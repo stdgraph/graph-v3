@@ -108,6 +108,11 @@ target_link_libraries(graph3_tests
         Catch2::Catch2WithMain
 )
 
+# MSVC requires /bigobj for files with many template instantiations
+if(MSVC)
+    target_compile_options(graph3_tests PRIVATE /bigobj)
+endif()
+
 # Register tests with CTest
 include(CTest)
 include(Catch)
