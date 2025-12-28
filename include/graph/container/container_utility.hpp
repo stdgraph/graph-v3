@@ -77,6 +77,16 @@ concept is_map_based_edge_container = is_associative_container<C> &&
    std::is_same_v<typename C::key_type, std::pair<typename C::mapped_type::vertex_id_type, 
                                                     typename C::mapped_type::vertex_id_type>>);
 
+// Concept for detecting map-based vertex containers (std::map<VId, vertex_type>)
+// These containers use vertex IDs as keys and vertices as values
+template <class C>
+concept is_map_based_vertex_container = is_associative_container<C> &&
+  requires {
+    typename C::mapped_type;  // has mapped_type (vertex_type)
+    typename C::key_type;     // has key_type (VId)
+  } &&
+  !requires { typename C::mapped_type::vertex_id_type; };  // NOT an edge container
+
 // return a lambda to push/insert/emplace an element in a container
 template <class C>
 constexpr auto push_or_insert(C& container) {

@@ -1416,8 +1416,11 @@ public: // Properties
 
   constexpr auto size() const noexcept { return vertices_.size(); }
 
-  constexpr typename vertices_type::value_type&       operator[](size_type i) noexcept { return vertices_[i]; }
-  constexpr const typename vertices_type::value_type& operator[](size_type i) const noexcept { return vertices_[i]; }
+  // Returns reference to vertex at index/key i
+  // Throws std::out_of_range if vertex doesn't exist
+  // Note: For maps, at() returns mapped_type& (vertex), not pair
+  constexpr vertex_type&       operator[](size_type i)       { return vertices_.at(i); }
+  constexpr const vertex_type& operator[](size_type i) const { return vertices_.at(i); }
 
 public: // Operations
   void reserve_vertices(size_type count) {
