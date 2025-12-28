@@ -1,6 +1,6 @@
 # Dynamic Graph Testing and Enhancement Plan
 
-## Current Status (Updated: December 28, 2024)
+## Current Status (Updated: December 28, 2025)
 
 **Phases 1-3: COMPLETE ✅**
 - 16 traits fully tested (basic + CPO): vofl, vol, vov, vod, dofl, dol, dov, dod, mofl, mol, mov, mod, uofl, uol, uov, uod
@@ -11,20 +11,31 @@
 - ✅ vos (vector + set): Basic + CPO tests COMPLETE
 - ✅ dos (deque + set): Basic + CPO tests COMPLETE  
 - ✅ mos (map + set): Basic + CPO tests COMPLETE (28 test cases, 377 assertions)
-- ⏳ uos (unordered_map + set): PENDING
+- ⏳ uos (unordered_map + set): PENDING (trait + tests needed)
 
-**Phase 4.2: Unordered Set Edge Containers - IN PROGRESS ⏳ (75% complete)**
+**Phase 4.2: Unordered Set Edge Containers - COMPLETE ✅**
 - ✅ vous (vector + unordered_set): Basic + CPO tests COMPLETE (37 test cases, 238 assertions)
 - ✅ dous (deque + unordered_set): Basic + CPO tests COMPLETE (37 test cases, 238 assertions)
 - ✅ mous (map + unordered_set): Basic + CPO tests COMPLETE (53 test cases, 578 assertions)
-- ⏳ uous (unordered_map + unordered_set): PENDING
+- ✅ uous (unordered_map + unordered_set): Basic + CPO tests COMPLETE (53 test cases, 563 assertions)
 
-**Next Steps:**
-1. Complete Phase 4.2: uous implementation
-2. Complete Phase 4.1: uos implementation
-3. Begin Phase 4.3 (map-based edges) or Phase 5+ (additional features)
+**Phase 4.3: Map-Based Edge Containers - COMPLETE ✅**
+- ✅ voem (vector + map edges): Basic + CPO tests COMPLETE (46 test cases, 292 assertions)
+- ✅ moem (map + map edges): Basic + CPO tests COMPLETE (53 test cases, 578 assertions)
 
-**Test Files Created (38 total, 37 complete):**
+**Phase 4 Overall: 90% COMPLETE (9/10 traits implemented)**
+
+**Phase 5: Non-Integral Vertex IDs - COMPLETE ✅**
+- ✅ Phase 5.1: Analysis and Preparation COMPLETE
+- ✅ Phase 5.2-5.4: Combined test file with string edge cases, double IDs, custom types
+- **Test file:** test_dynamic_graph_nonintegral_ids.cpp (19 test cases, 133 assertions)
+
+**Remaining Work:**
+- ⏳ Phase 4.1.5: uos_graph_traits (unordered_map + set) - trait file + 2 test files
+- Phase 6: Integration tests (optional)
+- Phase 7: Mutation and stress tests (optional)
+
+**Test Files Created (51 files total, 49 complete):**
 
 *Sequential Containers (16 files):*
 - test_dynamic_graph_vofl.cpp + test_dynamic_graph_cpo_vofl.cpp ✅
@@ -46,15 +57,21 @@
 - test_dynamic_graph_uov.cpp + test_dynamic_graph_cpo_uov.cpp ✅
 - test_dynamic_graph_uod.cpp + test_dynamic_graph_cpo_uod.cpp ✅
 
-*Set Edge Containers (6 files):*
+*Set Edge Containers (6 files + 2 pending):*
 - test_dynamic_graph_vos.cpp + test_dynamic_graph_cpo_vos.cpp ✅
 - test_dynamic_graph_dos.cpp + test_dynamic_graph_cpo_dos.cpp ✅
 - test_dynamic_graph_mos.cpp + test_dynamic_graph_cpo_mos.cpp ✅
+- test_dynamic_graph_uos.cpp + test_dynamic_graph_cpo_uos.cpp ⏳ PENDING
 
-*Unordered Set Edge Containers (6 files, more in progress):*
+*Unordered Set Edge Containers (8 files):*
 - test_dynamic_graph_vous.cpp + test_dynamic_graph_cpo_vous.cpp ✅
 - test_dynamic_graph_dous.cpp + test_dynamic_graph_cpo_dous.cpp ✅
 - test_dynamic_graph_mous.cpp + test_dynamic_graph_cpo_mous.cpp ✅
+- test_dynamic_graph_uous.cpp + test_dynamic_graph_cpo_uous.cpp ✅
+
+*Map Edge Containers (4 files):*
+- test_dynamic_graph_voem.cpp + test_dynamic_graph_cpo_voem.cpp ✅
+- test_dynamic_graph_moem.cpp + test_dynamic_graph_cpo_moem.cpp ✅
 
 *Additional Test Files:*
 - test_dynamic_graph_common.cpp ✅
@@ -973,28 +990,206 @@ All prerequisites for both std::set (Phase 4.1) and std::unordered_set (Phase 4.
 
 ## Phase 5: Non-Integral Vertex IDs
 
-Extend support beyond integral types for vertex IDs.
+Extend and validate support for non-integral vertex ID types. This phase focuses on verifying
+that map/unordered_map-based vertex containers work correctly with various ID types beyond
+the standard integral types.
 
-**New VId Types:**
-- `double` (floating-point IDs)
-- `std::string` (string IDs)
-- Compound types: `struct Name { std::string first, last; }`
+**Current State Analysis:**
+- Map-based containers (mos, moem, mol, etc.) already support `std::string` vertex IDs
+- Tests exist with `std::string` IDs in: mos, mous, moem, mol, mov, mod, mofl tests
+- Basic string ID functionality is validated but not comprehensively tested
+- No tests exist for: double IDs, compound types, custom types with complex comparison
+
+**New VId Types to Test:**
+- `double` (floating-point IDs with precision considerations)
+- `std::string` (already partially tested - needs comprehensive coverage)
+- Compound types: `struct PersonId { std::string name; int department; }`
+- Custom types with complex hash/comparison logic
 
 **Requirements:**
-- Must support map/unordered_map as vertex containers (Phase 3 dependency)
-- Must provide operator<, hash, operator== as appropriate
-- Update vertex_id() CPO for non-integral contexts
+- Must use map/unordered_map vertex containers (vector/deque require integral IDs for indexing)
+- std::map requires: `operator<` or custom comparator
+- std::unordered_map requires: `std::hash` specialization + `operator==`
+- CPO functions must work correctly with non-integral IDs
 
-**Test File:**
-```
-tests/test_dynamic_graph_non_integral_id.cpp  (~800 lines)
-```
+---
 
-**Test Coverage:**
-- Construction with non-integral IDs
-- Lookup and iteration
-- Partition support (may need custom partition function)
-- CPO compatibility
+### Phase 5.1: Analysis and Preparation ✅ COMPLETE
+
+**Goal:** Understand current support and identify gaps.
+
+| Step | Task | Status |
+|------|------|--------|
+| 5.1.1 | Audit existing string ID tests across all map-based traits | ✅ DONE |
+| 5.1.2 | Verify vertex_id() CPO works with string IDs | ✅ DONE |
+| 5.1.3 | Verify all CPOs work with string IDs in map containers | ✅ DONE |
+| 5.1.4 | Document which traits support which ID types | ✅ DONE |
+
+**Deliverable:** Analysis document identifying gaps in non-integral ID coverage.
+
+---
+
+#### Phase 5.1 Analysis Results (December 28, 2025)
+
+**1. Trait ID Type Support Matrix:**
+
+| Trait Category | Vertex Container | Supports Non-Integral VId | Reason |
+|----------------|------------------|--------------------------|--------|
+| Sequential (vo*, do*) | vector/deque | ❌ NO | Requires integral for indexing |
+| Ordered Associative (mo*) | std::map | ✅ YES | Any type with operator< |
+| Unordered Associative (uo*) | std::unordered_map | ✅ YES | Any type with hash + operator== |
+
+**2. Existing String ID Test Coverage:**
+
+| Trait | Basic Tests | CPO Tests | String Sections |
+|-------|-------------|-----------|-----------------|
+| mos | 3 test cases | 22 sections | ✅ Comprehensive |
+| mous | 3 test cases | 22 sections | ✅ Comprehensive |
+| moem | 3 test cases | 22 sections | ✅ Comprehensive |
+| mol | 3 test cases | ~20 sections | ✅ Comprehensive |
+| mov | 3 test cases | ~20 sections | ✅ Comprehensive |
+| mod | 3 test cases | ~20 sections | ✅ Comprehensive |
+| mofl | 3 test cases | ~20 sections | ✅ Comprehensive |
+| uofl | 3 test cases | 20 sections | ✅ Comprehensive |
+| uol | 3 test cases | ~20 sections | ✅ Comprehensive |
+| uov | 3 test cases | ~20 sections | ✅ Comprehensive |
+| uod | 3 test cases | ~20 sections | ✅ Comprehensive |
+| uous | 3 test cases | ~20 sections | ✅ Comprehensive |
+
+**Total:** 36 basic test cases + ~260 CPO string sections across 12 traits
+
+**3. CPO Functions Verified with String IDs (mos as reference):**
+
+All major CPO functions have string ID test sections:
+- `vertices(g)` ✅
+- `num_vertices(g)` ✅
+- `find_vertex(g, id)` ✅
+- `vertex_id(g, u)` ✅ (returns std::string)
+- `edges(g, u)` ✅
+- `num_edges(g)` ✅
+- `degree(g, u)` ✅
+- `target_id(g, uv)` ✅
+- `target(g, uv)` ✅
+- `source_id(g, uv)` ✅ (sourced graphs)
+- `source(g, uv)` ✅ (sourced graphs)
+- `find_vertex_edge(g, u, v)` ✅
+- `find_vertex_edge(g, uid, vid)` ✅
+- `contains_edge(g, u, v)` ✅
+- `contains_edge(g, uid, vid)` ✅
+- `vertex_value(g, u)` ✅
+- `edge_value(g, uv)` ✅
+- `partition_id(g, u)` ✅
+- `num_partitions(g)` ✅
+
+**4. Test Execution Results:**
+- `[string]` tag tests: 128 assertions in 36 test cases - ALL PASSED ✅
+- `[mos][cpo]` tests: 377 assertions in 28 test cases - ALL PASSED ✅
+
+**5. Gaps Identified:**
+
+| Gap | Priority | Notes |
+|-----|----------|-------|
+| No double/float ID tests | Medium | May have precision edge cases |
+| No compound type ID tests | Low | No user-defined VId types tested |
+| No Unicode string tests | Low | Basic ASCII strings only tested |
+| No empty string edge cases | Low | Not explicitly tested |
+| No very long string tests | Low | Not tested for performance |
+| No graph_value CPO with string IDs | Low | Most graphs use void GV |
+
+**6. Conclusions:**
+
+✅ **String vertex IDs are well-supported** - All map/unordered_map traits work with std::string VId
+✅ **CPO layer is fully compatible** - All CPO functions work correctly with string IDs
+✅ **Existing coverage is comprehensive** - ~260 string ID test sections across 12 traits
+
+**Recommended Phase 5 Adjustments:**
+
+Given the extensive existing coverage, Phase 5.2 (comprehensive string tests) can be **simplified** 
+to focus only on edge cases not currently covered:
+- Empty strings, Unicode, very long strings
+- Performance with string IDs
+- Error conditions
+
+Phase 5.3-5.4 (double/custom IDs) remain as planned since no coverage exists.
+
+---
+
+### Phase 5.2-5.4: Non-Integral ID Tests ✅ COMPLETE (December 28, 2025)
+
+**Implementation:** Combined string edge cases, double IDs, and custom type IDs into single test file.
+
+**Test File:** `tests/test_dynamic_graph_nonintegral_ids.cpp` (~740 lines)
+
+**Results:** 19 test cases, 133 assertions - ALL PASSED ✅
+
+**Coverage:**
+
+| Category | Test Cases | Assertions | Status |
+|----------|------------|------------|--------|
+| String edge cases (empty, Unicode, long) | 5 | ~35 | ✅ DONE |
+| Double/floating-point IDs | 7 | ~50 | ✅ DONE |
+| Custom compound type (PersonId) | 5 | ~35 | ✅ DONE |
+| Type traits verification | 1 | 4 | ✅ DONE |
+| Integration tests | 1 | 9 | ✅ DONE |
+| **Total** | **19** | **133** | ✅ DONE |
+
+**Key Tests Implemented:**
+
+*String Edge Cases:*
+- Empty strings as vertex IDs
+- Whitespace (space, tab, newline) in IDs
+- Unicode (CJK, emoji, Greek) vertex IDs
+- Very long strings (10K+ characters)
+- Sourced edges with string IDs
+
+*Double IDs:*
+- Basic construction and lookup
+- Ordering (negative before positive)
+- Close values (epsilon separation)
+- Special values (0.0, -0.0, infinity)
+- CPO access (vertex_id, target_id, find_vertex, contains_edge)
+- unordered_map with double keys
+
+*Custom Type IDs (PersonId):*
+- Compound type with name + department
+- Three-way comparison (operator<=>)
+- Hash specialization for unordered_map
+- Ordering verification
+- CPO access with custom types
+- Edge values with custom IDs
+
+**Infrastructure Added:**
+- `PersonId` struct with `operator<=>` and `operator==`
+- `std::hash<PersonId>` specialization using boost-style hash combine
+
+---
+
+### Phase 5.5: CPO Non-Integral ID Validation
+---
+
+## Phase 6: Comprehensive Integration Tests
+
+### Phase 5 Summary ✅ COMPLETE
+
+**Implementation Date:** December 28, 2025
+
+**Test File:** `tests/test_dynamic_graph_nonintegral_ids.cpp` (~740 lines)
+
+**Results:** 19 test cases, 133 assertions - ALL PASSED ✅
+
+**What Was Implemented:**
+- String edge cases: empty strings, whitespace, Unicode (CJK, emoji, Greek), long strings (10K+)
+- Double IDs: construction, ordering, special values (0.0, -0.0, infinity), CPO access
+- Custom PersonId type: compound struct with `operator<=>`, `std::hash` specialization
+- Integration tests: verify iteration works across all non-integral types
+
+**Risk Assessment Results:**
+- ✅ LOW RISK confirmed: String IDs work correctly with all edge cases
+- ✅ LOW RISK confirmed: Double IDs work with special values (except NaN which is documented)
+- ✅ LOW RISK confirmed: Custom types work with proper hash/comparison implementations
+
+**Note:** Phase 5.5 (explicit CPO validation) was folded into the main test file since CPO 
+functions are tested throughout the string, double, and PersonId test cases.
 
 ---
 

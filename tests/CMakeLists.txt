@@ -96,6 +96,8 @@ add_executable(graph3_tests
     test_dynamic_graph_cpo_mous.cpp
     test_dynamic_graph_uous.cpp
     test_dynamic_graph_cpo_uous.cpp
+    # Phase 5: Non-integral vertex IDs
+    test_dynamic_graph_nonintegral_ids.cpp
 )
 
 target_link_libraries(graph3_tests
