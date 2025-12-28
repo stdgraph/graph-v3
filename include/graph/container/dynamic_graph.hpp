@@ -1337,9 +1337,12 @@ public: // Load operations
             max_id      = std::max(max_id, static_cast<size_t>(e_scan.target_id));
             projected.push_back(e_scan); // copy (value semantics)
           }
-          if constexpr (resizable<vertices_type>) {
-            if (vertices_.size() <= max_id)
-              vertices_.resize(max_id + 1, vertex_type(vertices_.get_allocator()));
+          // Only resize if we collected edges; empty input should not create vertices
+          if (!projected.empty()) {
+            if constexpr (resizable<vertices_type>) {
+              if (vertices_.size() <= max_id)
+                vertices_.resize(max_id + 1, vertex_type(vertices_.get_allocator()));
+            }
           }
           // If adjacency edge container is vector we can reserve per-vertex capacity now.
           using edges_container_example = decltype(vertices_[0].edges());

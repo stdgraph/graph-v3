@@ -132,6 +132,9 @@ constexpr void emplace_edge(EdgeContainer& edges, const typename Edge::vertex_id
       edges.emplace_back(std::forward<Edge>(edge));
     } else if constexpr (has_push_back<EdgeContainer>) {
       edges.push_back(std::forward<Edge>(edge));
+    } else if constexpr (has_emplace_front<EdgeContainer>) {
+      // For forward_list and similar containers that only support front insertion
+      edges.emplace_front(std::forward<Edge>(edge));
     }
   }
 }

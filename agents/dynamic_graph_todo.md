@@ -1202,61 +1202,429 @@ functions are tested throughout the string, double, and PersonId test cases.
 
 ## Phase 6: Comprehensive Integration Tests
 
-After all phases, create integration tests for complex scenarios.
+**Status:** 📋 READY FOR IMPLEMENTATION
 
-**Test File:**
+After completing individual trait tests, this phase validates that different graph types work together 
+correctly and can interoperate. Focus on realistic usage patterns and generic programming with CPOs.
+
+**Test Files:**
 ```
-tests/test_dynamic_graph_integration.cpp  (~1200 lines)
+tests/test_dynamic_graph_integration.cpp       (~800 lines)  - Main integration tests
+tests/test_dynamic_graph_stl_algorithms.cpp    (~600 lines)  - STL/Ranges integration
+tests/test_dynamic_graph_cpo_generic.cpp       (~500 lines)  - Generic CPO usage
 ```
 
-### Phase 6: Integration Test Scenarios
+**Total Estimated:** ~1900 lines, 180-220 test cases
 
-**Test Coverage:**
-- Mixed container types in same codebase
-- Large-scale graphs (100k+ vertices, 1M+ edges)
-- Interoperability with compressed_graph
-- Conversion between graph types
-- STL algorithm compatibility
-- Range adaptor compatibility
+---
 
-**Specific Tests:**
-1. **Graph Conversion** (50 tests)
-   - dynamic_graph → compressed_graph
-   - compressed_graph → dynamic_graph
-   - Preserve vertex/edge values
-   - Preserve partition information
-   - Handle large graphs efficiently
+### Phase 6.1: Cross-Traits Graph Construction ⏳ READY
 
-2. **Cross-Container Operations** (40 tests)
-   - Copy between different traits types
-   - Transform graph structure
-   - Merge multiple graphs
-   - Extract subgraphs
+**Goal:** Verify graphs can be constructed from data in other graph types
 
-3. **STL Algorithm Integration** (50 tests)
-   - `std::ranges::for_each` on vertices/edges
-   - `std::ranges::find_if` for search
-   - `std::ranges::sort` on edge containers
-   - `std::ranges::transform` on values
-   - Pipeline operations with views
-   - `std::ranges::count_if` for filtering
-   - `std::ranges::accumulate` for aggregation
+**Test File:** `tests/test_dynamic_graph_integration.cpp` (Part 1, ~200 lines)
 
-4. **Performance Validation** (40 tests)
-   - Benchmark construction time
-   - Benchmark iteration time
-   - Memory usage measurement
-   - Compare container choices
-   - Identify performance regressions
-   - Cache locality impact
+**Prerequisites:**
+- Phase 1-5 complete
+- All CPO functions working (vertices, edges, vertex_id, target_id, etc.)
 
-5. **CPO Interoperability** (60 tests)
-   - Use CPOs across different graph types
-   - Generic functions using CPOs
-   - Verify CPO consistency
-   - Test CPO with all container combinations
+**Test Strategy:**
+1. Create source graph with one trait
+2. Extract data using CPOs (generic approach)
+3. Construct target graph with different trait
+4. Verify data integrity
 
-**Note:** Graph algorithms (BFS, DFS, shortest path, etc.) will be implemented and tested separately using the CPO functions once the CPO layer is complete and stable. This ensures algorithms are generic and work across all graph types.
+**Tasks:**
+
+**6.1.1: Copy Construction Between Sequential Traits** (30 tests)
+- Copy vov → vofl (vector vertices, different edge containers)
+- Copy dofl → dol (deque vertices, different edge containers)
+- Copy vofl → dov (different vertex containers)
+- Verify: vertex count, edge count, vertex values, edge values
+- Test with: void, int, string values for EV/VV/GV
+
+**6.1.2: Copy Construction from Sequential to Map** (30 tests)
+- Copy vov → mos (vector to map vertices, set edges)
+- Copy dol → mol (deque to map vertices)
+- Verify: all vertices present, all edges present, correct IDs
+- Test edge case: sparse vertex IDs (e.g., graph with vertices 0, 10, 100)
+
+**6.1.3: Copy Construction from Map to Sequential** (30 tests)
+- Copy mos → vov (requires renumbering if string IDs)
+- Copy mol → dofl
+- Handle: non-consecutive IDs, custom ordering
+- Note: Cannot directly copy string-keyed graph to integral-ID graph without ID mapping
+
+**6.1.4: Copy Within Same Container Category** (20 tests)
+- mos → mous (map ordered to unordered)
+- mous → mos (unordered to ordered - check ordering difference)
+- vov → vov_with_different_allocator
+
+**Implementation Pattern:**
+```cpp
+TEST_CASE("Copy vov to vofl preserves data", "[integration][cross_traits]") {
+    // Source: vov (vector + vector)
+    vov_graph source({{0, 1, 100}, {1, 2, 200}});
+    
+    // Target: vofl (vector + forward_list)
+    vofl_graph target;
+    
+    // Generic copy using CPOs
+    for (auto&& [uid, u] : vertices(source)) {
+        // Vertex will auto-create in target on edge insertion
+    }
+    
+    std::vector<copyable_edge_t<uint64_t, int>> edges_data;
+    for (auto&& [uid, u] : vertices(source)) {
+        for (auto&& edge : edges(source, u)) {
+            edges_data.push_back({
+                vertex_id(source, u),
+                target_id(source, edge),
+                edge_value(source, edge)
+            });
+        }
+    }
+    target.load_edges(edges_data, identity{});
+    
+    REQUIRE(target.size() == source.size());
+    REQUIRE(count_all_edges(target) == count_all_edges(source));
+}
+```
+
+**Success Criteria:**
+- All 110 tests pass
+- Generic copy pattern works for any graph type
+- No data loss during conversion
+- Edge cases handled (empty graphs, single vertex, self-loops)
+
+---
+
+### Phase 6.2: STL Algorithm Integration ⏳ READY
+
+**Goal:** Verify standard library algorithms work correctly with dynamic_graph ranges
+
+**Test File:** `tests/test_dynamic_graph_stl_algorithms.cpp` (~600 lines)
+
+**Prerequisites:**
+- C++20 ranges support
+- Graph types expose standard range interfaces
+
+**Tasks:**
+
+**6.2.1: std::ranges::for_each** (25 tests)
+- Iterate all vertices and accumulate values
+- Iterate all edges and count/sum
+- Modify values in place (if mutable)
+- Test with different graph types: vov, mos, dofl
+
+**6.2.2: std::ranges::find_if and Search** (30 tests)
+- Find vertex by ID
+- Find vertex by value predicate
+- Find edge by target ID
+- Find edge by value predicate
+- Return correct iterators (or end())
+
+**6.2.3: std::ranges::count_if and Filtering** (25 tests)
+- Count vertices matching predicate
+- Count edges matching predicate
+- Count degrees above threshold
+- Count self-loops
+
+**6.2.4: std::ranges::transform** (30 tests)
+- Extract vertex IDs to vector
+- Extract edge target IDs to vector
+- Transform vertex values
+- Transform edge values
+- Pipeline with filter | transform
+
+**6.2.5: std::ranges::sort (where applicable)** (20 tests)
+- Sort edges by target ID (if random access)
+- Sort vertices by value
+- Cannot sort map-based containers (test compilation failure?)
+
+**6.2.6: Range Adaptors and Views** (35 tests)
+- `views::filter` - filter vertices/edges by predicate
+- `views::transform` - transform vertex/edge values
+- `views::take` - first N vertices/edges
+- `views::drop` - skip first N vertices/edges
+- `views::reverse` - reverse vertex iteration (if bidirectional)
+- Pipeline: `vertices(g) | views::filter(...) | views::transform(...)`
+
+**6.2.7: Accumulate and Fold Operations** (25 tests)
+- Sum all vertex values
+- Sum all edge values
+- Count total degree (sum of all degrees)
+- Max degree vertex
+- Average degree
+
+**Implementation Pattern:**
+```cpp
+TEST_CASE("std::ranges::for_each on vertices", "[integration][stl][ranges]") {
+    vov_int_graph g({{0, 1}, {1, 2}, {2, 0}});
+    
+    size_t count = 0;
+    std::ranges::for_each(vertices(g), [&count](auto&& v) {
+        ++count;
+    });
+    
+    REQUIRE(count == g.size());
+}
+
+TEST_CASE("std::ranges::transform extracts IDs", "[integration][stl][ranges]") {
+    vov_graph g({{0, 1}, {1, 2}});
+    
+    std::vector<uint64_t> ids;
+    std::ranges::transform(vertices(g), std::back_inserter(ids),
+        [&g](auto&& v) { return vertex_id(g, v); });
+    
+    REQUIRE(ids.size() == g.size());
+    REQUIRE(std::ranges::is_sorted(ids)); // Sequential graphs are ordered
+}
+```
+
+**Success Criteria:**
+- All 190 tests pass
+- Standard algorithms work seamlessly with graph ranges
+- Performance is acceptable (no unexpected copies)
+- Range adaptors compose correctly
+
+---
+
+### Phase 6.3: Generic CPO-Based Functions ⏳ READY
+
+**Goal:** Implement and test generic graph functions using only CPOs (graph-agnostic)
+
+**Test File:** `tests/test_dynamic_graph_cpo_generic.cpp` (~500 lines)
+
+**Prerequisites:**
+- All CPO functions implemented and tested
+- Concepts defined (if available)
+
+**Tasks:**
+
+**6.3.1: Generic Graph Queries** (40 tests)
+- `count_vertices(G g)` - using CPOs only
+- `count_edges(G g)` - iterate all edges
+- `max_degree(G g)` - find vertex with max out-degree
+- `min_degree(G g)` - find vertex with min out-degree
+- `avg_degree(G g)` - compute average degree
+- `is_empty(G g)` - check if graph has no vertices
+- Test with: vov, mos, dofl, mous
+
+**6.3.2: Generic Graph Traversal Helpers** (35 tests)
+- `has_edge(G g, VId uid, VId vid)` - check edge existence using CPOs
+- `get_neighbors(G g, VId uid)` - return vector of neighbor IDs
+- `is_isolated(G g, VId uid)` - check if vertex has degree 0
+- `count_self_loops(G g)` - count edges where source == target
+- Test with different graph types
+
+**6.3.3: Generic Graph Transformations** (30 tests)
+- `extract_subgraph(G g, std::vector<VId> vids)` - create subgraph with selected vertices
+- `copy_graph<TargetTraits>(G g)` - generic copy (from 6.1 but as reusable function)
+- `reverse_edges(G g)` - create new graph with reversed edges
+- `filter_edges(G g, Predicate p)` - create graph with subset of edges
+
+**6.3.4: Generic Graph Validation** (25 tests)
+- `is_dag(G g)` - check if directed acyclic graph (requires DFS/BFS - simplified check)
+- `has_cycle(G g)` - detect cycle (simplified)
+- `is_connected(G g)` - check weak connectivity (requires BFS - simplified)
+- Note: Full algorithm implementations belong in Phase 8
+
+**6.3.5: Type-Erased Graph Wrapper** (20 tests)
+- Create `graph_view` that wraps any graph type using CPOs
+- Allows storing different graph types in same container
+- Test polymorphic behavior
+
+**Implementation Pattern:**
+```cpp
+// Generic function using only CPOs
+template<typename G>
+size_t count_edges(const G& g) {
+    size_t count = 0;
+    for (auto&& [vid, v] : vertices(g)) {
+        count += std::ranges::distance(edges(g, v));
+    }
+    return count;
+}
+
+// Generic function template test
+TEMPLATE_TEST_CASE("count_edges works generically", "[integration][cpo][generic]",
+                   vov_graph_traits<void, void, void, uint64_t, false>,
+                   mos_graph_traits<void, void, void, std::string, false>,
+                   dofl_graph_traits<void, void, void, uint64_t, false>) {
+    using Graph = dynamic_graph<void, void, void, 
+                                typename TestType::vertex_id_type, false, TestType>;
+    
+    Graph g; // Construct appropriate graph
+    // Add edges...
+    
+    size_t edge_count = count_edges(g);
+    REQUIRE(edge_count == /* expected */);
+}
+```
+
+**Success Criteria:**
+- All 150 tests pass
+- Generic functions work with any graph type
+- CPO-based abstraction is complete
+- Foundation for graph algorithms (Phase 8)
+
+---
+
+### Phase 6.4: Mixed Graph Type Usage ⏳ READY
+
+**Goal:** Verify multiple graph types can coexist and interoperate in same program
+
+**Test File:** `tests/test_dynamic_graph_integration.cpp` (Part 2, ~250 lines)
+
+**Prerequisites:**
+- Previous phases complete
+
+**Tasks:**
+
+**6.4.1: Multiple Graph Types in Same Test** (20 tests)
+- Create vov, mos, dofl graphs in same test
+- Pass each to generic function
+- Verify consistent behavior
+- Mix integral and non-integral VId types
+
+**6.4.2: Graph Type Conversions** (25 tests)
+- Convert mos (string IDs) → vov (integral IDs) with ID mapping
+- Convert vov → mos (integral → string)
+- Create mapping functions: `id_mapper<From, To>`
+- Handle: bijective mappings, sparse IDs
+
+**6.4.3: Heterogeneous Graph Collections** (15 tests)
+- Store different graph types using `std::variant`
+- Visit using `std::visit` with generic lambdas
+- Store as type-erased `graph_view` (if implemented)
+
+**Implementation Pattern:**
+```cpp
+TEST_CASE("Multiple graph types coexist", "[integration][mixed]") {
+    vov_graph g1({{0, 1}, {1, 2}});
+    mos_string_graph g2({{"A", "B"}, {"B", "C"}});
+    dofl_graph g3({{0, 1}, {1, 2}});
+    
+    // All can use generic functions
+    REQUIRE(count_edges(g1) == 2);
+    REQUIRE(count_edges(g2) == 2);
+    REQUIRE(count_edges(g3) == 2);
+}
+```
+
+**Success Criteria:**
+- All 60 tests pass
+- Different graph types work together
+- Type conversions are explicit and safe
+- Generic programming is seamless
+
+---
+
+### Phase 6.5: Edge Case Integration Scenarios ⏳ READY
+
+**Goal:** Test complex real-world scenarios and edge cases across graph types
+
+**Test File:** `tests/test_dynamic_graph_integration.cpp` (Part 3, ~350 lines)
+
+**Prerequisites:**
+- All previous phases complete
+
+**Tasks:**
+
+**6.5.1: Empty Graph Operations** (20 tests)
+- Empty graph → empty graph copy
+- Generic functions on empty graphs
+- STL algorithms on empty ranges
+- All graph types
+
+**6.5.2: Large Graph Operations** (25 tests)
+- Construct graph with 10K vertices, 100K edges
+- Copy to different trait type
+- Measure time (should complete in reasonable time)
+- Verify correctness with sampling
+- Test with: vov (best performance), mos (hash-based)
+
+**6.5.3: Self-Loop Handling Across Types** (20 tests)
+- Create graphs with self-loops
+- Copy between trait types
+- Verify self-loops preserved
+- Count self-loops generically
+
+**6.5.4: Parallel Edges Across Types** (20 tests)
+- Create graphs with parallel edges (list/forward_list containers)
+- Copy to set-based containers (should deduplicate)
+- Copy from set to list (no duplicates)
+- Document behavior differences
+
+**6.5.5: Value Type Conversions** (25 tests)
+- Copy graph with int edge values to string edge values
+- Transform during copy: `transform_copy_graph(g, value_transformer)`
+- Copy void graph to valued graph (assign default values)
+- Copy valued graph to void graph (discard values)
+
+**6.5.6: Real-World Graph Examples** (20 tests)
+- Social network: people (vertices) and friendships (edges)
+- Road network: cities (vertices) and roads (edges with distances)
+- Dependency graph: tasks (vertices) and dependencies (edges)
+- Test construction, queries, transformations
+
+**Implementation Pattern:**
+```cpp
+TEST_CASE("Social network example", "[integration][real_world]") {
+    // People are vertices (string IDs), friendships are edges
+    using SocialGraph = dynamic_graph<void, std::string, void, std::string, false,
+                                       mos_graph_traits<void, std::string, void, 
+                                                       std::string, false>>;
+    
+    SocialGraph g({
+        {"Alice", "Bob"}, {"Alice", "Charlie"},
+        {"Bob", "David"}, {"Charlie", "David"}
+    });
+    
+    // Find friends of Alice
+    auto alice = find_vertex(g, std::string("Alice"));
+    REQUIRE(alice != vertices(g).end());
+    
+    std::vector<std::string> friends;
+    for (auto&& edge : edges(g, *alice)) {
+        friends.push_back(target_id(g, edge));
+    }
+    
+    REQUIRE(friends.size() == 2);
+    REQUIRE(std::ranges::find(friends, "Bob") != friends.end());
+    REQUIRE(std::ranges::find(friends, "Charlie") != friends.end());
+}
+```
+
+**Success Criteria:**
+- All 130 tests pass
+- Real-world scenarios work correctly
+- Edge cases handled properly
+- Documentation includes usage examples
+
+---
+
+### Phase 6 Summary
+
+**Total Test Count:** ~530 tests across 3 files
+**Total Lines:** ~1900 lines
+**Estimated Time:** 3-4 days
+
+**Deliverables:**
+1. ✅ `test_dynamic_graph_integration.cpp` - Cross-trait construction, mixed types, edge cases
+2. ✅ `test_dynamic_graph_stl_algorithms.cpp` - STL/Ranges algorithm integration
+3. ✅ `test_dynamic_graph_cpo_generic.cpp` - Generic CPO-based functions
+
+**Success Criteria:**
+- All 530+ integration tests pass
+- Generic programming with CPOs works seamlessly
+- Different graph types interoperate correctly
+- STL algorithms integrate properly
+- Real-world usage patterns validated
+- Foundation ready for Phase 8 (graph algorithms)
+
+**Note:** Graph algorithms (BFS, DFS, shortest path, etc.) will be implemented in Phase 8 using the CPO layer validated here, ensuring algorithms work generically across all graph types.
 
 ---
 
