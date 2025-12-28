@@ -113,11 +113,10 @@ TEST_CASE("uol traits verification", "[dynamic_graph][uol][traits]") {
 
 TEST_CASE("uol iterator categories", "[dynamic_graph][uol][iterators]") {
     SECTION("underlying unordered_map iterators are forward") {
-        // Note: unordered_map iterators are forward iterators
+        // Note: unordered_map iterators are at least forward iterators (bidirectional in MSVC, forward-only in GCC)
         using G = uol_void_void_void;
         using iter_t = typename G::vertices_type::iterator;
         static_assert(std::forward_iterator<iter_t>);
-        static_assert(!std::bidirectional_iterator<iter_t>);
         REQUIRE(true);
     }
 

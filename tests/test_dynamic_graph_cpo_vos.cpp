@@ -1191,7 +1191,7 @@ TEST_CASE("vos CPO integration", "[dynamic_graph][vos][cpo][integration]") {
         visited[start] = true;
         order.push_back(start);
         
-        std::vector<uint32_t> queue = {start};
+        std::vector<uint32_t> queue = {static_cast<uint32_t>(start)};
         while (!queue.empty()) {
             auto uid = queue.front();
             queue.erase(queue.begin());

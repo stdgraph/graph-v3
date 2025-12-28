@@ -103,12 +103,12 @@
     {
       "name": "windows-clang-debug",
       "displayName": "Windows Clang Debug",
-      "description": "Windows development build with Clang (Debug)",
+      "description": "Windows development build with Clang (Debug) - requires MSVC environment",
       "inherits": "windows-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_C_COMPILER": "clang-cl",
+        "CMAKE_CXX_COMPILER": "clang-cl",
         "BUILD_TESTS": "ON",
         "BUILD_EXAMPLES": "ON"
       }
@@ -120,8 +120,8 @@
       "inherits": "windows-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_C_COMPILER": "clang-cl",
+        "CMAKE_CXX_COMPILER": "clang-cl",
         "BUILD_TESTS": "ON",
         "BUILD_EXAMPLES": "ON"
       }

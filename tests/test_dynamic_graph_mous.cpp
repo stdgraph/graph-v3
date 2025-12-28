@@ -130,9 +130,8 @@ TEST_CASE("mous iterator categories", "[dynamic_graph][mous][iterators]") {
         using traits = mous_graph_traits<void, void, void, uint32_t, false>;
         using edges_t = typename traits::edges_type;
         using edge_iter_t = typename edges_t::iterator;
-        // unordered_set iterators are forward only (not bidirectional)
+        // unordered_set iterators are at least forward (bidirectional in MSVC, forward-only in GCC)
         static_assert(std::forward_iterator<edge_iter_t>);
-        static_assert(!std::bidirectional_iterator<edge_iter_t>);
         // and NOT random access
         static_assert(!std::random_access_iterator<edge_iter_t>);
         REQUIRE(true);

@@ -8,10 +8,10 @@ namespace graph::container {
 
 // Forward declarations
 template <class EV, class VV, class GV, class VId, bool Sourced, class Traits>
-struct dynamic_edge;
+class dynamic_edge;
 
 template <class EV, class VV, class GV, class VId, bool Sourced, class Traits>
-struct dynamic_vertex;
+class dynamic_vertex;
 
 template <class EV, class VV, class GV, class VId, bool Sourced, class Traits>
 class dynamic_graph;
