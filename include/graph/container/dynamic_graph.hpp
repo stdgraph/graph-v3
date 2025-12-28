@@ -1259,18 +1259,18 @@ public: // Load operations
         // operator[] on map will auto-insert default vertex if not present
         // We need to ensure both source and target vertices exist
         (void)vertices_[e.target_id]; // ensure target vertex exists
-        auto&& edge_adder = push_or_insert(vertices_[e.source_id].edges());
+        auto& edges = vertices_[e.source_id].edges();
         if constexpr (Sourced) {
           if constexpr (is_void_v<EV>) {
-            edge_adder(edge_type(e.source_id, e.target_id));
+            emplace_edge(edges, e.target_id, edge_type(e.source_id, e.target_id));
           } else {
-            edge_adder(edge_type(e.source_id, e.target_id, std::move(e.value)));
+            emplace_edge(edges, e.target_id, edge_type(e.source_id, e.target_id, std::move(e.value)));
           }
         } else {
           if constexpr (is_void_v<EV>) {
-            edge_adder(edge_type(e.target_id));
+            emplace_edge(edges, e.target_id, edge_type(e.target_id));
           } else {
-            edge_adder(edge_type(e.target_id, std::move(e.value)));
+            emplace_edge(edges, e.target_id, edge_type(e.target_id, std::move(e.value)));
           }
         }
         edge_count_ += 1;
@@ -1326,18 +1326,18 @@ public: // Load operations
               throw std::runtime_error("source id exceeds the number of vertices in load_edges");
             if (static_cast<size_t>(e.target_id) >= vertices_.size())
               throw std::runtime_error("target id exceeds the number of vertices in load_edges");
-            auto&& edge_adder = push_or_insert(vertices_[e.source_id].edges());
+            auto& edges = vertices_[e.source_id].edges();
             if constexpr (Sourced) {
               if constexpr (is_void_v<EV>) {
-                edge_adder(edge_type(e.source_id, e.target_id));
+                emplace_edge(edges, e.target_id, edge_type(e.source_id, e.target_id));
               } else {
-                edge_adder(edge_type(e.source_id, e.target_id, std::move(e.value)));
+                emplace_edge(edges, e.target_id, edge_type(e.source_id, e.target_id, std::move(e.value)));
               }
             } else {
               if constexpr (is_void_v<EV>) {
-                edge_adder(edge_type(e.target_id));
+                emplace_edge(edges, e.target_id, edge_type(e.target_id));
               } else {
-                edge_adder(edge_type(e.target_id, std::move(e.value)));
+                emplace_edge(edges, e.target_id, edge_type(e.target_id, std::move(e.value)));
               }
             }
             edge_count_ += 1;
@@ -1356,18 +1356,18 @@ public: // Load operations
           throw std::runtime_error("source id exceeds the number of vertices in load_edges");
         if (static_cast<size_t>(e.target_id) >= vertices_.size())
           throw std::runtime_error("target id exceeds the number of vertices in load_edges");
-        auto&& edge_adder = push_or_insert(vertices_[e.source_id].edges());
+        auto& edges = vertices_[e.source_id].edges();
         if constexpr (Sourced) {
           if constexpr (is_void_v<EV>) {
-            edge_adder(edge_type(std::move(e.source_id), std::move(e.target_id)));
+            emplace_edge(edges, e.target_id, edge_type(std::move(e.source_id), std::move(e.target_id)));
           } else {
-            edge_adder(edge_type(std::move(e.source_id), std::move(e.target_id), std::move(e.value)));
+            emplace_edge(edges, e.target_id, edge_type(std::move(e.source_id), std::move(e.target_id), std::move(e.value)));
           }
         } else {
           if constexpr (is_void_v<EV>) {
-            edge_adder(edge_type(std::move(e.target_id)));
+            emplace_edge(edges, e.target_id, edge_type(std::move(e.target_id)));
           } else {
-            edge_adder(edge_type(std::move(e.target_id), std::move(e.value)));
+            emplace_edge(edges, e.target_id, edge_type(std::move(e.target_id), std::move(e.value)));
           }
         }
         edge_count_ += 1;
@@ -1661,10 +1661,15 @@ private: // CPO properties
     auto&& source_vertex = std::forward<E>(uv).source().inner_value(std::forward<G>(g).vertices_);
     // Get the edges container from the vertex
     auto&& edges_container = std::forward<decltype(source_vertex)>(source_vertex).edges();
-    // Get the edge object from the descriptor
+    // Get the edge object from the descriptor (may be edge_type or pair<VId, edge_type>)
     auto&& edge_obj = std::forward<E>(uv).inner_value(std::forward<decltype(edges_container)>(edges_container));
     // Return the value from the edge object
-    return std::forward<decltype(edge_obj)>(edge_obj).value();
+    // For map-based containers, edge_obj is pair<const VId, edge_type>, so access .second
+    if constexpr (requires { edge_obj.second.value(); }) {
+      return std::forward<decltype(edge_obj)>(edge_obj).second.value();
+    } else {
+      return std::forward<decltype(edge_obj)>(edge_obj).value();
+    }
   }
 
   // friend constexpr vertex_id_type vertex_id(const dynamic_graph_base& g, typename vertices_type::const_iterator ui) {

@@ -66,6 +66,17 @@ concept has_mapped_type = requires {
 template <class C>
 concept is_associative_container = has_key_type<C> && has_mapped_type<C>;
 
+// Concept for detecting map-based edge containers (std::map<VId, edge_type>)
+// These containers use vertex IDs as keys and edges as values
+template <class C>
+concept is_map_based_edge_container = is_associative_container<C> &&
+  requires {
+    typename C::mapped_type::vertex_id_type;  // edge_type has vertex_id_type
+  } &&
+  (std::same_as<typename C::key_type, typename C::mapped_type::vertex_id_type> ||
+   std::is_same_v<typename C::key_type, std::pair<typename C::mapped_type::vertex_id_type, 
+                                                    typename C::mapped_type::vertex_id_type>>);
+
 // return a lambda to push/insert/emplace an element in a container
 template <class C>
 constexpr auto push_or_insert(C& container) {
@@ -91,6 +102,28 @@ constexpr auto push_or_insert(C& container) {
   //              "The container doesn't have emplace_back, push_back, emplace_front, push_front, emplace or insert");
   //}
 #  endif
+}
+
+// Helper to insert edges into map-based or sequential edge containers
+// For map-based containers (std::map<VId, edge_type>), wraps edge in a pair
+// For sequential containers (vector, set, etc.), inserts edge directly
+template <class EdgeContainer, class Edge>
+constexpr void emplace_edge(EdgeContainer& edges, const typename Edge::vertex_id_type& target_id, Edge&& edge) {
+  if constexpr (is_map_based_edge_container<EdgeContainer>) {
+    // Map-based: key is target_id, value is edge
+    edges.emplace(target_id, std::forward<Edge>(edge));
+  } else {
+    // Sequential/set-based: insert edge directly
+    if constexpr (has_emplace<EdgeContainer>) {
+      edges.emplace(std::forward<Edge>(edge));
+    } else if constexpr (has_insert<EdgeContainer>) {
+      edges.insert(std::forward<Edge>(edge));
+    } else if constexpr (has_emplace_back<EdgeContainer>) {
+      edges.emplace_back(std::forward<Edge>(edge));
+    } else if constexpr (has_push_back<EdgeContainer>) {
+      edges.push_back(std::forward<Edge>(edge));
+    }
+  }
 }
 
 // return a lambda to assign/insert an element in a container
