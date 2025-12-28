@@ -13,14 +13,14 @@
 - ✅ mos (map + set): Basic + CPO tests COMPLETE (28 test cases, 377 assertions)
 - ⏳ uos (unordered_map + set): PENDING
 
-**Phase 4.2: Unordered Set Edge Containers - IN PROGRESS ⏳ (25% complete)**
+**Phase 4.2: Unordered Set Edge Containers - IN PROGRESS ⏳ (50% complete)**
 - ✅ vous (vector + unordered_set): Basic + CPO tests COMPLETE (37 test cases, 238 assertions)
-- ⏳ dous (deque + unordered_set): PENDING
+- ✅ dous (deque + unordered_set): Basic + CPO tests COMPLETE (37 test cases, 238 assertions)
 - ⏳ mous (map + unordered_set): PENDING  
 - ⏳ uous (unordered_map + unordered_set): PENDING
 
 **Next Steps:**
-1. Continue Phase 4.2: dous, mous, uous implementations
+1. Continue Phase 4.2: mous, uous implementations
 2. Complete Phase 4.1: uos implementation
 3. Begin Phase 4.3 (map-based edges) or Phase 5+ (additional features)
 
@@ -51,8 +51,9 @@
 - test_dynamic_graph_dos.cpp + test_dynamic_graph_cpo_dos.cpp ✅
 - test_dynamic_graph_mos.cpp + test_dynamic_graph_cpo_mos.cpp ✅
 
-*Unordered Set Edge Containers (2 files, more in progress):*
+*Unordered Set Edge Containers (4 files, more in progress):*
 - test_dynamic_graph_vous.cpp + test_dynamic_graph_cpo_vous.cpp ✅
+- test_dynamic_graph_dous.cpp + test_dynamic_graph_cpo_dous.cpp ✅
 
 *Additional Test Files:*
 - test_dynamic_graph_common.cpp ✅
@@ -847,14 +848,14 @@ All prerequisites for both std::set (Phase 4.1) and std::unordered_set (Phase 4.
 - Test adaptations: All order-dependent assertions updated to sort before comparing
 - All 37 test cases passing (11 basic + 26 CPO) ✅
 
-**Step 4.2.3: Create dous_graph_traits (deque + unordered_set)**
+**Step 4.2.3: Create dous_graph_traits (deque + unordered_set)** ✅ COMPLETE
 
 | Step | Task | Status |
 |------|------|--------|
-| 4.2.3a | Create dous_graph_traits.hpp | ⏳ PENDING |
-| 4.2.3b | Create test_dynamic_graph_dous.cpp (~800 lines) | ⏳ PENDING |
-| 4.2.3c | Create test_dynamic_graph_cpo_dous.cpp (~1200 lines) | ⏳ PENDING |
-| 4.2.3d | Update CMakeLists.txt and verify tests pass | ⏳ PENDING |
+| 4.2.3a | Create dous_graph_traits.hpp | ✅ COMPLETE |
+| 4.2.3b | Create test_dynamic_graph_dous.cpp (486 lines, 11 tests) | ✅ COMPLETE |
+| 4.2.3c | Create test_dynamic_graph_cpo_dous.cpp (1281 lines, 26 tests) | ✅ COMPLETE |
+| 4.2.3d | Update CMakeLists.txt and verify tests pass (238 assertions) | ✅ COMPLETE |
 
 **Step 4.2.4: Create mous_graph_traits (map + unordered_set)**
 
