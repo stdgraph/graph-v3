@@ -1173,20 +1173,27 @@ Phase 5.3-5.4 (double/custom IDs) remain as planned since no coverage exists.
 
 **Implementation Date:** December 28, 2025
 
-**Test File:** `tests/test_dynamic_graph_nonintegral_ids.cpp` (~740 lines)
+**Test File:** `tests/test_dynamic_graph_nonintegral_ids.cpp` (~850 lines)
 
-**Results:** 19 test cases, 133 assertions - ALL PASSED ✅
+**Results:** 21 test cases, 156 assertions - ALL PASSED ✅
 
 **What Was Implemented:**
 - String edge cases: empty strings, whitespace, Unicode (CJK, emoji, Greek), long strings (10K+)
 - Double IDs: construction, ordering, special values (0.0, -0.0, infinity), CPO access
 - Custom PersonId type: compound struct with `operator<=>`, `std::hash` specialization
 - Integration tests: verify iteration works across all non-integral types
+- **load_vertices/load_edges tests**: Explicit testing of `load_vertices` and `load_edges` with 
+  non-integral VId types (string, PersonId, double)
+
+**Bug Fix:** Fixed `load_vertices` in `dynamic_graph.hpp` to handle `VV=void` case correctly.
+When vertex values are void, `copyable_vertex_t<VId, void>` has only 1 element (id), not 2.
+The fix uses `if constexpr (is_void_v<VV>)` to handle both cases properly.
 
 **Risk Assessment Results:**
 - ✅ LOW RISK confirmed: String IDs work correctly with all edge cases
 - ✅ LOW RISK confirmed: Double IDs work with special values (except NaN which is documented)
 - ✅ LOW RISK confirmed: Custom types work with proper hash/comparison implementations
+- ✅ LOW RISK confirmed: load_vertices and load_edges work with non-integral VId types
 
 **Note:** Phase 5.5 (explicit CPO validation) was folded into the main test file since CPO 
 functions are tested throughout the string, double, and PersonId test cases.

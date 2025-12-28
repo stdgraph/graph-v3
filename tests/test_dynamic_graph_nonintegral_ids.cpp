@@ -741,3 +741,126 @@ TEST_CASE("non-integral IDs - graph integration", "[nonintegral][integration]") 
         REQUIRE(edge_count == 3);
     }
 }
+
+//==================================================================================================
+// PART 5: load_vertices and load_edges with Non-Integral IDs
+//==================================================================================================
+
+TEST_CASE("load_vertices with non-integral VId (VV=void)", "[nonintegral][load_vertices]") {
+    SECTION("string IDs - void vertex value") {
+        mos_string g;
+        
+        std::vector<std::string> vertex_ids = {"alice", "bob", "charlie"};
+        g.load_vertices(vertex_ids, [](const std::string& id) {
+            return graph::copyable_vertex_t<std::string, void>{id};
+        });
+        
+        REQUIRE(g.size() == 3);
+        REQUIRE(find_vertex(g, "alice") != vertices(g).end());
+        REQUIRE(find_vertex(g, "bob") != vertices(g).end());
+        REQUIRE(find_vertex(g, "charlie") != vertices(g).end());
+    }
+    
+    SECTION("PersonId - void vertex value") {
+        mos_person g;
+        
+        PersonId alice{"Alice", 1};
+        PersonId bob{"Bob", 2};
+        
+        std::vector<PersonId> vertex_ids = {alice, bob};
+        g.load_vertices(vertex_ids, [](const PersonId& id) {
+            return graph::copyable_vertex_t<PersonId, void>{id};
+        });
+        
+        REQUIRE(g.size() == 2);
+        REQUIRE(find_vertex(g, alice) != vertices(g).end());
+        REQUIRE(find_vertex(g, bob) != vertices(g).end());
+    }
+    
+    SECTION("double IDs - void vertex value") {
+        mos_double g;
+        
+        std::vector<double> vertex_ids = {1.0, 2.5, 3.14159};
+        g.load_vertices(vertex_ids, [](double id) {
+            return graph::copyable_vertex_t<double, void>{id};
+        });
+        
+        REQUIRE(g.size() == 3);
+        REQUIRE(find_vertex(g, 1.0) != vertices(g).end());
+        REQUIRE(find_vertex(g, 2.5) != vertices(g).end());
+        REQUIRE(find_vertex(g, 3.14159) != vertices(g).end());
+    }
+}
+
+TEST_CASE("load_edges with non-integral VId", "[nonintegral][load_edges]") {
+    SECTION("string IDs") {
+        mos_string g;
+        
+        std::vector<std::tuple<std::string, std::string>> edge_data = {
+            {"alice", "bob"},
+            {"bob", "charlie"},
+            {"charlie", "alice"}
+        };
+        
+        g.load_edges(edge_data, [](const auto& t) {
+            return graph::copyable_edge_t<std::string, void>{std::get<0>(t), std::get<1>(t)};
+        });
+        
+        REQUIRE(g.size() == 3);
+        REQUIRE(count_all_edges(g) == 3);
+        REQUIRE(contains_edge(g, "alice", "bob"));
+        REQUIRE(contains_edge(g, "bob", "charlie"));
+        REQUIRE(contains_edge(g, "charlie", "alice"));
+    }
+    
+    SECTION("PersonId - load_edges after load_vertices") {
+        mos_person g;
+        
+        PersonId alice{"Alice", 1};
+        PersonId bob{"Bob", 2};
+        PersonId charlie{"Charlie", 3};
+        
+        // First load vertices
+        std::vector<PersonId> vertex_ids = {alice, bob, charlie};
+        g.load_vertices(vertex_ids, [](const PersonId& id) {
+            return graph::copyable_vertex_t<PersonId, void>{id};
+        });
+        
+        // Then load edges
+        std::vector<std::tuple<PersonId, PersonId>> edge_data = {
+            {alice, bob},
+            {bob, charlie}
+        };
+        
+        g.load_edges(edge_data, [](const auto& t) {
+            return graph::copyable_edge_t<PersonId, void>{std::get<0>(t), std::get<1>(t)};
+        });
+        
+        REQUIRE(g.size() == 3);
+        REQUIRE(count_all_edges(g) == 2);
+        REQUIRE(contains_edge(g, alice, bob));
+        REQUIRE(contains_edge(g, bob, charlie));
+    }
+    
+    SECTION("double IDs with edge values") {
+        mos_double_ev g;
+        
+        std::vector<std::tuple<double, double, int>> edge_data = {
+            {1.0, 2.0, 100},
+            {2.0, 3.0, 200}
+        };
+        
+        g.load_edges(edge_data, [](const auto& t) {
+            return graph::copyable_edge_t<double, int>{std::get<0>(t), std::get<1>(t), std::get<2>(t)};
+        });
+        
+        REQUIRE(g.size() == 3);
+        REQUIRE(count_all_edges(g) == 2);
+        
+        // Verify edge values
+        auto v1 = find_vertex(g, 1.0);
+        auto edge_rng = edges(g, *v1);
+        auto edge = *std::ranges::begin(edge_rng);
+        REQUIRE(edge_value(g, edge) == 100);
+    }
+}

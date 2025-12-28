@@ -1106,8 +1106,15 @@ public: // Load operations
       // For associative containers, operator[] auto-inserts vertices
       // No resize needed, use vertex ID directly as key
       for (auto&& v : vrng) {
-        auto&& [id, value] = vproj(v); //copyable_vertex_t<VId, VV>
-        vertices_[id].value() = value;
+        if constexpr (is_void_v<VV>) {
+          // copyable_vertex_t<VId, void> has only 1 element: {id}
+          auto&& projected = vproj(v);
+          VId id = projected.id;
+          (void)vertices_[id]; // ensure vertex exists
+        } else {
+          auto&& [id, value] = vproj(v); //copyable_vertex_t<VId, VV>
+          vertices_[id].value() = value;
+        }
       }
     } else {
       // For sequential containers, pre-size and use index-based access
@@ -1116,13 +1123,24 @@ public: // Load operations
         resize_vertices(std::max(vertex_count, static_cast<size_type>(std::ranges::size(vrng))));
       }
       for (auto&& v : vrng) {
-        auto&& [id, value] = vproj(v); //copyable_vertex_t<VId, VV>
-        size_t k           = static_cast<size_t>(id);
-        if constexpr (random_access_range<vertices_type>) {
-          if (k >= vertices_.size()) [[unlikely]]
-            throw std::out_of_range("vertex id in load_vertices exceeds current vertex container size");
+        if constexpr (is_void_v<VV>) {
+          // copyable_vertex_t<VId, void> has only 1 element: {id}
+          auto&& projected = vproj(v);
+          size_t k = static_cast<size_t>(projected.id);
+          if constexpr (random_access_range<vertices_type>) {
+            if (k >= vertices_.size()) [[unlikely]]
+              throw std::out_of_range("vertex id in load_vertices exceeds current vertex container size");
+          }
+          (void)vertices_[k]; // ensure vertex exists
+        } else {
+          auto&& [id, value] = vproj(v); //copyable_vertex_t<VId, VV>
+          size_t k           = static_cast<size_t>(id);
+          if constexpr (random_access_range<vertices_type>) {
+            if (k >= vertices_.size()) [[unlikely]]
+              throw std::out_of_range("vertex id in load_vertices exceeds current vertex container size");
+          }
+          vertices_[k].value() = value;
         }
-        vertices_[k].value() = value;
       }
     }
   }
@@ -1158,8 +1176,15 @@ public: // Load operations
       // For associative containers, operator[] auto-inserts vertices
       // No resize needed, use vertex ID directly as key
       for (auto&& v : vrng) {
-        auto&& [id, value] = vproj(v); //copyable_vertex_t<VId, VV>
-        vertices_[id].value() = move(value);
+        if constexpr (is_void_v<VV>) {
+          // copyable_vertex_t<VId, void> has only 1 element: {id}
+          auto&& projected = vproj(v);
+          VId id = projected.id;
+          (void)vertices_[id]; // ensure vertex exists
+        } else {
+          auto&& [id, value] = vproj(v); //copyable_vertex_t<VId, VV>
+          vertices_[id].value() = move(value);
+        }
       }
     } else {
       // For sequential containers, pre-size and use index-based access
@@ -1169,13 +1194,24 @@ public: // Load operations
         resize_vertices(std::max(vertex_count, static_cast<size_type>(std::ranges::size(vrng))));
       }
       for (auto&& v : vrng) {
-        auto&& [id, value] = vproj(v); //copyable_vertex_t<VId, VV>
-        size_t k           = static_cast<size_t>(id);
-        if constexpr (random_access_range<vertices_type>) {
-          if (k >= vertices_.size()) [[unlikely]]
-            throw std::out_of_range("vertex id in load_vertices exceeds current vertex container size");
+        if constexpr (is_void_v<VV>) {
+          // copyable_vertex_t<VId, void> has only 1 element: {id}
+          auto&& projected = vproj(v);
+          size_t k = static_cast<size_t>(projected.id);
+          if constexpr (random_access_range<vertices_type>) {
+            if (k >= vertices_.size()) [[unlikely]]
+              throw std::out_of_range("vertex id in load_vertices exceeds current vertex container size");
+          }
+          (void)vertices_[k]; // ensure vertex exists
+        } else {
+          auto&& [id, value] = vproj(v); //copyable_vertex_t<VId, VV>
+          size_t k           = static_cast<size_t>(id);
+          if constexpr (random_access_range<vertices_type>) {
+            if (k >= vertices_.size()) [[unlikely]]
+              throw std::out_of_range("vertex id in load_vertices exceeds current vertex container size");
+          }
+          vertices_[k].value() = move(value);
         }
-        vertices_[k].value() = move(value);
       }
     }
   }
