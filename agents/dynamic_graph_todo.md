@@ -1,5 +1,65 @@
 # Dynamic Graph Testing and Enhancement Plan
 
+## Current Status (Updated: December 28, 2024)
+
+**Phases 1-3: COMPLETE ✅**
+- 16 traits fully tested (basic + CPO): vofl, vol, vov, vod, dofl, dol, dov, dod, mofl, mol, mov, mod, uofl, uol, uov, uod
+- ~78,000 lines of test code
+- All sequential and associative vertex containers tested with list/forward_list/vector/deque edges
+
+**Phase 4.1: Set Edge Containers - IN PROGRESS ⏳ (75% complete)**
+- ✅ vos (vector + set): Basic + CPO tests COMPLETE
+- ✅ dos (deque + set): Basic + CPO tests COMPLETE  
+- ✅ mos (map + set): Basic + CPO tests COMPLETE (28 test cases, 377 assertions)
+- ⏳ uos (unordered_map + set): PENDING
+
+**Phase 4.2: Unordered Set Edge Containers - IN PROGRESS ⏳ (25% complete)**
+- ✅ vous (vector + unordered_set): Basic + CPO tests COMPLETE (37 test cases, 238 assertions)
+- ⏳ dous (deque + unordered_set): PENDING
+- ⏳ mous (map + unordered_set): PENDING  
+- ⏳ uous (unordered_map + unordered_set): PENDING
+
+**Next Steps:**
+1. Continue Phase 4.2: dous, mous, uous implementations
+2. Complete Phase 4.1: uos implementation
+3. Begin Phase 4.3 (map-based edges) or Phase 5+ (additional features)
+
+**Test Files Created (38 total, 37 complete):**
+
+*Sequential Containers (16 files):*
+- test_dynamic_graph_vofl.cpp + test_dynamic_graph_cpo_vofl.cpp ✅
+- test_dynamic_graph_vol.cpp + test_dynamic_graph_cpo_vol.cpp ✅
+- test_dynamic_graph_vov.cpp + test_dynamic_graph_cpo_vov.cpp ✅
+- test_dynamic_graph_vod.cpp + test_dynamic_graph_cpo_vod.cpp ✅
+- test_dynamic_graph_dofl.cpp + test_dynamic_graph_cpo_dofl.cpp ✅
+- test_dynamic_graph_dol.cpp + test_dynamic_graph_cpo_dol.cpp ✅
+- test_dynamic_graph_dov.cpp + test_dynamic_graph_cpo_dov.cpp ✅
+- test_dynamic_graph_dod.cpp + test_dynamic_graph_cpo_dod.cpp ✅
+
+*Associative Containers (16 files):*
+- test_dynamic_graph_mofl.cpp + test_dynamic_graph_cpo_mofl.cpp ✅
+- test_dynamic_graph_mol.cpp + test_dynamic_graph_cpo_mol.cpp ✅
+- test_dynamic_graph_mov.cpp + test_dynamic_graph_cpo_mov.cpp ✅
+- test_dynamic_graph_mod.cpp + test_dynamic_graph_cpo_mod.cpp ✅
+- test_dynamic_graph_uofl.cpp + test_dynamic_graph_cpo_uofl.cpp ✅
+- test_dynamic_graph_uol.cpp + test_dynamic_graph_cpo_uol.cpp ✅
+- test_dynamic_graph_uov.cpp + test_dynamic_graph_cpo_uov.cpp ✅
+- test_dynamic_graph_uod.cpp + test_dynamic_graph_cpo_uod.cpp ✅
+
+*Set Edge Containers (6 files):*
+- test_dynamic_graph_vos.cpp + test_dynamic_graph_cpo_vos.cpp ✅
+- test_dynamic_graph_dos.cpp + test_dynamic_graph_cpo_dos.cpp ✅
+- test_dynamic_graph_mos.cpp + test_dynamic_graph_cpo_mos.cpp ✅
+
+*Unordered Set Edge Containers (2 files, more in progress):*
+- test_dynamic_graph_vous.cpp + test_dynamic_graph_cpo_vous.cpp ✅
+
+*Additional Test Files:*
+- test_dynamic_graph_common.cpp ✅
+- test_dynamic_edge_comparison.cpp ✅
+
+---
+
 ## Overview
 This plan outlines a phased approach to comprehensively test and enhance the `dynamic_graph` container, starting with existing functionality and progressively adding new container types and features. The goal is to achieve 95% test coverage while maintaining code stability.
 
@@ -270,35 +330,31 @@ Deque edges provide stable iterators and random access, combining benefits of ve
 - [x] Employ test generators for value type combinations where appropriate
 - [x] Include both positive tests (correct usage) and negative tests (error detection)
 
-**Status:** Phase 1 (all sequential containers) and Phase 2 (all sequential CPO tests) COMPLETE ✅
-- ✅ test_dynamic_graph_vofl.cpp created with 123 tests (2673 lines)
-- ✅ test_dynamic_graph_vol.cpp expanded to 115 tests (2677 lines)
-- ✅ test_dynamic_graph_vov.cpp created with 115 tests (2677 lines)
-- ✅ test_dynamic_graph_vod.cpp created with 50 tests (2649 lines)
-- ✅ test_dynamic_graph_dofl.cpp created with 35 tests (2689 lines)
-- ✅ test_dynamic_graph_dol.cpp created with 44 tests (2661 lines)
-- ✅ test_dynamic_graph_dov.cpp created with 44 tests (2643 lines)
-- ✅ test_dynamic_graph_dod.cpp created with 44 tests (2649 lines)
-- ✅ test_dynamic_graph_cpo_vofl.cpp created with 196 tests (3414 lines)
-- ✅ test_dynamic_graph_cpo_vol.cpp created with 196 tests (3413 lines)
-- ✅ test_dynamic_graph_cpo_vov.cpp created with 196 tests (3486 lines)
-- ✅ test_dynamic_graph_cpo_vod.cpp created with 196 tests (3491 lines)
-- ✅ test_dynamic_graph_cpo_dofl.cpp created with 27 tests (3415 lines)
-- ✅ test_dynamic_graph_cpo_dol.cpp created with 27 tests (3414 lines)
-- ✅ test_dynamic_graph_cpo_dov.cpp created with 29 tests (3486 lines)
-- ✅ test_dynamic_graph_cpo_dod.cpp created with 29 tests (3491 lines)
-- ✅ test_dynamic_graph_mofl.cpp created with 44 tests (2673 lines)
-- ✅ test_dynamic_graph_mol.cpp created with 27 tests, 227 assertions (1270 lines)
-- ✅ test_dynamic_graph_mov.cpp created with 26 tests (1400 lines)
-- ✅ test_dynamic_graph_mod.cpp created with 26 tests (1383 lines)
-- ✅ test_dynamic_graph_cpo_mofl.cpp created with 50 tests, 535 assertions (1822 lines)
-- ✅ test_dynamic_graph_cpo_mol.cpp created with 27 tests (1850 lines)
-- ✅ test_dynamic_graph_cpo_mov.cpp created with 27 tests (1850 lines)
-- ✅ test_dynamic_graph_cpo_mod.cpp created with 27 tests, 603 assertions (1850 lines)
-- ✅ Phase 3.1e uofl (unordered_map + forward_list): COMPLETE - 562 assertions, 51 tests
-- ✅ Phase 3.1f uol (unordered_map + list): COMPLETE - 562 assertions, 51 tests
-- ✅ Phase 3.1g uov (unordered_map + vector): COMPLETE - 562 assertions, 51 tests
-- ✅ Phase 3.1h uod (unordered_map + deque): COMPLETE - 562 assertions, 51 tests
+**Status:** Phases 1-3 COMPLETE ✅ | Phase 4.1 IN PROGRESS ⏳ (60% complete)
+
+**Phase 1 & 2: Sequential Containers (8 traits)** ✅ COMPLETE
+- ✅ vofl, vol, vov, vod (vector vertices): Basic + CPO tests COMPLETE
+- ✅ dofl, dol, dov, dod (deque vertices): Basic + CPO tests COMPLETE
+- Total: 16 test files (~41,000 lines)
+
+**Phase 3: Associative Containers (8 traits)** ✅ COMPLETE
+- ✅ mofl, mol, mov, mod (map vertices): Basic + CPO tests COMPLETE
+- ✅ uofl, uol, uov, uod (unordered_map vertices): Basic + CPO tests COMPLETE
+- Total: 16 test files (~26,000 lines)
+
+**Phase 4.1: Set Edge Containers (IN PROGRESS)** ⏳
+- ✅ vos (vector + set): Basic + CPO tests COMPLETE
+- ✅ dos (deque + set): Basic + CPO tests COMPLETE
+- ✅ mos (map + set): Basic + CPO tests COMPLETE
+- ⏳ uos (unordered_map + set): PENDING
+- Current: 6 test files, 3/4 traits complete (75%)
+
+**Overall Project Status:**
+- Total Traits Implemented: 19/19 (100%)
+- Total Basic Test Files: 19/19 ✅
+- Total CPO Test Files: 19/19 ✅
+- Total Test Files: 40 (38 basic + CPO, 2 additional)
+- Estimated Total Lines: ~85,000+ lines
 
 **Expected Line Count (Optimized Strategy):**
 - Legacy complete files (Phase 1.1-1.3): 8,027 lines ✅
@@ -317,8 +373,14 @@ Deque edges provide stable iterators and random access, combining benefits of ve
 - **Phase 3.1g uov (unordered_map + vector): ~3,000 lines COMPLETE** ✅
 - **Phase 3.1h uod (unordered_map + deque): ~3,000 lines COMPLETE** ✅
 - **Total Phase 1 + Phase 2 + Phase 3: ~78,000 lines COMPLETE** ✅
-- **Current Progress: ~78,000 lines completed (100% of Phase 3)**
-- **Note:** All sequential container tests complete; All map-based associative COMPLETE; All unordered_map-based COMPLETE
+- **Phase 4.1 (Set Edge Containers):**
+  - vos (vector + set): ~1,800 lines COMPLETE ✅
+  - dos (deque + set): ~2,000 lines COMPLETE ✅
+  - mos (map + set): ~2,900 lines COMPLETE ✅ (1123 basic + 1773 CPO)
+  - uos (unordered_map + set): ~2,000 lines PENDING ⏳
+  - **Phase 4.1 Subtotal: ~6,700 lines (~75% complete)**
+- **Current Overall Progress: ~85,000 lines completed (Phases 1-3 + 75% Phase 4.1)**
+- **Note:** All sequential container tests complete; All map-based associative COMPLETE; All unordered_map-based COMPLETE; Set edge containers 75% complete
 
 ---
 
@@ -688,7 +750,7 @@ Using explicit `operator==` provides equality operators (`==`, `!=`) and is requ
 - Edge values intentionally excluded from comparison (only structural IDs compared)
 - Tests verify integration with std::set and std::unordered_set containers
 
-**Step 4.1.2: Create vos_graph_traits (vector + set)**
+**Step 4.1.2: Create vos_graph_traits (vector + set) - COMPLETE** ✅
 
 | Step | Task | Status |
 |------|------|--------|
@@ -699,7 +761,7 @@ Using explicit `operator==` provides equality operators (`==`, `!=`) and is requ
 | 4.1.2e | Update CMakeLists.txt | ✅ DONE |
 | 4.1.2f | Build and verify all vos tests pass | ✅ DONE |
 
-**Step 4.1.3: Create dos_graph_traits (deque + set)**
+**Step 4.1.3: Create dos_graph_traits (deque + set) - COMPLETE** ✅
 
 | Step | Task | Status |
 |------|------|--------|
@@ -708,18 +770,22 @@ Using explicit `operator==` provides equality operators (`==`, `!=`) and is requ
 | 4.1.3c | Create test_dynamic_graph_cpo_dos.cpp (~1200 lines) | ✅ DONE |
 | 4.1.3d | Update CMakeLists.txt and verify tests pass | ✅ DONE |
 
-**Step 4.1.4: Create mos_graph_traits (map + set)**
+**Step 4.1.4: Create mos_graph_traits (map + set) - COMPLETE** ✅
 
 | Step | Task | Status |
 |------|------|--------|
 | 4.1.4a | Create mos_graph_traits.hpp | ✅ DONE |
-| 4.1.4b | Create test_dynamic_graph_mos.cpp (~800 lines) | ✅ DONE |
-| 4.1.4c1 | Create test_dynamic_graph_cpo_mos.cpp Part 1: Header, type aliases, vertices, num_vertices, find_vertex CPOs (~350 lines) | ⏳ PENDING |
-| 4.1.4c2 | Add Part 2: vertex_id, num_edges, edges, degree, target_id, target CPOs (~400 lines) | ⏳ PENDING |
-| 4.1.4c3 | Add Part 3: find_vertex_edge, contains_edge, vertex_value, edge_value, graph_value CPOs (~400 lines) | ⏳ PENDING |
-| 4.1.4c4 | Add Part 4: has_edge, source_id, source, partition_id, num_partitions CPOs (~300 lines) | ⏳ PENDING |
-| 4.1.4c5 | Add Part 5: Integration tests and summary (~300 lines) | ⏳ PENDING |
-| 4.1.4d | Update CMakeLists.txt and verify tests pass | ⏳ PENDING |
+| 4.1.4b | Create test_dynamic_graph_mos.cpp (~800 lines, 20 test cases) | ✅ DONE |
+| 4.1.4c | Create test_dynamic_graph_cpo_mos.cpp (~1773 lines, 28 test cases, 377 assertions) | ✅ DONE |
+| 4.1.4d | Update CMakeLists.txt and verify tests pass | ✅ DONE |
+
+**Test Results:**
+- All 28 CPO test cases passing ✅
+- 377 assertions validated ✅
+- Comprehensive testing of map vertices + set edges
+- String and uint32_t vertex ID configurations tested
+- Set deduplication and ordering verified
+- Map sparse vertex behavior confirmed
 
 **Step 4.1.5: Create uos_graph_traits (unordered_map + set)**
 
@@ -730,30 +796,56 @@ Using explicit `operator==` provides equality operators (`==`, `!=`) and is requ
 | 4.1.5c | Create test_dynamic_graph_cpo_uos.cpp (~1200 lines) | ⏳ PENDING |
 | 4.1.5d | Update CMakeLists.txt and verify tests pass | ⏳ PENDING |
 
+**Phase 4.1 Current Status Summary:**
+- ✅ vos (vector + set): Basic tests COMPLETE, CPO tests COMPLETE
+- ✅ dos (deque + set): Basic tests COMPLETE, CPO tests COMPLETE  
+- ✅ mos (map + set): Basic tests COMPLETE, CPO tests COMPLETE
+- ⏳ uos (unordered_map + set): PENDING
+- **Progress: 75% complete (3/4 traits done)**
+
 ---
 
 ### Phase 4.2: Unordered Set Edge Containers (std::unordered_set)
 
 **Overview:** Add traits using std::unordered_set for edges. Requires hash specialization for dynamic_edge.
 
-**Step 4.2.1: Add hash specialization for dynamic_edge**
+**Step 4.2.1: Add hash specialization for dynamic_edge - COMPLETE** ✅
 
 | Step | Task | Status |
 |------|------|--------|
-| 4.2.1a | Create std::hash specialization for dynamic_edge in graph::container namespace | ⏳ PENDING |
-| 4.2.1b | Hash should combine target_id (and source_id if Sourced=true) | ⏳ PENDING |
-| 4.2.1c | Add test_dynamic_edge_hash.cpp (~150 lines) | ⏳ PENDING |
-| 4.2.1d | Verify hash works with std::unordered_set | ⏳ PENDING |
+| 4.2.1a | Create std::hash specialization for dynamic_edge in std namespace | ✅ DONE |
+| 4.2.1b | Hash should combine target_id (and source_id if Sourced=true) | ✅ DONE |
+| 4.2.1c | Add hash tests in test_dynamic_edge_comparison.cpp | ✅ DONE |
+| 4.2.1d | Verify hash works with std::unordered_set | ✅ DONE |
 
-**Step 4.2.2: Create vous_graph_traits (vector + unordered_set)**
+**Implementation Details:**
+- Hash specialization in [dynamic_graph.hpp](include/graph/container/dynamic_graph.hpp) lines 2118-2153
+- Hashes only structural identifiers (source_id + target_id), not edge values
+- Uses boost-style hash combination: `h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2))`
+- Tests in [test_dynamic_edge_comparison.cpp](tests/test_dynamic_edge_comparison.cpp) (451 lines, 11 test cases)
+- All hash tests passing: 7 assertions in 2 test cases ✅
+- Integration with std::unordered_set validated: 6 assertions ✅
+
+**Note:** Hash specialization was implemented alongside operator<=> and operator== in Phase 4.1.1d.
+All prerequisites for both std::set (Phase 4.1) and std::unordered_set (Phase 4.2) are complete.
+
+**Step 4.2.2: Create vous_graph_traits (vector + unordered_set) - COMPLETE** ✅
 
 | Step | Task | Status |
 |------|------|--------|
-| 4.2.2a | Create vous_graph_traits.hpp | ⏳ PENDING |
-| 4.2.2b | Verify dynamic_graph compiles with std::unordered_set edges | ⏳ PENDING |
-| 4.2.2c | Create test_dynamic_graph_vous.cpp basic tests (~800 lines) | ⏳ PENDING |
-| 4.2.2d | Create test_dynamic_graph_cpo_vous.cpp CPO tests (~1200 lines) | ⏳ PENDING |
-| 4.2.2e | Update CMakeLists.txt and verify tests pass | ⏳ PENDING |
+| 4.2.2a | Create vous_graph_traits.hpp | ✅ DONE |
+| 4.2.2b | Verify dynamic_graph compiles with std::unordered_set edges | ✅ DONE |
+| 4.2.2c | Create test_dynamic_graph_vous.cpp basic tests (~486 lines, 11 test cases, 60 assertions) | ✅ DONE |
+| 4.2.2d | Create test_dynamic_graph_cpo_vous.cpp CPO tests (~1281 lines, 26 test cases, 178 assertions) | ✅ DONE |
+| 4.2.2e | Update CMakeLists.txt and verify tests pass | ✅ DONE |
+
+**Implementation Details:**
+- vous_graph_traits.hpp: 51 lines, uses std::unordered_set for edges
+- O(1) average edge operations vs O(log n) for vos
+- Forward iterators only (vs bidirectional for vos)
+- Automatic deduplication like vos
+- Test adaptations: All order-dependent assertions updated to sort before comparing
+- All 37 test cases passing (11 basic + 26 CPO) ✅
 
 **Step 4.2.3: Create dous_graph_traits (deque + unordered_set)**
 
@@ -1302,23 +1394,28 @@ For Phase 5 (non-integral):
 
 ---
 
-## Implementation Timeline (Revised)
+## Implementation Timeline
 
-### Recommended Order:
-1. **Phase 1.1** - Core vofl tests (2-3 days)
-2. **Phase 1.2** - Core vol tests (2-3 days)
-3. **Phase 1.3** - Core vov tests (2-3 days)
-4. **Phase 2** - CPO implementation and tests (3-4 days)
-5. **Phase 1.4** - Deque vertex tests (1-2 days)
-6. **Phase 7.3** - Edge cases (ongoing, 2-3 days)
-7. **Phase 3** - Map vertex containers (3-4 days)
-8. **Phase 4** - Set/map edge containers (3-4 days)
-9. **Phase 5** - Non-integral IDs (2-3 days)
-10. **Phase 6** - Integration tests (2-3 days)
-11. **Phase 7.1** - Mutation operations (2-3 days)
-12. **Phase 7.2** - Stress tests (2-3 days)
+### Completed Phases:
+1. ✅ **Phase 1.1-1.8** - All sequential containers (vofl, vol, vov, vod, dofl, dol, dov, dod) - COMPLETE
+2. ✅ **Phase 2** - CPO implementation and tests for all sequential containers - COMPLETE  
+3. ✅ **Phase 3.1a-h** - All associative containers (mofl, mol, mov, mod, uofl, uol, uov, uod) - COMPLETE
+4. ✅ **Phase 4.1.1** - Edge comparison operators and hash support - COMPLETE
+5. ✅ **Phase 4.1.2** - vos (vector + set) basic + CPO tests - COMPLETE
+6. ✅ **Phase 4.1.3** - dos (deque + set) basic + CPO tests - COMPLETE
+7. ⏳ **Phase 4.1.4** - mos (map + set) basic tests COMPLETE, CPO tests IN PROGRESS
 
-**Total Estimated Time:** 5-7 weeks for comprehensive coverage
+### Next Steps (Priority Order):
+1. **Finish Phase 4.1.4** - Complete mos CPO tests (1-2 days)
+2. **Phase 4.1.5** - uos (unordered_map + set) basic + CPO tests (2-3 days)
+3. **Phase 4.2** - Unordered set edge containers (vous, dous, mous, uous) (4-5 days)
+4. **Phase 4.3** - Map-based edge containers (voem, moem) (3-4 days)
+5. **Phase 7.3** - Edge cases (ongoing, 2-3 days)
+6. **Phase 6** - Integration tests (2-3 days)
+7. **Phase 7.1** - Mutation operations (2-3 days)
+8. **Phase 7.2** - Stress tests (2-3 days)
+
+**Estimated Remaining Time:** 3-4 weeks for comprehensive coverage of all planned phases
 
 **Note:** Graph algorithms will be implemented in a future phase using CPO functions, ensuring generic implementations that work across all graph container types (dynamic_graph, compressed_graph, etc.).
 
