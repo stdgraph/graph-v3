@@ -1,6 +1,6 @@
 # BGL2 vs Graph-v3 Comparative Evaluation
 
-**Date:** Based on analysis of source code from both libraries  
+**Date:** December 2024 (Updated with BGL2 container selector improvements)  
 **BGL2 Location:** `/home/phil/dev_graph/boost/libs/graph/modern/`  
 **Graph-v3 Location:** `/home/phil/dev_graph/desc/`
 
@@ -13,8 +13,10 @@
 BGL2 uses a **traditional, type-centric** approach to descriptors:
 
 ```cpp
-// Vertex descriptor is a simple integral type
-using vertex_descriptor = std::size_t;
+// Vertex descriptor varies by VertexListS selector:
+// - vecS: std::size_t (index-based)
+// - listS/setS: iterator into the container (iterator-based)
+using vertex_descriptor = /* varies by selector */;
 
 // Edge descriptor is a lightweight struct
 struct adjacency_list_edge<vertex_descriptor> {
@@ -25,12 +27,17 @@ struct adjacency_list_edge<vertex_descriptor> {
 ```
 
 **Key Characteristics:**
-- **Integral vertex descriptors**: `std::size_t` enables direct array indexing for O(1) property map access
-- **Stable on insertion**: Adding vertices doesn't invalidate existing descriptors (index-based)
+- **Selector-based vertex descriptors**: `std::size_t` for `vecS`, container iterator for `listS`/`setS`
+- **10 container selectors fully implemented**:
+  - Sequence: `vecS` (vector), `listS` (list)
+  - Ordered associative: `setS`, `mapS`, `multisetS`, `multimapS`
+  - Hash-based: `hash_setS`, `hash_mapS`, `hash_multisetS`, `hash_multimapS`
+- **Vertex list implementations**: `vecS` (index-based), `listS` (stable iterators), `setS` (ordered, stable)
+- **All 10 out-edge selectors**: Work for edge containers
 - **Optional strong typing**: `descriptor<vertex_tag, IndexType>` wrapper prevents mixing vertex/edge descriptors at compile time
-- **Null vertex convention**: `static_cast<vertex_descriptor>(-1)` for invalid/null vertices
+- **Null vertex convention**: `static_cast<vertex_descriptor>(-1)` for invalid/null vertices (vecS)
 - **Extracted via traits**: `vertex_descriptor_t<G>` uses `graph_traits<G>::vertex_descriptor`
-- **Container selectors defined but not implemented**: `listS` and `setS` are declared as TODOs; `mapS` is not present. Only `vecS` (vector) works currently.
+- **Parallel edge control**: `parallel_edge_category_for<OutEdgeListS>` auto-detects based on selector's `is_unique` trait
 
 ### Graph-v3 Approach
 
@@ -93,10 +100,10 @@ struct edge_descriptor {
 
 | Aspect | BGL2 | Graph-v3 |
 |--------|------|----------|
-| **Type** | `std::size_t` (fixed) | `vertex_descriptor<Iter>` template |
-| **Internal storage** | Index (8 bytes) | Index for random-access (8 bytes), iterator otherwise |
-| **Container selectors** | Only `vecS` implemented; `listS`, `setS` TODO; no `mapS` | 20+ trait combinations (vov, vofl, mofl, mol, etc.) |
-| **Non-integral IDs** | Not supported (no `mapS`) | Native support via map-based traits (mofl, mol, etc.) |
+| **Type** | Selector-dependent: `size_t` (vecS) or iterator (listS/setS) | `vertex_descriptor<Iter>` template |
+| **Internal storage** | Index (8 bytes) for vecS; iterator for listS/setS | Index for random-access (8 bytes), iterator otherwise |
+| **Container selectors** | 10 selectors (vecS, listS, setS, mapS, multisetS, multimapS, hash_setS, hash_mapS, hash_multisetS, hash_multimapS); 3 vertex list impls (vecS, listS, setS) | 25 trait combinations (vov, vofl, mofl, mol, dos, uous, etc.) |
+| **Non-integral IDs** | Not directly supported (vertex descriptors are index or iterator) | Native support via map-based traits (mofl, mol, uofl, etc.) |
 | **Property access** | Requires property map lambda | `inner_value(container)` or CPO `vertex_value(g, u)` |
 | **Array indexing** | Direct (`container[descriptor]`) | Via `vertex_id()` for random-access containers |
 | **Descriptor stability** | Stable (index-based) | Stable for random-access; iterator-dependent for others |
@@ -111,7 +118,7 @@ struct edge_descriptor {
 | **Target storage** | In edge data (`target` field) | Extracted via `target_id(vertex_data)` |
 | **Parallel edge support** | `edge_index` field distinguishes duplicates | Iterator position distinguishes duplicates |
 | **Size (vector-based)** | 24 bytes (source + target + index) | 16 bytes (edge index + source vertex index) |
-| **Size (iterator-based)** | N/A (only vector implemented) | Varies by iterator size |
+| **Size (iterator-based)** | Varies by iterator size (for listS/setS) | Varies by iterator size |
 | **Property access** | `g[e].property` with property map | CPO `edge_value(g, uv)` or `inner_value()` |
 
 ---
@@ -229,31 +236,52 @@ class MyGraph {
    });
    ```
 
-5. **Lightweight descriptors**: 8-byte vertex descriptors enable cache-efficient traversal.
+5. **Lightweight descriptors**: 8-byte vertex descriptors for `vecS` enable cache-efficient traversal.
+
+6. **Selector-based configuration**: Compile-time container selection via template parameters with concept-based constraints:
+   ```cpp
+   template<typename S>
+   concept ContainerSelector = 
+       std::same_as<S, vecS> || std::same_as<S, listS> || 
+       std::same_as<S, setS> || /* ... 7 more selectors */;
+   ```
+
+7. **Automatic parallel edge detection**: `parallel_edge_category_for<OutEdgeListS>` determines `allow_parallel_edge_tag` vs `disallow_parallel_edge_tag` based on selector's `is_unique` trait.
 
 ### BGL2 Weaknesses
 
-1. **Fixed container structure**: `adjacency_list` currently only supports vector-based storage (`vecS`). Container selectors `listS` and `setS` are declared but marked TODO; `mapS` (which BGL1 supported for map-based vertex storage with non-integral keys) is not present. This means vertex descriptors are always `std::size_t`.
-
-2. **Integral descriptor requirement**: Since only vector storage is implemented, vertex descriptors are always integral. Non-integral vertex IDs (strings, custom types) would require either:
+1. **No direct non-integral vertex ID support**: While `mapS` is defined for edge containers, vertex IDs remain index-based (for `vecS`) or iterator-based (for `listS`/`setS`). Non-integral vertex IDs (strings, custom types) would require:
    - A separate vertex-to-index mapping layer
-   - Using `unordered_map` for property storage instead of vectors
-   - Future implementation of `mapS` selector
+   - External property maps for string/custom key lookup
 
-3. **Traits boilerplate**: Adapting external graphs requires explicit `graph_traits` specialization.
+2. **Traits boilerplate**: Adapting external graphs requires explicit `graph_traits` specialization.
 
-4. **Single-partition assumption**: No built-in support for partitioned/distributed graphs.
+3. **Single-partition assumption**: No built-in support for partitioned/distributed graphs.
+
+4. **Vertex list selector limitation**: While 10 out-edge selectors are supported, only 3 vertex list selectors are implemented (`vecS`, `listS`, `setS`). Hash-based vertex storage is not yet available.
 
 ### Graph-v3 Strengths
 
-1. **Exceptional container flexibility**: 20+ trait combinations (vofl, vol, vov, vod, dol, dofl, dov, dod, mofl, mol, mov, mod, uov, uod, uol, uofl, mos, mous, dos, vos):
+1. **Multi-layered container flexibility**:
+   - **Zero-config**: Standard containers like `vector<vector<int>>` work directly as graphs
+   - **Concept-based adaptation**: Any structure with random-access vertices + forward-range edges works automatically
+   - **Trait-based**: 25 explicit trait combinations for `dynamic_graph`
+   - **CSR format**: `compressed_graph` for high-performance static graphs
+   
+   Example - standard container as graph:
    ```cpp
-   // Same dynamic_graph, different containers
-   using g1 = dynamic_graph<EV, VV, GV, VId, Sourced, vov_graph_traits<...>>;  // vector<vector>
-   using g2 = dynamic_graph<EV, VV, GV, VId, Sourced, mofl_graph_traits<...>>; // map<forward_list>
+   std::vector<std::vector<int>> g = {{1,2}, {2,3}, {3}};
+   for (auto u : graph::vertices(g)) {
+       for (auto e : graph::edges(g, u)) {
+           auto tid = graph::target_id(g, e);  // Just works!
+       }
+   }
    ```
 
-2. **Non-invasive adaptation**: CPO resolution with fallbacks means standard containers work without adaptation.
+2. **Non-invasive adaptation**: CPO resolution with fallbacks means:
+   - Standard containers work without any wrapper
+   - Custom graphs just need to satisfy `adjacency_list` concept
+   - No traits specialization required
 
 3. **Rich descriptor pattern detection**: Automatic handling of:
    - Random-access patterns (vector, deque) → index-based IDs
@@ -272,6 +300,8 @@ class MyGraph {
 
 6. **Non-integral vertex ID support**: Native support for string keys, custom types, etc.
 
+7. **Compressed Sparse Row support**: `compressed_graph` provides optimal memory layout for static graphs.
+
 ### Graph-v3 Weaknesses
 
 1. **No algorithms implemented**: This is a known limitation. All traversal, shortest-path, spanning tree, and flow algorithms are missing.
@@ -286,7 +316,154 @@ class MyGraph {
 
 ---
 
-## 4. Other Design and Flexibility Considerations
+## 4. Container Flexibility: Selector-Based vs Trait-Based
+
+### BGL2 Selector-Based Approach
+
+BGL2 uses **container selector tags** that map to standard containers:
+
+```cpp
+// Selector tags with compile-time properties
+struct vecS {
+    static constexpr bool is_random_access = true;
+    static constexpr bool has_stable_iterators = false;
+    static constexpr bool is_ordered = false;
+    static constexpr bool is_unique = false;
+};
+
+// container_gen maps selectors to containers
+template<typename ValueType>
+struct container_gen<listS, ValueType> {
+    using type = std::list<ValueType>;
+};
+
+// Usage: adjacency_list<OutEdgeListS, VertexListS, DirectedS, ...>
+adjacency_list<setS, listS, directed_tag, VertexProp, EdgeProp> g;
+//             ^^^^^  ^^^^^
+//             edges  vertices
+```
+
+**Available Selectors (10 total):**
+
+| Selector | Container | Use Case |
+|----------|-----------|----------|
+| `vecS` | `std::vector` | Fast access, cache-friendly traversal |
+| `listS` | `std::list` | Stable iterators, O(1) insertion/removal |
+| `setS` | `std::set` | Unique edges, ordered iteration |
+| `mapS` | `std::set` (for edges) | Prevent parallel edges |
+| `multisetS` | `std::multiset` | Ordered with parallel edges |
+| `multimapS` | `std::multiset` | Key-value with parallel edges |
+| `hash_setS` | `std::unordered_set` | Fast unique lookup |
+| `hash_mapS` | `std::unordered_set` | Fast key-value access |
+| `hash_multisetS` | `std::unordered_multiset` | Fast with duplicates |
+| `hash_multimapS` | `std::unordered_multiset` | Fast key-value with duplicates |
+
+**Vertex List Implementations (3):** `vecS`, `listS`, `setS`
+
+### Graph-v3 Multi-Layered Approach
+
+Graph-v3 provides **three levels of graph support**:
+
+#### Level 1: Standard Containers as Graphs (Zero Configuration)
+
+Standard containers work directly as graphs via CPOs and concepts:
+
+```cpp
+// std::vector<std::vector<int>> works directly as an adjacency list
+std::vector<std::vector<int>> g = {
+    {1, 2},    // vertex 0 -> edges to 1, 2
+    {2, 3},    // vertex 1 -> edges to 2, 3
+    {3}        // vertex 2 -> edges to 3
+};
+
+// CPOs work automatically
+for (auto u : graph::vertices(g)) {
+    auto id = graph::vertex_id(g, u);  // Returns index (size_t)
+    for (auto e : graph::edges(g, u)) {
+        auto tid = graph::target_id(g, e);  // Returns target vertex ID
+    }
+}
+
+// Weighted graphs: vector<vector<pair<int, double>>>
+std::vector<std::vector<std::pair<int, double>>> weighted = {
+    {{1, 1.5}, {2, 2.0}},  // vertex 0 with weights
+    {{2, 0.5}}              // vertex 1
+};
+```
+
+**Supported patterns:**
+- `vector<vector<VId>>` - simple adjacency list
+- `vector<vector<pair<VId, Weight>>>` - weighted adjacency
+- `vector<forward_list<VId>>` - forward_list edges
+- `deque<vector<VId>>` - deque-based vertices
+- Any combination with random-access vertices + forward-range edges
+
+#### Level 2: Adapt Existing Graphs (Concept-Based)
+
+Any graph structure satisfying the `adjacency_list` concept works automatically:
+
+```cpp
+// Requirements: random-access vertices, forward-range edges
+template<typename G>
+concept adjacency_list = 
+    vertex_range<G> &&                          // vertices(g) returns a range
+    requires(G& g, vertex_t<G> u) {
+        { edges(g, u) } -> targeted_edge_range<G>;  // forward range of edges
+    };
+```
+
+Custom graphs just need to provide `vertices()` and `edges()` functions/methods.
+
+#### Level 3: dynamic_graph with Trait Structs
+
+For full-featured graphs with properties, use trait-based configuration:
+
+```cpp
+// Trait struct defines container types directly
+template <class EV, class VV, class GV, class VId, bool Sourced>
+struct mofl_graph_traits {
+    using vertices_type = std::map<VId, vertex_type>;      // map for vertices
+    using edges_type    = std::forward_list<edge_type>;    // forward_list for edges
+};
+
+// Usage: dynamic_graph<EV, VV, GV, VId, Sourced, Traits>
+using G = dynamic_graph<double, std::string, void, uint32_t, false, 
+                        mofl_graph_traits<double, std::string, void, uint32_t, false>>;
+```
+
+**Available Trait Combinations (25 total):**
+
+| Vertices | Edges | Trait |
+|----------|-------|-------|
+| vector | vector, list, forward_list, deque, set, unordered_set, edge_multimap | vov, vol, vofl, vod, vos, vous, voem |
+| deque | vector, list, forward_list, deque, set, unordered_set | dov, dol, dofl, dod, dos, dous |
+| map | vector, list, forward_list, deque, set, unordered_set, edge_multimap | mov, mol, mofl, mod, mos, mous, moem |
+| unordered_map | vector, list, forward_list, deque, unordered_set | uov, uol, uofl, uod, uous |
+
+#### Level 4: compressed_graph (CSR Format)
+
+High-performance static graph with Compressed Sparse Row storage:
+
+```cpp
+compressed_graph<EdgeValue, VertexValue, GraphValue, VId, EIndex> csr;
+// Optimal for read-heavy workloads, minimal memory footprint
+```
+
+### Comparative Analysis
+
+| Aspect | BGL2 Selectors | Graph-v3 |
+|--------|---------------|----------|
+| **Configuration** | Tag-based template params | Multi-layered (zero-config to traits) |
+| **Standard containers** | Requires `adjacency_list` wrapper | Direct use via concepts |
+| **Total built-in options** | 10 × 3 = 30 potential (edge × vertex) | 25 traits + unlimited container combos |
+| **Extensibility** | Specialize `container_gen<S, T>` | Satisfy concept or create trait |
+| **CSR/static graphs** | `compressed_sparse_row_graph` | `compressed_graph` |
+| **Adaptation complexity** | graph_traits specialization | Just satisfy concept |
+| **Non-integral vertex IDs** | Not directly supported | Native (map/unordered_map vertices) |
+
+---
+
+## 5. Other Design and Flexibility Considerations
 
 ### Customization Point Objects (Graph-v3) vs ADL (BGL2)
 
@@ -357,24 +534,26 @@ template<typename G>
 
 ---
 
-## 5. Summary Recommendations
+## 6. Summary Recommendations
 
 ### When to Choose BGL2
 
-- You need **working algorithms now** (BFS, DFS, Dijkstra, etc.)
-- Your graphs use **integral vertex IDs**
+- You need **working algorithms now** (BFS, DFS, Dijkstra, Bellman-Ford, Prim, Kruskal, etc.)
+- Your graphs use **integral or iterator-based vertex descriptors**
 - You're migrating from **legacy Boost.Graph** code
 - You want **familiar patterns** with established documentation
-- You need algorithms immediately without building your own
+- You need **container selector flexibility** with 10 selectors for edges and 3 for vertices
+- You want **automatic parallel edge detection** based on container uniqueness
 
 ### When to Choose Graph-v3
 
-- You need **maximum container flexibility** (vector, deque, map, set, list, forward_list combinations)
-- Your graphs use **non-integral vertex IDs** (strings, custom types)
-- You want **non-invasive adaptation** of existing containers
-- You prefer **self-contained descriptors** that carry values
+- You want to use **standard containers directly** (`vector<vector<int>>`, etc.) without wrappers
+- You need **non-integral vertex IDs** (strings, custom types) as first-class citizens
+- You want to **adapt existing graph structures** by just satisfying concepts
+- You need **maximum container flexibility** (25 traits + unlimited container combos)
+- You prefer **self-contained descriptors** that carry vertex IDs
 - You're building a **new codebase** and can wait for algorithms
-- You need **partitioned graph support**
+- You need **partitioned graph support** or **CSR format** (`compressed_graph`)
 
 ### Potential Synergies
 
@@ -385,7 +564,7 @@ Both libraries share C++20 foundations and could potentially:
 
 ---
 
-## 6. Code Examples Side-by-Side
+## 7. Code Examples Side-by-Side
 
 ### Creating a Graph
 
@@ -393,14 +572,33 @@ Both libraries share C++20 foundations and could potentially:
 ```cpp
 struct VertexData { std::string name; };
 struct EdgeData { double weight; };
-adjacency_list<VertexData, EdgeData> g;
 
-auto v0 = add_vertex(g, {"A"});
-auto v1 = add_vertex(g, {"B"});
-add_edge(g, v0, v1, {1.5});
+// Using selectors: setS for edges (no parallel), listS for vertices (stable)
+adjacency_list<setS, listS, directed_tag, VertexData, EdgeData> g;
+
+auto v0 = g.add_vertex({"A"});
+auto v1 = g.add_vertex({"B"});
+auto [e, inserted] = g.add_edge(v0, v1, {1.5});
 ```
 
-**Graph-v3:**
+**Graph-v3 (using standard containers directly):**
+```cpp
+// Simple adjacency list - no library types needed!
+std::vector<std::vector<int>> g = {
+    {1, 2},    // vertex 0 -> edges to 1, 2
+    {2},       // vertex 1 -> edge to 2
+    {}         // vertex 2 -> no outgoing edges
+};
+
+// Weighted version
+std::vector<std::vector<std::pair<int, double>>> weighted = {
+    {{1, 1.5}, {2, 2.0}},
+    {{2, 0.5}},
+    {}
+};
+```
+
+**Graph-v3 (using dynamic_graph with traits):**
 ```cpp
 using G = dynamic_graph<double, std::string, void, uint32_t, false, vov_graph_traits<...>>;
 G g;
@@ -419,7 +617,17 @@ for (auto v : vertices(g)) {
 }
 ```
 
-**Graph-v3:**
+**Graph-v3 (standard container):**
+```cpp
+std::vector<std::vector<int>> g = {{1,2}, {2}, {}};
+for (auto u : graph::vertices(g)) {
+    auto vid = graph::vertex_id(g, u);
+    std::cout << "Vertex " << vid << " has " 
+              << std::ranges::size(graph::edges(g, u)) << " edges\n";
+}
+```
+
+**Graph-v3 (dynamic_graph):**
 ```cpp
 for (auto v : graph::vertices(g)) {
     std::cout << graph::vertex_value(g, v) << "\n";  // Via CPO with graph reference
