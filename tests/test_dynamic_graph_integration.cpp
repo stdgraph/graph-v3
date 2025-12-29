@@ -87,85 +87,85 @@ size_t count_edges(const G& g) {
 //==================================================================================================
 
 TEST_CASE("Copy vov to vofl - void edges", "[integration][6.1.1]") {
-    vov_void source({{0, 1}, {1, 2}, {2, 0}});
+    vov_void source_graph({{0, 1}, {1, 2}, {2, 0}});
     
     // Extract edges using CPOs
     std::vector<graph::copyable_edge_t<uint64_t, void>> edge_list;
-    for (auto&& v : vertices(source)) {
-        for (auto&& e : edges(source, v)) {
-            edge_list.push_back({vertex_id(source, v), target_id(source, e)});
+    for (auto&& v : vertices(source_graph)) {
+        for (auto&& e : edges(source_graph, v)) {
+            edge_list.push_back({vertex_id(source_graph, v), target_id(source_graph, e)});
         }
     }
     
     // Load into target
-    vofl_void target;
-    target.load_edges(edge_list, std::identity{}, source.size());
+    vofl_void target_graph;
+    target_graph.load_edges(edge_list, std::identity{}, source_graph.size());
     
-    REQUIRE(target.size() == source.size());
-    REQUIRE(count_edges(target) == 3);
+    REQUIRE(target_graph.size() == source_graph.size());
+    REQUIRE(count_edges(target_graph) == 3);
 }
 
 TEST_CASE("Copy vofl to dov - void edges", "[integration][6.1.1]") {
-    vofl_void source({{0, 1}, {1, 2}});
+    vofl_void source_graph({{0, 1}, {1, 2}});
     
     std::vector<graph::copyable_edge_t<uint64_t, void>> edge_list;
-    for (auto&& v : vertices(source)) {
-        for (auto&& e : edges(source, v)) {
-            edge_list.push_back({vertex_id(source, v), target_id(source, e)});
+    for (auto&& v : vertices(source_graph)) {
+        for (auto&& e : edges(source_graph, v)) {
+            edge_list.push_back({vertex_id(source_graph, v), target_id(source_graph, e)});
         }
     }
     
-    dov_void target;
-    target.load_edges(edge_list, std::identity{}, source.size());
+    dov_void target_graph;
+    target_graph.load_edges(edge_list, std::identity{}, source_graph.size());
     
-    REQUIRE(target.size() == 3);
-    REQUIRE(count_edges(target) == 2);
+    REQUIRE(target_graph.size() == 3);
+    REQUIRE(count_edges(target_graph) == 2);
 }
 
 TEST_CASE("Copy dofl to dol - void edges", "[integration][6.1.1]") {
-    dofl_void source({{0, 1}, {1, 2}, {2, 3}});
+    dofl_void source_graph({{0, 1}, {1, 2}, {2, 3}});
     
     std::vector<graph::copyable_edge_t<uint64_t, void>> edge_list;
-    for (auto&& v : vertices(source)) {
-        for (auto&& e : edges(source, v)) {
-            edge_list.push_back({vertex_id(source, v), target_id(source, e)});
+    for (auto&& v : vertices(source_graph)) {
+        for (auto&& e : edges(source_graph, v)) {
+            edge_list.push_back({vertex_id(source_graph, v), target_id(source_graph, e)});
         }
     }
     
-    dol_void target;
-    target.load_edges(edge_list, std::identity{}, source.size());
+    dol_void target_graph;
+    target_graph.load_edges(edge_list, std::identity{}, source_graph.size());
     
-    REQUIRE(target.size() == 4);
-    REQUIRE(count_edges(target) == 3);
+    REQUIRE(target_graph.size() == 4);
+    REQUIRE(count_edges(target_graph) == 3);
 }
 
 TEST_CASE("Copy vov to vofl - empty graph", "[integration][6.1.1]") {
-    vov_void source;
+    vov_void source_graph;
     
     std::vector<graph::copyable_edge_t<uint64_t, void>> edge_list;
     
-    vofl_void target;
-    target.load_edges(edge_list, std::identity{});
+    vofl_void target_graph;
+    target_graph.load_edges(edge_list, std::identity{});
     
-    REQUIRE(target.size() == 0);
-    REQUIRE(count_edges(target) == 0);
+    REQUIRE(target_graph.size() == 0);
+    REQUIRE(count_edges(target_graph) == 0);
 }
 
 TEST_CASE("Copy vov to vofl - self-loop", "[integration][6.1.1]") {
-    vov_void source({{0, 0}});
+    vov_void source_graph({{0, 0}});
     
     std::vector<graph::copyable_edge_t<uint64_t, void>> edge_list;
-    for (auto&& v : vertices(source)) {
-        for (auto&& e : edges(source, v)) {
-            edge_list.push_back({vertex_id(source, v), target_id(source, e)});
+    for (auto&& v : vertices(source_graph)) {
+        for (auto&& e : edges(source_graph, v)) {
+            edge_list.push_back({vertex_id(source_graph, v), target_id(source_graph, e)});
         }
     }
     
-    vofl_void target;
-    target.load_edges(edge_list, std::identity{}, source.size());
+    vofl_void target_graph;
+    target_graph.load_edges(edge_list, std::identity{}, source_graph.size());
     
-    REQUIRE(target.size() == 1);
-    REQUIRE(count_edges(target) == 1);
+    REQUIRE(target_graph.size() == 1);
+    REQUIRE(count_edges(target_graph) == 1);
 }
 
 //==================================================================================================
@@ -173,65 +173,65 @@ TEST_CASE("Copy vov to vofl - self-loop", "[integration][6.1.1]") {
 //==================================================================================================
 
 TEST_CASE("Copy vov to vofl - int edges", "[integration][6.1.1]") {
-    vov_int source({{0, 1, 100}, {1, 2, 200}});
+    vov_int source_graph({{0, 1, 100}, {1, 2, 200}});
     
     std::vector<graph::copyable_edge_t<uint64_t, int>> edge_list;
-    for (auto&& v : vertices(source)) {
-        for (auto&& e : edges(source, v)) {
-            edge_list.push_back({vertex_id(source, v), target_id(source, e), edge_value(source, e)});
+    for (auto&& v : vertices(source_graph)) {
+        for (auto&& e : edges(source_graph, v)) {
+            edge_list.push_back({vertex_id(source_graph, v), target_id(source_graph, e), edge_value(source_graph, e)});
         }
     }
     
-    vofl_int target;
-    target.load_edges(edge_list, std::identity{}, source.size());
+    vofl_int target_graph;
+    target_graph.load_edges(edge_list, std::identity{}, source_graph.size());
     
-    REQUIRE(target.size() == 3);
-    REQUIRE(count_edges(target) == 2);
+    REQUIRE(target_graph.size() == 3);
+    REQUIRE(count_edges(target_graph) == 2);
     
     // Verify edge value preserved
-    auto v0 = find_vertex(target, uint64_t{0});
-    auto e_rng = edges(target, *v0);
+    auto v0 = find_vertex(target_graph, uint64_t{0});
+    auto e_rng = edges(target_graph, *v0);
     auto first_edge = *std::ranges::begin(e_rng);
-    REQUIRE(edge_value(target, first_edge) == 100);
+    REQUIRE(edge_value(target_graph, first_edge) == 100);
 }
 
 TEST_CASE("Copy dofl to dol - int edges", "[integration][6.1.1]") {
-    dofl_int source({{0, 1, 10}, {1, 2, 20}});
+    dofl_int source_graph({{0, 1, 10}, {1, 2, 20}});
     
     std::vector<graph::copyable_edge_t<uint64_t, int>> edge_list;
-    for (auto&& v : vertices(source)) {
-        for (auto&& e : edges(source, v)) {
-            edge_list.push_back({vertex_id(source, v), target_id(source, e), edge_value(source, e)});
+    for (auto&& v : vertices(source_graph)) {
+        for (auto&& e : edges(source_graph, v)) {
+            edge_list.push_back({vertex_id(source_graph, v), target_id(source_graph, e), edge_value(source_graph, e)});
         }
     }
     
-    dol_int target;
-    target.load_edges(edge_list, std::identity{}, source.size());
+    dol_int target_graph;
+    target_graph.load_edges(edge_list, std::identity{}, source_graph.size());
     
-    REQUIRE(target.size() == 3);
-    REQUIRE(count_edges(target) == 2);
+    REQUIRE(target_graph.size() == 3);
+    REQUIRE(count_edges(target_graph) == 2);
 }
 
 TEST_CASE("Copy vov to dov - int edges large", "[integration][6.1.1]") {
-    vov_int source;
+    vov_int source_graph;
     std::vector<graph::copyable_edge_t<uint64_t, int>> src_edges;
     for (uint64_t i = 0; i < 50; ++i) {
         src_edges.push_back({i, (i + 1) % 50, static_cast<int>(i)});
     }
-    source.load_edges(src_edges, std::identity{});
+    source_graph.load_edges(src_edges, std::identity{});
     
     std::vector<graph::copyable_edge_t<uint64_t, int>> edge_list;
-    for (auto&& v : vertices(source)) {
-        for (auto&& e : edges(source, v)) {
-            edge_list.push_back({vertex_id(source, v), target_id(source, e), edge_value(source, e)});
+    for (auto&& v : vertices(source_graph)) {
+        for (auto&& e : edges(source_graph, v)) {
+            edge_list.push_back({vertex_id(source_graph, v), target_id(source_graph, e), edge_value(source_graph, e)});
         }
     }
     
-    dov_int target;
-    target.load_edges(edge_list, std::identity{}, source.size());
+    dov_int target_graph;
+    target_graph.load_edges(edge_list, std::identity{}, source_graph.size());
     
-    REQUIRE(target.size() == 50);
-    REQUIRE(count_edges(target) == 50);
+    REQUIRE(target_graph.size() == 50);
+    REQUIRE(count_edges(target_graph) == 50);
 }
 
 //==================================================================================================
@@ -239,74 +239,74 @@ TEST_CASE("Copy vov to dov - int edges large", "[integration][6.1.1]") {
 //==================================================================================================
 
 TEST_CASE("Copy vov to mos - void edges", "[integration][6.1.2]") {
-    vov_void source({{0, 1}, {1, 2}, {2, 0}});
+    vov_void source_graph({{0, 1}, {1, 2}, {2, 0}});
     
     // Convert uint64_t IDs to string IDs
     std::vector<graph::copyable_edge_t<std::string, void>> edge_list;
-    for (auto&& v : vertices(source)) {
-        for (auto&& e : edges(source, v)) {
+    for (auto&& v : vertices(source_graph)) {
+        for (auto&& e : edges(source_graph, v)) {
             edge_list.push_back({
-                std::to_string(vertex_id(source, v)),
-                std::to_string(target_id(source, e))
+                std::to_string(vertex_id(source_graph, v)),
+                std::to_string(target_id(source_graph, e))
             });
         }
     }
     
-    mos_void target;
-    target.load_edges(edge_list, std::identity{});
+    mos_void target_graph;
+    target_graph.load_edges(edge_list, std::identity{});
     
-    REQUIRE(target.size() == 3);
-    REQUIRE(count_edges(target) == 3);
+    REQUIRE(target_graph.size() == 3);
+    REQUIRE(count_edges(target_graph) == 3);
 }
 
 TEST_CASE("Copy dol to mol - void edges", "[integration][6.1.2]") {
-    dol_void source({{0, 1}, {1, 2}});
+    dol_void source_graph({{0, 1}, {1, 2}});
     
     std::vector<graph::copyable_edge_t<std::string, void>> edge_list;
-    for (auto&& v : vertices(source)) {
-        for (auto&& e : edges(source, v)) {
+    for (auto&& v : vertices(source_graph)) {
+        for (auto&& e : edges(source_graph, v)) {
             edge_list.push_back({
-                std::to_string(vertex_id(source, v)),
-                std::to_string(target_id(source, e))
+                std::to_string(vertex_id(source_graph, v)),
+                std::to_string(target_id(source_graph, e))
             });
         }
     }
     
-    mol_void target;
-    target.load_edges(edge_list, std::identity{});
+    mol_void target_graph;
+    target_graph.load_edges(edge_list, std::identity{});
     
-    REQUIRE(target.size() == 3);
-    REQUIRE(count_edges(target) == 2);
+    REQUIRE(target_graph.size() == 3);
+    REQUIRE(count_edges(target_graph) == 2);
 }
 
 TEST_CASE("Copy vov to mos - sparse IDs", "[integration][6.1.2]") {
     // Source has sparse IDs: 0, 10, 100
-    vov_void source;
+    vov_void source_graph;
     std::vector<graph::copyable_edge_t<uint64_t, void>> src_edges{
         {0, 10}, {10, 100}, {100, 0}
     };
-    source.load_edges(src_edges, std::identity{}, 101);
+    source_graph.load_edges(src_edges, std::identity{}, 101);
     
     std::vector<graph::copyable_edge_t<std::string, void>> edge_list;
-    for (auto&& v : vertices(source)) {
-        for (auto&& e : edges(source, v)) {
+    for (auto&& v : vertices(source_graph)) {
+        for (auto&& e : edges(source_graph, v)) {
             edge_list.push_back({
-                std::to_string(vertex_id(source, v)),
-                std::to_string(target_id(source, e))
+                std::to_string(vertex_id(source_graph, v)),
+                std::to_string(target_id(source_graph, e))
             });
         }
     }
     
-    mos_void target;
-    target.load_edges(edge_list, std::identity{});
+    mos_void target_graph;
+    target_graph.load_edges(edge_list, std::identity{});
     
     // Map only contains explicitly referenced vertices
-    REQUIRE(target.size() == 3);
-    REQUIRE(count_edges(target) == 3);
+    REQUIRE(target_graph.size() == 3);
+    REQUIRE(count_edges(target_graph) == 3);
     
-    REQUIRE(find_vertex(target, std::string("0")) != vertices(target).end());
-    REQUIRE(find_vertex(target, std::string("10")) != vertices(target).end());
-    REQUIRE(find_vertex(target, std::string("100")) != vertices(target).end());
+    REQUIRE(find_vertex(target_graph, std::string("0")) != vertices(target_graph).end());
+    REQUIRE(find_vertex(target_graph, std::string("10")) != vertices(target_graph).end());
+    REQUIRE(find_vertex(target_graph, std::string("100")) != vertices(target_graph).end());
 }
 
 //==================================================================================================
@@ -314,51 +314,51 @@ TEST_CASE("Copy vov to mos - sparse IDs", "[integration][6.1.2]") {
 //==================================================================================================
 
 TEST_CASE("Copy vov to mos - int edges", "[integration][6.1.2]") {
-    vov_int source({{0, 1, 100}, {1, 2, 200}});
+    vov_int source_graph({{0, 1, 100}, {1, 2, 200}});
     
     std::vector<graph::copyable_edge_t<std::string, int>> edge_list;
-    for (auto&& v : vertices(source)) {
-        for (auto&& e : edges(source, v)) {
+    for (auto&& v : vertices(source_graph)) {
+        for (auto&& e : edges(source_graph, v)) {
             edge_list.push_back({
-                std::to_string(vertex_id(source, v)),
-                std::to_string(target_id(source, e)),
-                edge_value(source, e)
+                std::to_string(vertex_id(source_graph, v)),
+                std::to_string(target_id(source_graph, e)),
+                edge_value(source_graph, e)
             });
         }
     }
     
-    mos_int target;
-    target.load_edges(edge_list, std::identity{});
+    mos_int target_graph;
+    target_graph.load_edges(edge_list, std::identity{});
     
-    REQUIRE(target.size() == 3);
-    REQUIRE(count_edges(target) == 2);
+    REQUIRE(target_graph.size() == 3);
+    REQUIRE(count_edges(target_graph) == 2);
     
     // Verify edge value
-    auto v0 = find_vertex(target, std::string("0"));
-    auto e_rng = edges(target, *v0);
+    auto v0 = find_vertex(target_graph, std::string("0"));
+    auto e_rng = edges(target_graph, *v0);
     auto first_edge = *std::ranges::begin(e_rng);
-    REQUIRE(edge_value(target, first_edge) == 100);
+    REQUIRE(edge_value(target_graph, first_edge) == 100);
 }
 
 TEST_CASE("Copy dol to mol - int edges", "[integration][6.1.2]") {
-    dol_int source({{0, 1, 10}, {1, 2, 20}, {2, 0, 30}});
+    dol_int source_graph({{0, 1, 10}, {1, 2, 20}, {2, 0, 30}});
     
     std::vector<graph::copyable_edge_t<std::string, int>> edge_list;
-    for (auto&& v : vertices(source)) {
-        for (auto&& e : edges(source, v)) {
+    for (auto&& v : vertices(source_graph)) {
+        for (auto&& e : edges(source_graph, v)) {
             edge_list.push_back({
-                std::to_string(vertex_id(source, v)),
-                std::to_string(target_id(source, e)),
-                edge_value(source, e)
+                std::to_string(vertex_id(source_graph, v)),
+                std::to_string(target_id(source_graph, e)),
+                edge_value(source_graph, e)
             });
         }
     }
     
-    mol_int target;
-    target.load_edges(edge_list, std::identity{});
+    mol_int target_graph;
+    target_graph.load_edges(edge_list, std::identity{});
     
-    REQUIRE(target.size() == 3);
-    REQUIRE(count_edges(target) == 3);
+    REQUIRE(target_graph.size() == 3);
+    REQUIRE(count_edges(target_graph) == 3);
 }
 
 //==================================================================================================
@@ -366,62 +366,62 @@ TEST_CASE("Copy dol to mol - int edges", "[integration][6.1.2]") {
 //==================================================================================================
 
 TEST_CASE("Copy mos to vov - void edges", "[integration][6.1.3]") {
-    mos_void source({{"a", "b"}, {"b", "c"}, {"c", "a"}});
+    mos_void source_graph({{"a", "b"}, {"b", "c"}, {"c", "a"}});
     
     // Create ID mapping: string → uint64_t
     std::map<std::string, uint64_t> id_map;
     uint64_t next_id = 0;
-    for (auto&& v : vertices(source)) {
-        auto vid = vertex_id(source, v);
+    for (auto&& v : vertices(source_graph)) {
+        auto vid = vertex_id(source_graph, v);
         if (!id_map.contains(vid)) {
             id_map[vid] = next_id++;
         }
     }
     
     std::vector<graph::copyable_edge_t<uint64_t, void>> edge_list;
-    for (auto&& v : vertices(source)) {
-        for (auto&& e : edges(source, v)) {
+    for (auto&& v : vertices(source_graph)) {
+        for (auto&& e : edges(source_graph, v)) {
             edge_list.push_back({
-                id_map[vertex_id(source, v)],
-                id_map[target_id(source, e)]
+                id_map[vertex_id(source_graph, v)],
+                id_map[target_id(source_graph, e)]
             });
         }
     }
     
-    vov_void target;
-    target.load_edges(edge_list, std::identity{});
+    vov_void target_graph;
+    target_graph.load_edges(edge_list, std::identity{});
     
-    REQUIRE(target.size() == 3);
-    REQUIRE(count_edges(target) == 3);
+    REQUIRE(target_graph.size() == 3);
+    REQUIRE(count_edges(target_graph) == 3);
 }
 
 TEST_CASE("Copy mol to dofl - void edges", "[integration][6.1.3]") {
-    mol_void source({{"p", "q"}, {"q", "r"}});
+    mol_void source_graph({{"p", "q"}, {"q", "r"}});
     
     std::map<std::string, uint64_t> id_map;
     uint64_t next_id = 0;
-    for (auto&& v : vertices(source)) {
-        auto vid = vertex_id(source, v);
+    for (auto&& v : vertices(source_graph)) {
+        auto vid = vertex_id(source_graph, v);
         if (!id_map.contains(vid)) {
             id_map[vid] = next_id++;
         }
     }
     
     std::vector<graph::copyable_edge_t<uint64_t, void>> edge_list;
-    for (auto&& v : vertices(source)) {
-        for (auto&& e : edges(source, v)) {
+    for (auto&& v : vertices(source_graph)) {
+        for (auto&& e : edges(source_graph, v)) {
             edge_list.push_back({
-                id_map[vertex_id(source, v)],
-                id_map[target_id(source, e)]
+                id_map[vertex_id(source_graph, v)],
+                id_map[target_id(source_graph, e)]
             });
         }
     }
     
-    dofl_void target;
-    target.load_edges(edge_list, std::identity{});
+    dofl_void target_graph;
+    target_graph.load_edges(edge_list, std::identity{});
     
-    REQUIRE(target.size() == 3);
-    REQUIRE(count_edges(target) == 2);
+    REQUIRE(target_graph.size() == 3);
+    REQUIRE(count_edges(target_graph) == 2);
 }
 
 //==================================================================================================
@@ -429,72 +429,72 @@ TEST_CASE("Copy mol to dofl - void edges", "[integration][6.1.3]") {
 //==================================================================================================
 
 TEST_CASE("Copy mos to vov - int edges", "[integration][6.1.3]") {
-    mos_int source({{"a", "b", 100}, {"b", "c", 200}});
+    mos_int source_graph({{"a", "b", 100}, {"b", "c", 200}});
     
     std::map<std::string, uint64_t> id_map;
     uint64_t next_id = 0;
-    for (auto&& v : vertices(source)) {
-        auto vid = vertex_id(source, v);
+    for (auto&& v : vertices(source_graph)) {
+        auto vid = vertex_id(source_graph, v);
         if (!id_map.contains(vid)) {
             id_map[vid] = next_id++;
         }
     }
     
     std::vector<graph::copyable_edge_t<uint64_t, int>> edge_list;
-    for (auto&& v : vertices(source)) {
-        for (auto&& e : edges(source, v)) {
+    for (auto&& v : vertices(source_graph)) {
+        for (auto&& e : edges(source_graph, v)) {
             edge_list.push_back({
-                id_map[vertex_id(source, v)],
-                id_map[target_id(source, e)],
-                edge_value(source, e)
+                id_map[vertex_id(source_graph, v)],
+                id_map[target_id(source_graph, e)],
+                edge_value(source_graph, e)
             });
         }
     }
     
-    vov_int target;
-    target.load_edges(edge_list, std::identity{});
+    vov_int target_graph;
+    target_graph.load_edges(edge_list, std::identity{});
     
-    REQUIRE(target.size() == 3);
-    REQUIRE(count_edges(target) == 2);
+    REQUIRE(target_graph.size() == 3);
+    REQUIRE(count_edges(target_graph) == 2);
 }
 
 TEST_CASE("Copy mol to dofl - int edges", "[integration][6.1.3]") {
-    mol_int source({{"a", "b", 1}, {"b", "c", 2}, {"c", "a", 3}});
+    mol_int source_graph({{"a", "b", 1}, {"b", "c", 2}, {"c", "a", 3}});
     
     std::map<std::string, uint64_t> id_map;
     uint64_t next_id = 0;
-    for (auto&& v : vertices(source)) {
-        auto vid = vertex_id(source, v);
+    for (auto&& v : vertices(source_graph)) {
+        auto vid = vertex_id(source_graph, v);
         if (!id_map.contains(vid)) {
             id_map[vid] = next_id++;
         }
     }
     
     std::vector<graph::copyable_edge_t<uint64_t, int>> edge_list;
-    for (auto&& v : vertices(source)) {
-        for (auto&& e : edges(source, v)) {
+    for (auto&& v : vertices(source_graph)) {
+        for (auto&& e : edges(source_graph, v)) {
             edge_list.push_back({
-                id_map[vertex_id(source, v)],
-                id_map[target_id(source, e)],
-                edge_value(source, e)
+                id_map[vertex_id(source_graph, v)],
+                id_map[target_id(source_graph, e)],
+                edge_value(source_graph, e)
             });
         }
     }
     
-    dofl_int target;
-    target.load_edges(edge_list, std::identity{});
+    dofl_int target_graph;
+    target_graph.load_edges(edge_list, std::identity{});
     
-    REQUIRE(target.size() == 3);
-    REQUIRE(count_edges(target) == 3);
+    REQUIRE(target_graph.size() == 3);
+    REQUIRE(count_edges(target_graph) == 3);
 }
 
 TEST_CASE("Copy mos to vov - bijective ID mapping", "[integration][6.1.3]") {
-    mos_void source({{"x", "y"}, {"y", "z"}, {"z", "x"}});
+    mos_void source_graph({{"x", "y"}, {"y", "z"}, {"z", "x"}});
     
     std::map<std::string, uint64_t> id_map;
     uint64_t next_id = 0;
-    for (auto&& v : vertices(source)) {
-        auto vid = vertex_id(source, v);
+    for (auto&& v : vertices(source_graph)) {
+        auto vid = vertex_id(source_graph, v);
         if (!id_map.contains(vid)) {
             id_map[vid] = next_id++;
         }
@@ -512,158 +512,149 @@ TEST_CASE("Copy mos to vov - bijective ID mapping", "[integration][6.1.3]") {
 //==================================================================================================
 
 TEST_CASE("Copy mos to mous - void edges", "[integration][6.1.4]") {
-    mos_void source({{"a", "b"}, {"b", "c"}});
+    mos_void source_graph({{"a", "b"}, {"b", "c"}});
     
     std::vector<graph::copyable_edge_t<std::string, void>> edge_list;
-    for (auto&& v : vertices(source)) {
-        for (auto&& e : edges(source, v)) {
+    for (auto&& v : vertices(source_graph)) {
+        for (auto&& e : edges(source_graph, v)) {
             edge_list.push_back({
-                vertex_id(source, v),
-                target_id(source, e)
+                vertex_id(source_graph, v),
+                target_id(source_graph, e)
             });
         }
     }
     
-    mous_void target;
-    target.load_edges(edge_list, std::identity{});
+    mous_void target_graph;
+    target_graph.load_edges(edge_list, std::identity{});
     
-    REQUIRE(target.size() == 3);
-    REQUIRE(count_edges(target) == 2);
+    REQUIRE(target_graph.size() == 3);
+    REQUIRE(count_edges(target_graph) == 2);
 }
 
 TEST_CASE("Copy mous to mos - void edges", "[integration][6.1.4]") {
-    mous_void source({{"p", "q"}, {"q", "r"}, {"r", "p"}});
+    mous_void source_graph({{"p", "q"}, {"q", "r"}, {"r", "p"}});
     
     std::vector<graph::copyable_edge_t<std::string, void>> edge_list;
-    for (auto&& v : vertices(source)) {
-        for (auto&& e : edges(source, v)) {
+    for (auto&& v : vertices(source_graph)) {
+        for (auto&& e : edges(source_graph, v)) {
             edge_list.push_back({
-                vertex_id(source, v),
-                target_id(source, e)
+                vertex_id(source_graph, v),
+                target_id(source_graph, e)
             });
         }
     }
     
-    mos_void target;
-    target.load_edges(edge_list, std::identity{});
+    mos_void target_graph;
+    target_graph.load_edges(edge_list, std::identity{});
     
-    REQUIRE(target.size() == 3);
-    REQUIRE(count_edges(target) == 3);
+    REQUIRE(target_graph.size() == 3);
+    REQUIRE(count_edges(target_graph) == 3);
 }
 
 TEST_CASE("Copy mos to mous - int edges", "[integration][6.1.4]") {
-    mos_int source({{"x", "y", 10}, {"y", "z", 20}});
+    mos_int source_graph({{"x", "y", 10}, {"y", "z", 20}});
     
     std::vector<graph::copyable_edge_t<std::string, int>> edge_list;
-    for (auto&& v : vertices(source)) {
-        for (auto&& e : edges(source, v)) {
+    for (auto&& v : vertices(source_graph)) {
+        for (auto&& e : edges(source_graph, v)) {
             edge_list.push_back({
-                vertex_id(source, v),
-                target_id(source, e),
-                edge_value(source, e)
+                vertex_id(source_graph, v),
+                target_id(source_graph, e),
+                edge_value(source_graph, e)
             });
         }
     }
     
-    mous_int target;
-    target.load_edges(edge_list, std::identity{});
+    mous_int target_graph;
+    target_graph.load_edges(edge_list, std::identity{});
     
-    REQUIRE(target.size() == 3);
-    REQUIRE(count_edges(target) == 2);
+    REQUIRE(target_graph.size() == 3);
+    REQUIRE(count_edges(target_graph) == 2);
 }
 
 TEST_CASE("Copy mous to mos - int edges", "[integration][6.1.4]") {
-    mous_int source({{"a", "b", 100}, {"b", "c", 200}});
+    mous_int source_graph({{"a", "b", 100}, {"b", "c", 200}});
     
     std::vector<graph::copyable_edge_t<std::string, int>> edge_list;
-    for (auto&& v : vertices(source)) {
-        for (auto&& e : edges(source, v)) {
+    for (auto&& v : vertices(source_graph)) {
+        for (auto&& e : edges(source_graph, v)) {
             edge_list.push_back({
-                vertex_id(source, v),
-                target_id(source, e),
-                edge_value(source, e)
+                vertex_id(source_graph, v),
+                target_id(source_graph, e),
+                edge_value(source_graph, e)
             });
         }
     }
     
-    mos_int target;
-    target.load_edges(edge_list, std::identity{});
+    mos_int target_graph;
+    target_graph.load_edges(edge_list, std::identity{});
     
-    REQUIRE(target.size() == 3);
-    REQUIRE(count_edges(target) == 2);
+    REQUIRE(target_graph.size() == 3);
+    REQUIRE(count_edges(target_graph) == 2);
 }
 
 TEST_CASE("Copy mos to mous - ordering may differ", "[integration][6.1.4]") {
-    mos_void source({{"z", "a"}, {"a", "m"}, {"m", "b"}});
+    mos_void source_graph({{"z", "a"}, {"a", "m"}, {"m", "b"}});
     
     // mos is ordered (alphabetically by key)
     // Edges create vertices: z, a (sources) and a, m, b (targets)
-    // Unique vertices: a, b, m, z - ordered alphabetically
-    std::vector<std::string> mos_order;
-    for (auto&& v : vertices(source)) {
-        mos_order.push_back(vertex_id(source, v));
-    }
-    REQUIRE(mos_order.size() == 4);
-    REQUIRE(mos_order[0] == "a"); // alphabetical
-    REQUIRE(mos_order[1] == "b");
-    REQUIRE(mos_order[2] == "m");
-    REQUIRE(mos_order[3] == "z");
+    // Vertices in order: a, b, m, z
     
     std::vector<graph::copyable_edge_t<std::string, void>> edge_list;
-    for (auto&& v : vertices(source)) {
-        for (auto&& e : edges(source, v)) {
+    for (auto&& v : vertices(source_graph)) {
+        for (auto&& e : edges(source_graph, v)) {
             edge_list.push_back({
-                vertex_id(source, v),
-                target_id(source, e)
+                vertex_id(source_graph, v),
+                target_id(source_graph, e)
             });
         }
     }
     
-    mous_void target;
-    target.load_edges(edge_list, std::identity{});
+    mous_void target_graph;
+    target_graph.load_edges(edge_list, std::identity{});
     
     // mous is unordered - iteration order may differ
     std::vector<std::string> mous_order;
-    for (auto&& v : vertices(target)) {
-        mous_order.push_back(vertex_id(target, v));
+    for (auto&& v : vertices(target_graph)) {
+        mous_order.push_back(vertex_id(target_graph, v));
     }
     
     REQUIRE(mous_order.size() == 4); // a, b, m, z (in some order)
 }
 
 TEST_CASE("Copy mos to mous - empty graph", "[integration][6.1.4]") {
-    mos_void source;
+    mos_void source_graph;
     
     std::vector<graph::copyable_edge_t<std::string, void>> edge_list;
     
-    mous_void target;
-    target.load_edges(edge_list, std::identity{});
+    mous_void target_graph;
+    target_graph.load_edges(edge_list, std::identity{});
     
-    REQUIRE(target.size() == 0);
+    REQUIRE(target_graph.size() == 0);
 }
 
 TEST_CASE("Copy mos to mous - self-loop", "[integration][6.1.4]") {
-    mos_void source({{"only", "only"}});
+    mos_void source_graph({{"only", "only"}});
     
     std::vector<graph::copyable_edge_t<std::string, void>> edge_list;
-    for (auto&& v : vertices(source)) {
-        for (auto&& e : edges(source, v)) {
+    for (auto&& v : vertices(source_graph)) {
+        for (auto&& e : edges(source_graph, v)) {
             edge_list.push_back({
-                vertex_id(source, v),
-                target_id(source, e)
+                vertex_id(source_graph, v),
+                target_id(source_graph, e)
             });
         }
     }
     
-    mous_void target;
-    target.load_edges(edge_list, std::identity{});
+    mous_void target_graph;
+    target_graph.load_edges(edge_list, std::identity{});
     
-    REQUIRE(target.size() == 1);
-    REQUIRE(count_edges(target) == 1);
+    REQUIRE(target_graph.size() == 1);
+    REQUIRE(count_edges(target_graph) == 1);
 }
 
 TEST_CASE("Copy mos to mous - large graph", "[integration][6.1.4]") {
-    mos_int source;
+    mos_int source_graph;
     std::vector<graph::copyable_edge_t<std::string, int>> src_edges;
     for (int i = 0; i < 50; ++i) {
         src_edges.push_back({
@@ -672,43 +663,43 @@ TEST_CASE("Copy mos to mous - large graph", "[integration][6.1.4]") {
             i
         });
     }
-    source.load_edges(src_edges, std::identity{});
+    source_graph.load_edges(src_edges, std::identity{});
     
     std::vector<graph::copyable_edge_t<std::string, int>> edge_list;
-    for (auto&& v : vertices(source)) {
-        for (auto&& e : edges(source, v)) {
+    for (auto&& v : vertices(source_graph)) {
+        for (auto&& e : edges(source_graph, v)) {
             edge_list.push_back({
-                vertex_id(source, v),
-                target_id(source, e),
-                edge_value(source, e)
+                vertex_id(source_graph, v),
+                target_id(source_graph, e),
+                edge_value(source_graph, e)
             });
         }
     }
     
-    mous_int target;
-    target.load_edges(edge_list, std::identity{});
+    mous_int target_graph;
+    target_graph.load_edges(edge_list, std::identity{});
     
-    REQUIRE(target.size() == 50);
-    REQUIRE(count_edges(target) == 50);
+    REQUIRE(target_graph.size() == 50);
+    REQUIRE(count_edges(target_graph) == 50);
 }
 
 TEST_CASE("Copy mous to mos - preserves all data", "[integration][6.1.4]") {
-    mous_int source({{"one", "two", 1}, {"two", "three", 2}, {"three", "one", 3}});
+    mous_int source_graph({{"one", "two", 1}, {"two", "three", 2}, {"three", "one", 3}});
     
     std::vector<graph::copyable_edge_t<std::string, int>> edge_list;
-    for (auto&& v : vertices(source)) {
-        for (auto&& e : edges(source, v)) {
+    for (auto&& v : vertices(source_graph)) {
+        for (auto&& e : edges(source_graph, v)) {
             edge_list.push_back({
-                vertex_id(source, v),
-                target_id(source, e),
-                edge_value(source, e)
+                vertex_id(source_graph, v),
+                target_id(source_graph, e),
+                edge_value(source_graph, e)
             });
         }
     }
     
-    mos_int target;
-    target.load_edges(edge_list, std::identity{});
+    mos_int target_graph;
+    target_graph.load_edges(edge_list, std::identity{});
     
-    REQUIRE(target.size() == source.size());
-    REQUIRE(count_edges(target) == count_edges(source));
+    REQUIRE(target_graph.size() == source_graph.size());
+    REQUIRE(count_edges(target_graph) == count_edges(source_graph));
 }

@@ -298,30 +298,30 @@ TEST_CASE("std::hash for dynamic_edge with Sourced=false", "[edge][hash]") {
 
 TEST_CASE("dynamic_edge works with std::set", "[edge][set][integration]") {
     SECTION("Sourced edges - deduplicates by source_id and target_id") {
-        std::set<edge_ev_sourced> edges;
+        std::set<edge_ev_sourced> edge_set;
         
-        edges.insert(edge_ev_sourced(1, 2, 100));
-        edges.insert(edge_ev_sourced(1, 2, 999));  // Duplicate (same ids)
-        edges.insert(edge_ev_sourced(1, 3, 100));
-        edges.insert(edge_ev_sourced(2, 1, 100));
+        edge_set.insert(edge_ev_sourced(1, 2, 100));
+        edge_set.insert(edge_ev_sourced(1, 2, 999));  // Duplicate (same ids)
+        edge_set.insert(edge_ev_sourced(1, 3, 100));
+        edge_set.insert(edge_ev_sourced(2, 1, 100));
         
-        REQUIRE(edges.size() == 3);  // Only 3 unique edges
+        REQUIRE(edge_set.size() == 3);  // Only 3 unique edges
     }
 
     SECTION("Sourced edges - maintains sorted order") {
-        std::set<edge_void_sourced> edges;
+        std::set<edge_void_sourced> edge_set;
         
-        edges.insert(edge_void_sourced(2, 3));
-        edges.insert(edge_void_sourced(1, 2));
-        edges.insert(edge_void_sourced(1, 3));
-        edges.insert(edge_void_sourced(2, 1));
+        edge_set.insert(edge_void_sourced(2, 3));
+        edge_set.insert(edge_void_sourced(1, 2));
+        edge_set.insert(edge_void_sourced(1, 3));
+        edge_set.insert(edge_void_sourced(2, 1));
         
         std::vector<std::pair<uint32_t, uint32_t>> expected = {
             {1, 2}, {1, 3}, {2, 1}, {2, 3}
         };
         
         size_t i = 0;
-        for (const auto& e : edges) {
+        for (const auto& e : edge_set) {
             REQUIRE(e.source_id() == expected[i].first);
             REQUIRE(e.target_id() == expected[i].second);
             ++i;
@@ -329,28 +329,28 @@ TEST_CASE("dynamic_edge works with std::set", "[edge][set][integration]") {
     }
 
     SECTION("Unsourced edges - deduplicates by target_id") {
-        std::set<edge_ev_unsourced> edges;
+        std::set<edge_ev_unsourced> edge_set;
         
-        edges.insert(edge_ev_unsourced(2, 100));
-        edges.insert(edge_ev_unsourced(2, 999));  // Duplicate
-        edges.insert(edge_ev_unsourced(5, 100));
-        edges.insert(edge_ev_unsourced(3, 100));
+        edge_set.insert(edge_ev_unsourced(2, 100));
+        edge_set.insert(edge_ev_unsourced(2, 999));  // Duplicate
+        edge_set.insert(edge_ev_unsourced(5, 100));
+        edge_set.insert(edge_ev_unsourced(3, 100));
         
-        REQUIRE(edges.size() == 3);
+        REQUIRE(edge_set.size() == 3);
     }
 
     SECTION("Unsourced edges - maintains sorted order") {
-        std::set<edge_void_unsourced> edges;
+        std::set<edge_void_unsourced> edge_set;
         
-        edges.insert(edge_void_unsourced(5));
-        edges.insert(edge_void_unsourced(2));
-        edges.insert(edge_void_unsourced(8));
-        edges.insert(edge_void_unsourced(1));
+        edge_set.insert(edge_void_unsourced(5));
+        edge_set.insert(edge_void_unsourced(2));
+        edge_set.insert(edge_void_unsourced(8));
+        edge_set.insert(edge_void_unsourced(1));
         
         std::vector<uint32_t> expected = {1, 2, 5, 8};
         
         size_t i = 0;
-        for (const auto& e : edges) {
+        for (const auto& e : edge_set) {
             REQUIRE(e.target_id() == expected[i]);
             ++i;
         }
@@ -363,44 +363,44 @@ TEST_CASE("dynamic_edge works with std::set", "[edge][set][integration]") {
 
 TEST_CASE("dynamic_edge works with std::unordered_set", "[edge][unordered_set][integration]") {
     SECTION("Sourced edges - deduplicates by source_id and target_id") {
-        std::unordered_set<edge_ev_sourced> edges;
+        std::unordered_set<edge_ev_sourced> edge_set;
         
-        edges.insert(edge_ev_sourced(1, 2, 100));
-        edges.insert(edge_ev_sourced(1, 2, 999));  // Duplicate
-        edges.insert(edge_ev_sourced(1, 3, 100));
-        edges.insert(edge_ev_sourced(2, 1, 100));
+        edge_set.insert(edge_ev_sourced(1, 2, 100));
+        edge_set.insert(edge_ev_sourced(1, 2, 999));  // Duplicate
+        edge_set.insert(edge_ev_sourced(1, 3, 100));
+        edge_set.insert(edge_ev_sourced(2, 1, 100));
         
-        REQUIRE(edges.size() == 3);
+        REQUIRE(edge_set.size() == 3);
     }
 
     SECTION("Sourced edges - find works correctly") {
-        std::unordered_set<edge_void_sourced> edges;
+        std::unordered_set<edge_void_sourced> edge_set;
         
-        edges.insert(edge_void_sourced(1, 2));
-        edges.insert(edge_void_sourced(2, 3));
+        edge_set.insert(edge_void_sourced(1, 2));
+        edge_set.insert(edge_void_sourced(2, 3));
         
-        REQUIRE(edges.find(edge_void_sourced(1, 2)) != edges.end());
-        REQUIRE(edges.find(edge_void_sourced(1, 5)) == edges.end());
+        REQUIRE(edge_set.find(edge_void_sourced(1, 2)) != edge_set.end());
+        REQUIRE(edge_set.find(edge_void_sourced(1, 5)) == edge_set.end());
     }
 
     SECTION("Unsourced edges - deduplicates by target_id") {
-        std::unordered_set<edge_ev_unsourced> edges;
+        std::unordered_set<edge_ev_unsourced> edge_set;
         
-        edges.insert(edge_ev_unsourced(2, 100));
-        edges.insert(edge_ev_unsourced(2, 999));  // Duplicate
-        edges.insert(edge_ev_unsourced(5, 100));
+        edge_set.insert(edge_ev_unsourced(2, 100));
+        edge_set.insert(edge_ev_unsourced(2, 999));  // Duplicate
+        edge_set.insert(edge_ev_unsourced(5, 100));
         
-        REQUIRE(edges.size() == 2);
+        REQUIRE(edge_set.size() == 2);
     }
 
     SECTION("Unsourced edges - find works correctly") {
-        std::unordered_set<edge_void_unsourced> edges;
+        std::unordered_set<edge_void_unsourced> edge_set;
         
-        edges.insert(edge_void_unsourced(3));
-        edges.insert(edge_void_unsourced(7));
+        edge_set.insert(edge_void_unsourced(3));
+        edge_set.insert(edge_void_unsourced(7));
         
-        REQUIRE(edges.find(edge_void_unsourced(3)) != edges.end());
-        REQUIRE(edges.find(edge_void_unsourced(5)) == edges.end());
+        REQUIRE(edge_set.find(edge_void_unsourced(3)) != edge_set.end());
+        REQUIRE(edge_set.find(edge_void_unsourced(5)) == edge_set.end());
     }
 }
 

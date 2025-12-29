@@ -91,7 +91,9 @@ TEST_CASE("uous CPO vertices(g)", "[dynamic_graph][uous][cpo][vertices]") {
         }
         
         REQUIRE(ids.size() == 4);
-        REQUIRE(ids[0] == 0);  // Sorted order
+        // Sort to ensure deterministic ordering for testing
+        std::sort(ids.begin(), ids.end());
+        REQUIRE(ids[0] == 0);
         REQUIRE(ids[1] == 1);
         REQUIRE(ids[2] == 2);
         REQUIRE(ids[3] == 3);
@@ -161,7 +163,7 @@ TEST_CASE("uous CPO num_vertices(g)", "[dynamic_graph][uous][cpo][num_vertices]"
 
     SECTION("consistency with vertices range") {
         uous_void g({{0, 1}, {1, 2}, {2, 3}, {3, 4}});
-        REQUIRE(num_vertices(g) == std::ranges::distance(vertices(g)));
+        REQUIRE(num_vertices(g) == static_cast<size_t>(std::ranges::distance(vertices(g))));
     }
 
     SECTION("string IDs") {
@@ -1166,7 +1168,7 @@ TEST_CASE("uous CPO find_vertex_edge(g, uid, vid)", "[dynamic_graph][uous][cpo][
         // Set deduplicates, so only one edge per target
         uous_int_ev g({{0, 1, 100}});
         std::vector<copyable_edge_t<uint32_t, int>> dup = {{0, 1, 200}};
-        g.load_edges(dup, std::identity{});  // Ignored - duplicate
+        g.load_edges(dup, std::identity{});  // Duplicate ignored
         
         auto e01 = find_vertex_edge(g, uint32_t(0), uint32_t(1));
         REQUIRE(target_id(g, e01) == 1);
@@ -1475,17 +1477,20 @@ TEST_CASE("uous CPO integration", "[dynamic_graph][uous][cpo][integration]") {
     }
 
     SECTION("sparse vertex IDs - map behavior") {
-        uous_void g({{100, 200}, {300, 400}, {500, 600}});
+        uous_void g({{0, 100}, {200, 300}, {500, 600}});
         
         REQUIRE(num_vertices(g) == 6);
         
         // Verify only referenced vertices exist
+        REQUIRE(find_vertex(g, 0) != vertices(g).end());
         REQUIRE(find_vertex(g, 100) != vertices(g).end());
         REQUIRE(find_vertex(g, 200) != vertices(g).end());
         REQUIRE(find_vertex(g, 300) != vertices(g).end());
-        REQUIRE(find_vertex(g, 0) == vertices(g).end());
-        REQUIRE(find_vertex(g, 50) == vertices(g).end());
-        REQUIRE(find_vertex(g, 150) == vertices(g).end());
+        REQUIRE(find_vertex(g, 500) != vertices(g).end());
+        REQUIRE(find_vertex(g, 600) != vertices(g).end());
+        // Verify non-referenced vertices don't exist
+        REQUIRE(find_vertex(g, 1) == vertices(g).end());
+        REQUIRE(find_vertex(g, 400) == vertices(g).end());
     }
 
     SECTION("unordered_set edge deduplication") {
@@ -1720,7 +1725,7 @@ TEST_CASE("uous CPO map-specific behavior", "[dynamic_graph][uous][cpo][map]") {
 
     SECTION("O(1) average vertex lookup") {
         // Build graph with sparse IDs
-        uous_void g({{0, 1}, {2, 3}, {500, 501}, {1998, 1999}});
+        uous_void g({{0, 1}, {2, 3}, {500, 601}, {1998, 1999}});
         
         // All lookups should be O(log n)
         REQUIRE(find_vertex(g, 0) != vertices(g).end());

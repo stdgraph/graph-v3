@@ -1151,11 +1151,11 @@ TEST_CASE("mol bidirectional edge iteration", "[dynamic_graph][mol][edges][bidir
         REQUIRE(it != g.end());
         
         auto& v = it->second;
-        auto edges = v.edges();
+        auto edge_range = v.edges();
         
         // With std::list, edges appear in order added
         std::vector<int> values;
-        for (auto& e : edges) {
+        for (auto& e : edge_range) {
             values.push_back(e.value());
         }
         
@@ -1174,10 +1174,10 @@ TEST_CASE("mol bidirectional edge iteration", "[dynamic_graph][mol][edges][bidir
         REQUIRE(it != g.end());
         
         auto& v = it->second;
-        auto& edges = v.edges();
+        auto& edge_range = v.edges();
         
         // std::list allows decrementing iterators
-        auto last_it = edges.end();
+        auto last_it = edge_range.end();
         --last_it;
         REQUIRE(last_it->value() == 30);
         
@@ -1187,7 +1187,7 @@ TEST_CASE("mol bidirectional edge iteration", "[dynamic_graph][mol][edges][bidir
         --last_it;
         REQUIRE(last_it->value() == 10);
         
-        REQUIRE(last_it == edges.begin());
+        REQUIRE(last_it == edge_range.begin());
     }
     
     SECTION("edge count using bidirectional iteration") {

@@ -1112,11 +1112,11 @@ TEST_CASE("mod random access edge iteration", "[dynamic_graph][mod][edges][rando
         REQUIRE(it != g.end());
         
         auto& v = it->second;
-        auto edges = v.edges();
+        auto edge_range = v.edges();
         
         // With std::deque, edges appear in order added
         std::vector<int> values;
-        for (auto& e : edges) {
+        for (auto& e : edge_range) {
             values.push_back(e.value());
         }
         
@@ -1135,16 +1135,16 @@ TEST_CASE("mod random access edge iteration", "[dynamic_graph][mod][edges][rando
         REQUIRE(it != g.end());
         
         auto& v = it->second;
-        auto& edges = v.edges();
+        auto& edge_range = v.edges();
         
         // std::deque allows random access via operator[]
-        REQUIRE(edges[0].value() == 10);
-        REQUIRE(edges[1].value() == 20);
-        REQUIRE(edges[2].value() == 30);
+        REQUIRE(edge_range[0].value() == 10);
+        REQUIRE(edge_range[1].value() == 20);
+        REQUIRE(edge_range[2].value() == 30);
         
         // Also allows .at() for bounds-checked access
-        REQUIRE(edges.at(0).value() == 10);
-        REQUIRE(edges.at(2).value() == 30);
+        REQUIRE(edge_range.at(0).value() == 10);
+        REQUIRE(edge_range.at(2).value() == 30);
     }
     
     SECTION("random access via iterator arithmetic") {
@@ -1155,19 +1155,19 @@ TEST_CASE("mod random access edge iteration", "[dynamic_graph][mod][edges][rando
         REQUIRE(it != g.end());
         
         auto& v = it->second;
-        auto& edges = v.edges();
+        auto& edge_range = v.edges();
         
         // Random access iterators support + and - operators
-        auto last_it = edges.end();
+        auto last_it = edge_range.end();
         --last_it;
         REQUIRE(last_it->value() == 30);
         
         // Jump directly to middle element
-        auto middle_it = edges.begin() + 1;
+        auto middle_it = edge_range.begin() + 1;
         REQUIRE(middle_it->value() == 20);
         
         // Calculate distance
-        REQUIRE(edges.end() - edges.begin() == 3);
+        REQUIRE(edge_range.end() - edge_range.begin() == 3);
     }
     
     SECTION("edge count using random access size") {

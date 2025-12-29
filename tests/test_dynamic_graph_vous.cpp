@@ -147,18 +147,18 @@ TEST_CASE("vous load_edges", "[vous][load]") {
         auto& v0 = g[0];
         // Note: unordered_set does NOT guarantee any particular order
         // So we collect all edges and verify they're present
-        std::vector<std::pair<uint32_t, int>> edges;
+        std::vector<std::pair<uint32_t, int>> edge_list;
         for (auto& e : v0.edges()) {
-            edges.emplace_back(e.target_id(), e.value());
+            edge_list.emplace_back(e.target_id(), e.value());
         }
-        REQUIRE(edges.size() == 2);
+        REQUIRE(edge_list.size() == 2);
         
         // Sort to make assertions order-independent
-        std::ranges::sort(edges);
-        REQUIRE(edges[0].first == 1);
-        REQUIRE(edges[0].second == 100);
-        REQUIRE(edges[1].first == 2);
-        REQUIRE(edges[1].second == 200);
+        std::ranges::sort(edge_list);
+        REQUIRE(edge_list[0].first == 1);
+        REQUIRE(edge_list[0].second == 100);
+        REQUIRE(edge_list[1].first == 2);
+        REQUIRE(edge_list[1].second == 200);
     }
     
     SECTION("duplicate edges are deduplicated by unordered_set") {
@@ -350,11 +350,11 @@ TEST_CASE("vous unordered_set specific behavior", "[vous][unordered_set]") {
         
         auto& v0 = g[0];
         auto it = v0.edges().begin();
-        auto end = v0.edges().end();
+        auto end_iter = v0.edges().end();
         
         // Can iterate forward
         size_t count = 0;
-        while (it != end) {
+        while (it != end_iter) {
             ++it;
             ++count;
         }
