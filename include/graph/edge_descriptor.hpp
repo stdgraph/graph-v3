@@ -8,6 +8,7 @@
 #include "vertex_descriptor.hpp"
 #include <compare>
 #include <functional>
+#include <numeric>
 
 namespace graph {
 
