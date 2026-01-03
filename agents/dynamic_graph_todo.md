@@ -30,7 +30,7 @@
 - ✅ Phase 5.2-5.4: Combined test file with string edge cases, double IDs, custom types
 - **Test file:** test_dynamic_graph_nonintegral_ids.cpp (19 test cases, 133 assertions)
 
-**Phase 6: Integration Tests - IN PROGRESS ⏳ (60% complete)**
+**Phase 6: Integration Tests - IN PROGRESS ⏳ (65% complete)**
 - ✅ Phase 6.1: Cross-Traits Graph Construction COMPLETE (26 test cases, 144 assertions)
   - Sequential ↔ Sequential copying (vov, vofl, dol, dofl, dov)
   - Sequential ↔ Map conversions with ID type changes (uint64_t ↔ std::string)
@@ -45,9 +45,10 @@
   - ✅ Phase 6.2.5: sort COMPLETE (19 test cases, 90 assertions)
   - ✅ Phase 6.2.6: Range Adaptors and Views COMPLETE (29 test cases, 89 assertions)
   - ✅ Phase 6.2.7: Accumulate and Fold Operations COMPLETE (25 test cases, 43 assertions)
-- ⏳ Phase 6.3: Generic CPO-Based Functions IN PROGRESS (2/5 complete)
+- ⏳ Phase 6.3: Generic CPO-Based Functions IN PROGRESS (3/5 complete)
   - ✅ Phase 6.3.1: Generic Graph Queries COMPLETE (45 test cases, 66 assertions)
   - ✅ Phase 6.3.2: Generic Graph Traversal Helpers COMPLETE (34 test cases, 64 assertions)
+  - ✅ Phase 6.3.3: Generic Graph Transformations COMPLETE (30 test cases, 52 assertions)
 - ⏳ Phase 6.4: Mixed Operations PENDING
 - ⏳ Phase 6.5: Real-World Patterns PENDING
 
@@ -1422,11 +1423,12 @@ TEST_CASE("std::ranges::transform extracts IDs", "[integration][stl][ranges]") {
 
 **Goal:** Implement and test generic graph functions using only CPOs (graph-agnostic)
 
-**Status:** ⏳ **IN PROGRESS** - 2 of 5 subtasks complete (40%)
+**Status:** ⏳ **IN PROGRESS** - 3 of 5 subtasks complete (60%)
 
 **Test Files:** 
 - `tests/test_dynamic_graph_generic_queries.cpp` (~560 lines)
 - `tests/test_dynamic_graph_traversal_helpers.cpp` (~380 lines)
+- `tests/test_dynamic_graph_transformations.cpp` (~580 lines)
 
 **Prerequisites:**
 - All CPO functions implemented and tested ✅
@@ -1453,11 +1455,15 @@ TEST_CASE("std::ranges::transform extracts IDs", "[integration][stl][ranges]") {
 - ✓ All 34 test cases passing (64 assertions)
 - ✓ Functions handle empty graphs, isolated vertices, self-loops
 
-**6.3.3: Generic Graph Transformations** (30 tests)
-- `extract_subgraph(G g, std::vector<VId> vids)` - create subgraph with selected vertices
-- `copy_graph<TargetTraits>(G g)` - generic copy (from 6.1 but as reusable function)
-- `reverse_edges(G g)` - create new graph with reversed edges
-- `filter_edges(G g, Predicate p)` - create graph with subset of edges
+**6.3.3: Generic Graph Transformations** (30 tests) ✅ COMPLETE
+- ✓ `extract_subgraph(G g, std::vector<VId> vids)` - create subgraph with selected vertices (7 tests)
+- ✓ `copy_graph_generic<TargetTraits>(G g)` - generic copy (5 tests)
+- ✓ `reverse_edges(G g)` - create new graph with reversed edges (6 tests)
+- ✓ `filter_edges(G g, Predicate p)` - create graph with subset of edges (12 tests)
+- ✓ Tested with: vov, mos, dofl, dov
+- ✓ All 30 test cases passing (52 assertions)
+- ✓ ID remapping for integral types in extract_subgraph
+- ✓ Functions handle empty graphs, self-loops, cycles, bidirectional edges
 
 **6.3.4: Generic Graph Validation** (25 tests)
 - `is_dag(G g)` - check if directed acyclic graph (requires DFS/BFS - simplified check)
