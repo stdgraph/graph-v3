@@ -1,6 +1,6 @@
 # Dynamic Graph Testing and Enhancement Plan
 
-## Current Status (Updated: January 4, 2026)
+## Current Status (Updated: January 3, 2026)
 
 **Phases 1-3: COMPLETE ✅**
 - 16 traits fully tested (basic + CPO): vofl, vol, vov, vod, dofl, dol, dov, dod, mofl, mol, mov, mod, uofl, uol, uov, uod
@@ -30,7 +30,7 @@
 - ✅ Phase 5.2-5.4: Combined test file with string edge cases, double IDs, custom types
 - **Test file:** test_dynamic_graph_nonintegral_ids.cpp (19 test cases, 133 assertions)
 
-**Phase 6: Integration Tests - IN PROGRESS ⏳ (55% complete)**
+**Phase 6: Integration Tests - IN PROGRESS ⏳ (60% complete)**
 - ✅ Phase 6.1: Cross-Traits Graph Construction COMPLETE (26 test cases, 144 assertions)
   - Sequential ↔ Sequential copying (vov, vofl, dol, dofl, dov)
   - Sequential ↔ Map conversions with ID type changes (uint64_t ↔ std::string)
@@ -45,8 +45,9 @@
   - ✅ Phase 6.2.5: sort COMPLETE (19 test cases, 90 assertions)
   - ✅ Phase 6.2.6: Range Adaptors and Views COMPLETE (29 test cases, 89 assertions)
   - ✅ Phase 6.2.7: Accumulate and Fold Operations COMPLETE (25 test cases, 43 assertions)
-- ⏳ Phase 6.3: Generic CPO-Based Functions IN PROGRESS (1/5 complete)
+- ⏳ Phase 6.3: Generic CPO-Based Functions IN PROGRESS (2/5 complete)
   - ✅ Phase 6.3.1: Generic Graph Queries COMPLETE (45 test cases, 66 assertions)
+  - ✅ Phase 6.3.2: Generic Graph Traversal Helpers COMPLETE (34 test cases, 64 assertions)
 - ⏳ Phase 6.4: Mixed Operations PENDING
 - ⏳ Phase 6.5: Real-World Patterns PENDING
 
@@ -1421,9 +1422,11 @@ TEST_CASE("std::ranges::transform extracts IDs", "[integration][stl][ranges]") {
 
 **Goal:** Implement and test generic graph functions using only CPOs (graph-agnostic)
 
-**Status:** ⏳ **IN PROGRESS** - 1 of 5 subtasks complete (20%)
+**Status:** ⏳ **IN PROGRESS** - 2 of 5 subtasks complete (40%)
 
-**Test File:** `tests/test_dynamic_graph_generic_queries.cpp` (~560 lines)
+**Test Files:** 
+- `tests/test_dynamic_graph_generic_queries.cpp` (~560 lines)
+- `tests/test_dynamic_graph_traversal_helpers.cpp` (~380 lines)
 
 **Prerequisites:**
 - All CPO functions implemented and tested ✅
@@ -1441,12 +1444,14 @@ TEST_CASE("std::ranges::transform extracts IDs", "[integration][stl][ranges]") {
 - ✓ All 45 test cases passing (66 assertions)
 - ✓ Generic functions return std::optional for empty graphs (max_degree, min_degree)
 
-**6.3.2: Generic Graph Traversal Helpers** (35 tests)
-- `has_edge(G g, VId uid, VId vid)` - check edge existence using CPOs
-- `get_neighbors(G g, VId uid)` - return vector of neighbor IDs
-- `is_isolated(G g, VId uid)` - check if vertex has degree 0
-- `count_self_loops(G g)` - count edges where source == target
-- Test with different graph types
+**6.3.2: Generic Graph Traversal Helpers** (34 tests) ✅ COMPLETE
+- ✓ `generic_has_edge(G g, VId uid, VId vid)` - check edge existence using CPOs (8 tests)
+- ✓ `get_neighbors(G g, VId uid)` - return vector of neighbor IDs (9 tests)
+- ✓ `is_isolated(G g, VId uid)` - check if vertex has degree 0 (8 tests)
+- ✓ `count_self_loops(G g)` - count edges where source == target (9 tests)
+- ✓ Tested with: vov, mos, dofl, mous, dov
+- ✓ All 34 test cases passing (64 assertions)
+- ✓ Functions handle empty graphs, isolated vertices, self-loops
 
 **6.3.3: Generic Graph Transformations** (30 tests)
 - `extract_subgraph(G g, std::vector<VId> vids)` - create subgraph with selected vertices
