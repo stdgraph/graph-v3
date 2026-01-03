@@ -88,6 +88,8 @@ add_executable(graph3_tests
     test_dynamic_graph_cpo_dos.cpp
     test_dynamic_graph_mos.cpp
     test_dynamic_graph_cpo_mos.cpp
+    test_dynamic_graph_uos.cpp
+    test_dynamic_graph_cpo_uos.cpp
     test_dynamic_graph_vous.cpp
     test_dynamic_graph_cpo_vous.cpp
     test_dynamic_graph_dous.cpp
@@ -100,6 +102,7 @@ add_executable(graph3_tests
     test_dynamic_graph_nonintegral_ids.cpp
     # Phase 6: Integration tests
     test_dynamic_graph_integration.cpp
+    test_dynamic_graph_stl_algorithms.cpp
 )
 
 target_link_libraries(graph3_tests
