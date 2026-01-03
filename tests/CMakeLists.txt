@@ -103,6 +103,7 @@ add_executable(graph3_tests
     # Phase 6: Integration tests
     test_dynamic_graph_integration.cpp
     test_dynamic_graph_stl_algorithms.cpp
+    test_dynamic_graph_generic_queries.cpp
 )
 
 target_link_libraries(graph3_tests
