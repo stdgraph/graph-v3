@@ -2791,3 +2791,437 @@ TEST_CASE("views::take(0) on vertices (vov)", "[stl][6.2.6][views]") {
     
     REQUIRE(std::ranges::distance(none) == 0);
 }
+
+//==================================================================================================
+// Phase 6.2.7: Accumulate and Fold Operations
+//==================================================================================================
+
+TEST_CASE("accumulate sum of vertex values (vov)", "[stl][6.2.7][accumulate]") {
+    using G = vov_int_verts;
+    G g({{0, 1}, {1, 2}, {2, 3}});
+    for (auto&& v : vertices(g)) {
+        auto id = vertex_id(g, v);
+        vertex_value(g, v) = static_cast<int>(id) * 10;
+    }
+    
+    int sum = 0;
+    for (auto&& v : vertices(g)) {
+        sum += vertex_value(g, v);
+    }
+    
+    REQUIRE(sum == 60); // 0 + 10 + 20 + 30
+}
+
+TEST_CASE("accumulate sum of edge values (vov)", "[stl][6.2.7][accumulate]") {
+    using G = vov_int_edges;
+    G g({{0, 1, 10}, {0, 2, 20}, {1, 2, 15}, {2, 3, 25}});
+    
+    int sum = 0;
+    for (auto&& v : vertices(g)) {
+        for (auto&& e : edges(g, v)) {
+            sum += edge_value(g, e);
+        }
+    }
+    
+    REQUIRE(sum == 70); // 10 + 20 + 15 + 25
+}
+
+TEST_CASE("accumulate with std::accumulate on vertex values (vov)", "[stl][6.2.7][accumulate]") {
+    using G = vov_int_verts;
+    G g({{0, 1}, {1, 2}});
+    for (auto&& v : vertices(g)) {
+        vertex_value(g, v) = static_cast<int>(vertex_id(g, v)) * 5;
+    }
+    
+    std::vector<int> values;
+    for (auto&& v : vertices(g)) {
+        values.push_back(vertex_value(g, v));
+    }
+    
+    int sum = std::accumulate(values.begin(), values.end(), 0);
+    
+    REQUIRE(sum == 15); // 0 + 5 + 10
+}
+
+TEST_CASE("accumulate with std::accumulate on edge values (vov)", "[stl][6.2.7][accumulate]") {
+    using G = vov_int_edges;
+    G g({{0, 1, 100}, {1, 2, 200}, {2, 3, 300}});
+    
+    std::vector<int> values;
+    for (auto&& v : vertices(g)) {
+        for (auto&& e : edges(g, v)) {
+            values.push_back(edge_value(g, e));
+        }
+    }
+    
+    int sum = std::accumulate(values.begin(), values.end(), 0);
+    
+    REQUIRE(sum == 600);
+}
+
+TEST_CASE("count total out-degree (vov)", "[stl][6.2.7][accumulate]") {
+    using G = vov_void;
+    G g({{0, 1}, {0, 2}, {1, 2}, {1, 3}, {2, 3}});
+    
+    size_t total_degree = 0;
+    for (auto&& v : vertices(g)) {
+        total_degree += std::ranges::distance(edges(g, v));
+    }
+    
+    REQUIRE(total_degree == 5); // 2 + 2 + 1 + 0
+}
+
+TEST_CASE("sum of all degrees equals edge count (vov)", "[stl][6.2.7][accumulate]") {
+    using G = vov_void;
+    G g({{0, 1}, {0, 2}, {1, 2}, {2, 3}, {3, 0}});
+    
+    size_t edge_count = 0;
+    for (auto&& v : vertices(g)) {
+        edge_count += std::ranges::distance(edges(g, v));
+    }
+    
+    size_t total_degree = 0;
+    for (auto&& v : vertices(g)) {
+        total_degree += std::ranges::distance(edges(g, v));
+    }
+    
+    REQUIRE(total_degree == edge_count);
+    REQUIRE(edge_count == 5);
+}
+
+TEST_CASE("find max degree vertex (vov)", "[stl][6.2.7][accumulate]") {
+    using G = vov_void;
+    G g({{0, 1}, {0, 2}, {0, 3}, {1, 2}, {2, 3}});
+    
+    uint64_t max_degree_id = 0;
+    size_t max_degree = 0;
+    
+    for (auto&& v : vertices(g)) {
+        size_t degree = std::ranges::distance(edges(g, v));
+        if (degree > max_degree) {
+            max_degree = degree;
+            max_degree_id = vertex_id(g, v);
+        }
+    }
+    
+    REQUIRE(max_degree_id == 0);
+    REQUIRE(max_degree == 3);
+}
+
+TEST_CASE("find min degree vertex (vov)", "[stl][6.2.7][accumulate]") {
+    using G = vov_void;
+    G g({{0, 1}, {0, 2}, {1, 2}, {2, 3}});
+    
+    uint64_t min_degree_id = 0;
+    size_t min_degree = std::numeric_limits<size_t>::max();
+    
+    for (auto&& v : vertices(g)) {
+        size_t degree = std::ranges::distance(edges(g, v));
+        if (degree < min_degree) {
+            min_degree = degree;
+            min_degree_id = vertex_id(g, v);
+        }
+    }
+    
+    REQUIRE(min_degree_id == 3);
+    REQUIRE(min_degree == 0);
+}
+
+TEST_CASE("compute average degree (vov)", "[stl][6.2.7][accumulate]") {
+    using G = vov_void;
+    G g({{0, 1}, {0, 2}, {1, 2}, {2, 3}});
+    
+    size_t total_degree = 0;
+    size_t vertex_count = 0;
+    
+    for (auto&& v : vertices(g)) {
+        total_degree += std::ranges::distance(edges(g, v));
+        ++vertex_count;
+    }
+    
+    double avg_degree = static_cast<double>(total_degree) / vertex_count;
+    
+    REQUIRE(vertex_count == 4);
+    REQUIRE(total_degree == 4);
+    REQUIRE(avg_degree == 1.0);
+}
+
+TEST_CASE("find vertex with max value (vov)", "[stl][6.2.7][accumulate]") {
+    using G = vov_int_verts;
+    G g({{0, 1}, {1, 2}, {2, 3}});
+    for (auto&& v : vertices(g)) {
+        auto id = vertex_id(g, v);
+        vertex_value(g, v) = (id == 0) ? 50 : (id == 1) ? 150 : (id == 2) ? 100 : 25;
+    }
+    
+    uint64_t max_value_id = 0;
+    int max_value = std::numeric_limits<int>::min();
+    
+    for (auto&& v : vertices(g)) {
+        int val = vertex_value(g, v);
+        if (val > max_value) {
+            max_value = val;
+            max_value_id = vertex_id(g, v);
+        }
+    }
+    
+    REQUIRE(max_value_id == 1);
+    REQUIRE(max_value == 150);
+}
+
+TEST_CASE("find edge with max value (vov)", "[stl][6.2.7][accumulate]") {
+    using G = vov_int_edges;
+    G g({{0, 1, 10}, {0, 2, 50}, {1, 2, 30}, {2, 3, 25}});
+    
+    struct EdgeRef {
+        uint64_t source;
+        uint64_t target;
+        int value;
+    };
+    
+    EdgeRef max_edge{0, 0, std::numeric_limits<int>::min()};
+    
+    for (auto&& v : vertices(g)) {
+        auto uid = vertex_id(g, v);
+        for (auto&& e : edges(g, v)) {
+            int val = edge_value(g, e);
+            if (val > max_edge.value) {
+                max_edge = {uid, target_id(g, e), val};
+            }
+        }
+    }
+    
+    REQUIRE(max_edge.source == 0);
+    REQUIRE(max_edge.target == 2);
+    REQUIRE(max_edge.value == 50);
+}
+
+TEST_CASE("compute average vertex value (vov)", "[stl][6.2.7][accumulate]") {
+    using G = vov_int_verts;
+    G g({{0, 1}, {1, 2}, {2, 3}});
+    for (auto&& v : vertices(g)) {
+        vertex_value(g, v) = static_cast<int>(vertex_id(g, v)) * 10;
+    }
+    
+    int sum = 0;
+    size_t count = 0;
+    
+    for (auto&& v : vertices(g)) {
+        sum += vertex_value(g, v);
+        ++count;
+    }
+    
+    double avg = static_cast<double>(sum) / count;
+    
+    REQUIRE(count == 4);
+    REQUIRE(sum == 60);
+    REQUIRE(avg == 15.0);
+}
+
+TEST_CASE("compute average edge value (vov)", "[stl][6.2.7][accumulate]") {
+    using G = vov_int_edges;
+    G g({{0, 1, 10}, {0, 2, 20}, {1, 2, 30}, {2, 3, 40}});
+    
+    int sum = 0;
+    size_t count = 0;
+    
+    for (auto&& v : vertices(g)) {
+        for (auto&& e : edges(g, v)) {
+            sum += edge_value(g, e);
+            ++count;
+        }
+    }
+    
+    double avg = static_cast<double>(sum) / count;
+    
+    REQUIRE(count == 4);
+    REQUIRE(sum == 100);
+    REQUIRE(avg == 25.0);
+}
+
+TEST_CASE("product of vertex values (vov)", "[stl][6.2.7][accumulate]") {
+    using G = vov_int_verts;
+    G g({{0, 1}, {1, 2}});
+    for (auto&& v : vertices(g)) {
+        auto id = vertex_id(g, v);
+        vertex_value(g, v) = (id == 0) ? 2 : (id == 1) ? 3 : 5;
+    }
+    
+    std::vector<int> values;
+    for (auto&& v : vertices(g)) {
+        values.push_back(vertex_value(g, v));
+    }
+    
+    int product = std::accumulate(values.begin(), values.end(), 1, std::multiplies<int>());
+    
+    REQUIRE(product == 30); // 2 * 3 * 5
+}
+
+TEST_CASE("count vertices with degree > threshold (vov)", "[stl][6.2.7][accumulate]") {
+    using G = vov_void;
+    G g({{0, 1}, {0, 2}, {0, 3}, {1, 2}, {2, 3}});
+    
+    size_t count = 0;
+    for (auto&& v : vertices(g)) {
+        if (std::ranges::distance(edges(g, v)) >= 2) {
+            ++count;
+        }
+    }
+    
+    REQUIRE(count == 1); // vertex 0 has degree 3
+}
+
+TEST_CASE("sum vertex values with filter (vov)", "[stl][6.2.7][accumulate]") {
+    using G = vov_int_verts;
+    G g({{0, 1}, {1, 2}, {2, 3}, {3, 4}});
+    for (auto&& v : vertices(g)) {
+        vertex_value(g, v) = static_cast<int>(vertex_id(g, v)) * 10;
+    }
+    
+    int sum = 0;
+    for (auto&& v : vertices(g)) {
+        int val = vertex_value(g, v);
+        if (val >= 20) {
+            sum += val;
+        }
+    }
+    
+    REQUIRE(sum == 90); // 20 + 30 + 40
+}
+
+TEST_CASE("sum edge values with filter (vov)", "[stl][6.2.7][accumulate]") {
+    using G = vov_int_edges;
+    G g({{0, 1, 5}, {0, 2, 15}, {1, 2, 25}, {2, 3, 35}});
+    
+    int sum = 0;
+    for (auto&& v : vertices(g)) {
+        for (auto&& e : edges(g, v)) {
+            int val = edge_value(g, e);
+            if (val > 10) {
+                sum += val;
+            }
+        }
+    }
+    
+    REQUIRE(sum == 75); // 15 + 25 + 35
+}
+
+TEST_CASE("accumulate on empty graph (vov)", "[stl][6.2.7][accumulate]") {
+    using G = vov_int_verts;
+    G g;
+    
+    int sum = 0;
+    for (auto&& v : vertices(g)) {
+        sum += vertex_value(g, v);
+    }
+    
+    REQUIRE(sum == 0);
+}
+
+TEST_CASE("accumulate on graph with no edges (vov)", "[stl][6.2.7][accumulate]") {
+    using G = vov_int_edges;
+    G g({{0}, {1}});  // Two vertices, no edges
+    
+    int sum = 0;
+    for (auto&& v : vertices(g)) {
+        for (auto&& e : edges(g, v)) {
+            sum += edge_value(g, e);
+        }
+    }
+    
+    REQUIRE(sum == 0);
+}
+
+TEST_CASE("fold with custom operation - concatenate IDs (vov)", "[stl][6.2.7][accumulate]") {
+    using G = vov_void;
+    G g({{0, 1}, {1, 2}, {2, 3}});
+    
+    std::string result;
+    for (auto&& v : vertices(g)) {
+        if (!result.empty()) result += ",";
+        result += std::to_string(vertex_id(g, v));
+    }
+    
+    REQUIRE(result == "0,1,2,3");
+}
+
+TEST_CASE("reduce - count self-loops (vov)", "[stl][6.2.7][accumulate]") {
+    using G = vov_void;
+    G g({{0, 0}, {0, 1}, {1, 1}, {1, 2}, {2, 2}});
+    
+    size_t self_loop_count = 0;
+    for (auto&& v : vertices(g)) {
+        auto uid = vertex_id(g, v);
+        for (auto&& e : edges(g, v)) {
+            if (uid == target_id(g, e)) {
+                ++self_loop_count;
+            }
+        }
+    }
+    
+    REQUIRE(self_loop_count == 3);
+}
+
+TEST_CASE("accumulate degrees into vector (vov)", "[stl][6.2.7][accumulate]") {
+    using G = vov_void;
+    G g({{0, 1}, {0, 2}, {1, 2}, {2, 3}});
+    
+    std::vector<size_t> degrees;
+    for (auto&& v : vertices(g)) {
+        degrees.push_back(std::ranges::distance(edges(g, v)));
+    }
+    
+    REQUIRE(degrees.size() == 4);
+    REQUIRE(degrees[0] == 2); // vertex 0
+    REQUIRE(degrees[1] == 1); // vertex 1
+    REQUIRE(degrees[2] == 1); // vertex 2
+    REQUIRE(degrees[3] == 0); // vertex 3
+}
+
+TEST_CASE("find vertices with specific degree (vov)", "[stl][6.2.7][accumulate]") {
+    using G = vov_void;
+    G g({{0, 1}, {0, 2}, {1, 2}, {1, 3}, {2, 3}});
+    
+    std::vector<uint64_t> degree_two;
+    for (auto&& v : vertices(g)) {
+        if (std::ranges::distance(edges(g, v)) == 2) {
+            degree_two.push_back(vertex_id(g, v));
+        }
+    }
+    
+    REQUIRE(degree_two.size() == 2);
+    REQUIRE(degree_two[0] == 0);
+    REQUIRE(degree_two[1] == 1);
+}
+
+TEST_CASE("accumulate with map-based graph (mos)", "[stl][6.2.7][accumulate]") {
+    using mos_void = dynamic_graph<void, void, void, std::string, false,
+                                    mos_graph_traits<void, void, void, std::string, false>>;
+    mos_void g({{{"a", "b"}, {"b", "c"}, {"c", "d"}}});
+    
+    size_t total_degree = 0;
+    for (auto&& v : vertices(g)) {
+        total_degree += std::ranges::distance(edges(g, v));
+    }
+    
+    REQUIRE(total_degree == 3);
+}
+
+TEST_CASE("weighted sum - vertex values as weights (vov)", "[stl][6.2.7][accumulate]") {
+    using G = vov_int_both;
+    G g({{0, 1, 10}, {0, 2, 20}, {1, 2, 15}});
+    for (auto&& v : vertices(g)) {
+        vertex_value(g, v) = static_cast<int>(vertex_id(g, v)) + 1;
+    }
+    
+    // Weighted sum: for each edge, multiply edge_value by source vertex_value
+    int weighted_sum = 0;
+    for (auto&& v : vertices(g)) {
+        int weight = vertex_value(g, v);
+        for (auto&& e : edges(g, v)) {
+            weighted_sum += edge_value(g, e) * weight;
+        }
+    }
+    
+    REQUIRE(weighted_sum == 60); // (10*1 + 20*1) + (15*2)
+}
