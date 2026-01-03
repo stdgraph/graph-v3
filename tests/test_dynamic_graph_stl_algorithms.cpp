@@ -2292,3 +2292,502 @@ TEST_CASE("sort with both vertex and edge values (vov)", "[stl][6.2.5][sort]") {
     REQUIRE(data[2].vval == 200);
     REQUIRE(data[2].eval == 40);
 }
+
+//==================================================================================================
+// Phase 6.2.6: Range Adaptors and Views
+//==================================================================================================
+
+TEST_CASE("views::filter on vertices by value (vov)", "[stl][6.2.6][views]") {
+    using G = vov_int_verts;
+    G g({{0, 1}, {1, 2}});
+    for (auto&& v : vertices(g)) {
+        auto id = vertex_id(g, v);
+        vertex_value(g, v) = (id == 0) ? 100 : (id == 1) ? 200 : 300;
+    }
+    
+    auto filtered = vertices(g) | std::views::filter([&g](auto&& v) {
+        return vertex_value(g, v) >= 200;
+    });
+    
+    size_t count = 0;
+    for (auto&& v : filtered) {
+        REQUIRE(vertex_value(g, v) >= 200);
+        ++count;
+    }
+    REQUIRE(count == 2);
+}
+
+TEST_CASE("views::filter on edges by value (vov)", "[stl][6.2.6][views]") {
+    using G = vov_int_edges;
+    G g({{0, 1, 10}, {0, 2, 50}, {1, 2, 30}});
+    
+    auto v0 = *find_vertex(g, 0);
+    auto filtered = edges(g, v0) | std::views::filter([&g](auto&& e) {
+        return edge_value(g, e) > 20;
+    });
+    
+    size_t count = 0;
+    for (auto&& e : filtered) {
+        REQUIRE(edge_value(g, e) > 20);
+        ++count;
+    }
+    REQUIRE(count == 1);
+    REQUIRE(std::ranges::distance(filtered) == 1);
+}
+
+TEST_CASE("views::filter by degree (vov)", "[stl][6.2.6][views]") {
+    using G = vov_void;
+    G g({{0, 1}, {0, 2}, {1, 2}, {3, 4}});
+    
+    auto high_degree = vertices(g) | std::views::filter([&g](auto&& v) {
+        return std::ranges::distance(edges(g, v)) >= 2;
+    });
+    
+    std::vector<uint64_t> ids;
+    for (auto&& v : high_degree) {
+        ids.push_back(vertex_id(g, v));
+    }
+    
+    REQUIRE(ids.size() == 1);
+    REQUIRE(ids[0] == 0);
+}
+
+TEST_CASE("views::transform on vertices to extract IDs (vov)", "[stl][6.2.6][views]") {
+    using G = vov_void;
+    G g({{0, 1}, {1, 2}, {2, 3}});
+    
+    auto ids = vertices(g) | std::views::transform([&g](auto&& v) {
+        return vertex_id(g, v);
+    });
+    
+    std::vector<uint64_t> id_vec(ids.begin(), ids.end());
+    
+    REQUIRE(id_vec.size() == 4);
+    REQUIRE(id_vec[0] == 0);
+    REQUIRE(id_vec[1] == 1);
+    REQUIRE(id_vec[2] == 2);
+    REQUIRE(id_vec[3] == 3);
+}
+
+TEST_CASE("views::transform on edges to extract target IDs (vov)", "[stl][6.2.6][views]") {
+    using G = vov_void;
+    G g({{0, 1}, {0, 2}, {0, 3}});
+    
+    auto v0 = *find_vertex(g, 0);
+    auto targets = edges(g, v0) | std::views::transform([&g](auto&& e) {
+        return target_id(g, e);
+    });
+    
+    std::vector<uint64_t> target_vec(targets.begin(), targets.end());
+    std::ranges::sort(target_vec);
+    
+    REQUIRE(target_vec.size() == 3);
+    REQUIRE(target_vec[0] == 1);
+    REQUIRE(target_vec[1] == 2);
+    REQUIRE(target_vec[2] == 3);
+}
+
+TEST_CASE("views::transform on vertex values (vov)", "[stl][6.2.6][views]") {
+    using G = vov_int_verts;
+    G g({{0, 1}, {1, 2}});
+    for (auto&& v : vertices(g)) {
+        auto id = vertex_id(g, v);
+        vertex_value(g, v) = static_cast<int>(id) * 10;
+    }
+    
+    auto doubled = vertices(g) | std::views::transform([&g](auto&& v) {
+        return vertex_value(g, v) * 2;
+    });
+    
+    std::vector<int> values(doubled.begin(), doubled.end());
+    
+    REQUIRE(values.size() == 3);
+    REQUIRE(values[0] == 0);
+    REQUIRE(values[1] == 20);
+    REQUIRE(values[2] == 40);
+}
+
+TEST_CASE("views::transform on edge values (vov)", "[stl][6.2.6][views]") {
+    using G = vov_int_edges;
+    G g({{0, 1, 10}, {0, 2, 20}});
+    
+    auto v0 = *find_vertex(g, 0);
+    auto scaled = edges(g, v0) | std::views::transform([&g](auto&& e) {
+        return edge_value(g, e) * 3;
+    });
+    
+    std::vector<int> values(scaled.begin(), scaled.end());
+    std::ranges::sort(values);
+    
+    REQUIRE(values.size() == 2);
+    REQUIRE(values[0] == 30);
+    REQUIRE(values[1] == 60);
+}
+
+TEST_CASE("views::take on vertices (vov)", "[stl][6.2.6][views]") {
+    using G = vov_void;
+    G g({{0, 1}, {1, 2}, {2, 3}, {3, 4}, {4, 5}});
+    
+    auto first_three = vertices(g) | std::views::take(3);
+    
+    size_t count = 0;
+    for (auto&& v : first_three) {
+        REQUIRE(vertex_id(g, v) < 3);
+        ++count;
+    }
+    REQUIRE(count == 3);
+}
+
+TEST_CASE("views::take on edges (vov)", "[stl][6.2.6][views]") {
+    using G = vov_void;
+    G g({{0, 1}, {0, 2}, {0, 3}, {0, 4}});
+    
+    auto v0 = *find_vertex(g, 0);
+    auto first_two = edges(g, v0) | std::views::take(2);
+    
+    REQUIRE(std::ranges::distance(first_two) == 2);
+}
+
+TEST_CASE("views::take more than available (vov)", "[stl][6.2.6][views]") {
+    using G = vov_void;
+    G g({{0, 1}, {1, 2}});
+    
+    auto many = vertices(g) | std::views::take(100);
+    
+    REQUIRE(std::ranges::distance(many) == 3);
+}
+
+TEST_CASE("views::drop on vertices (vov)", "[stl][6.2.6][views]") {
+    using G = vov_void;
+    G g({{0, 1}, {1, 2}, {2, 3}, {3, 4}});
+    
+    auto skip_first = vertices(g) | std::views::drop(2);
+    
+    std::vector<uint64_t> ids;
+    for (auto&& v : skip_first) {
+        ids.push_back(vertex_id(g, v));
+    }
+    
+    REQUIRE(ids.size() == 3);
+    REQUIRE(ids[0] == 2);
+    REQUIRE(ids[1] == 3);
+    REQUIRE(ids[2] == 4);
+}
+
+TEST_CASE("views::drop on edges (vov)", "[stl][6.2.6][views]") {
+    using G = vov_void;
+    G g({{0, 1}, {0, 2}, {0, 3}});
+    
+    auto v0 = *find_vertex(g, 0);
+    auto skip_one = edges(g, v0) | std::views::drop(1);
+    
+    REQUIRE(std::ranges::distance(skip_one) == 2);
+}
+
+TEST_CASE("views::drop more than available (vov)", "[stl][6.2.6][views]") {
+    using G = vov_void;
+    G g({{0, 1}});
+    
+    auto skip_many = vertices(g) | std::views::drop(10);
+    
+    REQUIRE(std::ranges::distance(skip_many) == 0);
+}
+
+TEST_CASE("views::reverse on vector (vov)", "[stl][6.2.6][views]") {
+    using G = vov_void;
+    G g({{0, 1}, {1, 2}, {2, 3}});
+    
+    // Extract IDs to vector first, then reverse the vector
+    std::vector<uint64_t> ids;
+    for (auto&& v : vertices(g)) {
+        ids.push_back(vertex_id(g, v));
+    }
+    
+    auto reversed = ids | std::views::reverse;
+    std::vector<uint64_t> reversed_ids(reversed.begin(), reversed.end());
+    
+    REQUIRE(reversed_ids.size() == 4);
+    REQUIRE(reversed_ids[0] == 3);
+    REQUIRE(reversed_ids[1] == 2);
+    REQUIRE(reversed_ids[2] == 1);
+    REQUIRE(reversed_ids[3] == 0);
+}
+
+TEST_CASE("pipeline: filter then transform vertices (vov)", "[stl][6.2.6][views]") {
+    using G = vov_int_verts;
+    G g({{0, 1}, {1, 2}, {2, 3}});
+    for (auto&& v : vertices(g)) {
+        auto id = vertex_id(g, v);
+        vertex_value(g, v) = (id == 0) ? 100 : (id == 1) ? 200 : (id == 2) ? 150 : 300;
+    }
+    
+    auto result = vertices(g) 
+        | std::views::filter([&g](auto&& v) { return vertex_value(g, v) >= 150; })
+        | std::views::transform([&g](auto&& v) { return vertex_id(g, v); });
+    
+    std::vector<uint64_t> ids(result.begin(), result.end());
+    std::ranges::sort(ids);
+    
+    REQUIRE(ids.size() == 3);
+    REQUIRE(ids[0] == 1);
+    REQUIRE(ids[1] == 2);
+    REQUIRE(ids[2] == 3);
+}
+
+TEST_CASE("pipeline: filter then transform edges (vov)", "[stl][6.2.6][views]") {
+    using G = vov_int_edges;
+    G g({{0, 1, 10}, {0, 2, 50}, {0, 3, 30}, {0, 4, 60}});
+    
+    auto v0 = *find_vertex(g, 0);
+    auto result = edges(g, v0)
+        | std::views::filter([&g](auto&& e) { return edge_value(g, e) > 25; })
+        | std::views::transform([&g](auto&& e) { return target_id(g, e); });
+    
+    std::vector<uint64_t> targets(result.begin(), result.end());
+    std::ranges::sort(targets);
+    
+    REQUIRE(targets.size() == 3);
+    REQUIRE(targets[0] == 2);
+    REQUIRE(targets[1] == 3);
+    REQUIRE(targets[2] == 4);
+}
+
+TEST_CASE("pipeline: transform then take vertices (vov)", "[stl][6.2.6][views]") {
+    using G = vov_int_verts;
+    G g({{0, 1}, {1, 2}, {2, 3}});
+    for (auto&& v : vertices(g)) {
+        vertex_value(g, v) = static_cast<int>(vertex_id(g, v)) * 10;
+    }
+    
+    auto result = vertices(g)
+        | std::views::transform([&g](auto&& v) { return vertex_value(g, v); })
+        | std::views::take(3);
+    
+    std::vector<int> values;
+    for (auto val : result) {
+        values.push_back(val);
+    }
+    
+    REQUIRE(values.size() == 3);
+    REQUIRE(values[0] == 0);
+    REQUIRE(values[1] == 10);
+    REQUIRE(values[2] == 20);
+}
+
+TEST_CASE("pipeline: drop then transform edges (vov)", "[stl][6.2.6][views]") {
+    using G = vov_int_edges;
+    G g({{0, 1, 10}, {0, 2, 20}, {0, 3, 30}, {0, 4, 40}});
+    
+    auto v0 = *find_vertex(g, 0);
+    auto result = edges(g, v0)
+        | std::views::drop(1)
+        | std::views::transform([&g](auto&& e) { return edge_value(g, e); });
+    
+    std::vector<int> values(result.begin(), result.end());
+    std::ranges::sort(values);
+    
+    REQUIRE(values.size() == 3);
+    REQUIRE(values[0] == 20);
+    REQUIRE(values[1] == 30);
+    REQUIRE(values[2] == 40);
+}
+
+TEST_CASE("pipeline: filter then take vertices (vov)", "[stl][6.2.6][views]") {
+    using G = vov_int_verts;
+    G g({{0, 1}, {1, 2}, {2, 3}, {3, 4}});
+    for (auto&& v : vertices(g)) {
+        vertex_value(g, v) = static_cast<int>(vertex_id(g, v)) % 2 == 0 ? 100 : 200;
+    }
+    
+    auto result = vertices(g)
+        | std::views::filter([&g](auto&& v) { return vertex_value(g, v) == 100; })
+        | std::views::take(2);
+    
+    size_t count = std::ranges::distance(result);
+    REQUIRE(count == 2);
+}
+
+TEST_CASE("pipeline: take then filter vertices (vov)", "[stl][6.2.6][views]") {
+    using G = vov_int_verts;
+    G g({{0, 1}, {1, 2}, {2, 3}});
+    for (auto&& v : vertices(g)) {
+        auto id = vertex_id(g, v);
+        vertex_value(g, v) = (id == 0) ? 50 : (id == 1) ? 150 : 250;
+    }
+    
+    auto result = vertices(g)
+        | std::views::take(3)
+        | std::views::filter([&g](auto&& v) { return vertex_value(g, v) > 100; });
+    
+    std::vector<int> values;
+    for (auto&& v : result) {
+        values.push_back(vertex_value(g, v));
+    }
+    
+    REQUIRE(values.size() == 2);
+    REQUIRE(values[0] == 150);
+    REQUIRE(values[1] == 250);
+}
+
+TEST_CASE("pipeline: three-stage filter-transform-take (vov)", "[stl][6.2.6][views]") {
+    using G = vov_int_verts;
+    G g({{0, 1}, {1, 2}, {2, 3}, {3, 4}, {4, 5}});
+    for (auto&& v : vertices(g)) {
+        vertex_value(g, v) = static_cast<int>(vertex_id(g, v)) * 10;
+    }
+    
+    auto result = vertices(g)
+        | std::views::filter([&g](auto&& v) { return vertex_value(g, v) >= 20; })
+        | std::views::transform([&g](auto&& v) { return vertex_value(g, v) / 10; })
+        | std::views::take(3);
+    
+    std::vector<int> values;
+    for (auto val : result) {
+        values.push_back(val);
+    }
+    
+    REQUIRE(values.size() == 3);
+    REQUIRE(values[0] == 2);
+    REQUIRE(values[1] == 3);
+    REQUIRE(values[2] == 4);
+}
+
+TEST_CASE("views::filter on empty vertex range (vov)", "[stl][6.2.6][views]") {
+    using G = vov_void;
+    G g;
+    
+    auto filtered = vertices(g) | std::views::filter([](auto&&) { return true; });
+    
+    REQUIRE(std::ranges::distance(filtered) == 0);
+}
+
+TEST_CASE("views::filter on empty edge range (vov)", "[stl][6.2.6][views]") {
+    using G = vov_void;
+    G g({{0, 1}});
+    
+    auto v1 = *find_vertex(g, 1);
+    auto filtered = edges(g, v1) | std::views::filter([](auto&&) { return true; });
+    
+    REQUIRE(std::ranges::distance(filtered) == 0);
+}
+
+TEST_CASE("views::transform with complex lambda (vov)", "[stl][6.2.6][views]") {
+    using G = vov_int_edges;
+    G g({{0, 1, 10}, {0, 2, 20}, {1, 2, 15}});
+    
+    struct EdgeInfo {
+        uint64_t source;
+        uint64_t target;
+        int value;
+        int doubled;
+    };
+    
+    auto v0 = *find_vertex(g, 0);
+    auto result = edges(g, v0) | std::views::transform([&g, v0](auto&& e) {
+        return EdgeInfo{
+            vertex_id(g, v0),
+            target_id(g, e),
+            edge_value(g, e),
+            edge_value(g, e) * 2
+        };
+    });
+    
+    std::vector<EdgeInfo> infos(result.begin(), result.end());
+    std::ranges::sort(infos, [](const auto& a, const auto& b) {
+        return a.target < b.target;
+    });
+    
+    REQUIRE(infos.size() == 2);
+    REQUIRE(infos[0].source == 0);
+    REQUIRE(infos[0].target == 1);
+    REQUIRE(infos[0].value == 10);
+    REQUIRE(infos[0].doubled == 20);
+    REQUIRE(infos[1].target == 2);
+    REQUIRE(infos[1].value == 20);
+    REQUIRE(infos[1].doubled == 40);
+}
+
+TEST_CASE("views with map-based graph (mos)", "[stl][6.2.6][views]") {
+    using mos_void = dynamic_graph<void, void, void, std::string, false,
+                                    mos_graph_traits<void, void, void, std::string, false>>;
+    mos_void g({{{"a", "b"}, {"b", "c"}, {"c", "d"}}});
+    
+    auto filtered = vertices(g) | std::views::filter([&g](auto&& v) {
+        auto id = vertex_id(g, v);
+        return id != "b";
+    });
+    
+    std::vector<std::string> ids;
+    for (auto&& v : filtered) {
+        ids.push_back(vertex_id(g, v));
+    }
+    std::ranges::sort(ids);
+    
+    REQUIRE(ids.size() == 3);
+    REQUIRE(ids[0] == "a");
+    REQUIRE(ids[1] == "c");
+    REQUIRE(ids[2] == "d");
+}
+
+TEST_CASE("views with deque-based graph (dofl)", "[stl][6.2.6][views]") {
+    using G = dofl_void;
+    G g({{0, 1}, {1, 2}, {2, 3}});
+    
+    auto transformed = vertices(g) | std::views::transform([&g](auto&& v) {
+        return vertex_id(g, v) * 2;
+    });
+    
+    std::vector<uint64_t> doubled(transformed.begin(), transformed.end());
+    
+    REQUIRE(doubled.size() == 4);
+    REQUIRE(doubled[0] == 0);
+    REQUIRE(doubled[1] == 2);
+    REQUIRE(doubled[2] == 4);
+    REQUIRE(doubled[3] == 6);
+}
+
+TEST_CASE("complex pipeline: filter-drop-transform-take (vov)", "[stl][6.2.6][views]") {
+    using G = vov_int_verts;
+    G g({{0, 1}, {1, 2}, {2, 3}, {3, 4}, {4, 5}, {5, 6}});
+    for (auto&& v : vertices(g)) {
+        vertex_value(g, v) = static_cast<int>(vertex_id(g, v)) * 5;
+    }
+    
+    auto result = vertices(g)
+        | std::views::filter([&g](auto&& v) { return vertex_value(g, v) >= 10; })
+        | std::views::drop(1)
+        | std::views::transform([&g](auto&& v) { return vertex_value(g, v); })
+        | std::views::take(2);
+    
+    std::vector<int> values;
+    for (auto val : result) {
+        values.push_back(val);
+    }
+    
+    REQUIRE(values.size() == 2);
+    REQUIRE(values[0] == 15);
+    REQUIRE(values[1] == 20);
+}
+
+TEST_CASE("views::filter with all elements rejected (vov)", "[stl][6.2.6][views]") {
+    using G = vov_int_verts;
+    G g({{0, 1}, {1, 2}});
+    for (auto&& v : vertices(g)) {
+        vertex_value(g, v) = 50;
+    }
+    
+    auto filtered = vertices(g) | std::views::filter([&g](auto&& v) {
+        return vertex_value(g, v) > 100;
+    });
+    
+    REQUIRE(std::ranges::distance(filtered) == 0);
+}
+
+TEST_CASE("views::take(0) on vertices (vov)", "[stl][6.2.6][views]") {
+    using G = vov_void;
+    G g({{0, 1}, {1, 2}});
+    
+    auto none = vertices(g) | std::views::take(0);
+    
+    REQUIRE(std::ranges::distance(none) == 0);
+}
