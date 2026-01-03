@@ -30,7 +30,7 @@
 - ✅ Phase 5.2-5.4: Combined test file with string edge cases, double IDs, custom types
 - **Test file:** test_dynamic_graph_nonintegral_ids.cpp (19 test cases, 133 assertions)
 
-**Phase 6: Integration Tests - IN PROGRESS ⏳ (65% complete)**
+**Phase 6: Integration Tests - IN PROGRESS ⏳ (70% complete)**
 - ✅ Phase 6.1: Cross-Traits Graph Construction COMPLETE (26 test cases, 144 assertions)
   - Sequential ↔ Sequential copying (vov, vofl, dol, dofl, dov)
   - Sequential ↔ Map conversions with ID type changes (uint64_t ↔ std::string)
@@ -45,10 +45,11 @@
   - ✅ Phase 6.2.5: sort COMPLETE (19 test cases, 90 assertions)
   - ✅ Phase 6.2.6: Range Adaptors and Views COMPLETE (29 test cases, 89 assertions)
   - ✅ Phase 6.2.7: Accumulate and Fold Operations COMPLETE (25 test cases, 43 assertions)
-- ⏳ Phase 6.3: Generic CPO-Based Functions IN PROGRESS (3/5 complete)
+- ⏳ Phase 6.3: Generic CPO-Based Functions IN PROGRESS (4/5 complete)
   - ✅ Phase 6.3.1: Generic Graph Queries COMPLETE (45 test cases, 66 assertions)
   - ✅ Phase 6.3.2: Generic Graph Traversal Helpers COMPLETE (34 test cases, 64 assertions)
   - ✅ Phase 6.3.3: Generic Graph Transformations COMPLETE (30 test cases, 52 assertions)
+  - ✅ Phase 6.3.4: Generic Graph Validation COMPLETE (26 test cases, 26 assertions)
 - ⏳ Phase 6.4: Mixed Operations PENDING
 - ⏳ Phase 6.5: Real-World Patterns PENDING
 
@@ -1465,11 +1466,16 @@ TEST_CASE("std::ranges::transform extracts IDs", "[integration][stl][ranges]") {
 - ✓ ID remapping for integral types in extract_subgraph
 - ✓ Functions handle empty graphs, self-loops, cycles, bidirectional edges
 
-**6.3.4: Generic Graph Validation** (25 tests)
-- `is_dag(G g)` - check if directed acyclic graph (requires DFS/BFS - simplified check)
-- `has_cycle(G g)` - detect cycle (simplified)
-- `is_connected(G g)` - check weak connectivity (requires BFS - simplified)
-- Note: Full algorithm implementations belong in Phase 8
+**6.3.4: Generic Graph Validation** (26 tests) ✅ COMPLETE
+- ✓ `has_cycle(G g)` - detect cycles using DFS with recursion stack (10 tests)
+- ✓ `is_dag(G g)` - check if directed acyclic graph, returns !has_cycle(g) (8 tests)
+- ✓ `is_weakly_connected(G g)` - check weak connectivity using BFS treating graph as undirected (8 tests)
+- ✓ Tested with: vov, mos, dofl, dov
+- ✓ All 26 test cases passing (26 assertions)
+- ✓ DFS-based cycle detection with visited set and recursion stack
+- ✓ BFS-based weak connectivity check building undirected adjacency map
+- ✓ Functions handle empty graphs, self-loops, cycles, DAGs, disconnected components
+- ✓ Note: Simplified implementations suitable for testing; full algorithms belong in Phase 8
 
 **6.3.5: Type-Erased Graph Wrapper** (20 tests)
 - Create `graph_view` that wraps any graph type using CPOs
