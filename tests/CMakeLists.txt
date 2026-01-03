@@ -105,6 +105,7 @@ add_executable(graph3_tests
     test_dynamic_graph_stl_algorithms.cpp
     test_dynamic_graph_generic_queries.cpp
     test_dynamic_graph_traversal_helpers.cpp
+    test_dynamic_graph_transformations.cpp
 )
 
 target_link_libraries(graph3_tests
