@@ -107,6 +107,7 @@ add_executable(graph3_tests
     test_dynamic_graph_traversal_helpers.cpp
     test_dynamic_graph_transformations.cpp
     test_dynamic_graph_validation.cpp
+    test_dynamic_graph_type_erasure.cpp
 )
 
 target_link_libraries(graph3_tests
