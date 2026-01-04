@@ -2,6 +2,103 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "(Linux) Launch with CMake",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${command:cmake.launchTargetPath}",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    },
+    {
+      "name": "(Linux) Run graph3_tests (Debug)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/linux-gcc-debug/tests/graph3_tests",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ],
+      "preLaunchTask": "cmake: build"
+    },
+    {
+      "name": "(Linux) Run graph3_tests (Release)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/linux-gcc-release/tests/graph3_tests",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ],
+      "preLaunchTask": "cmake: build"
+    },
+    {
+      "name": "(macOS) Launch with CMake",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${command:cmake.launchTargetPath}",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "lldb"
+    },
+    {
+      "name": "(macOS) Run graph3_tests (Debug)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/macos-clang-debug/tests/graph3_tests",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "lldb",
+      "preLaunchTask": "cmake: build"
+    },
+    {
+      "name": "(macOS) Run graph3_tests (Release)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/macos-clang-release/tests/graph3_tests",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "lldb",
+      "preLaunchTask": "cmake: build"
+    },
+    {
       "name": "(Windows) Launch with CMake",
       "type": "cppvsdbg",
       "request": "launch",
@@ -13,10 +110,10 @@
       "console": "integratedTerminal"
     },
     {
-      "name": "Run graph3_tests",
+      "name": "(Windows) Run graph3_tests (Debug)",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/tests/Debug/graph3_tests.exe",
+      "program": "${workspaceFolder}/build/windows-msvc-debug/tests/Debug/graph3_tests.exe",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
@@ -25,10 +122,10 @@
       "preLaunchTask": "cmake: build"
     },
     {
-      "name": "Run graph3_tests (Release)",
+      "name": "(Windows) Run graph3_tests (Release)",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/tests/Release/graph3_tests.exe",
+      "program": "${workspaceFolder}/build/windows-msvc-release/tests/Release/graph3_tests.exe",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
