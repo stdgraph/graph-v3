@@ -1208,70 +1208,68 @@ undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::undirected_adjac
 
 // clang-format off
 template <typename VV, typename EV, typename GV, integral KeyT, template <typename V, typename A> class VContainer, typename Alloc>
-template <typename ERng, typename EKeyFnc, typename EValueFnc, typename VRng, typename VValueFnc>
+template <typename ERng, typename VRng, typename EProj, typename VProj>
   requires ranges::forward_range<ERng> 
         && ranges::input_range<VRng>
-        && std::regular_invocable<EKeyFnc, ranges::range_reference_t<ERng>>
-        && std::regular_invocable<EValueFnc, ranges::range_reference_t<ERng>>
-        && std::regular_invocable<VValueFnc, ranges::range_reference_t<VRng>>
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::undirected_adjacency_list(const ERng&      erng,
-                                                                              const VRng&      vrng,
-                                                                              const EKeyFnc&   ekey_fnc,
-                                                                              const EValueFnc& evalue_fnc,
-                                                                              const VValueFnc& vvalue_fnc,
-                                                                              const GV&        gv,
-                                                                              const Alloc&     alloc)
+        && std::regular_invocable<EProj, ranges::range_reference_t<ERng>>
+        && std::regular_invocable<VProj, ranges::range_reference_t<VRng>>
+undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::undirected_adjacency_list(const ERng&  erng,
+                                                                              const VRng&  vrng,
+                                                                              const EProj& eproj,
+                                                                              const VProj& vproj,
+                                                                              const GV&    gv,
+                                                                              const Alloc& alloc)
       : base_type(gv), vertices_(alloc), edge_alloc_(alloc)
 // clang-format on
 {
   // Evaluate max vertex key needed
   vertex_key_type max_vtx_key = static_cast<vertex_key_type>(vrng.size() - 1);
   for (auto& e : erng) {
-    edge_key_type edge_key = ekey_fnc(e);
-    max_vtx_key            = max(max_vtx_key, max(edge_key.first, edge_key.second));
+    auto&& edge_info = eproj(e);  // copyable_edge_t<VId, EV>
+    max_vtx_key = max(max_vtx_key, max(edge_info.source_id, edge_info.target_id));
   }
 
   // add vertices
   vertices_.reserve(max_vtx_key + 1);
-  if constexpr (!same_as<decltype(vvalue_fnc(*ranges::begin(vrng))), void>) {
-    for (auto& vtx : vrng)
-      create_vertex(vvalue_fnc(vtx));
+  if constexpr (!std::is_void_v<VV>) {
+    for (auto& vtx : vrng) {
+      auto&& [id, value] = vproj(vtx);  // copyable_vertex_t<VId, VV>
+      create_vertex(value);
+    }
   }
   vertices_.resize(max_vtx_key + 1); // assure expected vertices exist
 
   // add edges
   if (erng.size() > 0) {
-    edge_key_type   tu_key = ekey_fnc(*ranges::begin(erng)); // first edge
-    vertex_key_type tkey   = tu_key.first;                   // last in-vertex key
+    auto&& first_edge_info = eproj(*ranges::begin(erng)); // first edge
+    vertex_key_type tkey = first_edge_info.source_id;     // last in-vertex key
     for (auto& edge_data : erng) {
-      edge_key_type uv_key = ekey_fnc(edge_data);
-      if (uv_key.first < tkey)
+      auto&& edge_info = eproj(edge_data);  // copyable_edge_t<VId, EV>
+      if (edge_info.source_id < tkey)
         throw_unordered_edges();
 
       vertex_edge_iterator uv;
-      if constexpr (same_as<decltype(evalue_fnc(edge_data)), void>) {
-        uv = create_edge(uv_key.first, uv_key.second);
+      if constexpr (std::is_void_v<EV>) {
+        uv = create_edge(edge_info.source_id, edge_info.target_id);
       } else {
-        uv = create_edge(uv_key.first, uv_key.second, evalue_fnc(edge_data));
+        uv = create_edge(edge_info.source_id, edge_info.target_id, edge_info.value);
       }
-      tkey = uv_key.first;
+      tkey = edge_info.source_id;
     }
   }
 }
 
 // clang-format off
 template <typename VV, typename EV, typename GV, integral KeyT, template <typename V, typename A> class VContainer, typename Alloc>
-template <typename ERng, typename EKeyFnc, typename EValueFnc>
+template <typename ERng, typename EProj>
   requires ranges::forward_range<ERng>
-        && std::regular_invocable<EKeyFnc, ranges::range_reference_t<ERng>>
-        && std::regular_invocable<EValueFnc, ranges::range_reference_t<ERng>>
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::undirected_adjacency_list(const ERng&      erng, 
-                                                                              const EKeyFnc&   ekey_fnc, 
-                                                                              const EValueFnc& evalue_fnc, 
-                                                                              const GV&        gv, 
-                                                                              const Alloc&     alloc)
-      : undirected_adjacency_list(erng, vector<int>(), ekey_fnc, evalue_fnc, [](empty_value) 
-{ return empty_value(); }, gv, alloc)
+        && std::regular_invocable<EProj, ranges::range_reference_t<ERng>>
+undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::undirected_adjacency_list(const ERng&  erng, 
+                                                                              const EProj& eproj, 
+                                                                              const GV&    gv, 
+                                                                              const Alloc& alloc)
+      : undirected_adjacency_list(erng, vector<int>(), eproj, [](empty_value) 
+{ return copyable_vertex_t<KeyT, VV>{KeyT()}; }, gv, alloc)
 // clang-format on
 {}
 

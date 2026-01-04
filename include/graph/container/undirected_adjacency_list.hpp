@@ -2,6 +2,7 @@
 //	Author: J. Phillip Ratzloff
 //
 #include "../graph_utility.hpp"
+#include "../graph_info.hpp"
 #include "container_utility.hpp"
 #include <vector>
 #include <ranges>
@@ -940,79 +941,78 @@ public:
 
   /// Constructor that takes edge & vertex ranges to create the graph.
   ///
-  /// @tparam ERng      The edge data range.
-  /// @tparam EKeyFnc   Projection to return edge_key_type from ERng::value_type.
-  /// @tparam EValueFnc Projection to return the edge_value_type, or
-  ///                   a type that edge_value_type is constructible
-  ///                   from. If the return type is void or empty_value the
-  ///                   edge_value_type default constructor
-  ///                   will be used to initialize the value.
-  /// @tparam VRng      The vertex data range.
-  /// @tparam VValueFnc Projection to return the vertex_value_type,
-  ///                   or a type that vertex_value_type is constructible
-  ///                   from. If the return type is void or empty_value the
-  ///                   vertex_value_type default constructor will be
-  ///                   used to initialize the value.
+  /// The value_type of @c erng must be converted to @c copyable_edge_t<VId,EV> before it can be
+  /// added to the graph, which is done using the @c eproj function. If the value_type of
+  /// @c erng is already copyable_edge_t<VId,EV>, @c std::identity can be used instead. @c copyable_edge_t
+  /// contains source_id, target_id and optionally a value member if an edge value type has been defined.
   ///
-  /// @param erng       The container of edge data.
-  /// @param vrng       The container of vertex data.
-  /// @param ekey_fnc   The edge key projection:
-  ///                   ekey_fnc(ERng::value_type) -> undirected_adjacency_list::edge_key_type
-  /// @param evalue_fnc The edge value projection:
-  ///                   evalue_fnc(ERng::value_type) -> edge_value_t<G>.
-  /// @param vvalue_fnc The vertex value projection:
-  ///                   vvalue_fnc(VRng::value_type) -> vertex_value_t<G>.
-  /// @param alloc      The allocator to use for internal containers for
-  ///                   vertices & edges.
+  /// The value_type of @c vrng must be converted to @c copyable_vertex_t<VId,VV> before it can be
+  /// added to the graph, which is done using the @c vproj function. If the value_type of
+  /// @c vrng is already copyable_vertex_t<VId,VV>, @c std::identity can be used instead. @c copyable_vertex_t
+  /// contains id and optionally a value member if a vertex value type has been defined.
+  ///
+  /// @tparam ERng  The edge data range.
+  /// @tparam VRng  The vertex data range.
+  /// @tparam EProj A projection function type to convert the ERng value_type to copyable_edge_t<VId,EV>.
+  ///               If ERng value_type is already copyable_edge_t, identity can be used.
+  /// @tparam VProj A projection function type to convert the VRng value_type to copyable_vertex_t<VId,VV>.
+  ///               If VRng value_type is already copyable_vertex_t, identity can be used.
+  ///
+  /// @param erng  The container of edge data.
+  /// @param vrng  The container of vertex data.
+  /// @param eproj The projection function that converts the ERng value_type to copyable_edge_t<VId,EV>,
+  ///              or identity() if ERng value_type is already copyable_edge_t.
+  /// @param vproj The projection function that converts the VRng value_type to copyable_vertex_t<VId,VV>,
+  ///              or identity() if VRng value_type is already copyable_vertex_t.
+  /// @param gv    Graph value.
+  /// @param alloc The allocator to use for internal containers for vertices & edges.
   ///
   // clang-format off
   template <typename ERng, 
-            typename EKeyFnc = std::identity, 
-            typename EValueFnc = std::identity, 
             typename VRng, 
-            typename VValueFnc = std::identity>
+            typename EProj = std::identity, 
+            typename VProj = std::identity>
     requires ranges::forward_range<ERng> 
           && ranges::input_range<VRng>
-          && std::regular_invocable<EKeyFnc, ranges::range_reference_t<ERng>>
-          && std::regular_invocable<EValueFnc, ranges::range_reference_t<ERng>>
-          && std::regular_invocable<VValueFnc, ranges::range_reference_t<VRng>>
-  undirected_adjacency_list(const ERng&      erng,
-                            const VRng&      vrng,
-                            const EKeyFnc&   ekey_fnc   = {},
-                            const EValueFnc& evalue_fnc = {},
-                            const VValueFnc& vvalue_fnc = {},
-                            const GV&        gv         = GV(),
-                            const Alloc&     alloc      = Alloc());
+          && std::regular_invocable<EProj, ranges::range_reference_t<ERng>>
+          && std::regular_invocable<VProj, ranges::range_reference_t<VRng>>
+  undirected_adjacency_list(const ERng&  erng,
+                            const VRng&  vrng,
+                            const EProj& eproj = {},
+                            const VProj& vproj = {},
+                            const GV&    gv    = GV(),
+                            const Alloc& alloc = Alloc());
   // clang-format on
 
   /// Constructor that takes edge range to create the graph.
   ///
-  /// @tparam ERng      The edge data range.
-  /// @tparam EKeyFnc   Projection to return edge_key_type from ERng::value_type.
-  /// @tparam EValueFnc Projection to return the edge_value_type, or
-  ///                   a type that edge_value_type is constructible
-  ///                   from. If the return type is void or empty_value the
-  ///                   edge_value_type default constructor will be used
-  ///                   to initialize the value.
+  /// The value_type of @c erng must be converted to @c copyable_edge_t<VId,EV> before it can be
+  /// added to the graph, which is done using the @c eproj function. If the value_type of
+  /// @c erng is already copyable_edge_t<VId,EV>, @c std::identity can be used instead. @c copyable_edge_t
+  /// contains source_id, target_id and optionally a value member if an edge value type has been defined.
   ///
-  /// @param erng       The container of edge data.
-  /// @param ekey_fnc   The edge key projection:
-  ///                   ekey_fnc(ERng::value_type) -> undirected_adjacency_list::edge_key_type
-  /// @param evalue_fnc The edge value projection:
-  ///                   evalue_fnc(ERng::value_type) -> edge_value_t<G>.
-  /// @param alloc      The allocator to use for internal containers for
-  ///                   vertices & edges.
+  /// Edges are scanned to determine the largest vertex id needed.
+  ///
+  /// If vertices have a user-defined value (e.g. VV not void), the value must be default-constructable.
+  ///
+  /// @tparam ERng  The edge data range.
+  /// @tparam EProj A projection function type to convert the ERng value_type to copyable_edge_t<VId,EV>.
+  ///               If ERng value_type is already copyable_edge_t, identity can be used.
+  ///
+  /// @param erng  The container of edge data.
+  /// @param eproj The projection function that converts the ERng value_type to copyable_edge_t<VId,EV>,
+  ///              or identity() if ERng value_type is already copyable_edge_t.
+  /// @param gv    Graph value.
+  /// @param alloc The allocator to use for internal containers for vertices & edges.
   ///
   // clang-format off
-  template <typename ERng, typename EKeyFnc = std::identity, typename EValueFnc = std::identity>
+  template <typename ERng, typename EProj = std::identity>
     requires ranges::forward_range<ERng>
-          && std::regular_invocable<EKeyFnc, ranges::range_reference_t<ERng>>
-          && std::regular_invocable<EValueFnc, ranges::range_reference_t<ERng>>
-  undirected_adjacency_list(const ERng&      erng, 
-                            const EKeyFnc&   ekey_fnc   = {}, 
-                            const EValueFnc& evalue_fnc = {}, 
-                            const GV&        gv         = GV(), 
-                            const Alloc&     alloc      = Alloc());
+          && std::regular_invocable<EProj, ranges::range_reference_t<ERng>>
+  undirected_adjacency_list(const ERng&  erng, 
+                            const EProj& eproj = {}, 
+                            const GV&    gv    = GV(), 
+                            const Alloc& alloc = Alloc());
   // clang-format on
 
   /// Constructor for easy creation of a graph that takes an initializer
