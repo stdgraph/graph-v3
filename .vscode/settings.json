@@ -1,0 +1,8 @@
+{
+  "cmake.configureOnOpen": false,
+  "cmake.preferredGenerators": [
+    "Ninja"
+  ],
+  "cmake.generator": "Ninja",
+  "cmake.cmakePath": "cmake"
+}

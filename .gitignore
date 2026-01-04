@@ -6,7 +6,6 @@ out/
 
 # IDE files
 .vs/
-.vscode/
 .idea/
 *.swp
 *.swo
