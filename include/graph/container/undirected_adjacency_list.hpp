@@ -10,7 +10,8 @@
 #ifndef UNDIRECTED_ADJ_LIST_HPP
 #  define UNDIRECTED_ADJ_LIST_HPP
 
-namespace std::graph {
+#define CPO 1
+namespace graph::container {
 
 ///-------------------------------------------------------------------------------------
 /// undirected_adjacency_list forward declarations
@@ -1103,6 +1104,7 @@ private:
 };
 
 #  ifdef CPO
+#if 0
 // clang-format off
 template <typename                                VV,
           typename                                EV,
@@ -1137,9 +1139,10 @@ struct graph_traits<undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Allo
   using vertex_vertex_range       = typename vertex_type::vertex_vertex_range;
   using const_vertex_vertex_range = typename vertex_type::const_vertex_vertex_range;
 };
-#  endif
+# endif //0
+#  endif // CPO
 
-} // namespace std::graph
+} // namespace graph::container
 
 #endif // UNDIRECTED_ADJ_LIST_HPP
 

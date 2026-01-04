@@ -7,7 +7,7 @@
 
 #include <stdexcept>
 
-namespace std::graph {
+namespace graph::container {
 
 #ifdef CPO
 ///-------------------------------------------------------------------------------------
@@ -936,6 +936,6 @@ void clear(undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>& g) {
 
 #endif // CPO
 
-} // namespace std::graph
+} // namespace graph::container
 
 #endif // UNDIRECTED_ADJ_LIST_API_HPP

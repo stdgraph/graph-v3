@@ -233,7 +233,7 @@ Multiple partition types can be handled using:
 
 An edgelist is a range of values with `source_id`, `target_id`, and optional `edge_value`. It's similar to edges in adjacency lists but is a distinct, separate range.
 
-**Namespace:** `std::graph::edgelist` (to avoid conflicts with adjacency list)
+**Namespace:** `graph::container::edgelist` (to avoid conflicts with adjacency list)
 
 ### Concepts
 
