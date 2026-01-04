@@ -13,9 +13,9 @@
 | 0 | ✅ COMPLETE | - | 1 day | Planning and review |
 | 1 | ✅ COMPLETE | CRITICAL | 2 days | Bug fixes and quick wins |
 | 2 | ✅ COMPLETE | CRITICAL | 3 hours | Interface conformance verification |
-| 3 | ⏳ PENDING | CRITICAL | 2-3 days | API standardization and modernization |
-| 4 | ⏳ PENDING | BLOCKING | 4-5 days | Comprehensive test suite |
-| 5 | ⏳ PENDING | HIGH | 2 days | Documentation updates |
+| 3 | ⏭️ DEFERRED | CRITICAL | 30 min | API standardization (deferred - see phase3_deferred.md) |
+| 4 | ⏳ NEXT | BLOCKING | 4-5 days | Comprehensive test suite **← DO NEXT** |
+| 5 | ⏳ PENDING | HIGH | 2 days | Documentation + API modernization (combined) |
 | 6 | ⏳ PENDING | MEDIUM | 1-2 days | Code cleanup and polish |
 | 7 | ⏳ PENDING | OPTIONAL | 2-3 days | Performance optimizations |
 
@@ -116,46 +116,48 @@
 
 ---
 
-### Phase 3: API Standardization and Modernization (CRITICAL - 2-3 days)
+### Phase 3: API Standardization and Modernization (⏭️ DEFERRED)
 
-**Goal:** Update legacy API to match current library standards and terminology.
+**Status:** DEFERRED until after Phase 4 (test suite creation)
 
-**Dependencies:** Phase 2 complete
+**Rationale:** See [undirected_adjlist_phase3_deferred.md](undirected_adjlist_phase3_deferred.md)
 
-**Tasks:**
-1. **Update constructor signatures** (1 day)
-   - Current: Uses `ekey_fnc`, `evalue_fnc` separately
-   - Target: Unified `eproj` (edge projection) pattern
-   - Update parameter order to match `dynamic_graph`
-   - Support optional vertex range + projection
-   - Files: Main header and implementation
+**Key Decision:** Don't change working code without tests to verify the changes.
 
-2. **Rename legacy terminology** (4 hours)
-   - Replace "function" → "projection" in names
-   - Update template parameter names
-   - Update documentation comments
-   - Ensure consistency across all files
+**Original Goal:** Update legacy API to match current library standards and terminology.
 
-3. **Standardize type trait names** (2 hours)
-   - Review against `dynamic_graph` patterns
-   - Update any non-standard trait names
-   - Verify `graph_traits` specialization
+**Deferral Analysis:**
+- ❌ NO tests exist for undirected_adjacency_list
+- ✅ Current API is functional (legacy style but correct)
+- 📭 NO current usage in codebase
+- 🚧 Phase 4 (tests) marked as BLOCKING
+- ⚖️ Better to test before refactoring
 
-4. **Update API documentation** (4 hours)
-   - Reflect new constructor signatures
-   - Document projection patterns
-   - Add migration guide from legacy API
-   - Update examples in comments
+**New Timeline:**
+- Original: 2-3 days implementing API changes
+- Actual: 30 minutes analysis + deferral decision
+- **Saved Time:** 2-3 days → applied to Phase 4
+
+**When to Revisit:**
+- After Phase 4 test suite is complete
+- During Phase 5 (Documentation + API Modernization combined)
+- With full test coverage for verification
+
+**Original Tasks (Deferred):**
+1. ⏭️ Update constructor signatures (1 day) - deferred
+2. ⏭️ Rename legacy terminology (4 hours) - deferred
+3. ⏭️ Standardize type trait names (2 hours) - deferred
+4. ⏭️ Update API documentation (4 hours) - moved to Phase 5
 
 **Deliverables:**
-- Modernized constructor API
-- Consistent terminology throughout
-- Migration guide for users
+- ✅ Phase 3 deferral analysis document
+- ✅ Updated project plan
+- ✅ Clear rationale for decision
 
 **Success Criteria:**
-- API matches library standards
-- Constructors follow common pattern
-- All terminology updated
+- ✅ Engineering decision documented
+- ✅ Plan updated to reflect new order
+- ✅ Ready to proceed to Phase 4
 
 ---
 
