@@ -1056,6 +1056,7 @@ void ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::erase_edge(graph_type& g, 
 
   uv->~edge_type();
   g.edge_alloc_.deallocate(uv, 1);
+  --g.edges_size_;
 }
 
 template <typename VV,
@@ -1681,6 +1682,7 @@ undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::erase_edge(edge_
   ++pos;
   uv->~edge_type(); // unlinks from vertices
   edge_alloc_.deallocate(uv, 1);
+  --edges_size_;
   return pos;
 }
 

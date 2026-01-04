@@ -913,7 +913,7 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-void contains_vertex(undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>&              g,
+bool contains_vertex(undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>&              g,
                      vertex_key_t<undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>> ukey) {
   return ukey >= 0 && ukey < g.vertices().size();
 }
