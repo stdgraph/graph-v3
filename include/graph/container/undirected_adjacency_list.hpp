@@ -2,16 +2,31 @@
 //	Author: J. Phillip Ratzloff
 //
 #include "../graph_utility.hpp"
+#include "container_utility.hpp"
 #include <vector>
 #include <ranges>
 #include <cassert>
 #include <type_traits>
+#include <cstdint>
+#include <limits>
+#include <initializer_list>
+#include <utility>
 
 #ifndef UNDIRECTED_ADJ_LIST_HPP
 #  define UNDIRECTED_ADJ_LIST_HPP
 
 #define CPO 1
 namespace graph::container {
+
+using std::vector;
+using std::allocator;
+using std::numeric_limits;
+using std::bidirectional_iterator_tag;
+using std::initializer_list;
+using std::tuple;
+using std::pair;
+namespace ranges = std::ranges;
+
 
 ///-------------------------------------------------------------------------------------
 /// undirected_adjacency_list forward declarations
@@ -379,13 +394,13 @@ template <typename VV,
           class VContainer,
           typename Alloc>
 class ual_edge
-      : public conditional_t<graph_value_needs_wrap<EV>::value, graph_value_wrapper<EV>, EV>
+      : public conditional_t<detail::graph_value_needs_wrap<EV>::value, detail::graph_value_wrapper<EV>, EV>
       , public ual_vertex_edge_list_link<VV, EV, GV, KeyT, VContainer, Alloc, inward_list>
       , public ual_vertex_edge_list_link<VV, EV, GV, KeyT, VContainer, Alloc, outward_list> {
 public:
   using graph_type       = undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>;
   using graph_value_type = GV;
-  using base_type        = conditional_t<graph_value_needs_wrap<EV>::value, graph_value_wrapper<EV>, EV>;
+  using base_type        = conditional_t<detail::graph_value_needs_wrap<EV>::value, detail::graph_value_wrapper<EV>, EV>;
 
   using vertex_type           = ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>;
   using vertex_allocator_type = typename allocator_traits<Alloc>::template rebind_alloc<vertex_type>;
@@ -477,11 +492,11 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-class ual_vertex : public conditional_t<graph_value_needs_wrap<VV>::value, graph_value_wrapper<VV>, VV> {
+class ual_vertex : public conditional_t<detail::graph_value_needs_wrap<VV>::value, detail::graph_value_wrapper<VV>, VV> {
 public:
   using graph_type       = undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>;
   using graph_value_type = GV;
-  using base_type        = conditional_t<graph_value_needs_wrap<VV>::value, graph_value_wrapper<VV>, VV>;
+  using base_type        = conditional_t<detail::graph_value_needs_wrap<VV>::value, detail::graph_value_wrapper<VV>, VV>;
 
   using vertex_type           = ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>;
   using vertex_allocator_type = typename allocator_traits<Alloc>::template rebind_alloc<vertex_type>;
@@ -738,11 +753,11 @@ template <typename                                VV,
           template <typename V, typename A> class VContainer,
           typename                                Alloc>
 class undirected_adjacency_list 
-  : public conditional_t<graph_value_needs_wrap<GV>::value, graph_value_wrapper<GV>, GV>
+  : public conditional_t<detail::graph_value_needs_wrap<GV>::value, detail::graph_value_wrapper<GV>, GV>
 // clang-format on
 {
 public:
-  using base_type        = conditional_t<graph_value_needs_wrap<GV>::value, graph_value_wrapper<GV>, GV>;
+  using base_type        = conditional_t<detail::graph_value_needs_wrap<GV>::value, detail::graph_value_wrapper<GV>, GV>;
   using graph_type       = undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>;
   using graph_value_type = GV;
   using allocator_type   = Alloc;
@@ -776,6 +791,12 @@ public:
   using vertex_edge_size_type       = typename vertex_edge_iterator::size_type;
   using vertex_edge_difference_type = typename vertex_edge_iterator::difference_type;
 
+  using vertex_vertex_iterator       = typename vertex_type::vertex_vertex_iterator;
+  using const_vertex_vertex_iterator = typename vertex_type::const_vertex_vertex_iterator;
+  using vertex_vertex_range          = typename vertex_type::vertex_vertex_range;
+  using const_vertex_vertex_range    = typename vertex_type::const_vertex_vertex_range;
+  using vertex_vertex_size_type      = typename vertex_type::vertex_vertex_size_type;
+
   class edge_iterator;       // (defined below)
   class const_edge_iterator; // (defined below)
   using edge_range       = ranges::subrange<edge_iterator, edge_iterator, ranges::subrange_kind::sized>;
@@ -792,6 +813,10 @@ public:
 
   public:
     const_edge_iterator(const graph_type& g, vertex_iterator u) : g_(&const_cast<graph_type&>(g)), u_(u) {
+      advance_vertex();
+    }
+    const_edge_iterator(const graph_type& g, const_vertex_iterator u) 
+          : g_(&const_cast<graph_type&>(g)), u_(g_->vertices().begin() + (u - g.vertices().begin())) {
       advance_vertex();
     }
     const_edge_iterator(const graph_type& g, vertex_iterator u, vertex_edge_iterator uv)
@@ -916,15 +941,14 @@ public:
   /// Constructor that takes edge & vertex ranges to create the graph.
   ///
   /// @tparam ERng      The edge data range.
-  /// @tparam EKeyFnc   Function object to return edge_key_type of the
-  ///                   ERng::value_type.
-  /// @tparam EValueFnc Function object to return the edge_value_type, or
+  /// @tparam EKeyFnc   Projection to return edge_key_type from ERng::value_type.
+  /// @tparam EValueFnc Projection to return the edge_value_type, or
   ///                   a type that edge_value_type is constructible
   ///                   from. If the return type is void or empty_value the
   ///                   edge_value_type default constructor
   ///                   will be used to initialize the value.
   /// @tparam VRng      The vertex data range.
-  /// @tparam VValueFnc Function object to return the vertex_value_type,
+  /// @tparam VValueFnc Projection to return the vertex_value_type,
   ///                   or a type that vertex_value_type is constructible
   ///                   from. If the return type is void or empty_value the
   ///                   vertex_value_type default constructor will be
@@ -932,59 +956,63 @@ public:
   ///
   /// @param erng       The container of edge data.
   /// @param vrng       The container of vertex data.
-  /// @param ekey_fnc   The edge key extractor functor:
+  /// @param ekey_fnc   The edge key projection:
   ///                   ekey_fnc(ERng::value_type) -> undirected_adjacency_list::edge_key_type
-  /// @param evalue_fnc The edge value extractor functor:
+  /// @param evalue_fnc The edge value projection:
   ///                   evalue_fnc(ERng::value_type) -> edge_value_t<G>.
-  /// @param vvalue_fnc The vertex value extractor functor:
+  /// @param vvalue_fnc The vertex value projection:
   ///                   vvalue_fnc(VRng::value_type) -> vertex_value_t<G>.
   /// @param alloc      The allocator to use for internal containers for
   ///                   vertices & edges.
   ///
   // clang-format off
   template <typename ERng, 
-            typename EKeyFnc, 
-            typename EValueFnc, 
+            typename EKeyFnc = std::identity, 
+            typename EValueFnc = std::identity, 
             typename VRng, 
-            typename VValueFnc>
-    requires edge_value_extractor<ERng, EKeyFnc, EValueFnc> 
-          &&  vertex_value_extractor<VRng, VValueFnc>
+            typename VValueFnc = std::identity>
+    requires ranges::forward_range<ERng> 
+          && ranges::input_range<VRng>
+          && std::regular_invocable<EKeyFnc, ranges::range_reference_t<ERng>>
+          && std::regular_invocable<EValueFnc, ranges::range_reference_t<ERng>>
+          && std::regular_invocable<VValueFnc, ranges::range_reference_t<VRng>>
   undirected_adjacency_list(const ERng&      erng,
                             const VRng&      vrng,
-                            const EKeyFnc&   ekey_fnc,
-                            const EValueFnc& evalue_fnc,
-                            const VValueFnc& vvalue_fnc,
-                            const GV&        gv    = GV(),
-                            const Alloc&     alloc = Alloc());
+                            const EKeyFnc&   ekey_fnc   = {},
+                            const EValueFnc& evalue_fnc = {},
+                            const VValueFnc& vvalue_fnc = {},
+                            const GV&        gv         = GV(),
+                            const Alloc&     alloc      = Alloc());
   // clang-format on
 
-  /// Constructor that takes edge & vertex ranges to create the graph.
+  /// Constructor that takes edge range to create the graph.
   ///
   /// @tparam ERng      The edge data range.
-  /// @tparam EKeyFnc   Function object to return edge_key_type of the
-  ///                   ERng::value_type.
-  /// @tparam EValueFnc Function object to return the edge_value_type, or
+  /// @tparam EKeyFnc   Projection to return edge_key_type from ERng::value_type.
+  /// @tparam EValueFnc Projection to return the edge_value_type, or
   ///                   a type that edge_value_type is constructible
   ///                   from. If the return type is void or empty_value the
   ///                   edge_value_type default constructor will be used
   ///                   to initialize the value.
   ///
   /// @param erng       The container of edge data.
-  /// @param ekey_fnc   The edge key extractor functor:
+  /// @param ekey_fnc   The edge key projection:
   ///                   ekey_fnc(ERng::value_type) -> undirected_adjacency_list::edge_key_type
-  /// @param evalue_fnc The edge value extractor functor:
+  /// @param evalue_fnc The edge value projection:
   ///                   evalue_fnc(ERng::value_type) -> edge_value_t<G>.
   /// @param alloc      The allocator to use for internal containers for
   ///                   vertices & edges.
   ///
   // clang-format off
-  template <typename ERng, typename EKeyFnc, typename EValueFnc>
-    requires edge_value_extractor<ERng, EKeyFnc, EValueFnc>
+  template <typename ERng, typename EKeyFnc = std::identity, typename EValueFnc = std::identity>
+    requires ranges::forward_range<ERng>
+          && std::regular_invocable<EKeyFnc, ranges::range_reference_t<ERng>>
+          && std::regular_invocable<EValueFnc, ranges::range_reference_t<ERng>>
   undirected_adjacency_list(const ERng&      erng, 
-                            const EKeyFnc&   ekey_fnc, 
-                            const EValueFnc& evalue_fnc, 
-                            const GV&        gv    = GV(), 
-                            const Alloc&     alloc = Alloc());
+                            const EKeyFnc&   ekey_fnc   = {}, 
+                            const EValueFnc& evalue_fnc = {}, 
+                            const GV&        gv         = GV(), 
+                            const Alloc&     alloc      = Alloc());
   // clang-format on
 
   /// Constructor for easy creation of a graph that takes an initializer
@@ -1057,42 +1085,67 @@ public:
   edge_range       edges() { return {edges_begin(), edges_end(), edges_size_}; }
   const_edge_range edges() const { return {edges_begin(), edges_end(), edges_size_}; }
 
-protected:
-  void reserve_vertices(vertex_size_type);
-  void resize_vertices(vertex_size_type);
-  void resize_vertices(vertex_size_type, const vertex_value_type&);
+  // Graph value accessors
+  graph_value_type& graph_value() noexcept {
+    if constexpr (std::is_same_v<graph_value_type, empty_value>) {
+      static empty_value ev;
+      return ev;
+    } else if constexpr (detail::graph_value_needs_wrap<graph_value_type>::value) {
+      return static_cast<base_type&>(*this).value;
+    } else {
+      return static_cast<graph_value_type&>(*this);
+    }
+  }
+  
+  const graph_value_type& graph_value() const noexcept {
+    if constexpr (std::is_same_v<graph_value_type, empty_value>) {
+      static empty_value ev;
+      return ev;
+    } else if constexpr (detail::graph_value_needs_wrap<graph_value_type>::value) {
+      return static_cast<const base_type&>(*this).value;
+    } else {
+      return static_cast<const graph_value_type&>(*this);
+    }
+  }
 
+  // Vertex creation
   vertex_iterator create_vertex();
   vertex_iterator create_vertex(vertex_value_type&&);
 
   template <class VV2>
-  vertex_iterator create_vertex(const VV2&); // vertex_value_type must be constructable from VV2
+    requires std::constructible_from<vertex_value_type, const VV2&>
+  vertex_iterator create_vertex(const VV2&);
 
 public:
   vertex_edge_iterator create_edge(vertex_key_type, vertex_key_type);
   vertex_edge_iterator create_edge(vertex_key_type, vertex_key_type, edge_value_type&&);
 
   template <class EV2>
+    requires std::constructible_from<edge_value_type, const EV2&>
   vertex_edge_iterator create_edge(vertex_key_type,
                                    vertex_key_type,
-                                   const EV2&); // EV2 must be accepted by vertex_value_type constructor
+                                   const EV2&);
 
   vertex_edge_iterator create_edge(vertex_iterator, vertex_iterator);
   vertex_edge_iterator create_edge(vertex_iterator, vertex_iterator, edge_value_type&&);
 
   template <class EV2>
+    requires std::constructible_from<edge_value_type, const EV2&>
   vertex_edge_iterator create_edge(vertex_iterator,
                                    vertex_iterator,
-                                   const EV2&); // EV2 must be accepted by vertex_value_type constructor
+                                   const EV2&);
 
 
   edge_iterator erase_edge(edge_iterator);
 
-public:
   void clear();
   void swap(undirected_adjacency_list&);
 
 protected:
+  void reserve_vertices(vertex_size_type);
+  void resize_vertices(vertex_size_type);
+  void resize_vertices(vertex_size_type, const vertex_value_type&);
+  
   //vertex_iterator finalize_outward_edges(vertex_range);
   void throw_unordered_edges() const;
 

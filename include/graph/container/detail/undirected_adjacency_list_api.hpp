@@ -9,6 +9,33 @@
 
 namespace graph::container {
 
+// Type trait aliases for undirected_adjacency_list API
+template<typename G> using graph_value_t = typename G::graph_value_type;
+template<typename G> using vertex_type_t = typename G::vertex_type;
+template<typename G> using vertex_value_t = typename G::vertex_value_type;
+template<typename G> using vertex_key_t = typename G::vertex_key_type;
+template<typename G> using vertex_size_t = typename G::vertex_size_type;
+template<typename G> using vertex_iterator_t = typename G::vertex_iterator;
+template<typename G> using const_vertex_iterator_t = typename G::const_vertex_iterator;
+template<typename G> using vertex_range_t = typename G::vertex_range;
+template<typename G> using const_vertex_range_t = typename G::const_vertex_range;
+template<typename G> using edge_t = typename G::edge_type;
+template<typename G> using edge_value_t = typename G::edge_value_type;
+template<typename G> using edge_key_t = typename G::edge_key_type;
+template<typename G> using edge_size_t = typename G::edge_size_type;
+template<typename G> using edge_iterator_t = typename G::edge_iterator;
+template<typename G> using const_edge_iterator_t = typename G::const_edge_iterator;
+template<typename G> using edge_range_t = typename G::edge_range;
+template<typename G> using const_edge_range_t = typename G::const_edge_range;
+template<typename G> using vertex_edge_iterator_t = typename G::vertex_edge_iterator;
+template<typename G> using const_vertex_edge_iterator_t = typename G::const_vertex_edge_iterator;
+template<typename G> using vertex_edge_range_t = typename G::vertex_edge_range;
+template<typename G> using const_vertex_edge_range_t = typename G::const_vertex_edge_range;
+template<typename G> using vertex_vertex_iterator_t = typename G::vertex_vertex_iterator;
+template<typename G> using const_vertex_vertex_iterator_t = typename G::const_vertex_vertex_iterator;
+template<typename G> using vertex_vertex_range_t = typename G::vertex_vertex_range;
+template<typename G> using const_vertex_vertex_range_t = typename G::const_vertex_vertex_range;
+
 #ifdef CPO
 ///-------------------------------------------------------------------------------------
 /// undirected_adjacency_list graph API

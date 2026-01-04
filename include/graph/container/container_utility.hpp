@@ -158,13 +158,6 @@ constexpr auto assign_or_insert(C& container) {
 }
 
 
-// Requirements for extracting edge values from external sources for graph construction
-// ERng is a forward_range because it is traversed twice; once to get the max vertex_id
-// and a second time to load the edges.
-template <class ERng, class EIdFnc, class EValueFnc>
-concept edge_value_extractor = forward_range<ERng> && invocable<EIdFnc, typename ERng::value_type> &&
-                               invocable<EValueFnc, typename ERng::value_type>;
-
 namespace detail {
   //--------------------------------------------------------------------------------------
   // graph_value<> - wraps scaler, union & reference user values for graph, vertex & edge

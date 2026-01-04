@@ -1209,7 +1209,11 @@ undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::undirected_adjac
 // clang-format off
 template <typename VV, typename EV, typename GV, integral KeyT, template <typename V, typename A> class VContainer, typename Alloc>
 template <typename ERng, typename EKeyFnc, typename EValueFnc, typename VRng, typename VValueFnc>
-  requires edge_value_extractor<ERng, EKeyFnc, EValueFnc> &&  vertex_value_extractor<VRng, VValueFnc>
+  requires ranges::forward_range<ERng> 
+        && ranges::input_range<VRng>
+        && std::regular_invocable<EKeyFnc, ranges::range_reference_t<ERng>>
+        && std::regular_invocable<EValueFnc, ranges::range_reference_t<ERng>>
+        && std::regular_invocable<VValueFnc, ranges::range_reference_t<VRng>>
 undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::undirected_adjacency_list(const ERng&      erng,
                                                                               const VRng&      vrng,
                                                                               const EKeyFnc&   ekey_fnc,
@@ -1228,7 +1232,7 @@ undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::undirected_adjac
   }
 
   // add vertices
-  detail::reserve(vertices_, max_vtx_key + 1);
+  vertices_.reserve(max_vtx_key + 1);
   if constexpr (!same_as<decltype(vvalue_fnc(*ranges::begin(vrng))), void>) {
     for (auto& vtx : vrng)
       create_vertex(vvalue_fnc(vtx));
@@ -1258,7 +1262,9 @@ undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::undirected_adjac
 // clang-format off
 template <typename VV, typename EV, typename GV, integral KeyT, template <typename V, typename A> class VContainer, typename Alloc>
 template <typename ERng, typename EKeyFnc, typename EValueFnc>
-  requires edge_value_extractor<ERng, EKeyFnc, EValueFnc> 
+  requires ranges::forward_range<ERng>
+        && std::regular_invocable<EKeyFnc, ranges::range_reference_t<ERng>>
+        && std::regular_invocable<EValueFnc, ranges::range_reference_t<ERng>>
 undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::undirected_adjacency_list(const ERng&      erng, 
                                                                               const EKeyFnc&   ekey_fnc, 
                                                                               const EValueFnc& evalue_fnc, 
@@ -1322,7 +1328,7 @@ undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::undirected_adjac
 
   // add edges
   if (ilist.size() > 0) {
-    auto [tkey, uukey, tu_val] = *ranges::begin(ilist);
+    auto [tkey, uukey] = *ranges::begin(ilist);
     for (auto& edge_data : ilist) {
       const auto& [ukey, vkey] = edge_data;
       if (ukey < tkey)
@@ -1391,7 +1397,7 @@ template <typename VV,
           class VContainer,
           typename Alloc>
 void undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::reserve_vertices(vertex_size_type n) {
-  detail::reserve(vertices_, n);
+  vertices_.reserve(n);
 }
 
 template <typename VV,
@@ -1448,6 +1454,7 @@ template <typename VV,
           class VContainer,
           typename Alloc>
 template <class VV2>
+  requires std::constructible_from<typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_value_type, const VV2&>
 typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_iterator
 undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::create_vertex(const VV2& val) {
   vertices_.push_back(vertex_type(vertices_, static_cast<vertex_key_type>(vertices_.size()), val));
@@ -1605,6 +1612,7 @@ template <typename VV,
           class VContainer,
           typename Alloc>
 template <class EV2>
+  requires std::constructible_from<typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::edge_value_type, const EV2&>
 typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_edge_iterator
 undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::create_edge(vertex_key_type from_key,
                                                                             vertex_key_type to_key,
@@ -1657,6 +1665,7 @@ template <typename VV,
           class VContainer,
           typename Alloc>
 template <class EV2>
+  requires std::constructible_from<typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::edge_value_type, const EV2&>
 typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_edge_iterator
 undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::create_edge(vertex_iterator u,
                                                                             vertex_iterator v,
@@ -1724,7 +1733,7 @@ template <typename VV,
           typename Alloc>
 void undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::throw_unordered_edges() const {
   assert(false); // container must be sorted by edge_key.first
-  throw invalid_argument("edges not ordered");
+  throw std::invalid_argument("edges not ordered");
 }
 
 ///-------------------------------------------------------------------------------------
