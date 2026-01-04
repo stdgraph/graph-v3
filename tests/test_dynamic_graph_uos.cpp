@@ -122,8 +122,9 @@ TEST_CASE("uos iterator categories", "[dynamic_graph][uos][iterators]") {
         using G = uos_void_void_void;
         using iter_t = typename G::vertices_type::iterator;
         static_assert(std::forward_iterator<iter_t>);
-        // unordered_map iterators are only forward, not bidirectional
-        static_assert(!std::bidirectional_iterator<iter_t>);
+        // Note: unordered_map iterators are forward in the standard, but some
+        // implementations (like MSVC) provide bidirectional iterators
+        // static_assert(!std::bidirectional_iterator<iter_t>); // Not portable
         static_assert(!std::random_access_iterator<iter_t>);
         REQUIRE(true);
     }
