@@ -23,9 +23,9 @@ function(enable_coverage target_name)
                     add_custom_target(coverage
                         COMMAND ${LCOV} --directory . --zerocounters
                         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-                        COMMAND ${LCOV} --directory . --capture --output-file coverage.info
-                        COMMAND ${LCOV} --remove coverage.info '/usr/*' '*/tests/*' --output-file coverage.info
-                        COMMAND ${GENHTML} coverage.info --output-directory coverage_html
+                        COMMAND ${LCOV} --directory . --capture --output-file coverage.info --ignore-errors mismatch
+                        COMMAND ${LCOV} --remove coverage.info '/usr/*' '*/tests/*' --output-file coverage.info --ignore-errors mismatch
+                        COMMAND ${GENHTML} coverage.info --output-directory coverage_html --ignore-errors mismatch
                         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
                         COMMENT "Generating code coverage report"
                     )
