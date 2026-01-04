@@ -1,7 +1,7 @@
 //
 //	Author: J. Phillip Ratzloff
 //
-#include "graph_utility.hpp"
+#include "../graph_utility.hpp"
 #include <vector>
 #include <ranges>
 #include <cassert>
