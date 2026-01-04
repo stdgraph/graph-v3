@@ -110,6 +110,7 @@ add_executable(graph3_tests
     test_dynamic_graph_type_erasure.cpp
     test_dynamic_graph_mixed_types.cpp
     test_dynamic_graph_conversions.cpp
+    test_dynamic_graph_heterogeneous.cpp
 )
 
 target_link_libraries(graph3_tests
