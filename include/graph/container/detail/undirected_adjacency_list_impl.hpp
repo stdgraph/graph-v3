@@ -100,6 +100,8 @@ template <typename VV,
           class VContainer,
           typename Alloc>
 void ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator::advance() {
+  edge_type* start_edge = edge_; // Remember where we started for cycle detection
+  
   vertex_edge_list_inward_link_type&  inward_link  = *edge_; // in.vertex_key_ == this->vertex_key_;
   vertex_edge_list_outward_link_type& outward_link = *edge_;
   if (inward_link.vertex_key_ == vertex_key_) {
@@ -107,6 +109,11 @@ void ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator::
   } else {
     assert(outward_link.vertex_key_ == vertex_key_);
     edge_ = outward_link.next_;
+  }
+  
+  // Self-loop detection: if we've cycled back to the starting edge, treat as end
+  if (edge_ == start_edge) {
+    edge_ = nullptr;
   }
 }
 

@@ -12,7 +12,7 @@ using std::set;
 // Phase 4.3: Edge Cases and Stress Tests
 // =============================================================================
 
-TEST_CASE("self-loops behavior", "[.][edge_cases][self_loop][broken]") {
+TEST_CASE("self-loops behavior", "[edge_cases][self_loop]") {
     // NOTE: Self-loops currently cause infinite loops during iteration
     // This is a known bug that needs fixing in the link/unlink logic
     // Using [.] tag to hide from default test runs
