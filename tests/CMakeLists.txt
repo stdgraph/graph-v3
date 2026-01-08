@@ -114,6 +114,7 @@ add_executable(graph3_tests
     # undirected_adjacency_list tests
     test_undirected_adjlist_basic.cpp
     test_undirected_adjlist_iterators.cpp
+    test_undirected_adjlist_edge_cases.cpp
 )
 
 target_link_libraries(graph3_tests

@@ -271,7 +271,7 @@ undirected_adjacency_list<empty_value, EV> g2(edges_direct, std::identity{});
 1. ✅ **Vertex iterator tests** - Forward iteration, const iteration, equality, advancement
 2. ✅ **Edge iterator tests** - Forward iteration, const iteration, empty graphs, single edge
 3. ✅ **Vertex-edge iterator tests** - Incident edges, bidirectional iteration, const iteration
-4. ✅ **Vertex-vertex iterator tests** - Adjacent vertices, isolated vertices
+4. ✅ **Vertex adjacency patterns** - Iterating edges + accessing target vertex (no dedicated vertex-vertex iterator)
 5. ✅ **Algorithm compatibility** - std::distance, std::advance, std::find_if, std::count_if
 6. ✅ **Edge cases** - Empty graphs, single elements, multiple passes, interleaved iteration, copy/assignment
 
@@ -282,7 +282,7 @@ undirected_adjacency_list<empty_value, EV> g2(edges_direct, std::identity{});
   - Vertex iterators (forward, const, empty, single)
   - Edge iterators (forward, const, empty, single)
   - Vertex-edge iterators (incident edges, bidirectional)
-  - Vertex-vertex iterators (adjacency)
+  - Vertex adjacency patterns
   - STL algorithm compatibility
   - Edge cases and multiple iteration patterns
 
@@ -327,11 +327,11 @@ undirected_adjacency_list<empty_value, EV> g2(edges_direct, std::identity{});
 **File:** `tests/test_undirected_adjlist_edge_cases.cpp` (to be created)
 
 **Planned Tasks:**
-- Self-loops behavior (implementation limitation identified)
-- Parallel edges
+- Self-loops behavior (Limitation: implementation treats each self-loop end as distinct incidence, appearing twice in iteration)
+- Parallel edges (multiple edges between same pair)
 - High-degree vertices
 - Maximum vertex keys
-- Edge deletion during iteration
+- Edge deletion during iteration (verify erasure from BOTH adjacency lists)
 - Large graphs (stress test)
 
 #### Phase 4.4: Memory Management Tests ⏳ PENDING (4 hours)
@@ -344,6 +344,7 @@ undirected_adjacency_list<empty_value, EV> g2(edges_direct, std::identity{});
 - Move semantics
 - Copy semantics (if implemented)
 - Clear and destructor behavior
+- Swap operations
 - Exception safety
 
 #### Phase 4.5: CPO Tests ⏳ PENDING (1 day)
