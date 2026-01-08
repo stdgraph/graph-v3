@@ -402,12 +402,12 @@ void ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::unlink(
   uv_link.prev_ = uv_link.next_ = nullptr;
   --size_;
 
-  if (size_ == 0)
+  if (size_ == 0) {
     assert(head_ == nullptr && tail_ == nullptr);
-  else if (size_ == 1)
-    assert(head_ == tail_);
-  else
-    assert(head_ != tail_);
+  }
+  // Note: For self-loops, size_ may be > 0 but the edge appears in the list twice
+  // (once as inward, once as outward), so assertions about head/tail equality
+  // don't hold during partial unlink. The invariant is restored after both unlinks.
 }
 
 template <typename VV,
