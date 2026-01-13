@@ -894,17 +894,7 @@ ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::edges_cbegin(const graph_type& 
   return edges_.cbegin(g, ukey);
 }
 
-template <typename VV,
-          typename EV,
-          typename GV,
-          integral KeyT,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-typename ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_edge_iterator
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::e_begin(graph_type const& g, vertex_key_type ukey) const {
-  return const_cast<vertex_edge_list_type&>(edges_).begin(const_cast<graph_type&>(g), ukey);
-}
+// Removed: e_begin implementation - legacy method using const_cast, replaced by edges_begin
 
 
 template <typename VV,
@@ -943,17 +933,7 @@ ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::edges_cend(const graph_type& g,
   return edges_.cend(g, ukey);
 }
 
-template <typename VV,
-          typename EV,
-          typename GV,
-          integral KeyT,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-typename ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_edge_iterator
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::e_end(graph_type const& g, vertex_key_type ukey) const {
-  return const_cast<vertex_edge_list_type&>(edges_).end(const_cast<graph_type&>(g), ukey);
-}
+// Removed: e_end implementation - legacy method using const_cast, replaced by edges_end
 
 template <typename VV,
           typename EV,
@@ -1936,7 +1916,7 @@ template <typename VV,
           typename Alloc>
 constexpr typename ual_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::reference
 ual_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::operator*() const {
-  return *const_cast<edge_type&>(*uv_).other_vertex(const_cast<graph_type&>(uv_.graph()), uv_.source_key());
+  return *uv_->other_vertex(uv_.graph(), uv_.source_key());
 }
 template <typename VV,
           typename EV,

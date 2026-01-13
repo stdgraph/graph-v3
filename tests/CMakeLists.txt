@@ -112,10 +112,7 @@ add_executable(graph3_tests
     test_dynamic_graph_conversions.cpp
     test_dynamic_graph_heterogeneous.cpp
     # undirected_adjacency_list tests
-    test_undirected_adjlist_basic.cpp
-    test_undirected_adjlist_iterators.cpp
-    test_undirected_adjlist_edge_cases.cpp
-    test_undirected_adjlist_memory.cpp
+    test_undirected_adjacency_list.cpp
 )
 
 target_link_libraries(graph3_tests

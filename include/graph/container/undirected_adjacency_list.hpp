@@ -30,16 +30,103 @@ namespace ranges = std::ranges;
 
 
 ///-------------------------------------------------------------------------------------
-/// undirected_adjacency_list forward declarations
+/// undirected_adjacency_list - Undirected Graph Container using Dual-List Design
 ///
-/// All vertices are kept in a single random-access container with an index for the
-/// first outward edge.
+/// @brief An efficient undirected graph implementation where edges are stored in 
+///        bidirectional doubly-linked lists at both vertices.
 ///
-/// All edges are kept in doubly-linked lists for both the inward and outward vertices.
+/// DESIGN OVERVIEW:
+/// ----------------
+/// This container uses a "dual-list" design where each undirected edge is physically
+/// stored in two doubly-linked lists - one at each incident vertex. This provides O(1)
+/// edge removal from both endpoints and efficient iteration of incident edges.
 ///
-/// A vector is used as the default container though any random-access container with
-/// <T,A> (type, allocator) template parameters can be used.
+/// Vertices: Stored in a contiguous random-access container (default: std::vector)
+///   - Provides O(1) vertex access by key/index
+///   - Each vertex maintains a doubly-linked list of incident edges
+///   - Vertex values stored inline (optional, use empty_value for no value)
 ///
+/// Edges: Each edge appears in two edge lists (one per endpoint)
+///   - Allocated individually on heap (via allocator)
+///   - Each edge stores pointers to form doubly-linked list at both vertices
+///   - O(1) removal from both vertices' edge lists
+///   - Edge values stored inline (optional, use empty_value for no value)
+///
+/// MEMORY OVERHEAD:
+/// ----------------
+/// Per vertex: ~24-32 bytes (list head pointers, value)
+/// Per edge: ~48-64 bytes (4 list pointers, 2 vertex keys, value, allocation overhead)
+/// Total for edge: 2× list nodes (one at each vertex)
+///
+/// COMPLEXITY GUARANTEES:
+/// ----------------------
+/// - Vertex access: O(1)
+/// - Add vertex: O(1) amortized
+/// - Add edge: O(1)
+/// - Remove edge: O(degree) to find + O(1) to unlink from both lists
+/// - Degree query: O(1) (cached)
+/// - Iterate edges from vertex: O(degree)
+/// - Iterate all edges: O(V + E)
+///
+/// ITERATION SEMANTICS:
+/// --------------------
+/// - Vertex iteration: Each vertex visited exactly once
+/// - Edge iteration (graph-level): Each edge visited TWICE (once from each endpoint)
+///   This is fundamental to the undirected design - use `edges_size() / 2` for unique count
+/// - Edge iteration (vertex-level): Each incident edge visited once
+///
+/// INTERFACE CONFORMANCE:
+/// ----------------------
+/// Satisfies Graph Container Interface requirements:
+/// - vertex_range<G>, adjacency_list<G>, sourced_adjacency_list<G>
+/// - Provides 47+ CPO functions (vertices, edges, degree, find_vertex, etc.)
+/// - Full const-correctness with const/non-const overloads
+/// - C++20 iterator concepts (bidirectional/forward iterators)
+///
+/// THREAD SAFETY:
+/// --------------
+/// NOT thread-safe. External synchronization required for:
+/// - Concurrent writes (add/remove vertices/edges)
+/// - Concurrent read + write operations
+/// Concurrent reads from multiple threads are safe if no writes occur.
+///
+/// WHEN TO USE:
+/// ------------
+/// Best for:
+/// - Undirected graphs with frequent edge removal
+/// - Algorithms needing fast neighbor iteration
+/// - Graphs where edge count dominates vertex count
+/// - Graphs with moderate vertex degrees
+///
+/// Consider alternatives when:
+/// - Memory overhead is critical (use compressed_graph for read-only)
+/// - Vertex degrees are very high (> 1000s of edges)
+/// - Graph is read-only after construction (use compressed_graph)
+/// - Need directed edges (use dynamic_graph instead)
+///
+/// EXAMPLE USAGE:
+/// --------------
+/// @code
+/// using Graph = undirected_adjacency_list<string, int>;  // vertex_value=string, edge_value=int
+/// 
+/// Graph g;
+/// auto u = g.create_vertex("Alice");
+/// auto v = g.create_vertex("Bob");
+/// auto uv = g.create_edge(u, v, 100);  // edge from Alice to Bob with value 100
+///
+/// // Iterate neighbors
+/// for (auto&& [uid, vid, uv] : g.edges(u)) {
+///   cout << "Edge to " << g[vid].value << " with weight " << uv.value << "\n";
+/// }
+/// @endcode
+///
+/// @tparam VV Vertex Value type (default: empty_value for no value)
+/// @tparam EV Edge Value type (default: empty_value for no value)  
+/// @tparam GV Graph Value type (default: empty_value for no value)
+/// @tparam KeyT Vertex key/index type (default: uint32_t)
+/// @tparam VContainer Vertex storage container template (default: std::vector)
+/// @tparam Alloc Allocator type (default: std::allocator<char>)
+///-------------------------------------------------------------------------------------
 
 template <typename VV                                        = empty_value,
           typename EV                                        = empty_value,
@@ -168,6 +255,7 @@ public:
   class const_iterator {
   public:
     using iterator_category = bidirectional_iterator_tag;
+    using iterator_concept  = std::bidirectional_iterator_tag;
     using value_type        = ual_vertex_edge_list::edge_type;
     using difference_type   = ual_vertex_edge_list::difference_type;
     using size_type         = ual_vertex_edge_list::size_type;
@@ -590,8 +678,7 @@ public:
 protected:
   void erase_edge(graph_type&, edge_type*);
 
-  vertex_edge_iterator e_begin(graph_type const&, vertex_key_type ukey) const;
-  vertex_edge_iterator e_end(graph_type const&, vertex_key_type ukey) const;
+  // Removed: e_begin/e_end were legacy protected methods using const_cast, replaced by public edges_begin/edges_end
 
 private:
   vertex_edge_list_type edges_;
@@ -632,6 +719,7 @@ public:
   using edge_key_type   = typename edge_type::edge_key_type; // <from,to>
 
   using iterator_category = bidirectional_iterator_tag;
+  using iterator_concept  = std::bidirectional_iterator_tag;
   using value_type        = vertex_type;
   using size_type         = typename edge_list_type::size_type;
   using difference_type   = typename edge_list_type::difference_type;
@@ -737,6 +825,38 @@ public:
   friend void swap(ual_vertex_vertex_iterator& lhs, ual_vertex_vertex_iterator& rhs) { swap(lhs.uv_, rhs.uv_); }
 };
 
+///-------------------------------------------------------------------------------------
+/// ITERATOR INVALIDATION RULES
+///-------------------------------------------------------------------------------------
+/// 
+/// Vertex Iterators:
+///   - Invalidated by: create_vertex() if reallocation occurs, clear()
+///   - NOT invalidated by: create_edge(), erase_edge()
+///   - Note: Use vertex keys instead of iterators for stable references
+///
+/// Edge Iterators (graph-level edges()):
+///   - Invalidated by: erase_edge() on the same edge, clear()
+///   - NOT invalidated by: erase_edge() on different edges, create_edge(), create_vertex()
+///
+/// Vertex-Edge Iterators (per-vertex edges):
+///   - Invalidated by: erase_edge() that removes the edge, clear()
+///   - NOT invalidated by: erase_edge() on different edges, create_edge(), create_vertex()
+///
+/// Vertex-Vertex Iterators (neighbors):
+///   - Same invalidation rules as vertex-edge iterators
+///
+/// References and Pointers:
+///   - Vertex references: Invalidated by create_vertex() if reallocation, clear()
+///   - Edge references: Invalidated by erase_edge() on that edge, clear()
+///   - Use vertex keys for stable references across operations
+///
+/// Thread Safety:
+///   - NOT thread-safe for concurrent modifications
+///   - Concurrent reads safe if no writes
+///   - External synchronization required for write operations
+///
+///-------------------------------------------------------------------------------------
+
 /// A simple undirected adjacency list (graph).
 ///
 /// @tparam VV              Vertex Value type. default = empty_value.
@@ -806,6 +926,7 @@ public:
   class const_edge_iterator {
   public:
     using iterator_category = forward_iterator_tag;
+    using iterator_concept  = std::forward_iterator_tag;
     using value_type        = ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>;
     using size_type         = size_t;
     using difference_type   = ptrdiff_t;
@@ -1047,25 +1168,45 @@ public:
   undirected_adjacency_list& operator=(const undirected_adjacency_list&) = default;
   undirected_adjacency_list& operator=(undirected_adjacency_list&&) = default;
 
-public:
+public: // Accessors
+  /// @brief Get the edge allocator.
+  /// @complexity O(1)
   constexpr edge_allocator_type edge_allocator() const noexcept;
 
+  /// @brief Access the vertex container.
+  /// @return Reference to the internal vertex container.
+  /// @complexity O(1)
   constexpr vertex_set&       vertices();
   constexpr const vertex_set& vertices() const;
 
+  /// @brief Get iterator to first vertex.
+  /// @complexity O(1)
   constexpr vertex_iterator       begin();
   constexpr const_vertex_iterator begin() const;
   constexpr const_vertex_iterator cbegin() const;
 
+  /// @brief Get iterator to one-past-last vertex.
+  /// @complexity O(1)
   constexpr vertex_iterator       end();
   constexpr const_vertex_iterator end() const;
   constexpr const_vertex_iterator cend() const;
 
+  /// @brief Find a vertex by its key.
+  /// @param key The vertex key to find.
+  /// @return Iterator to the vertex, or end() if not found.
+  /// @complexity O(1)
   vertex_iterator       find_vertex(vertex_key_type);
   const_vertex_iterator find_vertex(vertex_key_type) const;
 
+  /// @brief Get the number of edges in the graph.
+  /// @return Edge count (each undirected edge counted TWICE - once from each endpoint).
+  /// @note For unique edge count, divide by 2.
+  /// @complexity O(1)
   constexpr edge_size_type edges_size() const noexcept;
 
+  /// @brief Get iterator to first edge in the graph.
+  /// @note Iterates ALL edges from ALL vertices. Each edge visited twice (from both endpoints).
+  /// @complexity O(1)
   constexpr edge_iterator       edges_begin() { return edge_iterator(*this, begin()); }
   constexpr const_edge_iterator edges_begin() const {
     return const_edge_iterator(*this, const_cast<graph_type&>(*this).begin());
@@ -1074,6 +1215,8 @@ public:
     return const_edge_iterator(*this, const_cast<graph_type&>(*this).cbegin());
   }
 
+  /// @brief Get iterator to one-past-last edge.
+  /// @complexity O(1)
   constexpr edge_iterator       edges_end() { return edge_iterator(*this, end()); }
   constexpr const_edge_iterator edges_end() const {
     return const_edge_iterator(*this, const_cast<graph_type&>(*this).end());
@@ -1082,10 +1225,16 @@ public:
     return const_edge_iterator(*this, const_cast<graph_type&>(*this).end());
   }
 
+  /// @brief Get range of all edges.
+  /// @note Each undirected edge appears twice in iteration (once from each endpoint).
+  /// @complexity O(1) to create range, O(V+E) to iterate.
   edge_range       edges() { return {edges_begin(), edges_end(), edges_size_}; }
   const_edge_range edges() const { return {edges_begin(), edges_end(), edges_size_}; }
 
   // Graph value accessors
+  /// @brief Access the graph-level value.
+  /// @return Reference to the graph value.
+  /// @complexity O(1)
   graph_value_type& graph_value() noexcept {
     if constexpr (std::is_same_v<graph_value_type, empty_value>) {
       static empty_value ev;
@@ -1108,37 +1257,118 @@ public:
     }
   }
 
-  // Vertex creation
+public: // Vertex creation
+  /// @brief Create a new vertex with default value.
+  /// @return Iterator to the newly created vertex.
+  /// @complexity O(1) amortized.
+  /// @invalidates Vertex iterators if reallocation occurs.
   vertex_iterator create_vertex();
+  
+  /// @brief Create a new vertex with the given value (move).
+  /// @param val The value to move into the vertex.
+  /// @return Iterator to the newly created vertex.
+  /// @complexity O(1) amortized.
+  /// @invalidates Vertex iterators if reallocation occurs.
   vertex_iterator create_vertex(vertex_value_type&&);
 
+  /// @brief Create a new vertex with the given value (copy).
+  /// @tparam VV2 Type convertible to vertex_value_type.
+  /// @param val The value to copy into the vertex.
+  /// @return Iterator to the newly created vertex.
+  /// @complexity O(1) amortized.
+  /// @invalidates Vertex iterators if reallocation occurs.
   template <class VV2>
     requires std::constructible_from<vertex_value_type, const VV2&>
   vertex_iterator create_vertex(const VV2&);
 
-public:
+public: // Edge creation
+  /// @brief Create an edge between two vertices (by key).
+  /// @param ukey Source vertex key.
+  /// @param vkey Target vertex key.
+  /// @return Iterator to the newly created edge.
+  /// @complexity O(1).
+  /// @precondition Both vertex keys must be valid.
+  /// @invalidates No iterators invalidated.
   vertex_edge_iterator create_edge(vertex_key_type, vertex_key_type);
+  
+  /// @brief Create an edge with value between two vertices (by key, move value).
+  /// @param ukey Source vertex key.
+  /// @param vkey Target vertex key.
+  /// @param val Edge value to move.
+  /// @return Iterator to the newly created edge.
+  /// @complexity O(1).
+  /// @precondition Both vertex keys must be valid.
+  /// @invalidates No iterators invalidated.
   vertex_edge_iterator create_edge(vertex_key_type, vertex_key_type, edge_value_type&&);
 
+  /// @brief Create an edge with value between two vertices (by key, copy value).
+  /// @tparam EV2 Type convertible to edge_value_type.
+  /// @param ukey Source vertex key.
+  /// @param vkey Target vertex key.
+  /// @param val Edge value to copy.
+  /// @return Iterator to the newly created edge.
+  /// @complexity O(1).
+  /// @precondition Both vertex keys must be valid.
+  /// @invalidates No iterators invalidated.
   template <class EV2>
     requires std::constructible_from<edge_value_type, const EV2&>
   vertex_edge_iterator create_edge(vertex_key_type,
                                    vertex_key_type,
                                    const EV2&);
 
+  /// @brief Create an edge between two vertices (by iterator).
+  /// @param u Source vertex iterator.
+  /// @param v Target vertex iterator.
+  /// @return Iterator to the newly created edge.
+  /// @complexity O(1).
+  /// @precondition Both iterators must be valid and dereferenceable.
+  /// @invalidates No iterators invalidated.
   vertex_edge_iterator create_edge(vertex_iterator, vertex_iterator);
+  
+  /// @brief Create an edge with value between two vertices (by iterator, move value).
+  /// @param u Source vertex iterator.
+  /// @param v Target vertex iterator.
+  /// @param val Edge value to move.
+  /// @return Iterator to the newly created edge.
+  /// @complexity O(1).
+  /// @precondition Both iterators must be valid and dereferenceable.
+  /// @invalidates No iterators invalidated.
   vertex_edge_iterator create_edge(vertex_iterator, vertex_iterator, edge_value_type&&);
 
+  /// @brief Create an edge with value between two vertices (by iterator, copy value).
+  /// @tparam EV2 Type convertible to edge_value_type.
+  /// @param u Source vertex iterator.
+  /// @param v Target vertex iterator.
+  /// @param val Edge value to copy.
+  /// @return Iterator to the newly created edge.
+  /// @complexity O(1).
+  /// @precondition Both iterators must be valid and dereferenceable.
+  /// @invalidates No iterators invalidated.
   template <class EV2>
     requires std::constructible_from<edge_value_type, const EV2&>
   vertex_edge_iterator create_edge(vertex_iterator,
                                    vertex_iterator,
                                    const EV2&);
 
-
+public: // Edge removal
+  /// @brief Erase an edge from the graph.
+  /// @param pos Iterator to the edge to erase.
+  /// @return Iterator to the next edge.
+  /// @complexity O(1) to unlink from both vertex edge lists.
+  /// @precondition Iterator must be valid and dereferenceable.
+  /// @invalidates Only the erased edge iterator. Other edge iterators remain valid.
   edge_iterator erase_edge(edge_iterator);
 
+public: // Graph operations
+  /// @brief Remove all vertices and edges from the graph.
+  /// @complexity O(V + E).
+  /// @invalidates All iterators, pointers, and references.
   void clear();
+  
+  /// @brief Swap contents with another graph.
+  /// @param other The graph to swap with.
+  /// @complexity O(1).
+  /// @invalidates All iterators, pointers, and references to both graphs.
   void swap(undirected_adjacency_list&);
 
 protected:
