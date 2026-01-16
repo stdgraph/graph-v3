@@ -17,36 +17,36 @@ namespace graph::container {
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator::reference
-ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator::operator*() const {
+typename ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::const_iterator::reference
+ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::const_iterator::operator*() const {
   return *edge_;
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator::pointer
-ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator::operator->() const {
+typename ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::const_iterator::pointer
+ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::const_iterator::operator->() const {
   return edge_;
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator&
-ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator::operator++() {
+typename ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::const_iterator&
+ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::const_iterator::operator++() {
   advance();
   return *this;
 }
@@ -54,12 +54,12 @@ ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator::opera
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator
-ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator::operator++(int) {
+typename ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::const_iterator
+ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::const_iterator::operator++(int) {
   const_iterator tmp(*this);
   ++*this;
   return tmp;
@@ -68,12 +68,12 @@ ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator::opera
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator&
-ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator::operator--() {
+typename ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::const_iterator&
+ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::const_iterator::operator--() {
   retreat();
   return *this;
 }
@@ -81,12 +81,12 @@ ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator::opera
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator
-ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator::operator--(int) {
+typename ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::const_iterator
+ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::const_iterator::operator--(int) {
   const_iterator tmp(*this);
   --*this;
   return tmp;
@@ -95,11 +95,11 @@ ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator::opera
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-void ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator::advance() {
+void ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::const_iterator::advance() {
   edge_type* start_edge = edge_; // Remember where we started for cycle detection
   
   vertex_edge_list_inward_link_type&  inward_link  = *edge_; // in.vertex_key_ == this->vertex_key_;
@@ -120,11 +120,11 @@ void ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator::
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-void ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator::retreat() {
+void ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::const_iterator::retreat() {
   if (edge_) {
     vertex_edge_list_inward_link_type&  inward_link  = *edge_; // in.vertex_key_ == this->vertex_key_;
     vertex_edge_list_outward_link_type& outward_link = *edge_;
@@ -135,7 +135,7 @@ void ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator::
       edge_ = outward_link.prev_;
     }
   } else {
-    vertex_iterator u = graph_->find_vertex(vertex_key_);
+    vertex_iterator u = graph_->try_find_vertex(vertex_key_);
     edge_             = &u->edge_back(*graph_);
   }
 }
@@ -143,11 +143,11 @@ void ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator::
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-bool ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator::operator==(
+bool ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::const_iterator::operator==(
       const const_iterator& rhs) const noexcept {
   return edge_ == rhs.edge_;
 }
@@ -155,11 +155,11 @@ bool ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator::
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-bool ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator::operator!=(
+bool ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::const_iterator::operator!=(
       const const_iterator& rhs) const noexcept {
   return !(*this == rhs);
 }
@@ -168,36 +168,36 @@ bool ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator::
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::reference
-ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::iterator::operator*() const {
+typename ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::reference
+ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::iterator::operator*() const {
   return *this->edge_;
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::pointer
-ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::iterator::operator->() const {
+typename ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::pointer
+ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::iterator::operator->() const {
   return this->edge_;
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::iterator&
-ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::iterator::operator++() {
+typename ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::iterator&
+ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::iterator::operator++() {
   this->advance();
   return *this;
 }
@@ -205,12 +205,12 @@ ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::iterator::operator++(
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::iterator
-ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::iterator::operator++(int) {
+typename ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::iterator
+ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::iterator::operator++(int) {
   iterator tmp(*this);
   ++*this;
   return tmp;
@@ -219,12 +219,12 @@ ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::iterator::operator++(
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::iterator&
-ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::iterator::operator--() {
+typename ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::iterator&
+ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::iterator::operator--() {
   this->retreat();
   return *this;
 }
@@ -232,12 +232,12 @@ ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::iterator::operator--(
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::iterator
-ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::iterator::operator--(int) {
+typename ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::iterator
+ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::iterator::operator--(int) {
   iterator tmp(*this);
   --*this;
   return tmp;
@@ -247,82 +247,82 @@ ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::iterator::operator--(
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::size_type
-ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::size() const noexcept {
+typename ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::size_type
+ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::size() const noexcept {
   return size_;
 }
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-bool ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::empty() const noexcept {
+bool ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::empty() const noexcept {
   return size_ == 0;
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::edge_type&
-ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::front() {
+typename ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::edge_type&
+ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::front() {
   return *head_;
 }
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-const typename ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::edge_type&
-ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::front() const {
+const typename ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::edge_type&
+ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::front() const {
   return *head_;
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::edge_type&
-ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::back() {
+typename ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::edge_type&
+ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::back() {
   return *tail_;
 }
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-const typename ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::edge_type&
-ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::back() const {
+const typename ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::edge_type&
+ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::back() const {
   return *tail_;
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
 template <typename ListT>
-void ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::link_front(
-      edge_type& uv, ual_vertex_edge_list_link<VV, EV, GV, KeyT, VContainer, Alloc, ListT>& uv_link) {
-  using link_t = ual_vertex_edge_list_link<VV, EV, GV, KeyT, VContainer, Alloc, ListT>;
+void ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::link_front(
+      edge_type& uv, ual_vertex_edge_list_link<VV, EV, GV, VId, VContainer, Alloc, ListT>& uv_link) {
+  using link_t = ual_vertex_edge_list_link<VV, EV, GV, VId, VContainer, Alloc, ListT>;
   if (head_) {
     link_t& head_link = *static_cast<link_t*>(head_);
     uv_link.next_     = head_;
@@ -337,13 +337,13 @@ void ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::link_front(
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
 template <typename ListT>
-void ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::link_back(
-      edge_type& uv, ual_vertex_edge_list_link<VV, EV, GV, KeyT, VContainer, Alloc, ListT>& uv_link) {
+void ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::link_back(
+      edge_type& uv, ual_vertex_edge_list_link<VV, EV, GV, VId, VContainer, Alloc, ListT>& uv_link) {
   if (tail_) {
     vertex_edge_list_inward_link_type&  tail_inward_link  = static_cast<vertex_edge_list_inward_link_type&>(*tail_);
     vertex_edge_list_outward_link_type& tail_outward_link = static_cast<vertex_edge_list_outward_link_type&>(*tail_);
@@ -366,13 +366,13 @@ void ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::link_back(
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
 template <typename ListT>
-void ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::unlink(
-      edge_type& uv, ual_vertex_edge_list_link<VV, EV, GV, KeyT, VContainer, Alloc, ListT>& uv_link) {
+void ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::unlink(
+      edge_type& uv, ual_vertex_edge_list_link<VV, EV, GV, VId, VContainer, Alloc, ListT>& uv_link) {
 
   if (uv_link.prev_) {
     vertex_edge_list_inward_link_type& prev_inward_link =
@@ -420,35 +420,35 @@ void ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::unlink(
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::iterator
-ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::begin(graph_type& g, vertex_key_type ukey) noexcept {
+typename ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::iterator
+ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::begin(graph_type& g, vertex_key_type ukey) noexcept {
   return iterator(g, ukey, head_);
 }
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator
-ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::begin(const graph_type& g,
+typename ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::const_iterator
+ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::begin(const graph_type& g,
                                                                  vertex_key_type   ukey) const noexcept {
   return const_iterator(g, ukey, head_);
 }
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator
-ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::cbegin(const graph_type& g,
+typename ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::const_iterator
+ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::cbegin(const graph_type& g,
                                                                   vertex_key_type   ukey) const noexcept {
   return const_iterator(g, ukey, head_);
 }
@@ -456,35 +456,35 @@ ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::cbegin(const graph_ty
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::iterator
-ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::end(graph_type& g, vertex_key_type ukey) noexcept {
+typename ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::iterator
+ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::end(graph_type& g, vertex_key_type ukey) noexcept {
   return iterator(g, ukey, nullptr);
 }
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator
-ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::end(const graph_type& g,
+typename ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::const_iterator
+ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::end(const graph_type& g,
                                                                vertex_key_type   ukey) const noexcept {
   return const_iterator(g, ukey, nullptr);
 }
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_iterator
-ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::cend(const graph_type& g,
+typename ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::const_iterator
+ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::cend(const graph_type& g,
                                                                 vertex_key_type   ukey) const noexcept {
   return const_iterator(g, ukey, nullptr);
 }
@@ -492,24 +492,24 @@ ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::cend(const graph_type
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::edge_range
-ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::edges(graph_type& g, vertex_key_type ukey) noexcept {
+typename ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::edge_range
+ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::edges(graph_type& g, vertex_key_type ukey) noexcept {
   return {iterator(g, ukey, head_), iterator(g, ukey, nullptr), size_};
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_edge_range
-ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::edges(const graph_type& g,
+typename ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::const_edge_range
+ual_vertex_edge_list<VV, EV, GV, VId, VContainer, Alloc>::edges(const graph_type& g,
                                                                  vertex_key_type   ukey) const noexcept {
   return {const_iterator(g, ukey, head_), const_iterator(g, ukey, nullptr), size_};
 }
@@ -520,11 +520,11 @@ ual_vertex_edge_list<VV, EV, GV, KeyT, VContainer, Alloc>::edges(const graph_typ
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::ual_edge(graph_type&     g,
+ual_edge<VV, EV, GV, VId, VContainer, Alloc>::ual_edge(graph_type&     g,
                                                         vertex_key_type ukey,
                                                         vertex_key_type vkey) noexcept
       : base_type(), vertex_edge_list_inward_link_type(ukey), vertex_edge_list_outward_link_type(vkey) {
@@ -534,11 +534,11 @@ ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::ual_edge(graph_type&     g,
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::ual_edge(graph_type&            g,
+ual_edge<VV, EV, GV, VId, VContainer, Alloc>::ual_edge(graph_type&            g,
                                                         vertex_key_type        ukey,
                                                         vertex_key_type        vkey,
                                                         const edge_value_type& val) noexcept
@@ -549,11 +549,11 @@ ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::ual_edge(graph_type&            g
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::ual_edge(graph_type&       g,
+ual_edge<VV, EV, GV, VId, VContainer, Alloc>::ual_edge(graph_type&       g,
                                                         vertex_key_type   ukey,
                                                         vertex_key_type   vkey,
                                                         edge_value_type&& val) noexcept
@@ -564,11 +564,11 @@ ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::ual_edge(graph_type&       g,
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::ual_edge(graph_type& g, vertex_iterator ui, vertex_iterator vi) noexcept
+ual_edge<VV, EV, GV, VId, VContainer, Alloc>::ual_edge(graph_type& g, vertex_iterator ui, vertex_iterator vi) noexcept
       : base_type()
       , vertex_edge_list_inward_link_type(vertex_key(g, ui))
       , vertex_edge_list_outward_link_type(vertex_key(g, vi)) {
@@ -578,11 +578,11 @@ ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::ual_edge(graph_type& g, vertex_it
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::ual_edge(graph_type&            g,
+ual_edge<VV, EV, GV, VId, VContainer, Alloc>::ual_edge(graph_type&            g,
                                                         vertex_iterator        ui,
                                                         vertex_iterator        vi,
                                                         const edge_value_type& val) noexcept
@@ -595,11 +595,11 @@ ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::ual_edge(graph_type&            g
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::ual_edge(graph_type&       g,
+ual_edge<VV, EV, GV, VId, VContainer, Alloc>::ual_edge(graph_type&       g,
                                                         vertex_iterator   ui,
                                                         vertex_iterator   vi,
                                                         edge_value_type&& val) noexcept
@@ -612,11 +612,11 @@ ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::ual_edge(graph_type&       g,
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::~ual_edge() noexcept {
+ual_edge<VV, EV, GV, VId, VContainer, Alloc>::~ual_edge() noexcept {
   vertex_edge_list_outward_link_type& outward_link = *static_cast<vertex_edge_list_outward_link_type*>(this);
   assert(outward_link.prev() == nullptr && outward_link.next() == nullptr); // has edge been unlinked?
 
@@ -627,22 +627,22 @@ ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::~ual_edge() noexcept {
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-void ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::link_front(vertex_type& u, vertex_type& v) noexcept {
+void ual_edge<VV, EV, GV, VId, VContainer, Alloc>::link_front(vertex_type& u, vertex_type& v) noexcept {
   u.edges_.link_front(*this, *static_cast<vertex_edge_list_inward_link_type*>(this));
   v.edges_.link_front(*this, *static_cast<vertex_edge_list_outward_link_type*>(this));
 }
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-void ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::link_back(vertex_type& u, vertex_type& v) noexcept {
+void ual_edge<VV, EV, GV, VId, VContainer, Alloc>::link_back(vertex_type& u, vertex_type& v) noexcept {
   u.edges_.link_back(*this, *static_cast<vertex_edge_list_inward_link_type*>(this));
   v.edges_.link_back(*this, *static_cast<vertex_edge_list_outward_link_type*>(this));
 }
@@ -650,11 +650,11 @@ void ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::link_back(vertex_type& u, ve
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-void ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::unlink(vertex_type& u, vertex_type& v) noexcept {
+void ual_edge<VV, EV, GV, VId, VContainer, Alloc>::unlink(vertex_type& u, vertex_type& v) noexcept {
   u.edges_.unlink(*this, *static_cast<vertex_edge_list_inward_link_type*>(this));
   v.edges_.unlink(*this, *static_cast<vertex_edge_list_outward_link_type*>(this));
 }
@@ -662,72 +662,72 @@ void ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::unlink(vertex_type& u, verte
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_iterator
-ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::source_vertex(graph_type& g) noexcept {
+typename ual_edge<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
+ual_edge<VV, EV, GV, VId, VContainer, Alloc>::source_vertex(graph_type& g) noexcept {
   return g.vertices().begin() + source_vertex_key(g);
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::const_vertex_iterator
-ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::source_vertex(const graph_type& g) const noexcept {
+typename ual_edge<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_iterator
+ual_edge<VV, EV, GV, VId, VContainer, Alloc>::source_vertex(const graph_type& g) const noexcept {
   return static_cast<vertex_edge_list_inward_link_type const*>(this)->vertex(g);
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_key_type
-ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::source_vertex_key(const graph_type& g) const noexcept {
+typename ual_edge<VV, EV, GV, VId, VContainer, Alloc>::vertex_key_type
+ual_edge<VV, EV, GV, VId, VContainer, Alloc>::source_vertex_key([[maybe_unused]] const graph_type& g) const noexcept {
   return static_cast<vertex_edge_list_inward_link_type const*>(this)->vertex_key();
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_iterator
-ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::target_vertex(graph_type& g) noexcept {
+typename ual_edge<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
+ual_edge<VV, EV, GV, VId, VContainer, Alloc>::target_vertex(graph_type& g) noexcept {
   return g.vertices().begin() + target_vertex_key(g);
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::const_vertex_iterator
-ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::target_vertex(const graph_type& g) const noexcept {
+typename ual_edge<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_iterator
+ual_edge<VV, EV, GV, VId, VContainer, Alloc>::target_vertex(const graph_type& g) const noexcept {
   return static_cast<vertex_edge_list_outward_link_type const*>(this)->vertex(g);
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_key_type
-ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::target_vertex_key(const graph_type& g) const noexcept {
+typename ual_edge<VV, EV, GV, VId, VContainer, Alloc>::vertex_key_type
+ual_edge<VV, EV, GV, VId, VContainer, Alloc>::target_vertex_key([[maybe_unused]] const graph_type& g) const noexcept {
   return static_cast<vertex_edge_list_outward_link_type const*>(this)->vertex_key();
 }
 
@@ -735,24 +735,24 @@ ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::target_vertex_key(const graph_typ
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_iterator
-ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::other_vertex(graph_type& g, const_vertex_iterator other) noexcept {
+typename ual_edge<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
+ual_edge<VV, EV, GV, VId, VContainer, Alloc>::other_vertex(graph_type& g, const_vertex_iterator other) noexcept {
   return other != source_vertex(g) ? source_vertex(g) : target_vertex(g);
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::const_vertex_iterator
-ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::other_vertex(const graph_type&     g,
+typename ual_edge<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_iterator
+ual_edge<VV, EV, GV, VId, VContainer, Alloc>::other_vertex(const graph_type&     g,
                                                             const_vertex_iterator other) const noexcept {
   return other != source_vertex(g) ? source_vertex(g) : target_vertex(g);
 }
@@ -760,24 +760,24 @@ ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::other_vertex(const graph_type&   
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_iterator
-ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::other_vertex(graph_type& g, vertex_key_type other_key) noexcept {
+typename ual_edge<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
+ual_edge<VV, EV, GV, VId, VContainer, Alloc>::other_vertex(graph_type& g, vertex_key_type other_key) noexcept {
   return other_key != source_vertex_key(g) ? source_vertex(g) : target_vertex(g);
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::const_vertex_iterator
-ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::other_vertex(const graph_type& g,
+typename ual_edge<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_iterator
+ual_edge<VV, EV, GV, VId, VContainer, Alloc>::other_vertex(const graph_type& g,
                                                             vertex_key_type   other_key) const noexcept {
   return other_key != source_vertex_key(g) ? source_vertex(g) : target_vertex(g);
 }
@@ -786,12 +786,12 @@ ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::other_vertex(const graph_type& g,
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_key_type
-ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::other_vertex_key(const graph_type&     g,
+typename ual_edge<VV, EV, GV, VId, VContainer, Alloc>::vertex_key_type
+ual_edge<VV, EV, GV, VId, VContainer, Alloc>::other_vertex_key(const graph_type&     g,
                                                                 const_vertex_iterator other) const noexcept {
   return other != source_vertex(g) ? source_vertex_key(g) : target_vertex_key(g);
 }
@@ -799,12 +799,12 @@ ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::other_vertex_key(const graph_type
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_key_type
-ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::other_vertex_key(const graph_type& g,
+typename ual_edge<VV, EV, GV, VId, VContainer, Alloc>::vertex_key_type
+ual_edge<VV, EV, GV, VId, VContainer, Alloc>::other_vertex_key(const graph_type& g,
                                                                 vertex_key_type   other_key) const noexcept {
   return other_key != source_vertex_key(g) ? source_vertex_key(g) : target_vertex_key(g);
 }
@@ -812,12 +812,12 @@ ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::other_vertex_key(const graph_type
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::edge_key_type
-ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::edge_key(const graph_type& g) const noexcept {
+typename ual_edge<VV, EV, GV, VId, VContainer, Alloc>::edge_key_type
+ual_edge<VV, EV, GV, VId, VContainer, Alloc>::edge_key(const graph_type& g) const noexcept {
   return unordered_pair(source_vertex_key(g), target_vertex_key(g));
 }
 
@@ -828,31 +828,31 @@ ual_edge<VV, EV, GV, KeyT, VContainer, Alloc>::edge_key(const graph_type& g) con
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::ual_vertex(vertex_set& vertices, vertex_index index) {}
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::ual_vertex([[maybe_unused]] vertex_set& vertices, [[maybe_unused]] vertex_index index) {}
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::ual_vertex(vertex_set&              vertices,
-                                                            vertex_index             index,
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::ual_vertex([[maybe_unused]] vertex_set& vertices,
+                                                            [[maybe_unused]] vertex_index index,
                                                             const vertex_value_type& val)
       : base_type(val) {}
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::ual_vertex(vertex_set&         vertices,
-                                                            vertex_index        index,
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::ual_vertex([[maybe_unused]] vertex_set& vertices,
+                                                            [[maybe_unused]] vertex_index index,
                                                             vertex_value_type&& val) noexcept
       : base_type(move(val)) {}
 
@@ -860,36 +860,36 @@ ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::ual_vertex(vertex_set&         
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_edge_iterator
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::edges_begin(graph_type& g, vertex_key_type ukey) noexcept {
+typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::vertex_edge_iterator
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::edges_begin(graph_type& g, vertex_key_type ukey) noexcept {
   return edges_.begin(g, ukey);
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::const_vertex_edge_iterator
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::edges_begin(const graph_type& g, vertex_key_type ukey) const noexcept {
+typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_edge_iterator
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::edges_begin(const graph_type& g, vertex_key_type ukey) const noexcept {
   return edges_.begin(g, ukey);
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::const_vertex_edge_iterator
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::edges_cbegin(const graph_type& g,
+typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_edge_iterator
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::edges_cbegin(const graph_type& g,
                                                               vertex_key_type   ukey) const noexcept {
   return edges_.cbegin(g, ukey);
 }
@@ -900,36 +900,36 @@ ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::edges_cbegin(const graph_type& 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_edge_iterator
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::edges_end(graph_type& g, vertex_key_type ukey) noexcept {
+typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::vertex_edge_iterator
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::edges_end(graph_type& g, vertex_key_type ukey) noexcept {
   return edges_.end(g, ukey);
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::const_vertex_edge_iterator
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::edges_end(const graph_type& g, vertex_key_type ukey) const noexcept {
+typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_edge_iterator
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::edges_end(const graph_type& g, vertex_key_type ukey) const noexcept {
   return edges_.end(g, ukey);
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::const_vertex_edge_iterator
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::edges_cend(const graph_type& g, vertex_key_type ukey) const noexcept {
+typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_edge_iterator
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::edges_cend(const graph_type& g, vertex_key_type ukey) const noexcept {
   return edges_.cend(g, ukey);
 }
 
@@ -938,31 +938,31 @@ ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::edges_cend(const graph_type& g,
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_edge_range
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::edges(graph_type& g, vertex_key_type ukey) {
+typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::vertex_edge_range
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::edges(graph_type& g, vertex_key_type ukey) {
   return edges_.edges(g, ukey);
 }
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::const_vertex_edge_range
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::edges(const graph_type& g, vertex_key_type ukey) const {
+typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_edge_range
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::edges(const graph_type& g, vertex_key_type ukey) const {
   return edges_.edges(g, ukey);
 }
 
 
 #if 0
-template <typename VV, typename EV, typename GV, integral KeyT, template <typename V, typename A> class VContainer, typename Alloc>
-typename ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_key_type
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_key(const graph_type& g) const noexcept {
+template <typename VV, typename EV, typename GV, integral VId, template <typename V, typename A> class VContainer, typename Alloc>
+typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::vertex_key_type
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::vertex_key(const graph_type& g) const noexcept {
   return static_cast<vertex_key_type>(this - g.vertices().data());
 }
 #endif
@@ -971,48 +971,48 @@ ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_key(const graph_type& g)
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::edge_type&
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::edge_front(graph_type& g) noexcept {
+typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::edge_type&
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::edge_front(graph_type& g) noexcept {
   return edges_.front(g, *this);
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-const typename ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::edge_type&
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::edge_front(const graph_type& g) const noexcept {
+const typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::edge_type&
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::edge_front(const graph_type& g) const noexcept {
   return edges_.front(g, *this);
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::edge_type&
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::edge_back(graph_type& g) noexcept {
+typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::edge_type&
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::edge_back(graph_type& g) noexcept {
   return edges_.back();
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-const typename ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::edge_type&
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::edge_back(const graph_type& g) const noexcept {
+const typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::edge_type&
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::edge_back(const graph_type& g) const noexcept {
   return edges_.back();
 }
 
@@ -1020,23 +1020,23 @@ ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::edge_back(const graph_type& g) 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_edge_size_type
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::edges_size() const {
+typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::vertex_edge_size_type
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::edges_size() const {
   return edges_.size();
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-void ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::erase_edge(graph_type& g, edge_type* uv) {
+void ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::erase_edge(graph_type& g, edge_type* uv) {
   vertex_type& u = g.vertices()[uv->source_vertex_key(g)];
   vertex_type& v = g.vertices()[uv->target_vertex_key(g)];
   uv->unlink(u, v);
@@ -1049,11 +1049,11 @@ void ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::erase_edge(graph_type& g, 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-void ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::clear_edges(graph_type& g) {
+void ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::clear_edges(graph_type& g) {
   while (!edges_.empty()) {
     erase_edge(g, &edges_.front());
   }
@@ -1062,12 +1062,12 @@ void ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::clear_edges(graph_type& g)
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_edge_iterator
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::erase_edge(graph_type& g, vertex_edge_iterator uvi) {
+typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::vertex_edge_iterator
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::erase_edge(graph_type& g, vertex_edge_iterator uvi) {
   edge_type* uv = &*uvi;
   ++uvi;
   erase_edge(g, uv);
@@ -1077,12 +1077,12 @@ ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::erase_edge(graph_type& g, verte
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_edge_iterator
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::erase_edge(graph_type&          g,
+typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::vertex_edge_iterator
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::erase_edge(graph_type&          g,
                                                             vertex_edge_iterator first,
                                                             vertex_edge_iterator last) {
   while (first != last)
@@ -1091,27 +1091,27 @@ ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::erase_edge(graph_type&         
 }
 
 #if 0
-template <typename VV, typename EV, typename GV, integral KeyT, template <typename V, typename A> class VContainer, typename Alloc>
-typename ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_edge_iterator
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::create_edge(graph_type& g, vertex_type& v) {
+template <typename VV, typename EV, typename GV, integral VId, template <typename V, typename A> class VContainer, typename Alloc>
+typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::vertex_edge_iterator
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::create_edge(graph_type& g, vertex_type& v) {
   edge_type* uv = g.edge_alloc_.allocate(1);
   new (uv) edge_type(g, *this, v);
   ++g.edges_size_;
   return vertex_edge_iterator(g, *this, uv);
 }
 
-template <typename VV, typename EV, typename GV, integral KeyT, template <typename V, typename A> class VContainer, typename Alloc>
-typename ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_edge_iterator
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::create_edge(graph_type& g, vertex_type& v, edge_value_type&& val) {
+template <typename VV, typename EV, typename GV, integral VId, template <typename V, typename A> class VContainer, typename Alloc>
+typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::vertex_edge_iterator
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::create_edge(graph_type& g, vertex_type& v, edge_value_type&& val) {
   edge_type* uv = g.edge_alloc_.allocate(1);
   new (uv) edge_type(g, *this, v, move(val));
   ++g.edges_size_;
   return vertex_edge_iterator(g, *this, uv);
 }
 
-template <typename VV, typename EV, typename GV, integral KeyT, template <typename V, typename A> class VContainer, typename Alloc>
-typename ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_edge_iterator
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::create_edge(graph_type& g, vertex_type& v, const edge_value_type& val) {
+template <typename VV, typename EV, typename GV, integral VId, template <typename V, typename A> class VContainer, typename Alloc>
+typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::vertex_edge_iterator
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::create_edge(graph_type& g, vertex_type& v, const edge_value_type& val) {
   edge_type* uv = g.edge_alloc_.allocate(1);
   new (uv) edge_type(g, *this, v, val);
   ++g.edges_size_;
@@ -1122,35 +1122,35 @@ ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::create_edge(graph_type& g, vert
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_vertex_size_type
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::vertices_size(const graph_type& g) const {
+typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::vertex_vertex_size_type
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::vertices_size(const graph_type& g) const {
   return size(edges(g));
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_vertex_range
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::vertices(graph_type& g, vertex_key_type ukey) {
+typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::vertex_vertex_range
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::vertices(graph_type& g, vertex_key_type ukey) {
   return {vertex_vertex_iterator(edges_.begin(g, ukey)), vertex_vertex_iterator(edges_.end(g, ukey)), edges_.size()};
 }
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::const_vertex_vertex_range
-ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::vertices(const graph_type& g, vertex_key_type ukey) const {
+typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_vertex_range
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::vertices(const graph_type& g, vertex_key_type ukey) const {
   return {const_vertex_vertex_iterator(edges_.begin(g, ukey)), const_vertex_vertex_iterator(edges_.end(g, ukey)),
           edges_.size()};
 }
@@ -1163,44 +1163,44 @@ ual_vertex<VV, EV, GV, KeyT, VContainer, Alloc>::vertices(const graph_type& g, v
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::undirected_adjacency_list(const allocator_type& alloc)
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjacency_list(const allocator_type& alloc)
       : vertices_(alloc), edge_alloc_(alloc) {}
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::undirected_adjacency_list(const graph_value_type& val,
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjacency_list(const graph_value_type& val,
                                                                                           const allocator_type&   alloc)
-      : vertices_(alloc), base_type(val), edge_alloc_(alloc) {}
+      : base_type(val), vertices_(alloc), edge_alloc_(alloc) {}
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::undirected_adjacency_list(graph_value_type&&    val,
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjacency_list(graph_value_type&&    val,
                                                                                           const allocator_type& alloc)
-      : vertices_(alloc), base_type(move(val)), edge_alloc_(alloc) {}
+      : base_type(move(val)), vertices_(alloc), edge_alloc_(alloc) {}
 
 
 // clang-format off
-template <typename VV, typename EV, typename GV, integral KeyT, template <typename V, typename A> class VContainer, typename Alloc>
+template <typename VV, typename EV, typename GV, integral VId, template <typename V, typename A> class VContainer, typename Alloc>
 template <typename ERng, typename VRng, typename EProj, typename VProj>
   requires ranges::forward_range<ERng> 
         && ranges::input_range<VRng>
         && std::regular_invocable<EProj, ranges::range_reference_t<ERng>>
         && std::regular_invocable<VProj, ranges::range_reference_t<VRng>>
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::undirected_adjacency_list(const ERng&  erng,
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjacency_list(const ERng&  erng,
                                                                               const VRng&  vrng,
                                                                               const EProj& eproj,
                                                                               const VProj& vproj,
@@ -1247,27 +1247,28 @@ undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::undirected_adjac
 }
 
 // clang-format off
-template <typename VV, typename EV, typename GV, integral KeyT, template <typename V, typename A> class VContainer, typename Alloc>
+template <typename VV, typename EV, typename GV, integral VId, template <typename V, typename A> class VContainer, typename Alloc>
 template <typename ERng, typename EProj>
   requires ranges::forward_range<ERng>
         && std::regular_invocable<EProj, ranges::range_reference_t<ERng>>
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::undirected_adjacency_list(const ERng&  erng, 
+        && (!std::is_convertible_v<ERng, GV>)
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjacency_list(const ERng&  erng, 
                                                                               const EProj& eproj, 
                                                                               const GV&    gv, 
                                                                               const Alloc& alloc)
-      : undirected_adjacency_list(erng, vector<int>(), eproj, [](empty_value) 
-{ return copyable_vertex_t<KeyT, VV>{KeyT()}; }, gv, alloc)
+      : undirected_adjacency_list(erng, vector<int>(), eproj, [](auto) 
+{ return copyable_vertex_t<VId, VV>{VId()}; }, gv, alloc)
 // clang-format on
 {}
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::undirected_adjacency_list(
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjacency_list(
       const initializer_list<tuple<vertex_key_type, vertex_key_type, edge_value_type>>& ilist, const Alloc& alloc)
       : base_type(), vertices_(alloc), edge_alloc_(alloc) {
   // Evaluate max vertex key needed
@@ -1296,11 +1297,11 @@ undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::undirected_adjac
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::undirected_adjacency_list(
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjacency_list(
       const initializer_list<tuple<vertex_key_type, vertex_key_type>>& ilist, const Alloc& alloc)
       : base_type(), vertices_(alloc), edge_alloc_(alloc) {
   // Evaluate max vertex key needed
@@ -1329,11 +1330,11 @@ undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::undirected_adjac
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::~undirected_adjacency_list() {
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::~undirected_adjacency_list() {
   clear(); // assure edges are deleted using edge_alloc_
 }
 
@@ -1341,68 +1342,68 @@ undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::~undirected_adja
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::edge_allocator_type
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::edge_allocator() const noexcept {
+constexpr typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::edge_allocator_type
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::edge_allocator() const noexcept {
   return edge_alloc_;
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_set&
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::vertices() {
+constexpr typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_set&
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertices() {
   return vertices_;
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr const typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_set&
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::vertices() const {
+constexpr const typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_set&
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertices() const {
   return vertices_;
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-void undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::reserve_vertices(vertex_size_type n) {
+void undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::reserve_vertices(vertex_size_type n) {
   vertices_.reserve(n);
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-void undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::resize_vertices(vertex_size_type n) {
+void undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::resize_vertices(vertex_size_type n) {
   vertices_.resize(n);
 }
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-void undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::resize_vertices(vertex_size_type         n,
+void undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::resize_vertices(vertex_size_type         n,
                                                                                      const vertex_value_type& val) {
   vertices_.resize(n, val);
 }
@@ -1410,38 +1411,38 @@ void undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::resize_vert
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_iterator
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::create_vertex() {
-  vertices_.push_back(vertex_type(vertices_, vertices_.size()));
-  return vertices_.begin() + (vertices_.size() - 1);
+typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_vertex() {
+  vertices_.push_back(vertex_type(vertices_, static_cast<vertex_key_type>(vertices_.size())));
+  return vertices_.begin() + static_cast<vertex_difference_type>(vertices_.size() - 1);
 }
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_iterator
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::create_vertex(vertex_value_type&& val) {
-  vertices_.push_back(vertex_type(vertices_, vertices_.size(), move(val)));
-  return vertices_.begin() + (vertices_.size() - 1);
+typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_vertex(vertex_value_type&& val) {
+  vertices_.push_back(vertex_type(vertices_, static_cast<vertex_key_type>(vertices_.size()), move(val)));
+  return vertices_.begin() + static_cast<vertex_difference_type>(vertices_.size() - 1);
 }
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
 template <class VV2>
-  requires std::constructible_from<typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_value_type, const VV2&>
-typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_iterator
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::create_vertex(const VV2& val) {
+  requires std::constructible_from<typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_value_type, const VV2&>
+typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_vertex(const VV2& val) {
   vertices_.push_back(vertex_type(vertices_, static_cast<vertex_key_type>(vertices_.size()), val));
   return vertices_.begin() + static_cast<vertex_key_type>(vertices_.size() - 1);
 }
@@ -1450,12 +1451,12 @@ undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::create_vertex(co
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_iterator
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::find_vertex(vertex_key_type key) {
+typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::try_find_vertex(vertex_key_type key) {
   if (key < vertices_.size())
     return vertices_.begin() + key;
   else
@@ -1464,12 +1465,12 @@ undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::find_vertex(vert
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_vertex_iterator
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::find_vertex(vertex_key_type key) const {
+typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_iterator
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::try_find_vertex(vertex_key_type key) const {
   if (key < vertices_.size())
     return vertices_.begin() + key;
   else
@@ -1480,80 +1481,80 @@ undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::find_vertex(vert
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_iterator
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::begin() {
+constexpr typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::begin() {
   return vertices_.begin();
 }
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_vertex_iterator
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::begin() const {
+constexpr typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_iterator
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::begin() const {
   return vertices_.begin();
 }
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_vertex_iterator
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::cbegin() const {
+constexpr typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_iterator
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::cbegin() const {
   return vertices_.cbegin();
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_iterator
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::end() {
+constexpr typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::end() {
   return vertices_.end();
 }
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_vertex_iterator
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::end() const {
+constexpr typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_iterator
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::end() const {
   return vertices_.end();
 }
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::const_vertex_iterator
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::cend() const {
+constexpr typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_iterator
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::cend() const {
   return vertices_.cend();
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::edge_size_type
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::edges_size() const noexcept {
+constexpr typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::edge_size_type
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::edges_size() const noexcept {
   return edges_size_;
 }
 
@@ -1561,27 +1562,27 @@ undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::edges_size() con
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_edge_iterator
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::create_edge(vertex_key_type from_key,
+typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_edge_iterator
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_edge(vertex_key_type from_key,
                                                                             vertex_key_type to_key) {
-  vertex_iterator ui = find_vertex(from_key);
-  vertex_iterator vi = find_vertex(to_key);
+  vertex_iterator ui = try_find_vertex(from_key);
+  vertex_iterator vi = try_find_vertex(to_key);
   return create_edge(ui, vi);
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_edge_iterator
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::create_edge(vertex_key_type   from_key,
+typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_edge_iterator
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_edge(vertex_key_type   from_key,
                                                                             vertex_key_type   to_key,
                                                                             edge_value_type&& val) {
   vertex_iterator ui = vertices_.begin() + from_key;
@@ -1592,14 +1593,14 @@ undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::create_edge(vert
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
 template <class EV2>
-  requires std::constructible_from<typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::edge_value_type, const EV2&>
-typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_edge_iterator
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::create_edge(vertex_key_type from_key,
+  requires std::constructible_from<typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::edge_value_type, const EV2&>
+typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_edge_iterator
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_edge(vertex_key_type from_key,
                                                                             vertex_key_type to_key,
                                                                             const EV2&      val) {
   vertex_iterator ui = vertices_.begin() + from_key;
@@ -1611,12 +1612,12 @@ undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::create_edge(vert
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_edge_iterator
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::create_edge(vertex_iterator u, vertex_iterator v) {
+typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_edge_iterator
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_edge(vertex_iterator u, vertex_iterator v) {
   vertex_key_type ukey = u - vertices_.begin();
   edge_type*      uv   = edge_alloc_.allocate(1);
   new (uv) edge_type(*this, u, v);
@@ -1627,12 +1628,12 @@ undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::create_edge(vert
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_edge_iterator
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::create_edge(vertex_iterator   u,
+typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_edge_iterator
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_edge(vertex_iterator   u,
                                                                             vertex_iterator   v,
                                                                             edge_value_type&& val) {
   vertex_key_type ukey = vertex_key(*this, u);
@@ -1645,14 +1646,14 @@ undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::create_edge(vert
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
 template <class EV2>
-  requires std::constructible_from<typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::edge_value_type, const EV2&>
-typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_edge_iterator
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::create_edge(vertex_iterator u,
+  requires std::constructible_from<typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::edge_value_type, const EV2&>
+typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_edge_iterator
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_edge(vertex_iterator u,
                                                                             vertex_iterator v,
                                                                             const EV2&      val) {
   vertex_key_type ukey = vertex_key(*this, u);
@@ -1666,12 +1667,12 @@ undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::create_edge(vert
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::edge_iterator
-undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::erase_edge(edge_iterator pos) {
+typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::edge_iterator
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::erase_edge(edge_iterator pos) {
   edge_type* uv = &*pos;
   ++pos;
   uv->~edge_type(); // unlinks from vertices
@@ -1684,11 +1685,11 @@ undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::erase_edge(edge_
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-void undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::clear() {
+void undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::clear() {
   // make sure edges are deallocated from edge_alloc_
   for (vertex_type& u : vertices_)
     u.clear_edges(*this);
@@ -1699,11 +1700,11 @@ void undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::clear() {
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-void undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::swap(undirected_adjacency_list& rhs) {
+void undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::swap(undirected_adjacency_list& rhs) {
   vertices_.swap(rhs.vertices_);
   swap(edges_size_, rhs.edges_size_);
   edge_alloc_.swap(rhs.edge_alloc_);
@@ -1712,11 +1713,11 @@ void undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::swap(undire
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-void undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::throw_unordered_edges() const {
+void undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::throw_unordered_edges() const {
   assert(false); // container must be sorted by edge_key.first
   throw std::invalid_argument("edges not ordered");
 }
@@ -1727,105 +1728,105 @@ void undirected_adjacency_list<VV, EV, GV, KeyT, VContainer, Alloc>::throw_unord
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr ual_const_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::ual_const_vertex_vertex_iterator(
+constexpr ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::ual_const_vertex_vertex_iterator(
       vertex_edge_iterator const& uv)
       : uv_(uv) {}
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr typename ual_const_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::graph_type&
-ual_const_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::graph() noexcept {
+constexpr typename ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::graph_type&
+ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::graph() noexcept {
   return uv_.graph();
 }
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr const typename ual_const_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::graph_type&
-ual_const_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::graph() const noexcept {
+constexpr const typename ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::graph_type&
+ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::graph() const noexcept {
   return uv_.graph();
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr typename ual_const_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::const_vertex_iterator
-ual_const_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::other_vertex() const {
+constexpr typename ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_iterator
+ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::other_vertex() const {
   return uv_->other_vertex(uv_.graph(), uv_.source_key());
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr typename ual_const_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_key_type
-ual_const_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::other_vertex_key() const {
+constexpr typename ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::vertex_key_type
+ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::other_vertex_key() const {
   return uv_->other_vertex_key(uv_.graph(), uv_.source_key());
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr typename ual_const_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::reference
-ual_const_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::operator*() const noexcept {
+constexpr typename ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::reference
+ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator*() const noexcept {
   return *uv_->other_vertex(uv_.graph(), uv_.source_key());
 }
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr typename ual_const_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::pointer
-ual_const_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::operator->() const noexcept {
+constexpr typename ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::pointer
+ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator->() const noexcept {
   return &**this;
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr ual_const_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>&
-ual_const_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::operator++() noexcept {
+constexpr ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>&
+ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator++() noexcept {
   ++uv_;
   return *this;
 }
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr ual_const_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>
-ual_const_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::operator++(int) noexcept {
+constexpr ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>
+ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator++(int) noexcept {
   ual_const_vertex_vertex_iterator tmp(*this);
   ++*this;
   return tmp;
@@ -1834,24 +1835,24 @@ ual_const_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::operator+
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr ual_const_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>&
-ual_const_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::operator--() noexcept {
+constexpr ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>&
+ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator--() noexcept {
   --uv_;
   return *this;
 }
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr ual_const_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>
-ual_const_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::operator--(int) noexcept {
+constexpr ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>
+ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator--(int) noexcept {
   ual_const_vertex_vertex_iterator tmp(*this);
   --*this;
   return tmp;
@@ -1860,22 +1861,22 @@ ual_const_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::operator-
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr bool ual_const_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::operator==(
+constexpr bool ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator==(
       const ual_const_vertex_vertex_iterator& rhs) const noexcept {
   return uv_ == rhs.uv_;
 }
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr bool ual_const_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::operator!=(
+constexpr bool ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator!=(
       const ual_const_vertex_vertex_iterator& rhs) const noexcept {
   return !operator==(rhs);
 }
@@ -1887,70 +1888,70 @@ constexpr bool ual_const_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Al
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr ual_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::ual_vertex_vertex_iterator(
+constexpr ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::ual_vertex_vertex_iterator(
       vertex_edge_iterator const& uv)
       : base_t(uv) {}
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr typename ual_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::vertex_iterator
-ual_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::other_vertex() {
+constexpr typename ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
+ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::other_vertex() {
   return uv_->other_vertex(uv_.graph(), uv_.source_key());
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr typename ual_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::reference
-ual_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::operator*() const {
+constexpr typename ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::const_reference
+ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator*() const {
   return *uv_->other_vertex(uv_.graph(), uv_.source_key());
 }
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr typename ual_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::pointer
-ual_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::operator->() const {
+constexpr typename ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::const_pointer
+ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator->() const {
   return &**this;
 }
 
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr ual_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>&
-ual_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::operator++() {
+constexpr ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>&
+ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator++() {
   ++uv_;
   return *this;
 }
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr ual_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>
-ual_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::operator++(int) {
+constexpr ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>
+ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator++(int) {
   ual_vertex_vertex_iterator tmp(*this);
   ++*this;
   return tmp;
@@ -1959,24 +1960,24 @@ ual_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::operator++(int)
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr ual_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>&
-ual_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::operator--() noexcept {
+constexpr ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>&
+ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator--() noexcept {
   --uv_;
   return *this;
 }
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr ual_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>
-ual_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::operator--(int) noexcept {
+constexpr ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>
+ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator--(int) noexcept {
   ual_vertex_vertex_iterator tmp(*this);
   --*this;
   return tmp;
@@ -1985,22 +1986,22 @@ ual_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::operator--(int)
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr bool ual_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::operator==(
+constexpr bool ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator==(
       const ual_vertex_vertex_iterator& rhs) const noexcept {
   return base_t::operator==(rhs);
 }
 template <typename VV,
           typename EV,
           typename GV,
-          integral KeyT,
+          integral VId,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr bool ual_vertex_vertex_iterator<VV, EV, GV, KeyT, VContainer, Alloc>::operator!=(
+constexpr bool ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator!=(
       const ual_vertex_vertex_iterator& rhs) const noexcept {
   return base_t::operator!=(rhs);
 }

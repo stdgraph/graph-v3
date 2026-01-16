@@ -19,35 +19,8 @@
 
 namespace graph {
 
-// Forward declarations for CPOs that will be implemented
-// Following the MSVC-style CPO pattern documented in docs/cpo.md
-
-namespace _cpo_impls {
-    // Shared _Choice_t struct for all CPOs
-    template<typename _Ty>
-    struct _Choice_t {
-        _Ty _Strategy = _Ty{};
-        bool _No_throw = false;
-    };
-    
-    // Future: Implement vertex_id CPO
-    // namespace _vertex_id { ... }
-    
-    // Future: Implement num_vertices CPO
-    // namespace _num_vertices { ... }
-    
-    // Future: Implement num_edges CPO
-    // namespace _num_edges { ... }
-    
-    // Future: Implement vertices CPO (returns range)
-    // namespace _vertices { ... }
-    
-    // Future: Implement edges CPO (returns range)
-    // namespace _edges { ... }
-    
-    // Future: Implement out_edges CPO (returns range)
-    // namespace _out_edges { ... }
-}
+// CPO implementation details are in graph/detail/graph_cpo.hpp
+// The _Choice_t struct and CPO implementations are defined there.
 
 // Public CPO instances will be defined here
 // inline namespace _cpo_instances {
