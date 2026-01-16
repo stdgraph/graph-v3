@@ -499,3 +499,182 @@ TEST_CASE("contains_edge CPO", "[undirected_adjacency_list][cpo][contains_edge]"
         REQUIRE(graph::contains_edge(cg, 1u, 2u) == false);
     }
 }
+
+TEST_CASE("edges(g) graph-level CPO", "[undirected_adjacency_list][cpo][edges]") {
+    IntGraph g(0);
+    g.create_vertex(10);  // vertex 0
+    g.create_vertex(20);  // vertex 1
+    g.create_vertex(30);  // vertex 2
+    g.create_edge(0, 1, 100);
+    g.create_edge(1, 2, 200);
+    g.create_edge(0, 2, 300);
+    
+    SECTION("graph-level edges iteration visits all edges") {
+        // Use the graph's edges() member which iterates all edges
+        // Note: In undirected graphs, each edge is visited twice
+        size_t count = 0;
+        int total_value = 0;
+        
+        for (auto& v : g.vertices()) {
+            auto uid = static_cast<unsigned int>(&v - &g.vertices()[0]);
+            for (auto& e : v.edges(g, uid)) {
+                ++count;
+                total_value += e.value;
+            }
+        }
+        
+        // Each edge counted twice (once from each endpoint)
+        REQUIRE(count == 6);
+        REQUIRE(total_value == (100 + 200 + 300) * 2);
+    }
+    
+    SECTION("unique edge count") {
+        // The edges_size() returns unique edge count
+        REQUIRE(g.edges_size() == 3);
+    }
+}
+
+TEST_CASE("source_id with vertex descriptor edges", "[undirected_adjacency_list][cpo][source_id]") {
+    IntGraph g(0);
+    g.create_vertex(10);  // vertex 0
+    g.create_vertex(20);  // vertex 1
+    g.create_vertex(30);  // vertex 2
+    g.create_edge(0, 1, 100);
+    g.create_edge(1, 2, 200);
+    
+    SECTION("source_id via CPO") {
+        auto verts = vertices(g);
+        auto v1_it = verts.begin();
+        ++v1_it;  // vertex 1
+        auto v1 = *v1_it;
+        
+        auto edge_range = edges(g, v1);
+        for (auto e : edge_range) {
+            // Source should always be v1 (id=1) when iterating from v1
+            REQUIRE(source_id(g, e) == 1);
+        }
+    }
+}
+
+TEST_CASE("CPO with empty graph", "[undirected_adjacency_list][cpo][empty]") {
+    IntGraph g(42);
+    
+    SECTION("vertices on empty graph") {
+        auto verts = vertices(g);
+        REQUIRE(verts.begin() == verts.end());
+    }
+    
+    SECTION("num_vertices on empty graph") {
+        REQUIRE(num_vertices(g) == 0);
+    }
+    
+    SECTION("num_edges on empty graph") {
+        REQUIRE(num_edges(g) == 0);
+    }
+    
+    SECTION("has_edge on empty graph") {
+        REQUIRE_FALSE(has_edge(g));
+    }
+    
+    SECTION("find_vertex on empty graph returns end") {
+        auto it = find_vertex(g, 0u);
+        REQUIRE(it == vertices(g).end());
+    }
+    
+    SECTION("graph_value on empty graph") {
+        REQUIRE(graph_value(g) == 42);
+    }
+}
+
+TEST_CASE("CPO const correctness", "[undirected_adjacency_list][cpo][const]") {
+    IntGraph g(0);
+    g.create_vertex(10);
+    g.create_vertex(20);
+    g.create_edge(0, 1, 100);
+    
+    const IntGraph& cg = g;
+    
+    SECTION("all read CPOs work on const graph") {
+        REQUIRE(num_vertices(cg) == 2);
+        REQUIRE(num_edges(cg) == 1);
+        REQUIRE(has_edge(cg));
+        
+        auto verts = vertices(cg);
+        REQUIRE(std::distance(verts.begin(), verts.end()) == 2);
+        
+        auto v = *verts.begin();
+        REQUIRE(graph::vertex_id(cg, v) == 0);
+        REQUIRE(vertex_value(cg, v) == 10);
+        REQUIRE(degree(cg, v) == 1);
+        
+        auto edge_range = edges(cg, v);
+        auto e = *edge_range.begin();
+        REQUIRE(target_id(cg, e) == 1);
+        REQUIRE(source_id(cg, e) == 0);
+        
+        auto target_v = graph::target(cg, e);
+        REQUIRE(graph::vertex_id(cg, target_v) == 1);
+        
+        auto source_v = graph::source(cg, e);
+        REQUIRE(graph::vertex_id(cg, source_v) == 0);
+    }
+}
+
+TEST_CASE("CPO vertex_id consistency", "[undirected_adjacency_list][cpo][vertex_id]") {
+    IntGraph g(0);
+    for (int i = 0; i < 10; ++i) {
+        g.create_vertex(i * 10);
+    }
+    
+    SECTION("vertex_id matches iteration order") {
+        unsigned int expected = 0;
+        for (auto v : vertices(g)) {
+            REQUIRE(graph::vertex_id(g, v) == expected);
+            ++expected;
+        }
+        REQUIRE(expected == 10);
+    }
+    
+    SECTION("vertex_id matches find_vertex result") {
+        for (unsigned int i = 0; i < 10; ++i) {
+            auto it = find_vertex(g, i);
+            REQUIRE(it != vertices(g).end());
+            REQUIRE(graph::vertex_id(g, *it) == i);
+        }
+    }
+}
+
+TEST_CASE("CPO edge traversal consistency", "[undirected_adjacency_list][cpo][edges]") {
+    IntGraph g(0);
+    g.create_vertex(10);  // 0
+    g.create_vertex(20);  // 1
+    g.create_vertex(30);  // 2
+    g.create_vertex(40);  // 3
+    // Create a path: 0 -- 1 -- 2 -- 3
+    g.create_edge(0, 1, 1);
+    g.create_edge(1, 2, 2);
+    g.create_edge(2, 3, 3);
+    
+    SECTION("edge target and source are consistent") {
+        for (auto v : vertices(g)) {
+            auto vid = graph::vertex_id(g, v);
+            for (auto e : edges(g, v)) {
+                auto sid = source_id(g, e);
+                auto tid = target_id(g, e);
+                
+                // Source should always be the vertex we're iterating from
+                REQUIRE(sid == vid);
+                
+                // Target should be different from source (no self-loops in this test)
+                REQUIRE(tid != sid);
+                
+                // Verify source/target descriptors
+                auto source_v = graph::source(g, e);
+                auto target_v = graph::target(g, e);
+                REQUIRE(graph::vertex_id(g, source_v) == sid);
+                REQUIRE(graph::vertex_id(g, target_v) == tid);
+            }
+        }
+    }
+}
+

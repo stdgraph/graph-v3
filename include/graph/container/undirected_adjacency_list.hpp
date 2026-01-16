@@ -1476,7 +1476,7 @@ private: // CPO support via ADL (friend functions)
     requires (!std::is_void_v<GV>)
   {
     if constexpr (detail::graph_value_needs_wrap<GV>::value) {
-      return (g.base_type::value());
+      return (g.base_type::value);
     } else {
       return (static_cast<GV&>(g));
     }
@@ -1485,7 +1485,7 @@ private: // CPO support via ADL (friend functions)
     requires (!std::is_void_v<GV>)
   {
     if constexpr (detail::graph_value_needs_wrap<GV>::value) {
-      return (g.base_type::value());
+      return (g.base_type::value);
     } else {
       return (static_cast<const GV&>(g));
     }
@@ -1544,17 +1544,19 @@ private: // CPO support via ADL (friend functions)
   }
 
   // target_id(g, edge_descriptor) - get target vertex id from edge descriptor
+  // For undirected graphs, the target is the "other" vertex relative to the source we're iterating from
   template <typename E>
     requires edge_descriptor_type<E>
   friend constexpr vertex_key_type target_id(const undirected_adjacency_list& g, const E& e) noexcept {
-    return target_id(g, *e.value());
+    return e.value()->other_vertex_key(g, static_cast<vertex_key_type>(e.source_id()));
   }
 
   // source_id(g, edge_descriptor) - get source vertex id from edge descriptor
+  // For undirected graphs, the source is the vertex we're iterating from (stored in descriptor)
   template <typename E>
     requires edge_descriptor_type<E>
-  friend constexpr vertex_key_type source_id(const undirected_adjacency_list& g, const E& e) noexcept {
-    return source_id(g, *e.value());
+  friend constexpr vertex_key_type source_id([[maybe_unused]] const undirected_adjacency_list& g, const E& e) noexcept {
+    return static_cast<vertex_key_type>(e.source_id());
   }
 
   // target(g, edge_descriptor) - get target vertex descriptor from edge descriptor
