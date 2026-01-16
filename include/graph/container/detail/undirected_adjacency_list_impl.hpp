@@ -1327,6 +1327,70 @@ undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjace
   }
 }
 
+// Copy constructor - deep copies all vertices and edges
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjacency_list(
+      const undirected_adjacency_list& other)
+      : base_type(static_cast<const base_type&>(other))
+      , edge_alloc_(other.edge_alloc_) {
+  // Reserve space and copy vertices (with empty edge lists)
+  vertices_.reserve(other.vertices_.size());
+  for (const auto& v : other.vertices_) {
+    if constexpr (std::is_void_v<VV>) {
+      vertices_.emplace_back();
+    } else if constexpr (detail::graph_value_needs_wrap<VV>::value) {
+      vertices_.emplace_back(vertices_, static_cast<vertex_key_type>(vertices_.size()), 
+                             v.vertex_type::base_type::value);
+    } else {
+      vertices_.emplace_back(vertices_, static_cast<vertex_key_type>(vertices_.size()), static_cast<const VV&>(v));
+    }
+  }
+  
+  // Copy edges - iterate through each vertex and copy edges where source_key <= target_key to avoid duplicates
+  for (vertex_key_type ukey = 0; ukey < static_cast<vertex_key_type>(other.vertices_.size()); ++ukey) {
+    const auto& src_vtx = other.vertices_[ukey];
+    for (auto uv = src_vtx.edges_begin(other, ukey); uv != src_vtx.edges_end(other, ukey); ++uv) {
+      vertex_key_type src_key = uv->source_vertex_key(other);
+      vertex_key_type tgt_key = uv->target_vertex_key(other);
+      // Only copy each edge once: when ukey matches source and source <= target
+      // (or for self-loops, when ukey matches both)
+      if (ukey == src_key && src_key <= tgt_key) {
+        if constexpr (std::is_void_v<EV>) {
+          create_edge(src_key, tgt_key);
+        } else if constexpr (detail::graph_value_needs_wrap<EV>::value) {
+          create_edge(src_key, tgt_key, uv->edge_type::base_type::value);
+        } else {
+          create_edge(src_key, tgt_key, static_cast<const EV&>(*uv));
+        }
+      }
+    }
+  }
+}
+
+// Copy assignment operator - uses copy-and-swap idiom
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::operator=(
+      const undirected_adjacency_list& other) {
+  if (this != &other) {
+    undirected_adjacency_list tmp(other);
+    swap(tmp);
+  }
+  return *this;
+}
+
 template <typename VV,
           typename EV,
           typename GV,
@@ -1705,9 +1769,11 @@ template <typename VV,
           class VContainer,
           typename Alloc>
 void undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::swap(undirected_adjacency_list& rhs) {
+  using std::swap;
+  swap(static_cast<base_type&>(*this), static_cast<base_type&>(rhs));
   vertices_.swap(rhs.vertices_);
   swap(edges_size_, rhs.edges_size_);
-  edge_alloc_.swap(rhs.edge_alloc_);
+  swap(edge_alloc_, rhs.edge_alloc_);
 }
 
 template <typename VV,

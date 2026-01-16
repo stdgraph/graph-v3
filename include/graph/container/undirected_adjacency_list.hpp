@@ -1068,7 +1068,7 @@ public:
 public:
   undirected_adjacency_list()                                         = default;
   undirected_adjacency_list(undirected_adjacency_list&& rhs) noexcept = default;
-  undirected_adjacency_list(const undirected_adjacency_list&)         = default;
+  undirected_adjacency_list(const undirected_adjacency_list& other);
 
   // clang-format off
   undirected_adjacency_list(const allocator_type& alloc);
@@ -1200,7 +1200,7 @@ public:
 
   ~undirected_adjacency_list();
 
-  undirected_adjacency_list& operator=(const undirected_adjacency_list&) = default;
+  undirected_adjacency_list& operator=(const undirected_adjacency_list& other);
   undirected_adjacency_list& operator=(undirected_adjacency_list&&) = default;
 
 public: // Accessors

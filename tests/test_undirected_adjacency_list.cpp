@@ -1247,17 +1247,15 @@ TEST_CASE("large graph cleanup", "[undirected_adjacency_list][memory][stress]") 
 
 // =============================================================================
 // Copy Semantics Tests
-// NOTE: Copy constructor/assignment are defaulted but do NOT work correctly
-// because the doubly-linked edge list pointers refer to the original graph's
-// edges. These tests are skipped until copy semantics are properly implemented.
+// =============================================================================
+// Copy Semantics Tests
 // =============================================================================
 
-TEST_CASE("copy constructor", "[undirected_adjacency_list][memory][copy][!mayfail]") {
-    // SKIP: Copy constructor not properly implemented - edge list pointers broken
+TEST_CASE("copy constructor", "[undirected_adjacency_list][memory][copy]") {
     undirected_adjacency_list<int, int> g1;
     g1.create_vertex(10);
     g1.create_vertex(20);
-    // No edges - copy works for vertex-only graph
+    g1.create_edge(0, 1, 100);  // Add an edge
     
     undirected_adjacency_list<int, int> g2(g1);
     
@@ -1270,21 +1268,50 @@ TEST_CASE("copy constructor", "[undirected_adjacency_list][memory][copy][!mayfai
         REQUIRE(g2.vertices()[1].value == 20);
     }
     
+    SECTION("copy has same edge count") {
+        REQUIRE(g2.edges_size() == g1.edges_size());
+    }
+    
     SECTION("modifying copy does not affect original") {
         g2.vertices()[0].value = 999;
         REQUIRE(g1.vertices()[0].value == 10);
         REQUIRE(g2.vertices()[0].value == 999);
     }
+    
+    SECTION("edges are independent") {
+        // Create another edge in copy
+        g2.create_edge(0, 1, 200);
+        REQUIRE(g2.edges_size() > g1.edges_size());
+    }
 }
 
-// Copy with edges is broken - edge list pointers are not deep copied
-// Uncommenting this will cause SIGABRT
-// TEST_CASE("copy constructor with edges", "[undirected_adjacency_list][memory][copy][.skip]") { ... }
+TEST_CASE("copy constructor with multiple edges", "[undirected_adjacency_list][memory][copy]") {
+    undirected_adjacency_list<int, int> g1;
+    for (int i = 0; i < 5; ++i) {
+        g1.create_vertex(i * 10);
+    }
+    g1.create_edge(0, 1, 100);
+    g1.create_edge(1, 2, 200);
+    g1.create_edge(2, 3, 300);
+    g1.create_edge(3, 4, 400);
+    g1.create_edge(0, 4, 500);  // Creates a cycle
+    
+    undirected_adjacency_list<int, int> g2(g1);
+    
+    REQUIRE(g2.vertices().size() == 5);
+    REQUIRE(g2.edges_size() == g1.edges_size());
+    
+    // Verify all vertices are correct
+    for (size_t i = 0; i < 5; ++i) {
+        REQUIRE(g2.vertices()[i].value == static_cast<int>(i * 10));
+    }
+}
 
-TEST_CASE("copy assignment vertices only", "[undirected_adjacency_list][memory][copy][!mayfail]") {
+TEST_CASE("copy assignment", "[undirected_adjacency_list][memory][copy]") {
     undirected_adjacency_list<int, int> g1;
     g1.create_vertex(10);
     g1.create_vertex(20);
+    g1.create_edge(0, 1, 100);
     
     undirected_adjacency_list<int, int> g2;
     g2.create_vertex(99);
@@ -1295,19 +1322,27 @@ TEST_CASE("copy assignment vertices only", "[undirected_adjacency_list][memory][
         REQUIRE(g2.vertices().size() == 2);
         REQUIRE(g2.vertices()[0].value == 10);
         REQUIRE(g2.vertices()[1].value == 20);
+        REQUIRE(g2.edges_size() == g1.edges_size());
+    }
+    
+    SECTION("self-assignment is safe") {
+        g1 = g1;
+        REQUIRE(g1.vertices().size() == 2);
+        REQUIRE(g1.edges_size() == 1);  // 1 edge
     }
 }
 
-TEST_CASE("copy with graph value", "[undirected_adjacency_list][memory][copy][!mayfail]") {
+TEST_CASE("copy with graph value", "[undirected_adjacency_list][memory][copy]") {
     undirected_adjacency_list<int, int, std::string> g1("original graph");
     g1.create_vertex(10);
     g1.create_vertex(20);
-    // No edges - copy works for vertex-only graph
+    g1.create_edge(0, 1, 100);
     
     SECTION("copy constructor preserves graph value") {
         undirected_adjacency_list<int, int, std::string> g2(g1);
         REQUIRE(g2.graph_value() == "original graph");
         REQUIRE(g2.vertices().size() == 2);
+        REQUIRE(g2.edges_size() == g1.edges_size());
     }
     
     SECTION("copy assignment preserves graph value") {
