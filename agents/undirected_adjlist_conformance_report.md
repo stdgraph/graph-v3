@@ -3,6 +3,7 @@
 **Phase:** Phase 2 - Interface Conformance Verification  
 **Status:** ✅ COMPLETE  
 **Date:** January 4, 2026  
+**Updated:** January 15, 2026  
 **Completion Time:** 3 hours  
 
 ---
@@ -16,8 +17,10 @@ The undirected_adjacency_list implementation provides comprehensive Graph Contai
 - ✅ **Sourced edge support** - edges provide both source and target information
 - ✅ **All required type aliases** present (vertex_t, edge_t, vertex_id_t, etc.)
 - ✅ **Proper const-correctness** with const/non-const overloads
+- ✅ **Template defaults aligned** - VV, EV, GV default to `void` (matching dynamic_graph)
+- ✅ **Modern eproj pattern** - constructors use unified projection pattern
+- ✅ **94 test cases passing** (525 assertions)
 - ⚠️ **Include path bug fixed** - Changed `"graph_utility.hpp"` to `"../graph_utility.hpp"`
-- ℹ️ **No test file** - Previous test files don't exist, conformance verified through code inspection
 
 ---
 
@@ -99,7 +102,7 @@ The undirected_adjacency_list implementation provides comprehensive Graph Contai
 
 ---
 
-## Bug Fixes Applied (Phase 1 & 2)
+## Bug Fixes Applied (Phase 1, 2 & January 15, 2026)
 
 ### 1. `contains_vertex()` Return Type ✅
 - **Issue:** Function returned `void` instead of `bool`
@@ -120,6 +123,22 @@ The undirected_adjacency_list implementation provides comprehensive Graph Contai
 - **Location:** `undirected_adjacency_list.hpp:4`
 - **Fix:** Changed to `#include "../graph_utility.hpp"`
 - **Impact:** HIGH - prevented compilation
+
+### 4. Template Defaults Alignment ✅ (January 15, 2026)
+- **Issue:** Template defaults used `empty_value` instead of `void`
+- **Location:** `undirected_adjacency_list.hpp` template declaration
+- **Fix:** Changed VV, EV, GV defaults from `empty_value` to `void`
+- **Impact:** MEDIUM - consistency with dynamic_graph and compressed_graph
+
+### 5. Copy Constructor Fix ✅ (January 15, 2026)
+- **Issue:** Template constructors with `GV_` parameter hijacked copy constructor
+- **Symptom:** `graph_t g2(g1)` called wrong constructor, resulting in empty graph
+- **Root Cause:** Template `undirected_adjacency_list(const GV_& gv, ...)` matched with `GV_=graph_type`
+- **Fix:** Added constraint `!std::is_same_v<std::remove_cvref_t<GV_>, undirected_adjacency_list>`
+- **Also Fixed:** Base class value access syntax in copy constructor
+  - From: `v.vertex_type::base_type::value`
+  - To: `static_cast<const typename vertex_type::base_type&>(v).value`
+- **Impact:** CRITICAL - copy constructor was completely broken
 
 ---
 

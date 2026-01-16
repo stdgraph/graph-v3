@@ -1,12 +1,25 @@
 # Undirected Adjacency List Implementation Plan
 
-**Status:** Phase 5 Complete - Documentation Updated  
-**Last Updated:** January 12, 2026 (Phase 5 & 6 Complete)  
+**Status:** Phase 6 Complete - All Phases Done  
+**Last Updated:** January 15, 2026 (Template Defaults & Copy Constructor Fix)  
 **Estimated Total Time:** 2.5-3 weeks  
 
 ---
 
 ## Recent Changes
+
+**January 15, 2026 - Template Defaults & Copy Constructor:**
+- ✅ Changed template defaults from `empty_value` to `void` for VV, EV, GV
+  - Aligns with `dynamic_graph` and `compressed_graph` patterns
+- ✅ Fixed copy constructor being hijacked by template constructors
+  - Added constraint `!std::is_same_v<std::remove_cvref_t<GV_>, undirected_adjacency_list>`
+  - Prevents template `GV_` constructors from matching graph types
+- ✅ Fixed base class value access in copy constructor
+  - Changed from `v.vertex_type::base_type::value` to `static_cast<const typename vertex_type::base_type&>(v).value`
+- ✅ Updated conditional inheritance for void types:
+  - `conditional_t<is_void_v<T>, empty_value, conditional_t<graph_value_needs_wrap<T>::value, graph_value_wrapper<T>, T>>`
+- ✅ All 94 undirected_adjacency_list tests pass (525 assertions)
+- ✅ All 3866 total tests pass
 
 **Phase 5 Complete (January 12, 2026):**
 - ✅ Added comprehensive class-level documentation (90+ lines)
@@ -98,7 +111,7 @@ undirected_adjacency_list<empty_value, EV> g2(edges_direct, std::identity{});
 | 0 | ✅ COMPLETE | - | 1 day | Planning and review |
 | 1 | ✅ COMPLETE | CRITICAL | 2 days | Bug fixes and quick wins |
 | 2 | ✅ COMPLETE | CRITICAL | 3 hours | Interface conformance verification |
-| 3 | ⏭️ DEFERRED | CRITICAL | 30 min | API standardization (deferred - see phase3_deferred.md) |
+| 3 | ✅ COMPLETE | CRITICAL | 30 min | API standardization (eproj pattern already implemented) |
 | 4.1 | ✅ COMPLETE | BLOCKING | 1 day | Basic operations tests (23/23 passing, 119 assertions) |
 | 4.2 | ✅ COMPLETE | BLOCKING | 1 hour | Iterator tests (104/104 passing, 227 assertions) |
 | 4.3 | ✅ COMPLETE | BLOCKING | 1 day | Edge cases (52/52 passing, 482 assertions) |
@@ -107,7 +120,8 @@ undirected_adjacency_list<empty_value, EV> g2(edges_direct, std::identity{});
 | 4.6 | ⏭️ DEFERRED | OPTIONAL | 1 day | Interface conformance tests (verified in Phase 2) |
 | 5 | ✅ COMPLETE | HIGH | 2 hours | Documentation (class, methods, invalidation, performance, thread safety) |
 | 6 | ✅ COMPLETE | MEDIUM | 2 hours | Code cleanup and polish (const_cast removed, C++20 concepts added) |
-| 7 | ⏳ OPTIONAL | OPTIONAL | 2-3 days | Performance optimizations |
+| 7 | ✅ COMPLETE | HIGH | 1 hour | Template defaults aligned (void instead of empty_value) |
+| 8 | ⏳ OPTIONAL | OPTIONAL | 2-3 days | Performance optimizations |
 
 **Legend:**
 - ✅ COMPLETE - Phase finished and verified
