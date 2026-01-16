@@ -1177,7 +1177,9 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjacency_list(const graph_value_type& val,
+template <typename GV_>
+  requires (!std::is_void_v<GV_> && !std::is_same_v<std::remove_cvref_t<GV_>, undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>>)
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjacency_list(const GV_& val,
                                                                                           const allocator_type&   alloc)
       : base_type(val), vertices_(alloc), edge_alloc_(alloc) {}
 
@@ -1188,23 +1190,26 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjacency_list(graph_value_type&&    val,
+template <typename GV_>
+  requires (!std::is_void_v<GV_> && !std::is_same_v<std::remove_cvref_t<GV_>, undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>>)
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjacency_list(GV_&&    val,
                                                                                           const allocator_type& alloc)
-      : base_type(move(val)), vertices_(alloc), edge_alloc_(alloc) {}
+      : base_type(std::forward<GV_>(val)), vertices_(alloc), edge_alloc_(alloc) {}
 
 
 // clang-format off
 template <typename VV, typename EV, typename GV, integral VId, template <typename V, typename A> class VContainer, typename Alloc>
-template <typename ERng, typename VRng, typename EProj, typename VProj>
+template <typename ERng, typename VRng, typename EProj, typename VProj, typename GV_>
   requires ranges::forward_range<ERng> 
         && ranges::input_range<VRng>
         && std::regular_invocable<EProj, ranges::range_reference_t<ERng>>
         && std::regular_invocable<VProj, ranges::range_reference_t<VRng>>
+        && (!std::is_void_v<GV_>)
 undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjacency_list(const ERng&  erng,
                                                                               const VRng&  vrng,
                                                                               const EProj& eproj,
                                                                               const VProj& vproj,
-                                                                              const GV&    gv,
+                                                                              const GV_&   gv,
                                                                               const Alloc& alloc)
       : base_type(gv), vertices_(alloc), edge_alloc_(alloc)
 // clang-format on
@@ -1254,16 +1259,91 @@ undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjace
 
 // clang-format off
 template <typename VV, typename EV, typename GV, integral VId, template <typename V, typename A> class VContainer, typename Alloc>
-template <typename ERng, typename EProj>
+template <typename ERng, typename EProj, typename GV_>
   requires ranges::forward_range<ERng>
         && std::regular_invocable<EProj, ranges::range_reference_t<ERng>>
-        && (!std::is_convertible_v<ERng, GV>)
+        && (!std::is_void_v<GV_>)
 undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjacency_list(const ERng&  erng, 
                                                                               const EProj& eproj, 
-                                                                              const GV&    gv, 
+                                                                              const GV_&   gv, 
                                                                               const Alloc& alloc)
       : undirected_adjacency_list(erng, vector<int>(), eproj, [](auto) 
 { return copyable_vertex_t<VId, VV>{VId()}; }, gv, alloc)
+// clang-format on
+{}
+
+// Overload for GV=void: edge+vertex range constructor without graph value
+// clang-format off
+template <typename VV, typename EV, typename GV, integral VId, template <typename V, typename A> class VContainer, typename Alloc>
+template <typename ERng, typename VRng, typename EProj, typename VProj>
+  requires ranges::forward_range<ERng>
+        && ranges::input_range<VRng>
+        && std::regular_invocable<EProj, ranges::range_reference_t<ERng>>
+        && std::regular_invocable<VProj, ranges::range_reference_t<VRng>>
+        && std::is_void_v<GV>
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjacency_list(const ERng&  erng,
+                                                                              const VRng&  vrng,
+                                                                              const EProj& eproj,
+                                                                              const VProj& vproj,
+                                                                              const Alloc& alloc)
+      : vertices_(alloc), edge_alloc_(alloc)
+// clang-format on
+{
+  // Handle empty case - no vertices or edges to create
+  if (vrng.empty() && ranges::empty(erng)) {
+    return;
+  }
+
+  // Evaluate max vertex key needed
+  vertex_key_type max_vtx_key = vrng.empty() ? vertex_key_type(0) 
+                                             : static_cast<vertex_key_type>(vrng.size() - 1);
+  for (auto& e : erng) {
+    auto&& edge_info = eproj(e);  // copyable_edge_t<VId, EV>
+    max_vtx_key = max(max_vtx_key, max(edge_info.source_id, edge_info.target_id));
+  }
+
+  // add vertices
+  vertices_.reserve(max_vtx_key + 1);
+  if constexpr (!std::is_void_v<VV>) {
+    for (auto& vtx : vrng) {
+      auto&& [id, value] = vproj(vtx);  // copyable_vertex_t<VId, VV>
+      create_vertex(value);
+    }
+  }
+  vertices_.resize(max_vtx_key + 1); // assure expected vertices exist
+
+  // add edges
+  if (!ranges::empty(erng)) {
+    auto&& first_edge_info = eproj(*ranges::begin(erng)); // first edge
+    vertex_key_type tkey = first_edge_info.source_id;     // last in-vertex key
+    for (auto& edge_data : erng) {
+      auto&& edge_info = eproj(edge_data);  // copyable_edge_t<VId, EV>
+      if (edge_info.source_id < tkey)
+        throw_unordered_edges();
+
+      vertex_edge_iterator uv;
+      if constexpr (std::is_void_v<EV>) {
+        uv = create_edge(edge_info.source_id, edge_info.target_id);
+      } else {
+        uv = create_edge(edge_info.source_id, edge_info.target_id, edge_info.value);
+      }
+      tkey = edge_info.source_id;
+    }
+  }
+}
+
+// Overload for GV=void: edge-only range constructor without graph value
+// clang-format off
+template <typename VV, typename EV, typename GV, integral VId, template <typename V, typename A> class VContainer, typename Alloc>
+template <typename ERng, typename EProj>
+  requires ranges::forward_range<ERng>
+        && std::regular_invocable<EProj, ranges::range_reference_t<ERng>>
+        && std::is_void_v<GV>
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjacency_list(const ERng&  erng, 
+                                                                              const EProj& eproj, 
+                                                                              const Alloc& alloc)
+      : undirected_adjacency_list(erng, vector<int>(), eproj, [](auto) 
+{ return copyable_vertex_t<VId, VV>{VId()}; }, alloc)
 // clang-format on
 {}
 
@@ -1347,12 +1427,18 @@ undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjace
       , edge_alloc_(other.edge_alloc_) {
   // Reserve space and copy vertices (with empty edge lists)
   vertices_.reserve(other.vertices_.size());
+  
+  // DEBUG: Check loop count
+  [[maybe_unused]] size_t loop_count = 0;
+  
   for (const auto& v : other.vertices_) {
+    ++loop_count;
     if constexpr (std::is_void_v<VV>) {
       vertices_.emplace_back();
     } else if constexpr (detail::graph_value_needs_wrap<VV>::value) {
+      // VV is a scalar/array/union/reference type - use graph_value_wrapper's .value member
       vertices_.emplace_back(vertices_, static_cast<vertex_key_type>(vertices_.size()), 
-                             v.vertex_type::base_type::value);
+                             static_cast<const typename vertex_type::base_type&>(v).value);
     } else {
       vertices_.emplace_back(vertices_, static_cast<vertex_key_type>(vertices_.size()), static_cast<const VV&>(v));
     }
@@ -1370,7 +1456,8 @@ undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjace
         if constexpr (std::is_void_v<EV>) {
           create_edge(src_key, tgt_key);
         } else if constexpr (detail::graph_value_needs_wrap<EV>::value) {
-          create_edge(src_key, tgt_key, uv->edge_type::base_type::value);
+          // EV is a scalar/array/union/reference type - use graph_value_wrapper's .value member
+          create_edge(src_key, tgt_key, static_cast<const typename edge_type::base_type&>(*uv).value);
         } else {
           create_edge(src_key, tgt_key, static_cast<const EV&>(*uv));
         }

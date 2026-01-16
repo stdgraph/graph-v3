@@ -1,17 +1,43 @@
 # Phase 4.1 - Test Implementation Issues
 
 **Date:** January 4, 2026  
-**Status:** 🔧 IN PROGRESS - Fixing Implementation Gaps  
+**Updated:** January 15, 2026  
+**Status:** ✅ COMPLETE  
 
 ---
 
 ## Summary
 
-Created comprehensive test suite for undirected_adjacency_list native API (609 lines, 11 categories, ~50 test cases). Tests compile and reveal fundamental API design issues requiring fixes before proceeding.
+Created comprehensive test suite for undirected_adjacency_list native API. All issues identified during implementation have been resolved.
+
+**Final Results:** 94 test cases, 525 assertions, all passing.
 
 ---
 
-## Critical Findings
+## Resolved Issues
+
+### 1. ✅ **API Accessibility Issues** - FIXED
+- `create_vertex()` methods are now **public** (line 1330 in undirected_adjacency_list.hpp)
+- All three overloads accessible: default, move, and copy
+
+### 2. ✅ **Graph Value Access** - FIXED
+- `graph_value()` member function added (lines 1311-1327)
+- Properly handles wrapped vs direct inheritance
+- const and non-const overloads provided
+
+### 3. ✅ **Test Code Updated** - FIXED
+- Tests use correct API patterns:
+  - `(*v).edges_size()` for edge count
+  - `(*v).edges(g, key)` for edge range
+  - Direct member access for edge values where appropriate
+
+### 4. ✅ **Copy Constructor** - FIXED (January 15, 2026)
+- Fixed template constructor hijacking copy constructor
+- Added constraint `!std::is_same_v<std::remove_cvref_t<GV_>, undirected_adjacency_list>` to template constructors
+
+---
+
+## Original Issues (Historical Reference)
 
 ### 1. **API Accessibility Issues**
 - `create_vertex()` methods are **protected** - should be public
@@ -206,16 +232,14 @@ This preserves the design while fixing accessibility issues.
 
 ---
 
-## Phase 4.1 Adjusted Plan
-
-**Original:** Create basic operations test file  
-**Updated:** Create test file + fix critical API issues
+## Phase 4.1 Final Status
 
 **Completion Criteria:**
-- ✅ Test file created (609 lines, 11 categories)
-- 🚧 API accessibility fixed
-- 🚧 Tests compile successfully
-- ⏳ Tests run and pass
-- ⏳ Document API usage patterns
+- ✅ Test file created (94 test cases across multiple categories)
+- ✅ API accessibility fixed (create_vertex public)
+- ✅ graph_value() accessor added
+- ✅ Tests compile successfully
+- ✅ All 94 tests pass (525 assertions)
+- ✅ Copy constructor fixed
 
-**Status:** ~60% complete
+**Status:** 100% complete

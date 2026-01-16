@@ -47,13 +47,13 @@ namespace ranges = std::ranges;
 /// Vertices: Stored in a contiguous random-access container (default: std::vector)
 ///   - Provides O(1) vertex access by key/index
 ///   - Each vertex maintains a doubly-linked list of incident edges
-///   - Vertex values stored inline (optional, use empty_value for no value)
+///   - Vertex values stored inline (optional, use void for no value)
 ///
 /// Edges: Each edge appears in two edge lists (one per endpoint)
 ///   - Allocated individually on heap (via allocator)
 ///   - Each edge stores pointers to form doubly-linked list at both vertices
 ///   - O(1) removal from both vertices' edge lists
-///   - Edge values stored inline (optional, use empty_value for no value)
+///   - Edge values stored inline (optional, use void for no value)
 ///
 /// MEMORY OVERHEAD:
 /// ----------------
@@ -123,17 +123,17 @@ namespace ranges = std::ranges;
 /// }
 /// @endcode
 ///
-/// @tparam VV Vertex Value type (default: empty_value for no value)
-/// @tparam EV Edge Value type (default: empty_value for no value)  
-/// @tparam GV Graph Value type (default: empty_value for no value)
+/// @tparam VV Vertex Value type (default: void for no value)
+/// @tparam EV Edge Value type (default: void for no value)  
+/// @tparam GV Graph Value type (default: void for no value)
 /// @tparam VId Vertex key/index type (default: uint32_t)
 /// @tparam VContainer Vertex storage container template (default: std::vector)
 /// @tparam Alloc Allocator type (default: std::allocator<char>)
 ///-------------------------------------------------------------------------------------
 
-template <typename VV                                        = empty_value,
-          typename EV                                        = empty_value,
-          typename GV                                        = empty_value,
+template <typename VV                                        = void,
+          typename EV                                        = void,
+          typename GV                                        = void,
           integral VId                                      = uint32_t,
           template <typename V, typename A> class VContainer = vector,
           typename Alloc                                     = allocator<char>>
@@ -205,9 +205,9 @@ class ual_vertex_edge_list_link;
 ///-------------------------------------------------------------------------------------
 /// ual_vertex_edge_list
 ///
-/// @tparam VV     Vertex Value type. default = empty_value.
-/// @tparam EV     Edge Value type. default = empty_value.
-/// @tparam GV     Graph Value type. default = empty_value.
+/// @tparam VV     Vertex Value type. default = void.
+/// @tparam EV     Edge Value type. default = void.
+/// @tparam GV     Graph Value type. default = void.
 /// @tparam IntexT The type used for vertex & edge index into the internal vectors.
 /// @tparam A      Allocator. default = std::allocator
 /// @tparam ListT  inward_list|outward_list. Which edge list this is for.
@@ -407,9 +407,9 @@ private:
 ///-------------------------------------------------------------------------------------
 /// ual_vertex_edge_list_link
 ///
-/// @tparam VV     Vertex Value type. default = empty_value.
-/// @tparam EV     Edge Value type. default = empty_value.
-/// @tparam GV     Graph Value type. default = empty_value.
+/// @tparam VV     Vertex Value type. default = void.
+/// @tparam EV     Edge Value type. default = void.
+/// @tparam GV     Graph Value type. default = void.
 /// @tparam IntexT The type used for vertex & edge index into the internal vectors.
 /// @tparam A      Allocator. default = std::allocator
 /// @tparam ListT  inward_list|outward_list. Which edge list this is for.
@@ -472,9 +472,9 @@ private:
 ///-------------------------------------------------------------------------------------
 /// ual_edge
 ///
-/// @tparam VV     Vertex Value type. default = empty_value.
-/// @tparam EV     Edge Value type. default = empty_value.
-/// @tparam GV     Graph Value type. default = empty_value.
+/// @tparam VV     Vertex Value type. default = void.
+/// @tparam EV     Edge Value type. default = void.
+/// @tparam GV     Graph Value type. default = void.
 /// @tparam IntexT The type used for vertex & edge index into the internal vectors.
 /// @tparam A      Allocator. default = std::allocator
 ///
@@ -486,13 +486,15 @@ template <typename VV,
           class VContainer,
           typename Alloc>
 class ual_edge
-      : public conditional_t<detail::graph_value_needs_wrap<EV>::value, detail::graph_value_wrapper<EV>, EV>
+      : public conditional_t<is_void_v<EV>, empty_value,
+               conditional_t<detail::graph_value_needs_wrap<EV>::value, detail::graph_value_wrapper<EV>, EV>>
       , public ual_vertex_edge_list_link<VV, EV, GV, VId, VContainer, Alloc, inward_list>
       , public ual_vertex_edge_list_link<VV, EV, GV, VId, VContainer, Alloc, outward_list> {
 public:
   using graph_type       = undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>;
   using graph_value_type = GV;
-  using base_type        = conditional_t<detail::graph_value_needs_wrap<EV>::value, detail::graph_value_wrapper<EV>, EV>;
+  using base_type        = conditional_t<is_void_v<EV>, empty_value,
+                             conditional_t<detail::graph_value_needs_wrap<EV>::value, detail::graph_value_wrapper<EV>, EV>>;
 
   using vertex_type           = ual_vertex<VV, EV, GV, VId, VContainer, Alloc>;
   using vertex_allocator_type = typename allocator_traits<Alloc>::template rebind_alloc<vertex_type>;
@@ -600,9 +602,9 @@ private: // CPO support via ADL (friend functions)
 ///-------------------------------------------------------------------------------------
 /// ual_vertex
 ///
-/// @tparam VV     Vertex Value type. default = empty_value.
-/// @tparam EV     Edge Value type. default = empty_value.
-/// @tparam GV     Graph Value type. default = empty_value.
+/// @tparam VV     Vertex Value type. default = void.
+/// @tparam EV     Edge Value type. default = void.
+/// @tparam GV     Graph Value type. default = void.
 /// @tparam IntexT The type used for vertex & edge index into the internal vectors.
 /// @tparam A      Allocator. default = std::allocator
 ///
@@ -613,11 +615,13 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-class ual_vertex : public conditional_t<detail::graph_value_needs_wrap<VV>::value, detail::graph_value_wrapper<VV>, VV> {
+class ual_vertex : public conditional_t<is_void_v<VV>, empty_value,
+                         conditional_t<detail::graph_value_needs_wrap<VV>::value, detail::graph_value_wrapper<VV>, VV>> {
 public:
   using graph_type       = undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>;
   using graph_value_type = GV;
-  using base_type        = conditional_t<detail::graph_value_needs_wrap<VV>::value, detail::graph_value_wrapper<VV>, VV>;
+  using base_type        = conditional_t<is_void_v<VV>, empty_value,
+                             conditional_t<detail::graph_value_needs_wrap<VV>::value, detail::graph_value_wrapper<VV>, VV>>;
 
   using vertex_type           = ual_vertex<VV, EV, GV, VId, VContainer, Alloc>;
   using vertex_allocator_type = typename allocator_traits<Alloc>::template rebind_alloc<vertex_type>;
@@ -891,9 +895,9 @@ public:
 
 /// A simple undirected adjacency list (graph).
 ///
-/// @tparam VV              Vertex Value type. default = empty_value.
-/// @tparam EV              Edge Value type. default = empty_value.
-/// @tparam GV              Graph Value type. default = empty_value.
+/// @tparam VV              Vertex Value type. default = void.
+/// @tparam EV              Edge Value type. default = void.
+/// @tparam GV              Graph Value type. default = void.
 /// @tparam IntexT          The type used for vertex & edge index into the internal vectors.
 /// @tparam VContainer<V,A> Random-access container type used to store vertices (V) with allocator (A).
 /// @tparam Alloc           Allocator. default = std::allocator
@@ -1072,9 +1076,14 @@ public:
 
   // clang-format off
   undirected_adjacency_list(const allocator_type& alloc);
-  undirected_adjacency_list(const graph_value_type&, 
+  
+  template <typename GV_ = GV>
+    requires (!std::is_void_v<GV_> && !std::is_same_v<std::remove_cvref_t<GV_>, undirected_adjacency_list>)
+  undirected_adjacency_list(const GV_& gv, 
                             const allocator_type& alloc = allocator_type());
-  undirected_adjacency_list(graph_value_type&&, 
+  template <typename GV_ = GV>
+    requires (!std::is_void_v<GV_> && !std::is_same_v<std::remove_cvref_t<GV_>, undirected_adjacency_list>)
+  undirected_adjacency_list(GV_&& gv, 
                             const allocator_type& alloc = allocator_type());
   // clang-format on
 
@@ -1126,16 +1135,33 @@ public:
   template <typename ERng, 
             typename VRng, 
             typename EProj = std::identity, 
+            typename VProj = std::identity,
+            typename GV_ = GV>
+    requires ranges::forward_range<ERng> 
+          && ranges::input_range<VRng>
+          && std::regular_invocable<EProj, ranges::range_reference_t<ERng>>
+          && std::regular_invocable<VProj, ranges::range_reference_t<VRng>>
+          && (!std::is_void_v<GV_>)
+  undirected_adjacency_list(const ERng&  erng,
+                            const VRng&  vrng,
+                            const EProj& eproj,
+                            const VProj& vproj,
+                            const GV_&   gv,
+                            const Alloc& alloc = Alloc());
+  
+  template <typename ERng, 
+            typename VRng, 
+            typename EProj = std::identity, 
             typename VProj = std::identity>
     requires ranges::forward_range<ERng> 
           && ranges::input_range<VRng>
           && std::regular_invocable<EProj, ranges::range_reference_t<ERng>>
           && std::regular_invocable<VProj, ranges::range_reference_t<VRng>>
+          && std::is_void_v<GV>
   undirected_adjacency_list(const ERng&  erng,
                             const VRng&  vrng,
                             const EProj& eproj = {},
                             const VProj& vproj = {},
-                            const GV&    gv    = GV(),
                             const Alloc& alloc = Alloc());
   // clang-format on
 
@@ -1161,13 +1187,21 @@ public:
   /// @param alloc The allocator to use for internal containers for vertices & edges.
   ///
   // clang-format off
+  template <typename ERng, typename EProj = std::identity, typename GV_ = GV>
+    requires ranges::forward_range<ERng>
+          && std::regular_invocable<EProj, ranges::range_reference_t<ERng>>
+          && (!std::is_void_v<GV_>)
+  undirected_adjacency_list(const ERng&  erng, 
+                            const EProj& eproj, 
+                            const GV_&   gv, 
+                            const Alloc& alloc = Alloc());
+  
   template <typename ERng, typename EProj = std::identity>
     requires ranges::forward_range<ERng>
           && std::regular_invocable<EProj, ranges::range_reference_t<ERng>>
-          && (!std::is_convertible_v<ERng, GV>)
+          && std::is_void_v<GV>
   undirected_adjacency_list(const ERng&  erng, 
                             const EProj& eproj = {}, 
-                            const GV&    gv    = GV(), 
                             const Alloc& alloc = Alloc());
   // clang-format on
 
@@ -1271,25 +1305,24 @@ public: // Accessors
   /// @brief Access the graph-level value.
   /// @return Reference to the graph value.
   /// @complexity O(1)
-  graph_value_type& graph_value() noexcept {
-    if constexpr (std::is_same_v<graph_value_type, empty_value>) {
-      static empty_value ev;
-      return ev;
-    } else if constexpr (detail::graph_value_needs_wrap<graph_value_type>::value) {
+  /// @note Only available when GV is not void.
+  template <typename GV_ = GV>
+    requires (!std::is_void_v<GV_>)
+  GV_& graph_value() noexcept {
+    if constexpr (detail::graph_value_needs_wrap<GV_>::value) {
       return static_cast<base_type&>(*this).value;
     } else {
-      return static_cast<graph_value_type&>(*this);
+      return static_cast<GV_&>(*this);
     }
   }
   
-  const graph_value_type& graph_value() const noexcept {
-    if constexpr (std::is_same_v<graph_value_type, empty_value>) {
-      static empty_value ev;
-      return ev;
-    } else if constexpr (detail::graph_value_needs_wrap<graph_value_type>::value) {
+  template <typename GV_ = GV>
+    requires (!std::is_void_v<GV_>)
+  const GV_& graph_value() const noexcept {
+    if constexpr (detail::graph_value_needs_wrap<GV_>::value) {
       return static_cast<const base_type&>(*this).value;
     } else {
-      return static_cast<const graph_value_type&>(*this);
+      return static_cast<const GV_&>(*this);
     }
   }
 
