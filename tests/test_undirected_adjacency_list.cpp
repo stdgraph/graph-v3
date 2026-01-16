@@ -1354,14 +1354,8 @@ TEST_CASE("copy with graph value", "[undirected_adjacency_list][memory][copy]") 
 
 // =============================================================================
 // Edge Range Constructor Tests
-// NOTE: Edge range constructor has bugs causing SIGSEGV. These tests are
-// skipped until the implementation is fixed.
 // =============================================================================
 
-// Skipped: Edge range constructor causes SIGSEGV
-// TEST_CASE("edge range constructor basic", "[undirected_adjacency_list][construction][range][.skip]") { ... }
-
-/*
 TEST_CASE("edge range constructor basic", "[undirected_adjacency_list][construction][range]") {
     // Use copyable_edge_t (edge_info) with source_id, target_id, value members
     using edge_info_t = graph::copyable_edge_t<VKey, int>;
@@ -1464,7 +1458,6 @@ TEST_CASE("edge range constructor empty range", "[undirected_adjacency_list][con
     REQUIRE(g.edges_size() == 0);
     REQUIRE(g.graph_value() == 99);
 }
-*/
 
 // =============================================================================
 // Iterator Invalidation Tests
@@ -1540,3 +1533,146 @@ TEST_CASE("edge reference stable across operations", "[undirected_adjacency_list
     REQUIRE(found);
 }
 
+// =============================================================================
+// Container Operation Tests
+// =============================================================================
+
+TEST_CASE("try_find_vertex", "[undirected_adjacency_list][vertex][find]") {
+    undirected_adjacency_list<int, int> g;
+    g.create_vertex(10);
+    g.create_vertex(20);
+    g.create_vertex(30);
+    
+    SECTION("find existing vertex") {
+        auto it = g.try_find_vertex(1);
+        REQUIRE(it != g.end());
+        REQUIRE(it->value == 20);
+    }
+    
+    SECTION("find first vertex") {
+        auto it = g.try_find_vertex(0);
+        REQUIRE(it != g.end());
+        REQUIRE(it->value == 10);
+    }
+    
+    SECTION("find last vertex") {
+        auto it = g.try_find_vertex(2);
+        REQUIRE(it != g.end());
+        REQUIRE(it->value == 30);
+    }
+    
+    SECTION("find non-existent vertex returns end") {
+        auto it = g.try_find_vertex(100);
+        REQUIRE(it == g.end());
+    }
+    
+    SECTION("const version") {
+        const auto& cg = g;
+        auto it = cg.try_find_vertex(1);
+        REQUIRE(it != cg.end());
+        REQUIRE(it->value == 20);
+    }
+}
+
+TEST_CASE("clear_edges per-vertex", "[undirected_adjacency_list][vertex][clear_edges]") {
+    undirected_adjacency_list<int, int> g;
+    g.create_vertex(0);
+    g.create_vertex(1);
+    g.create_vertex(2);
+    g.create_edge(0, 1, 100);
+    g.create_edge(0, 2, 200);
+    g.create_edge(1, 2, 300);
+    
+    REQUIRE(g.edges_size() == 3);
+    REQUIRE(g.vertices()[0].edges_size() == 2);
+    REQUIRE(g.vertices()[1].edges_size() == 2);
+    REQUIRE(g.vertices()[2].edges_size() == 2);
+    
+    SECTION("clear edges from one vertex") {
+        g.vertices()[0].clear_edges(g);
+        
+        // Edges involving vertex 0 are gone
+        REQUIRE(g.vertices()[0].edges_size() == 0);
+        // Edges to/from vertex 0 are removed from other vertices too
+        REQUIRE(g.vertices()[1].edges_size() == 1);  // Only 1-2 remains
+        REQUIRE(g.vertices()[2].edges_size() == 1);  // Only 1-2 remains
+        REQUIRE(g.edges_size() == 1);
+    }
+}
+
+TEST_CASE("erase_edge with iterator range", "[undirected_adjacency_list][edge][erase]") {
+    undirected_adjacency_list<int, int> g;
+    g.create_vertex(0);
+    g.create_vertex(1);
+    g.create_vertex(2);
+    g.create_vertex(3);
+    g.create_edge(0, 1, 100);
+    g.create_edge(0, 2, 200);
+    g.create_edge(0, 3, 300);
+    
+    REQUIRE(g.vertices()[0].edges_size() == 3);
+    
+    SECTION("erase all edges from vertex") {
+        auto& v0 = g.vertices()[0];
+        v0.erase_edge(g, v0.edges_begin(g, 0), v0.edges_end(g, 0));
+        REQUIRE(v0.edges_size() == 0);
+        REQUIRE(g.edges_size() == 0);
+    }
+}
+
+// =============================================================================
+// Void Value Type Tests
+// NOTE: Void value types require additional implementation work - "forming reference to void" errors
+// These tests are documented here but commented out until implementation is fixed.
+// =============================================================================
+
+/*
+TEST_CASE("graph with void vertex value", "[undirected_adjacency_list][void_types]") {
+    undirected_adjacency_list<void, int> g;
+    g.create_vertex();
+    g.create_vertex();
+    g.create_edge(0, 1, 100);
+    
+    REQUIRE(g.vertices().size() == 2);
+    REQUIRE(g.edges_size() == 1);
+    
+    // Verify edge has value
+    auto& v0 = g.vertices()[0];
+    auto& e = *v0.edges_begin(g, 0);
+    REQUIRE(e.value == 100);
+}
+
+TEST_CASE("graph with void edge value", "[undirected_adjacency_list][void_types]") {
+    undirected_adjacency_list<int, void> g;
+    g.create_vertex(10);
+    g.create_vertex(20);
+    g.create_edge(0, 1);
+    
+    REQUIRE(g.vertices().size() == 2);
+    REQUIRE(g.vertices()[0].value == 10);
+    REQUIRE(g.vertices()[1].value == 20);
+    REQUIRE(g.edges_size() == 1);
+}
+
+TEST_CASE("graph with void graph value", "[undirected_adjacency_list][void_types]") {
+    undirected_adjacency_list<int, int, void> g;
+    g.create_vertex(10);
+    g.create_vertex(20);
+    g.create_edge(0, 1, 100);
+    
+    REQUIRE(g.vertices().size() == 2);
+    REQUIRE(g.edges_size() == 1);
+}
+
+TEST_CASE("graph with all void values", "[undirected_adjacency_list][void_types]") {
+    undirected_adjacency_list<void, void, void> g;
+    g.create_vertex();
+    g.create_vertex();
+    g.create_vertex();
+    g.create_edge(0, 1);
+    g.create_edge(1, 2);
+    
+    REQUIRE(g.vertices().size() == 3);
+    REQUIRE(g.edges_size() == 2);
+}
+*/

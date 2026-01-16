@@ -678,3 +678,68 @@ TEST_CASE("CPO edge traversal consistency", "[undirected_adjacency_list][cpo][ed
     }
 }
 
+// =============================================================================
+// Additional CPO Tests - vertex descriptor based edges/degree
+// =============================================================================
+
+TEST_CASE("edges via vertex descriptor CPO", "[undirected_adjacency_list][cpo][edges]") {
+    using namespace graph;
+    undirected_adjacency_list<int, int> g;
+    g.create_vertex(10);
+    g.create_vertex(20);
+    g.create_vertex(30);
+    g.create_edge(0, 1, 100);
+    g.create_edge(0, 2, 200);
+    g.create_edge(1, 2, 300);
+    
+    SECTION("get edges via vertex descriptor from vertices()") {
+        size_t v0_count = 0;
+        for (auto v : vertices(g)) {
+            if (vertex_id(g, v) == 0) {
+                for ([[maybe_unused]] auto e : edges(g, v)) {
+                    ++v0_count;
+                }
+            }
+        }
+        REQUIRE(v0_count == 2);  // vertex 0 has edges to 1 and 2
+    }
+    
+    SECTION("each vertex has correct edge count") {
+        std::vector<size_t> edge_counts;
+        for (auto v : vertices(g)) {
+            size_t count = 0;
+            for ([[maybe_unused]] auto e : edges(g, v)) {
+                ++count;
+            }
+            edge_counts.push_back(count);
+        }
+        REQUIRE(edge_counts.size() == 3);
+        REQUIRE(edge_counts[0] == 2);  // vertex 0
+        REQUIRE(edge_counts[1] == 2);  // vertex 1
+        REQUIRE(edge_counts[2] == 2);  // vertex 2
+    }
+}
+
+TEST_CASE("degree via vertex descriptor CPO", "[undirected_adjacency_list][cpo][degree]") {
+    using namespace graph;
+    undirected_adjacency_list<int, int> g;
+    g.create_vertex(10);
+    g.create_vertex(20);
+    g.create_vertex(30);
+    g.create_vertex(40);  // isolated vertex
+    g.create_edge(0, 1, 100);
+    g.create_edge(0, 2, 200);
+    g.create_edge(1, 2, 300);
+    
+    SECTION("degree via vertex descriptor") {
+        for (auto v : vertices(g)) {
+            auto vid = vertex_id(g, v);
+            auto d = degree(g, v);
+            if (vid == 0 || vid == 1 || vid == 2) {
+                REQUIRE(d == 2);
+            } else {
+                REQUIRE(d == 0);  // vertex 3 is isolated
+            }
+        }
+    }
+}

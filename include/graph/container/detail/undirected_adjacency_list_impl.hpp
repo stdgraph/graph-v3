@@ -1209,8 +1209,14 @@ undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjace
       : base_type(gv), vertices_(alloc), edge_alloc_(alloc)
 // clang-format on
 {
+  // Handle empty case - no vertices or edges to create
+  if (vrng.empty() && ranges::empty(erng)) {
+    return;
+  }
+
   // Evaluate max vertex key needed
-  vertex_key_type max_vtx_key = static_cast<vertex_key_type>(vrng.size() - 1);
+  vertex_key_type max_vtx_key = vrng.empty() ? vertex_key_type(0) 
+                                             : static_cast<vertex_key_type>(vrng.size() - 1);
   for (auto& e : erng) {
     auto&& edge_info = eproj(e);  // copyable_edge_t<VId, EV>
     max_vtx_key = max(max_vtx_key, max(edge_info.source_id, edge_info.target_id));
@@ -1227,7 +1233,7 @@ undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjace
   vertices_.resize(max_vtx_key + 1); // assure expected vertices exist
 
   // add edges
-  if (erng.size() > 0) {
+  if (!ranges::empty(erng)) {
     auto&& first_edge_info = eproj(*ranges::begin(erng)); // first edge
     vertex_key_type tkey = first_edge_info.source_id;     // last in-vertex key
     for (auto& edge_data : erng) {
