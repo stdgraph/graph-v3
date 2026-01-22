@@ -527,7 +527,7 @@ template <typename VV,
 ual_edge<VV, EV, GV, VId, VContainer, Alloc>::ual_edge(graph_type&     g,
                                                         vertex_key_type ukey,
                                                         vertex_key_type vkey) noexcept
-      : base_type(), vertex_edge_list_inward_link_type(ukey), vertex_edge_list_outward_link_type(vkey) {
+      : base_value_type(), vertex_edge_list_inward_link_type(ukey), vertex_edge_list_outward_link_type(vkey) {
   link_back(g.vertices()[ukey], g.vertices()[vkey]);
 }
 
@@ -542,7 +542,7 @@ ual_edge<VV, EV, GV, VId, VContainer, Alloc>::ual_edge(graph_type&            g,
                                                         vertex_key_type        ukey,
                                                         vertex_key_type        vkey,
                                                         const edge_value_type& val) noexcept
-      : base_type(val), vertex_edge_list_inward_link_type(ukey), vertex_edge_list_outward_link_type(vkey) {
+      : base_value_type(val), vertex_edge_list_inward_link_type(ukey), vertex_edge_list_outward_link_type(vkey) {
   link_back(g.vertices()[ukey], g.vertices()[vkey]);
 }
 
@@ -557,7 +557,7 @@ ual_edge<VV, EV, GV, VId, VContainer, Alloc>::ual_edge(graph_type&       g,
                                                         vertex_key_type   ukey,
                                                         vertex_key_type   vkey,
                                                         edge_value_type&& val) noexcept
-      : base_type(move(val)), vertex_edge_list_inward_link_type(ukey), vertex_edge_list_outward_link_type(vkey) {
+      : base_value_type(move(val)), vertex_edge_list_inward_link_type(ukey), vertex_edge_list_outward_link_type(vkey) {
   link_back(g.vertices()[ukey], g.vertices()[vkey]);
 }
 
@@ -569,7 +569,7 @@ template <typename VV,
           class VContainer,
           typename Alloc>
 ual_edge<VV, EV, GV, VId, VContainer, Alloc>::ual_edge(graph_type& g, vertex_iterator ui, vertex_iterator vi) noexcept
-      : base_type()
+      : base_value_type()
       , vertex_edge_list_inward_link_type(vertex_key(g, ui))
       , vertex_edge_list_outward_link_type(vertex_key(g, vi)) {
   link_back(*ui, *vi);
@@ -586,7 +586,7 @@ ual_edge<VV, EV, GV, VId, VContainer, Alloc>::ual_edge(graph_type&            g,
                                                         vertex_iterator        ui,
                                                         vertex_iterator        vi,
                                                         const edge_value_type& val) noexcept
-      : base_type(val)
+      : base_value_type(val)
       , vertex_edge_list_inward_link_type(vertex_key(g, ui))
       , vertex_edge_list_outward_link_type(vertex_key(g, vi)) {
   link_back(*ui, *vi);
@@ -603,7 +603,7 @@ ual_edge<VV, EV, GV, VId, VContainer, Alloc>::ual_edge(graph_type&       g,
                                                         vertex_iterator   ui,
                                                         vertex_iterator   vi,
                                                         edge_value_type&& val) noexcept
-      : base_type(move(val))
+      : base_value_type(move(val))
       , vertex_edge_list_inward_link_type(vertex_key(g, ui))
       , vertex_edge_list_outward_link_type(vertex_key(g, vi)) {
   link_back(*ui, *vi);
@@ -843,7 +843,7 @@ template <typename VV,
 ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::ual_vertex([[maybe_unused]] vertex_set& vertices,
                                                             [[maybe_unused]] vertex_index index,
                                                             const vertex_value_type& val)
-      : base_type(val) {}
+      : base_value_type(val) {}
 template <typename VV,
           typename EV,
           typename GV,
@@ -854,7 +854,7 @@ template <typename VV,
 ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::ual_vertex([[maybe_unused]] vertex_set& vertices,
                                                             [[maybe_unused]] vertex_index index,
                                                             vertex_value_type&& val) noexcept
-      : base_type(move(val)) {}
+      : base_value_type(move(val)) {}
 
 
 template <typename VV,
@@ -1181,7 +1181,7 @@ template <typename GV_>
   requires (!std::is_void_v<GV_> && !std::is_same_v<std::remove_cvref_t<GV_>, undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>>)
 undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjacency_list(const GV_& val,
                                                                                           const allocator_type&   alloc)
-      : base_type(val), vertices_(alloc), edge_alloc_(alloc) {}
+      : vertices_(alloc), edge_alloc_(alloc), graph_value_(val) {}
 
 template <typename VV,
           typename EV,
@@ -1194,7 +1194,7 @@ template <typename GV_>
   requires (!std::is_void_v<GV_> && !std::is_same_v<std::remove_cvref_t<GV_>, undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>>)
 undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjacency_list(GV_&&    val,
                                                                                           const allocator_type& alloc)
-      : base_type(std::forward<GV_>(val)), vertices_(alloc), edge_alloc_(alloc) {}
+      : vertices_(alloc), edge_alloc_(alloc), graph_value_(std::forward<GV_>(val)) {}
 
 
 // clang-format off
@@ -1211,7 +1211,7 @@ undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjace
                                                                               const VProj& vproj,
                                                                               const GV_&   gv,
                                                                               const Alloc& alloc)
-      : base_type(gv), vertices_(alloc), edge_alloc_(alloc)
+      : vertices_(alloc), edge_alloc_(alloc), graph_value_(gv)
 // clang-format on
 {
   // Handle empty case - no vertices or edges to create
@@ -1356,7 +1356,7 @@ template <typename VV,
           typename Alloc>
 undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjacency_list(
       const initializer_list<tuple<vertex_key_type, vertex_key_type, edge_value_type>>& ilist, const Alloc& alloc)
-      : base_type(), vertices_(alloc), edge_alloc_(alloc) {
+      : vertices_(alloc), edge_alloc_(alloc) {
   // Evaluate max vertex key needed
   vertex_key_type max_vtx_key = vertex_key_type();
   for (auto& edge_data : ilist) {
@@ -1389,7 +1389,7 @@ template <typename VV,
           typename Alloc>
 undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjacency_list(
       const initializer_list<tuple<vertex_key_type, vertex_key_type>>& ilist, const Alloc& alloc)
-      : base_type(), vertices_(alloc), edge_alloc_(alloc) {
+      : vertices_(alloc), edge_alloc_(alloc) {
   // Evaluate max vertex key needed
   vertex_key_type max_vtx_key = vertex_key_type();
   for (auto& edge_data : ilist) {
@@ -1423,8 +1423,8 @@ template <typename VV,
           typename Alloc>
 undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjacency_list(
       const undirected_adjacency_list& other)
-      : base_type(static_cast<const base_type&>(other))
-      , edge_alloc_(other.edge_alloc_) {
+      : edge_alloc_(other.edge_alloc_)
+      , graph_value_(other.graph_value_) {
   // Reserve space and copy vertices (with empty edge lists)
   vertices_.reserve(other.vertices_.size());
   
@@ -1435,12 +1435,9 @@ undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjace
     ++loop_count;
     if constexpr (std::is_void_v<VV>) {
       vertices_.emplace_back();
-    } else if constexpr (detail::graph_value_needs_wrap<VV>::value) {
-      // VV is a scalar/array/union/reference type - use graph_value_wrapper's .value member
-      vertices_.emplace_back(vertices_, static_cast<vertex_key_type>(vertices_.size()), 
-                             static_cast<const typename vertex_type::base_type&>(v).value);
     } else {
-      vertices_.emplace_back(vertices_, static_cast<vertex_key_type>(vertices_.size()), static_cast<const VV&>(v));
+      // Access vertex value member directly
+      vertices_.emplace_back(vertices_, static_cast<vertex_key_type>(vertices_.size()), v.value);
     }
   }
   
@@ -1455,11 +1452,9 @@ undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjace
       if (ukey == src_key && src_key <= tgt_key) {
         if constexpr (std::is_void_v<EV>) {
           create_edge(src_key, tgt_key);
-        } else if constexpr (detail::graph_value_needs_wrap<EV>::value) {
-          // EV is a scalar/array/union/reference type - use graph_value_wrapper's .value member
-          create_edge(src_key, tgt_key, static_cast<const typename edge_type::base_type&>(*uv).value);
         } else {
-          create_edge(src_key, tgt_key, static_cast<const EV&>(*uv));
+          // Access edge value member directly
+          create_edge(src_key, tgt_key, uv->value);
         }
       }
     }
@@ -1863,7 +1858,7 @@ template <typename VV,
           typename Alloc>
 void undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::swap(undirected_adjacency_list& rhs) {
   using std::swap;
-  swap(static_cast<base_type&>(*this), static_cast<base_type&>(rhs));
+  swap(graph_value_, rhs.graph_value_);
   vertices_.swap(rhs.vertices_);
   swap(edges_size_, rhs.edges_size_);
   swap(edge_alloc_, rhs.edge_alloc_);

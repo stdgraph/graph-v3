@@ -201,6 +201,100 @@ template <typename VV,
           typename ListT>
 class ual_vertex_edge_list_link;
 
+///-------------------------------------------------------------------------------------
+/// ual_edge_value
+///
+/// @brief Value class for undirected_adjacency_list edges with template specialization for void.
+///
+/// This class stores the user-defined edge value. A specialization for EV=void provides
+/// zero memory overhead when no edge value is needed.
+///
+/// @tparam EV Edge value type
+/// @tparam VV Vertex value type
+/// @tparam GV Graph value type
+/// @tparam VId Vertex ID type
+/// @tparam VContainer Container template for vertices
+/// @tparam Alloc Allocator type
+///
+template <typename EV, typename VV, typename GV, integral VId, 
+          template <typename V, typename A> class VContainer, typename Alloc>
+class ual_edge_value {
+public:
+  using value_type = EV;
+  using graph_type = undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>;
+
+public:
+  constexpr ual_edge_value(const value_type& val) : value(val) {}
+  constexpr ual_edge_value(value_type&& val) : value(std::move(val)) {}
+
+  constexpr ual_edge_value()                        = default;
+  constexpr ual_edge_value(const ual_edge_value&)   = default;
+  constexpr ual_edge_value(ual_edge_value&&)        = default;
+  constexpr ~ual_edge_value()                       = default;
+
+  constexpr ual_edge_value& operator=(const ual_edge_value&) = default;
+  constexpr ual_edge_value& operator=(ual_edge_value&&)      = default;
+
+public:
+  value_type value = value_type();
+};
+
+///-------------------------------------------------------------------------------------
+/// ual_edge_value<void, ...> specialization
+///
+/// @brief Specialization for EV=void that provides zero memory overhead.
+///
+template <typename VV, typename GV, integral VId, 
+          template <typename V, typename A> class VContainer, typename Alloc>
+class ual_edge_value<void, VV, GV, VId, VContainer, Alloc> {};
+
+///-------------------------------------------------------------------------------------
+/// ual_vertex_value
+///
+/// @brief Value class for undirected_adjacency_list vertices with template specialization for void.
+///
+/// This class stores the user-defined vertex value. A specialization for VV=void provides
+/// zero memory overhead when no vertex value is needed.
+///
+/// @tparam VV Vertex value type
+/// @tparam EV Edge value type
+/// @tparam GV Graph value type
+/// @tparam VId Vertex ID type
+/// @tparam VContainer Container template for vertices
+/// @tparam Alloc Allocator type
+///
+template <typename VV, typename EV, typename GV, integral VId,
+          template <typename V, typename A> class VContainer, typename Alloc>
+class ual_vertex_value {
+public:
+  using value_type = VV;
+  using graph_type = undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>;
+
+public:
+  constexpr ual_vertex_value(const value_type& val) : value(val) {}
+  constexpr ual_vertex_value(value_type&& val) : value(std::move(val)) {}
+
+  constexpr ual_vertex_value()                          = default;
+  constexpr ual_vertex_value(const ual_vertex_value&)   = default;
+  constexpr ual_vertex_value(ual_vertex_value&&)        = default;
+  constexpr ~ual_vertex_value()                         = default;
+
+  constexpr ual_vertex_value& operator=(const ual_vertex_value&) = default;
+  constexpr ual_vertex_value& operator=(ual_vertex_value&&)      = default;
+
+public:
+  value_type value = value_type();
+};
+
+///-------------------------------------------------------------------------------------
+/// ual_vertex_value<void, ...> specialization
+///
+/// @brief Specialization for VV=void that provides zero memory overhead.
+///
+template <typename EV, typename GV, integral VId,
+          template <typename V, typename A> class VContainer, typename Alloc>
+class ual_vertex_value<void, EV, GV, VId, VContainer, Alloc> {};
+
 
 ///-------------------------------------------------------------------------------------
 /// ual_vertex_edge_list
@@ -486,15 +580,13 @@ template <typename VV,
           class VContainer,
           typename Alloc>
 class ual_edge
-      : public conditional_t<is_void_v<EV>, empty_value,
-               conditional_t<detail::graph_value_needs_wrap<EV>::value, detail::graph_value_wrapper<EV>, EV>>
+      : public ual_edge_value<EV, VV, GV, VId, VContainer, Alloc>
       , public ual_vertex_edge_list_link<VV, EV, GV, VId, VContainer, Alloc, inward_list>
       , public ual_vertex_edge_list_link<VV, EV, GV, VId, VContainer, Alloc, outward_list> {
 public:
   using graph_type       = undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>;
   using graph_value_type = GV;
-  using base_type        = conditional_t<is_void_v<EV>, empty_value,
-                             conditional_t<detail::graph_value_needs_wrap<EV>::value, detail::graph_value_wrapper<EV>, EV>>;
+  using base_value_type  = ual_edge_value<EV, VV, GV, VId, VContainer, Alloc>;
 
   using vertex_type           = ual_vertex<VV, EV, GV, VId, VContainer, Alloc>;
   using vertex_allocator_type = typename allocator_traits<Alloc>::template rebind_alloc<vertex_type>;
@@ -582,20 +674,12 @@ private: // CPO support via ADL (friend functions)
   friend constexpr decltype(auto) edge_value(graph_type&, ual_edge& e) noexcept
     requires (!std::is_void_v<EV>)
   {
-    if constexpr (detail::graph_value_needs_wrap<EV>::value) {
-      return (e.base_type::value);
-    } else {
-      return (static_cast<EV&>(e));
-    }
+    return (e.base_value_type::value);
   }
   friend constexpr decltype(auto) edge_value(const graph_type&, const ual_edge& e) noexcept
     requires (!std::is_void_v<EV>)
   {
-    if constexpr (detail::graph_value_needs_wrap<EV>::value) {
-      return (e.base_type::value);
-    } else {
-      return (static_cast<const EV&>(e));
-    }
+    return (e.base_value_type::value);
   }
 };
 
@@ -615,13 +699,11 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-class ual_vertex : public conditional_t<is_void_v<VV>, empty_value,
-                         conditional_t<detail::graph_value_needs_wrap<VV>::value, detail::graph_value_wrapper<VV>, VV>> {
+class ual_vertex : public ual_vertex_value<VV, EV, GV, VId, VContainer, Alloc> {
 public:
   using graph_type       = undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>;
   using graph_value_type = GV;
-  using base_type        = conditional_t<is_void_v<VV>, empty_value,
-                             conditional_t<detail::graph_value_needs_wrap<VV>::value, detail::graph_value_wrapper<VV>, VV>>;
+  using base_value_type  = ual_vertex_value<VV, EV, GV, VId, VContainer, Alloc>;
 
   using vertex_type           = ual_vertex<VV, EV, GV, VId, VContainer, Alloc>;
   using vertex_allocator_type = typename allocator_traits<Alloc>::template rebind_alloc<vertex_type>;
@@ -910,13 +992,9 @@ template <typename                                VV,
           template <typename V, typename A> class VContainer,
           typename                                Alloc>
 class undirected_adjacency_list 
-  : public conditional_t<is_void_v<GV>, empty_value, 
-           conditional_t<detail::graph_value_needs_wrap<GV>::value, detail::graph_value_wrapper<GV>, GV>>
 // clang-format on
 {
 public:
-  using base_type        = conditional_t<is_void_v<GV>, empty_value,
-                             conditional_t<detail::graph_value_needs_wrap<GV>::value, detail::graph_value_wrapper<GV>, GV>>;
   using graph_type       = undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>;
   using graph_value_type = GV;
   using allocator_type   = Alloc;
@@ -1309,21 +1387,13 @@ public: // Accessors
   template <typename GV_ = GV>
     requires (!std::is_void_v<GV_>)
   GV_& graph_value() noexcept {
-    if constexpr (detail::graph_value_needs_wrap<GV_>::value) {
-      return static_cast<base_type&>(*this).value;
-    } else {
-      return static_cast<GV_&>(*this);
-    }
+    return graph_value_;
   }
   
   template <typename GV_ = GV>
     requires (!std::is_void_v<GV_>)
   const GV_& graph_value() const noexcept {
-    if constexpr (detail::graph_value_needs_wrap<GV_>::value) {
-      return static_cast<const base_type&>(*this).value;
-    } else {
-      return static_cast<const GV_&>(*this);
-    }
+    return graph_value_;
   }
 
 public: // Vertex creation
@@ -1449,9 +1519,10 @@ protected:
   void throw_unordered_edges() const;
 
 private:
-  vertex_set          vertices_;
-  edge_size_type      edges_size_ = 0;
-  edge_allocator_type edge_alloc_;
+  vertex_set                    vertices_;
+  edge_size_type                edges_size_ = 0;
+  edge_allocator_type           edge_alloc_;
+  [[no_unique_address]] GV      graph_value_{};
   friend vertex_type;
 
 private: // CPO support via ADL (friend functions)
@@ -1508,20 +1579,12 @@ private: // CPO support via ADL (friend functions)
   friend constexpr decltype(auto) graph_value(undirected_adjacency_list& g) noexcept
     requires (!std::is_void_v<GV>)
   {
-    if constexpr (detail::graph_value_needs_wrap<GV>::value) {
-      return (g.base_type::value);
-    } else {
-      return (static_cast<GV&>(g));
-    }
+    return g.graph_value_;
   }
   friend constexpr decltype(auto) graph_value(const undirected_adjacency_list& g) noexcept
     requires (!std::is_void_v<GV>)
   {
-    if constexpr (detail::graph_value_needs_wrap<GV>::value) {
-      return (g.base_type::value);
-    } else {
-      return (static_cast<const GV&>(g));
-    }
+    return g.graph_value_;
   }
 
   // vertex_value(g, u) - get vertex value (only when VV is not void)
@@ -1529,21 +1592,13 @@ private: // CPO support via ADL (friend functions)
     requires vertex_descriptor_type<U> && (!std::is_void_v<VV>)
   friend constexpr decltype(auto) vertex_value(undirected_adjacency_list& g, const U& u) noexcept {
     auto& vtx = u.inner_value(g.vertices_);
-    if constexpr (detail::graph_value_needs_wrap<VV>::value) {
-      return (vtx.vertex_type::base_type::value);
-    } else {
-      return (static_cast<VV&>(vtx));
-    }
+    return (vtx.base_value_type::value);
   }
   template <typename U>
     requires vertex_descriptor_type<U> && (!std::is_void_v<VV>)
   friend constexpr decltype(auto) vertex_value(const undirected_adjacency_list& g, const U& u) noexcept {
     const auto& vtx = u.inner_value(g.vertices_);
-    if constexpr (detail::graph_value_needs_wrap<VV>::value) {
-      return (vtx.vertex_type::base_type::value);
-    } else {
-      return (static_cast<const VV&>(vtx));
-    }
+    return (vtx.base_value_type::value);
   }
 
   // edges(g, u) - get edges from a vertex (returns edge_descriptor_view)
@@ -1679,44 +1734,480 @@ private: // CPO support via ADL (friend functions)
   }
 };
 
-#  ifdef CPO
-#if 0
-// clang-format off
-template <typename                                VV,
-          typename                                EV,
-          typename                                GV,
-          integral                                VId,
+///-------------------------------------------------------------------------------------
+/// undirected_adjacency_list<VV, EV, void, ...> - Specialization for GV=void
+///
+/// @brief Specialization of undirected_adjacency_list when no graph value is needed.
+///
+/// This specialization removes the graph_value_ member and graph_value() accessor
+/// to provide zero memory overhead when graph-level values aren't needed.
+///
+/// All other functionality remains identical to the primary template.
+///-------------------------------------------------------------------------------------
+template <typename VV,
+          typename EV,
+          integral VId,
           template <typename V, typename A> class VContainer,
-          typename                                Alloc>
-struct graph_traits<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>>
-// clang-format on
+          typename Alloc>
+class undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>
 {
-  using graph_type       = undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>;
-  using graph_value_type = typename graph_type::graph_value_type;
-  using allocator_type   = typename graph_type::allocator_type;
+public:
+  using graph_type       = undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>;
+  using graph_value_type = void;
+  using allocator_type   = Alloc;
 
-  using vertex_type       = typename graph_type::vertex_type;
-  using vertex_key_type   = typename graph_type::vertex_key_type;
-  using vertex_value_type = typename graph_type::vertex_value_type;
+  using vertex_type            = ual_vertex<VV, EV, void, VId, VContainer, Alloc>;
+  using vertex_value_type      = VV;
+  using vertex_key_type        = VId;
+  using vertex_index_type      = VId;
+  using vertex_allocator_type  = typename allocator_traits<Alloc>::template rebind_alloc<vertex_type>;
+  using vertex_set             = VContainer<vertex_type, vertex_allocator_type>;
+  using vertex_size_type       = typename vertex_set::size_type;
+  using vertex_difference_type = typename vertex_set::difference_type;
 
-  using edge_type       = typename graph_type::edge_type;
-  using edge_key_type   = pair<vertex_key_type, vertex_key_type>;
-  using edge_value_type = typename graph_type::edge_value_type;
+  using vertex_iterator       = typename vertex_set::iterator;
+  using const_vertex_iterator = typename vertex_set::const_iterator;
+  using vertex_range          = vertex_set&;
+  using const_vertex_range    = const vertex_set&;
 
-  using vertex_range       = typename graph_type::vertex_range;
-  using const_vertex_range = typename graph_type::const_vertex_range;
+  using edge_type            = ual_edge<VV, EV, void, VId, VContainer, Alloc>;
+  using edge_value_type      = EV;
+  using edge_allocator_type  = typename allocator_traits<Alloc>::template rebind_alloc<edge_type>;
+  using edge_key_type        = pair<vertex_key_type, vertex_key_type>;
+  using edge_size_type       = typename edge_type::edge_size_type;
+  using edge_difference_type = typename edge_type::edge_difference_type;
 
-  using edge_range       = typename graph_type::edge_range;
-  using const_edge_range = typename graph_type::const_edge_range;
+  using vertex_edge_iterator        = typename vertex_type::vertex_edge_iterator;
+  using const_vertex_edge_iterator  = typename vertex_type::const_vertex_edge_iterator;
+  using vertex_edge_range           = typename vertex_type::vertex_edge_range;
+  using const_vertex_edge_range     = typename vertex_type::const_vertex_edge_range;
+  using vertex_edge_size_type       = typename vertex_edge_iterator::size_type;
+  using vertex_edge_difference_type = typename vertex_edge_iterator::difference_type;
 
-  using vertex_edge_range       = typename vertex_type::vertex_edge_range;
-  using const_vertex_edge_range = typename vertex_type::const_vertex_edge_range;
+  using vertex_vertex_iterator       = typename vertex_type::vertex_vertex_iterator;
+  using const_vertex_vertex_iterator = typename vertex_type::const_vertex_vertex_iterator;
+  using vertex_vertex_range          = typename vertex_type::vertex_vertex_range;
+  using const_vertex_vertex_range    = typename vertex_type::const_vertex_vertex_range;
+  using vertex_vertex_size_type      = typename vertex_type::vertex_vertex_size_type;
 
-  using vertex_vertex_range       = typename vertex_type::vertex_vertex_range;
-  using const_vertex_vertex_range = typename vertex_type::const_vertex_vertex_range;
+  class edge_iterator;
+  class const_edge_iterator;
+  using edge_range       = ranges::subrange<edge_iterator, edge_iterator, ranges::subrange_kind::sized>;
+  using const_edge_range = ranges::subrange<const_edge_iterator, const_edge_iterator, ranges::subrange_kind::sized>;
+
+  class const_edge_iterator {
+  public:
+    using iterator_category = forward_iterator_tag;
+    using iterator_concept  = std::forward_iterator_tag;
+    using value_type        = ual_edge<VV, EV, void, VId, VContainer, Alloc>;
+    using size_type         = size_t;
+    using difference_type   = ptrdiff_t;
+    using pointer           = value_type const*;
+    using reference         = const value_type&;
+
+  public:
+    const_edge_iterator(const graph_type& g, vertex_iterator u) : g_(&const_cast<graph_type&>(g)), u_(u) {
+      advance_vertex();
+    }
+    const_edge_iterator(const graph_type& g, const_vertex_iterator u) 
+          : g_(&const_cast<graph_type&>(g)), u_(g_->vertices().begin() + (u - g.vertices().begin())) {
+      advance_vertex();
+    }
+    const_edge_iterator(const graph_type& g, vertex_iterator u, vertex_edge_iterator uv)
+          : g_(&const_cast<graph_type&>(g)), u_(u), uv_(uv) {}
+
+    const_edge_iterator() noexcept                               = default;
+    const_edge_iterator(const const_edge_iterator& rhs) noexcept = default;
+    ~const_edge_iterator() noexcept                              = default;
+    const_edge_iterator& operator=(const const_edge_iterator& rhs) = default;
+
+    reference operator*() const { return *uv_; }
+    pointer   operator->() const { return &*uv_; }
+
+    const_edge_iterator& operator++() {
+      advance_edge();
+      return *this;
+    }
+    const_edge_iterator operator++(int) {
+      const_edge_iterator tmp(*this);
+      ++*this;
+      return tmp;
+    }
+
+    bool operator==(const const_edge_iterator& rhs) const noexcept { return uv_ == rhs.uv_ && u_ == rhs.u_; }
+    bool operator!=(const const_edge_iterator& rhs) const noexcept { return !operator==(rhs); }
+
+  protected:
+    void advance_edge() {
+      vertex_key_type ukey = vertex_key(*g_, u_);
+      if (++uv_ != u_->edges_end(*g_, ukey))
+        return;
+      ++u_;
+      advance_vertex();
+    }
+
+    void advance_vertex() {
+      for (; u_ != g_->vertices().end(); ++u_) {
+        if (u_->edges_size() > 0) {
+          vertex_key_type ukey = vertex_key(*g_, u_);
+          uv_                  = u_->edges_begin(*g_, ukey);
+          return;
+        }
+      }
+    }
+
+  protected:
+    graph_type*          g_;
+    vertex_iterator      u_;
+    vertex_edge_iterator uv_;
+  };
+
+  class edge_iterator : public const_edge_iterator {
+  public:
+    using base_t            = const_edge_iterator;
+    using iterator_category = typename base_t::iterator_category;
+    using value_type        = typename base_t::value_type;
+    using size_type         = typename base_t::size_type;
+    using difference_type   = typename base_t::difference_type;
+    using pointer           = value_type*;
+    using reference         = value_type&;
+
+  public:
+    edge_iterator(graph_type& g, vertex_iterator u) noexcept : const_edge_iterator(g, u) {}
+    edge_iterator(graph_type& g, vertex_iterator u, vertex_edge_iterator uv) : const_edge_iterator(g, u, uv) {}
+
+    edge_iterator() noexcept : const_edge_iterator(){};
+    edge_iterator(const edge_iterator& rhs) noexcept : const_edge_iterator(rhs) {}
+    edge_iterator(const_edge_iterator& rhs) : const_edge_iterator(rhs) {}
+    ~edge_iterator() {}
+    edge_iterator& operator=(const edge_iterator& rhs) noexcept {
+      const_edge_iterator::operator=(rhs);
+      return *this;
+    }
+
+    reference operator*() const { return *this->uv_; }
+    pointer   operator->() const { return &*this->uv_; }
+
+    edge_iterator& operator++() {
+      this->advance_edge();
+      return *this;
+    }
+    edge_iterator operator++(int) {
+      edge_iterator tmp(*this);
+      ++*this;
+      return tmp;
+    }
+  };
+
+public:
+  // Forward declare all the same public methods as the primary template
+  // (constructor declarations, accessors, create_vertex, create_edge, etc.)
+  // The implementations will be shared via undirected_adjacency_list_impl.hpp
+
+  undirected_adjacency_list()                                         = default;
+  undirected_adjacency_list(undirected_adjacency_list&& rhs) noexcept = default;
+  undirected_adjacency_list(const undirected_adjacency_list& other);
+
+  undirected_adjacency_list(const allocator_type& alloc);
+
+  template <typename ERng, 
+            typename VRng, 
+            typename EProj = std::identity, 
+            typename VProj = std::identity>
+    requires ranges::forward_range<ERng> 
+          && ranges::input_range<VRng>
+          && std::regular_invocable<EProj, ranges::range_reference_t<ERng>>
+          && std::regular_invocable<VProj, ranges::range_reference_t<VRng>>
+  undirected_adjacency_list(const ERng&  erng,
+                            const VRng&  vrng,
+                            const EProj& eproj = {},
+                            const VProj& vproj = {},
+                            const Alloc& alloc = Alloc());
+
+  template <typename ERng, typename EProj = std::identity>
+    requires ranges::forward_range<ERng>
+          && std::regular_invocable<EProj, ranges::range_reference_t<ERng>>
+  undirected_adjacency_list(const ERng&  erng, 
+                            const EProj& eproj = {}, 
+                            const Alloc& alloc = Alloc());
+
+  undirected_adjacency_list(
+    const initializer_list<
+          tuple<vertex_key_type, vertex_key_type, edge_value_type>>& ilist,
+    const Alloc&                                                     alloc = Alloc());
+
+  undirected_adjacency_list(
+    const initializer_list<tuple<vertex_key_type, vertex_key_type>>& ilist,
+    const Alloc&                                                     alloc = Alloc());
+
+  ~undirected_adjacency_list();
+
+  undirected_adjacency_list& operator=(const undirected_adjacency_list& other);
+  undirected_adjacency_list& operator=(undirected_adjacency_list&&) = default;
+
+public:
+  constexpr edge_allocator_type edge_allocator() const noexcept;
+
+  constexpr vertex_set&       vertices();
+  constexpr const vertex_set& vertices() const;
+
+  constexpr vertex_iterator       begin();
+  constexpr const_vertex_iterator begin() const;
+  constexpr const_vertex_iterator cbegin() const;
+
+  constexpr vertex_iterator       end();
+  constexpr const_vertex_iterator end() const;
+  constexpr const_vertex_iterator cend() const;
+
+  vertex_iterator       try_find_vertex(vertex_key_type);
+  const_vertex_iterator try_find_vertex(vertex_key_type) const;
+
+  constexpr edge_size_type edges_size() const noexcept;
+
+  constexpr edge_iterator       edges_begin() { return edge_iterator(*this, begin()); }
+  constexpr const_edge_iterator edges_begin() const {
+    return const_edge_iterator(*this, const_cast<graph_type&>(*this).begin());
+  }
+  constexpr const_edge_iterator edges_cbegin() const {
+    return const_edge_iterator(*this, const_cast<graph_type&>(*this).cbegin());
+  }
+
+  constexpr edge_iterator       edges_end() { return edge_iterator(*this, end()); }
+  constexpr const_edge_iterator edges_end() const {
+    return const_edge_iterator(*this, const_cast<graph_type&>(*this).end());
+  }
+  constexpr const_edge_iterator edges_cend() const {
+    return const_edge_iterator(*this, const_cast<graph_type&>(*this).end());
+  }
+
+  edge_range       edges() { return {edges_begin(), edges_end(), edges_size_}; }
+  const_edge_range edges() const { return {edges_begin(), edges_end(), edges_size_}; }
+
+  // Note: No graph_value() methods for GV=void specialization
+
+public:
+  vertex_iterator create_vertex();
+  vertex_iterator create_vertex(vertex_value_type&&);
+
+  template <class VV2>
+    requires std::constructible_from<vertex_value_type, const VV2&>
+  vertex_iterator create_vertex(const VV2&);
+
+public:
+  vertex_edge_iterator create_edge(vertex_key_type, vertex_key_type);
+  vertex_edge_iterator create_edge(vertex_key_type, vertex_key_type, edge_value_type&&);
+
+  template <class EV2>
+    requires std::constructible_from<edge_value_type, const EV2&>
+  vertex_edge_iterator create_edge(vertex_key_type,
+                                   vertex_key_type,
+                                   const EV2&);
+
+  vertex_edge_iterator create_edge(vertex_iterator, vertex_iterator);
+  vertex_edge_iterator create_edge(vertex_iterator, vertex_iterator, edge_value_type&&);
+
+  template <class EV2>
+    requires std::constructible_from<edge_value_type, const EV2&>
+  vertex_edge_iterator create_edge(vertex_iterator,
+                                   vertex_iterator,
+                                   const EV2&);
+
+public:
+  edge_iterator erase_edge(edge_iterator);
+
+public:
+  void clear();
+  void swap(undirected_adjacency_list&);
+
+protected:
+  void reserve_vertices(vertex_size_type);
+  void resize_vertices(vertex_size_type);
+  void resize_vertices(vertex_size_type, const vertex_value_type&);
+  void throw_unordered_edges() const;
+
+private:
+  vertex_set          vertices_;
+  edge_size_type      edges_size_ = 0;
+  edge_allocator_type edge_alloc_;
+  friend vertex_type;
+
+private:
+  friend constexpr auto vertices(undirected_adjacency_list& g) noexcept { 
+    return vertex_descriptor_view(g.vertices_);
+  }
+  friend constexpr auto vertices(const undirected_adjacency_list& g) noexcept { 
+    return vertex_descriptor_view(g.vertices_);
+  }
+  
+  friend constexpr auto num_vertices(const undirected_adjacency_list& g) noexcept { 
+    return g.vertices_.size(); 
+  }
+  
+  friend constexpr auto num_edges(const undirected_adjacency_list& g) noexcept { 
+    return g.edges_size_; 
+  }
+  
+  friend constexpr bool has_edge(const undirected_adjacency_list& g) noexcept { 
+    return g.edges_size_ > 0; 
+  }
+
+  friend constexpr auto find_vertex(undirected_adjacency_list& g, vertex_key_type id) noexcept {
+    using container_iter = typename vertex_set::iterator;
+    using view_type      = vertex_descriptor_view<container_iter>;
+    using view_iterator  = typename view_type::iterator;
+    using storage_type   = typename view_iterator::value_type::storage_type;
+
+    if (id >= static_cast<vertex_key_type>(g.vertices_.size())) {
+      return view_iterator{static_cast<storage_type>(g.vertices_.size())};
+    }
+    return view_iterator{static_cast<storage_type>(id)};
+  }
+  friend constexpr auto find_vertex(const undirected_adjacency_list& g, vertex_key_type id) noexcept {
+    using container_iter = typename vertex_set::const_iterator;
+    using view_type      = vertex_descriptor_view<container_iter>;
+    using view_iterator  = typename view_type::iterator;
+    using storage_type   = typename view_iterator::value_type::storage_type;
+
+    if (id >= static_cast<vertex_key_type>(g.vertices_.size())) {
+      return view_iterator{static_cast<storage_type>(g.vertices_.size())};
+    }
+    return view_iterator{static_cast<storage_type>(id)};
+  }
+
+  // Note: No graph_value(g) CPO for GV=void specialization
+
+  template <typename U>
+    requires vertex_descriptor_type<U> && (!std::is_void_v<VV>)
+  friend constexpr decltype(auto) vertex_value(undirected_adjacency_list& g, const U& u) noexcept {
+    auto& vtx = u.inner_value(g.vertices_);
+    return (vtx.base_value_type::value);
+  }
+  template <typename U>
+    requires vertex_descriptor_type<U> && (!std::is_void_v<VV>)
+  friend constexpr decltype(auto) vertex_value(const undirected_adjacency_list& g, const U& u) noexcept {
+    const auto& vtx = u.inner_value(g.vertices_);
+    return (vtx.base_value_type::value);
+  }
+
+  template <typename U>
+    requires vertex_descriptor_type<U>
+  friend constexpr auto edges(undirected_adjacency_list& g, const U& u) noexcept {
+    auto uid = static_cast<vertex_key_type>(u.vertex_id());
+    auto& vtx = g.vertices_[uid];
+    auto edges_rng = vtx.edges(g, uid);
+    using edge_iter_t = vertex_edge_iterator;
+    using vertex_iter_t = typename U::iterator_type;
+    return edge_descriptor_view<edge_iter_t, vertex_iter_t>(edges_rng, u);
+  }
+  template <typename U>
+    requires vertex_descriptor_type<U>
+  friend constexpr auto edges(const undirected_adjacency_list& g, const U& u) noexcept {
+    auto uid = static_cast<vertex_key_type>(u.vertex_id());
+    const auto& vtx = g.vertices_[uid];
+    auto edges_rng = vtx.edges(g, uid);
+    using edge_iter_t = const_vertex_edge_iterator;
+    using vertex_iter_t = typename U::iterator_type;
+    return edge_descriptor_view<edge_iter_t, vertex_iter_t>(edges_rng, u);
+  }
+
+  template <typename U>
+    requires vertex_descriptor_type<U>
+  friend constexpr auto degree(const undirected_adjacency_list& g, const U& u) noexcept {
+    auto uid = static_cast<vertex_key_type>(u.vertex_id());
+    return g.vertices_[uid].edges_size();
+  }
+
+  template <typename E>
+    requires edge_descriptor_type<E>
+  friend constexpr vertex_key_type target_id(const undirected_adjacency_list& g, const E& e) noexcept {
+    return e.value()->other_vertex_key(g, static_cast<vertex_key_type>(e.source_id()));
+  }
+
+  template <typename E>
+    requires edge_descriptor_type<E>
+  friend constexpr vertex_key_type source_id([[maybe_unused]] const undirected_adjacency_list& g, const E& e) noexcept {
+    return static_cast<vertex_key_type>(e.source_id());
+  }
+
+  template <typename E>
+    requires edge_descriptor_type<E>
+  friend constexpr auto target(undirected_adjacency_list& g, const E& e) noexcept {
+    auto tid = target_id(g, e);
+    return *find_vertex(g, tid);
+  }
+  template <typename E>
+    requires edge_descriptor_type<E>
+  friend constexpr auto target(const undirected_adjacency_list& g, const E& e) noexcept {
+    auto tid = target_id(g, e);
+    return *find_vertex(g, tid);
+  }
+
+  template <typename E>
+    requires edge_descriptor_type<E>
+  friend constexpr auto source(undirected_adjacency_list& g, const E& e) noexcept {
+    auto sid = source_id(g, e);
+    return *find_vertex(g, sid);
+  }
+  template <typename E>
+    requires edge_descriptor_type<E>
+  friend constexpr auto source(const undirected_adjacency_list& g, const E& e) noexcept {
+    auto sid = source_id(g, e);
+    return *find_vertex(g, sid);
+  }
+
+  template <typename U>
+    requires vertex_descriptor_type<U>
+  friend constexpr auto find_vertex_edge(undirected_adjacency_list& g, const U& u, vertex_key_type vid) noexcept {
+    auto uid = static_cast<vertex_key_type>(u.vertex_id());
+    auto& vtx = g.vertices_[uid];
+    auto edges_rng = vtx.edges(g, uid);
+    using edge_iter_t = vertex_edge_iterator;
+    using vertex_iter_t = typename U::iterator_type;
+    auto edge_view = edge_descriptor_view<edge_iter_t, vertex_iter_t>(edges_rng, u);
+    for (auto it = edge_view.begin(); it != edge_view.end(); ++it) {
+      if (target_id(g, *it) == vid) {
+        return *it;
+      }
+    }
+    return *edge_view.end();
+  }
+  template <typename U>
+    requires vertex_descriptor_type<U>
+  friend constexpr auto find_vertex_edge(const undirected_adjacency_list& g, const U& u, vertex_key_type vid) noexcept {
+    auto uid = static_cast<vertex_key_type>(u.vertex_id());
+    const auto& vtx = g.vertices_[uid];
+    auto edges_rng = vtx.edges(g, uid);
+    using edge_iter_t = const_vertex_edge_iterator;
+    using vertex_iter_t = typename U::iterator_type;
+    auto edge_view = edge_descriptor_view<edge_iter_t, vertex_iter_t>(edges_rng, u);
+    for (auto it = edge_view.begin(); it != edge_view.end(); ++it) {
+      if (target_id(g, *it) == vid) {
+        return *it;
+      }
+    }
+    return *edge_view.end();
+  }
+
+  template <typename U, typename V>
+    requires vertex_descriptor_type<U> && vertex_descriptor_type<V>
+  friend constexpr auto find_vertex_edge(undirected_adjacency_list& g, const U& u, const V& v) noexcept {
+    return find_vertex_edge(g, u, static_cast<vertex_key_type>(v.vertex_id()));
+  }
+  template <typename U, typename V>
+    requires vertex_descriptor_type<U> && vertex_descriptor_type<V>
+  friend constexpr auto find_vertex_edge(const undirected_adjacency_list& g, const U& u, const V& v) noexcept {
+    return find_vertex_edge(g, u, static_cast<vertex_key_type>(v.vertex_id()));
+  }
+
+  friend constexpr auto find_vertex_edge(undirected_adjacency_list& g, vertex_key_type uid, vertex_key_type vid) noexcept {
+    auto u = *find_vertex(g, uid);
+    return find_vertex_edge(g, u, vid);
+  }
+  friend constexpr auto find_vertex_edge(const undirected_adjacency_list& g, vertex_key_type uid, vertex_key_type vid) noexcept {
+    auto u = *find_vertex(g, uid);
+    return find_vertex_edge(g, u, vid);
+  }
 };
-# endif //0
-#  endif // CPO
 
 } // namespace graph::container
 

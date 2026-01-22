@@ -12,7 +12,7 @@ This library provides the foundation for a complete graph library following the 
 - **Range-Based Design**: Graphs as ranges of vertices, where each vertex is a range of edges
 - **Documentation**: Comprehensive documentation following P1709 conventions
 
-**Current Status**: Phase 7 complete - All core CPOs, value access CPOs, optional partitioning/sourced edge CPOs, adjacency list concepts, and adjacency list traits implemented with comprehensive tests. Ready for first container implementation.
+**Current Status**: Phase 8 complete - All graph containers implemented (`dynamic_graph`, `compressed_graph`, `undirected_adjacency_list`) with comprehensive test coverage (3866 tests, 36004 assertions). Core CPOs, value access CPOs, partitioning/sourced edge CPOs, adjacency list concepts, and traits are all fully implemented.
 
 ## Features
 
@@ -418,7 +418,25 @@ Unit tests and documentation for each CPO added.
     * Runtime verification tests for trait correctness
     * Integration tests with existing CPO framework
 
-### 📋 Phase 8: First Container Implementation (PLANNED)
+### ✅ Phase 8: Graph Container Implementations (COMPLETE)
+- [x] **dynamic_graph** - Flexible directed graph with configurable vertex/edge containers ✅
+  - Multiple container combinations: vector-of-vector (vov), vector-of-list (vol), vector-of-forward_list (vofl)
+  - Partition support for distributed/NUMA-aware graphs
+  - Sourced edges optional (track source vertex in edge)
+  - Comprehensive test coverage: 1000+ test cases
+- [x] **compressed_graph** - Read-only compressed sparse row (CSR) format ✅
+  - Optimal for static graph algorithms
+  - Minimal memory footprint
+  - O(1) vertex access, O(degree) edge iteration
+  - Partition support
+- [x] **undirected_adjacency_list** - Undirected graph with dual-list design ✅
+  - Each edge stored in two linked lists (one per endpoint)
+  - O(1) edge removal from both vertices
+  - Template defaults aligned with other graphs (VV, EV, GV default to `void`)
+  - Modern `eproj` constructor pattern (consistent with dynamic_graph)
+  - 94 test cases, 525 assertions
+  - Full CPO conformance (47+ functions)
+
 ### 📋 Phase 9: Basic Algorithms (PLANNED)
 - [ ] Foundational algorithms in `include/graph/algorithm/`:
   - `breadth_first_search.hpp` - BFS traversal
@@ -465,13 +483,16 @@ desc/
 │       └── graph_utility.hpp       # Utility CPOs (stub)
 ├── scripts/                # Build and maintenance scripts
 │   └── format.sh          # Code formatting script
-├── tests/                  # Unit tests (535 tests, all passing)
+├── tests/                  # Unit tests (3866 tests, all passing)
 │   ├── test_adjacency_list_edge_concepts.cpp
 │   ├── test_adjacency_list_traits.cpp
 │   ├── test_adjacency_list_vertex_concepts.cpp
+│   ├── test_compressed_graph.cpp
+│   ├── test_compressed_graph_cpo.cpp
 │   ├── test_contains_edge_cpo.cpp
 │   ├── test_degree_cpo.cpp
 │   ├── test_descriptor_traits.cpp
+│   ├── test_dynamic_graph_*.cpp      # Multiple dynamic_graph test files
 │   ├── test_edge_concepts.cpp
 │   ├── test_edge_descriptor.cpp
 │   ├── test_edge_value_cpo.cpp
@@ -488,6 +509,8 @@ desc/
 │   ├── test_target_cpo.cpp
 │   ├── test_target_id_cpo.cpp
 │   ├── test_type_aliases.cpp
+│   ├── test_undirected_adjacency_list.cpp
+│   ├── test_undirected_adjacency_list_cpo.cpp
 │   ├── test_vertex_concepts.cpp
 │   ├── test_vertex_descriptor.cpp
 │   ├── test_vertex_id_cpo.cpp
@@ -722,7 +745,7 @@ Contributions are welcome! Please:
 
 ## License
 
-[License information to be determined]
+This library is distributed under the [Boost Software License 1.0](LICENSE). See the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
