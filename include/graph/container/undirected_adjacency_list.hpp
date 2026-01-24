@@ -163,6 +163,15 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
+class base_undirected_adjacency_list;
+
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
 class ual_edge;
 
 template <typename VV,
@@ -666,6 +675,7 @@ public:
   edge_key_type edge_key(const graph_type& g) const noexcept;
 
   friend graph_type;     // the graph is the one to create & destroy edges because it owns the allocator
+  friend base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>; // base class also creates edges
   friend vertex_type;    // vertex can also destroy its own edges
   friend edge_list_type; // for delete, when clearing the list
 
@@ -1014,6 +1024,59 @@ public: // Vertex Creation
   template <class VV2>
     requires std::constructible_from<vertex_value_type, const VV2&>
   vertex_iterator create_vertex(const VV2& val);
+
+public: // Edge Creation
+  /// @brief Create an edge between two vertices (by key).
+  /// @param ukey Source vertex key.
+  /// @param vkey Target vertex key.
+  /// @return Iterator to the newly created edge.
+  /// @complexity O(1).
+  vertex_edge_iterator create_edge(vertex_key_type ukey, vertex_key_type vkey);
+  
+  /// @brief Create an edge with value between two vertices (by key, move value).
+  /// @param ukey Source vertex key.
+  /// @param vkey Target vertex key.
+  /// @param val Edge value to move.
+  /// @return Iterator to the newly created edge.
+  /// @complexity O(1).
+  vertex_edge_iterator create_edge(vertex_key_type ukey, vertex_key_type vkey, edge_value_type&& val);
+
+  /// @brief Create an edge with value between two vertices (by key, copy value).
+  /// @tparam EV2 Type convertible to edge_value_type.
+  /// @param ukey Source vertex key.
+  /// @param vkey Target vertex key.
+  /// @param val Edge value to copy.
+  /// @return Iterator to the newly created edge.
+  /// @complexity O(1).
+  template <class EV2>
+    requires std::constructible_from<edge_value_type, const EV2&>
+  vertex_edge_iterator create_edge(vertex_key_type ukey, vertex_key_type vkey, const EV2& val);
+
+  /// @brief Create an edge between two vertices (by iterator).
+  /// @param u Source vertex iterator.
+  /// @param v Target vertex iterator.
+  /// @return Iterator to the newly created edge.
+  /// @complexity O(1).
+  vertex_edge_iterator create_edge(vertex_iterator u, vertex_iterator v);
+  
+  /// @brief Create an edge with value between two vertices (by iterator, move value).
+  /// @param u Source vertex iterator.
+  /// @param v Target vertex iterator.
+  /// @param val Edge value to move.
+  /// @return Iterator to the newly created edge.
+  /// @complexity O(1).
+  vertex_edge_iterator create_edge(vertex_iterator u, vertex_iterator v, edge_value_type&& val);
+
+  /// @brief Create an edge with value between two vertices (by iterator, copy value).
+  /// @tparam EV2 Type convertible to edge_value_type.
+  /// @param u Source vertex iterator.
+  /// @param v Target vertex iterator.
+  /// @param val Edge value to copy.
+  /// @return Iterator to the newly created edge.
+  /// @complexity O(1).
+  template <class EV2>
+    requires std::constructible_from<edge_value_type, const EV2&>
+  vertex_edge_iterator create_edge(vertex_iterator u, vertex_iterator v, const EV2& val);
 };
 
 ///-------------------------------------------------------------------------------------
@@ -1585,73 +1648,8 @@ public: // Vertex creation
   using base_type::create_vertex;
 
 public: // Edge creation
-  /// @brief Create an edge between two vertices (by key).
-  /// @param ukey Source vertex key.
-  /// @param vkey Target vertex key.
-  /// @return Iterator to the newly created edge.
-  /// @complexity O(1).
-  /// @precondition Both vertex keys must be valid.
-  /// @invalidates No iterators invalidated.
-  vertex_edge_iterator create_edge(vertex_key_type, vertex_key_type);
-  
-  /// @brief Create an edge with value between two vertices (by key, move value).
-  /// @param ukey Source vertex key.
-  /// @param vkey Target vertex key.
-  /// @param val Edge value to move.
-  /// @return Iterator to the newly created edge.
-  /// @complexity O(1).
-  /// @precondition Both vertex keys must be valid.
-  /// @invalidates No iterators invalidated.
-  vertex_edge_iterator create_edge(vertex_key_type, vertex_key_type, edge_value_type&&);
-
-  /// @brief Create an edge with value between two vertices (by key, copy value).
-  /// @tparam EV2 Type convertible to edge_value_type.
-  /// @param ukey Source vertex key.
-  /// @param vkey Target vertex key.
-  /// @param val Edge value to copy.
-  /// @return Iterator to the newly created edge.
-  /// @complexity O(1).
-  /// @precondition Both vertex keys must be valid.
-  /// @invalidates No iterators invalidated.
-  template <class EV2>
-    requires std::constructible_from<edge_value_type, const EV2&>
-  vertex_edge_iterator create_edge(vertex_key_type,
-                                   vertex_key_type,
-                                   const EV2&);
-
-  /// @brief Create an edge between two vertices (by iterator).
-  /// @param u Source vertex iterator.
-  /// @param v Target vertex iterator.
-  /// @return Iterator to the newly created edge.
-  /// @complexity O(1).
-  /// @precondition Both iterators must be valid and dereferenceable.
-  /// @invalidates No iterators invalidated.
-  vertex_edge_iterator create_edge(vertex_iterator, vertex_iterator);
-  
-  /// @brief Create an edge with value between two vertices (by iterator, move value).
-  /// @param u Source vertex iterator.
-  /// @param v Target vertex iterator.
-  /// @param val Edge value to move.
-  /// @return Iterator to the newly created edge.
-  /// @complexity O(1).
-  /// @precondition Both iterators must be valid and dereferenceable.
-  /// @invalidates No iterators invalidated.
-  vertex_edge_iterator create_edge(vertex_iterator, vertex_iterator, edge_value_type&&);
-
-  /// @brief Create an edge with value between two vertices (by iterator, copy value).
-  /// @tparam EV2 Type convertible to edge_value_type.
-  /// @param u Source vertex iterator.
-  /// @param v Target vertex iterator.
-  /// @param val Edge value to copy.
-  /// @return Iterator to the newly created edge.
-  /// @complexity O(1).
-  /// @precondition Both iterators must be valid and dereferenceable.
-  /// @invalidates No iterators invalidated.
-  template <class EV2>
-    requires std::constructible_from<edge_value_type, const EV2&>
-  vertex_edge_iterator create_edge(vertex_iterator,
-                                   vertex_iterator,
-                                   const EV2&);
+  // Base class edge creation methods
+  using base_type::create_edge;
 
 public: // Edge removal
   /// @brief Erase an edge from the graph.
@@ -2030,24 +2028,9 @@ public: // Vertex creation
   // Base class vertex creation methods
   using base_type::create_vertex;
 
-public:
-  vertex_edge_iterator create_edge(vertex_key_type, vertex_key_type);
-  vertex_edge_iterator create_edge(vertex_key_type, vertex_key_type, edge_value_type&&);
-
-  template <class EV2>
-    requires std::constructible_from<edge_value_type, const EV2&>
-  vertex_edge_iterator create_edge(vertex_key_type,
-                                   vertex_key_type,
-                                   const EV2&);
-
-  vertex_edge_iterator create_edge(vertex_iterator, vertex_iterator);
-  vertex_edge_iterator create_edge(vertex_iterator, vertex_iterator, edge_value_type&&);
-
-  template <class EV2>
-    requires std::constructible_from<edge_value_type, const EV2&>
-  vertex_edge_iterator create_edge(vertex_iterator,
-                                   vertex_iterator,
-                                   const EV2&);
+public: // Edge creation
+  // Base class edge creation methods
+  using base_type::create_edge;
 
 public:
   edge_iterator erase_edge(edge_iterator);
