@@ -12,6 +12,7 @@
 #include "graph/detail/graph_cpo.hpp"
 
 using namespace graph;
+using namespace graph::adj_list;
 
 // =============================================================================
 // Test with Member Function (Highest Priority)
@@ -42,7 +43,7 @@ TEST_CASE("graph_value - member function returns reference", "[graph_value][memb
     GraphWithMemberValue g;
     g.data = {{1, 2}, {0, 2}, {0, 1}};
     
-    auto& meta = graph::graph_value(g);
+    auto& meta = graph_value(g);
     REQUIRE(meta.name == "TestGraph");
     REQUIRE(meta.version == 1);
     REQUIRE(meta.weight_scale == 1.0);
@@ -52,7 +53,7 @@ TEST_CASE("graph_value - modify through member function", "[graph_value][member]
     GraphWithMemberValue g;
     
     // Modify through graph_value
-    auto& meta = graph::graph_value(g);
+    auto& meta = graph_value(g);
     meta.name = "ModifiedGraph";
     meta.version = 2;
     meta.weight_scale = 2.5;
@@ -66,23 +67,23 @@ TEST_CASE("graph_value - const graph returns const reference", "[graph_value][me
     GraphWithMemberValue g;
     const GraphWithMemberValue& g_const = g;
     
-    const auto& meta = graph::graph_value(g_const);
+    const auto& meta = graph_value(g_const);
     REQUIRE(meta.name == "TestGraph");
     
     // Verify return type is const reference
-    static_assert(std::is_same_v<decltype(graph::graph_value(g_const)), const GraphMetadata&>);
+    static_assert(std::is_same_v<decltype(graph_value(g_const)), const GraphMetadata&>);
 }
 
 TEST_CASE("graph_value - non-const graph returns mutable reference", "[graph_value][member][const]") {
     GraphWithMemberValue g;
     
-    auto& meta = graph::graph_value(g);
+    auto& meta = graph_value(g);
     meta.version = 99;
     
     REQUIRE(g.metadata.version == 99);
     
     // Verify return type is mutable reference
-    static_assert(std::is_same_v<decltype(graph::graph_value(g)), GraphMetadata&>);
+    static_assert(std::is_same_v<decltype(graph_value(g)), GraphMetadata&>);
 }
 
 // =============================================================================
@@ -124,23 +125,23 @@ TEST_CASE("graph_value - by-value return from member", "[graph_value][member][by
     REQUIRE(g.graph_id == 42);
     REQUIRE(g.graph_score == 3.14);
     
-    SimpleMetadata meta = graph::graph_value(g);
+    SimpleMetadata meta = graph_value(g);
     REQUIRE(meta.id == 42);
     REQUIRE(meta.score == 3.14);
     
     // Verify it's returned by value (prvalue)
-    static_assert(std::is_same_v<decltype(graph::graph_value(g)), SimpleMetadata>);
+    static_assert(std::is_same_v<decltype(graph_value(g)), SimpleMetadata>);
 }
 
 TEST_CASE("graph_value - by-value allows independent modification", "[graph_value][member][by_value]") {
     GraphWithByValueReturn g;
     
-    [[maybe_unused]] auto meta = graph::graph_value(g);
+    [[maybe_unused]] auto meta = graph_value(g);
     meta.id = 999;  // Modify the copy
     
     // Original unchanged
     REQUIRE(g.graph_id == 42);
-    REQUIRE(graph::graph_value(g).id == 42);
+    REQUIRE(graph_value(g).id == 42);
 }
 
 // =============================================================================
@@ -166,14 +167,14 @@ namespace test_adl {
 TEST_CASE("graph_value - ADL function", "[graph_value][adl]") {
     test_adl::CustomGraph g;
     
-    auto& name = graph::graph_value(g);
+    auto& name = graph_value(g);
     REQUIRE(name == "ADL_Graph");
 }
 
 TEST_CASE("graph_value - ADL with modification", "[graph_value][adl][modify]") {
     test_adl::CustomGraph g;
     
-    graph::graph_value(g) = "Modified_ADL";
+    graph_value(g) = "Modified_ADL";
     REQUIRE(g.graph_name == "Modified_ADL");
 }
 
@@ -182,10 +183,10 @@ TEST_CASE("graph_value - ADL const correctness", "[graph_value][adl][const]") {
     const test_adl::CustomGraph& g_const = g;
     
     // Non-const: mutable reference
-    static_assert(std::is_same_v<decltype(graph::graph_value(g)), std::string&>);
+    static_assert(std::is_same_v<decltype(graph_value(g)), std::string&>);
     
     // Const: const reference
-    static_assert(std::is_same_v<decltype(graph::graph_value(g_const)), const std::string&>);
+    static_assert(std::is_same_v<decltype(graph_value(g_const)), const std::string&>);
 }
 
 // =============================================================================
@@ -212,7 +213,7 @@ TEST_CASE("graph_value - member function has priority over ADL", "[graph_value][
     test_priority::GraphWithBoth g;
     
     // Should call member function, not ADL
-    auto& value = graph::graph_value(g);
+    auto& value = graph_value(g);
     REQUIRE(value == "member");
     
     value = "modified_member";
@@ -235,8 +236,8 @@ struct IntValueGraph {
 TEST_CASE("graph_value - int value type", "[graph_value][types]") {
     IntValueGraph g;
     
-    REQUIRE(graph::graph_value(g) == 100);
-    graph::graph_value(g) = 200;
+    REQUIRE(graph_value(g) == 100);
+    graph_value(g) = 200;
     REQUIRE(g.value == 200);
 }
 
@@ -251,8 +252,8 @@ struct StringValueGraph {
 TEST_CASE("graph_value - string value type", "[graph_value][types]") {
     StringValueGraph g;
     
-    REQUIRE(graph::graph_value(g) == "hello");
-    graph::graph_value(g) = "world";
+    REQUIRE(graph_value(g) == "hello");
+    graph_value(g) = "world";
     REQUIRE(g.value == "world");
 }
 
@@ -267,7 +268,7 @@ struct VectorValueGraph {
 TEST_CASE("graph_value - vector value type", "[graph_value][types]") {
     VectorValueGraph g;
     
-    auto& weights = graph::graph_value(g);
+    auto& weights = graph_value(g);
     REQUIRE(weights.size() == 3);
     REQUIRE(weights[0] == 1.0);
     
@@ -286,7 +287,7 @@ struct MapValueGraph {
 TEST_CASE("graph_value - map value type", "[graph_value][types]") {
     MapValueGraph g;
     
-    auto& props = graph::graph_value(g);
+    auto& props = graph_value(g);
     REQUIRE(props["nodes"] == 10);
     REQUIRE(props["edges"] == 15);
     
@@ -321,7 +322,7 @@ struct ComplexGraph {
 TEST_CASE("graph_value - complex nested structure", "[graph_value][complex]") {
     ComplexGraph g;
     
-    auto& props = graph::graph_value(g);
+    auto& props = graph_value(g);
     REQUIRE(props.name == "ComplexGraph");
     REQUIRE(props.stats.node_count == 100);
     REQUIRE(props.stats.edge_count == 500);
@@ -333,7 +334,7 @@ TEST_CASE("graph_value - complex nested structure", "[graph_value][complex]") {
 TEST_CASE("graph_value - modify nested structure", "[graph_value][complex][modify]") {
     ComplexGraph g;
     
-    auto& props = graph::graph_value(g);
+    auto& props = graph_value(g);
     props.stats.node_count = 200;
     props.tags.push_back("sparse");
     
@@ -356,8 +357,8 @@ TEST_CASE("graph_value - deque-based graph", "[graph_value][containers]") {
     DequeGraph g;
     g.data = {{1}, {0}};
     
-    REQUIRE(graph::graph_value(g) == "DequeGraph");
-    graph::graph_value(g) = "ModifiedDeque";
+    REQUIRE(graph_value(g) == "DequeGraph");
+    graph_value(g) = "ModifiedDeque";
     REQUIRE(g.name == "ModifiedDeque");
 }
 
@@ -373,8 +374,8 @@ TEST_CASE("graph_value - map-based graph", "[graph_value][containers]") {
     g.adjacency[0] = {1, 2};
     g.adjacency[1] = {0};
     
-    REQUIRE(graph::graph_value(g) == 42);
-    graph::graph_value(g) = 100;
+    REQUIRE(graph_value(g) == 42);
+    graph_value(g) = 100;
     REQUIRE(g.graph_id == 100);
 }
 
@@ -395,14 +396,14 @@ TEST_CASE("graph_value - weight scaling pattern", "[graph_value][patterns]") {
     g.adjacency = {{{1, 10.0}, {2, 20.0}}, {{0, 15.0}}};
     
     // Get global weight multiplier
-    auto& multiplier = graph::graph_value(g);
+    auto& multiplier = graph_value(g);
     REQUIRE(multiplier == 1.0);
     
     // Scale all weights by changing multiplier
     multiplier = 2.0;
     
     // In actual use, algorithms would apply this multiplier
-    REQUIRE(graph::graph_value(g) == 2.0);
+    REQUIRE(graph_value(g) == 2.0);
 }
 
 struct TimestampedGraph {
@@ -423,7 +424,7 @@ struct TimestampedGraph {
 TEST_CASE("graph_value - version tracking pattern", "[graph_value][patterns]") {
     TimestampedGraph g;
     
-    auto& meta = graph::graph_value(g);
+    auto& meta = graph_value(g);
     REQUIRE(meta.version == 1);
     
     // Update metadata when graph changes
@@ -446,8 +447,8 @@ TEST_CASE("graph_value - graph identification pattern", "[graph_value][patterns]
     NamedGraph g1("NetworkA");
     NamedGraph g2("NetworkB");
     
-    REQUIRE(graph::graph_value(g1) == "NetworkA");
-    REQUIRE(graph::graph_value(g2) == "NetworkB");
+    REQUIRE(graph_value(g1) == "NetworkA");
+    REQUIRE(graph_value(g2) == "NetworkB");
 }
 
 // =============================================================================
@@ -473,12 +474,12 @@ TEST_CASE("graph_value - correct overload selection", "[graph_value][const][over
     OverloadTestGraph g;
     
     // Non-const: should call non-const overload
-    [[maybe_unused]] auto& val1 = graph::graph_value(g);
+    [[maybe_unused]] auto& val1 = graph_value(g);
     REQUIRE(g.call_count == 1);
     
     // Const: should call const overload (doesn't increment call_count)
     const OverloadTestGraph& g_const = g;
-    [[maybe_unused]] auto& val2 = graph::graph_value(g_const);
+    [[maybe_unused]] auto& val2 = graph_value(g_const);
     REQUIRE(g.call_count == 1);  // Unchanged
 }
 
@@ -498,7 +499,7 @@ TEST_CASE("graph_value - empty struct value", "[graph_value][edge_cases]") {
     EmptyValueGraph g;
     
     // Should compile and work even with empty struct
-    [[maybe_unused]] auto& val = graph::graph_value(g);
+    [[maybe_unused]] auto& val = graph_value(g);
 }
 
 struct BoolValueGraph {
@@ -512,13 +513,13 @@ struct BoolValueGraph {
 TEST_CASE("graph_value - bool value type", "[graph_value][edge_cases]") {
     BoolValueGraph g;
     
-    REQUIRE(graph::graph_value(g) == true);
-    graph::graph_value(g) = false;
+    REQUIRE(graph_value(g) == true);
+    graph_value(g) = false;
     REQUIRE(g.is_directed == false);
     
     // Const version returns by value
     const BoolValueGraph& g_const = g;
-    static_assert(std::is_same_v<decltype(graph::graph_value(g_const)), bool>);
+    static_assert(std::is_same_v<decltype(graph_value(g_const)), bool>);
 }
 
 // =============================================================================
@@ -528,9 +529,9 @@ TEST_CASE("graph_value - bool value type", "[graph_value][edge_cases]") {
 TEST_CASE("graph_value - multiple independent graphs", "[graph_value][multi]") {
     GraphWithMemberValue g1, g2, g3;
     
-    graph::graph_value(g1).name = "Graph1";
-    graph::graph_value(g2).name = "Graph2";
-    graph::graph_value(g3).name = "Graph3";
+    graph_value(g1).name = "Graph1";
+    graph_value(g2).name = "Graph2";
+    graph_value(g3).name = "Graph3";
     
     REQUIRE(g1.metadata.name == "Graph1");
     REQUIRE(g2.metadata.name == "Graph2");
@@ -553,9 +554,9 @@ TEST_CASE("graph_value - noexcept propagation", "[graph_value][noexcept]") {
     NoexceptGraph g;
     
     // Should be noexcept when underlying function is noexcept
-    static_assert(noexcept(graph::graph_value(g)));
+    static_assert(noexcept(graph_value(g)));
     
-    REQUIRE(graph::graph_value(g) == 0);
+    REQUIRE(graph_value(g) == 0);
 }
 
 // =============================================================================
@@ -585,7 +586,7 @@ struct LargeValueGraph {
 TEST_CASE("graph_value - large metadata structure", "[graph_value][large]") {
     LargeValueGraph g;
     
-    auto& meta = graph::graph_value(g);
+    auto& meta = graph_value(g);
     REQUIRE(meta.name == "LargeGraph");
     REQUIRE(meta.weights.size() == 5);
     REQUIRE(meta.properties.size() == 2);

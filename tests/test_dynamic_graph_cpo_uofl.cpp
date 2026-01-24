@@ -52,6 +52,7 @@
 #include <set>
 
 using namespace graph;
+using namespace graph::adj_list;
 using namespace graph::container;
 
 // Type aliases for test configurations with uint32_t vertex IDs

@@ -31,6 +31,7 @@
 #include <algorithm>
 
 using namespace graph;
+using namespace graph::adj_list;
 
 // =============================================================================
 // Test 1: Vector of Vectors (most common adjacency list)
@@ -503,7 +504,7 @@ TEST_CASE("vertices(g) - custom member returning vertex_descriptor_view", "[vert
         std::vector<std::vector<int>> data = {{1, 2}, {2}, {}};
         
         auto vertices() {
-            return graph::vertex_descriptor_view(data);
+            return vertex_descriptor_view(data);
         }
     };
     
@@ -523,7 +524,7 @@ TEST_CASE("vertices(g) - custom member returning vertex_descriptor_view", "[vert
     SECTION("returns vertex_descriptor_view") {
         auto verts = vertices(g);
         using ViewType = decltype(verts);
-        REQUIRE(graph::is_vertex_descriptor_view_v<ViewType>);
+        REQUIRE(is_vertex_descriptor_view_v<ViewType>);
     }
 }
 
@@ -548,7 +549,7 @@ TEST_CASE("vertices(g) - custom member returning raw container", "[vertices][cpo
         
         // Should still be a vertex_descriptor_view
         using ViewType = decltype(verts);
-        REQUIRE(graph::is_vertex_descriptor_view_v<ViewType>);
+        REQUIRE(is_vertex_descriptor_view_v<ViewType>);
         
         std::vector<size_t> ids;
         for (auto v : verts) {
@@ -569,7 +570,7 @@ namespace custom_graph_ns {
     
     // ADL-findable vertices() that returns vertex_descriptor_view
     auto vertices(Graph& g) {
-        return graph::vertex_descriptor_view(g.data);
+        return vertex_descriptor_view(g.data);
     }
 }
 
@@ -590,7 +591,7 @@ TEST_CASE("vertices(g) - ADL returning vertex_descriptor_view", "[vertices][cpo]
     SECTION("returns vertex_descriptor_view") {
         auto verts = vertices(g);
         using ViewType = decltype(verts);
-        REQUIRE(graph::is_vertex_descriptor_view_v<ViewType>);
+        REQUIRE(is_vertex_descriptor_view_v<ViewType>);
     }
 }
 
@@ -617,7 +618,7 @@ TEST_CASE("vertices(g) - ADL returning raw container", "[vertices][cpo][adl]") {
         
         // Should still be a vertex_descriptor_view
         using ViewType = decltype(verts);
-        REQUIRE(graph::is_vertex_descriptor_view_v<ViewType>);
+        REQUIRE(is_vertex_descriptor_view_v<ViewType>);
         
         std::vector<size_t> ids;
         for (auto v : verts) {

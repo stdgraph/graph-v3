@@ -17,6 +17,7 @@
 #include <string>
 
 using namespace graph;
+using namespace graph::adj_list;
 
 // =============================================================================
 // Type Identification Traits Tests

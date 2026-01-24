@@ -15,6 +15,7 @@
 #include <list>
 
 using namespace graph;
+using namespace graph::adj_list;
 
 // =============================================================================
 // Test: Default Implementation - Simple Edge Pattern (vector<int>)
@@ -260,7 +261,7 @@ TEST_CASE("edges(g,u) - custom member function", "[edges][cpo][member]") {
     auto v0 = *verts.begin();
     
     // This should use g.edges(v0) member function
-    auto edge_range = graph::edges(g, v0);
+    auto edge_range = edges(g, v0);
     
     std::vector<int> targets;
     for (auto e : edge_range) {
@@ -298,7 +299,7 @@ TEST_CASE("edges(g,u) - ADL customization", "[edges][cpo][adl]") {
     auto v0 = *verts.begin();
     
     // This should find edges via ADL
-    auto edge_range = graph::edges(g, v0);
+    auto edge_range = edges(g, v0);
     
     std::vector<int> targets;
     for (auto e : edge_range) {

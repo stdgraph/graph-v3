@@ -32,6 +32,14 @@
 
 namespace graph::container {
 
+// Import types from graph::adj_list for convenience
+using adj_list::vertex_descriptor;
+using adj_list::edge_descriptor;
+using adj_list::vertex_descriptor_view;
+using adj_list::edge_descriptor_view;
+using adj_list::vertex_descriptor_type;
+using adj_list::edge_descriptor_type;
+
 /**
  * @ingroup graph_containers
  * @brief Scans a range used for input for loading edges to determine the largest vertex id used.

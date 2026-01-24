@@ -10,6 +10,7 @@
 #include <string>
 
 using namespace graph;
+using namespace graph::adj_list;
 
 // Test edge data types
 struct CustomEdge {

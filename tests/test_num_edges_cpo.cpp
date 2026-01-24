@@ -12,6 +12,7 @@
 #include "graph/detail/graph_cpo.hpp"
 
 using namespace graph;
+using namespace graph::adj_list;
 
 // =============================================================================
 // Test: Default Implementation with Vector - Simple Edges
@@ -262,7 +263,7 @@ TEST_CASE("num_edges(g) - ADL customization", "[num_edges][cpo][adl]") {
     };
     
     // Should find ADL num_edges
-    auto total = graph::num_edges(graph);
+    auto total = num_edges(graph);
     REQUIRE(total == 99);
 }
 

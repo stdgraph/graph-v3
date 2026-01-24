@@ -9,7 +9,7 @@
 #include <ranges>
 #include <iterator>
 
-namespace graph {
+namespace graph::adj_list {
 
 /**
  * @brief Forward-only view over vertex storage yielding vertex descriptors
@@ -168,8 +168,8 @@ vertex_descriptor_view(Container&) -> vertex_descriptor_view<typename Container:
 template<typename Container>
 vertex_descriptor_view(const Container&) -> vertex_descriptor_view<typename Container::const_iterator>;
 
-} // namespace graph
+} // namespace graph::adj_list
 
 // Enable borrowed_range for vertex_descriptor_view since it doesn't own the data
 template<typename VertexIter>
-inline constexpr bool std::ranges::enable_borrowed_range<graph::vertex_descriptor_view<VertexIter>> = true;
+inline constexpr bool std::ranges::enable_borrowed_range<graph::adj_list::vertex_descriptor_view<VertexIter>> = true;

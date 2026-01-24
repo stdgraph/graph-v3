@@ -24,6 +24,7 @@
 #include <deque>
 
 using namespace graph;
+using namespace graph::adj_list;
 
 // =============================================================================
 // Default Implementation Tests - Single Partition (returns 0)

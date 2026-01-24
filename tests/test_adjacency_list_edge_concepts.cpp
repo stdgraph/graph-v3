@@ -17,6 +17,7 @@
 #include <deque>
 
 using namespace graph;
+using namespace graph::adj_list;
 
 // =============================================================================
 // targeted_edge Concept Tests with edge_descriptor

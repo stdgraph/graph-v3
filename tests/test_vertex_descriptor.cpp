@@ -16,6 +16,7 @@
 #include <algorithm>
 
 using namespace graph;
+using namespace graph::adj_list;
 
 // =============================================================================
 // Random Access Iterator Tests (std::vector)

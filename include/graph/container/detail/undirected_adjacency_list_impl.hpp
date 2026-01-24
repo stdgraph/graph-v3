@@ -2160,6 +2160,452 @@ constexpr bool ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::o
   return base_t::operator!=(rhs);
 }
 
+///-------------------------------------------------------------------------------------
+/// Implementations for undirected_adjacency_list<VV, EV, void, ...> specialization
+/// (when GV=void, no graph_value_ member)
+///
+
+// Default allocator constructor
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::undirected_adjacency_list(const allocator_type& alloc)
+      : vertices_(alloc), edge_alloc_(alloc) {}
+
+// Copy constructor
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::undirected_adjacency_list(
+      const undirected_adjacency_list& other)
+      : edge_alloc_(other.edge_alloc_) {
+  // Reserve space and copy vertices (with empty edge lists)
+  vertices_.reserve(other.vertices_.size());
+  
+  for (const auto& v : other.vertices_) {
+    if constexpr (std::is_void_v<VV>) {
+      vertices_.push_back(vertex_type(vertices_, static_cast<vertex_key_type>(vertices_.size())));
+    } else {
+      // Access vertex value member directly
+      vertices_.push_back(vertex_type(vertices_, static_cast<vertex_key_type>(vertices_.size()), v.value));
+    }
+  }
+  
+  // Copy edges - iterate through each vertex and copy edges where source_key <= target_key to avoid duplicates
+  for (vertex_key_type ukey = 0; ukey < static_cast<vertex_key_type>(other.vertices_.size()); ++ukey) {
+    const auto& src_vtx = other.vertices_[ukey];
+    for (auto uv = src_vtx.edges_begin(other, ukey); uv != src_vtx.edges_end(other, ukey); ++uv) {
+      vertex_key_type src_key = uv->source_vertex_key(other);
+      vertex_key_type tgt_key = uv->target_vertex_key(other);
+      // Only copy each edge once: when ukey matches source and source <= target
+      // (or for self-loops, when ukey matches both)
+      if (ukey == src_key && src_key <= tgt_key) {
+        if constexpr (std::is_void_v<EV>) {
+          create_edge(src_key, tgt_key);
+        } else {
+          // Access edge value member directly
+          create_edge(src_key, tgt_key, uv->value);
+        }
+      }
+    }
+  }
+}
+
+// Destructor
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::~undirected_adjacency_list() {
+  clear(); // assure edges are deleted using edge_alloc_
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+constexpr typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::edge_allocator_type
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::edge_allocator() const noexcept {
+  return edge_alloc_;
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+constexpr typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertex_set&
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertices() {
+  return vertices_;
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+constexpr const typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertex_set&
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertices() const {
+  return vertices_;
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+void undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::reserve_vertices(vertex_size_type n) {
+  vertices_.reserve(n);
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+void undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::resize_vertices(vertex_size_type n) {
+  vertices_.resize(n);
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+void undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::resize_vertices(vertex_size_type n, 
+                                                                                       const vertex_value_type& val) {
+  vertices_.resize(n, val);
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+constexpr typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertex_iterator
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::begin() {
+  return vertices_.begin();
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+constexpr typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::const_vertex_iterator
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::begin() const {
+  return vertices_.begin();
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+constexpr typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::const_vertex_iterator
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::cbegin() const {
+  return vertices_.cbegin();
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+constexpr typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertex_iterator
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::end() {
+  return vertices_.end();
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+constexpr typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::const_vertex_iterator
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::end() const {
+  return vertices_.end();
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+constexpr typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::const_vertex_iterator
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::cend() const {
+  return vertices_.cend();
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertex_iterator
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::try_find_vertex(vertex_key_type key) {
+  if (key >= static_cast<vertex_key_type>(vertices_.size())) {
+    return vertices_.end();
+  }
+  return vertices_.begin() + key;
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::const_vertex_iterator
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::try_find_vertex(vertex_key_type key) const {
+  if (key >= static_cast<vertex_key_type>(vertices_.size())) {
+    return vertices_.end();
+  }
+  return vertices_.begin() + key;
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+constexpr typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::edge_size_type
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::edges_size() const noexcept {
+  return edges_size_;
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertex_iterator
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::create_vertex() {
+  vertices_.push_back(vertex_type(vertices_, static_cast<vertex_key_type>(vertices_.size())));
+  return vertices_.begin() + static_cast<vertex_difference_type>(vertices_.size() - 1);
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertex_iterator
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::create_vertex(vertex_value_type&& val) {
+  vertices_.push_back(vertex_type(vertices_, static_cast<vertex_key_type>(vertices_.size()), move(val)));
+  return vertices_.begin() + static_cast<vertex_difference_type>(vertices_.size() - 1);
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+template <class VV2>
+  requires std::constructible_from<typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertex_value_type, const VV2&>
+typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertex_iterator
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::create_vertex(const VV2& val) {
+  vertices_.push_back(vertex_type(vertices_, static_cast<vertex_key_type>(vertices_.size()), val));
+  return vertices_.begin() + static_cast<vertex_key_type>(vertices_.size() - 1);
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertex_edge_iterator
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::create_edge(vertex_key_type from_key,
+                                                                              vertex_key_type to_key) {
+  vertex_iterator ui = try_find_vertex(from_key);
+  vertex_iterator vi = try_find_vertex(to_key);
+  return create_edge(ui, vi);
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertex_edge_iterator
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::create_edge(vertex_key_type   from_key,
+                                                                              vertex_key_type   to_key,
+                                                                              edge_value_type&& val) {
+  vertex_iterator ui = vertices_.begin() + from_key;
+  vertex_iterator vi = vertices_.begin() + to_key;
+  return create_edge(ui, vi, move(val));
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+template <class EV2>
+  requires std::constructible_from<typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::edge_value_type, const EV2&>
+typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertex_edge_iterator
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::create_edge(vertex_key_type from_key,
+                                                                              vertex_key_type to_key,
+                                                                              const EV2&      val) {
+  vertex_iterator ui = vertices_.begin() + from_key;
+  vertex_iterator vi = vertices_.begin() + to_key;
+  return create_edge(ui, vi, val);
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertex_edge_iterator
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::create_edge(vertex_iterator u, vertex_iterator v) {
+  vertex_key_type ukey = u - vertices_.begin();
+  using edge_type = typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::edge_type;
+  edge_type*      uv   = edge_alloc_.allocate(1);
+  new (uv) edge_type(*this, u, v);
+  ++edges_size_;
+  return vertex_edge_iterator(*this, ukey, uv);
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertex_edge_iterator
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::create_edge(vertex_iterator   u,
+                                                                              vertex_iterator   v,
+                                                                              edge_value_type&& val) {
+  vertex_key_type ukey = vertex_key(*this, u);
+  using edge_type = typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::edge_type;
+  edge_type*      uv   = edge_alloc_.allocate(1);
+  new (uv) edge_type(*this, u, v, move(val));
+  ++edges_size_;
+  return vertex_edge_iterator(*this, ukey, uv);
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+template <class EV2>
+  requires std::constructible_from<typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::edge_value_type, const EV2&>
+typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertex_edge_iterator
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::create_edge(vertex_iterator u,
+                                                                              vertex_iterator v,
+                                                                              const EV2&      val) {
+  vertex_key_type ukey = vertex_key(*this, u);
+  using edge_type = typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::edge_type;
+  edge_type*      uv   = edge_alloc_.allocate(1);
+  new (uv) edge_type(*this, u, v, val);
+  ++edges_size_;
+  return vertex_edge_iterator(*this, ukey, uv);
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::edge_iterator
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::erase_edge(edge_iterator pos) {
+  using edge_type = typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::edge_type;
+  edge_type* uv = &*pos;
+  ++pos;
+  uv->~edge_type(); // unlinks from vertices
+  edge_alloc_.deallocate(uv, 1);
+  --edges_size_;
+  return pos;
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+void undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::clear() {
+  // make sure edges are deallocated from edge_alloc_
+  for (vertex_type& u : vertices_)
+    u.clear_edges(*this);
+  vertices_.clear(); // now we can clear the vertices
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+void undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::swap(undirected_adjacency_list& rhs) {
+  using std::swap;
+  vertices_.swap(rhs.vertices_);
+  swap(edges_size_, rhs.edges_size_);
+  swap(edge_alloc_, rhs.edge_alloc_);
+  // Note: No graph_value_ in the GV=void specialization
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+void undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::throw_unordered_edges() const {
+  assert(false); // container must be sorted by edge_key.first
+  throw std::invalid_argument("edges not ordered");
+}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>&
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::operator=(
+      const undirected_adjacency_list& other) {
+  if (this != &other) {
+    undirected_adjacency_list tmp(other);
+    swap(tmp);
+  }
+  return *this;
+}
+
 } // namespace graph::container
 
 #endif // UNDIRECTED_ADJ_LIST_IMPL_HPP

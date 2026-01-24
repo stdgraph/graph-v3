@@ -20,6 +20,7 @@
 #define SKIP_RAW_ADJACENCY_LIST_TESTS 1
 
 using namespace graph;
+using namespace graph::adj_list;
 
 // =============================================================================
 // Test graphs with custom find_vertex_edge member
@@ -260,14 +261,14 @@ TEST_CASE("find_vertex_edge(g, u, v) uses custom member function", "[find_vertex
     graph.add_edge(1, 3);
     
     // Custom member returns target * 1000 if found
-    auto result = graph::find_vertex_edge(graph, 0, 1);
+    auto result = find_vertex_edge(graph, 0, 1);
     REQUIRE(result == 1000);
     
-    auto result2 = graph::find_vertex_edge(graph, 0, 2);
+    auto result2 = find_vertex_edge(graph, 0, 2);
     REQUIRE(result2 == 2000);
     
     // Not found
-    auto result3 = graph::find_vertex_edge(graph, 0, 3);
+    auto result3 = find_vertex_edge(graph, 0, 3);
     REQUIRE(result3 == -1);
 }
 
@@ -282,14 +283,14 @@ TEST_CASE("find_vertex_edge(g, u, v) uses ADL when available", "[find_vertex_edg
     graph.add_edge(1, 3);
     
     // ADL function returns target * 2000 if found
-    auto result = graph::find_vertex_edge(graph, 0, 1);
+    auto result = find_vertex_edge(graph, 0, 1);
     REQUIRE(result == 2000);
     
-    auto result2 = graph::find_vertex_edge(graph, 0, 2);
+    auto result2 = find_vertex_edge(graph, 0, 2);
     REQUIRE(result2 == 4000);
     
     // Not found
-    auto result3 = graph::find_vertex_edge(graph, 0, 3);
+    auto result3 = find_vertex_edge(graph, 0, 3);
     REQUIRE(result3 == -1);
 }
 

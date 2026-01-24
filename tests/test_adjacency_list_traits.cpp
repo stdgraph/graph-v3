@@ -12,6 +12,7 @@
 #include <deque>
 
 using namespace graph;
+using namespace graph::adj_list;
 
 // =============================================================================
 // Test Graphs
@@ -160,7 +161,7 @@ struct UnorderedGraph {
 
 // Specialize the trait
 template<>
-struct graph::define_unordered_edge<UnorderedGraph> : std::true_type {};
+struct graph::adj_list::define_unordered_edge<UnorderedGraph> : std::true_type {};
 
 TEST_CASE("define_unordered_edge can be specialized", "[adjacency_list_traits][define_unordered_edge]") {
     STATIC_REQUIRE(define_unordered_edge_v<UnorderedGraph>);

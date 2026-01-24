@@ -9,7 +9,7 @@
 #include <ranges>
 #include <iterator>
 
-namespace graph {
+namespace graph::adj_list {
 
 /**
  * @brief Forward-only view over edge storage yielding edge descriptors
@@ -177,8 +177,8 @@ template<typename Container, typename VertexDesc>
 edge_descriptor_view(const Container&, VertexDesc) 
     -> edge_descriptor_view<typename Container::const_iterator, typename VertexDesc::iterator_type>;
 
-} // namespace graph
+} // namespace graph::adj_list
 
 // Enable borrowed_range for edge_descriptor_view to allow std::ranges operations on temporaries
 template<typename EdgeIter, typename VertexIter>
-inline constexpr bool std::ranges::enable_borrowed_range<graph::edge_descriptor_view<EdgeIter, VertexIter>> = true;
+inline constexpr bool std::ranges::enable_borrowed_range<graph::adj_list::edge_descriptor_view<EdgeIter, VertexIter>> = true;

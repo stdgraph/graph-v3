@@ -28,6 +28,7 @@
 #include <string>
 
 using namespace graph;
+using namespace graph::adj_list;
 
 // =============================================================================
 // Test 1: Vector-based Graph (Index IDs)

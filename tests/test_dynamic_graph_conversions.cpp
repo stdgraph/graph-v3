@@ -11,6 +11,7 @@
 #include <sstream>
 
 using namespace graph;
+using namespace graph::adj_list;
 using namespace graph::container;
 
 // Graph type aliases

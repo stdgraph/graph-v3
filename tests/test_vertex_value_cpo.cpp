@@ -14,6 +14,7 @@
 #include "graph/detail/graph_cpo.hpp"
 
 using namespace graph;
+using namespace graph::adj_list;
 
 // =============================================================================
 // Test with Default Implementation - Vector of Vertex Data
@@ -256,20 +257,20 @@ TEST_CASE("vertex_value - by-value return from member", "[vertex_value][by-value
     g.data = {10, 20, 30};
     
     using VertexIter = decltype(g.begin());
-    auto v0 = graph::vertex_descriptor<VertexIter>(0);
-    auto v1 = graph::vertex_descriptor<VertexIter>(1);
-    auto v2 = graph::vertex_descriptor<VertexIter>(2);
+    auto v0 = vertex_descriptor<VertexIter>(0);
+    auto v1 = vertex_descriptor<VertexIter>(1);
+    auto v2 = vertex_descriptor<VertexIter>(2);
     
     // Member function returns by value (transformed)
-    REQUIRE(graph::vertex_value(g, v0) == 20);  // 10 * 2
-    REQUIRE(graph::vertex_value(g, v1) == 40);  // 20 * 2
-    REQUIRE(graph::vertex_value(g, v2) == 60);  // 30 * 2
+    REQUIRE(vertex_value(g, v0) == 20);  // 10 * 2
+    REQUIRE(vertex_value(g, v1) == 40);  // 20 * 2
+    REQUIRE(vertex_value(g, v2) == 60);  // 30 * 2
     
     // Return type should be value, not reference
-    static_assert(!std::is_reference_v<decltype(graph::vertex_value(g, v0))>);
+    static_assert(!std::is_reference_v<decltype(vertex_value(g, v0))>);
     
     // Cannot modify through by-value return (won't compile if uncommented)
-    // graph::vertex_value(g, v0) = 99;
+    // vertex_value(g, v0) = 99;
 }
 
 // Graph with by-value member function (returns transformed value)
@@ -299,17 +300,17 @@ TEST_CASE("vertex_value - by-value return from member function", "[vertex_value]
     g.data = {"hello", "world", "test"};
     
     using VertexIter = decltype(g.begin());
-    auto v0 = graph::vertex_descriptor<VertexIter>(0);
-    auto v1 = graph::vertex_descriptor<VertexIter>(1);
-    auto v2 = graph::vertex_descriptor<VertexIter>(2);
+    auto v0 = vertex_descriptor<VertexIter>(0);
+    auto v1 = vertex_descriptor<VertexIter>(1);
+    auto v2 = vertex_descriptor<VertexIter>(2);
     
     // Member function returns by value (transformed)
-    REQUIRE(graph::vertex_value(g, v0) == "HELLO");
-    REQUIRE(graph::vertex_value(g, v1) == "WORLD");
-    REQUIRE(graph::vertex_value(g, v2) == "TEST");
+    REQUIRE(vertex_value(g, v0) == "HELLO");
+    REQUIRE(vertex_value(g, v1) == "WORLD");
+    REQUIRE(vertex_value(g, v2) == "TEST");
     
     // Return type should be value, not reference
-    static_assert(!std::is_reference_v<decltype(graph::vertex_value(g, v0))>);
+    static_assert(!std::is_reference_v<decltype(vertex_value(g, v0))>);
     
     // Original data unchanged
     REQUIRE(g.data[0] == "hello");
@@ -343,24 +344,24 @@ TEST_CASE("vertex_value - const overload selection", "[vertex_value][const][over
     g_mutable.data = {100, 200, 300};
     
     using VertexIter = decltype(g_mutable.begin());
-    auto v0 = graph::vertex_descriptor<VertexIter>(0);
-    auto v1 = graph::vertex_descriptor<VertexIter>(1);
+    auto v0 = vertex_descriptor<VertexIter>(0);
+    auto v1 = vertex_descriptor<VertexIter>(1);
     
     // Non-const graph: should call non-const overload (mutable reference)
-    REQUIRE(graph::vertex_value(g_mutable, v0) == 100);
-    static_assert(std::is_same_v<decltype(graph::vertex_value(g_mutable, v0)), int&>);
+    REQUIRE(vertex_value(g_mutable, v0) == 100);
+    static_assert(std::is_same_v<decltype(vertex_value(g_mutable, v0)), int&>);
     
     // Should be able to modify through non-const
-    graph::vertex_value(g_mutable, v1) = 999;
+    vertex_value(g_mutable, v1) = 999;
     REQUIRE(g_mutable.data[1] == 999);
     
     // Const graph: should call const overload (const reference)
     const GraphWithConstOverloads& g_const = g_mutable;
-    REQUIRE(graph::vertex_value(g_const, v0) == 100);
-    static_assert(std::is_same_v<decltype(graph::vertex_value(g_const, v0)), const int&>);
+    REQUIRE(vertex_value(g_const, v0) == 100);
+    static_assert(std::is_same_v<decltype(vertex_value(g_const, v0)), const int&>);
     
     // Cannot modify through const (won't compile if uncommented)
-    // graph::vertex_value(g_const, v0) = 888;
+    // vertex_value(g_const, v0) = 888;
 }
 
 TEST_CASE("vertex_value - default implementation const correctness", "[vertex_value][const][default]") {
@@ -370,11 +371,11 @@ TEST_CASE("vertex_value - default implementation const correctness", "[vertex_va
     auto v0 = *verts_mut.begin();
     
     // Non-const: returns mutable reference
-    static_assert(std::is_same_v<decltype(graph::vertex_value(g_mutable, v0)), int&>);
-    REQUIRE(graph::vertex_value(g_mutable, v0) == 10);
+    static_assert(std::is_same_v<decltype(vertex_value(g_mutable, v0)), int&>);
+    REQUIRE(vertex_value(g_mutable, v0) == 10);
     
     // Can modify
-    graph::vertex_value(g_mutable, v0) = 777;
+    vertex_value(g_mutable, v0) = 777;
     REQUIRE(g_mutable[0] == 777);
     
     // Const: returns const reference
@@ -382,11 +383,11 @@ TEST_CASE("vertex_value - default implementation const correctness", "[vertex_va
     auto verts_const = vertices(g_const);
     auto v0_const = *verts_const.begin();
     
-    static_assert(std::is_same_v<decltype(graph::vertex_value(g_const, v0_const)), const int&>);
-    REQUIRE(graph::vertex_value(g_const, v0_const) == 777);
+    static_assert(std::is_same_v<decltype(vertex_value(g_const, v0_const)), const int&>);
+    REQUIRE(vertex_value(g_const, v0_const) == 777);
     
     // Cannot modify through const (won't compile if uncommented)
-    // graph::vertex_value(g_const, v0_const) = 555;
+    // vertex_value(g_const, v0_const) = 555;
 }
 
 // =============================================================================

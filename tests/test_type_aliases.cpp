@@ -11,6 +11,7 @@
 #include <type_traits>
 
 using namespace graph;
+using namespace graph::adj_list;
 
 TEST_CASE("Type aliases - vertices(g) based types", "[type_aliases][vertices]") {
     SECTION("vector<vector<int>> - vertex_range_t") {

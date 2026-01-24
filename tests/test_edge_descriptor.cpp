@@ -17,6 +17,7 @@
 #include <algorithm>
 
 using namespace graph;
+using namespace graph::adj_list;
 
 // =============================================================================
 // Edge Descriptor Tests - Random Access Iterator (vector)

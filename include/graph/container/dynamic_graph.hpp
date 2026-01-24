@@ -31,6 +31,14 @@
 
 namespace graph::container {
 
+// Import types from graph::adj_list for convenience
+using adj_list::vertex_descriptor;
+using adj_list::edge_descriptor;
+using adj_list::vertex_descriptor_view;
+using adj_list::edge_descriptor_view;
+using adj_list::vertex_descriptor_type;
+using adj_list::edge_descriptor_type;
+
 //--------------------------------------------------------------------------------------------------
 // dynamic_graph traits forward references
 // Note: Include the appropriate traits header for the container combination you need:

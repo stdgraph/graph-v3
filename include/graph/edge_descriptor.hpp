@@ -10,7 +10,7 @@
 #include <functional>
 #include <numeric>
 
-namespace graph {
+namespace graph::adj_list {
 
 /**
  * @brief Descriptor for edges in a graph
@@ -658,13 +658,13 @@ private:
     vertex_desc source_;
 };
 
-} // namespace graph
+} // namespace graph::adj_list
 
 // Hash specialization for std::unordered containers
 namespace std {
-    template<graph::edge_iterator EdgeIter, graph::vertex_iterator VertexIter>
-    struct hash<graph::edge_descriptor<EdgeIter, VertexIter>> {
-        [[nodiscard]] size_t operator()(const graph::edge_descriptor<EdgeIter, VertexIter>& ed) const noexcept {
+    template<graph::adj_list::edge_iterator EdgeIter, graph::adj_list::vertex_iterator VertexIter>
+    struct hash<graph::adj_list::edge_descriptor<EdgeIter, VertexIter>> {
+        [[nodiscard]] size_t operator()(const graph::adj_list::edge_descriptor<EdgeIter, VertexIter>& ed) const noexcept {
             // Combine hash of edge storage and source vertex
             size_t h1 = [&ed]() {
                 if constexpr (std::random_access_iterator<EdgeIter>) {
@@ -679,7 +679,7 @@ namespace std {
                 }
             }();
             
-            size_t h2 = std::hash<graph::vertex_descriptor<VertexIter>>{}(ed.source());
+            size_t h2 = std::hash<graph::adj_list::vertex_descriptor<VertexIter>>{}(ed.source());
             
             // Combine hashes using a simple mixing function
             return h1 ^ (h2 << 1);

@@ -15,6 +15,7 @@
 #include "graph/detail/graph_cpo.hpp"
 
 using namespace graph;
+using namespace graph::adj_list;
 
 // =============================================================================
 // Test with Default Implementation - Simple Edges (int target only)
@@ -259,7 +260,7 @@ TEST_CASE("edge_value - by-value return from member", "[edge_value][by-value][me
     g.data = {{}, {{1, 10.5}, {2, 20.5}}};
     
     using VertexIter = decltype(g.begin());
-    auto v1 = graph::vertex_descriptor<VertexIter>(1);
+    auto v1 = vertex_descriptor<VertexIter>(1);
     auto edge_range = edges(g.data, v1);
     
     // Get edge descriptors
@@ -268,11 +269,11 @@ TEST_CASE("edge_value - by-value return from member", "[edge_value][by-value][me
     auto e11 = *it;
     
     // Member function returns by value (transformed)
-    REQUIRE(graph::edge_value(g, e10) == 21.0);  // 10.5 * 2
-    REQUIRE(graph::edge_value(g, e11) == 41.0);  // 20.5 * 2
+    REQUIRE(edge_value(g, e10) == 21.0);  // 10.5 * 2
+    REQUIRE(edge_value(g, e11) == 41.0);  // 20.5 * 2
     
     // Return type should be value, not reference
-    static_assert(!std::is_reference_v<decltype(graph::edge_value(g, e10))>);
+    static_assert(!std::is_reference_v<decltype(edge_value(g, e10))>);
 }
 
 // =============================================================================
@@ -313,16 +314,16 @@ TEST_CASE("edge_value - const overload selection", "[edge_value][const][overload
     using VertexIter = decltype(g_mutable.data.begin());
     using EdgeIter = decltype(g_mutable.data[0].begin());
     
-    auto v1 = graph::vertex_descriptor<VertexIter>(1);
+    auto v1 = vertex_descriptor<VertexIter>(1);
     auto edge_range = edges(g_mutable.data, v1);
     auto e10 = *edge_range.begin();
     
     // Non-const graph: should call non-const overload (mutable reference)
-    REQUIRE(graph::edge_value(g_mutable, e10) == 10.5);
-    static_assert(std::is_same_v<decltype(graph::edge_value(g_mutable, e10)), double&>);
+    REQUIRE(edge_value(g_mutable, e10) == 10.5);
+    static_assert(std::is_same_v<decltype(edge_value(g_mutable, e10)), double&>);
     
     // Should be able to modify through non-const
-    graph::edge_value(g_mutable, e10) = 99.9;
+    edge_value(g_mutable, e10) = 99.9;
     REQUIRE(g_mutable.data[1][0].second == 99.9);
     
     // Const graph: should call const overload (const reference)
@@ -330,12 +331,12 @@ TEST_CASE("edge_value - const overload selection", "[edge_value][const][overload
     using ConstVertexIter = decltype(g_const.data.begin());
     using ConstEdgeIter = decltype(g_const.data[0].begin());
     
-    auto v1_const = graph::vertex_descriptor<ConstVertexIter>(1);
+    auto v1_const = vertex_descriptor<ConstVertexIter>(1);
     auto edge_range_const = edges(g_const.data, v1_const);
     auto e10_const = *edge_range_const.begin();
     
-    REQUIRE(graph::edge_value(g_const, e10_const) == 99.9);
-    static_assert(std::is_same_v<decltype(graph::edge_value(g_const, e10_const)), const double&>);
+    REQUIRE(edge_value(g_const, e10_const) == 99.9);
+    static_assert(std::is_same_v<decltype(edge_value(g_const, e10_const)), const double&>);
 }
 
 TEST_CASE("edge_value - default implementation const correctness", "[edge_value][const][default]") {
@@ -346,11 +347,11 @@ TEST_CASE("edge_value - default implementation const correctness", "[edge_value]
     auto e_mut = *edges(g_mutable, v0_mut).begin();
     
     // Non-const: returns mutable reference
-    static_assert(std::is_same_v<decltype(graph::edge_value(g_mutable, e_mut)), double&>);
-    REQUIRE(graph::edge_value(g_mutable, e_mut) == 10.5);
+    static_assert(std::is_same_v<decltype(edge_value(g_mutable, e_mut)), double&>);
+    REQUIRE(edge_value(g_mutable, e_mut) == 10.5);
     
     // Can modify
-    graph::edge_value(g_mutable, e_mut) = 77.7;
+    edge_value(g_mutable, e_mut) = 77.7;
     REQUIRE(g_mutable[0][0].second == 77.7);
     
     // Const: returns const reference
@@ -358,8 +359,8 @@ TEST_CASE("edge_value - default implementation const correctness", "[edge_value]
     auto v0_const = *vertices(g_const).begin();
     auto e_const = *edges(g_const, v0_const).begin();
     
-    static_assert(std::is_same_v<decltype(graph::edge_value(g_const, e_const)), const double&>);
-    REQUIRE(graph::edge_value(g_const, e_const) == 77.7);
+    static_assert(std::is_same_v<decltype(edge_value(g_const, e_const)), const double&>);
+    REQUIRE(edge_value(g_const, e_const) == 77.7);
 }
 
 TEST_CASE("edge_value - const map graph with pair edges", "[edge_value][const][map]") {

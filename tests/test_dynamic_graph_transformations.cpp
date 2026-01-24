@@ -32,6 +32,7 @@
 #include <ranges>
 
 using namespace graph;
+using namespace graph::adj_list;
 using namespace graph::container;
 
 // Type aliases for testing

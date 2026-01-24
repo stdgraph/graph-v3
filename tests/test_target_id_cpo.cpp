@@ -12,6 +12,7 @@
 #include <map>
 
 using namespace graph;
+using namespace graph::adj_list;
 
 // =============================================================================
 // Test: Default Implementation - Simple Edge Pattern (vector<int>)
@@ -198,7 +199,7 @@ namespace custom_adl_test {
     
     // ADL function for edge descriptor - takes graph and descriptor
     template<typename E>
-    int target_id(const CustomGraph&, const E& edge_desc) requires(graph::is_edge_descriptor_v<E>) {
+    int target_id(const CustomGraph&, const E& edge_desc) requires(is_edge_descriptor_v<E>) {
         // Custom logic: extract target and multiply by 10
         // Note: This demonstrates ADL but in practice would call edge_desc.target_id()
         return 999;  // Custom fixed value for testing
@@ -230,7 +231,7 @@ TEST_CASE("target_id(g,uv) - custom ADL with descriptor", "[target_id][cpo][adl]
 namespace custom_descriptor_ns {
     // Custom ADL function that takes graph and descriptor
     template<typename G, typename E>
-    int target_id(const G&, const E& edge_desc) requires(graph::is_edge_descriptor_v<E>) {
+    int target_id(const G&, const E& edge_desc) requires(is_edge_descriptor_v<E>) {
         // Extract target ID and add 1000
         auto edges_ref = edge_desc.source().inner_value(std::declval<std::remove_const_t<G>&>());
         // Note: This is a demonstration - in practice, would call edge_desc.target_id()

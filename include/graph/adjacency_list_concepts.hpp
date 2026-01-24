@@ -12,7 +12,7 @@
 #include <ranges>
 #include "detail/graph_cpo.hpp"
 
-namespace graph {
+namespace graph::adj_list {
 
 // =============================================================================
 // Edge Concepts
@@ -307,4 +307,4 @@ concept index_sourced_adjacency_list =
     sourced_adjacency_list<G>;
 
 
-} // namespace graph
+} // namespace graph::adj_list

@@ -46,7 +46,7 @@ TEST_CASE("vertex_id CPO", "[undirected_adjacency_list][cpo][vertex_id]") {
         auto verts = vertices(g);
         unsigned int expected_id = 0;
         for (auto v : verts) {
-            REQUIRE(graph::vertex_id(g, v) == expected_id);
+            REQUIRE(graph::adj_list::vertex_id(g, v) == expected_id);
             ++expected_id;
         }
     }
@@ -55,13 +55,13 @@ TEST_CASE("vertex_id CPO", "[undirected_adjacency_list][cpo][vertex_id]") {
         const IntGraph& cg = g;
         auto verts = vertices(cg);
         auto v = *verts.begin();
-        REQUIRE(graph::vertex_id(cg, v) == 0);
+        REQUIRE(graph::adj_list::vertex_id(cg, v) == 0);
     }
     
     SECTION("vertex_id after find_vertex") {
         auto it = find_vertex(g, 2u);
         REQUIRE(it != vertices(g).end());
-        REQUIRE(graph::vertex_id(g, *it) == 2);
+        REQUIRE(graph::adj_list::vertex_id(g, *it) == 2);
     }
 }
 
@@ -354,7 +354,7 @@ TEST_CASE("target CPO", "[undirected_adjacency_list][cpo][target]") {
         std::vector<int> target_values;
         for (auto e : edge_range) {
             // Use the target CPO with the edge_descriptor directly
-            auto target_v = graph::target(g, e);
+            auto target_v = target(g, e);
             target_values.push_back(vertex_value(g, target_v));
         }
         
@@ -371,9 +371,9 @@ TEST_CASE("target CPO", "[undirected_adjacency_list][cpo][target]") {
         auto edge_range = edges(cg, v0);
         auto e = *edge_range.begin();
         
-        auto target_v = graph::target(cg, e);
+        auto target_v = target(cg, e);
         // Just verify it compiles and returns something valid
-        auto tid = graph::vertex_id(cg, target_v);
+        auto tid = graph::adj_list::vertex_id(cg, target_v);
         REQUIRE((tid == 1 || tid == 2));
     }
 }
@@ -393,8 +393,8 @@ TEST_CASE("source CPO", "[undirected_adjacency_list][cpo][source]") {
         
         // All edges from v0 should have v0 as source
         for (auto e : edge_range) {
-            auto source_v = graph::source(g, e);
-            REQUIRE(graph::vertex_id(g, source_v) == 0);
+            auto source_v = source(g, e);
+            REQUIRE(graph::adj_list::vertex_id(g, source_v) == 0);
             REQUIRE(vertex_value(g, source_v) == 10);
         }
     }
@@ -406,8 +406,8 @@ TEST_CASE("source CPO", "[undirected_adjacency_list][cpo][source]") {
         auto edge_range = edges(cg, v0);
         auto e = *edge_range.begin();
         
-        auto source_v = graph::source(cg, e);
-        REQUIRE(graph::vertex_id(cg, source_v) == 0);
+        auto source_v = source(cg, e);
+        REQUIRE(graph::adj_list::vertex_id(cg, source_v) == 0);
     }
 }
 
@@ -426,7 +426,7 @@ TEST_CASE("find_vertex_edge CPO", "[undirected_adjacency_list][cpo][find_vertex_
         
         // Find edge from vertex 0 to vertex 1
         // Returns an edge_descriptor
-        auto e = graph::find_vertex_edge(g, v0, 1u);
+        auto e = find_vertex_edge(g, v0, 1u);
         // Use edge_value CPO with edge_descriptor
         auto edge_it = e.value();
         REQUIRE(edge_value(g, *edge_it) == 100);
@@ -435,7 +435,7 @@ TEST_CASE("find_vertex_edge CPO", "[undirected_adjacency_list][cpo][find_vertex_
     
     SECTION("find_vertex_edge with two vertex ids") {
         // Find edge from vertex 0 to vertex 2
-        auto e = graph::find_vertex_edge(g, 0u, 2u);
+        auto e = find_vertex_edge(g, 0u, 2u);
         auto edge_it = e.value();
         REQUIRE(edge_value(g, *edge_it) == 200);
         REQUIRE(target_id(g, e) == 2);
@@ -448,14 +448,14 @@ TEST_CASE("find_vertex_edge CPO", "[undirected_adjacency_list][cpo][find_vertex_
         ++it;
         auto v1 = *it;
         
-        auto e = graph::find_vertex_edge(g, v0, v1);
+        auto e = find_vertex_edge(g, v0, v1);
         auto edge_it = e.value();
         REQUIRE(edge_value(g, *edge_it) == 100);
     }
     
     SECTION("find_vertex_edge on const graph") {
         const IntGraph& cg = g;
-        auto e = graph::find_vertex_edge(cg, 1u, 2u);
+        auto e = find_vertex_edge(cg, 1u, 2u);
         auto edge_it = e.value();
         REQUIRE(edge_value(cg, *edge_it) == 300);
     }
@@ -471,12 +471,12 @@ TEST_CASE("contains_edge CPO", "[undirected_adjacency_list][cpo][contains_edge]"
     // No edge between 1 and 2
     
     SECTION("contains_edge with two vertex ids - edge exists") {
-        REQUIRE(graph::contains_edge(g, 0u, 1u) == true);
-        REQUIRE(graph::contains_edge(g, 0u, 2u) == true);
+        REQUIRE(graph::adj_list::contains_edge(g, 0u, 1u) == true);
+        REQUIRE(graph::adj_list::contains_edge(g, 0u, 2u) == true);
     }
     
     SECTION("contains_edge with two vertex ids - edge does not exist") {
-        REQUIRE(graph::contains_edge(g, 1u, 2u) == false);
+        REQUIRE(graph::adj_list::contains_edge(g, 1u, 2u) == false);
     }
     
     SECTION("contains_edge with two vertex descriptors") {
@@ -488,15 +488,15 @@ TEST_CASE("contains_edge CPO", "[undirected_adjacency_list][cpo][contains_edge]"
         ++it;
         auto v2 = *it;
         
-        REQUIRE(graph::contains_edge(g, v0, v1) == true);
-        REQUIRE(graph::contains_edge(g, v0, v2) == true);
-        REQUIRE(graph::contains_edge(g, v1, v2) == false);
+        REQUIRE(graph::adj_list::contains_edge(g, v0, v1) == true);
+        REQUIRE(graph::adj_list::contains_edge(g, v0, v2) == true);
+        REQUIRE(graph::adj_list::contains_edge(g, v1, v2) == false);
     }
     
     SECTION("contains_edge on const graph") {
         const IntGraph& cg = g;
-        REQUIRE(graph::contains_edge(cg, 0u, 1u) == true);
-        REQUIRE(graph::contains_edge(cg, 1u, 2u) == false);
+        REQUIRE(graph::adj_list::contains_edge(cg, 0u, 1u) == true);
+        REQUIRE(graph::adj_list::contains_edge(cg, 1u, 2u) == false);
     }
 }
 
@@ -603,7 +603,7 @@ TEST_CASE("CPO const correctness", "[undirected_adjacency_list][cpo][const]") {
         REQUIRE(std::distance(verts.begin(), verts.end()) == 2);
         
         auto v = *verts.begin();
-        REQUIRE(graph::vertex_id(cg, v) == 0);
+        REQUIRE(graph::adj_list::vertex_id(cg, v) == 0);
         REQUIRE(vertex_value(cg, v) == 10);
         REQUIRE(degree(cg, v) == 1);
         
@@ -612,11 +612,11 @@ TEST_CASE("CPO const correctness", "[undirected_adjacency_list][cpo][const]") {
         REQUIRE(target_id(cg, e) == 1);
         REQUIRE(source_id(cg, e) == 0);
         
-        auto target_v = graph::target(cg, e);
-        REQUIRE(graph::vertex_id(cg, target_v) == 1);
+        auto target_v = target(cg, e);
+        REQUIRE(graph::adj_list::vertex_id(cg, target_v) == 1);
         
-        auto source_v = graph::source(cg, e);
-        REQUIRE(graph::vertex_id(cg, source_v) == 0);
+        auto source_v = source(cg, e);
+        REQUIRE(graph::adj_list::vertex_id(cg, source_v) == 0);
     }
 }
 
@@ -629,7 +629,7 @@ TEST_CASE("CPO vertex_id consistency", "[undirected_adjacency_list][cpo][vertex_
     SECTION("vertex_id matches iteration order") {
         unsigned int expected = 0;
         for (auto v : vertices(g)) {
-            REQUIRE(graph::vertex_id(g, v) == expected);
+            REQUIRE(graph::adj_list::vertex_id(g, v) == expected);
             ++expected;
         }
         REQUIRE(expected == 10);
@@ -639,7 +639,7 @@ TEST_CASE("CPO vertex_id consistency", "[undirected_adjacency_list][cpo][vertex_
         for (unsigned int i = 0; i < 10; ++i) {
             auto it = find_vertex(g, i);
             REQUIRE(it != vertices(g).end());
-            REQUIRE(graph::vertex_id(g, *it) == i);
+            REQUIRE(graph::adj_list::vertex_id(g, *it) == i);
         }
     }
 }
@@ -657,7 +657,7 @@ TEST_CASE("CPO edge traversal consistency", "[undirected_adjacency_list][cpo][ed
     
     SECTION("edge target and source are consistent") {
         for (auto v : vertices(g)) {
-            auto vid = graph::vertex_id(g, v);
+            auto vid = graph::adj_list::vertex_id(g, v);
             for (auto e : edges(g, v)) {
                 auto sid = source_id(g, e);
                 auto tid = target_id(g, e);
@@ -669,10 +669,10 @@ TEST_CASE("CPO edge traversal consistency", "[undirected_adjacency_list][cpo][ed
                 REQUIRE(tid != sid);
                 
                 // Verify source/target descriptors
-                auto source_v = graph::source(g, e);
-                auto target_v = graph::target(g, e);
-                REQUIRE(graph::vertex_id(g, source_v) == sid);
-                REQUIRE(graph::vertex_id(g, target_v) == tid);
+                auto source_v = source(g, e);
+                auto target_v = target(g, e);
+                REQUIRE(graph::adj_list::vertex_id(g, source_v) == sid);
+                REQUIRE(graph::adj_list::vertex_id(g, target_v) == tid);
             }
         }
     }
@@ -684,6 +684,7 @@ TEST_CASE("CPO edge traversal consistency", "[undirected_adjacency_list][cpo][ed
 
 TEST_CASE("edges via vertex descriptor CPO", "[undirected_adjacency_list][cpo][edges]") {
     using namespace graph;
+using namespace graph::adj_list;
     undirected_adjacency_list<int, int> g;
     g.create_vertex(10);
     g.create_vertex(20);
@@ -695,7 +696,7 @@ TEST_CASE("edges via vertex descriptor CPO", "[undirected_adjacency_list][cpo][e
     SECTION("get edges via vertex descriptor from vertices()") {
         size_t v0_count = 0;
         for (auto v : vertices(g)) {
-            if (vertex_id(g, v) == 0) {
+            if (graph::adj_list::vertex_id(g, v) == 0) {
                 for ([[maybe_unused]] auto e : edges(g, v)) {
                     ++v0_count;
                 }
@@ -722,6 +723,7 @@ TEST_CASE("edges via vertex descriptor CPO", "[undirected_adjacency_list][cpo][e
 
 TEST_CASE("degree via vertex descriptor CPO", "[undirected_adjacency_list][cpo][degree]") {
     using namespace graph;
+    using namespace graph::adj_list;
     undirected_adjacency_list<int, int> g;
     g.create_vertex(10);
     g.create_vertex(20);
@@ -733,7 +735,7 @@ TEST_CASE("degree via vertex descriptor CPO", "[undirected_adjacency_list][cpo][
     
     SECTION("degree via vertex descriptor") {
         for (auto v : vertices(g)) {
-            auto vid = vertex_id(g, v);
+            auto vid = graph::adj_list::vertex_id(g, v);
             auto d = degree(g, v);
             if (vid == 0 || vid == 1 || vid == 2) {
                 REQUIRE(d == 2);

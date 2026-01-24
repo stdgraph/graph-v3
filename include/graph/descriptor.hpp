@@ -10,7 +10,7 @@
 #include <tuple>
 #include <type_traits>
 
-namespace graph {
+namespace graph::adj_list {
 
 /**
  * @brief Concept to check if a type is pair-like (has at least 2 members accessible via tuple protocol)
@@ -398,4 +398,4 @@ struct edge_pattern_type {
 template<typename T>
 inline constexpr edge_pattern edge_pattern_type_v = edge_pattern_type<T>::value;
 
-} // namespace graph
+} // namespace graph::adj_list

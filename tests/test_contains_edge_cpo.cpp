@@ -10,6 +10,7 @@
 #include <utility>
 
 using namespace graph;
+using namespace graph::adj_list;
 
 // =============================================================================
 // Test graphs with custom contains_edge member
@@ -214,11 +215,11 @@ TEST_CASE("contains_edge(g, u, v) uses custom member function", "[contains_edge]
     graph.add_edge(1, 3);
     
     // Should use custom member
-    REQUIRE(graph::contains_edge(graph, 0, 1) == true);
-    REQUIRE(graph::contains_edge(graph, 0, 2) == true);
-    REQUIRE(graph::contains_edge(graph, 1, 3) == true);
-    REQUIRE(graph::contains_edge(graph, 0, 3) == false);
-    REQUIRE(graph::contains_edge(graph, 2, 0) == false);
+    REQUIRE(contains_edge(graph, 0, 1) == true);
+    REQUIRE(contains_edge(graph, 0, 2) == true);
+    REQUIRE(contains_edge(graph, 1, 3) == true);
+    REQUIRE(contains_edge(graph, 0, 3) == false);
+    REQUIRE(contains_edge(graph, 2, 0) == false);
 }
 
 // =============================================================================
@@ -232,11 +233,11 @@ TEST_CASE("contains_edge(g, u, v) uses ADL when available", "[contains_edge][cpo
     graph.add_edge(1, 3);
     
     // Should use ADL function
-    REQUIRE(graph::contains_edge(graph, 0, 1) == true);
-    REQUIRE(graph::contains_edge(graph, 0, 2) == true);
-    REQUIRE(graph::contains_edge(graph, 1, 3) == true);
-    REQUIRE(graph::contains_edge(graph, 0, 3) == false);
-    REQUIRE(graph::contains_edge(graph, 2, 0) == false);
+    REQUIRE(contains_edge(graph, 0, 1) == true);
+    REQUIRE(contains_edge(graph, 0, 2) == true);
+    REQUIRE(contains_edge(graph, 1, 3) == true);
+    REQUIRE(contains_edge(graph, 0, 3) == false);
+    REQUIRE(contains_edge(graph, 2, 0) == false);
 }
 
 // =============================================================================

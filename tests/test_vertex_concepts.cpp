@@ -13,6 +13,7 @@
 #include <string>
 
 using namespace graph;
+using namespace graph::adj_list;
 
 // Test vertex data types
 struct VertexData {

@@ -11,6 +11,7 @@
 #include "graph/detail/graph_cpo.hpp"
 
 using namespace graph;
+using namespace graph::adj_list;
 
 // =============================================================================
 // Test: Default Implementation with Vector

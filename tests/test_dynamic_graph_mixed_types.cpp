@@ -8,6 +8,7 @@
 #include <string>
 
 using namespace graph;
+using namespace graph::adj_list;
 using namespace graph::container;
 
 // Graph type aliases with uint64_t IDs

@@ -11,6 +11,7 @@
 #include <list>
 
 using namespace graph;
+using namespace graph::adj_list;
 
 // ============================================================================
 // Default Implementation Tests - Random Access
@@ -68,7 +69,7 @@ struct CustomGraphWithMember {
     
     // Custom find_vertex that validates ID range and returns iterator to vertex_descriptor_view
     auto find_vertex(std::size_t uid) {
-        auto verts = graph::vertices(adj_list);
+        auto verts = vertices(adj_list);
         if (uid >= adj_list.size()) {
             return std::ranges::end(verts);
         }
@@ -81,14 +82,14 @@ TEST_CASE("find_vertex - custom member function", "[graph_cpo][find_vertex][memb
     
     SECTION("Valid vertex ID") {
         auto v_iter = find_vertex(g, 1);
-        auto verts = graph::vertices(g.adj_list);
+        auto verts = vertices(g.adj_list);
         REQUIRE(v_iter != std::ranges::end(verts));
         REQUIRE(vertex_id(g.adj_list, *v_iter) == 1);
     }
     
     SECTION("Out of range returns end") {
         auto v_iter = find_vertex(g, 10);
-        auto verts = graph::vertices(g.adj_list);
+        auto verts = vertices(g.adj_list);
         REQUIRE(v_iter == std::ranges::end(verts));
     }
 }
@@ -104,7 +105,7 @@ namespace custom_ns {
     
     // ADL find_vertex for sparse ID lookup
     auto find_vertex(GraphWithADL& g, std::size_t uid) {
-        auto verts = graph::vertices(g.adj_list);
+        auto verts = vertices(g.adj_list);
         if (uid >= g.adj_list.size()) {
             return std::ranges::end(verts);
         }
@@ -117,13 +118,13 @@ TEST_CASE("find_vertex - ADL customization", "[graph_cpo][find_vertex][adl]") {
     
     SECTION("Find via ADL") {
         auto v_iter = find_vertex(g, 1);
-        auto verts = graph::vertices(g.adj_list);
+        auto verts = vertices(g.adj_list);
         REQUIRE(v_iter != std::ranges::end(verts));
     }
     
     SECTION("ADL validates range") {
         auto v_iter = find_vertex(g, 5);
-        auto verts = graph::vertices(g.adj_list);
+        auto verts = vertices(g.adj_list);
         REQUIRE(v_iter == std::ranges::end(verts));
     }
 }
@@ -196,7 +197,7 @@ struct MapGraphWrapper {
         // Construct vertex_descriptor_view iterator directly from map iterator
         auto map_iter = data.find(uid);
         using container_iterator = decltype(map_iter);
-        using view_type = graph::vertex_descriptor_view<container_iterator>;
+        using view_type = vertex_descriptor_view<container_iterator>;
         using view_iterator = typename view_type::iterator;
         return view_iterator{map_iter};
     }
@@ -225,7 +226,7 @@ namespace map_adl_ns {
         // Construct vertex_descriptor_view iterator directly from map iterator
         auto map_iter = g.adj_list.find(uid);
         using container_iterator = decltype(map_iter);
-        using view_type = graph::vertex_descriptor_view<container_iterator>;
+        using view_type = vertex_descriptor_view<container_iterator>;
         using view_iterator = typename view_type::iterator;
         return view_iterator{map_iter};
     }

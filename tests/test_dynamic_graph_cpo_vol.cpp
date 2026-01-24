@@ -71,6 +71,7 @@
 #include <algorithm>
 
 using namespace graph;
+using namespace graph::adj_list;
 using namespace graph::container;
 
 // Type aliases for test configurations
@@ -2489,7 +2490,7 @@ TEST_CASE("vol CPO edge_value(g, uv)", "[dynamic_graph][vol][cpo][edge_value]") 
         if (e_iter != edge_range.end()) {
             using edge_iter_t = decltype(e_iter);
             using vertex_desc_t = decltype(u);
-            auto uv = graph::edge_descriptor<edge_iter_t, typename vertex_desc_t::iterator_type>(e_iter, u);
+            auto uv = edge_descriptor<edge_iter_t, typename vertex_desc_t::iterator_type>(e_iter, u);
             REQUIRE(edge_value(g, uv) == 42);
         }
     }
@@ -2513,11 +2514,11 @@ TEST_CASE("vol CPO edge_value(g, uv)", "[dynamic_graph][vol][cpo][edge_value]") 
         if (e_iter != edge_range.end()) {
             using edge_iter_t = decltype(e_iter);
             using vertex_desc_t = decltype(u);
-            auto uv0 = graph::edge_descriptor<edge_iter_t, typename vertex_desc_t::iterator_type>(e_iter, u);
+            auto uv0 = edge_descriptor<edge_iter_t, typename vertex_desc_t::iterator_type>(e_iter, u);
             REQUIRE(edge_value(g, uv0) == 100);  // loaded first, appears first with push_back
             ++e_iter;
             if (e_iter != edge_range.end()) {
-                auto uv1 = graph::edge_descriptor<edge_iter_t, typename vertex_desc_t::iterator_type>(e_iter, u);
+                auto uv1 = edge_descriptor<edge_iter_t, typename vertex_desc_t::iterator_type>(e_iter, u);
                 REQUIRE(edge_value(g, uv1) == 200);  // loaded second, appears second with push_back
             }
         }
@@ -2533,7 +2534,7 @@ TEST_CASE("vol CPO edge_value(g, uv)", "[dynamic_graph][vol][cpo][edge_value]") 
         if (e_iter != edge_range.end()) {
             using edge_iter_t = decltype(e_iter);
             using vertex_desc_t = decltype(u);
-            auto uv = graph::edge_descriptor<edge_iter_t, typename vertex_desc_t::iterator_type>(e_iter, u);
+            auto uv = edge_descriptor<edge_iter_t, typename vertex_desc_t::iterator_type>(e_iter, u);
             
             REQUIRE(edge_value(g, uv) == 50);
             
@@ -2557,7 +2558,7 @@ TEST_CASE("vol CPO edge_value(g, uv)", "[dynamic_graph][vol][cpo][edge_value]") 
         if (const_e_iter != const_edge_range.end()) {
             using const_edge_iter_t = decltype(const_e_iter);
             using const_vertex_desc_t = decltype(const_u);
-            auto const_uv = graph::edge_descriptor<const_edge_iter_t, typename const_vertex_desc_t::iterator_type>(const_e_iter, const_u);
+            auto const_uv = edge_descriptor<const_edge_iter_t, typename const_vertex_desc_t::iterator_type>(const_e_iter, const_u);
             REQUIRE(edge_value(const_g, const_uv) == 42);
         }
     }
@@ -2581,7 +2582,7 @@ TEST_CASE("vol CPO edge_value(g, uv)", "[dynamic_graph][vol][cpo][edge_value]") 
                 if (idx < 2) {
                     using edge_iter_t = decltype(e_iter);
                     using vertex_desc_t = decltype(u);
-                    auto uv = graph::edge_descriptor<edge_iter_t, typename vertex_desc_t::iterator_type>(e_iter, u);
+                    auto uv = edge_descriptor<edge_iter_t, typename vertex_desc_t::iterator_type>(e_iter, u);
                     REQUIRE(edge_value(g, uv) == expected[idx]);
                     ++idx;
                 }
@@ -2608,7 +2609,7 @@ TEST_CASE("vol CPO edge_value(g, uv)", "[dynamic_graph][vol][cpo][edge_value]") 
             for (auto e_iter = edge_range.begin(); e_iter != edge_range.end(); ++e_iter) {
                 using edge_iter_t = decltype(e_iter);
                 using vertex_desc_t = decltype(u);
-                auto uv = graph::edge_descriptor<edge_iter_t, typename vertex_desc_t::iterator_type>(e_iter, u);
+                auto uv = edge_descriptor<edge_iter_t, typename vertex_desc_t::iterator_type>(e_iter, u);
                 sum += edge_value(g, uv);
             }
         }
@@ -2672,7 +2673,7 @@ TEST_CASE("vol CPO integration: values", "[dynamic_graph][vol][cpo][integration]
             if (e_iter != edge_range.end()) {
                 using edge_iter_t = decltype(e_iter);
                 using vertex_desc_t = decltype(u);
-                auto uv = graph::edge_descriptor<edge_iter_t, typename vertex_desc_t::iterator_type>(e_iter, u);
+                auto uv = edge_descriptor<edge_iter_t, typename vertex_desc_t::iterator_type>(e_iter, u);
                 int expected = (u.vertex_id() == 0) ? 5 : 10;
                 REQUIRE(edge_value(g, uv) == expected);
             }
@@ -2764,7 +2765,7 @@ TEST_CASE("vol CPO graph_value(g)", "[dynamic_graph][vol][cpo][graph_value]") {
             for (auto e_iter = edge_range.begin(); e_iter != edge_range.end(); ++e_iter) {
                 using edge_iter_t = decltype(e_iter);
                 using vertex_desc_t = decltype(u);
-                auto uv = graph::edge_descriptor<edge_iter_t, typename vertex_desc_t::iterator_type>(e_iter, u);
+                auto uv = edge_descriptor<edge_iter_t, typename vertex_desc_t::iterator_type>(e_iter, u);
                 edge_value(g, uv) = 75;
             }
         }
@@ -3398,7 +3399,7 @@ TEST_CASE("vol CPO integration: modify vertex and edge values", "[dynamic_graph]
         for (auto e_iter = edge_range.begin(); e_iter != edge_range.end(); ++e_iter) {
             using edge_iter_t = decltype(e_iter);
             using vertex_desc_t = decltype(u);
-            auto uv = graph::edge_descriptor<edge_iter_t, typename vertex_desc_t::iterator_type>(e_iter, u);
+            auto uv = edge_descriptor<edge_iter_t, typename vertex_desc_t::iterator_type>(e_iter, u);
             vertex_value(g, u) += edge_value(g, uv);
         }
     }

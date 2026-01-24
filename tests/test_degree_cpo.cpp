@@ -10,6 +10,7 @@
 #include <utility>
 
 using namespace graph;
+using namespace graph::adj_list;
 
 // =============================================================================
 // Test graphs with custom degree member
@@ -192,9 +193,9 @@ TEST_CASE("degree(g, u) uses ADL when available", "[degree][cpo][adl]") {
     graph.add_edge(1, 2);
     
     // ADL function returns triple the actual count
-    REQUIRE(graph::degree(graph, 0) == 6); // 2 * 3
-    REQUIRE(graph::degree(graph, 1) == 3); // 1 * 3
-    REQUIRE(graph::degree(graph, 2) == 0); // 0 * 3
+    REQUIRE(degree(graph, 0) == 6); // 2 * 3
+    REQUIRE(degree(graph, 1) == 3); // 1 * 3
+    REQUIRE(degree(graph, 2) == 0); // 0 * 3
 }
 
 // =============================================================================

@@ -11,6 +11,7 @@
 #include "graph/detail/graph_cpo.hpp"
 
 using namespace graph;
+using namespace graph::adj_list;
 
 // =============================================================================
 // Test: Default Implementation with Vector - Simple Edges
@@ -236,7 +237,7 @@ TEST_CASE("target(g,uv) - custom member function", "[target][cpo][member]") {
     auto e = *graph.edges(v0).begin();
     
     // Should use custom member function
-    auto target_v = graph::target(graph, e);
+    auto target_v = target(graph, e);
     
     REQUIRE(vertex_id(graph, target_v) == 2);
 }
@@ -279,7 +280,7 @@ TEST_CASE("target(g,uv) - ADL customization", "[target][cpo][adl]") {
     auto e = *graph.edges(v0).begin();
     
     // Should find ADL target
-    auto target_v = graph::target(graph, e);
+    auto target_v = target(graph, e);
     
     REQUIRE(vertex_id(graph, target_v) == 1);
 }
@@ -322,7 +323,7 @@ TEST_CASE("target(g,uv) - custom member returning iterator", "[target][cpo][memb
     auto e = *graph.edges(v0).begin();
     
     // Custom member returns iterator, CPO should convert to descriptor
-    auto target_v = graph::target(graph, e);
+    auto target_v = target(graph, e);
     
     // Verify it's a descriptor (can be used with vertex_id)
     REQUIRE(vertex_id(graph, target_v) == 3);
@@ -361,7 +362,7 @@ TEST_CASE("target(g,uv) - ADL returning iterator", "[target][cpo][adl][iterator]
     auto e = *graph.edges(v0).begin();
     
     // ADL returns iterator, CPO should convert to descriptor
-    auto target_v = graph::target(graph, e);
+    auto target_v = target(graph, e);
     
     // Verify it's a descriptor (can be used with vertex_id)
     REQUIRE(vertex_id(graph, target_v) == 2);

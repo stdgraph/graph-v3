@@ -12,6 +12,7 @@
 #include <ranges>
 
 using namespace graph;
+using namespace graph::adj_list;
 
 // =============================================================================
 // Test: Default Implementation - Vector Graph
@@ -179,9 +180,9 @@ TEST_CASE("edges(g,uid) - custom member function", "[edges][cpo][uid][member]") 
         {{1, 2}, {3}, {}, {0, 1}}
     };
     
-    auto e0 = graph::edges(graph, 0);
-    auto e1 = graph::edges(graph, 1);
-    auto e3 = graph::edges(graph, 3);
+    auto e0 = edges(graph, 0);
+    auto e1 = edges(graph, 1);
+    auto e3 = edges(graph, 3);
     
     REQUIRE(std::ranges::distance(e0) == 2);
     REQUIRE(std::ranges::distance(e1) == 1);
@@ -224,9 +225,9 @@ TEST_CASE("edges(g,uid) - ADL customization", "[edges][cpo][uid][adl]") {
         {{1, 2, 3}, {4}, {}, {0}}
     };
     
-    auto e0 = graph::edges(graph, 0);
-    auto e1 = graph::edges(graph, 1);
-    auto e3 = graph::edges(graph, 3);
+    auto e0 = edges(graph, 0);
+    auto e1 = edges(graph, 1);
+    auto e3 = edges(graph, 3);
     
     REQUIRE(std::ranges::distance(e0) == 3);
     REQUIRE(std::ranges::distance(e1) == 1);

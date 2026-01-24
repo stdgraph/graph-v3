@@ -22,6 +22,14 @@
 #define CPO 1
 namespace graph::container {
 
+// Import types from graph::adj_list for convenience
+using adj_list::vertex_descriptor;
+using adj_list::edge_descriptor;
+using adj_list::vertex_descriptor_view;
+using adj_list::edge_descriptor_view;
+using adj_list::vertex_descriptor_type;
+using adj_list::edge_descriptor_type;
+
 using std::vector;
 using std::allocator;
 using std::numeric_limits;
@@ -1386,13 +1394,13 @@ public: // Accessors
   /// @note Only available when GV is not void.
   template <typename GV_ = GV>
     requires (!std::is_void_v<GV_>)
-  GV_& graph_value() noexcept {
+  graph_value_type& graph_value() noexcept {
     return graph_value_;
   }
   
   template <typename GV_ = GV>
     requires (!std::is_void_v<GV_>)
-  const GV_& graph_value() const noexcept {
+  const graph_value_type& graph_value() const noexcept {
     return graph_value_;
   }
 
@@ -1576,12 +1584,12 @@ private: // CPO support via ADL (friend functions)
   }
 
   // graph_value(g) - get graph value (only when GV is not void)
-  friend constexpr decltype(auto) graph_value(undirected_adjacency_list& g) noexcept
+  friend constexpr graph_value_type& graph_value(undirected_adjacency_list& g) noexcept
     requires (!std::is_void_v<GV>)
   {
     return g.graph_value_;
   }
-  friend constexpr decltype(auto) graph_value(const undirected_adjacency_list& g) noexcept
+  friend constexpr const graph_value_type& graph_value(const undirected_adjacency_list& g) noexcept
     requires (!std::is_void_v<GV>)
   {
     return g.graph_value_;
@@ -2211,7 +2219,7 @@ private:
 
 } // namespace graph::container
 
-#endif // UNDIRECTED_ADJ_LIST_HPP
-
 #include "detail/undirected_adjacency_list_api.hpp"
 #include "detail/undirected_adjacency_list_impl.hpp"
+
+#endif // UNDIRECTED_ADJ_LIST_HPP

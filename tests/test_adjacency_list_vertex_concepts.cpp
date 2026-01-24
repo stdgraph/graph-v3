@@ -11,6 +11,7 @@
 #include <map>
 
 using namespace graph;
+using namespace graph::adj_list;
 
 // =============================================================================
 // vertex_range Concept Tests

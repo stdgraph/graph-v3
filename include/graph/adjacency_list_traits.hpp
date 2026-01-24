@@ -14,7 +14,7 @@
 #include "detail/graph_cpo.hpp"
 #include "adjacency_list_concepts.hpp"
 
-namespace graph {
+namespace graph::adj_list {
 
 // =============================================================================
 // Degree Trait
@@ -247,4 +247,4 @@ concept has_full_queries =
 template<typename G>
 inline constexpr bool has_full_queries_v = has_full_queries<G>;
 
-} // namespace graph
+} // namespace graph::adj_list

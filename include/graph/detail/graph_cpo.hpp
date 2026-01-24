@@ -21,7 +21,7 @@
 #include "graph/descriptor.hpp"
 #include "graph/descriptor_traits.hpp"
 
-namespace graph {
+namespace graph::adj_list {
 
 namespace _cpo_impls {
     /**
@@ -427,7 +427,7 @@ namespace _cpo_impls {
         enum class _St { _none, _member, _adl, _associative, _random_access };
         
         // Use the public vertices CPO (already declared above)
-        using graph::vertices;
+        using _cpo_instances::vertices;
         
         // Check for g.find_vertex(uid) member function
         template<typename G, typename VId>
@@ -599,7 +599,7 @@ namespace _cpo_impls {
     
     namespace _edges {
         // Use the public CPO instances (already declared above)
-        using graph::find_vertex;
+        using _cpo_instances::find_vertex;
         
         // Strategy enum for edges(g, u) - vertex descriptor version
         enum class _St_u { _none, _member, _adl, _edge_value_pattern };
@@ -968,8 +968,8 @@ namespace _cpo_impls {
         enum class _St { _none, _member, _adl, _default };
         
         // Use the public CPO instances (already declared above)
-        using graph::find_vertex;
-        using graph::target_id;
+        using _cpo_instances::find_vertex;
+        using _cpo_instances::target_id;
         
         // Check for g.target(uv) member function
         // Accepts either edge_descriptor or underlying edge value type
@@ -2697,8 +2697,8 @@ namespace _cpo_impls {
         enum class _St { _none, _member, _adl, _descriptor, _default };
         
         // Use the public CPO instances (already declared above)
-        using graph::find_vertex;
-        using graph::source_id;
+        using _cpo_instances::find_vertex;
+        using _cpo_instances::source_id;
         
         // Check for g.source(uv) member function
         // Accepts either edge_descriptor or underlying edge value type
@@ -3083,4 +3083,4 @@ inline namespace _cpo_instances {
     inline constexpr _cpo_impls::_num_partitions::_fn num_partitions{};
 } // namespace _cpo_instances
 
-} // namespace graph
+} // namespace graph::adj_list

@@ -13,6 +13,7 @@
 #include "graph/detail/graph_cpo.hpp"
 
 using namespace graph;
+using namespace graph::adj_list;
 
 // =============================================================================
 // Test Graphs with Default Implementation
@@ -155,7 +156,7 @@ TEST_CASE("has_edge - Custom member function returns true", "[has_edge][member]"
     g.data.resize(3);
     g.has_edges_flag = true; // Custom implementation returns true
     // Note: actual graph has no edges, but member takes precedence
-    REQUIRE(graph::has_edge(g));
+    REQUIRE(has_edge(g));
 }
 
 TEST_CASE("has_edge - Custom member function returns false", "[has_edge][member]") {
@@ -163,7 +164,7 @@ TEST_CASE("has_edge - Custom member function returns false", "[has_edge][member]
     g.data.resize(3);
     g.data[0].push_back({1, 10}); // Graph has edge
     g.has_edges_flag = false; // But custom implementation returns false
-    REQUIRE_FALSE(graph::has_edge(g));
+    REQUIRE_FALSE(has_edge(g));
 }
 
 // =============================================================================
@@ -191,7 +192,7 @@ TEST_CASE("has_edge - ADL function returns true", "[has_edge][adl]") {
     custom::Graph g;
     g.data.resize(3);
     g.adl_result = true;
-    REQUIRE(graph::has_edge(g));
+    REQUIRE(has_edge(g));
 }
 
 TEST_CASE("has_edge - ADL function returns false", "[has_edge][adl]") {
@@ -199,7 +200,7 @@ TEST_CASE("has_edge - ADL function returns false", "[has_edge][adl]") {
     g.data.resize(3);
     g.data[0].push_back({1, 10}); // Graph has edge
     g.adl_result = false; // But ADL returns false
-    REQUIRE_FALSE(graph::has_edge(g));
+    REQUIRE_FALSE(has_edge(g));
 }
 
 // =============================================================================

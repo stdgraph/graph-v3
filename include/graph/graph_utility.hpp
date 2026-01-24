@@ -17,7 +17,7 @@
 #include <concepts>
 #include <ranges>
 
-namespace graph {
+namespace graph::adj_list {
 
 // CPO implementation details are in graph/detail/graph_cpo.hpp
 // The _Choice_t struct and CPO implementations are defined there.
@@ -29,4 +29,4 @@ namespace graph {
 //     // ... etc
 // }
 
-} // namespace graph
+} // namespace graph::adj_list

@@ -10,7 +10,7 @@
 #include <functional>
 #include <ranges>
 
-namespace graph {
+namespace graph::adj_list {
 
 /**
  * @brief Descriptor for vertices in a graph
@@ -173,13 +173,13 @@ private:
     storage_type storage_;
 };
 
-} // namespace graph
+} // namespace graph::adj_list
 
 // Hash specialization for std::unordered containers
 namespace std {
-    template<graph::vertex_iterator VertexIter>
-    struct hash<graph::vertex_descriptor<VertexIter>> {
-        [[nodiscard]] size_t operator()(const graph::vertex_descriptor<VertexIter>& vd) const noexcept {
+    template<graph::adj_list::vertex_iterator VertexIter>
+    struct hash<graph::adj_list::vertex_descriptor<VertexIter>> {
+        [[nodiscard]] size_t operator()(const graph::adj_list::vertex_descriptor<VertexIter>& vd) const noexcept {
             if constexpr (std::random_access_iterator<VertexIter>) {
                 // Hash the size_t index
                 return std::hash<std::size_t>{}(vd.value());
