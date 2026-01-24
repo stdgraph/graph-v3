@@ -255,7 +255,7 @@ public:
   constexpr value_type&       value() noexcept { return value_; }
   constexpr const value_type& value() const noexcept { return value_; }
 
-public:
+private:
   value_type value_ = value_type();
 };
 
@@ -305,7 +305,7 @@ public:
   constexpr value_type&       value() noexcept { return value_; }
   constexpr const value_type& value() const noexcept { return value_; }
 
-public:
+private:
   value_type value_ = value_type();
 };
 
@@ -698,12 +698,12 @@ private: // CPO support via ADL (friend functions)
   friend constexpr decltype(auto) edge_value(graph_type&, ual_edge& e) noexcept
     requires (!std::is_void_v<EV>)
   {
-    return (e.base_value_type::value_);
+    return e.value();
   }
   friend constexpr decltype(auto) edge_value(const graph_type&, const ual_edge& e) noexcept
     requires (!std::is_void_v<EV>)
   {
-    return (e.base_value_type::value_);
+    return e.value();
   }
 };
 
@@ -1790,13 +1790,13 @@ private: // CPO support via ADL (friend functions)
     requires vertex_descriptor_type<U> && (!std::is_void_v<VV>)
   friend constexpr decltype(auto) vertex_value(undirected_adjacency_list& g, const U& u) noexcept {
     auto& vtx = u.inner_value(g.vertices_);
-    return (vtx.base_value_type::value_);
+    return vtx.value();
   }
   template <typename U>
     requires vertex_descriptor_type<U> && (!std::is_void_v<VV>)
   friend constexpr decltype(auto) vertex_value(const undirected_adjacency_list& g, const U& u) noexcept {
     const auto& vtx = u.inner_value(g.vertices_);
-    return (vtx.base_value_type::value_);
+    return vtx.value();
   }
 
   // Note: edges(g, u) removed - CPO uses base class member function edges(u)

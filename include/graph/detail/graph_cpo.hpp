@@ -2305,7 +2305,7 @@ namespace _cpo_impls {
              * 
              * Resolution order:
              * 1. g.vertex_value(u) - Member function (highest priority)
-             * 2. vertex_value(g, u) - ADL (medium priority)
+             * 2. vertex_value(g, u) - ADL (high priority)
              * 3. u.inner_value(g) - Default using descriptor's inner_value (lowest priority)
              * 
              * The default implementation:
