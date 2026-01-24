@@ -692,6 +692,132 @@ private: // CPO support via ADL (friend functions)
 };
 
 ///-------------------------------------------------------------------------------------
+/// base_undirected_adjacency_list - Base class for undirected_adjacency_list
+///
+/// @brief Contains all common implementation shared between the general template
+///        and GV=void specialization.
+///
+/// This base class contains:
+/// - All type aliases
+/// - Nested iterator classes (const_edge_iterator, edge_iterator)
+/// - All private data members (vertices_, edges_size_, allocators)
+/// - All constructors (except those taking GV parameter)
+/// - All core methods (accessors, creators, modifiers)
+/// - All friend functions for CPO customization (except graph_value CPO)
+///
+/// The derived classes (general template and GV=void specialization) contain only:
+/// - Constructors specific to GV handling
+/// - graph_value_ member (general template only)
+/// - graph_value() accessors (general template only)
+/// - graph_value() CPO friend function (general template only)
+///
+/// @tparam VV Vertex Value type
+/// @tparam EV Edge Value type
+/// @tparam GV Graph Value type (may be void)
+/// @tparam VId Vertex key/index type
+/// @tparam VContainer Vertex storage container template
+/// @tparam Alloc Allocator type
+///-------------------------------------------------------------------------------------
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A> class VContainer,
+          typename Alloc>
+class base_undirected_adjacency_list {
+public: // Type Aliases
+  using graph_type       = undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>;
+  using graph_value_type = GV;
+  using allocator_type   = Alloc;
+
+  using vertex_type            = ual_vertex<VV, EV, GV, VId, VContainer, Alloc>;
+  using vertex_value_type      = VV;
+  using vertex_key_type        = VId;
+  using vertex_index_type      = VId;
+  using vertex_allocator_type  = typename allocator_traits<Alloc>::template rebind_alloc<vertex_type>;
+  using vertex_set             = VContainer<vertex_type, vertex_allocator_type>;
+  using vertex_size_type       = typename vertex_set::size_type;
+  using vertex_difference_type = typename vertex_set::difference_type;
+
+  using vertex_iterator       = typename vertex_set::iterator;
+  using const_vertex_iterator = typename vertex_set::const_iterator;
+  using vertex_range          = vertex_set&;
+  using const_vertex_range    = const vertex_set&;
+
+  using edge_type            = ual_edge<VV, EV, GV, VId, VContainer, Alloc>;
+  using edge_value_type      = EV;
+  using edge_allocator_type  = typename allocator_traits<Alloc>::template rebind_alloc<edge_type>;
+  using edge_key_type        = pair<vertex_key_type, vertex_key_type>; // <from,to>
+  using edge_size_type       = typename edge_type::edge_size_type;
+  using edge_difference_type = typename edge_type::edge_difference_type;
+
+  using vertex_edge_iterator        = typename vertex_type::vertex_edge_iterator;
+  using const_vertex_edge_iterator  = typename vertex_type::const_vertex_edge_iterator;
+  using vertex_edge_range           = typename vertex_type::vertex_edge_range;
+  using const_vertex_edge_range     = typename vertex_type::const_vertex_edge_range;
+  using vertex_edge_size_type       = typename vertex_edge_iterator::size_type;
+  using vertex_edge_difference_type = typename vertex_edge_iterator::difference_type;
+
+  using vertex_vertex_iterator       = typename vertex_type::vertex_vertex_iterator;
+  using const_vertex_vertex_iterator = typename vertex_type::const_vertex_vertex_iterator;
+  using vertex_vertex_range          = typename vertex_type::vertex_vertex_range;
+  using const_vertex_vertex_range    = typename vertex_type::const_vertex_vertex_range;
+  using vertex_vertex_size_type      = typename vertex_type::vertex_vertex_size_type;
+
+  // Note: edge_iterator and const_edge_iterator will be moved here in Step 1.5
+  // Note: edge_range and const_edge_range will be added in Step 1.6
+  
+protected: // Data Members (protected for derived class access)
+  vertex_set vertices_;
+  edge_size_type edges_size_ = 0;
+  [[no_unique_address]] vertex_allocator_type vertex_alloc_;
+  [[no_unique_address]] edge_allocator_type edge_alloc_;
+  
+  // Note: graph_value_ is NOT here - it belongs in the derived class
+  
+protected: // Constructors (protected - for derived class use only)
+  base_undirected_adjacency_list() = default;
+  
+  explicit base_undirected_adjacency_list(const allocator_type& alloc)
+      : vertices_(alloc)
+      , edge_alloc_(alloc) {}
+  
+  // Copy constructor - copies vertices and edges (derived class handles graph_value_)
+  base_undirected_adjacency_list(const base_undirected_adjacency_list& other);
+  
+  // Move constructor - moves vertices and edges (derived class handles graph_value_)
+  base_undirected_adjacency_list(base_undirected_adjacency_list&& other) noexcept = default;
+  
+  // Move assignment operator
+  base_undirected_adjacency_list& operator=(base_undirected_adjacency_list&& other) noexcept = default;
+  
+  // Range constructors
+  template <typename ERng, typename VRng, typename EProj, typename VProj>
+    requires ranges::forward_range<ERng>
+          && ranges::input_range<VRng>
+          && std::regular_invocable<EProj, ranges::range_reference_t<ERng>>
+          && std::regular_invocable<VProj, ranges::range_reference_t<VRng>>
+  base_undirected_adjacency_list(const ERng& erng, const VRng& vrng, 
+                                  const EProj& eproj, const VProj& vproj, 
+                                  const allocator_type& alloc);
+  
+  // Initializer list constructors
+  base_undirected_adjacency_list(
+      const initializer_list<tuple<vertex_key_type, vertex_key_type, edge_value_type>>& ilist, 
+      const allocator_type& alloc);
+  
+  base_undirected_adjacency_list(
+      const initializer_list<tuple<vertex_key_type, vertex_key_type>>& ilist, 
+      const allocator_type& alloc);
+  
+  // Helper method for validation
+  void throw_unordered_edges() const;
+  
+public:
+  // Methods will be added in Phase 2
+};
+
+///-------------------------------------------------------------------------------------
 /// ual_vertex
 ///
 /// @tparam VV     Vertex Value type. default = void.
@@ -1000,9 +1126,15 @@ template <typename                                VV,
           template <typename V, typename A> class VContainer,
           typename                                Alloc>
 class undirected_adjacency_list 
+    : public base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>
 // clang-format on
 {
 public:
+  using base_type = base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>;
+  
+  // Note: Access base class members using this-> or base_type::
+  // (using declarations don't work in constructor initializer lists)
+  
   using graph_type       = undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>;
   using graph_value_type = GV;
   using allocator_type   = Alloc;
@@ -1384,8 +1516,8 @@ public: // Accessors
   /// @brief Get range of all edges.
   /// @note Each undirected edge appears twice in iteration (once from each endpoint).
   /// @complexity O(1) to create range, O(V+E) to iterate.
-  edge_range       edges() { return {edges_begin(), edges_end(), edges_size_}; }
-  const_edge_range edges() const { return {edges_begin(), edges_end(), edges_size_}; }
+  edge_range       edges() { return {edges_begin(), edges_end(), this->edges_size_}; }
+  const_edge_range edges() const { return {edges_begin(), edges_end(), this->edges_size_}; }
 
   // Graph value accessors
   /// @brief Access the graph-level value.
@@ -1524,12 +1656,8 @@ protected:
   void resize_vertices(vertex_size_type, const vertex_value_type&);
   
   //vertex_iterator finalize_outward_edges(vertex_range);
-  void throw_unordered_edges() const;
 
 private:
-  vertex_set                    vertices_;
-  edge_size_type                edges_size_ = 0;
-  edge_allocator_type           edge_alloc_;
   [[no_unique_address]] GV      graph_value_{};
   friend vertex_type;
 
@@ -1758,8 +1886,14 @@ template <typename VV,
           template <typename V, typename A> class VContainer,
           typename Alloc>
 class undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>
+    : public base_undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>
 {
 public:
+  using base_type = base_undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>;
+  
+  // Note: Access base class members using this-> or base_type::
+  // (using declarations don't work in constructor initializer lists)
+  
   using graph_type       = undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>;
   using graph_value_type = void;
   using allocator_type   = Alloc;
@@ -1988,8 +2122,8 @@ public:
     return const_edge_iterator(*this, const_cast<graph_type&>(*this).end());
   }
 
-  edge_range       edges() { return {edges_begin(), edges_end(), edges_size_}; }
-  const_edge_range edges() const { return {edges_begin(), edges_end(), edges_size_}; }
+  edge_range       edges() { return {edges_begin(), edges_end(), this->edges_size_}; }
+  const_edge_range edges() const { return {edges_begin(), edges_end(), this->edges_size_}; }
 
   // Note: No graph_value() methods for GV=void specialization
 
@@ -2031,12 +2165,9 @@ protected:
   void reserve_vertices(vertex_size_type);
   void resize_vertices(vertex_size_type);
   void resize_vertices(vertex_size_type, const vertex_value_type&);
-  void throw_unordered_edges() const;
 
 private:
-  vertex_set          vertices_;
-  edge_size_type      edges_size_ = 0;
-  edge_allocator_type edge_alloc_;
+  // Note: No graph_value_ member in GV=void specialization
   friend vertex_type;
 
 private:
