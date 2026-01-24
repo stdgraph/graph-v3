@@ -1400,6 +1400,160 @@ void base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::throw_u
   throw std::invalid_argument("edges not ordered");
 }
 
+//-------------------------------------------------------------------------------------
+// Accessor methods
+//-------------------------------------------------------------------------------------
+
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+constexpr typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::edge_allocator_type
+base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::edge_allocator() const noexcept {
+  return this->edge_alloc_;
+}
+
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+constexpr typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_set&
+base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertices() {
+  return this->vertices_;
+}
+
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+constexpr const typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_set&
+base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertices() const {
+  return this->vertices_;
+}
+
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+constexpr typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
+base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::begin() {
+  return this->vertices_.begin();
+}
+
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+constexpr typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_iterator
+base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::begin() const {
+  return this->vertices_.begin();
+}
+
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+constexpr typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_iterator
+base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::cbegin() const {
+  return this->vertices_.cbegin();
+}
+
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+constexpr typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
+base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::end() {
+  return this->vertices_.end();
+}
+
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+constexpr typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_iterator
+base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::end() const {
+  return this->vertices_.end();
+}
+
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+constexpr typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_iterator
+base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::cend() const {
+  return this->vertices_.cend();
+}
+
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
+base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::try_find_vertex(vertex_key_type key) {
+  if (key < this->vertices_.size())
+    return this->vertices_.begin() + key;
+  else
+    return this->vertices_.end();
+}
+
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_iterator
+base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::try_find_vertex(vertex_key_type key) const {
+  if (key < this->vertices_.size())
+    return this->vertices_.begin() + key;
+  else
+    return this->vertices_.end();
+}
+
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+constexpr typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::edge_size_type
+base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::edges_size() const noexcept {
+  return this->edges_size_;
+}
+
 
 ///-------------------------------------------------------------------------------------
 /// undirected_adjacency_list
@@ -1618,42 +1772,9 @@ template <typename VV,
           typename Alloc>
 undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::~undirected_adjacency_list() = default;
 
-
-template <typename VV,
-          typename EV,
-          typename GV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::edge_allocator_type
-undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::edge_allocator() const noexcept {
-  return this->edge_alloc_;
-}
-
-template <typename VV,
-          typename EV,
-          typename GV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_set&
-undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertices() {
-  return this->vertices_;
-}
-
-template <typename VV,
-          typename EV,
-          typename GV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-constexpr const typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_set&
-undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertices() const {
-  return this->vertices_;
-}
+//-------------------------------------------------------------------------------------
+// Vertex/edge modification methods (non-accessor)
+//-------------------------------------------------------------------------------------
 
 template <typename VV,
           typename EV,
@@ -1688,6 +1809,7 @@ void undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::resize_verti
   this->vertices_.resize(n, val);
 }
 
+// Vertex creation methods  
 template <typename VV,
           typename EV,
           typename GV,
@@ -1700,6 +1822,7 @@ undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_vertex() {
   this->vertices_.push_back(vertex_type(this->vertices_, static_cast<vertex_key_type>(this->vertices_.size())));
   return this->vertices_.begin() + static_cast<vertex_difference_type>(this->vertices_.size() - 1);
 }
+
 template <typename VV,
           typename EV,
           typename GV,
@@ -1712,6 +1835,7 @@ undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_vertex(ver
   this->vertices_.push_back(vertex_type(this->vertices_, static_cast<vertex_key_type>(this->vertices_.size()), move(val)));
   return this->vertices_.begin() + static_cast<vertex_difference_type>(this->vertices_.size() - 1);
 }
+
 template <typename VV,
           typename EV,
           typename GV,
@@ -1726,118 +1850,6 @@ undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_vertex(con
   this->vertices_.push_back(vertex_type(this->vertices_, static_cast<vertex_key_type>(this->vertices_.size()), val));
   return this->vertices_.begin() + static_cast<vertex_key_type>(this->vertices_.size() - 1);
 }
-
-
-template <typename VV,
-          typename EV,
-          typename GV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
-undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::try_find_vertex(vertex_key_type key) {
-  if (key < this->vertices_.size())
-    return this->vertices_.begin() + key;
-  else
-    return this->vertices_.end();
-}
-template <typename VV,
-          typename EV,
-          typename GV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_iterator
-undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::try_find_vertex(vertex_key_type key) const {
-  if (key < this->vertices_.size())
-    return this->vertices_.begin() + key;
-  else
-    return this->vertices_.end();
-}
-
-
-template <typename VV,
-          typename EV,
-          typename GV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
-undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::begin() {
-  return this->vertices_.begin();
-}
-template <typename VV,
-          typename EV,
-          typename GV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_iterator
-undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::begin() const {
-  return this->vertices_.begin();
-}
-template <typename VV,
-          typename EV,
-          typename GV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_iterator
-undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::cbegin() const {
-  return this->vertices_.cbegin();
-}
-
-template <typename VV,
-          typename EV,
-          typename GV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
-undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::end() {
-  return this->vertices_.end();
-}
-template <typename VV,
-          typename EV,
-          typename GV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_iterator
-undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::end() const {
-  return this->vertices_.end();
-}
-template <typename VV,
-          typename EV,
-          typename GV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_iterator
-undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::cend() const {
-  return this->vertices_.cend();
-}
-
-template <typename VV,
-          typename EV,
-          typename GV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::edge_size_type
-undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::edges_size() const noexcept {
-  return this->edges_size_;
-}
-
 
 template <typename VV,
           typename EV,
@@ -2311,38 +2323,9 @@ template <typename VV,
           typename Alloc>
 undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::~undirected_adjacency_list() = default;
 
-template <typename VV,
-          typename EV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::edge_allocator_type
-undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::edge_allocator() const noexcept {
-  return this->edge_alloc_;
-}
-
-template <typename VV,
-          typename EV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertex_set&
-undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertices() {
-  return this->vertices_;
-}
-
-template <typename VV,
-          typename EV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-constexpr const typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertex_set&
-undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertices() const {
-  return this->vertices_;
-}
+//-------------------------------------------------------------------------------------
+// Vertex/edge modification methods (non-accessor) - GV=void specialization
+//-------------------------------------------------------------------------------------
 
 template <typename VV,
           typename EV,
@@ -2373,111 +2356,6 @@ template <typename VV,
 void undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::resize_vertices(vertex_size_type n, 
                                                                                        const vertex_value_type& val) {
   this->vertices_.resize(n, val);
-}
-
-template <typename VV,
-          typename EV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertex_iterator
-undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::begin() {
-  return this->vertices_.begin();
-}
-
-template <typename VV,
-          typename EV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::const_vertex_iterator
-undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::begin() const {
-  return this->vertices_.begin();
-}
-
-template <typename VV,
-          typename EV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::const_vertex_iterator
-undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::cbegin() const {
-  return this->vertices_.cbegin();
-}
-
-template <typename VV,
-          typename EV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertex_iterator
-undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::end() {
-  return this->vertices_.end();
-}
-
-template <typename VV,
-          typename EV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::const_vertex_iterator
-undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::end() const {
-  return this->vertices_.end();
-}
-
-template <typename VV,
-          typename EV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::const_vertex_iterator
-undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::cend() const {
-  return this->vertices_.cend();
-}
-
-template <typename VV,
-          typename EV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertex_iterator
-undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::try_find_vertex(vertex_key_type key) {
-  if (key >= static_cast<vertex_key_type>(this->vertices_.size())) {
-    return this->vertices_.end();
-  }
-  return this->vertices_.begin() + key;
-}
-
-template <typename VV,
-          typename EV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::const_vertex_iterator
-undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::try_find_vertex(vertex_key_type key) const {
-  if (key >= static_cast<vertex_key_type>(this->vertices_.size())) {
-    return this->vertices_.end();
-  }
-  return this->vertices_.begin() + key;
-}
-
-template <typename VV,
-          typename EV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-constexpr typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::edge_size_type
-undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::edges_size() const noexcept {
-  return this->edges_size_;
 }
 
 template <typename VV,

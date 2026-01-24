@@ -930,8 +930,69 @@ protected: // Constructors (protected - for derived class use only)
   // Helper method for validation
   void throw_unordered_edges() const;
   
-public:
-  // Methods will be added in Phase 2
+public: // Accessors
+  /// @brief Get the edge allocator.
+  /// @complexity O(1)
+  constexpr edge_allocator_type edge_allocator() const noexcept;
+
+  /// @brief Access the vertex container.
+  /// @return Reference to the internal vertex container.
+  /// @complexity O(1)
+  constexpr vertex_set&       vertices();
+  constexpr const vertex_set& vertices() const;
+
+  /// @brief Get iterator to first vertex.
+  /// @complexity O(1)
+  constexpr vertex_iterator       begin();
+  constexpr const_vertex_iterator begin() const;
+  constexpr const_vertex_iterator cbegin() const;
+
+  /// @brief Get iterator to one-past-last vertex.
+  /// @complexity O(1)
+  constexpr vertex_iterator       end();
+  constexpr const_vertex_iterator end() const;
+  constexpr const_vertex_iterator cend() const;
+
+  /// @brief Find a vertex by its key (direct container access).
+  /// @param key The vertex key to find.
+  /// @return Iterator to the vertex, or end() if not found.
+  /// @complexity O(1)
+  /// @note This is distinct from the find_vertex CPO. Use this for direct container operations.
+  vertex_iterator       try_find_vertex(vertex_key_type);
+  const_vertex_iterator try_find_vertex(vertex_key_type) const;
+
+  /// @brief Get the number of edges in the graph.
+  /// @return Edge count (each undirected edge counted TWICE - once from each endpoint).
+  /// @note For unique edge count, divide by 2.
+  /// @complexity O(1)
+  constexpr edge_size_type edges_size() const noexcept;
+
+  /// @brief Get iterator to first edge in the graph.
+  /// @note Iterates ALL edges from ALL vertices. Each edge visited twice (from both endpoints).
+  /// @complexity O(1)
+  constexpr edge_iterator       edges_begin() { return edge_iterator(*this, begin()); }
+  constexpr const_edge_iterator edges_begin() const {
+    return const_edge_iterator(*this, const_cast<base_undirected_adjacency_list&>(*this).begin());
+  }
+  constexpr const_edge_iterator edges_cbegin() const {
+    return const_edge_iterator(*this, const_cast<base_undirected_adjacency_list&>(*this).cbegin());
+  }
+
+  /// @brief Get iterator to one-past-last edge.
+  /// @complexity O(1)
+  constexpr edge_iterator       edges_end() { return edge_iterator(*this, end()); }
+  constexpr const_edge_iterator edges_end() const {
+    return const_edge_iterator(*this, const_cast<base_undirected_adjacency_list&>(*this).end());
+  }
+  constexpr const_edge_iterator edges_cend() const {
+    return const_edge_iterator(*this, const_cast<base_undirected_adjacency_list&>(*this).end());
+  }
+
+  /// @brief Get range of all edges.
+  /// @note Each undirected edge appears twice in iteration (once from each endpoint).
+  /// @complexity O(1) to create range, O(V+E) to iterate.
+  edge_range       edges() { return {edges_begin(), edges_end(), this->edges_size_}; }
+  const_edge_range edges() const { return {edges_begin(), edges_end(), this->edges_size_}; }
 };
 
 ///-------------------------------------------------------------------------------------
@@ -1466,68 +1527,20 @@ public:
   undirected_adjacency_list& operator=(undirected_adjacency_list&&) = default;
 
 public: // Accessors
-  /// @brief Get the edge allocator.
-  /// @complexity O(1)
-  constexpr edge_allocator_type edge_allocator() const noexcept;
-
-  /// @brief Access the vertex container.
-  /// @return Reference to the internal vertex container.
-  /// @complexity O(1)
-  constexpr vertex_set&       vertices();
-  constexpr const vertex_set& vertices() const;
-
-  /// @brief Get iterator to first vertex.
-  /// @complexity O(1)
-  constexpr vertex_iterator       begin();
-  constexpr const_vertex_iterator begin() const;
-  constexpr const_vertex_iterator cbegin() const;
-
-  /// @brief Get iterator to one-past-last vertex.
-  /// @complexity O(1)
-  constexpr vertex_iterator       end();
-  constexpr const_vertex_iterator end() const;
-  constexpr const_vertex_iterator cend() const;
-
-  /// @brief Find a vertex by its key (direct container access).
-  /// @param key The vertex key to find.
-  /// @return Iterator to the vertex, or end() if not found.
-  /// @complexity O(1)
-  /// @note This is distinct from the find_vertex CPO. Use this for direct container operations.
-  vertex_iterator       try_find_vertex(vertex_key_type);
-  const_vertex_iterator try_find_vertex(vertex_key_type) const;
-
-  /// @brief Get the number of edges in the graph.
-  /// @return Edge count (each undirected edge counted TWICE - once from each endpoint).
-  /// @note For unique edge count, divide by 2.
-  /// @complexity O(1)
-  constexpr edge_size_type edges_size() const noexcept;
-
-  /// @brief Get iterator to first edge in the graph.
-  /// @note Iterates ALL edges from ALL vertices. Each edge visited twice (from both endpoints).
-  /// @complexity O(1)
-  constexpr edge_iterator       edges_begin() { return edge_iterator(*this, begin()); }
-  constexpr const_edge_iterator edges_begin() const {
-    return const_edge_iterator(*this, const_cast<graph_type&>(*this).begin());
-  }
-  constexpr const_edge_iterator edges_cbegin() const {
-    return const_edge_iterator(*this, const_cast<graph_type&>(*this).cbegin());
-  }
-
-  /// @brief Get iterator to one-past-last edge.
-  /// @complexity O(1)
-  constexpr edge_iterator       edges_end() { return edge_iterator(*this, end()); }
-  constexpr const_edge_iterator edges_end() const {
-    return const_edge_iterator(*this, const_cast<graph_type&>(*this).end());
-  }
-  constexpr const_edge_iterator edges_cend() const {
-    return const_edge_iterator(*this, const_cast<graph_type&>(*this).end());
-  }
-
-  /// @brief Get range of all edges.
-  /// @note Each undirected edge appears twice in iteration (once from each endpoint).
-  /// @complexity O(1) to create range, O(V+E) to iterate.
-  edge_range       edges() { return {edges_begin(), edges_end(), this->edges_size_}; }
-  const_edge_range edges() const { return {edges_begin(), edges_end(), this->edges_size_}; }
+  // Base class accessors
+  using base_type::edge_allocator;
+  using base_type::vertices;
+  using base_type::begin;
+  using base_type::cbegin;
+  using base_type::end;
+  using base_type::cend;
+  using base_type::try_find_vertex;
+  using base_type::edges_size;
+  using base_type::edges_begin;
+  using base_type::edges_end;
+  using base_type::edges_cbegin;
+  using base_type::edges_cend;
+  using base_type::edges;
 
   // Graph value accessors
   /// @brief Access the graph-level value.
@@ -1994,43 +2007,21 @@ public:
   undirected_adjacency_list& operator=(const undirected_adjacency_list& other);
   undirected_adjacency_list& operator=(undirected_adjacency_list&&) = default;
 
-public:
-  constexpr edge_allocator_type edge_allocator() const noexcept;
-
-  constexpr vertex_set&       vertices();
-  constexpr const vertex_set& vertices() const;
-
-  constexpr vertex_iterator       begin();
-  constexpr const_vertex_iterator begin() const;
-  constexpr const_vertex_iterator cbegin() const;
-
-  constexpr vertex_iterator       end();
-  constexpr const_vertex_iterator end() const;
-  constexpr const_vertex_iterator cend() const;
-
-  vertex_iterator       try_find_vertex(vertex_key_type);
-  const_vertex_iterator try_find_vertex(vertex_key_type) const;
-
-  constexpr edge_size_type edges_size() const noexcept;
-
-  constexpr edge_iterator       edges_begin() { return edge_iterator(*this, begin()); }
-  constexpr const_edge_iterator edges_begin() const {
-    return const_edge_iterator(*this, const_cast<graph_type&>(*this).begin());
-  }
-  constexpr const_edge_iterator edges_cbegin() const {
-    return const_edge_iterator(*this, const_cast<graph_type&>(*this).cbegin());
-  }
-
-  constexpr edge_iterator       edges_end() { return edge_iterator(*this, end()); }
-  constexpr const_edge_iterator edges_end() const {
-    return const_edge_iterator(*this, const_cast<graph_type&>(*this).end());
-  }
-  constexpr const_edge_iterator edges_cend() const {
-    return const_edge_iterator(*this, const_cast<graph_type&>(*this).end());
-  }
-
-  edge_range       edges() { return {edges_begin(), edges_end(), this->edges_size_}; }
-  const_edge_range edges() const { return {edges_begin(), edges_end(), this->edges_size_}; }
+public: // Accessors
+  // Base class accessors
+  using base_type::edge_allocator;
+  using base_type::vertices;
+  using base_type::begin;
+  using base_type::cbegin;
+  using base_type::end;
+  using base_type::cend;
+  using base_type::try_find_vertex;
+  using base_type::edges_size;
+  using base_type::edges_begin;
+  using base_type::edges_end;
+  using base_type::edges_cbegin;
+  using base_type::edges_cend;
+  using base_type::edges;
 
   // Note: No graph_value() methods for GV=void specialization
 
