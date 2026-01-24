@@ -764,8 +764,119 @@ public: // Type Aliases
   using const_vertex_vertex_range    = typename vertex_type::const_vertex_vertex_range;
   using vertex_vertex_size_type      = typename vertex_type::vertex_vertex_size_type;
 
-  // Note: edge_iterator and const_edge_iterator will be moved here in Step 1.5
-  // Note: edge_range and const_edge_range will be added in Step 1.6
+  // Edge iterators (nested classes)
+  class edge_iterator;       // (defined below)
+  class const_edge_iterator; // (defined below)
+  using edge_range       = ranges::subrange<edge_iterator, edge_iterator, ranges::subrange_kind::sized>;
+  using const_edge_range = ranges::subrange<const_edge_iterator, const_edge_iterator, ranges::subrange_kind::sized>;
+
+  class const_edge_iterator {
+  public:
+    using iterator_category = forward_iterator_tag;
+    using iterator_concept  = std::forward_iterator_tag;
+    using value_type        = ual_edge<VV, EV, GV, VId, VContainer, Alloc>;
+    using size_type         = size_t;
+    using difference_type   = ptrdiff_t;
+    using pointer           = value_type const*;
+    using reference         = const value_type&;
+
+  public:
+    const_edge_iterator(const graph_type& g, vertex_iterator u) : g_(&const_cast<graph_type&>(g)), u_(u) {
+      advance_vertex();
+    }
+    const_edge_iterator(const graph_type& g, const_vertex_iterator u) 
+          : g_(&const_cast<graph_type&>(g)), u_(g_->vertices().begin() + (u - g.vertices().begin())) {
+      advance_vertex();
+    }
+    const_edge_iterator(const graph_type& g, vertex_iterator u, vertex_edge_iterator uv)
+          : g_(&const_cast<graph_type&>(g)), u_(u), uv_(uv) {}
+
+    const_edge_iterator() noexcept                               = default;
+    const_edge_iterator(const const_edge_iterator& rhs) noexcept = default;
+    ~const_edge_iterator() noexcept                              = default;
+    const_edge_iterator& operator=(const const_edge_iterator& rhs) = default;
+
+    reference operator*() const { return *uv_; }
+    pointer   operator->() const { return &*uv_; }
+
+    const_edge_iterator& operator++() {
+      advance_edge();
+      return *this;
+    }
+    const_edge_iterator operator++(int) {
+      const_edge_iterator tmp(*this);
+      ++*this;
+      return tmp;
+    }
+
+    bool operator==(const const_edge_iterator& rhs) const noexcept { return uv_ == rhs.uv_ && u_ == rhs.u_; }
+    bool operator!=(const const_edge_iterator& rhs) const noexcept { return !operator==(rhs); }
+
+  protected:
+    void advance_edge() {
+      // next edge for current vertex
+      vertex_key_type ukey = vertex_key(*g_, u_);
+      if (++uv_ != u_->edges_end(*g_, ukey))
+        return;
+
+      // find next vertex with edge(s)
+      ++u_;
+      advance_vertex();
+    }
+
+    void advance_vertex() {
+      // at exit, if u_ != g.vertices().end() then uv_ will refer to a valid edge
+      for (; u_ != g_->vertices().end(); ++u_) {
+        if (u_->edges_size() > 0) {
+          vertex_key_type ukey = vertex_key(*g_, u_);
+          uv_                  = u_->edges_begin(*g_, ukey);
+          return;
+        }
+      }
+    }
+
+  protected:
+    graph_type*          g_;
+    vertex_iterator      u_;
+    vertex_edge_iterator uv_;
+  };
+
+  class edge_iterator : public const_edge_iterator {
+  public:
+    using base_t            = const_edge_iterator;
+    using iterator_category = typename base_t::iterator_category;
+    using value_type        = typename base_t::value_type;
+    using size_type         = typename base_t::size_type;
+    using difference_type   = typename base_t::difference_type;
+    using pointer           = value_type*;
+    using reference         = value_type&;
+
+  public:
+    edge_iterator(graph_type& g, vertex_iterator u) noexcept : const_edge_iterator(g, u) {}
+    edge_iterator(graph_type& g, vertex_iterator u, vertex_edge_iterator uv) : const_edge_iterator(g, u, uv) {}
+
+    edge_iterator() noexcept : const_edge_iterator(){};
+    edge_iterator(const edge_iterator& rhs) noexcept : const_edge_iterator(rhs) {}
+    edge_iterator(const_edge_iterator& rhs) : const_edge_iterator(rhs) {}
+    ~edge_iterator() {}
+    edge_iterator& operator=(const edge_iterator& rhs) noexcept {
+      const_edge_iterator::operator=(rhs);
+      return *this;
+    }
+
+    reference operator*() const { return *this->uv_; }
+    pointer   operator->() const { return &*this->uv_; }
+
+    edge_iterator& operator++() {
+      this->advance_edge();
+      return *this;
+    }
+    edge_iterator operator++(int) {
+      edge_iterator tmp(*this);
+      ++*this;
+      return tmp;
+    }
+  };
   
 protected: // Data Members (protected for derived class access)
   vertex_set vertices_;
@@ -1174,118 +1285,11 @@ public:
   using const_vertex_vertex_range    = typename vertex_type::const_vertex_vertex_range;
   using vertex_vertex_size_type      = typename vertex_type::vertex_vertex_size_type;
 
-  class edge_iterator;       // (defined below)
-  class const_edge_iterator; // (defined below)
-  using edge_range       = ranges::subrange<edge_iterator, edge_iterator, ranges::subrange_kind::sized>;
-  using const_edge_range = ranges::subrange<const_edge_iterator, const_edge_iterator, ranges::subrange_kind::sized>;
-
-  class const_edge_iterator {
-  public:
-    using iterator_category = forward_iterator_tag;
-    using iterator_concept  = std::forward_iterator_tag;
-    using value_type        = ual_edge<VV, EV, GV, VId, VContainer, Alloc>;
-    using size_type         = size_t;
-    using difference_type   = ptrdiff_t;
-    using pointer           = value_type const*;
-    using reference         = const value_type&;
-
-  public:
-    const_edge_iterator(const graph_type& g, vertex_iterator u) : g_(&const_cast<graph_type&>(g)), u_(u) {
-      advance_vertex();
-    }
-    const_edge_iterator(const graph_type& g, const_vertex_iterator u) 
-          : g_(&const_cast<graph_type&>(g)), u_(g_->vertices().begin() + (u - g.vertices().begin())) {
-      advance_vertex();
-    }
-    const_edge_iterator(const graph_type& g, vertex_iterator u, vertex_edge_iterator uv)
-          : g_(&const_cast<graph_type&>(g)), u_(u), uv_(uv) {}
-
-    const_edge_iterator() noexcept                               = default;
-    const_edge_iterator(const const_edge_iterator& rhs) noexcept = default;
-    ~const_edge_iterator() noexcept                              = default;
-    const_edge_iterator& operator=(const const_edge_iterator& rhs) = default;
-
-    reference operator*() const { return *uv_; }
-    pointer   operator->() const { return &*uv_; }
-
-    const_edge_iterator& operator++() {
-      advance_edge();
-      return *this;
-    }
-    const_edge_iterator operator++(int) {
-      const_edge_iterator tmp(*this);
-      ++*this;
-      return tmp;
-    }
-
-    bool operator==(const const_edge_iterator& rhs) const noexcept { return uv_ == rhs.uv_ && u_ == rhs.u_; }
-    bool operator!=(const const_edge_iterator& rhs) const noexcept { return !operator==(rhs); }
-
-  protected:
-    void advance_edge() {
-      // next edge for current vertex
-      vertex_key_type ukey = vertex_key(*g_, u_);
-      if (++uv_ != u_->edges_end(*g_, ukey))
-        return;
-
-      // find next vertex with edge(s)
-      ++u_;
-      advance_vertex();
-    }
-
-    void advance_vertex() {
-      // at exit, if u_ != g.vertices().end() then uv_ will refer to a valid edge
-      for (; u_ != g_->vertices().end(); ++u_) {
-        if (u_->edges_size() > 0) {
-          vertex_key_type ukey = vertex_key(*g_, u_);
-          uv_                  = u_->edges_begin(*g_, ukey);
-          return;
-        }
-      }
-    }
-
-  protected:
-    graph_type*          g_;
-    vertex_iterator      u_;
-    vertex_edge_iterator uv_;
-  };
-
-  class edge_iterator : public const_edge_iterator {
-  public:
-    using base_t            = const_edge_iterator;
-    using iterator_category = typename base_t::iterator_category;
-    using value_type        = typename base_t::value_type;
-    using size_type         = typename base_t::size_type;
-    using difference_type   = typename base_t::difference_type;
-    using pointer           = value_type*;
-    using reference         = value_type&;
-
-  public:
-    edge_iterator(graph_type& g, vertex_iterator u) noexcept : const_edge_iterator(g, u) {}
-    edge_iterator(graph_type& g, vertex_iterator u, vertex_edge_iterator uv) : const_edge_iterator(g, u, uv) {}
-
-    edge_iterator() noexcept : const_edge_iterator(){};
-    edge_iterator(const edge_iterator& rhs) noexcept : const_edge_iterator(rhs) {}
-    edge_iterator(const_edge_iterator& rhs) : const_edge_iterator(rhs) {}
-    ~edge_iterator() {}
-    edge_iterator& operator=(const edge_iterator& rhs) noexcept {
-      const_edge_iterator::operator=(rhs);
-      return *this;
-    }
-
-    reference operator*() const { return *this->uv_; }
-    pointer   operator->() const { return &*this->uv_; }
-
-    edge_iterator& operator++() {
-      this->advance_edge();
-      return *this;
-    }
-    edge_iterator operator++(int) {
-      edge_iterator tmp(*this);
-      ++*this;
-      return tmp;
-    }
-  };
+  // Use edge iterators from base class
+  using edge_iterator       = typename base_type::edge_iterator;
+  using const_edge_iterator = typename base_type::const_edge_iterator;
+  using edge_range          = typename base_type::edge_range;
+  using const_edge_range    = typename base_type::const_edge_range;
 
 public:
   undirected_adjacency_list()                                         = default;
@@ -1932,114 +1936,11 @@ public:
   using const_vertex_vertex_range    = typename vertex_type::const_vertex_vertex_range;
   using vertex_vertex_size_type      = typename vertex_type::vertex_vertex_size_type;
 
-  class edge_iterator;
-  class const_edge_iterator;
-  using edge_range       = ranges::subrange<edge_iterator, edge_iterator, ranges::subrange_kind::sized>;
-  using const_edge_range = ranges::subrange<const_edge_iterator, const_edge_iterator, ranges::subrange_kind::sized>;
-
-  class const_edge_iterator {
-  public:
-    using iterator_category = forward_iterator_tag;
-    using iterator_concept  = std::forward_iterator_tag;
-    using value_type        = ual_edge<VV, EV, void, VId, VContainer, Alloc>;
-    using size_type         = size_t;
-    using difference_type   = ptrdiff_t;
-    using pointer           = value_type const*;
-    using reference         = const value_type&;
-
-  public:
-    const_edge_iterator(const graph_type& g, vertex_iterator u) : g_(&const_cast<graph_type&>(g)), u_(u) {
-      advance_vertex();
-    }
-    const_edge_iterator(const graph_type& g, const_vertex_iterator u) 
-          : g_(&const_cast<graph_type&>(g)), u_(g_->vertices().begin() + (u - g.vertices().begin())) {
-      advance_vertex();
-    }
-    const_edge_iterator(const graph_type& g, vertex_iterator u, vertex_edge_iterator uv)
-          : g_(&const_cast<graph_type&>(g)), u_(u), uv_(uv) {}
-
-    const_edge_iterator() noexcept                               = default;
-    const_edge_iterator(const const_edge_iterator& rhs) noexcept = default;
-    ~const_edge_iterator() noexcept                              = default;
-    const_edge_iterator& operator=(const const_edge_iterator& rhs) = default;
-
-    reference operator*() const { return *uv_; }
-    pointer   operator->() const { return &*uv_; }
-
-    const_edge_iterator& operator++() {
-      advance_edge();
-      return *this;
-    }
-    const_edge_iterator operator++(int) {
-      const_edge_iterator tmp(*this);
-      ++*this;
-      return tmp;
-    }
-
-    bool operator==(const const_edge_iterator& rhs) const noexcept { return uv_ == rhs.uv_ && u_ == rhs.u_; }
-    bool operator!=(const const_edge_iterator& rhs) const noexcept { return !operator==(rhs); }
-
-  protected:
-    void advance_edge() {
-      vertex_key_type ukey = vertex_key(*g_, u_);
-      if (++uv_ != u_->edges_end(*g_, ukey))
-        return;
-      ++u_;
-      advance_vertex();
-    }
-
-    void advance_vertex() {
-      for (; u_ != g_->vertices().end(); ++u_) {
-        if (u_->edges_size() > 0) {
-          vertex_key_type ukey = vertex_key(*g_, u_);
-          uv_                  = u_->edges_begin(*g_, ukey);
-          return;
-        }
-      }
-    }
-
-  protected:
-    graph_type*          g_;
-    vertex_iterator      u_;
-    vertex_edge_iterator uv_;
-  };
-
-  class edge_iterator : public const_edge_iterator {
-  public:
-    using base_t            = const_edge_iterator;
-    using iterator_category = typename base_t::iterator_category;
-    using value_type        = typename base_t::value_type;
-    using size_type         = typename base_t::size_type;
-    using difference_type   = typename base_t::difference_type;
-    using pointer           = value_type*;
-    using reference         = value_type&;
-
-  public:
-    edge_iterator(graph_type& g, vertex_iterator u) noexcept : const_edge_iterator(g, u) {}
-    edge_iterator(graph_type& g, vertex_iterator u, vertex_edge_iterator uv) : const_edge_iterator(g, u, uv) {}
-
-    edge_iterator() noexcept : const_edge_iterator(){};
-    edge_iterator(const edge_iterator& rhs) noexcept : const_edge_iterator(rhs) {}
-    edge_iterator(const_edge_iterator& rhs) : const_edge_iterator(rhs) {}
-    ~edge_iterator() {}
-    edge_iterator& operator=(const edge_iterator& rhs) noexcept {
-      const_edge_iterator::operator=(rhs);
-      return *this;
-    }
-
-    reference operator*() const { return *this->uv_; }
-    pointer   operator->() const { return &*this->uv_; }
-
-    edge_iterator& operator++() {
-      this->advance_edge();
-      return *this;
-    }
-    edge_iterator operator++(int) {
-      edge_iterator tmp(*this);
-      ++*this;
-      return tmp;
-    }
-  };
+  // Use edge iterators from base class
+  using edge_iterator       = typename base_type::edge_iterator;
+  using const_edge_iterator = typename base_type::const_edge_iterator;
+  using edge_range          = typename base_type::edge_range;
+  using const_edge_range    = typename base_type::const_edge_range;
 
 public:
   // Forward declare all the same public methods as the primary template
