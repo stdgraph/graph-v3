@@ -1348,6 +1348,45 @@ base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::base_undirec
 }
 
 
+// Destructor
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::~base_undirected_adjacency_list() {
+  // Downcast to graph_type to access clear() method
+  auto& g = static_cast<graph_type&>(*this);
+  g.clear(); // assure edges are deleted using edge_alloc_
+}
+
+// Copy assignment operator
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>& 
+base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::operator=(
+    const base_undirected_adjacency_list& other) {
+  if (this != &other) {
+    // Use copy-and-swap idiom
+    // Note: This requires derived class to have proper copy constructor
+    base_undirected_adjacency_list tmp(other);
+    
+    // Swap base members
+    vertices_.swap(tmp.vertices_);
+    std::swap(edges_size_, tmp.edges_size_);
+    std::swap(vertex_alloc_, tmp.vertex_alloc_);
+    std::swap(edge_alloc_, tmp.edge_alloc_);
+  }
+  return *this;
+}
+
 // Helper method for validation
 template <typename VV,
           typename EV,
@@ -1577,9 +1616,7 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::~undirected_adjacency_list() {
-  clear(); // assure edges are deleted using this->edge_alloc_
-}
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::~undirected_adjacency_list() = default;
 
 
 template <typename VV,
@@ -2272,9 +2309,7 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::~undirected_adjacency_list() {
-  clear(); // assure edges are deleted using this->edge_alloc_
-}
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::~undirected_adjacency_list() = default;
 
 template <typename VV,
           typename EV,

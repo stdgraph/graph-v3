@@ -899,6 +899,12 @@ protected: // Constructors (protected - for derived class use only)
   // Move constructor - moves vertices and edges (derived class handles graph_value_)
   base_undirected_adjacency_list(base_undirected_adjacency_list&& other) noexcept = default;
   
+  // Destructor
+  ~base_undirected_adjacency_list();
+  
+  // Copy assignment operator
+  base_undirected_adjacency_list& operator=(const base_undirected_adjacency_list& other);
+  
   // Move assignment operator
   base_undirected_adjacency_list& operator=(base_undirected_adjacency_list&& other) noexcept = default;
   
