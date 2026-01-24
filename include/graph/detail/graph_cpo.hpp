@@ -2366,7 +2366,7 @@ namespace _cpo_impls {
     // =========================================================================
     
     namespace _edge_value {
-        enum class _St { _none, _member, _adl, _default };
+        enum class _St { _none, _member, _adl, _value_fn, _default };
         
         // Check for g.edge_value(uv) member function
         // Note: Uses G (not G&) to preserve const qualification
@@ -2381,6 +2381,15 @@ namespace _cpo_impls {
         concept _has_adl = requires(G g, const E& uv) {
             { edge_value(g, uv) };
         };
+        
+        // Check for uv.value() member function (only for non-descriptor edge types)
+        // Note: Uses E (not E&) to preserve const qualification
+        template<typename G, typename E>
+        concept _has_value_fn = 
+            (!is_edge_descriptor_v<std::remove_cvref_t<E>>) &&
+            requires(const E& uv) {
+                { uv.value() };
+            };
         
         // Check if we can use default: uv.inner_value(v) where v = uv.source().underlying_value(g)
         // Note: Uses G (not G&) to preserve const qualification
@@ -2402,6 +2411,9 @@ namespace _cpo_impls {
             } else if constexpr (_has_adl<G, E>) {
                 return {_St::_adl, 
                         noexcept(edge_value(std::declval<G>(), std::declval<const E&>()))};
+            } else if constexpr (_has_value_fn<G, E>) {
+                return {_St::_value_fn, 
+                        noexcept(std::declval<const E&>().value())};
             } else if constexpr (_has_default<G, E>) {
                 // Default to false (safe) since we have conditional logic
                 return {_St::_default, false};
@@ -2421,8 +2433,9 @@ namespace _cpo_impls {
              * 
              * Resolution order:
              * 1. g.edge_value(uv) - Member function (highest priority)
-             * 2. edge_value(g, uv) - ADL (medium priority)
-             * 3. uv.inner_value(edges) - Default using edge descriptor's inner_value (lowest priority)
+             * 2. edge_value(g, uv) - ADL (high priority)
+             * 3. uv.value() - Member function on edge (medium priority)
+             * 4. uv.inner_value(edges) - Default using edge descriptor's inner_value (lowest priority)
              * 
              * The default implementation:
              * - Uses uv.inner_value(edges) where edges = uv.source().inner_value(g)
@@ -2451,6 +2464,8 @@ namespace _cpo_impls {
                     return g.edge_value(std::forward<E>(uv));
                 } else if constexpr (_Choice<_G, _E>._Strategy == _St::_adl) {
                     return edge_value(g, std::forward<E>(uv));
+                } else if constexpr (_Choice<_G, _E>._Strategy == _St::_value_fn) {
+                    return std::forward<E>(uv).value();
                 } else if constexpr (_Choice<_G, _E>._Strategy == _St::_default) {
                     // Get vertex from underlying_value - works for both vov and raw adjacency lists
                     // For vov: gives vertex, edge_descriptor extracts properties from it

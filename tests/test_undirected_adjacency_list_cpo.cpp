@@ -529,7 +529,7 @@ TEST_CASE("edges(g) graph-level CPO", "[undirected_adjacency_list][cpo][edges]")
             auto uid = static_cast<unsigned int>(&v - &g.vertices()[0]);
             for (auto& e : v.edges(g, uid)) {
                 ++count;
-                total_value += e.value;
+                total_value += e.value();
             }
         }
         

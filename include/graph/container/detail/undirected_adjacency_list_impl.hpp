@@ -1181,7 +1181,7 @@ base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::base_undirec
       vertices_.push_back(vertex_type(vertices_, static_cast<vertex_id_type>(vertices_.size())));
     } else {
       // Access vertex value member directly
-      vertices_.push_back(vertex_type(vertices_, static_cast<vertex_id_type>(vertices_.size()), v.value));
+      vertices_.push_back(vertex_type(vertices_, static_cast<vertex_id_type>(vertices_.size()), v.value()));
     }
   }
   
@@ -1200,7 +1200,7 @@ base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::base_undirec
         if constexpr (std::is_void_v<EV>) {
           g.create_edge(src_key, tgt_key);
         } else {
-          g.create_edge(src_key, tgt_key, uv->value);
+          g.create_edge(src_key, tgt_key, uv->value());
         }
       }
     }

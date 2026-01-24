@@ -241,8 +241,8 @@ public:
   using graph_type = undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>;
 
 public:
-  constexpr ual_edge_value(const value_type& val) : value(val) {}
-  constexpr ual_edge_value(value_type&& val) : value(std::move(val)) {}
+  constexpr ual_edge_value(const value_type& val) : value_(val) {}
+  constexpr ual_edge_value(value_type&& val) : value_(std::move(val)) {}
 
   constexpr ual_edge_value()                        = default;
   constexpr ual_edge_value(const ual_edge_value&)   = default;
@@ -252,8 +252,11 @@ public:
   constexpr ual_edge_value& operator=(const ual_edge_value&) = default;
   constexpr ual_edge_value& operator=(ual_edge_value&&)      = default;
 
+  constexpr value_type&       value() noexcept { return value_; }
+  constexpr const value_type& value() const noexcept { return value_; }
+
 public:
-  value_type value = value_type();
+  value_type value_ = value_type();
 };
 
 ///-------------------------------------------------------------------------------------
@@ -288,8 +291,8 @@ public:
   using graph_type = undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>;
 
 public:
-  constexpr ual_vertex_value(const value_type& val) : value(val) {}
-  constexpr ual_vertex_value(value_type&& val) : value(std::move(val)) {}
+  constexpr ual_vertex_value(const value_type& val) : value_(val) {}
+  constexpr ual_vertex_value(value_type&& val) : value_(std::move(val)) {}
 
   constexpr ual_vertex_value()                          = default;
   constexpr ual_vertex_value(const ual_vertex_value&)   = default;
@@ -299,8 +302,11 @@ public:
   constexpr ual_vertex_value& operator=(const ual_vertex_value&) = default;
   constexpr ual_vertex_value& operator=(ual_vertex_value&&)      = default;
 
+  constexpr value_type&       value() noexcept { return value_; }
+  constexpr const value_type& value() const noexcept { return value_; }
+
 public:
-  value_type value = value_type();
+  value_type value_ = value_type();
 };
 
 ///-------------------------------------------------------------------------------------
@@ -692,12 +698,12 @@ private: // CPO support via ADL (friend functions)
   friend constexpr decltype(auto) edge_value(graph_type&, ual_edge& e) noexcept
     requires (!std::is_void_v<EV>)
   {
-    return (e.base_value_type::value);
+    return (e.base_value_type::value_);
   }
   friend constexpr decltype(auto) edge_value(const graph_type&, const ual_edge& e) noexcept
     requires (!std::is_void_v<EV>)
   {
-    return (e.base_value_type::value);
+    return (e.base_value_type::value_);
   }
 };
 
@@ -1784,13 +1790,13 @@ private: // CPO support via ADL (friend functions)
     requires vertex_descriptor_type<U> && (!std::is_void_v<VV>)
   friend constexpr decltype(auto) vertex_value(undirected_adjacency_list& g, const U& u) noexcept {
     auto& vtx = u.inner_value(g.vertices_);
-    return (vtx.base_value_type::value);
+    return (vtx.base_value_type::value_);
   }
   template <typename U>
     requires vertex_descriptor_type<U> && (!std::is_void_v<VV>)
   friend constexpr decltype(auto) vertex_value(const undirected_adjacency_list& g, const U& u) noexcept {
     const auto& vtx = u.inner_value(g.vertices_);
-    return (vtx.base_value_type::value);
+    return (vtx.base_value_type::value_);
   }
 
   // Note: edges(g, u) removed - CPO uses base class member function edges(u)
@@ -2104,13 +2110,13 @@ private:
     requires vertex_descriptor_type<U> && (!std::is_void_v<VV>)
   friend constexpr decltype(auto) vertex_value(undirected_adjacency_list& g, const U& u) noexcept {
     auto& vtx = u.inner_value(g.vertices_);
-    return (vtx.base_value_type::value);
+    return (vtx.base_value_type::value_);
   }
   template <typename U>
     requires vertex_descriptor_type<U> && (!std::is_void_v<VV>)
   friend constexpr decltype(auto) vertex_value(const undirected_adjacency_list& g, const U& u) noexcept {
     const auto& vtx = u.inner_value(g.vertices_);
-    return (vtx.base_value_type::value);
+    return (vtx.base_value_type::value_);
   }
 
   // Note: edges(g, u) removed - CPO uses base class member function edges(u)

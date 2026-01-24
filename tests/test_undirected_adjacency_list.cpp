@@ -11,12 +11,12 @@ using namespace graph::container;
 using std::vector;
 using std::set;
 
-// Type alias for vertex key to avoid conversion warnings
+// Type alias for vertex id to avoid conversion warnings
 using VKey = unsigned int;
 
-// Helper to convert iterator difference to vertex key
+// Helper to convert iterator difference to vertex id
 template<typename Iter, typename G>
-constexpr VKey vertex_key(Iter it, const G& g) {
+constexpr VKey vertex_id(Iter it, const G& g) {
     return static_cast<VKey>(it - g.begin());
 }
 
@@ -64,12 +64,12 @@ TEST_CASE("create single vertex", "[undirected_adjacency_list][vertex][create]")
     }
     
     SECTION("vertex has correct value") {
-        REQUIRE(v_it->value == 42);
-        REQUIRE(g.vertices()[0].value == 42);
+        REQUIRE(v_it->value() == 42);
+        REQUIRE(g.vertices()[0].value() == 42);
     }
     
     SECTION("vertex key is 0") {
-        VKey k = vertex_key(v_it, g);
+        VKey k = vertex_id(v_it, g);
         REQUIRE(k == 0);
     }
     
@@ -97,15 +97,15 @@ TEST_CASE("create multiple vertices", "[undirected_adjacency_list][vertex][creat
     }
     
     SECTION("vertices have correct values") {
-        REQUIRE(v1->value == 10);
-        REQUIRE(v2->value == 20);
-        REQUIRE(v3->value == 30);
+        REQUIRE(v1->value() == 10);
+        REQUIRE(v2->value() == 20);
+        REQUIRE(v3->value() == 30);
     }
     
     SECTION("vertices have sequential keys") {
-        REQUIRE(vertex_key(v1, g) == 0);
-        REQUIRE(vertex_key(v2, g) == 1);
-        REQUIRE(vertex_key(v3, g) == 2);
+        REQUIRE(vertex_id(v1, g) == 0);
+        REQUIRE(vertex_id(v2, g) == 1);
+        REQUIRE(vertex_id(v3, g) == 2);
     }
 }
 
@@ -113,9 +113,9 @@ TEST_CASE("create single edge", "[undirected_adjacency_list][edge][create]") {
     undirected_adjacency_list<int, int> g;
     
     auto v1 = g.create_vertex(10);
-    VKey k1 = vertex_key(v1, g);
+    VKey k1 = vertex_id(v1, g);
     auto v2 = g.create_vertex(20);
-    VKey k2 = vertex_key(v2, g);
+    VKey k2 = vertex_id(v2, g);
     
     auto e_it = g.create_edge(k1, k2, 100);
     
@@ -124,12 +124,12 @@ TEST_CASE("create single edge", "[undirected_adjacency_list][edge][create]") {
     }
     
     SECTION("edge has correct value") {
-        REQUIRE(e_it->value == 100);
+        REQUIRE(e_it->value() == 100);
     }
     
     SECTION("edge connects correct vertices") {
-        REQUIRE(e_it->source_vertex_key(g) == k1);
-        REQUIRE(e_it->target_vertex_key(g) == k2);
+        REQUIRE(e_it->source_vertex_id(g) == k1);
+        REQUIRE(e_it->target_vertex_id(g) == k2);
     }
     
     SECTION("both vertices report the edge") {
@@ -142,11 +142,11 @@ TEST_CASE("create multiple edges", "[undirected_adjacency_list][edge][create]") 
     undirected_adjacency_list<int, int> g;
     
     auto v1 = g.create_vertex(10);
-    VKey k1 = vertex_key(v1, g);
+    VKey k1 = vertex_id(v1, g);
     auto v2 = g.create_vertex(20);
-    VKey k2 = vertex_key(v2, g);
+    VKey k2 = vertex_id(v2, g);
     auto v3 = g.create_vertex(30);
-    VKey k3 = vertex_key(v3, g);
+    VKey k3 = vertex_id(v3, g);
     
     g.create_edge(k1, k2, 100);
     g.create_edge(k2, k3, 200);
@@ -167,11 +167,11 @@ TEST_CASE("remove edge", "[undirected_adjacency_list][edge][erase]") {
     undirected_adjacency_list<int, int> g;
     
     auto v1 = g.create_vertex(10);
-    VKey k1 = vertex_key(v1, g);
+    VKey k1 = vertex_id(v1, g);
     auto v2 = g.create_vertex(20);
-    VKey k2 = vertex_key(v2, g);
+    VKey k2 = vertex_id(v2, g);
     auto v3 = g.create_vertex(30);
-    VKey k3 = vertex_key(v3, g);
+    VKey k3 = vertex_id(v3, g);
     
     g.create_edge(k1, k2, 100);
     g.create_edge(k2, k3, 200);
@@ -199,34 +199,34 @@ TEST_CASE("modify vertex value", "[undirected_adjacency_list][vertex][modify]") 
     undirected_adjacency_list<int, int> g;
     
     auto v = g.create_vertex(10);
-    REQUIRE(v->value == 10);
+    REQUIRE(v->value() == 10);
     
-    v->value = 99;
-    REQUIRE(v->value == 99);
-    REQUIRE(g.vertices()[0].value == 99);
+    v->value() = 99;
+    REQUIRE(v->value() == 99);
+    REQUIRE(g.vertices()[0].value() == 99);
 }
 
 TEST_CASE("modify edge value", "[undirected_adjacency_list][edge][modify]") {
     undirected_adjacency_list<int, int> g;
     
     auto v1 = g.create_vertex(10);
-    VKey k1 = vertex_key(v1, g);
+    VKey k1 = vertex_id(v1, g);
     auto v2 = g.create_vertex(20);
-    VKey k2 = vertex_key(v2, g);
+    VKey k2 = vertex_id(v2, g);
     
     auto e = g.create_edge(k1, k2, 100);
-    REQUIRE(e->value == 100);
+    REQUIRE(e->value() == 100);
     
-    e->value = 999;
+    e->value() = 999;
     
     SECTION("edge value updated via iterator") {
-        REQUIRE(e->value == 999);
+        REQUIRE(e->value() == 999);
     }
     
     SECTION("value visible from vertex edge list") {
         auto& v = g.vertices()[k1];
         auto edge_it = v.edges(g, k1).begin();
-        REQUIRE(edge_it->value == 999);
+        REQUIRE(edge_it->value() == 999);
     }
 }
 
@@ -240,7 +240,7 @@ TEST_CASE("iterate vertices", "[undirected_adjacency_list][vertex][iterate]") {
     SECTION("range-for iteration") {
         vector<int> values;
         for (auto& v : g.vertices()) {
-            values.push_back(v.value);
+            values.push_back(v.value());
         }
         
         REQUIRE(values.size() == 3);
@@ -251,11 +251,11 @@ TEST_CASE("iterate vertices", "[undirected_adjacency_list][vertex][iterate]") {
     
     SECTION("iterator-based iteration") {
         auto it = g.begin();
-        REQUIRE(it->value == 10);
+        REQUIRE(it->value() == 10);
         ++it;
-        REQUIRE(it->value == 20);
+        REQUIRE(it->value() == 20);
         ++it;
-        REQUIRE(it->value == 30);
+        REQUIRE(it->value() == 30);
         ++it;
         REQUIRE(it == g.end());
     }
@@ -265,11 +265,11 @@ TEST_CASE("iterate edges from vertex", "[undirected_adjacency_list][edge][iterat
     undirected_adjacency_list<int, int> g;
     
     auto v1 = g.create_vertex(10);
-    VKey k1 = vertex_key(v1, g);
+    VKey k1 = vertex_id(v1, g);
     auto v2 = g.create_vertex(20);
-    VKey k2 = vertex_key(v2, g);
+    VKey k2 = vertex_id(v2, g);
     auto v3 = g.create_vertex(30);
-    VKey k3 = vertex_key(v3, g);
+    VKey k3 = vertex_id(v3, g);
     
     g.create_edge(k1, k2, 100);
     g.create_edge(k1, k3, 300);
@@ -278,7 +278,7 @@ TEST_CASE("iterate edges from vertex", "[undirected_adjacency_list][edge][iterat
     vector<int> edge_values;
     
     for (auto& e : v.edges(g, k1)) {
-        edge_values.push_back(e.value);
+        edge_values.push_back(e.value());
     }
     
     REQUIRE(edge_values.size() == 2);
@@ -290,7 +290,7 @@ TEST_CASE("iterate edges from vertex", "[undirected_adjacency_list][edge][iterat
 TEST_CASE("self-loop value storage", "[undirected_adjacency_list][edge][self_loop]") {
     undirected_adjacency_list<int, int> g;
     auto v_it = g.create_vertex(10);
-    VKey k = vertex_key(v_it, g);
+    VKey k = vertex_id(v_it, g);
     
     g.create_edge(k, k, 100);
     
@@ -327,13 +327,13 @@ TEST_CASE("vertex_iterator basic", "[undirected_adjacency_list][iterators][verte
     
     auto it = g.begin();
     REQUIRE(it != g.end());
-    REQUIRE(it->value == 10);
+    REQUIRE(it->value() == 10);
     
     ++it;
-    REQUIRE(it->value == 20);
+    REQUIRE(it->value() == 20);
     
     ++it;
-    REQUIRE(it->value == 30);
+    REQUIRE(it->value() == 30);
     
     ++it;
     REQUIRE(it == g.end());
@@ -347,8 +347,8 @@ TEST_CASE("vertex_iterator postincrement", "[undirected_adjacency_list][iterator
     auto it = g.begin();
     auto old_it = it++;
     
-    REQUIRE(old_it->value == 10);
-    REQUIRE(it->value == 20);
+    REQUIRE(old_it->value() == 10);
+    REQUIRE(it->value() == 20);
 }
 
 TEST_CASE("vertex_iterator dereference", "[undirected_adjacency_list][iterators][vertex]") {
@@ -358,9 +358,9 @@ TEST_CASE("vertex_iterator dereference", "[undirected_adjacency_list][iterators]
     auto it = g.begin();
     auto& vertex = *it;
     
-    REQUIRE(vertex.value == 42);
-    vertex.value = 99;
-    REQUIRE(g.vertices()[0].value == 99);
+    REQUIRE(vertex.value() == 42);
+    vertex.value() = 99;
+    REQUIRE(g.vertices()[0].value() == 99);
 }
 
 TEST_CASE("vertex_iterator comparison", "[undirected_adjacency_list][iterators][vertex]") {
@@ -387,7 +387,7 @@ TEST_CASE("vertex_iterator range-for", "[undirected_adjacency_list][iterators][v
     
     vector<int> values;
     for (auto& v : g.vertices()) {
-        values.push_back(v.value);
+        values.push_back(v.value());
     }
     
     REQUIRE(values == vector<int>{10, 20, 30});
@@ -401,9 +401,9 @@ TEST_CASE("const_vertex_iterator basic", "[undirected_adjacency_list][iterators]
     const auto& cg = g;
     auto it = cg.begin();
     
-    REQUIRE(it->value == 10);
+    REQUIRE(it->value() == 10);
     ++it;
-    REQUIRE(it->value == 20);
+    REQUIRE(it->value() == 20);
     ++it;
     REQUIRE(it == cg.end());
 }
@@ -414,9 +414,9 @@ TEST_CASE("const_vertex_iterator cbegin/cend", "[undirected_adjacency_list][iter
     g.create_vertex(20);
     
     auto it = g.cbegin();
-    REQUIRE(it->value == 10);
+    REQUIRE(it->value() == 10);
     ++it;
-    REQUIRE(it->value == 20);
+    REQUIRE(it->value() == 20);
     ++it;
     REQUIRE(it == g.cend());
 }
@@ -431,7 +431,7 @@ TEST_CASE("const_vertex_iterator range-for", "[undirected_adjacency_list][iterat
     vector<int> values;
     
     for (const auto& v : cg.vertices()) {
-        values.push_back(v.value);
+        values.push_back(v.value());
     }
     
     REQUIRE(values == vector<int>{10, 20, 30});
@@ -440,9 +440,9 @@ TEST_CASE("const_vertex_iterator range-for", "[undirected_adjacency_list][iterat
 TEST_CASE("edge_iterator basic", "[undirected_adjacency_list][iterators][edge]") {
     undirected_adjacency_list<int, int> g;
     auto v1 = g.create_vertex(10);
-    VKey k1 = vertex_key(v1, g);
+    VKey k1 = vertex_id(v1, g);
     auto v2 = g.create_vertex(20);
-    VKey k2 = vertex_key(v2, g);
+    VKey k2 = vertex_id(v2, g);
     
     g.create_edge(k1, k2, 100);
     g.create_edge(k1, k2, 200);
@@ -451,10 +451,10 @@ TEST_CASE("edge_iterator basic", "[undirected_adjacency_list][iterators][edge]")
     auto it = vertex.edges(g, k1).begin();
     
     REQUIRE(it != vertex.edges(g, k1).end());
-    REQUIRE((it->value == 100 || it->value == 200));
+    REQUIRE((it->value() == 100 || it->value() == 200));
     
     ++it;
-    REQUIRE((it->value == 100 || it->value == 200));
+    REQUIRE((it->value() == 100 || it->value() == 200));
     
     ++it;
     REQUIRE(it == vertex.edges(g, k1).end());
@@ -463,9 +463,9 @@ TEST_CASE("edge_iterator basic", "[undirected_adjacency_list][iterators][edge]")
 TEST_CASE("edge_iterator dereference", "[undirected_adjacency_list][iterators][edge]") {
     undirected_adjacency_list<int, int> g;
     auto v1 = g.create_vertex(10);
-    VKey k1 = vertex_key(v1, g);
+    VKey k1 = vertex_id(v1, g);
     auto v2 = g.create_vertex(20);
-    VKey k2 = vertex_key(v2, g);
+    VKey k2 = vertex_id(v2, g);
     
     g.create_edge(k1, k2, 100);
     
@@ -473,19 +473,19 @@ TEST_CASE("edge_iterator dereference", "[undirected_adjacency_list][iterators][e
     auto it = vertex.edges(g, k1).begin();
     auto& edge = *it;
     
-    REQUIRE(edge.value == 100);
-    edge.value = 999;
+    REQUIRE(edge.value() == 100);
+    edge.value() = 999;
     
     auto it2 = vertex.edges(g, k1).begin();
-    REQUIRE(it2->value == 999);
+    REQUIRE(it2->value() == 999);
 }
 
 TEST_CASE("edge_iterator comparison", "[undirected_adjacency_list][iterators][edge]") {
     undirected_adjacency_list<int, int> g;
     auto v1 = g.create_vertex(10);
-    VKey k1 = vertex_key(v1, g);
+    VKey k1 = vertex_id(v1, g);
     auto v2 = g.create_vertex(20);
-    VKey k2 = vertex_key(v2, g);
+    VKey k2 = vertex_id(v2, g);
     
     g.create_edge(k1, k2, 100);
     
@@ -502,11 +502,11 @@ TEST_CASE("edge_iterator comparison", "[undirected_adjacency_list][iterators][ed
 TEST_CASE("edge_iterator range-for", "[undirected_adjacency_list][iterators][edge]") {
     undirected_adjacency_list<int, int> g;
     auto v1 = g.create_vertex(10);
-    VKey k1 = vertex_key(v1, g);
+    VKey k1 = vertex_id(v1, g);
     auto v2 = g.create_vertex(20);
-    VKey k2 = vertex_key(v2, g);
+    VKey k2 = vertex_id(v2, g);
     auto v3 = g.create_vertex(30);
-    VKey k3 = vertex_key(v3, g);
+    VKey k3 = vertex_id(v3, g);
     
     g.create_edge(k1, k2, 100);
     g.create_edge(k1, k3, 300);
@@ -515,7 +515,7 @@ TEST_CASE("edge_iterator range-for", "[undirected_adjacency_list][iterators][edg
     vector<int> values;
     
     for (auto& e : vertex.edges(g, k1)) {
-        values.push_back(e.value);
+        values.push_back(e.value());
     }
     
     REQUIRE(values.size() == 2);
@@ -526,11 +526,11 @@ TEST_CASE("edge_iterator range-for", "[undirected_adjacency_list][iterators][edg
 TEST_CASE("vertex_edge_iterator basic", "[undirected_adjacency_list][iterators][vertex_edge]") {
     undirected_adjacency_list<int, int> g;
     auto v1 = g.create_vertex(10);
-    VKey k1 = vertex_key(v1, g);
+    VKey k1 = vertex_id(v1, g);
     auto v2 = g.create_vertex(20);
-    VKey k2 = vertex_key(v2, g);
+    VKey k2 = vertex_id(v2, g);
     auto v3 = g.create_vertex(30);
-    VKey k3 = vertex_key(v3, g);
+    VKey k3 = vertex_id(v3, g);
     
     g.create_edge(k1, k2, 100);
     g.create_edge(k1, k3, 300);
@@ -545,7 +545,7 @@ TEST_CASE("vertex_edge_iterator basic", "[undirected_adjacency_list][iterators][
 TEST_CASE("vertex_edge_iterator empty range", "[undirected_adjacency_list][iterators][vertex_edge]") {
     undirected_adjacency_list<int, int> g;
     auto v1 = g.create_vertex(10);
-    VKey k1 = vertex_key(v1, g);
+    VKey k1 = vertex_id(v1, g);
     
     auto& vertex = g.vertices()[k1];
     auto range = vertex.edges(g, k1);
@@ -557,11 +557,11 @@ TEST_CASE("vertex_edge_iterator empty range", "[undirected_adjacency_list][itera
 TEST_CASE("vertex_vertex_iterator basic", "[undirected_adjacency_list][iterators][vertex_vertex]") {
     undirected_adjacency_list<int, int> g;
     auto v1 = g.create_vertex(10);
-    VKey k1 = vertex_key(v1, g);
+    VKey k1 = vertex_id(v1, g);
     auto v2 = g.create_vertex(20);
-    VKey k2 = vertex_key(v2, g);
+    VKey k2 = vertex_id(v2, g);
     auto v3 = g.create_vertex(30);
-    VKey k3 = vertex_key(v3, g);
+    VKey k3 = vertex_id(v3, g);
     
     g.create_edge(k1, k2, 100);
     g.create_edge(k1, k3, 300);
@@ -571,7 +571,7 @@ TEST_CASE("vertex_vertex_iterator basic", "[undirected_adjacency_list][iterators
     
     vector<int> neighbor_values;
     for (auto& v : range) {
-        neighbor_values.push_back(v.value);
+        neighbor_values.push_back(v.value());
     }
     
     REQUIRE(neighbor_values.size() == 2);
@@ -582,7 +582,7 @@ TEST_CASE("vertex_vertex_iterator basic", "[undirected_adjacency_list][iterators
 TEST_CASE("vertex_vertex_iterator empty", "[undirected_adjacency_list][iterators][vertex_vertex]") {
     undirected_adjacency_list<int, int> g;
     auto v1 = g.create_vertex(10);
-    VKey k1 = vertex_key(v1, g);
+    VKey k1 = vertex_id(v1, g);
     
     auto& vertex = g.vertices()[k1];
     auto range = vertex.vertices(g, k1);
@@ -593,19 +593,19 @@ TEST_CASE("vertex_vertex_iterator empty", "[undirected_adjacency_list][iterators
 TEST_CASE("vertex_vertex_iterator dereference", "[undirected_adjacency_list][iterators][vertex_vertex]") {
     undirected_adjacency_list<int, int> g;
     auto v1 = g.create_vertex(10);
-    VKey k1 = vertex_key(v1, g);
+    VKey k1 = vertex_id(v1, g);
     auto v2 = g.create_vertex(20);
-    VKey k2 = vertex_key(v2, g);
+    VKey k2 = vertex_id(v2, g);
     
     g.create_edge(k1, k2, 100);
     
     auto& vertex = g.vertices()[k1];
     auto it = vertex.vertices(g, k1).begin();
     
-    REQUIRE(it->value == 20);
+    REQUIRE(it->value() == 20);
     
     auto& neighbor = *it;
-    REQUIRE(neighbor.value == 20);
+    REQUIRE(neighbor.value() == 20);
 }
 
 TEST_CASE("std::find with vertex_iterator", "[undirected_adjacency_list][iterators][algorithms]") {
@@ -615,11 +615,11 @@ TEST_CASE("std::find with vertex_iterator", "[undirected_adjacency_list][iterato
     g.create_vertex(30);
     
     auto it = std::find_if(g.begin(), g.end(), [](const auto& v) {
-        return v.value == 20;
+        return v.value() == 20;
     });
     
     REQUIRE(it != g.end());
-    REQUIRE(it->value == 20);
+    REQUIRE(it->value() == 20);
 }
 
 TEST_CASE("std::count_if with vertex_iterator", "[undirected_adjacency_list][iterators][algorithms]") {
@@ -630,7 +630,7 @@ TEST_CASE("std::count_if with vertex_iterator", "[undirected_adjacency_list][ite
     g.create_vertex(40);
     
     auto count = std::count_if(g.begin(), g.end(), [](const auto& v) {
-        return v.value > 15;
+        return v.value() > 15;
     });
     
     REQUIRE(count == 3);
@@ -644,7 +644,7 @@ TEST_CASE("std::for_each with vertex_iterator", "[undirected_adjacency_list][ite
     
     int sum = 0;
     std::for_each(g.begin(), g.end(), [&sum](const auto& v) {
-        sum += v.value;
+        sum += v.value();
     });
     
     REQUIRE(sum == 60);
@@ -657,7 +657,7 @@ TEST_CASE("std::all_of with vertex_iterator", "[undirected_adjacency_list][itera
     g.create_vertex(30);
     
     bool all_positive = std::all_of(g.begin(), g.end(), [](const auto& v) {
-        return v.value > 0;
+        return v.value() > 0;
     });
     
     REQUIRE(all_positive);
@@ -670,7 +670,7 @@ TEST_CASE("std::any_of with vertex_iterator", "[undirected_adjacency_list][itera
     g.create_vertex(30);
     
     bool has_twenty = std::any_of(g.begin(), g.end(), [](const auto& v) {
-        return v.value == 20;
+        return v.value() == 20;
     });
     
     REQUIRE(has_twenty);
@@ -683,7 +683,7 @@ TEST_CASE("std::none_of with vertex_iterator", "[undirected_adjacency_list][iter
     g.create_vertex(30);
     
     bool none_negative = std::none_of(g.begin(), g.end(), [](const auto& v) {
-        return v.value < 0;
+        return v.value() < 0;
     });
     
     REQUIRE(none_negative);
@@ -692,11 +692,11 @@ TEST_CASE("std::none_of with vertex_iterator", "[undirected_adjacency_list][iter
 TEST_CASE("std::find with edge_iterator", "[undirected_adjacency_list][iterators][algorithms]") {
     undirected_adjacency_list<int, int> g;
     auto v1 = g.create_vertex(10);
-    VKey k1 = vertex_key(v1, g);
+    VKey k1 = vertex_id(v1, g);
     auto v2 = g.create_vertex(20);
-    VKey k2 = vertex_key(v2, g);
+    VKey k2 = vertex_id(v2, g);
     auto v3 = g.create_vertex(30);
-    VKey k3 = vertex_key(v3, g);
+    VKey k3 = vertex_id(v3, g);
     
     g.create_edge(k1, k2, 100);
     g.create_edge(k1, k3, 300);
@@ -705,11 +705,11 @@ TEST_CASE("std::find with edge_iterator", "[undirected_adjacency_list][iterators
     auto range = vertex.edges(g, k1);
     
     auto it = std::find_if(range.begin(), range.end(), [](const auto& e) {
-        return e.value == 300;
+        return e.value() == 300;
     });
     
     REQUIRE(it != range.end());
-    REQUIRE(it->value == 300);
+    REQUIRE(it->value() == 300);
 }
 
 TEST_CASE("iterator subtraction", "[undirected_adjacency_list][iterators][vertex]") {
@@ -725,9 +725,9 @@ TEST_CASE("iterator subtraction", "[undirected_adjacency_list][iterators][vertex
     auto v2 = g.begin() + 1;
     auto v3 = g.begin() + 2;
     
-    VKey k1 = vertex_key(v1, g);
-    VKey k2 = vertex_key(v2, g);
-    VKey k3 = vertex_key(v3, g);
+    VKey k1 = vertex_id(v1, g);
+    VKey k2 = vertex_id(v2, g);
+    VKey k3 = vertex_id(v3, g);
     
     REQUIRE(k1 == 0);
     REQUIRE(k2 == 1);
@@ -743,7 +743,7 @@ TEST_CASE("self-loops behavior", "[undirected_adjacency_list][edge_cases][self_l
     // The iterator detects when it returns to its starting edge and terminates iteration.
     undirected_adjacency_list<int, int> g;
     auto v_it = g.create_vertex(10);
-    VKey k = vertex_key(v_it, g);
+    VKey k = vertex_id(v_it, g);
     
     // Create self-loop
     g.create_edge(k, k, 100);
@@ -759,7 +759,7 @@ TEST_CASE("self-loops behavior", "[undirected_adjacency_list][edge_cases][self_l
         auto& v = g.vertices()[k];
         size_t count = 0;
         for (auto& e : v.edges(g, k)) {
-            REQUIRE(e.value == 100);
+            REQUIRE(e.value() == 100);
             ++count;
         }
         
@@ -772,9 +772,9 @@ TEST_CASE("self-loop with regular edges", "[undirected_adjacency_list][edge_case
     // Verify self-loops work correctly when mixed with regular edges
     undirected_adjacency_list<int, int> g;
     auto v0_it = g.create_vertex(10);
-    VKey k0 = vertex_key(v0_it, g);
+    VKey k0 = vertex_id(v0_it, g);
     auto v1_it = g.create_vertex(20);
-    VKey k1 = vertex_key(v1_it, g);
+    VKey k1 = vertex_id(v1_it, g);
     
     // Create a regular edge and a self-loop on v0
     g.create_edge(k0, k1, 100);  // Regular edge between v0 and v1
@@ -788,7 +788,7 @@ TEST_CASE("self-loop with regular edges", "[undirected_adjacency_list][edge_case
         auto& v0 = g.vertices()[k0];
         std::vector<int> values;
         for (auto& e : v0.edges(g, k0)) {
-            values.push_back(e.value);
+            values.push_back(e.value());
         }
         
         REQUIRE(values.size() == 2);
@@ -800,7 +800,7 @@ TEST_CASE("self-loop with regular edges", "[undirected_adjacency_list][edge_case
         auto& v1 = g.vertices()[k1];
         std::vector<int> values;
         for (auto& e : v1.edges(g, k1)) {
-            values.push_back(e.value);
+            values.push_back(e.value());
         }
         
         REQUIRE(values.size() == 1);
@@ -812,7 +812,7 @@ TEST_CASE("multiple self-loops on same vertex", "[undirected_adjacency_list][edg
     // Verify multiple self-loops can exist on the same vertex
     undirected_adjacency_list<int, int> g;
     auto v_it = g.create_vertex(10);
-    VKey k = vertex_key(v_it, g);
+    VKey k = vertex_id(v_it, g);
     
     // Create multiple self-loops
     g.create_edge(k, k, 100);
@@ -827,7 +827,7 @@ TEST_CASE("multiple self-loops on same vertex", "[undirected_adjacency_list][edg
         auto& v = g.vertices()[k];
         std::vector<int> values;
         for (auto& e : v.edges(g, k)) {
-            values.push_back(e.value);
+            values.push_back(e.value());
         }
         
         REQUIRE(values.size() == 3);
@@ -841,7 +841,7 @@ TEST_CASE("self-loop erasure", "[undirected_adjacency_list][edge_cases][self_loo
     // Verify self-loops can be erased correctly
     undirected_adjacency_list<int, int> g;
     auto v_it = g.create_vertex(10);
-    VKey k = vertex_key(v_it, g);
+    VKey k = vertex_id(v_it, g);
     
     g.create_edge(k, k, 100);
     g.create_edge(k, k, 200);
@@ -852,7 +852,7 @@ TEST_CASE("self-loop erasure", "[undirected_adjacency_list][edge_cases][self_loo
         auto& v = g.vertices()[k];
         auto edges = v.edges(g, k);
         auto it = std::find_if(edges.begin(), edges.end(), [](const auto& e) {
-            return e.value == 100;
+            return e.value() == 100;
         });
         REQUIRE(it != edges.end());
         
@@ -863,7 +863,7 @@ TEST_CASE("self-loop erasure", "[undirected_adjacency_list][edge_cases][self_loo
         // Verify remaining self-loop
         std::vector<int> values;
         for (auto& e : v.edges(g, k)) {
-            values.push_back(e.value);
+            values.push_back(e.value());
         }
         REQUIRE(values.size() == 1);
         REQUIRE(values[0] == 200);
@@ -873,9 +873,9 @@ TEST_CASE("self-loop erasure", "[undirected_adjacency_list][edge_cases][self_loo
 TEST_CASE("parallel edges", "[undirected_adjacency_list][edge_cases][parallel]") {
     undirected_adjacency_list<int, int> g;
     auto v1 = g.create_vertex(10);
-    VKey k1 = vertex_key(v1, g);
+    VKey k1 = vertex_id(v1, g);
     auto v2 = g.create_vertex(20);
-    VKey k2 = vertex_key(v2, g);
+    VKey k2 = vertex_id(v2, g);
     
     // Create 3 parallel edges
     g.create_edge(k1, k2, 100);
@@ -890,7 +890,7 @@ TEST_CASE("parallel edges", "[undirected_adjacency_list][edge_cases][parallel]")
         vector<int> values;
         auto& v = g.vertices()[k1];
         for (auto& e : v.edges(g, k1)) {
-            values.push_back(e.value);
+            values.push_back(e.value());
         }
         
         REQUIRE(values.size() == 3);
@@ -904,7 +904,7 @@ TEST_CASE("parallel edges", "[undirected_adjacency_list][edge_cases][parallel]")
         auto& v = g.vertices()[k1];
         auto edges = v.edges(g, k1);
         auto it = std::find_if(edges.begin(), edges.end(), [](const auto& e) {
-            return e.value == 200;
+            return e.value() == 200;
         });
         
         REQUIRE(it != edges.end());
@@ -917,7 +917,7 @@ TEST_CASE("parallel edges", "[undirected_adjacency_list][edge_cases][parallel]")
         
         vector<int> remaining;
         for (auto& e : v.edges(g, k1)) {
-            remaining.push_back(e.value);
+            remaining.push_back(e.value());
         }
         
         REQUIRE(remaining.size() == 2);
@@ -930,9 +930,9 @@ TEST_CASE("parallel edges", "[undirected_adjacency_list][edge_cases][parallel]")
 TEST_CASE("edge erasure consistency", "[undirected_adjacency_list][edge_cases][erase][consistency]") {
     undirected_adjacency_list<int, int> g;
     auto v1 = g.create_vertex(10);
-    VKey k1 = vertex_key(v1, g);
+    VKey k1 = vertex_id(v1, g);
     auto v2 = g.create_vertex(20);
-    VKey k2 = vertex_key(v2, g);
+    VKey k2 = vertex_id(v2, g);
     
     g.create_edge(k1, k2, 100);
     
@@ -966,14 +966,14 @@ TEST_CASE("high degree vertex", "[undirected_adjacency_list][edge_cases][stress]
     
     // Create center vertex
     auto center_it = g.create_vertex(0);
-    VKey center_k = vertex_key(center_it, g);
+    VKey center_k = vertex_id(center_it, g);
     
     // Create 100 satellite vertices
     const int NUM_SATELLITES = 100;
     vector<unsigned int> satellite_keys;
     for (int i = 0; i < NUM_SATELLITES; ++i) {
         auto v = g.create_vertex(i + 1);
-        satellite_keys.push_back(vertex_key(v, g));
+        satellite_keys.push_back(vertex_id(v, g));
         g.create_edge(center_k, satellite_keys.back(), i * 10);
     }
     
@@ -992,7 +992,7 @@ TEST_CASE("high degree vertex", "[undirected_adjacency_list][edge_cases][stress]
         int count = 0;
         set<int> values;
         for (auto& e : center.edges(g, center_k)) {
-            values.insert(e.value);
+            values.insert(e.value());
             ++count;
         }
         
@@ -1004,9 +1004,9 @@ TEST_CASE("high degree vertex", "[undirected_adjacency_list][edge_cases][stress]
 TEST_CASE("edge deletion during iteration", "[undirected_adjacency_list][edge_cases][erase][iteration]") {
     undirected_adjacency_list<int, int> g;
     auto v1 = g.create_vertex(10);
-    VKey k1 = vertex_key(v1, g);
+    VKey k1 = vertex_id(v1, g);
     auto v2 = g.create_vertex(20);
-    VKey k2 = vertex_key(v2, g);
+    VKey k2 = vertex_id(v2, g);
     
     // Create multiple edges
     for (int i = 0; i < 5; ++i) {
@@ -1021,7 +1021,7 @@ TEST_CASE("edge deletion during iteration", "[undirected_adjacency_list][edge_ca
         
         // Carefully iterate and erase
         for (auto it = edges_range.begin(); it != edges_range.end(); /* no increment */) {
-            if (it->value % 2 == 0) {
+            if (it->value() % 2 == 0) {
                 // Erase returns iterator to next element
                 it = v.erase_edge(g, it);
             } else {
@@ -1034,7 +1034,7 @@ TEST_CASE("edge deletion during iteration", "[undirected_adjacency_list][edge_ca
         
         vector<int> remaining;
         for (auto& e : v.edges(g, k1)) {
-            remaining.push_back(e.value);
+            remaining.push_back(e.value());
         }
         
         REQUIRE(remaining.size() == 2);
@@ -1053,9 +1053,9 @@ TEST_CASE("edge deletion during iteration", "[undirected_adjacency_list][edge_ca
 TEST_CASE("move constructor", "[undirected_adjacency_list][memory][move]") {
     undirected_adjacency_list<int, int> g1;
     auto v1 = g1.create_vertex(10);
-    VKey k1 = vertex_key(v1, g1);
+    VKey k1 = vertex_id(v1, g1);
     auto v2 = g1.create_vertex(20);
-    VKey k2 = vertex_key(v2, g1);
+    VKey k2 = vertex_id(v2, g1);
     g1.create_edge(k1, k2, 100);
     
     REQUIRE(g1.vertices().size() == 2);
@@ -1067,8 +1067,8 @@ TEST_CASE("move constructor", "[undirected_adjacency_list][memory][move]") {
     SECTION("moved-to graph has correct state") {
         REQUIRE(g2.vertices().size() == 2);
         REQUIRE(g2.edges_size() == 1);
-        REQUIRE(g2.vertices()[k1].value == 10);
-        REQUIRE(g2.vertices()[k2].value == 20);
+        REQUIRE(g2.vertices()[k1].value() == 10);
+        REQUIRE(g2.vertices()[k2].value() == 20);
     }
     
     SECTION("moved-from graph is in valid state") {
@@ -1082,9 +1082,9 @@ TEST_CASE("move constructor", "[undirected_adjacency_list][memory][move]") {
 TEST_CASE("move assignment", "[undirected_adjacency_list][memory][move]") {
     undirected_adjacency_list<int, int> g1;
     auto v1 = g1.create_vertex(10);
-    VKey k1 = vertex_key(v1, g1);
+    VKey k1 = vertex_id(v1, g1);
     auto v2 = g1.create_vertex(20);
-    VKey k2 = vertex_key(v2, g1);
+    VKey k2 = vertex_id(v2, g1);
     g1.create_edge(k1, k2, 100);
     
     undirected_adjacency_list<int, int> g2;
@@ -1096,7 +1096,7 @@ TEST_CASE("move assignment", "[undirected_adjacency_list][memory][move]") {
     SECTION("moved-to graph has correct state") {
         REQUIRE(g2.vertices().size() == 2);
         REQUIRE(g2.edges_size() == 1);
-        REQUIRE(g2.vertices()[k1].value == 10);
+        REQUIRE(g2.vertices()[k1].value() == 10);
     }
     
     SECTION("moved-from graph is in valid state") {
@@ -1110,11 +1110,11 @@ TEST_CASE("clear method", "[undirected_adjacency_list][memory][clear]") {
     
     // Add some data
     auto v1 = g.create_vertex(10);
-    VKey k1 = vertex_key(v1, g);
+    VKey k1 = vertex_id(v1, g);
     auto v2 = g.create_vertex(20);
-    VKey k2 = vertex_key(v2, g);
+    VKey k2 = vertex_id(v2, g);
     auto v3 = g.create_vertex(30);
-    VKey k3 = vertex_key(v3, g);
+    VKey k3 = vertex_id(v3, g);
     
     g.create_edge(k1, k2, 100);
     g.create_edge(k2, k3, 200);
@@ -1135,7 +1135,7 @@ TEST_CASE("clear method", "[undirected_adjacency_list][memory][clear]") {
     SECTION("can add new data after clear") {
         auto v = g.create_vertex(42);
         REQUIRE(g.vertices().size() == 1);
-        REQUIRE(vertex_key(v, g) == 0);
+        REQUIRE(vertex_id(v, g) == 0);
     }
 }
 
@@ -1166,18 +1166,18 @@ TEST_CASE("destructor cleanup", "[undirected_adjacency_list][memory][destructor]
 TEST_CASE("swap operation", "[undirected_adjacency_list][memory][swap]") {
     undirected_adjacency_list<int, int> g1;
     auto v1a = g1.create_vertex(10);
-    VKey k1a = vertex_key(v1a, g1);
+    VKey k1a = vertex_id(v1a, g1);
     auto v1b = g1.create_vertex(20);
-    VKey k1b = vertex_key(v1b, g1);
+    VKey k1b = vertex_id(v1b, g1);
     g1.create_edge(k1a, k1b, 100);
     
     undirected_adjacency_list<int, int> g2;
     auto v2a = g2.create_vertex(30);
-    VKey k2a = vertex_key(v2a, g2);
+    VKey k2a = vertex_id(v2a, g2);
     auto v2b = g2.create_vertex(40);
-    VKey k2b = vertex_key(v2b, g2);
+    VKey k2b = vertex_id(v2b, g2);
     auto v2c = g2.create_vertex(50);
-    VKey k2c = vertex_key(v2c, g2);
+    VKey k2c = vertex_id(v2c, g2);
     g2.create_edge(k2a, k2b, 200);
     g2.create_edge(k2b, k2c, 300);
     
@@ -1187,16 +1187,16 @@ TEST_CASE("swap operation", "[undirected_adjacency_list][memory][swap]") {
     SECTION("g1 now has g2's old data") {
         REQUIRE(g1.vertices().size() == 3);
         REQUIRE(g1.edges_size() == 2);
-        REQUIRE(g1.vertices()[0].value == 30);
-        REQUIRE(g1.vertices()[1].value == 40);
-        REQUIRE(g1.vertices()[2].value == 50);
+        REQUIRE(g1.vertices()[0].value() == 30);
+        REQUIRE(g1.vertices()[1].value() == 40);
+        REQUIRE(g1.vertices()[2].value() == 50);
     }
     
     SECTION("g2 now has g1's old data") {
         REQUIRE(g2.vertices().size() == 2);
         REQUIRE(g2.edges_size() == 1);
-        REQUIRE(g2.vertices()[0].value == 10);
-        REQUIRE(g2.vertices()[1].value == 20);
+        REQUIRE(g2.vertices()[0].value() == 10);
+        REQUIRE(g2.vertices()[1].value() == 20);
     }
 }
 
@@ -1206,9 +1206,9 @@ TEST_CASE("graph with graph value", "[undirected_adjacency_list][memory][graph_v
     REQUIRE(g.graph_value() == 42);
     
     auto v1 = g.create_vertex(10);
-    VKey k1 = vertex_key(v1, g);
+    VKey k1 = vertex_id(v1, g);
     auto v2 = g.create_vertex(20);
-    VKey k2 = vertex_key(v2, g);
+    VKey k2 = vertex_id(v2, g);
     g.create_edge(k1, k2, 100);
     
     // Move construct preserves graph value
@@ -1264,8 +1264,8 @@ TEST_CASE("copy constructor", "[undirected_adjacency_list][memory][copy]") {
     }
     
     SECTION("copy has same vertex values") {
-        REQUIRE(g2.vertices()[0].value == 10);
-        REQUIRE(g2.vertices()[1].value == 20);
+        REQUIRE(g2.vertices()[0].value() == 10);
+        REQUIRE(g2.vertices()[1].value() == 20);
     }
     
     SECTION("copy has same edge count") {
@@ -1273,9 +1273,9 @@ TEST_CASE("copy constructor", "[undirected_adjacency_list][memory][copy]") {
     }
     
     SECTION("modifying copy does not affect original") {
-        g2.vertices()[0].value = 999;
-        REQUIRE(g1.vertices()[0].value == 10);
-        REQUIRE(g2.vertices()[0].value == 999);
+        g2.vertices()[0].value() = 999;
+        REQUIRE(g1.vertices()[0].value() == 10);
+        REQUIRE(g2.vertices()[0].value() == 999);
     }
     
     SECTION("edges are independent") {
@@ -1303,7 +1303,7 @@ TEST_CASE("copy constructor with multiple edges", "[undirected_adjacency_list][m
     
     // Verify all vertices are correct
     for (size_t i = 0; i < 5; ++i) {
-        REQUIRE(g2.vertices()[i].value == static_cast<int>(i * 10));
+        REQUIRE(g2.vertices()[i].value() == static_cast<int>(i * 10));
     }
 }
 
@@ -1320,8 +1320,8 @@ TEST_CASE("copy assignment", "[undirected_adjacency_list][memory][copy]") {
         g2 = g1;
         
         REQUIRE(g2.vertices().size() == 2);
-        REQUIRE(g2.vertices()[0].value == 10);
-        REQUIRE(g2.vertices()[1].value == 20);
+        REQUIRE(g2.vertices()[0].value() == 10);
+        REQUIRE(g2.vertices()[1].value() == 20);
         REQUIRE(g2.edges_size() == g1.edges_size());
     }
     
@@ -1388,7 +1388,7 @@ TEST_CASE("edge range constructor basic", "[undirected_adjacency_list][construct
         auto& v0 = g.vertices()[0];
         std::vector<int> edge_values;
         for (auto& e : v0.edges(g, 0)) {
-            edge_values.push_back(e.value);
+            edge_values.push_back(e.value());
         }
         REQUIRE(edge_values.size() == 1);  // edge to 1
         REQUIRE(edge_values[0] == 100);
@@ -1472,8 +1472,8 @@ TEST_CASE("vertex iterator invalidation on create_vertex", "[undirected_adjacenc
     g.create_vertex(20);
     
     auto it = g.begin();
-    VKey original_key = vertex_key(it, g);
-    int original_value = it->value;
+    VKey original_key = vertex_id(it, g);
+    int original_value = it->value();
     
     // Add many more vertices - this may invalidate iterators
     for (int i = 0; i < 100; ++i) {
@@ -1481,7 +1481,7 @@ TEST_CASE("vertex iterator invalidation on create_vertex", "[undirected_adjacenc
     }
     
     // Verify we can still access by key (keys are stable)
-    REQUIRE(g.vertices()[original_key].value == original_value);
+    REQUIRE(g.vertices()[original_key].value() == original_value);
     REQUIRE(g.vertices().size() == 102);
 }
 
@@ -1493,7 +1493,7 @@ TEST_CASE("edge iterator stable during vertex addition", "[undirected_adjacency_
     
     auto& v0 = g.vertices()[0];
     auto edge_it = v0.edges(g, 0).begin();
-    int original_edge_value = edge_it->value;
+    int original_edge_value = edge_it->value();
     
     // Add more vertices - edge iterators should remain valid
     for (int i = 0; i < 50; ++i) {
@@ -1501,7 +1501,7 @@ TEST_CASE("edge iterator stable during vertex addition", "[undirected_adjacency_
     }
     
     // Edge should still be accessible and valid
-    REQUIRE(edge_it->value == original_edge_value);
+    REQUIRE(edge_it->value() == original_edge_value);
 }
 
 TEST_CASE("edge reference stable across operations", "[undirected_adjacency_list][iterator_invalidation]") {
@@ -1519,16 +1519,16 @@ TEST_CASE("edge reference stable across operations", "[undirected_adjacency_list
     g.create_edge(1, 2, 300);
     
     // Original edge reference should still be valid
-    REQUIRE(edge.value == 100);
+    REQUIRE(edge.value() == 100);
     
     // Modify through reference
-    edge.value = 999;
+    edge.value() = 999;
     
     // Verify modification persisted
     // Note: order may vary, so find the edge with value 999
     bool found = false;
     for (auto& e : v0.edges(g, 0)) {
-        if (e.value == 999) found = true;
+        if (e.value() == 999) found = true;
     }
     REQUIRE(found);
 }
@@ -1546,19 +1546,19 @@ TEST_CASE("try_find_vertex", "[undirected_adjacency_list][vertex][find]") {
     SECTION("find existing vertex") {
         auto it = g.try_find_vertex(1);
         REQUIRE(it != g.end());
-        REQUIRE(it->value == 20);
+        REQUIRE(it->value() == 20);
     }
     
     SECTION("find first vertex") {
         auto it = g.try_find_vertex(0);
         REQUIRE(it != g.end());
-        REQUIRE(it->value == 10);
+        REQUIRE(it->value() == 10);
     }
     
     SECTION("find last vertex") {
         auto it = g.try_find_vertex(2);
         REQUIRE(it != g.end());
-        REQUIRE(it->value == 30);
+        REQUIRE(it->value() == 30);
     }
     
     SECTION("find non-existent vertex returns end") {
@@ -1570,7 +1570,7 @@ TEST_CASE("try_find_vertex", "[undirected_adjacency_list][vertex][find]") {
         const auto& cg = g;
         auto it = cg.try_find_vertex(1);
         REQUIRE(it != cg.end());
-        REQUIRE(it->value == 20);
+        REQUIRE(it->value() == 20);
     }
 }
 
@@ -1639,7 +1639,7 @@ TEST_CASE("graph with void vertex value", "[undirected_adjacency_list][void_type
     // Verify edge has value
     auto& v0 = g.vertices()[0];
     auto& e = *v0.edges_begin(g, 0);
-    REQUIRE(e.value == 100);
+    REQUIRE(e.value() == 100);
 }
 
 TEST_CASE("graph with void edge value", "[undirected_adjacency_list][void_types]") {
@@ -1649,8 +1649,8 @@ TEST_CASE("graph with void edge value", "[undirected_adjacency_list][void_types]
     g.create_edge(0, 1);
     
     REQUIRE(g.vertices().size() == 2);
-    REQUIRE(g.vertices()[0].value == 10);
-    REQUIRE(g.vertices()[1].value == 20);
+    REQUIRE(g.vertices()[0].value() == 10);
+    REQUIRE(g.vertices()[1].value() == 20);
     REQUIRE(g.edges_size() == 1);
 }
 
