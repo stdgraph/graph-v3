@@ -53,7 +53,7 @@ namespace ranges = std::ranges;
 /// edge removal from both endpoints and efficient iteration of incident edges.
 ///
 /// Vertices: Stored in a contiguous random-access container (default: std::vector)
-///   - Provides O(1) vertex access by key/index
+///   - Provides O(1) vertex access by id/index
 ///   - Each vertex maintains a doubly-linked list of incident edges
 ///   - Vertex values stored inline (optional, use void for no value)
 ///
@@ -66,7 +66,7 @@ namespace ranges = std::ranges;
 /// MEMORY OVERHEAD:
 /// ----------------
 /// Per vertex: ~24-32 bytes (list head pointers, value)
-/// Per edge: ~48-64 bytes (4 list pointers, 2 vertex keys, value, allocation overhead)
+/// Per edge: ~48-64 bytes (4 list pointers, 2 vertex ids, value, allocation overhead)
 /// Total for edge: 2× list nodes (one at each vertex)
 ///
 /// COMPLEXITY GUARANTEES:
@@ -134,7 +134,7 @@ namespace ranges = std::ranges;
 /// @tparam VV Vertex Value type (default: void for no value)
 /// @tparam EV Edge Value type (default: void for no value)  
 /// @tparam GV Graph Value type (default: void for no value)
-/// @tparam VId Vertex key/index type (default: uint32_t)
+/// @tparam VId Vertex id/index type (default: uint32_t)
 /// @tparam VContainer Vertex storage container template (default: std::vector)
 /// @tparam Alloc Allocator type (default: std::allocator<char>)
 ///-------------------------------------------------------------------------------------
@@ -342,7 +342,7 @@ public:
   using vertex_set            = VContainer<vertex_type, vertex_allocator_type>;
   using vertex_iterator       = typename vertex_set::iterator;
   using const_vertex_iterator = typename vertex_set::const_iterator;
-  using vertex_key_type       = VId;
+  using vertex_id_type       = VId;
   using vertex_index          = VId;
 
   using edge_value_type = EV;
@@ -382,8 +382,8 @@ public:
     using vertex_type = ual_vertex_edge_list::vertex_type;
     using edge_type   = ual_vertex_edge_list::edge_type;
 
-    const_iterator(const graph_type& g, vertex_key_type ukey, const edge_type* uv = nullptr) noexcept
-          : vertex_key_(ukey), edge_(const_cast<edge_type*>(uv)), graph_(const_cast<graph_type*>(&g)) {}
+    const_iterator(const graph_type& g, vertex_id_type uid, const edge_type* uv = nullptr) noexcept
+          : vertex_id_(uid), edge_(const_cast<edge_type*>(uv)), graph_(const_cast<graph_type*>(&g)) {}
 
     const_iterator() noexcept                          = default;
     const_iterator(const const_iterator& rhs) noexcept = default;
@@ -406,21 +406,21 @@ public:
     bool operator!=(const const_iterator& rhs) const noexcept;
 
     friend void swap(const_iterator& lhs, const_iterator& rhs) noexcept {
-      swap(lhs.vertex_key_, rhs.vertex_key_);
+      swap(lhs.vertex_id_, rhs.vertex_id_);
       swap(lhs.edge_, rhs.edge_);
     }
 
     graph_type&       graph() { return *graph_; }
     const graph_type& graph() const { return *graph_; }
 
-    vertex_key_type source_key() const { return vertex_key_; }
+    vertex_id_type source_id() const { return vertex_id_; }
 
   protected:
     void advance();
     void retreat();
 
   protected:
-    vertex_key_type vertex_key_ = numeric_limits<vertex_key_type>::max(); // source vertex for the list we're in
+    vertex_id_type vertex_id_ = numeric_limits<vertex_id_type>::max(); // source vertex for the list we're in
     edge_type*      edge_       = nullptr;                                // current edge (==nullptr for end)
     graph_type*     graph_      = nullptr;
   }; // end const_iterator
@@ -449,7 +449,7 @@ public:
     iterator& operator=(const iterator&) = default;
     iterator& operator=(iterator&&) = default;
 
-    iterator(const graph_type& g, vertex_key_type ukey, const edge_type* uv = nullptr) : const_iterator(g, ukey, uv) {}
+    iterator(const graph_type& g, vertex_id_type uid, const edge_type* uv = nullptr) : const_iterator(g, uid, uv) {}
 
     reference operator*() const;
     pointer   operator->() const;
@@ -461,7 +461,7 @@ public:
     iterator  operator--(int);
 
     friend void swap(iterator& lhs, iterator& rhs) {
-      swap(lhs.vertex_key_, rhs.vertex_key_);
+      swap(lhs.vertex_id_, rhs.vertex_id_);
       swap(lhs.edge_, rhs.edge_);
     }
   }; // end iterator
@@ -498,16 +498,16 @@ public:
   template <typename ListT>
   void unlink(edge_type& uv, ual_vertex_edge_list_link<VV, EV, GV, VId, VContainer, Alloc, ListT>& uv_link);
 
-  iterator       begin(graph_type& g, vertex_key_type ukey) noexcept;
-  const_iterator begin(const graph_type& g, vertex_key_type ukey) const noexcept;
-  const_iterator cbegin(const graph_type& g, vertex_key_type ukey) const noexcept;
+  iterator       begin(graph_type& g, vertex_id_type uid) noexcept;
+  const_iterator begin(const graph_type& g, vertex_id_type uid) const noexcept;
+  const_iterator cbegin(const graph_type& g, vertex_id_type uid) const noexcept;
 
-  iterator       end(graph_type& g, vertex_key_type ukey) noexcept;
-  const_iterator end(const graph_type& g, vertex_key_type ukey) const noexcept;
-  const_iterator cend(const graph_type& g, vertex_key_type ukey) const noexcept;
+  iterator       end(graph_type& g, vertex_id_type uid) noexcept;
+  const_iterator end(const graph_type& g, vertex_id_type uid) const noexcept;
+  const_iterator cend(const graph_type& g, vertex_id_type uid) const noexcept;
 
-  edge_range       edges(graph_type& g, vertex_key_type ukey) noexcept;
-  const_edge_range edges(const graph_type& g, vertex_key_type ukey) const noexcept;
+  edge_range       edges(graph_type& g, vertex_id_type uid) noexcept;
+  const_edge_range edges(const graph_type& g, vertex_id_type uid) const noexcept;
 
 private:
   edge_type* head_ = nullptr;
@@ -542,7 +542,7 @@ public:
   using vertex_set            = VContainer<vertex_type, vertex_allocator_type>;
   using vertex_iterator       = typename vertex_set::iterator;
   using const_vertex_iterator = typename vertex_set::const_iterator;
-  using vertex_key_type       = VId;
+  using vertex_id_type       = VId;
   using vertex_index          = VId;
 
   using edge_type = ual_edge<VV, EV, GV, VId, VContainer, Alloc>;
@@ -551,7 +551,7 @@ public:
   using edge_list_link_type = ual_vertex_edge_list_link<VV, EV, GV, VId, VContainer, Alloc, ListT>;
 
 public:
-  ual_vertex_edge_list_link(vertex_key_type ukey) noexcept : vertex_key_(ukey) {}
+  ual_vertex_edge_list_link(vertex_id_type uid) noexcept : vertex_id_(uid) {}
 
   ual_vertex_edge_list_link() noexcept                                 = default;
   ual_vertex_edge_list_link(const ual_vertex_edge_list_link&) noexcept = default;
@@ -561,9 +561,9 @@ public:
   ual_vertex_edge_list_link& operator=(ual_vertex_edge_list_link&&) noexcept = default;
 
 public:
-  vertex_key_type       vertex_key() const noexcept { return vertex_key_; }
-  const_vertex_iterator vertex(const graph_type& g) const { return g.vertices().begin() + vertex_key_; }
-  vertex_iterator       vertex(graph_type& g) { return g.vertices().begin() + vertex_key_; }
+  vertex_id_type       vertex_id() const noexcept { return vertex_id_; }
+  const_vertex_iterator vertex(const graph_type& g) const { return g.vertices().begin() + vertex_id_; }
+  vertex_iterator       vertex(graph_type& g) { return g.vertices().begin() + vertex_id_; }
 
   edge_type*       next() noexcept { return next_; }
   const edge_type* next() const noexcept { return next_; }
@@ -571,7 +571,7 @@ public:
   const edge_type* prev() const noexcept { return prev_; }
 
 private:
-  vertex_key_type vertex_key_ = numeric_limits<vertex_key_type>::max();
+  vertex_id_type vertex_id_ = numeric_limits<vertex_id_type>::max();
   edge_type*      next_       = nullptr;
   edge_type*      prev_       = nullptr;
 
@@ -610,11 +610,11 @@ public:
   using vertex_set            = VContainer<vertex_type, vertex_allocator_type>;
   using vertex_iterator       = typename vertex_set::iterator;
   using const_vertex_iterator = typename vertex_set::const_iterator;
-  using vertex_key_type       = VId;
+  using vertex_id_type       = VId;
   using vertex_index          = VId;
   using vertex_value_type     = VV;
 
-  using edge_key_type        = pair<vertex_key_type, vertex_key_type>;
+  using edge_id_type        = pair<vertex_id_type, vertex_id_type>;
   using edge_value_type      = EV;
   using edge_type            = ual_edge<VV, EV, GV, VId, VContainer, Alloc>;
   using edge_allocator_type  = typename allocator_traits<Alloc>::template rebind_alloc<edge_type>;
@@ -638,9 +638,9 @@ protected:
   ual_edge& operator=(ual_edge&&) noexcept = default;
 
 #  if 1
-  ual_edge(graph_type&, vertex_key_type ukey, vertex_key_type vkey) noexcept;
-  ual_edge(graph_type&, vertex_key_type ukey, vertex_key_type vkey, const edge_value_type&) noexcept;
-  ual_edge(graph_type&, vertex_key_type ukey, vertex_key_type vkey, edge_value_type&&) noexcept;
+  ual_edge(graph_type&, vertex_id_type uid, vertex_id_type vid) noexcept;
+  ual_edge(graph_type&, vertex_id_type uid, vertex_id_type vid, const edge_value_type&) noexcept;
+  ual_edge(graph_type&, vertex_id_type uid, vertex_id_type vid, edge_value_type&&) noexcept;
 #  else
   ual_edge(graph_type&, vertex_type& u, vertex_type& v) noexcept;
   ual_edge(graph_type&, vertex_type& u, vertex_type& v, const edge_value_type&) noexcept;
@@ -658,21 +658,21 @@ protected:
 public:
   vertex_iterator       source_vertex(graph_type&) noexcept;
   const_vertex_iterator source_vertex(const graph_type&) const noexcept;
-  vertex_key_type       source_vertex_key(const graph_type&) const noexcept;
+  vertex_id_type       source_vertex_id(const graph_type&) const noexcept;
 
   vertex_iterator       target_vertex(graph_type&) noexcept;
   const_vertex_iterator target_vertex(const graph_type&) const noexcept;
-  vertex_key_type       target_vertex_key(const graph_type&) const noexcept;
+  vertex_id_type       target_vertex_id(const graph_type&) const noexcept;
 
   vertex_iterator       other_vertex(graph_type&, const_vertex_iterator other) noexcept;
   const_vertex_iterator other_vertex(const graph_type&, const_vertex_iterator other) const noexcept;
-  vertex_iterator       other_vertex(graph_type&, vertex_key_type other_key) noexcept;
-  const_vertex_iterator other_vertex(const graph_type&, vertex_key_type other_key) const noexcept;
+  vertex_iterator       other_vertex(graph_type&, vertex_id_type other_id) noexcept;
+  const_vertex_iterator other_vertex(const graph_type&, vertex_id_type other_id) const noexcept;
 
-  vertex_key_type other_vertex_key(const graph_type&, const_vertex_iterator other) const noexcept;
-  vertex_key_type other_vertex_key(const graph_type&, vertex_key_type other_key) const noexcept;
+  vertex_id_type other_vertex_id(const graph_type&, const_vertex_iterator other) const noexcept;
+  vertex_id_type other_vertex_id(const graph_type&, vertex_id_type other_id) const noexcept;
 
-  edge_key_type edge_key(const graph_type& g) const noexcept;
+  edge_id_type edge_id(const graph_type& g) const noexcept;
 
   friend graph_type;     // the graph is the one to create & destroy edges because it owns the allocator
   friend base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>; // base class also creates edges
@@ -681,12 +681,12 @@ public:
 
 private: // CPO support via ADL (friend functions)
   // target_id(g, e) - get target vertex id from edge (works with raw edge reference)
-  friend constexpr vertex_key_type target_id(const graph_type& g, const ual_edge& e) noexcept {
-    return e.target_vertex_key(g);
+  friend constexpr vertex_id_type target_id(const graph_type& g, const ual_edge& e) noexcept {
+    return e.target_vertex_id(g);
   }
   // source_id(g, e) - get source vertex id from edge
-  friend constexpr vertex_key_type source_id(const graph_type& g, const ual_edge& e) noexcept {
-    return e.source_vertex_key(g);
+  friend constexpr vertex_id_type source_id(const graph_type& g, const ual_edge& e) noexcept {
+    return e.source_vertex_id(g);
   }
   // edge_value(g, e) - get edge value (only when EV is not void)
   friend constexpr decltype(auto) edge_value(graph_type&, ual_edge& e) noexcept
@@ -724,7 +724,7 @@ private: // CPO support via ADL (friend functions)
 /// @tparam VV Vertex Value type
 /// @tparam EV Edge Value type
 /// @tparam GV Graph Value type (may be void)
-/// @tparam VId Vertex key/index type
+/// @tparam VId Vertex id/index type
 /// @tparam VContainer Vertex storage container template
 /// @tparam Alloc Allocator type
 ///-------------------------------------------------------------------------------------
@@ -742,7 +742,7 @@ public: // Type Aliases
 
   using vertex_type            = ual_vertex<VV, EV, GV, VId, VContainer, Alloc>;
   using vertex_value_type      = VV;
-  using vertex_key_type        = VId;
+  using vertex_id_type        = VId;
   using vertex_index_type      = VId;
   using vertex_allocator_type  = typename allocator_traits<Alloc>::template rebind_alloc<vertex_type>;
   using vertex_set             = VContainer<vertex_type, vertex_allocator_type>;
@@ -757,7 +757,7 @@ public: // Type Aliases
   using edge_type            = ual_edge<VV, EV, GV, VId, VContainer, Alloc>;
   using edge_value_type      = EV;
   using edge_allocator_type  = typename allocator_traits<Alloc>::template rebind_alloc<edge_type>;
-  using edge_key_type        = pair<vertex_key_type, vertex_key_type>; // <from,to>
+  using edge_id_type        = pair<vertex_id_type, vertex_id_type>; // <from,to>
   using edge_size_type       = typename edge_type::edge_size_type;
   using edge_difference_type = typename edge_type::edge_difference_type;
 
@@ -825,8 +825,8 @@ public: // Type Aliases
   protected:
     void advance_edge() {
       // next edge for current vertex
-      vertex_key_type ukey = vertex_key(*g_, u_);
-      if (++uv_ != u_->edges_end(*g_, ukey))
+      vertex_id_type uid = static_cast<vertex_id_type>(u_ - g_->vertices().begin());
+      if (++uv_ != u_->edges_end(*g_, uid))
         return;
 
       // find next vertex with edge(s)
@@ -838,8 +838,8 @@ public: // Type Aliases
       // at exit, if u_ != g.vertices().end() then uv_ will refer to a valid edge
       for (; u_ != g_->vertices().end(); ++u_) {
         if (u_->edges_size() > 0) {
-          vertex_key_type ukey = vertex_key(*g_, u_);
-          uv_                  = u_->edges_begin(*g_, ukey);
+          vertex_id_type uid = static_cast<vertex_id_type>(u_ - g_->vertices().begin());
+          uv_                  = u_->edges_begin(*g_, uid);
           return;
         }
       }
@@ -930,11 +930,11 @@ protected: // Constructors (protected - for derived class use only)
   
   // Initializer list constructors
   base_undirected_adjacency_list(
-      const initializer_list<tuple<vertex_key_type, vertex_key_type, edge_value_type>>& ilist, 
+      const initializer_list<tuple<vertex_id_type, vertex_id_type, edge_value_type>>& ilist, 
       const allocator_type& alloc);
   
   base_undirected_adjacency_list(
-      const initializer_list<tuple<vertex_key_type, vertex_key_type>>& ilist, 
+      const initializer_list<tuple<vertex_id_type, vertex_id_type>>& ilist, 
       const allocator_type& alloc);
   
   // Helper method for validation
@@ -951,6 +951,11 @@ public: // Accessors
   constexpr vertex_set&       vertices();
   constexpr const vertex_set& vertices() const;
 
+  /// @brief Get the number of vertices in the graph (CPO-compatible name).
+  /// @return Number of vertices in the graph.
+  /// @complexity O(1)
+  constexpr auto num_vertices() const noexcept { return vertices_.size(); }
+
   /// @brief Get iterator to first vertex.
   /// @complexity O(1)
   constexpr vertex_iterator       begin();
@@ -963,19 +968,56 @@ public: // Accessors
   constexpr const_vertex_iterator end() const;
   constexpr const_vertex_iterator cend() const;
 
-  /// @brief Find a vertex by its key (direct container access).
-  /// @param key The vertex key to find.
+  /// @brief Find a vertex by its id (direct container access).
+  /// @param id The vertex id to find.
   /// @return Iterator to the vertex, or end() if not found.
   /// @complexity O(1)
   /// @note This is distinct from the find_vertex CPO. Use this for direct container operations.
-  vertex_iterator       try_find_vertex(vertex_key_type);
-  const_vertex_iterator try_find_vertex(vertex_key_type) const;
+  vertex_iterator       try_find_vertex(vertex_id_type);
+  const_vertex_iterator try_find_vertex(vertex_id_type) const;
 
   /// @brief Get the number of edges in the graph.
   /// @return Edge count (each undirected edge counted TWICE - once from each endpoint).
   /// @note For unique edge count, divide by 2.
   /// @complexity O(1)
   constexpr edge_size_type edges_size() const noexcept;
+
+  /// @brief Get the number of edges in the graph (CPO-compatible name).
+  /// @return Edge count (each undirected edge counted TWICE - once from each endpoint).
+  /// @note For unique edge count, divide by 2. This is the same as edges_size().
+  /// @complexity O(1)
+  constexpr edge_size_type num_edges() const noexcept { return edges_size_; }
+
+  /// @brief Check if the graph has any edges (CPO-compatible name).
+  /// @return true if the graph has at least one edge, false otherwise.
+  /// @complexity O(1)
+  constexpr bool has_edge() const noexcept { return edges_size_ > 0; }
+
+  /// @brief Get edges from a vertex descriptor (CPO-compatible).
+  /// @tparam U Vertex descriptor type.
+  /// @param u The vertex descriptor.
+  /// @return edge_descriptor_view over the vertex's edges.
+  /// @complexity O(1)
+  template <typename U>
+    requires adj_list::vertex_descriptor_type<U>
+  constexpr auto edges(const U& u) noexcept {
+    auto uid = static_cast<vertex_id_type>(u.vertex_id());
+    auto& vtx = vertices_[uid];
+    auto edges_rng = vtx.edges(*static_cast<graph_type*>(this), uid);
+    using edge_iter_t = vertex_edge_iterator;
+    using vertex_iter_t = typename U::iterator_type;
+    return adj_list::edge_descriptor_view<edge_iter_t, vertex_iter_t>(edges_rng, u);
+  }
+  template <typename U>
+    requires adj_list::vertex_descriptor_type<U>
+  constexpr auto edges(const U& u) const noexcept {
+    auto uid = static_cast<vertex_id_type>(u.vertex_id());
+    const auto& vtx = vertices_[uid];
+    auto edges_rng = vtx.edges(*static_cast<const graph_type*>(this), uid);
+    using edge_iter_t = const_vertex_edge_iterator;
+    using vertex_iter_t = typename U::iterator_type;
+    return adj_list::edge_descriptor_view<edge_iter_t, vertex_iter_t>(edges_rng, u);
+  }
 
   /// @brief Get iterator to first edge in the graph.
   /// @note Iterates ALL edges from ALL vertices. Each edge visited twice (from both endpoints).
@@ -1026,31 +1068,31 @@ public: // Vertex Creation
   vertex_iterator create_vertex(const VV2& val);
 
 public: // Edge Creation
-  /// @brief Create an edge between two vertices (by key).
-  /// @param ukey Source vertex key.
-  /// @param vkey Target vertex key.
+  /// @brief Create an edge between two vertices (by id).
+  /// @param uid Source vertex id.
+  /// @param vid Target vertex id.
   /// @return Iterator to the newly created edge.
   /// @complexity O(1).
-  vertex_edge_iterator create_edge(vertex_key_type ukey, vertex_key_type vkey);
+  vertex_edge_iterator create_edge(vertex_id_type uid, vertex_id_type vid);
   
-  /// @brief Create an edge with value between two vertices (by key, move value).
-  /// @param ukey Source vertex key.
-  /// @param vkey Target vertex key.
+  /// @brief Create an edge with value between two vertices (by id, move value).
+  /// @param uid Source vertex id.
+  /// @param vid Target vertex id.
   /// @param val Edge value to move.
   /// @return Iterator to the newly created edge.
   /// @complexity O(1).
-  vertex_edge_iterator create_edge(vertex_key_type ukey, vertex_key_type vkey, edge_value_type&& val);
+  vertex_edge_iterator create_edge(vertex_id_type uid, vertex_id_type vid, edge_value_type&& val);
 
-  /// @brief Create an edge with value between two vertices (by key, copy value).
+  /// @brief Create an edge with value between two vertices (by id, copy value).
   /// @tparam EV2 Type convertible to edge_value_type.
-  /// @param ukey Source vertex key.
-  /// @param vkey Target vertex key.
+  /// @param uid Source vertex id.
+  /// @param vid Target vertex id.
   /// @param val Edge value to copy.
   /// @return Iterator to the newly created edge.
   /// @complexity O(1).
   template <class EV2>
     requires std::constructible_from<edge_value_type, const EV2&>
-  vertex_edge_iterator create_edge(vertex_key_type ukey, vertex_key_type vkey, const EV2& val);
+  vertex_edge_iterator create_edge(vertex_id_type uid, vertex_id_type vid, const EV2& val);
 
   /// @brief Create an edge between two vertices (by iterator).
   /// @param u Source vertex iterator.
@@ -1138,7 +1180,7 @@ public:
   using vertex_set            = VContainer<vertex_type, vertex_allocator_type>;
   using vertex_iterator       = typename vertex_set::iterator;
   using const_vertex_iterator = typename vertex_set::const_iterator;
-  using vertex_key_type       = VId;
+  using vertex_id_type       = VId;
   using vertex_index          = VId;
   using vertex_value_type     = VV;
 
@@ -1183,7 +1225,7 @@ public:
 
 public:
 #  if 0
-  vertex_key_type       vertex_key(const graph_type&) const noexcept;
+  vertex_id_type       vertex_id(const graph_type&) const noexcept;
 #  endif
   vertex_edge_size_type edges_size() const;
 
@@ -1191,16 +1233,16 @@ public:
   vertex_edge_iterator erase_edge(graph_type&, vertex_edge_iterator, vertex_edge_iterator);
   void                 clear_edges(graph_type&);
 
-  vertex_edge_iterator       edges_begin(graph_type&, vertex_key_type ukey) noexcept;
-  const_vertex_edge_iterator edges_begin(const graph_type&, vertex_key_type ukey) const noexcept;
-  const_vertex_edge_iterator edges_cbegin(const graph_type&, vertex_key_type ukey) const noexcept;
+  vertex_edge_iterator       edges_begin(graph_type&, vertex_id_type uid) noexcept;
+  const_vertex_edge_iterator edges_begin(const graph_type&, vertex_id_type uid) const noexcept;
+  const_vertex_edge_iterator edges_cbegin(const graph_type&, vertex_id_type uid) const noexcept;
 
-  vertex_edge_iterator       edges_end(graph_type&, vertex_key_type ukey) noexcept;
-  const_vertex_edge_iterator edges_end(const graph_type&, vertex_key_type ukey) const noexcept;
-  const_vertex_edge_iterator edges_cend(const graph_type&, vertex_key_type ukey) const noexcept;
+  vertex_edge_iterator       edges_end(graph_type&, vertex_id_type uid) noexcept;
+  const_vertex_edge_iterator edges_end(const graph_type&, vertex_id_type uid) const noexcept;
+  const_vertex_edge_iterator edges_cend(const graph_type&, vertex_id_type uid) const noexcept;
 
-  vertex_edge_range       edges(graph_type&, vertex_key_type ukey);
-  const_vertex_edge_range edges(const graph_type&, vertex_key_type ukey) const;
+  vertex_edge_range       edges(graph_type&, vertex_id_type uid);
+  const_vertex_edge_range edges(const graph_type&, vertex_id_type uid) const;
 
   edge_type&       edge_front(graph_type&) noexcept;
   const edge_type& edge_front(const graph_type&) const noexcept;
@@ -1208,16 +1250,16 @@ public:
   edge_type&       edge_back(graph_type&) noexcept;
   const edge_type& edge_back(const graph_type&) const noexcept;
 
-  vertex_vertex_iterator       vertices_begin(graph_type&, vertex_key_type ukey);
-  const_vertex_vertex_iterator vertices_begin(const graph_type&, vertex_key_type ukey) const;
-  const_vertex_vertex_iterator vertices_cbegin(const graph_type&, vertex_key_type ukey) const;
+  vertex_vertex_iterator       vertices_begin(graph_type&, vertex_id_type uid);
+  const_vertex_vertex_iterator vertices_begin(const graph_type&, vertex_id_type uid) const;
+  const_vertex_vertex_iterator vertices_cbegin(const graph_type&, vertex_id_type uid) const;
 
-  vertex_vertex_iterator       vertices_end(graph_type&, vertex_key_type ukey);
-  const_vertex_vertex_iterator vertices_end(const graph_type&, vertex_key_type ukey) const;
-  const_vertex_vertex_iterator vertices_cend(const graph_type&, vertex_key_type ukey) const;
+  vertex_vertex_iterator       vertices_end(graph_type&, vertex_id_type uid);
+  const_vertex_vertex_iterator vertices_end(const graph_type&, vertex_id_type uid) const;
+  const_vertex_vertex_iterator vertices_cend(const graph_type&, vertex_id_type uid) const;
 
-  vertex_vertex_range       vertices(graph_type&, vertex_key_type ukey);
-  const_vertex_vertex_range vertices(const graph_type&, vertex_key_type ukey) const;
+  vertex_vertex_range       vertices(graph_type&, vertex_id_type uid);
+  const_vertex_vertex_range vertices(const graph_type&, vertex_id_type uid) const;
 
   vertex_vertex_size_type vertices_size(const graph_type&) const;
 
@@ -1248,7 +1290,7 @@ public:
 
   using vertex_type           = ual_vertex<VV, EV, GV, VId, VContainer, Alloc>;
   using vertex_value_type     = VV;
-  using vertex_key_type       = VId;
+  using vertex_id_type       = VId;
   using vertex_allocator_type = typename allocator_traits<Alloc>::template rebind_alloc<vertex_type>;
   using vertex_set            = VContainer<vertex_type, vertex_allocator_type>;
 
@@ -1262,7 +1304,7 @@ public:
 
   using edge_type       = ual_edge<VV, EV, GV, VId, VContainer, Alloc>;
   using edge_value_type = typename edge_type::edge_value_type;
-  using edge_key_type   = typename edge_type::edge_key_type; // <from,to>
+  using edge_id_type   = typename edge_type::edge_id_type; // <from,to>
 
   using iterator_category = bidirectional_iterator_tag;
   using iterator_concept  = std::bidirectional_iterator_tag;
@@ -1290,7 +1332,7 @@ public:
   constexpr const graph_type& graph() const noexcept;
 
   constexpr const_vertex_iterator other_vertex() const;
-  constexpr vertex_key_type       other_vertex_key() const;
+  constexpr vertex_id_type       other_vertex_id() const;
 
   constexpr reference operator*() const noexcept;
   constexpr pointer   operator->() const noexcept;
@@ -1378,7 +1420,7 @@ public:
 /// Vertex Iterators:
 ///   - Invalidated by: create_vertex() if reallocation occurs, clear()
 ///   - NOT invalidated by: create_edge(), erase_edge()
-///   - Note: Use vertex keys instead of iterators for stable references
+///   - Note: Use vertex ids instead of iterators for stable references
 ///
 /// Edge Iterators (graph-level edges()):
 ///   - Invalidated by: erase_edge() on the same edge, clear()
@@ -1394,7 +1436,7 @@ public:
 /// References and Pointers:
 ///   - Vertex references: Invalidated by create_vertex() if reallocation, clear()
 ///   - Edge references: Invalidated by erase_edge() on that edge, clear()
-///   - Use vertex keys for stable references across operations
+///   - Use vertex ids for stable references across operations
 ///
 /// Thread Safety:
 ///   - NOT thread-safe for concurrent modifications
@@ -1435,7 +1477,7 @@ public:
 
   using vertex_type            = ual_vertex<VV, EV, GV, VId, VContainer, Alloc>;
   using vertex_value_type      = VV;
-  using vertex_key_type        = VId;
+  using vertex_id_type        = VId;
   using vertex_index_type      = VId;
   using vertex_allocator_type  = typename allocator_traits<Alloc>::template rebind_alloc<vertex_type>;
   using vertex_set             = VContainer<vertex_type, vertex_allocator_type>;
@@ -1450,7 +1492,7 @@ public:
   using edge_type            = ual_edge<VV, EV, GV, VId, VContainer, Alloc>;
   using edge_value_type      = EV;
   using edge_allocator_type  = typename allocator_traits<Alloc>::template rebind_alloc<edge_type>;
-  using edge_key_type        = pair<vertex_key_type, vertex_key_type>; // <from,to>
+  using edge_id_type        = pair<vertex_id_type, vertex_id_type>; // <from,to>
   using edge_size_type       = typename edge_type::edge_size_type;
   using edge_difference_type = typename edge_type::edge_difference_type;
   // edge_set, edge_index_type n/a
@@ -1494,17 +1536,17 @@ public:
 
   // The following constructors will load edges (and vertices) into the graph
   //
-  // The number of vertices is guaranteed to match the highest vertex key in
+  // The number of vertices is guaranteed to match the highest vertex id in
   // the edges. Edges are scanned first to determine the highest number and
   // the vertices are resized to match the number.
   //
-  // Accessor functions are used to return the edge_key_type,
+  // Accessor functions are used to return the edge_id_type,
   // edge_value_type and vertex_value_type.
   //
   // The order visited in the vertices determines their index (and
-  // key/identity) in the internal vertices container. The edge keys use those
+  // id/identity) in the internal vertices container. The edge ids use those
   // values and are also expected to be ordered by their first (in) vertex
-  // key and an exception is thrown if they aren't in order. For these
+  // id and an exception is thrown if they aren't in order. For these
   // reasons, unordered (hash) containers won't work.
   //
 
@@ -1613,27 +1655,27 @@ public:
   /// Constructor for easy creation of a graph that takes an initializer
   /// list with edge values.
   ///
-  /// @param ilist Initializer list of tuples with source_vertex_key,
-  ///              target_vertex_key and the edge value.
+  /// @param ilist Initializer list of tuples with source_vertex_id,
+  ///              target_vertex_id and the edge value.
   /// @param alloc Allocator.
   ///
   // clang-format off
   undirected_adjacency_list(
     const initializer_list<
-          tuple<vertex_key_type, vertex_key_type, edge_value_type>>& ilist,
+          tuple<vertex_id_type, vertex_id_type, edge_value_type>>& ilist,
     const Alloc&                                                     alloc = Alloc());
   // clang-format on
 
   /// Constructor for easy creation of a graph that takes an initializer
   /// list with edge values.
   ///
-  /// @param ilist Initializer list of tuples with source_vertex_key and
-  ///              target_vertex_key.
+  /// @param ilist Initializer list of tuples with source_vertex_id and
+  ///              target_vertex_id.
   /// @param alloc Allocator.
   ///
   // clang-format off
   undirected_adjacency_list(
-    const initializer_list<tuple<vertex_key_type, vertex_key_type>>& ilist,
+    const initializer_list<tuple<vertex_id_type, vertex_id_type>>& ilist,
     const Alloc&                                                     alloc = Alloc());
   // clang-format on
 
@@ -1663,14 +1705,10 @@ public: // Accessors
   /// @return Reference to the graph value.
   /// @complexity O(1)
   /// @note Only available when GV is not void.
-  template <typename GV_ = GV>
-    requires (!std::is_void_v<GV_>)
   graph_value_type& graph_value() noexcept {
     return graph_value_;
   }
   
-  template <typename GV_ = GV>
-    requires (!std::is_void_v<GV_>)
   const graph_value_type& graph_value() const noexcept {
     return graph_value_;
   }
@@ -1710,65 +1748,36 @@ private:
 
 private: // CPO support via ADL (friend functions)
   // These friend functions enable CPO customization via ADL
-  
-  // vertices(g) - returns vertex_descriptor_view for CPO compatibility
-  friend constexpr auto vertices(undirected_adjacency_list& g) noexcept { 
-    return vertex_descriptor_view(g.vertices_);
-  }
-  friend constexpr auto vertices(const undirected_adjacency_list& g) noexcept { 
-    return vertex_descriptor_view(g.vertices_);
-  }
-  
-  // num_vertices(g)
-  friend constexpr auto num_vertices(const undirected_adjacency_list& g) noexcept { 
-    return g.vertices_.size(); 
-  }
-  
-  // num_edges(g) - total edge count
-  friend constexpr auto num_edges(const undirected_adjacency_list& g) noexcept { 
-    return g.edges_size_; 
-  }
-  
-  // has_edge(g) - check if graph has any edges
-  friend constexpr bool has_edge(const undirected_adjacency_list& g) noexcept { 
-    return g.edges_size_ > 0; 
-  }
+  // Note: vertices(g) removed - CPO uses base class member function vertices()
+  // Note: num_edges(g) removed - CPO uses base class member function num_edges()
+  // Note: num_vertices(g) removed - CPO uses base class member function num_vertices()
+  // Note: has_edge(g) removed - CPO uses base class member function has_edge()
 
   // find_vertex(g, id) - returns view iterator yielding vertex_descriptor
-  friend constexpr auto find_vertex(undirected_adjacency_list& g, vertex_key_type id) noexcept {
+  friend constexpr auto find_vertex(undirected_adjacency_list& g, vertex_id_type id) noexcept {
     using container_iter = typename vertex_set::iterator;
     using view_type      = vertex_descriptor_view<container_iter>;
     using view_iterator  = typename view_type::iterator;
     using storage_type   = typename view_iterator::value_type::storage_type;
 
-    if (id >= static_cast<vertex_key_type>(g.vertices_.size())) {
+    if (id >= static_cast<vertex_id_type>(g.vertices_.size())) {
       return view_iterator{static_cast<storage_type>(g.vertices_.size())};
     }
     return view_iterator{static_cast<storage_type>(id)};
   }
-  friend constexpr auto find_vertex(const undirected_adjacency_list& g, vertex_key_type id) noexcept {
+  friend constexpr auto find_vertex(const undirected_adjacency_list& g, vertex_id_type id) noexcept {
     using container_iter = typename vertex_set::const_iterator;
     using view_type      = vertex_descriptor_view<container_iter>;
     using view_iterator  = typename view_type::iterator;
     using storage_type   = typename view_iterator::value_type::storage_type;
 
-    if (id >= static_cast<vertex_key_type>(g.vertices_.size())) {
+    if (id >= static_cast<vertex_id_type>(g.vertices_.size())) {
       return view_iterator{static_cast<storage_type>(g.vertices_.size())};
     }
     return view_iterator{static_cast<storage_type>(id)};
   }
 
-  // graph_value(g) - get graph value (only when GV is not void)
-  friend constexpr graph_value_type& graph_value(undirected_adjacency_list& g) noexcept
-    requires (!std::is_void_v<GV>)
-  {
-    return g.graph_value_;
-  }
-  friend constexpr const graph_value_type& graph_value(const undirected_adjacency_list& g) noexcept
-    requires (!std::is_void_v<GV>)
-  {
-    return g.graph_value_;
-  }
+  // Note: graph_value(g) removed - CPO uses member function graph_value()
 
   // vertex_value(g, u) - get vertex value (only when VV is not void)
   template <typename U>
@@ -1784,33 +1793,13 @@ private: // CPO support via ADL (friend functions)
     return (vtx.base_value_type::value);
   }
 
-  // edges(g, u) - get edges from a vertex (returns edge_descriptor_view)
-  template <typename U>
-    requires vertex_descriptor_type<U>
-  friend constexpr auto edges(undirected_adjacency_list& g, const U& u) noexcept {
-    auto uid = static_cast<vertex_key_type>(u.vertex_id());
-    auto& vtx = g.vertices_[uid];
-    auto edges_rng = vtx.edges(g, uid);
-    using edge_iter_t = vertex_edge_iterator;
-    using vertex_iter_t = typename U::iterator_type;
-    return edge_descriptor_view<edge_iter_t, vertex_iter_t>(edges_rng, u);
-  }
-  template <typename U>
-    requires vertex_descriptor_type<U>
-  friend constexpr auto edges(const undirected_adjacency_list& g, const U& u) noexcept {
-    auto uid = static_cast<vertex_key_type>(u.vertex_id());
-    const auto& vtx = g.vertices_[uid];
-    auto edges_rng = vtx.edges(g, uid);
-    using edge_iter_t = const_vertex_edge_iterator;
-    using vertex_iter_t = typename U::iterator_type;
-    return edge_descriptor_view<edge_iter_t, vertex_iter_t>(edges_rng, u);
-  }
+  // Note: edges(g, u) removed - CPO uses base class member function edges(u)
 
   // degree(g, u) - get number of edges from a vertex
   template <typename U>
     requires vertex_descriptor_type<U>
   friend constexpr auto degree(const undirected_adjacency_list& g, const U& u) noexcept {
-    auto uid = static_cast<vertex_key_type>(u.vertex_id());
+    auto uid = static_cast<vertex_id_type>(u.vertex_id());
     return g.vertices_[uid].edges_size();
   }
 
@@ -1818,16 +1807,16 @@ private: // CPO support via ADL (friend functions)
   // For undirected graphs, the target is the "other" vertex relative to the source we're iterating from
   template <typename E>
     requires edge_descriptor_type<E>
-  friend constexpr vertex_key_type target_id(const undirected_adjacency_list& g, const E& e) noexcept {
-    return e.value()->other_vertex_key(g, static_cast<vertex_key_type>(e.source_id()));
+  friend constexpr vertex_id_type target_id(const undirected_adjacency_list& g, const E& e) noexcept {
+    return e.value()->other_vertex_id(g, static_cast<vertex_id_type>(e.source_id()));
   }
 
   // source_id(g, edge_descriptor) - get source vertex id from edge descriptor
   // For undirected graphs, the source is the vertex we're iterating from (stored in descriptor)
   template <typename E>
     requires edge_descriptor_type<E>
-  friend constexpr vertex_key_type source_id([[maybe_unused]] const undirected_adjacency_list& g, const E& e) noexcept {
-    return static_cast<vertex_key_type>(e.source_id());
+  friend constexpr vertex_id_type source_id([[maybe_unused]] const undirected_adjacency_list& g, const E& e) noexcept {
+    return static_cast<vertex_id_type>(e.source_id());
   }
 
   // target(g, edge_descriptor) - get target vertex descriptor from edge descriptor
@@ -1862,8 +1851,8 @@ private: // CPO support via ADL (friend functions)
   // Returns an edge_descriptor
   template <typename U>
     requires vertex_descriptor_type<U>
-  friend constexpr auto find_vertex_edge(undirected_adjacency_list& g, const U& u, vertex_key_type vid) noexcept {
-    auto uid = static_cast<vertex_key_type>(u.vertex_id());
+  friend constexpr auto find_vertex_edge(undirected_adjacency_list& g, const U& u, vertex_id_type vid) noexcept {
+    auto uid = static_cast<vertex_id_type>(u.vertex_id());
     auto& vtx = g.vertices_[uid];
     auto edges_rng = vtx.edges(g, uid);
     using edge_iter_t = vertex_edge_iterator;
@@ -1879,8 +1868,8 @@ private: // CPO support via ADL (friend functions)
   }
   template <typename U>
     requires vertex_descriptor_type<U>
-  friend constexpr auto find_vertex_edge(const undirected_adjacency_list& g, const U& u, vertex_key_type vid) noexcept {
-    auto uid = static_cast<vertex_key_type>(u.vertex_id());
+  friend constexpr auto find_vertex_edge(const undirected_adjacency_list& g, const U& u, vertex_id_type vid) noexcept {
+    auto uid = static_cast<vertex_id_type>(u.vertex_id());
     const auto& vtx = g.vertices_[uid];
     auto edges_rng = vtx.edges(g, uid);
     using edge_iter_t = const_vertex_edge_iterator;
@@ -1898,20 +1887,20 @@ private: // CPO support via ADL (friend functions)
   template <typename U, typename V>
     requires vertex_descriptor_type<U> && vertex_descriptor_type<V>
   friend constexpr auto find_vertex_edge(undirected_adjacency_list& g, const U& u, const V& v) noexcept {
-    return find_vertex_edge(g, u, static_cast<vertex_key_type>(v.vertex_id()));
+    return find_vertex_edge(g, u, static_cast<vertex_id_type>(v.vertex_id()));
   }
   template <typename U, typename V>
     requires vertex_descriptor_type<U> && vertex_descriptor_type<V>
   friend constexpr auto find_vertex_edge(const undirected_adjacency_list& g, const U& u, const V& v) noexcept {
-    return find_vertex_edge(g, u, static_cast<vertex_key_type>(v.vertex_id()));
+    return find_vertex_edge(g, u, static_cast<vertex_id_type>(v.vertex_id()));
   }
 
   // find_vertex_edge(g, uid, vid) - find edge between two vertex ids
-  friend constexpr auto find_vertex_edge(undirected_adjacency_list& g, vertex_key_type uid, vertex_key_type vid) noexcept {
+  friend constexpr auto find_vertex_edge(undirected_adjacency_list& g, vertex_id_type uid, vertex_id_type vid) noexcept {
     auto u = *find_vertex(g, uid);
     return find_vertex_edge(g, u, vid);
   }
-  friend constexpr auto find_vertex_edge(const undirected_adjacency_list& g, vertex_key_type uid, vertex_key_type vid) noexcept {
+  friend constexpr auto find_vertex_edge(const undirected_adjacency_list& g, vertex_id_type uid, vertex_id_type vid) noexcept {
     auto u = *find_vertex(g, uid);
     return find_vertex_edge(g, u, vid);
   }
@@ -1947,7 +1936,7 @@ public:
 
   using vertex_type            = ual_vertex<VV, EV, void, VId, VContainer, Alloc>;
   using vertex_value_type      = VV;
-  using vertex_key_type        = VId;
+  using vertex_id_type        = VId;
   using vertex_index_type      = VId;
   using vertex_allocator_type  = typename allocator_traits<Alloc>::template rebind_alloc<vertex_type>;
   using vertex_set             = VContainer<vertex_type, vertex_allocator_type>;
@@ -1962,7 +1951,7 @@ public:
   using edge_type            = ual_edge<VV, EV, void, VId, VContainer, Alloc>;
   using edge_value_type      = EV;
   using edge_allocator_type  = typename allocator_traits<Alloc>::template rebind_alloc<edge_type>;
-  using edge_key_type        = pair<vertex_key_type, vertex_key_type>;
+  using edge_id_type        = pair<vertex_id_type, vertex_id_type>;
   using edge_size_type       = typename edge_type::edge_size_type;
   using edge_difference_type = typename edge_type::edge_difference_type;
 
@@ -2019,11 +2008,11 @@ public:
 
   undirected_adjacency_list(
     const initializer_list<
-          tuple<vertex_key_type, vertex_key_type, edge_value_type>>& ilist,
+          tuple<vertex_id_type, vertex_id_type, edge_value_type>>& ilist,
     const Alloc&                                                     alloc = Alloc());
 
   undirected_adjacency_list(
-    const initializer_list<tuple<vertex_key_type, vertex_key_type>>& ilist,
+    const initializer_list<tuple<vertex_id_type, vertex_id_type>>& ilist,
     const Alloc&                                                     alloc = Alloc());
 
   ~undirected_adjacency_list();
@@ -2081,43 +2070,29 @@ private:
   friend vertex_type;
 
 private:
-  friend constexpr auto vertices(undirected_adjacency_list& g) noexcept { 
-    return vertex_descriptor_view(g.vertices_);
-  }
-  friend constexpr auto vertices(const undirected_adjacency_list& g) noexcept { 
-    return vertex_descriptor_view(g.vertices_);
-  }
-  
-  friend constexpr auto num_vertices(const undirected_adjacency_list& g) noexcept { 
-    return g.vertices_.size(); 
-  }
-  
-  friend constexpr auto num_edges(const undirected_adjacency_list& g) noexcept { 
-    return g.edges_size_; 
-  }
-  
-  friend constexpr bool has_edge(const undirected_adjacency_list& g) noexcept { 
-    return g.edges_size_ > 0; 
-  }
+  // Note: vertices(g) removed - CPO uses base class member function vertices()
+  // Note: num_edges(g) removed - CPO uses base class member function num_edges()
+  // Note: num_vertices(g) removed - CPO uses base class member function num_vertices()
+  // Note: has_edge(g) removed - CPO uses base class member function has_edge()
 
-  friend constexpr auto find_vertex(undirected_adjacency_list& g, vertex_key_type id) noexcept {
+  friend constexpr auto find_vertex(undirected_adjacency_list& g, vertex_id_type id) noexcept {
     using container_iter = typename vertex_set::iterator;
     using view_type      = vertex_descriptor_view<container_iter>;
     using view_iterator  = typename view_type::iterator;
     using storage_type   = typename view_iterator::value_type::storage_type;
 
-    if (id >= static_cast<vertex_key_type>(g.vertices_.size())) {
+    if (id >= static_cast<vertex_id_type>(g.vertices_.size())) {
       return view_iterator{static_cast<storage_type>(g.vertices_.size())};
     }
     return view_iterator{static_cast<storage_type>(id)};
   }
-  friend constexpr auto find_vertex(const undirected_adjacency_list& g, vertex_key_type id) noexcept {
+  friend constexpr auto find_vertex(const undirected_adjacency_list& g, vertex_id_type id) noexcept {
     using container_iter = typename vertex_set::const_iterator;
     using view_type      = vertex_descriptor_view<container_iter>;
     using view_iterator  = typename view_type::iterator;
     using storage_type   = typename view_iterator::value_type::storage_type;
 
-    if (id >= static_cast<vertex_key_type>(g.vertices_.size())) {
+    if (id >= static_cast<vertex_id_type>(g.vertices_.size())) {
       return view_iterator{static_cast<storage_type>(g.vertices_.size())};
     }
     return view_iterator{static_cast<storage_type>(id)};
@@ -2138,44 +2113,25 @@ private:
     return (vtx.base_value_type::value);
   }
 
-  template <typename U>
-    requires vertex_descriptor_type<U>
-  friend constexpr auto edges(undirected_adjacency_list& g, const U& u) noexcept {
-    auto uid = static_cast<vertex_key_type>(u.vertex_id());
-    auto& vtx = g.vertices_[uid];
-    auto edges_rng = vtx.edges(g, uid);
-    using edge_iter_t = vertex_edge_iterator;
-    using vertex_iter_t = typename U::iterator_type;
-    return edge_descriptor_view<edge_iter_t, vertex_iter_t>(edges_rng, u);
-  }
-  template <typename U>
-    requires vertex_descriptor_type<U>
-  friend constexpr auto edges(const undirected_adjacency_list& g, const U& u) noexcept {
-    auto uid = static_cast<vertex_key_type>(u.vertex_id());
-    const auto& vtx = g.vertices_[uid];
-    auto edges_rng = vtx.edges(g, uid);
-    using edge_iter_t = const_vertex_edge_iterator;
-    using vertex_iter_t = typename U::iterator_type;
-    return edge_descriptor_view<edge_iter_t, vertex_iter_t>(edges_rng, u);
-  }
+  // Note: edges(g, u) removed - CPO uses base class member function edges(u)
 
   template <typename U>
     requires vertex_descriptor_type<U>
   friend constexpr auto degree(const undirected_adjacency_list& g, const U& u) noexcept {
-    auto uid = static_cast<vertex_key_type>(u.vertex_id());
+    auto uid = static_cast<vertex_id_type>(u.vertex_id());
     return g.vertices_[uid].edges_size();
   }
 
   template <typename E>
     requires edge_descriptor_type<E>
-  friend constexpr vertex_key_type target_id(const undirected_adjacency_list& g, const E& e) noexcept {
-    return e.value()->other_vertex_key(g, static_cast<vertex_key_type>(e.source_id()));
+  friend constexpr vertex_id_type target_id(const undirected_adjacency_list& g, const E& e) noexcept {
+    return e.value()->other_vertex_id(g, static_cast<vertex_id_type>(e.source_id()));
   }
 
   template <typename E>
     requires edge_descriptor_type<E>
-  friend constexpr vertex_key_type source_id([[maybe_unused]] const undirected_adjacency_list& g, const E& e) noexcept {
-    return static_cast<vertex_key_type>(e.source_id());
+  friend constexpr vertex_id_type source_id([[maybe_unused]] const undirected_adjacency_list& g, const E& e) noexcept {
+    return static_cast<vertex_id_type>(e.source_id());
   }
 
   template <typename E>
@@ -2206,8 +2162,8 @@ private:
 
   template <typename U>
     requires vertex_descriptor_type<U>
-  friend constexpr auto find_vertex_edge(undirected_adjacency_list& g, const U& u, vertex_key_type vid) noexcept {
-    auto uid = static_cast<vertex_key_type>(u.vertex_id());
+  friend constexpr auto find_vertex_edge(undirected_adjacency_list& g, const U& u, vertex_id_type vid) noexcept {
+    auto uid = static_cast<vertex_id_type>(u.vertex_id());
     auto& vtx = g.vertices_[uid];
     auto edges_rng = vtx.edges(g, uid);
     using edge_iter_t = vertex_edge_iterator;
@@ -2222,8 +2178,8 @@ private:
   }
   template <typename U>
     requires vertex_descriptor_type<U>
-  friend constexpr auto find_vertex_edge(const undirected_adjacency_list& g, const U& u, vertex_key_type vid) noexcept {
-    auto uid = static_cast<vertex_key_type>(u.vertex_id());
+  friend constexpr auto find_vertex_edge(const undirected_adjacency_list& g, const U& u, vertex_id_type vid) noexcept {
+    auto uid = static_cast<vertex_id_type>(u.vertex_id());
     const auto& vtx = g.vertices_[uid];
     auto edges_rng = vtx.edges(g, uid);
     using edge_iter_t = const_vertex_edge_iterator;
@@ -2240,19 +2196,19 @@ private:
   template <typename U, typename V>
     requires vertex_descriptor_type<U> && vertex_descriptor_type<V>
   friend constexpr auto find_vertex_edge(undirected_adjacency_list& g, const U& u, const V& v) noexcept {
-    return find_vertex_edge(g, u, static_cast<vertex_key_type>(v.vertex_id()));
+    return find_vertex_edge(g, u, static_cast<vertex_id_type>(v.vertex_id()));
   }
   template <typename U, typename V>
     requires vertex_descriptor_type<U> && vertex_descriptor_type<V>
   friend constexpr auto find_vertex_edge(const undirected_adjacency_list& g, const U& u, const V& v) noexcept {
-    return find_vertex_edge(g, u, static_cast<vertex_key_type>(v.vertex_id()));
+    return find_vertex_edge(g, u, static_cast<vertex_id_type>(v.vertex_id()));
   }
 
-  friend constexpr auto find_vertex_edge(undirected_adjacency_list& g, vertex_key_type uid, vertex_key_type vid) noexcept {
+  friend constexpr auto find_vertex_edge(undirected_adjacency_list& g, vertex_id_type uid, vertex_id_type vid) noexcept {
     auto u = *find_vertex(g, uid);
     return find_vertex_edge(g, u, vid);
   }
-  friend constexpr auto find_vertex_edge(const undirected_adjacency_list& g, vertex_key_type uid, vertex_key_type vid) noexcept {
+  friend constexpr auto find_vertex_edge(const undirected_adjacency_list& g, vertex_id_type uid, vertex_id_type vid) noexcept {
     auto u = *find_vertex(g, uid);
     return find_vertex_edge(g, u, vid);
   }

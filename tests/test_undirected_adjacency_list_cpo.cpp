@@ -19,6 +19,16 @@ using graph::container::undirected_adjacency_list;
 using IntGraph = undirected_adjacency_list<int, int, int>;
 using StringGVGraph = undirected_adjacency_list<int, int, std::string>;
 
+// Bring CPOs into scope
+using graph::adj_list::vertices;
+using graph::adj_list::find_vertex;
+using graph::adj_list::vertex_id;
+using graph::adj_list::num_edges;
+using graph::adj_list::num_vertices;
+using graph::adj_list::has_edge;
+using graph::adj_list::graph_value;
+using graph::adj_list::edges;
+
 TEST_CASE("vertices CPO basic", "[undirected_adjacency_list][cpo][vertices]") {
     IntGraph g(42); // graph value = 42
     g.create_vertex(10);
