@@ -1706,6 +1706,101 @@ base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_edge(
   return vertex_edge_iterator(static_cast<graph_type&>(*this), ukey, uv);
 }
 
+//-------------------------------------------------------------------------------------
+// Edge removal methods
+//-------------------------------------------------------------------------------------
+
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::edge_iterator
+base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::erase_edge(edge_iterator pos) {
+  edge_type* uv = &*pos;
+  ++pos;
+  uv->~edge_type(); // unlinks from vertices
+  this->edge_alloc_.deallocate(uv, 1);
+  --this->edges_size_;
+  return pos;
+}
+
+//-------------------------------------------------------------------------------------
+// Graph modification methods
+//-------------------------------------------------------------------------------------
+
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+void base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::clear() {
+  // make sure edges are deallocated from this->edge_alloc_
+  // Use downcast to call derived class clear_edges method
+  auto& derived = static_cast<graph_type&>(*this);
+  for (vertex_type& u : this->vertices_)
+    u.clear_edges(derived);
+  this->vertices_.clear(); // now we can clear the vertices
+}
+
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+void base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::swap(base_undirected_adjacency_list& other) {
+  using std::swap;
+  this->vertices_.swap(other.vertices_);
+  swap(this->edges_size_, other.edges_size_);
+  swap(this->vertex_alloc_, other.vertex_alloc_);
+  swap(this->edge_alloc_, other.edge_alloc_);
+  // Note: Does NOT swap graph_value_ - that's handled by derived class
+}
+
+//-------------------------------------------------------------------------------------
+// Utility methods
+//-------------------------------------------------------------------------------------
+
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+void base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::reserve_vertices(vertex_size_type n) {
+  this->vertices_.reserve(n);
+}
+
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+void base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::resize_vertices(vertex_size_type n) {
+  this->vertices_.resize(n);
+}
+
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+void base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::resize_vertices(vertex_size_type n,
+                                                                                           const vertex_value_type& val) {
+  this->vertices_.resize(n, val);
+}
+
 
 ///-------------------------------------------------------------------------------------
 /// undirected_adjacency_list
@@ -1935,79 +2030,10 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-void undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::reserve_vertices(vertex_size_type n) {
-  this->vertices_.reserve(n);
-}
-
-template <typename VV,
-          typename EV,
-          typename GV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-void undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::resize_vertices(vertex_size_type n) {
-  this->vertices_.resize(n);
-}
-template <typename VV,
-          typename EV,
-          typename GV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-void undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::resize_vertices(vertex_size_type         n,
-                                                                                     const vertex_value_type& val) {
-  this->vertices_.resize(n, val);
-}
-
-// Edge removal and graph operations
-template <typename VV,
-          typename EV,
-          typename GV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::edge_iterator
-undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::erase_edge(edge_iterator pos) {
-  edge_type* uv = &*pos;
-  ++pos;
-  uv->~edge_type(); // unlinks from vertices
-  this->edge_alloc_.deallocate(uv, 1);
-  --this->edges_size_;
-  return pos;
-}
-
-
-template <typename VV,
-          typename EV,
-          typename GV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-void undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::clear() {
-  // make sure edges are deallocated from this->edge_alloc_
-  for (vertex_type& u : this->vertices_)
-    u.clear_edges(*this);
-  this->vertices_.clear(); // now we can clear the vertices
-}
-
-
-template <typename VV,
-          typename EV,
-          typename GV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
 void undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::swap(undirected_adjacency_list& rhs) {
   using std::swap;
   swap(graph_value_, rhs.graph_value_);
-  this->vertices_.swap(rhs.vertices_);
-  swap(this->edges_size_, rhs.edges_size_);
-  swap(this->edge_alloc_, rhs.edge_alloc_);
+  base_type::swap(rhs); // Call base class swap for vertices, edges_size, allocators
 }
 
 ///-------------------------------------------------------------------------------------
@@ -2339,74 +2365,8 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-void undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::reserve_vertices(vertex_size_type n) {
-  this->vertices_.reserve(n);
-}
-
-template <typename VV,
-          typename EV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-void undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::resize_vertices(vertex_size_type n) {
-  this->vertices_.resize(n);
-}
-
-template <typename VV,
-          typename EV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-void undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::resize_vertices(vertex_size_type n, 
-                                                                                       const vertex_value_type& val) {
-  this->vertices_.resize(n, val);
-}
-
-// Edge removal and graph operations - GV=void specialization
-template <typename VV,
-          typename EV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::edge_iterator
-undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::erase_edge(edge_iterator pos) {
-  using edge_type = typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::edge_type;
-  edge_type* uv = &*pos;
-  ++pos;
-  uv->~edge_type(); // unlinks from vertices
-  this->edge_alloc_.deallocate(uv, 1);
-  --this->edges_size_;
-  return pos;
-}
-
-template <typename VV,
-          typename EV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-void undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::clear() {
-  // make sure edges are deallocated from this->edge_alloc_
-  for (vertex_type& u : this->vertices_)
-    u.clear_edges(*this);
-  this->vertices_.clear(); // now we can clear the vertices
-}
-
-template <typename VV,
-          typename EV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
 void undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::swap(undirected_adjacency_list& rhs) {
-  using std::swap;
-  this->vertices_.swap(rhs.vertices_);
-  swap(this->edges_size_, rhs.edges_size_);
-  swap(this->edge_alloc_, rhs.edge_alloc_);
-  // Note: No graph_value_ in the GV=void specialization
+  base_type::swap(rhs); // Call base class swap (no graph_value_ to swap)
 }
 
 template <typename VV,

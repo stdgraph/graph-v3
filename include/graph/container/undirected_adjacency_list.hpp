@@ -1077,6 +1077,38 @@ public: // Edge Creation
   template <class EV2>
     requires std::constructible_from<edge_value_type, const EV2&>
   vertex_edge_iterator create_edge(vertex_iterator u, vertex_iterator v, const EV2& val);
+
+public: // Edge Removal
+  /// @brief Erase an edge from the graph.
+  /// @param pos Iterator to the edge to erase.
+  /// @return Iterator to the next edge.
+  /// @complexity O(1) to unlink from both vertex edge lists.
+  edge_iterator erase_edge(edge_iterator pos);
+
+public: // Graph Modification
+  /// @brief Remove all vertices and edges from the graph.
+  /// @complexity O(V + E).
+  void clear();
+  
+  /// @brief Swap contents with another graph of the same base type.
+  /// @param other The graph to swap with.
+  /// @complexity O(1).
+  /// @note Does NOT swap graph_value_ - that's handled by derived class.
+  void swap(base_undirected_adjacency_list& other);
+
+protected: // Utilities
+  /// @brief Reserve space for vertices.
+  /// @param n Number of vertices to reserve space for.
+  void reserve_vertices(vertex_size_type n);
+  
+  /// @brief Resize the vertex container.
+  /// @param n New size.
+  void resize_vertices(vertex_size_type n);
+  
+  /// @brief Resize the vertex container with default value.
+  /// @param n New size.
+  /// @param val Default value for new vertices.
+  void resize_vertices(vertex_size_type n, const vertex_value_type& val);
 };
 
 ///-------------------------------------------------------------------------------------
@@ -1652,19 +1684,12 @@ public: // Edge creation
   using base_type::create_edge;
 
 public: // Edge removal
-  /// @brief Erase an edge from the graph.
-  /// @param pos Iterator to the edge to erase.
-  /// @return Iterator to the next edge.
-  /// @complexity O(1) to unlink from both vertex edge lists.
-  /// @precondition Iterator must be valid and dereferenceable.
-  /// @invalidates Only the erased edge iterator. Other edge iterators remain valid.
-  edge_iterator erase_edge(edge_iterator);
+  // Base class edge removal methods
+  using base_type::erase_edge;
 
 public: // Graph operations
-  /// @brief Remove all vertices and edges from the graph.
-  /// @complexity O(V + E).
-  /// @invalidates All iterators, pointers, and references.
-  void clear();
+  // Base class graph operations
+  using base_type::clear;
   
   /// @brief Swap contents with another graph.
   /// @param other The graph to swap with.
@@ -1673,9 +1698,9 @@ public: // Graph operations
   void swap(undirected_adjacency_list&);
 
 protected:
-  void reserve_vertices(vertex_size_type);
-  void resize_vertices(vertex_size_type);
-  void resize_vertices(vertex_size_type, const vertex_value_type&);
+  // Base class utility methods
+  using base_type::reserve_vertices;
+  using base_type::resize_vertices;
   
   //vertex_iterator finalize_outward_edges(vertex_range);
 
@@ -2032,17 +2057,24 @@ public: // Edge creation
   // Base class edge creation methods
   using base_type::create_edge;
 
-public:
-  edge_iterator erase_edge(edge_iterator);
+public: // Edge removal
+  // Base class edge removal methods
+  using base_type::erase_edge;
 
-public:
-  void clear();
+public: // Graph operations
+  // Base class graph operations
+  using base_type::clear;
+  
+  /// @brief Swap contents with another graph.
+  /// @param rhs The graph to swap with.
+  /// @complexity O(1)
+  /// @invalidates All iterators, pointers, and references.
   void swap(undirected_adjacency_list&);
 
 protected:
-  void reserve_vertices(vertex_size_type);
-  void resize_vertices(vertex_size_type);
-  void resize_vertices(vertex_size_type, const vertex_value_type&);
+  // Base class utility methods
+  using base_type::reserve_vertices;
+  using base_type::resize_vertices;
 
 private:
   // Note: No graph_value_ member in GV=void specialization
