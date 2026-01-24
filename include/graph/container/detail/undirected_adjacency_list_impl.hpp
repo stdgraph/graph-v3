@@ -1554,6 +1554,51 @@ base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::edges_size()
   return this->edges_size_;
 }
 
+//-------------------------------------------------------------------------------------
+// Vertex creation methods
+//-------------------------------------------------------------------------------------
+
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
+base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_vertex() {
+  this->vertices_.push_back(vertex_type(this->vertices_, static_cast<vertex_key_type>(this->vertices_.size())));
+  return this->vertices_.begin() + static_cast<vertex_difference_type>(this->vertices_.size() - 1);
+}
+
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
+base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_vertex(vertex_value_type&& val) {
+  this->vertices_.push_back(vertex_type(this->vertices_, static_cast<vertex_key_type>(this->vertices_.size()), move(val)));
+  return this->vertices_.begin() + static_cast<vertex_difference_type>(this->vertices_.size() - 1);
+}
+
+template <typename VV,
+          typename EV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+template <class VV2>
+  requires std::constructible_from<typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_value_type, const VV2&>
+typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
+base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_vertex(const VV2& val) {
+  this->vertices_.push_back(vertex_type(this->vertices_, static_cast<vertex_key_type>(this->vertices_.size()), val));
+  return this->vertices_.begin() + static_cast<vertex_key_type>(this->vertices_.size() - 1);
+}
+
 
 ///-------------------------------------------------------------------------------------
 /// undirected_adjacency_list
@@ -1809,48 +1854,7 @@ void undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::resize_verti
   this->vertices_.resize(n, val);
 }
 
-// Vertex creation methods  
-template <typename VV,
-          typename EV,
-          typename GV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
-undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_vertex() {
-  this->vertices_.push_back(vertex_type(this->vertices_, static_cast<vertex_key_type>(this->vertices_.size())));
-  return this->vertices_.begin() + static_cast<vertex_difference_type>(this->vertices_.size() - 1);
-}
-
-template <typename VV,
-          typename EV,
-          typename GV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
-undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_vertex(vertex_value_type&& val) {
-  this->vertices_.push_back(vertex_type(this->vertices_, static_cast<vertex_key_type>(this->vertices_.size()), move(val)));
-  return this->vertices_.begin() + static_cast<vertex_difference_type>(this->vertices_.size() - 1);
-}
-
-template <typename VV,
-          typename EV,
-          typename GV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-template <class VV2>
-  requires std::constructible_from<typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_value_type, const VV2&>
-typename undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
-undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_vertex(const VV2& val) {
-  this->vertices_.push_back(vertex_type(this->vertices_, static_cast<vertex_key_type>(this->vertices_.size()), val));
-  return this->vertices_.begin() + static_cast<vertex_key_type>(this->vertices_.size() - 1);
-}
-
+// Edge creation methods
 template <typename VV,
           typename EV,
           typename GV,
@@ -2358,44 +2362,7 @@ void undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::resize_ver
   this->vertices_.resize(n, val);
 }
 
-template <typename VV,
-          typename EV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertex_iterator
-undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::create_vertex() {
-  this->vertices_.push_back(vertex_type(this->vertices_, static_cast<vertex_key_type>(this->vertices_.size())));
-  return this->vertices_.begin() + static_cast<vertex_difference_type>(this->vertices_.size() - 1);
-}
-
-template <typename VV,
-          typename EV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertex_iterator
-undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::create_vertex(vertex_value_type&& val) {
-  this->vertices_.push_back(vertex_type(this->vertices_, static_cast<vertex_key_type>(this->vertices_.size()), move(val)));
-  return this->vertices_.begin() + static_cast<vertex_difference_type>(this->vertices_.size() - 1);
-}
-
-template <typename VV,
-          typename EV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-template <class VV2>
-  requires std::constructible_from<typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertex_value_type, const VV2&>
-typename undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::vertex_iterator
-undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::create_vertex(const VV2& val) {
-  this->vertices_.push_back(vertex_type(this->vertices_, static_cast<vertex_key_type>(this->vertices_.size()), val));
-  return this->vertices_.begin() + static_cast<vertex_key_type>(this->vertices_.size() - 1);
-}
-
+// Edge creation methods
 template <typename VV,
           typename EV,
           integral VId,

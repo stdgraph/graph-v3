@@ -993,6 +993,27 @@ public: // Accessors
   /// @complexity O(1) to create range, O(V+E) to iterate.
   edge_range       edges() { return {edges_begin(), edges_end(), this->edges_size_}; }
   const_edge_range edges() const { return {edges_begin(), edges_end(), this->edges_size_}; }
+
+public: // Vertex Creation
+  /// @brief Create a new vertex with default value.
+  /// @return Iterator to the newly created vertex.
+  /// @complexity O(1) amortized
+  vertex_iterator create_vertex();
+  
+  /// @brief Create a new vertex with moved value.
+  /// @param val Value to move into the vertex.
+  /// @return Iterator to the newly created vertex.
+  /// @complexity O(1) amortized
+  vertex_iterator create_vertex(vertex_value_type&& val);
+  
+  /// @brief Create a new vertex with copied value.
+  /// @tparam VV2 Type convertible to vertex_value_type.
+  /// @param val Value to copy into the vertex.
+  /// @return Iterator to the newly created vertex.
+  /// @complexity O(1) amortized
+  template <class VV2>
+    requires std::constructible_from<vertex_value_type, const VV2&>
+  vertex_iterator create_vertex(const VV2& val);
 };
 
 ///-------------------------------------------------------------------------------------
@@ -1560,28 +1581,8 @@ public: // Accessors
   }
 
 public: // Vertex creation
-  /// @brief Create a new vertex with default value.
-  /// @return Iterator to the newly created vertex.
-  /// @complexity O(1) amortized.
-  /// @invalidates Vertex iterators if reallocation occurs.
-  vertex_iterator create_vertex();
-  
-  /// @brief Create a new vertex with the given value (move).
-  /// @param val The value to move into the vertex.
-  /// @return Iterator to the newly created vertex.
-  /// @complexity O(1) amortized.
-  /// @invalidates Vertex iterators if reallocation occurs.
-  vertex_iterator create_vertex(vertex_value_type&&);
-
-  /// @brief Create a new vertex with the given value (copy).
-  /// @tparam VV2 Type convertible to vertex_value_type.
-  /// @param val The value to copy into the vertex.
-  /// @return Iterator to the newly created vertex.
-  /// @complexity O(1) amortized.
-  /// @invalidates Vertex iterators if reallocation occurs.
-  template <class VV2>
-    requires std::constructible_from<vertex_value_type, const VV2&>
-  vertex_iterator create_vertex(const VV2&);
+  // Base class vertex creation methods
+  using base_type::create_vertex;
 
 public: // Edge creation
   /// @brief Create an edge between two vertices (by key).
@@ -2025,13 +2026,9 @@ public: // Accessors
 
   // Note: No graph_value() methods for GV=void specialization
 
-public:
-  vertex_iterator create_vertex();
-  vertex_iterator create_vertex(vertex_value_type&&);
-
-  template <class VV2>
-    requires std::constructible_from<vertex_value_type, const VV2&>
-  vertex_iterator create_vertex(const VV2&);
+public: // Vertex creation
+  // Base class vertex creation methods
+  using base_type::create_vertex;
 
 public:
   vertex_edge_iterator create_edge(vertex_key_type, vertex_key_type);
