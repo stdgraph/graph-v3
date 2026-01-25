@@ -25,6 +25,8 @@ add_executable(graph3_tests
     test_edges_uid_cpo.cpp
     test_target_id_cpo.cpp
     test_target_cpo.cpp
+    test_source_id_cpo.cpp
+    test_source_cpo.cpp
     test_num_vertices_cpo.cpp
     test_num_edges_cpo.cpp
     test_degree_cpo.cpp
