@@ -1040,32 +1040,17 @@ public: // Accessors
     return adj_list::edge_descriptor_view<edge_iter_t, vertex_iter_t>(edges_rng, u);
   }
 
-  /// @brief Get iterator to first edge in the graph.
-  /// @note Iterates ALL edges from ALL vertices. Each edge visited twice (from both endpoints).
-  /// @complexity O(1)
-  constexpr edge_iterator       edges_begin() { return edge_iterator(*this, begin()); }
-  constexpr const_edge_iterator edges_begin() const {
-    return const_edge_iterator(*this, const_cast<base_undirected_adjacency_list&>(*this).begin());
-  }
-  constexpr const_edge_iterator edges_cbegin() const {
-    return const_edge_iterator(*this, const_cast<base_undirected_adjacency_list&>(*this).cbegin());
-  }
-
-  /// @brief Get iterator to one-past-last edge.
-  /// @complexity O(1)
-  constexpr edge_iterator       edges_end() { return edge_iterator(*this, end()); }
-  constexpr const_edge_iterator edges_end() const {
-    return const_edge_iterator(*this, const_cast<base_undirected_adjacency_list&>(*this).end());
-  }
-  constexpr const_edge_iterator edges_cend() const {
-    return const_edge_iterator(*this, const_cast<base_undirected_adjacency_list&>(*this).end());
-  }
-
   /// @brief Get range of all edges.
   /// @note Each undirected edge appears twice in iteration (once from each endpoint).
   /// @complexity O(1) to create range, O(V+E) to iterate.
-  edge_range       edges() { return {edges_begin(), edges_end(), this->edges_size_}; }
-  const_edge_range edges() const { return {edges_begin(), edges_end(), this->edges_size_}; }
+  edge_range       edges() { 
+    return {edge_iterator(*this, begin()), edge_iterator(*this, end()), this->edges_size_}; 
+  }
+  const_edge_range edges() const { 
+    return {const_edge_iterator(*this, const_cast<base_undirected_adjacency_list&>(*this).begin()), 
+            const_edge_iterator(*this, const_cast<base_undirected_adjacency_list&>(*this).end()), 
+            this->edges_size_}; 
+  }
 
 public: // Vertex Creation
   /// @brief Create a new vertex with default value.
@@ -1714,10 +1699,6 @@ public: // Accessors
   using base_type::end;
   using base_type::cend;
   using base_type::try_find_vertex;
-  using base_type::edges_begin;
-  using base_type::edges_end;
-  using base_type::edges_cbegin;
-  using base_type::edges_cend;
   using base_type::edges;
 
   // Graph value accessors
@@ -2028,10 +2009,6 @@ public: // Accessors
   using base_type::end;
   using base_type::cend;
   using base_type::try_find_vertex;
-  using base_type::edges_begin;
-  using base_type::edges_end;
-  using base_type::edges_cbegin;
-  using base_type::edges_cend;
   using base_type::edges;
 
   // Note: No graph_value() methods for GV=void specialization
