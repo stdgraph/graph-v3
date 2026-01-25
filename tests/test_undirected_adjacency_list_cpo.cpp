@@ -32,6 +32,8 @@ using graph::adj_list::target;
 using graph::adj_list::source;
 using graph::adj_list::target_id;
 using graph::adj_list::source_id;
+using graph::adj_list::degree;
+using graph::adj_list::find_vertex_edge;
 
 TEST_CASE("vertices CPO basic", "[undirected_adjacency_list][cpo][vertices]") {
     IntGraph g(42); // graph value = 42

@@ -1775,14 +1775,7 @@ private: // CPO support via ADL (friend functions)
   // Note: graph_value(g) removed - CPO uses member function graph_value()
 
   // Note: edges(g, u) removed - CPO uses base class member function edges(u)
-
-  // degree(g, u) - get number of edges from a vertex
-  template <typename U>
-    requires vertex_descriptor_type<U>
-  friend constexpr auto degree(const undirected_adjacency_list& g, const U& u) noexcept {
-    auto uid = static_cast<vertex_id_type>(u.vertex_id());
-    return g.vertices_[uid].num_edges();
-  }
+  // Note: degree(g, u) removed - CPO uses default implementation
 
   // target_id(g, edge_descriptor) - get target vertex id from edge descriptor (iteration perspective)
   // For undirected graphs, the target is the "other" vertex relative to the source we're iterating from
@@ -1807,63 +1800,7 @@ private: // CPO support via ADL (friend functions)
     return static_cast<vertex_id_type>(e.source_id());
   }
 
-  // find_vertex_edge(g, u, vid) - find edge from vertex descriptor u to vertex with id vid
-  // Returns an edge_descriptor
-  template <typename U>
-    requires vertex_descriptor_type<U>
-  friend constexpr auto find_vertex_edge(undirected_adjacency_list& g, const U& u, vertex_id_type vid) noexcept {
-    auto uid = static_cast<vertex_id_type>(u.vertex_id());
-    auto& vtx = g.vertices_[uid];
-    auto edges_rng = vtx.edges(g, uid);
-    using edge_iter_t = vertex_edge_iterator;
-    using vertex_iter_t = typename U::iterator_type;
-    auto edge_view = edge_descriptor_view<edge_iter_t, vertex_iter_t>(edges_rng, u);
-    for (auto it = edge_view.begin(); it != edge_view.end(); ++it) {
-      if (target_id(g, *it) == vid) {
-        return *it;
-      }
-    }
-    // Return end edge descriptor (will be invalid if dereferenced)
-    return *edge_view.end();
-  }
-  template <typename U>
-    requires vertex_descriptor_type<U>
-  friend constexpr auto find_vertex_edge(const undirected_adjacency_list& g, const U& u, vertex_id_type vid) noexcept {
-    auto uid = static_cast<vertex_id_type>(u.vertex_id());
-    const auto& vtx = g.vertices_[uid];
-    auto edges_rng = vtx.edges(g, uid);
-    using edge_iter_t = const_vertex_edge_iterator;
-    using vertex_iter_t = typename U::iterator_type;
-    auto edge_view = edge_descriptor_view<edge_iter_t, vertex_iter_t>(edges_rng, u);
-    for (auto it = edge_view.begin(); it != edge_view.end(); ++it) {
-      if (target_id(g, *it) == vid) {
-        return *it;
-      }
-    }
-    return *edge_view.end();
-  }
-
-  // find_vertex_edge(g, u, v) - find edge between two vertex descriptors
-  template <typename U, typename V>
-    requires vertex_descriptor_type<U> && vertex_descriptor_type<V>
-  friend constexpr auto find_vertex_edge(undirected_adjacency_list& g, const U& u, const V& v) noexcept {
-    return find_vertex_edge(g, u, static_cast<vertex_id_type>(v.vertex_id()));
-  }
-  template <typename U, typename V>
-    requires vertex_descriptor_type<U> && vertex_descriptor_type<V>
-  friend constexpr auto find_vertex_edge(const undirected_adjacency_list& g, const U& u, const V& v) noexcept {
-    return find_vertex_edge(g, u, static_cast<vertex_id_type>(v.vertex_id()));
-  }
-
-  // find_vertex_edge(g, uid, vid) - find edge between two vertex ids
-  friend constexpr auto find_vertex_edge(undirected_adjacency_list& g, vertex_id_type uid, vertex_id_type vid) noexcept {
-    auto u = *find_vertex(g, uid);
-    return find_vertex_edge(g, u, vid);
-  }
-  friend constexpr auto find_vertex_edge(const undirected_adjacency_list& g, vertex_id_type uid, vertex_id_type vid) noexcept {
-    auto u = *find_vertex(g, uid);
-    return find_vertex_edge(g, u, vid);
-  }
+  // Note: find_vertex_edge(g, ...) removed - CPO uses default implementation
 };
 
 ///-------------------------------------------------------------------------------------
@@ -2056,13 +1993,7 @@ private:
   // Note: No graph_value(g) CPO for GV=void specialization
 
   // Note: edges(g, u) removed - CPO uses base class member function edges(u)
-
-  template <typename U>
-    requires vertex_descriptor_type<U>
-  friend constexpr auto degree(const undirected_adjacency_list& g, const U& u) noexcept {
-    auto uid = static_cast<vertex_id_type>(u.vertex_id());
-    return g.vertices_[uid].num_edges();
-  }
+  // Note: degree(g, u) removed - CPO uses default implementation
 
   template <typename E>
     requires edge_descriptor_type<E>
@@ -2070,58 +2001,7 @@ private:
     return static_cast<vertex_id_type>(e.source_id());
   }
 
-  template <typename U>
-    requires vertex_descriptor_type<U>
-  friend constexpr auto find_vertex_edge(undirected_adjacency_list& g, const U& u, vertex_id_type vid) noexcept {
-    auto uid = static_cast<vertex_id_type>(u.vertex_id());
-    auto& vtx = g.vertices_[uid];
-    auto edges_rng = vtx.edges(g, uid);
-    using edge_iter_t = vertex_edge_iterator;
-    using vertex_iter_t = typename U::iterator_type;
-    auto edge_view = edge_descriptor_view<edge_iter_t, vertex_iter_t>(edges_rng, u);
-    for (auto it = edge_view.begin(); it != edge_view.end(); ++it) {
-      if (target_id(g, *it) == vid) {
-        return *it;
-      }
-    }
-    return *edge_view.end();
-  }
-  template <typename U>
-    requires vertex_descriptor_type<U>
-  friend constexpr auto find_vertex_edge(const undirected_adjacency_list& g, const U& u, vertex_id_type vid) noexcept {
-    auto uid = static_cast<vertex_id_type>(u.vertex_id());
-    const auto& vtx = g.vertices_[uid];
-    auto edges_rng = vtx.edges(g, uid);
-    using edge_iter_t = const_vertex_edge_iterator;
-    using vertex_iter_t = typename U::iterator_type;
-    auto edge_view = edge_descriptor_view<edge_iter_t, vertex_iter_t>(edges_rng, u);
-    for (auto it = edge_view.begin(); it != edge_view.end(); ++it) {
-      if (target_id(g, *it) == vid) {
-        return *it;
-      }
-    }
-    return *edge_view.end();
-  }
-
-  template <typename U, typename V>
-    requires vertex_descriptor_type<U> && vertex_descriptor_type<V>
-  friend constexpr auto find_vertex_edge(undirected_adjacency_list& g, const U& u, const V& v) noexcept {
-    return find_vertex_edge(g, u, static_cast<vertex_id_type>(v.vertex_id()));
-  }
-  template <typename U, typename V>
-    requires vertex_descriptor_type<U> && vertex_descriptor_type<V>
-  friend constexpr auto find_vertex_edge(const undirected_adjacency_list& g, const U& u, const V& v) noexcept {
-    return find_vertex_edge(g, u, static_cast<vertex_id_type>(v.vertex_id()));
-  }
-
-  friend constexpr auto find_vertex_edge(undirected_adjacency_list& g, vertex_id_type uid, vertex_id_type vid) noexcept {
-    auto u = *find_vertex(g, uid);
-    return find_vertex_edge(g, u, vid);
-  }
-  friend constexpr auto find_vertex_edge(const undirected_adjacency_list& g, vertex_id_type uid, vertex_id_type vid) noexcept {
-    auto u = *find_vertex(g, uid);
-    return find_vertex_edge(g, u, vid);
-  }
+  // Note: find_vertex_edge(g, ...) removed - CPO uses default implementation
 };
 
 } // namespace graph::container
