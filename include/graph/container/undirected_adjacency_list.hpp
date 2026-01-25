@@ -664,7 +664,7 @@ protected:
 public:
   vertex_iterator       source_vertex(graph_type&) noexcept;
   const_vertex_iterator source_vertex(const graph_type&) const noexcept;
-  vertex_id_type       source_vertex_id(const graph_type&) const noexcept;
+  vertex_id_type        source_id() const noexcept;
 
   vertex_iterator       target_vertex(graph_type&) noexcept;
   const_vertex_iterator target_vertex(const graph_type&) const noexcept;
@@ -686,10 +686,6 @@ public:
   friend edge_list_type; // for delete, when clearing the list
 
 private: // CPO support via ADL (friend functions)
-  // source_id(g, e) - get source vertex id from edge
-  friend constexpr vertex_id_type source_id(const graph_type& g, const ual_edge& e) noexcept {
-    return e.source_vertex_id(g);
-  }
   // edge_value(g, e) - get edge value (only when EV is not void)
   friend constexpr decltype(auto) edge_value(graph_type&, ual_edge& e) noexcept
     requires (!std::is_void_v<EV>)
@@ -2122,12 +2118,6 @@ private:
   friend constexpr auto degree(const undirected_adjacency_list& g, const U& u) noexcept {
     auto uid = static_cast<vertex_id_type>(u.vertex_id());
     return g.vertices_[uid].edges_size();
-  }
-
-  template <typename E>
-    requires edge_descriptor_type<E>
-  friend constexpr vertex_id_type target_id(const undirected_adjacency_list& g, const E& e) noexcept {
-    return e.value()->other_vertex_id(g, static_cast<vertex_id_type>(e.source_id()));
   }
 
   template <typename E>

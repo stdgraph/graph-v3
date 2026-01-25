@@ -2611,7 +2611,15 @@ namespace _cpo_impls {
     // =========================================================================
     
     namespace _source_id {
-        enum class _St { _none, _member, _adl, _descriptor };
+        enum class _St { _none, _native_edge_member, _member, _adl, _descriptor };
+        
+        // Check if the underlying native edge type has source_id() member - highest priority
+        // This checks uv.value()->source_id() where value() returns iterator to native edge
+        template<typename G, typename E>
+        concept _has_native_edge_member = is_edge_descriptor_v<std::remove_cvref_t<E>> &&
+            requires(G& g, const E& uv) {
+                { (*uv.value()).source_id() };
+            };
         
         // Check for g.source_id(uv) member function
         // Note: Uses G (not G&) to preserve const qualification
@@ -2636,7 +2644,10 @@ namespace _cpo_impls {
         
         template<typename G, typename E>
         [[nodiscard]] consteval _Choice_t<_St> _Choose() noexcept {
-            if constexpr (_has_member<G, E>) {
+            if constexpr (_has_native_edge_member<G, E>) {
+                return {_St::_native_edge_member,
+                        noexcept((*std::declval<const E&>().value()).source_id())};
+            } else if constexpr (_has_member<G, E>) {
                 return {_St::_member, 
                         noexcept(std::declval<G>().source_id(std::declval<const E&>()))};
             } else if constexpr (_has_adl<G, E>) {
@@ -2659,12 +2670,18 @@ namespace _cpo_impls {
             /**
              * @brief Get the source vertex ID for an edge
              * 
-             * Resolution order:
-             * 1. g.source_id(uv) - Member function (highest priority)
-             * 2. source_id(g, uv) - ADL (medium priority)
-             * 3. uv.source_id() - Edge descriptor's source_id() member (lowest priority)
+             * Resolution order (four-tier approach):
+             * 1. (*uv.value()).source_id() - Native edge member function (highest priority)
+             * 2. g.source_id(uv) - Graph member function (high priority)
+             * 3. source_id(g, uv) - ADL (medium priority)
+             * 4. uv.source_id() - Edge descriptor's source_id() member (lowest priority)
              * 
-             * The default implementation (tier 3) works for any edge_descriptor that
+             * Where:
+             * - uv must be edge_t<G> (the edge descriptor type for graph G)
+             * - The native edge member function is called if the underlying edge type has source_id()
+             * - ADL allows customization by providing a free function that takes the descriptor
+             * 
+             * The default implementation (tier 4) works for any edge_descriptor that
              * stores its source vertex. This is available for standard adjacency list
              * graphs where edge descriptors maintain their source vertex reference.
              * 
@@ -2685,7 +2702,9 @@ namespace _cpo_impls {
                 using _G = std::remove_cvref_t<G>;
                 using _E = std::remove_cvref_t<E>;
                 
-                if constexpr (_Choice<_G, _E>._Strategy == _St::_member) {
+                if constexpr (_Choice<_G, _E>._Strategy == _St::_native_edge_member) {
+                    return (*uv.value()).source_id();
+                } else if constexpr (_Choice<_G, _E>._Strategy == _St::_member) {
                     return g.source_id(uv);
                 } else if constexpr (_Choice<_G, _E>._Strategy == _St::_adl) {
                     return source_id(g, uv);
