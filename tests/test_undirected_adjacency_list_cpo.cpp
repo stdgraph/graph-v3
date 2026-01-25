@@ -286,8 +286,7 @@ TEST_CASE("edge source_id CPO via ADL", "[undirected_adjacency_list][cpo][source
     auto edge_range = edges(g, v0);
     
     for (auto e : edge_range) {
-        auto edge_it = e.value();
-        REQUIRE(source_id(g, *edge_it) == 0);
+        REQUIRE(source_id(g, e) == 0);
     }
 }
 
