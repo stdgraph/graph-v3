@@ -1704,18 +1704,20 @@ private:                       // CPO properties
   requires std::derived_from<std::remove_cvref_t<G>, dynamic_graph_base> && edge_descriptor_type<E> &&
            (!std::is_void_v<EV>)
   [[nodiscard]] friend constexpr decltype(auto) edge_value(G&& g, E&& uv) noexcept {
-    // Get the source vertex from the descriptor
-    auto&& source_vertex = std::forward<E>(uv).source().inner_value(std::forward<G>(g).vertices_);
-    // Get the edges container from the vertex
-    auto&& edges_container = std::forward<decltype(source_vertex)>(source_vertex).edges();
-    // Get the edge object from the descriptor (may be edge_type or pair<VId, edge_type>)
-    auto&& edge_obj = std::forward<E>(uv).inner_value(std::forward<decltype(edges_container)>(edges_container));
-    // Return the value from the edge object
+    // Get the edge object by chaining calls to avoid dangling reference warnings
     // For map-based containers, edge_obj is pair<const VId, edge_type>, so access .second
-    if constexpr (requires { edge_obj.second.value(); }) {
-      return std::forward<decltype(edge_obj)>(edge_obj).second.value();
+    if constexpr (requires { 
+      std::forward<E>(uv).inner_value(
+        std::forward<E>(uv).source().inner_value(std::forward<G>(g).vertices_).edges()
+      ).second.value(); 
+    }) {
+      return std::forward<E>(uv).inner_value(
+        std::forward<E>(uv).source().inner_value(std::forward<G>(g).vertices_).edges()
+      ).second.value();
     } else {
-      return std::forward<decltype(edge_obj)>(edge_obj).value();
+      return std::forward<E>(uv).inner_value(
+        std::forward<E>(uv).source().inner_value(std::forward<G>(g).vertices_).edges()
+      ).value();
     }
   }
 

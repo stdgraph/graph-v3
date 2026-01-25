@@ -950,8 +950,7 @@ namespace _cpo_impls {
                     // Default: use edge_descriptor.target_id() with vertex from underlying_value
                     // For vov: underlying_value gives vertex, edge_descriptor extracts from it
                     // For raw adjacency lists: underlying_value gives edge container directly
-                    auto&& v = uv.source().underlying_value(g);
-                    return uv.target_id(v);
+                    return uv.target_id(uv.source().underlying_value(g));
                 }
             }
         };
@@ -2482,8 +2481,9 @@ namespace _cpo_impls {
                     // Get vertex from underlying_value - works for both vov and raw adjacency lists
                     // For vov: gives vertex, edge_descriptor extracts properties from it
                     // For raw adjacency lists: gives edge container directly
-                    auto&& v = std::forward<E>(uv).source().underlying_value(std::forward<G>(g));
-                    return std::forward<E>(uv).inner_value(std::forward<decltype(v)>(v));
+                    return std::forward<E>(uv).inner_value(
+                        std::forward<E>(uv).source().underlying_value(std::forward<G>(g))
+                    );
                 }
             }
         };
