@@ -27,7 +27,7 @@ The current `undirected_adjacency_list` has:
    - `ual_edge` - edge class with dual-list links
    - `ual_vertex_value` / `ual_edge_value` - value holders (with void specializations)
    - `ual_vertex_edge_list` - edge list management
-   - Iterator classes: `ual_const_vertex_vertex_iterator`, `ual_vertex_vertex_iterator`
+   - Iterator classes: `ual_const_neighbor_iterator`, `ual_neighbor_iterator`
    - Nested `const_edge_iterator`, `edge_iterator`
 
 ### Code Duplication Issues

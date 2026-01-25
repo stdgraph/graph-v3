@@ -31,10 +31,10 @@ template<typename G> using vertex_edge_iterator_t = typename G::vertex_edge_iter
 template<typename G> using const_vertex_edge_iterator_t = typename G::const_vertex_edge_iterator;
 template<typename G> using vertex_edge_range_t = typename G::vertex_edge_range;
 template<typename G> using const_vertex_edge_range_t = typename G::const_vertex_edge_range;
-template<typename G> using vertex_vertex_iterator_t = typename G::vertex_vertex_iterator;
-template<typename G> using const_vertex_vertex_iterator_t = typename G::const_vertex_vertex_iterator;
-template<typename G> using vertex_vertex_range_t = typename G::vertex_vertex_range;
-template<typename G> using const_vertex_vertex_range_t = typename G::const_vertex_vertex_range;
+template<typename G> using neighbor_iterator_t = typename G::neighbor_iterator;
+template<typename G> using const_neighbor_iterator_t = typename G::const_neighbor_iterator;
+template<typename G> using neighbor_range_t = typename G::neighbor_range;
+template<typename G> using const_neighbor_range_t = typename G::const_neighbor_range;
 
 #ifdef CPO
 ///-------------------------------------------------------------------------------------
@@ -695,7 +695,7 @@ template <typename VV,
           typename Alloc>
 constexpr auto
 vertex_id(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                          g,
-           const_vertex_vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> u)
+           const_neighbor_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> u)
       -> vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
   return u.other_vertex_id();
 }
@@ -709,7 +709,7 @@ template <typename VV,
           typename Alloc>
 constexpr auto vertices(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                   g,
                         vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> u)
-      -> vertex_vertex_range_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
+      -> neighbor_range_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
   return u->vertices(g, vertex_id(g, u));
 }
 
@@ -722,7 +722,7 @@ template <typename VV,
           typename Alloc>
 constexpr auto vertices(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                   g,
                         const_vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> u)
-      -> const_vertex_vertex_range_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
+      -> const_neighbor_range_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
   return u->vertices(g, vertex_id(g, u));
 }
 

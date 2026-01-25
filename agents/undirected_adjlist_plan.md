@@ -51,9 +51,9 @@
 **Phase 6 Complete (January 12, 2026):**
 - ✅ Removed all const_cast usages from iterators
 - ✅ Removed legacy e_begin/e_end methods that used const_cast
-- ✅ Fixed vertex_vertex_iterator to use const-correct other_vertex() overload
+- ✅ Fixed neighbor_iterator to use const-correct other_vertex() overload
 - ✅ Added C++20 iterator_concept typedefs to all iterators (bidirectional/forward)
-- ✅ Verified iterator const/non-const pattern (vertex_vertex_iterator inherits properly)
+- ✅ Verified iterator const/non-const pattern (neighbor_iterator inherits properly)
 - ✅ Code style consistent with project standards
 - ✅ All 271 tests still passing (100% success rate)
 
@@ -564,18 +564,18 @@ undirected_adjacency_list<empty_value, EV> g2(edges_direct, std::identity{});
 **Completed Tasks:**
 1. ✅ **Fixed `const_cast` issues** (1 hour)
    - Removed legacy `e_begin()` and `e_end()` methods that used const_cast
-   - Fixed `ual_vertex_vertex_iterator::operator*()` to use const-correct `other_vertex()` overload
+   - Fixed `ual_neighbor_iterator::operator*()` to use const-correct `other_vertex()` overload
    - All const_cast usages eliminated from iterator code
    - Zero const_cast warnings remaining
 
 2. ✅ **Verified code duplication is minimal** (15 min)
-   - Confirmed `vertex_vertex_iterator` properly inherits from const version
+   - Confirmed `neighbor_iterator` properly inherits from const version
    - No significant duplication patterns found
    - Iterator hierarchy already follows best practices
 
 3. ✅ **Added C++20 iterator concepts** (30 min)
    - Added `iterator_concept` typedef to `ual_vertex_edge_list::const_iterator` (bidirectional)
-   - Added `iterator_concept` typedef to `ual_const_vertex_vertex_iterator` (bidirectional)
+   - Added `iterator_concept` typedef to `ual_const_neighbor_iterator` (bidirectional)
    - Added `iterator_concept` typedef to `const_edge_iterator` (forward)
    - All iterators now satisfy C++20 iterator concepts
 
@@ -591,7 +591,7 @@ undirected_adjacency_list<empty_value, EV> g2(edges_direct, std::identity{});
    - No style violations found
 
 **Changes Made:**
-- Removed 3 const_cast usages (2 in `e_begin`/`e_end`, 1 in `vertex_vertex_iterator`)
+- Removed 3 const_cast usages (2 in `e_begin`/`e_end`, 1 in `neighbor_iterator`)
 - Removed 2 legacy methods (`e_begin`, `e_end`)
 - Added 3 `iterator_concept` typedefs
 - Added comments documenting removed legacy code

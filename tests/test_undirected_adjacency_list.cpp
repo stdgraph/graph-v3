@@ -554,7 +554,7 @@ TEST_CASE("vertex_edge_iterator empty range", "[undirected_adjacency_list][itera
     REQUIRE(range.begin() == range.end());
 }
 
-TEST_CASE("vertex_vertex_iterator basic", "[undirected_adjacency_list][iterators][vertex_vertex]") {
+TEST_CASE("neighbor_iterator basic", "[undirected_adjacency_list][iterators][vertex_vertex]") {
     undirected_adjacency_list<int, int> g;
     auto v1 = g.create_vertex(10);
     VKey k1 = vertex_id(v1, g);
@@ -567,7 +567,7 @@ TEST_CASE("vertex_vertex_iterator basic", "[undirected_adjacency_list][iterators
     g.create_edge(k1, k3, 300);
     
     auto& vertex = g.vertices()[k1];
-    auto range = vertex.vertices(g, k1);
+    auto range = vertex.neighbors(g, k1);
     
     vector<int> neighbor_values;
     for (auto& v : range) {
@@ -579,18 +579,18 @@ TEST_CASE("vertex_vertex_iterator basic", "[undirected_adjacency_list][iterators
     REQUIRE(std::find(neighbor_values.begin(), neighbor_values.end(), 30) != neighbor_values.end());
 }
 
-TEST_CASE("vertex_vertex_iterator empty", "[undirected_adjacency_list][iterators][vertex_vertex]") {
+TEST_CASE("neighbor_iterator empty", "[undirected_adjacency_list][iterators][vertex_vertex]") {
     undirected_adjacency_list<int, int> g;
     auto v1 = g.create_vertex(10);
     VKey k1 = vertex_id(v1, g);
     
     auto& vertex = g.vertices()[k1];
-    auto range = vertex.vertices(g, k1);
+    auto range = vertex.neighbors(g, k1);
     
     REQUIRE(range.begin() == range.end());
 }
 
-TEST_CASE("vertex_vertex_iterator dereference", "[undirected_adjacency_list][iterators][vertex_vertex]") {
+TEST_CASE("neighbor_iterator dereference", "[undirected_adjacency_list][iterators][vertex_vertex]") {
     undirected_adjacency_list<int, int> g;
     auto v1 = g.create_vertex(10);
     VKey k1 = vertex_id(v1, g);
@@ -600,7 +600,7 @@ TEST_CASE("vertex_vertex_iterator dereference", "[undirected_adjacency_list][ite
     g.create_edge(k1, k2, 100);
     
     auto& vertex = g.vertices()[k1];
-    auto it = vertex.vertices(g, k1).begin();
+    auto it = vertex.neighbors(g, k1).begin();
     
     REQUIRE(it->value() == 20);
     

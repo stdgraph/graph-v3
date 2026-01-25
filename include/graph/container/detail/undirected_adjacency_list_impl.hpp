@@ -1126,8 +1126,8 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::vertex_vertex_size_type
-ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::vertices_size(const graph_type& g) const {
+typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::neighbor_size_type
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::neighbors_size(const graph_type& g) const {
   return size(edges(g));
 }
 
@@ -1138,9 +1138,9 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::vertex_vertex_range
-ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::vertices(graph_type& g, vertex_id_type uid) {
-  return {vertex_vertex_iterator(edges_.begin(g, uid)), vertex_vertex_iterator(edges_.end(g, uid)), edges_.size()};
+typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::neighbor_range
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::neighbors(graph_type& g, vertex_id_type uid) {
+  return {neighbor_iterator(edges_.begin(g, uid)), neighbor_iterator(edges_.end(g, uid)), edges_.size()};
 }
 template <typename VV,
           typename EV,
@@ -1149,9 +1149,9 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_vertex_range
-ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::vertices(const graph_type& g, vertex_id_type uid) const {
-  return {const_vertex_vertex_iterator(edges_.begin(g, uid)), const_vertex_vertex_iterator(edges_.end(g, uid)),
+typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::const_neighbor_range
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::neighbors(const graph_type& g, vertex_id_type uid) const {
+  return {const_neighbor_iterator(edges_.begin(g, uid)), const_neighbor_iterator(edges_.end(g, uid)),
           edges_.size()};
 }
 
@@ -1812,9 +1812,7 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-template <typename GV_>
-  requires (!std::is_void_v<GV_> && !std::is_same_v<std::remove_cvref_t<GV_>, undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>>)
-undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjacency_list(const GV_& val,
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjacency_list(const graph_value_type& val,
                                                                                           const allocator_type&   alloc)
       : base_type(alloc)
       , graph_value_(val) {}
@@ -1827,12 +1825,10 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-template <typename GV_>
-  requires (!std::is_void_v<GV_> && !std::is_same_v<std::remove_cvref_t<GV_>, undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>>)
-undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjacency_list(GV_&&    val,
+undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjacency_list(graph_value_type&& val,
                                                                                           const allocator_type& alloc)
       : base_type(alloc)
-      , graph_value_(std::forward<GV_>(val)) {}
+      , graph_value_(std::forward<graph_value_type>(val)) {}
 
 
 
@@ -2025,7 +2021,7 @@ void undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::swap(undirec
 }
 
 ///-------------------------------------------------------------------------------------
-/// ual_const_vertex_vertex_iterator
+/// ual_const_neighbor_iterator
 ///
 template <typename VV,
           typename EV,
@@ -2034,7 +2030,7 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::ual_const_vertex_vertex_iterator(
+constexpr ual_const_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::ual_const_neighbor_iterator(
       vertex_edge_iterator const& uv)
       : uv_(uv) {}
 
@@ -2045,8 +2041,8 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr typename ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::graph_type&
-ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::graph() noexcept {
+constexpr typename ual_const_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::graph_type&
+ual_const_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::graph() noexcept {
   return uv_.graph();
 }
 template <typename VV,
@@ -2056,8 +2052,8 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr const typename ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::graph_type&
-ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::graph() const noexcept {
+constexpr const typename ual_const_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::graph_type&
+ual_const_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::graph() const noexcept {
   return uv_.graph();
 }
 
@@ -2068,8 +2064,8 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr typename ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_iterator
-ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::other_vertex() const {
+constexpr typename ual_const_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_iterator
+ual_const_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::other_vertex() const {
   return uv_->other_vertex(uv_.graph(), uv_.source_id());
 }
 
@@ -2080,8 +2076,8 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr typename ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::vertex_id_type
-ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::other_vertex_id() const {
+constexpr typename ual_const_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::vertex_id_type
+ual_const_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::other_vertex_id() const {
   return uv_->other_vertex_id(uv_.graph(), uv_.source_id());
 }
 
@@ -2092,8 +2088,8 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr typename ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::reference
-ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator*() const noexcept {
+constexpr typename ual_const_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::reference
+ual_const_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator*() const noexcept {
   return *uv_->other_vertex(uv_.graph(), uv_.source_id());
 }
 template <typename VV,
@@ -2103,8 +2099,8 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr typename ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::pointer
-ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator->() const noexcept {
+constexpr typename ual_const_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::pointer
+ual_const_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator->() const noexcept {
   return &**this;
 }
 
@@ -2115,8 +2111,8 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>&
-ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator++() noexcept {
+constexpr ual_const_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>&
+ual_const_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator++() noexcept {
   ++uv_;
   return *this;
 }
@@ -2127,9 +2123,9 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>
-ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator++(int) noexcept {
-  ual_const_vertex_vertex_iterator tmp(*this);
+constexpr ual_const_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>
+ual_const_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator++(int) noexcept {
+  ual_const_neighbor_iterator tmp(*this);
   ++*this;
   return tmp;
 }
@@ -2141,8 +2137,8 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>&
-ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator--() noexcept {
+constexpr ual_const_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>&
+ual_const_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator--() noexcept {
   --uv_;
   return *this;
 }
@@ -2153,9 +2149,9 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>
-ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator--(int) noexcept {
-  ual_const_vertex_vertex_iterator tmp(*this);
+constexpr ual_const_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>
+ual_const_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator--(int) noexcept {
+  ual_const_neighbor_iterator tmp(*this);
   --*this;
   return tmp;
 }
@@ -2167,8 +2163,8 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr bool ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator==(
-      const ual_const_vertex_vertex_iterator& rhs) const noexcept {
+constexpr bool ual_const_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator==(
+      const ual_const_neighbor_iterator& rhs) const noexcept {
   return uv_ == rhs.uv_;
 }
 template <typename VV,
@@ -2178,14 +2174,14 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr bool ual_const_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator!=(
-      const ual_const_vertex_vertex_iterator& rhs) const noexcept {
+constexpr bool ual_const_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator!=(
+      const ual_const_neighbor_iterator& rhs) const noexcept {
   return !operator==(rhs);
 }
 
 
 ///-------------------------------------------------------------------------------------
-/// ual_vertex_vertex_iterator
+/// ual_neighbor_iterator
 ///
 template <typename VV,
           typename EV,
@@ -2194,7 +2190,7 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::ual_vertex_vertex_iterator(
+constexpr ual_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::ual_neighbor_iterator(
       vertex_edge_iterator const& uv)
       : base_t(uv) {}
 
@@ -2205,8 +2201,8 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr typename ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
-ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::other_vertex() {
+constexpr typename ual_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
+ual_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::other_vertex() {
   return uv_->other_vertex(uv_.graph(), uv_.source_id());
 }
 
@@ -2217,8 +2213,8 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr typename ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::const_reference
-ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator*() const {
+constexpr typename ual_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::const_reference
+ual_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator*() const {
   return *uv_->other_vertex(uv_.graph(), uv_.source_id());
 }
 template <typename VV,
@@ -2228,8 +2224,8 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr typename ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::const_pointer
-ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator->() const {
+constexpr typename ual_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::const_pointer
+ual_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator->() const {
   return &**this;
 }
 
@@ -2240,8 +2236,8 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>&
-ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator++() {
+constexpr ual_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>&
+ual_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator++() {
   ++uv_;
   return *this;
 }
@@ -2252,9 +2248,9 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>
-ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator++(int) {
-  ual_vertex_vertex_iterator tmp(*this);
+constexpr ual_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>
+ual_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator++(int) {
+  ual_neighbor_iterator tmp(*this);
   ++*this;
   return tmp;
 }
@@ -2266,8 +2262,8 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>&
-ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator--() noexcept {
+constexpr ual_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>&
+ual_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator--() noexcept {
   --uv_;
   return *this;
 }
@@ -2278,9 +2274,9 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>
-ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator--(int) noexcept {
-  ual_vertex_vertex_iterator tmp(*this);
+constexpr ual_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>
+ual_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator--(int) noexcept {
+  ual_neighbor_iterator tmp(*this);
   --*this;
   return tmp;
 }
@@ -2292,8 +2288,8 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr bool ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator==(
-      const ual_vertex_vertex_iterator& rhs) const noexcept {
+constexpr bool ual_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator==(
+      const ual_neighbor_iterator& rhs) const noexcept {
   return base_t::operator==(rhs);
 }
 template <typename VV,
@@ -2303,8 +2299,8 @@ template <typename VV,
           template <typename V, typename A>
           class VContainer,
           typename Alloc>
-constexpr bool ual_vertex_vertex_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator!=(
-      const ual_vertex_vertex_iterator& rhs) const noexcept {
+constexpr bool ual_neighbor_iterator<VV, EV, GV, VId, VContainer, Alloc>::operator!=(
+      const ual_neighbor_iterator& rhs) const noexcept {
   return base_t::operator!=(rhs);
 }
 
