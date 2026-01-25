@@ -881,7 +881,7 @@ constexpr auto
 source_vertex_id(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                 g,
                   const_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv)
       -> vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
-  return uv->source_id();
+  return uv->list_owner_id();
 }
 
 template <typename VV,
@@ -895,7 +895,7 @@ constexpr auto
 source_vertex_id(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                        g,
                   const_vertex_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv)
       -> vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
-  return uv->source_id();
+  return uv->list_owner_id();
 }
 
 

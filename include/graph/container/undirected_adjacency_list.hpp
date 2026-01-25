@@ -662,13 +662,13 @@ protected:
   void unlink(vertex_type&, vertex_type&) noexcept;
 
 public:
-  vertex_iterator       source_vertex(graph_type&) noexcept;
-  const_vertex_iterator source_vertex(const graph_type&) const noexcept;
-  vertex_id_type        source_id() const noexcept;
+  vertex_iterator       source(graph_type&) noexcept;
+  const_vertex_iterator source(const graph_type&) const noexcept;
+  vertex_id_type        list_owner_id() const noexcept; // ID of vertex that owns this edge in its list
 
-  vertex_iterator       target_vertex(graph_type&) noexcept;
-  const_vertex_iterator target_vertex(const graph_type&) const noexcept;
-  vertex_id_type        target_id() const noexcept;
+  vertex_iterator       target(graph_type&) noexcept;
+  const_vertex_iterator target(const graph_type&) const noexcept;
+  vertex_id_type        list_target_id() const noexcept; // ID of target vertex from list owner's perspective
 
   vertex_iterator       other_vertex(graph_type&, const_vertex_iterator other) noexcept;
   const_vertex_iterator other_vertex(const graph_type&, const_vertex_iterator other) const noexcept;
@@ -1817,34 +1817,6 @@ private: // CPO support via ADL (friend functions)
     return static_cast<vertex_id_type>(e.source_id());
   }
 
-  // target(g, edge_descriptor) - get target vertex descriptor from edge descriptor
-  template <typename E>
-    requires edge_descriptor_type<E>
-  friend constexpr auto target(undirected_adjacency_list& g, const E& e) noexcept {
-    auto tid = target_id(g, e);
-    return *find_vertex(g, tid);
-  }
-  template <typename E>
-    requires edge_descriptor_type<E>
-  friend constexpr auto target(const undirected_adjacency_list& g, const E& e) noexcept {
-    auto tid = target_id(g, e);
-    return *find_vertex(g, tid);
-  }
-
-  // source(g, edge_descriptor) - get source vertex descriptor from edge descriptor
-  template <typename E>
-    requires edge_descriptor_type<E>
-  friend constexpr auto source(undirected_adjacency_list& g, const E& e) noexcept {
-    auto sid = source_id(g, e);
-    return *find_vertex(g, sid);
-  }
-  template <typename E>
-    requires edge_descriptor_type<E>
-  friend constexpr auto source(const undirected_adjacency_list& g, const E& e) noexcept {
-    auto sid = source_id(g, e);
-    return *find_vertex(g, sid);
-  }
-
   // find_vertex_edge(g, u, vid) - find edge from vertex descriptor u to vertex with id vid
   // Returns an edge_descriptor
   template <typename U>
@@ -2124,32 +2096,6 @@ private:
     requires edge_descriptor_type<E>
   friend constexpr vertex_id_type source_id([[maybe_unused]] const undirected_adjacency_list& g, const E& e) noexcept {
     return static_cast<vertex_id_type>(e.source_id());
-  }
-
-  template <typename E>
-    requires edge_descriptor_type<E>
-  friend constexpr auto target(undirected_adjacency_list& g, const E& e) noexcept {
-    auto tid = target_id(g, e);
-    return *find_vertex(g, tid);
-  }
-  template <typename E>
-    requires edge_descriptor_type<E>
-  friend constexpr auto target(const undirected_adjacency_list& g, const E& e) noexcept {
-    auto tid = target_id(g, e);
-    return *find_vertex(g, tid);
-  }
-
-  template <typename E>
-    requires edge_descriptor_type<E>
-  friend constexpr auto source(undirected_adjacency_list& g, const E& e) noexcept {
-    auto sid = source_id(g, e);
-    return *find_vertex(g, sid);
-  }
-  template <typename E>
-    requires edge_descriptor_type<E>
-  friend constexpr auto source(const undirected_adjacency_list& g, const E& e) noexcept {
-    auto sid = source_id(g, e);
-    return *find_vertex(g, sid);
   }
 
   template <typename U>

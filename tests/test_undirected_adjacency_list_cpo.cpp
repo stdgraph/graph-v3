@@ -28,6 +28,10 @@ using graph::adj_list::num_vertices;
 using graph::adj_list::has_edge;
 using graph::adj_list::graph_value;
 using graph::adj_list::edges;
+using graph::adj_list::target;
+using graph::adj_list::source;
+using graph::adj_list::target_id;
+using graph::adj_list::source_id;
 
 TEST_CASE("vertices CPO basic", "[undirected_adjacency_list][cpo][vertices]") {
     IntGraph g(42); // graph value = 42

@@ -128,8 +128,8 @@ TEST_CASE("create single edge", "[undirected_adjacency_list][edge][create]") {
     }
     
     SECTION("edge connects correct vertices") {
-        REQUIRE(e_it->source_id() == k1);
-        REQUIRE(e_it->target_id() == k2);
+        REQUIRE(e_it->list_owner_id() == k1);
+        REQUIRE(e_it->list_target_id() == k2);
     }
     
     SECTION("both vertices report the edge") {
