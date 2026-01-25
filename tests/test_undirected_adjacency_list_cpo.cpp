@@ -265,9 +265,7 @@ TEST_CASE("edge target_id CPO via ADL", "[undirected_adjacency_list][cpo][target
     
     std::vector<unsigned int> targets;
     for (auto e : edge_range) {
-        // Access edge via iterator stored in descriptor
-        auto edge_it = e.value();
-        targets.push_back(target_id(g, *edge_it));
+        targets.push_back(target_id(g, e));
     }
     
     // Edges from vertex 0 should go to vertices 1 and 2

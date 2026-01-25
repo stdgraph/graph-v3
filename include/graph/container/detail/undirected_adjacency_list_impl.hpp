@@ -704,7 +704,7 @@ template <typename VV,
           typename Alloc>
 typename ual_edge<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
 ual_edge<VV, EV, GV, VId, VContainer, Alloc>::target_vertex(graph_type& g) noexcept {
-  return g.vertices().begin() + target_vertex_id(g);
+  return g.vertices().begin() + target_id();
 }
 
 template <typename VV,
@@ -727,7 +727,7 @@ template <typename VV,
           class VContainer,
           typename Alloc>
 typename ual_edge<VV, EV, GV, VId, VContainer, Alloc>::vertex_id_type
-ual_edge<VV, EV, GV, VId, VContainer, Alloc>::target_vertex_id([[maybe_unused]] const graph_type& g) const noexcept {
+ual_edge<VV, EV, GV, VId, VContainer, Alloc>::target_id() const noexcept {
   return static_cast<vertex_edge_list_outward_link_type const*>(this)->vertex_id();
 }
 
@@ -793,7 +793,7 @@ template <typename VV,
 typename ual_edge<VV, EV, GV, VId, VContainer, Alloc>::vertex_id_type
 ual_edge<VV, EV, GV, VId, VContainer, Alloc>::other_vertex_id(const graph_type&     g,
                                                                 const_vertex_iterator other) const noexcept {
-  return other != source_vertex(g) ? source_vertex_id(g) : target_vertex_id(g);
+  return other != source_vertex(g) ? source_vertex_id(g) : target_id();
 }
 
 template <typename VV,
@@ -806,7 +806,7 @@ template <typename VV,
 typename ual_edge<VV, EV, GV, VId, VContainer, Alloc>::vertex_id_type
 ual_edge<VV, EV, GV, VId, VContainer, Alloc>::other_vertex_id(const graph_type& g,
                                                                 vertex_id_type   other_id) const noexcept {
-  return other_id != source_vertex_id(g) ? source_vertex_id(g) : target_vertex_id(g);
+  return other_id != source_vertex_id(g) ? source_vertex_id(g) : target_id();
 }
 
 template <typename VV,
@@ -818,7 +818,7 @@ template <typename VV,
           typename Alloc>
 typename ual_edge<VV, EV, GV, VId, VContainer, Alloc>::edge_id_type
 ual_edge<VV, EV, GV, VId, VContainer, Alloc>::edge_id(const graph_type& g) const noexcept {
-  return unordered_pair(source_vertex_id(g), target_vertex_id(g));
+  return unordered_pair(source_vertex_id(g), target_id());
 }
 
 
@@ -1038,7 +1038,7 @@ template <typename VV,
           typename Alloc>
 void ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::erase_edge(graph_type& g, edge_type* uv) {
   vertex_type& u = g.vertices()[uv->source_vertex_id(g)];
-  vertex_type& v = g.vertices()[uv->target_vertex_id(g)];
+  vertex_type& v = g.vertices()[uv->target_id()];
   uv->unlink(u, v);
 
   uv->~edge_type();
@@ -1194,7 +1194,7 @@ base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::base_undirec
     for (auto uv = src_vtx.edges_begin(static_cast<const graph_type&>(other), uid); 
          uv != src_vtx.edges_end(static_cast<const graph_type&>(other), uid); ++uv) {
       vertex_id_type src_id = uv->source_vertex_id(static_cast<const graph_type&>(other));
-      vertex_id_type tgt_id = uv->target_vertex_id(static_cast<const graph_type&>(other));
+      vertex_id_type tgt_id = uv->target_id();
       // Only copy each edge once: when uid matches source and source <= target
       if (uid == src_id && src_id <= tgt_id) {
         if constexpr (std::is_void_v<EV>) {

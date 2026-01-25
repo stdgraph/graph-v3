@@ -668,7 +668,7 @@ public:
 
   vertex_iterator       target_vertex(graph_type&) noexcept;
   const_vertex_iterator target_vertex(const graph_type&) const noexcept;
-  vertex_id_type       target_vertex_id(const graph_type&) const noexcept;
+  vertex_id_type        target_id() const noexcept;
 
   vertex_iterator       other_vertex(graph_type&, const_vertex_iterator other) noexcept;
   const_vertex_iterator other_vertex(const graph_type&, const_vertex_iterator other) const noexcept;
@@ -686,10 +686,6 @@ public:
   friend edge_list_type; // for delete, when clearing the list
 
 private: // CPO support via ADL (friend functions)
-  // target_id(g, e) - get target vertex id from edge (works with raw edge reference)
-  friend constexpr vertex_id_type target_id(const graph_type& g, const ual_edge& e) noexcept {
-    return e.target_vertex_id(g);
-  }
   // source_id(g, e) - get source vertex id from edge
   friend constexpr vertex_id_type source_id(const graph_type& g, const ual_edge& e) noexcept {
     return e.source_vertex_id(g);

@@ -135,6 +135,147 @@ TEST_CASE("target_id(g,uv) - vector<vector<tuple<...>>> multi-property edges", "
 }
 
 // =============================================================================
+// Test: Native Edge Member Function (Highest Priority)
+// =============================================================================
+
+namespace native_edge_member_test {
+    // Custom edge type with target_id() member function
+    struct CustomEdge {
+        int target;
+        double weight;
+        
+        // Member function that CPO should recognize
+        int target_id() const {
+            return target * 100;  // Custom logic: multiply by 100
+        }
+    };
+    
+    struct CustomGraph {
+        std::vector<std::vector<CustomEdge>> adjacency_list = {
+            {{CustomEdge{1, 1.5}, CustomEdge{2, 2.5}}},
+            {{CustomEdge{3, 3.5}}},
+            {}
+        };
+    };
+}
+
+TEST_CASE("target_id(g,uv) - native edge member function", "[target_id][cpo][member][native]") {
+    using namespace native_edge_member_test;
+    CustomGraph g;
+    
+    auto verts = vertices(g.adjacency_list);
+    auto v0 = *verts.begin();
+    
+    SECTION("Native edge member function is called") {
+        std::vector<int> targets;
+        for (auto e : edges(g.adjacency_list, v0)) {
+            targets.push_back(target_id(g.adjacency_list, e));
+        }
+        
+        // Should use CustomEdge::target_id() which returns target * 100
+        REQUIRE(targets.size() == 2);
+        REQUIRE(targets[0] == 100);  // 1 * 100
+        REQUIRE(targets[1] == 200);  // 2 * 100
+    }
+    
+    SECTION("First edge uses native member") {
+        auto edge_range = edges(g.adjacency_list, v0);
+        auto e = *edge_range.begin();
+        
+        auto tid = target_id(g.adjacency_list, e);
+        REQUIRE(tid == 100);  // 1 * 100
+    }
+}
+
+TEST_CASE("target_id(g,uv) - native edge member priority over default", "[target_id][cpo][member][priority]") {
+    using namespace native_edge_member_test;
+    
+    // Even though CustomEdge has a .target field that default extraction would find,
+    // the target_id() member function should take priority
+    CustomGraph g;
+    
+    auto verts = vertices(g.adjacency_list);
+    auto v0 = *verts.begin();
+    auto edge_range = edges(g.adjacency_list, v0);
+    auto e = *edge_range.begin();
+    
+    // Should call CustomEdge::target_id(), NOT extract .target field
+    auto tid = target_id(g.adjacency_list, e);
+    REQUIRE(tid == 100);  // target_id() returns 100, not 1
+}
+
+namespace complex_edge_test {
+    // Complex edge type with both member function and extractable data
+    struct ComplexEdge {
+        int destination;
+        int cost;
+        std::string label;
+        
+        // CPO should use this instead of extracting destination
+        int target_id() const {
+            return destination + 1000;  // Offset by 1000
+        }
+    };
+}
+
+TEST_CASE("target_id(g,uv) - complex edge with member function", "[target_id][cpo][member][complex]") {
+    using namespace complex_edge_test;
+    using Graph = std::vector<std::vector<ComplexEdge>>;
+    
+    Graph g = {
+        {{ComplexEdge{5, 10, "edge1"}, ComplexEdge{8, 15, "edge2"}}},
+        {{ComplexEdge{9, 20, "edge3"}}},
+        {}
+    };
+    
+    auto verts = vertices(g);
+    auto v0 = *verts.begin();
+    
+    std::vector<int> targets;
+    for (auto e : edges(g, v0)) {
+        targets.push_back(target_id(g, e));
+    }
+    
+    // Should use ComplexEdge::target_id()
+    REQUIRE(targets.size() == 2);
+    REQUIRE(targets[0] == 1005);  // 5 + 1000
+    REQUIRE(targets[1] == 1008);  // 8 + 1000
+}
+
+namespace const_member_test {
+    // Edge type with const member function
+    struct EdgeWithConstMember {
+        int target;
+        
+        int target_id() const noexcept {
+            return target;
+        }
+    };
+}
+
+TEST_CASE("target_id(g,uv) - const noexcept member function", "[target_id][cpo][member][const]") {
+    using namespace const_member_test;
+    using Graph = std::vector<std::vector<EdgeWithConstMember>>;
+    
+    Graph g = {
+        {{EdgeWithConstMember{10}, EdgeWithConstMember{20}}},
+        {}
+    };
+    
+    auto verts = vertices(g);
+    auto v0 = *verts.begin();
+    
+    std::vector<int> targets;
+    for (auto e : edges(g, v0)) {
+        targets.push_back(target_id(g, e));
+    }
+    
+    REQUIRE(targets.size() == 2);
+    REQUIRE(targets[0] == 10);
+    REQUIRE(targets[1] == 20);
+}
+
+// =============================================================================
 // Test: Deque Storage
 // =============================================================================
 

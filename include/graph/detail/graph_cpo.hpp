@@ -855,9 +855,17 @@ namespace _cpo_impls {
     // =========================================================================
     
     namespace _target_id {
-        enum class _St { _none, _adl_descriptor, _descriptor };
+        enum class _St { _none, _native_edge_member, _adl_descriptor, _descriptor };
         
-        // Check for ADL target_id(g, descriptor) - highest priority custom override
+        // Check if the underlying native edge type has target_id() member - highest priority
+        // This checks uv.value()->target_id() where value() returns iterator to native edge
+        template<typename G, typename E>
+        concept _has_native_edge_member = is_edge_descriptor_v<std::remove_cvref_t<E>> &&
+            requires(G& g, const E& uv) {
+                { (*uv.value()).target_id() };
+            };
+        
+        // Check for ADL target_id(g, descriptor) - medium priority custom override
         // This allows customization by providing a free function that takes the descriptor
         // Accepts either edge_descriptor or underlying edge value type
         template<typename G, typename E>
@@ -879,7 +887,10 @@ namespace _cpo_impls {
         
         template<typename G, typename E>
         [[nodiscard]] consteval _Choice_t<_St> _Choose() noexcept {
-            if constexpr (_has_adl_descriptor<G, E>) {
+            if constexpr (_has_native_edge_member<G, E>) {
+                return {_St::_native_edge_member,
+                        noexcept((*std::declval<const E&>().value()).target_id())};
+            } else if constexpr (_has_adl_descriptor<G, E>) {
                 return {_St::_adl_descriptor, 
                         noexcept(target_id(std::declval<const G&>(), std::declval<const E&>()))};
             } else if constexpr (_has_descriptor<G, E>) {
@@ -899,19 +910,21 @@ namespace _cpo_impls {
             /**
              * @brief Get target vertex ID from an edge
              * 
-             * Resolution order (two-tier approach):
-             * 1. target_id(g, uv) - ADL with edge_descriptor (highest priority)
-             * 2. uv.target_id(uv.source().inner_value(g)) - descriptor's default method (lowest priority)
+             * Resolution order (three-tier approach):
+             * 1. (*uv.value()).target_id() - Native edge member function (highest priority)
+             * 2. target_id(g, uv) - ADL with edge_descriptor (medium priority)
+             * 3. uv.target_id(uv.source().inner_value(g)) - descriptor's default method (lowest priority)
              * 
              * Where:
              * - uv must be edge_t<G> (the edge descriptor type for graph G)
+             * - The native edge member function is called if the underlying edge type has target_id()
              * - The default implementation uses the edge container from the source vertex
              * 
              * Edge data extraction (default implementation):
              * - Simple integral type (int): Returns the value itself (the target ID)
              * - Pair<target, property>: Returns .first (the target ID)
              * - Tuple<target, prop1, ...>: Returns std::get<0> (the target ID)
-             * - Custom struct/type: User provides custom extraction via ADL
+             * - Custom struct/type: User provides custom extraction via member function or ADL
              * 
              * @tparam G Graph type
              * @tparam E Edge descriptor type (constrained to be an edge_descriptor_type)
@@ -928,7 +941,10 @@ namespace _cpo_impls {
                 using _G = std::remove_cvref_t<G>;
                 using _E = std::remove_cvref_t<E>;
                 
-                if constexpr (_Choice<_G, _E>._Strategy == _St::_adl_descriptor) {
+                if constexpr (_Choice<_G, _E>._Strategy == _St::_native_edge_member) {
+                    // Call target_id() member on the underlying native edge
+                    return (*uv.value()).target_id();
+                } else if constexpr (_Choice<_G, _E>._Strategy == _St::_adl_descriptor) {
                     return target_id(g, uv);
                 } else if constexpr (_Choice<_G, _E>._Strategy == _St::_descriptor) {
                     // Default: use edge_descriptor.target_id() with vertex from underlying_value
