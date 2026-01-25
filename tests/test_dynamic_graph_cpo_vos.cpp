@@ -1157,7 +1157,7 @@ TEST_CASE("vos CPO integration", "[dynamic_graph][vos][cpo][integration]") {
         
         size_t total_edges = 0;
         for (auto v : vertices(g)) {
-            total_edges += degree(g, v);
+            total_edges += static_cast<size_t>(degree(g, v));
         }
         
         REQUIRE(total_edges == num_edges(g));

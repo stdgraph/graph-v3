@@ -84,7 +84,7 @@ TEST_CASE("vertices(g) - vector<vector<int>> simple adjacency list", "[vertices]
     SECTION("can use with range algorithms") {
         vertex_range_t<Graph> verts = vertices(graph);
         
-        size_t count = std::ranges::distance(verts);
+        size_t count = static_cast<size_t>(std::ranges::distance(verts));
         REQUIRE(count == 4);
         
         // Keep auto in range-for - it's clearer

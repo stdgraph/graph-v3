@@ -1018,9 +1018,9 @@ TEST_CASE("count_if - count self-loops in graph (vov)", "[stl][6.2.3][count_if]"
     size_t self_loops = 0;
     for (auto&& u : vertices(g)) {
         auto uid = vertex_id(g, u);
-        self_loops += std::ranges::count_if(edges(g, u), [&g, uid](auto&& e) {
+        self_loops += static_cast<size_t>(std::ranges::count_if(edges(g, u), [&g, uid](auto&& e) {
             return target_id(g, e) == uid;
-        });
+        }));
     }
     
     REQUIRE(self_loops == 3); // Vertices 0, 1, and 2 each have a self-loop
@@ -1240,9 +1240,9 @@ TEST_CASE("count_if - count in both directions (vov)", "[stl][6.2.3][count_if]")
     // Count all edges in graph with value >= 15
     size_t total_count = 0;
     for (auto&& v : vertices(g)) {
-        total_count += std::ranges::count_if(edges(g, v), [&g](auto&& e) {
+        total_count += static_cast<size_t>(std::ranges::count_if(edges(g, v), [&g](auto&& e) {
             return edge_value(g, e) >= 15;
-        });
+        }));
     }
     
     REQUIRE(total_count == 3); // Edges with values 20, 15, and 25
@@ -1254,10 +1254,10 @@ TEST_CASE("count_if - count edges between specific vertex range (mos)", "[stl][6
     // Count all edges from any vertex to targets in range ["B", "D"]
     size_t count = 0;
     for (auto&& v : vertices(g)) {
-        count += std::ranges::count_if(edges(g, v), [&g](auto&& e) {
+        count += static_cast<size_t>(std::ranges::count_if(edges(g, v), [&g](auto&& e) {
             auto tid = target_id(g, e);
             return tid >= "B" && tid <= "D";
-        });
+        }));
     }
     
     REQUIRE(count == 3); // A->B, B->C, B->D
@@ -1697,9 +1697,9 @@ TEST_CASE("transform - check if edges exist to specific targets (vov)", "[stl][6
     auto v = *vertices(g).begin();
     std::vector<bool> target_checks;
     
-    for (size_t target : {1, 2, 3, 4, 5}) {
+    for (size_t target : {1UL, 2UL, 3UL, 4UL, 5UL}) {
         auto found = std::ranges::any_of(edges(g, v), [&g, target](auto&& e) {
-            return target_id(g, e) == target;
+            return target_id(g, e) == static_cast<size_t>(target);
         });
         target_checks.push_back(found);
     }
@@ -1787,7 +1787,7 @@ TEST_CASE("transform - compute out-degree minus in-degree (vov)", "[stl][6.2.4][
     
     std::vector<int> degree_diff;
     std::ranges::transform(vertices(g), std::back_inserter(degree_diff), [&g](auto&& v) {
-        size_t out_degree = std::ranges::distance(edges(g, v));
+        size_t out_degree = static_cast<size_t>(std::ranges::distance(edges(g, v)));
         
         // Count in-degree by checking all edges
         size_t in_degree = 0;
@@ -2213,7 +2213,7 @@ TEST_CASE("nth_element to find median edge value (vov)", "[stl][6.2.5][sort]") {
     
     // Find median using nth_element (middle element when sorted)
     size_t mid = values.size() / 2;
-    std::ranges::nth_element(values, values.begin() + mid);
+    std::ranges::nth_element(values, values.begin() + static_cast<std::ptrdiff_t>(mid));
     
     REQUIRE(values.size() == 5);
     REQUIRE(values[mid] == 50);  // median of {10, 30, 50, 70, 90}
@@ -2603,7 +2603,7 @@ TEST_CASE("pipeline: filter then take vertices (vov)", "[stl][6.2.6][views]") {
         | std::views::filter([&g](auto&& v) { return vertex_value(g, v) == 100; })
         | std::views::take(2);
     
-    size_t count = std::ranges::distance(result);
+    size_t count = static_cast<size_t>(std::ranges::distance(result));
     REQUIRE(count == 2);
 }
 
@@ -2863,7 +2863,7 @@ TEST_CASE("count total out-degree (vov)", "[stl][6.2.7][accumulate]") {
     
     size_t total_degree = 0;
     for (auto&& v : vertices(g)) {
-        total_degree += std::ranges::distance(edges(g, v));
+        total_degree += static_cast<size_t>(std::ranges::distance(edges(g, v)));
     }
     
     REQUIRE(total_degree == 5); // 2 + 2 + 1 + 0
@@ -2875,12 +2875,12 @@ TEST_CASE("sum of all degrees equals edge count (vov)", "[stl][6.2.7][accumulate
     
     size_t edge_count = 0;
     for (auto&& v : vertices(g)) {
-        edge_count += std::ranges::distance(edges(g, v));
+        edge_count += static_cast<size_t>(std::ranges::distance(edges(g, v)));
     }
     
     size_t total_degree = 0;
     for (auto&& v : vertices(g)) {
-        total_degree += std::ranges::distance(edges(g, v));
+        total_degree += static_cast<size_t>(std::ranges::distance(edges(g, v)));
     }
     
     REQUIRE(total_degree == edge_count);
@@ -2895,7 +2895,7 @@ TEST_CASE("find max degree vertex (vov)", "[stl][6.2.7][accumulate]") {
     size_t max_degree = 0;
     
     for (auto&& v : vertices(g)) {
-        size_t degree = std::ranges::distance(edges(g, v));
+        size_t degree = static_cast<size_t>(std::ranges::distance(edges(g, v)));
         if (degree > max_degree) {
             max_degree = degree;
             max_degree_id = vertex_id(g, v);
@@ -2914,7 +2914,7 @@ TEST_CASE("find min degree vertex (vov)", "[stl][6.2.7][accumulate]") {
     size_t min_degree = std::numeric_limits<size_t>::max();
     
     for (auto&& v : vertices(g)) {
-        size_t degree = std::ranges::distance(edges(g, v));
+        size_t degree = static_cast<size_t>(std::ranges::distance(edges(g, v)));
         if (degree < min_degree) {
             min_degree = degree;
             min_degree_id = vertex_id(g, v);
@@ -2933,7 +2933,7 @@ TEST_CASE("compute average degree (vov)", "[stl][6.2.7][accumulate]") {
     size_t vertex_count = 0;
     
     for (auto&& v : vertices(g)) {
-        total_degree += std::ranges::distance(edges(g, v));
+        total_degree += static_cast<size_t>(std::ranges::distance(edges(g, v)));
         ++vertex_count;
     }
     
@@ -3166,7 +3166,7 @@ TEST_CASE("accumulate degrees into vector (vov)", "[stl][6.2.7][accumulate]") {
     
     std::vector<size_t> degrees;
     for (auto&& v : vertices(g)) {
-        degrees.push_back(std::ranges::distance(edges(g, v)));
+        degrees.push_back(static_cast<size_t>(std::ranges::distance(edges(g, v))));
     }
     
     REQUIRE(degrees.size() == 4);
@@ -3197,7 +3197,7 @@ TEST_CASE("accumulate with map-based graph (mos)", "[stl][6.2.7][accumulate]") {
     
     size_t total_degree = 0;
     for (auto&& v : vertices(g)) {
-        total_degree += std::ranges::distance(edges(g, v));
+        total_degree += static_cast<size_t>(std::ranges::distance(edges(g, v)));
     }
     
     REQUIRE(total_degree == 3);

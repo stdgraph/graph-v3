@@ -28,7 +28,7 @@ template<typename G>
 size_t count_edges(const G& g) {
     size_t count = 0;
     for (auto&& u : vertices(g)) {
-        count += std::ranges::distance(edges(g, u));
+        count += static_cast<size_t>(std::ranges::distance(edges(g, u)));
     }
     return count;
 }

@@ -1200,13 +1200,13 @@ TEST_CASE("mol bidirectional edge iteration", "[dynamic_graph][mol][edges][bidir
         // Count edges from vertex 0
         auto it0 = g.try_find_vertex(0);
         REQUIRE(it0 != g.end());
-        size_t count0 = std::ranges::distance(it0->second.edges());
+        size_t count0 = static_cast<size_t>(std::ranges::distance(it0->second.edges()));
         REQUIRE(count0 == 3);
         
         // Count edges from vertex 1
         auto it1 = g.try_find_vertex(1);
         REQUIRE(it1 != g.end());
-        size_t count1 = std::ranges::distance(it1->second.edges());
+        size_t count1 = static_cast<size_t>(std::ranges::distance(it1->second.edges()));
         REQUIRE(count1 == 2);
     }
 }
@@ -1309,7 +1309,7 @@ TEST_CASE("mol complete workflow scenarios", "[dynamic_graph][mol][workflow]") {
         size_t max_friends = 0;
         
         for (auto& [key, vertex] : g) {
-            size_t friend_count = std::ranges::distance(vertex.edges());
+            size_t friend_count = static_cast<size_t>(std::ranges::distance(vertex.edges()));
             if (friend_count > max_friends) {
                 max_friends = friend_count;
                 most_social = key;
@@ -1339,7 +1339,7 @@ TEST_CASE("mol complete workflow scenarios", "[dynamic_graph][mol][workflow]") {
         
         size_t total_edges = 0;
         for (auto& [key, vertex] : g) {
-            total_edges += std::ranges::distance(vertex.edges());
+            total_edges += static_cast<size_t>(std::ranges::distance(vertex.edges()));
         }
         REQUIRE(total_edges == 2);
         
@@ -1359,7 +1359,7 @@ TEST_CASE("mol complete workflow scenarios", "[dynamic_graph][mol][workflow]") {
         
         total_edges = 0;
         for (auto& [key, vertex] : g) {
-            total_edges += std::ranges::distance(vertex.edges());
+            total_edges += static_cast<size_t>(std::ranges::distance(vertex.edges()));
         }
         REQUIRE(total_edges == 3);
     }

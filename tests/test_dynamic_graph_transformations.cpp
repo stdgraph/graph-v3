@@ -205,7 +205,7 @@ TEST_CASE("extract_subgraph - single vertex (vov)", "[6.3.3][extract_subgraph][t
     // No edges since vertex 1's edges go to 0 and 2, which aren't included
     size_t edge_count = 0;
     for (auto&& v : vertices(sub)) {
-        edge_count += std::ranges::distance(edges(sub, v));
+        edge_count += static_cast<size_t>(std::ranges::distance(edges(sub, v)));
     }
     REQUIRE(edge_count == 0);
 }
@@ -217,7 +217,7 @@ TEST_CASE("extract_subgraph - two connected vertices (vov)", "[6.3.3][extract_su
     // Should have edge 0->1
     size_t edge_count = 0;
     for (auto&& v : vertices(sub)) {
-        edge_count += std::ranges::distance(edges(sub, v));
+        edge_count += static_cast<size_t>(std::ranges::distance(edges(sub, v)));
     }
     REQUIRE(edge_count == 1);
 }
@@ -228,7 +228,7 @@ TEST_CASE("extract_subgraph - complete subgraph (vov)", "[6.3.3][extract_subgrap
     REQUIRE(sub.size() == 3);
     size_t edge_count = 0;
     for (auto&& v : vertices(sub)) {
-        edge_count += std::ranges::distance(edges(sub, v));
+        edge_count += static_cast<size_t>(std::ranges::distance(edges(sub, v)));
     }
     REQUIRE(edge_count == 3);  // All edges preserved
 }
@@ -239,7 +239,7 @@ TEST_CASE("extract_subgraph - map-based graph (mos)", "[6.3.3][extract_subgraph]
     REQUIRE(sub.size() == 2);
     size_t edge_count = 0;
     for (auto&& v : vertices(sub)) {
-        edge_count += std::ranges::distance(edges(sub, v));
+        edge_count += static_cast<size_t>(std::ranges::distance(edges(sub, v)));
     }
     REQUIRE(edge_count == 1);  // Only A->B
 }
@@ -250,7 +250,7 @@ TEST_CASE("extract_subgraph - deque-based graph (dofl)", "[6.3.3][extract_subgra
     REQUIRE(sub.size() == 2);
     size_t edge_count = 0;
     for (auto&& v : vertices(sub)) {
-        edge_count += std::ranges::distance(edges(sub, v));
+        edge_count += static_cast<size_t>(std::ranges::distance(edges(sub, v)));
     }
     REQUIRE(edge_count == 1);  // Only 1->2
 }
@@ -262,7 +262,7 @@ TEST_CASE("extract_subgraph - disconnected vertices (vov)", "[6.3.3][extract_sub
     // No edges between 0 and 2
     size_t edge_count = 0;
     for (auto&& v : vertices(sub)) {
-        edge_count += std::ranges::distance(edges(sub, v));
+        edge_count += static_cast<size_t>(std::ranges::distance(edges(sub, v)));
     }
     REQUIRE(edge_count == 0);
 }
@@ -284,10 +284,10 @@ TEST_CASE("copy_graph_generic - simple graph (vov)", "[6.3.3][copy_graph][transf
     
     size_t orig_edges = 0, copy_edges = 0;
     for (auto&& v : vertices(g)) {
-        orig_edges += std::ranges::distance(edges(g, v));
+        orig_edges += static_cast<size_t>(std::ranges::distance(edges(g, v)));
     }
     for (auto&& v : vertices(copy)) {
-        copy_edges += std::ranges::distance(edges(copy, v));
+        copy_edges += static_cast<size_t>(std::ranges::distance(edges(copy, v)));
     }
     REQUIRE(orig_edges == copy_edges);
 }
@@ -299,7 +299,7 @@ TEST_CASE("copy_graph_generic - graph with self-loop (vov)", "[6.3.3][copy_graph
     
     size_t copy_edges = 0;
     for (auto&& v : vertices(copy)) {
-        copy_edges += std::ranges::distance(edges(copy, v));
+        copy_edges += static_cast<size_t>(std::ranges::distance(edges(copy, v)));
     }
     REQUIRE(copy_edges == 2);
 }
@@ -311,7 +311,7 @@ TEST_CASE("copy_graph_generic - map-based graph (mos)", "[6.3.3][copy_graph][tra
     
     size_t copy_edges = 0;
     for (auto&& v : vertices(copy)) {
-        copy_edges += std::ranges::distance(edges(copy, v));
+        copy_edges += static_cast<size_t>(std::ranges::distance(edges(copy, v)));
     }
     REQUIRE(copy_edges == 2);
 }
@@ -323,7 +323,7 @@ TEST_CASE("copy_graph_generic - deque-based graph (dofl)", "[6.3.3][copy_graph][
     
     size_t copy_edges = 0;
     for (auto&& v : vertices(copy)) {
-        copy_edges += std::ranges::distance(edges(copy, v));
+        copy_edges += static_cast<size_t>(std::ranges::distance(edges(copy, v)));
     }
     REQUIRE(copy_edges == 3);
 }
@@ -364,7 +364,7 @@ TEST_CASE("reverse_edges - cycle (vov)", "[6.3.3][reverse_edges][transform]") {
     
     size_t edge_count = 0;
     for (auto&& v : vertices(reversed)) {
-        edge_count += std::ranges::distance(edges(reversed, v));
+        edge_count += static_cast<size_t>(std::ranges::distance(edges(reversed, v)));
     }
     REQUIRE(edge_count == 3);
     
@@ -427,7 +427,7 @@ TEST_CASE("reverse_edges - deque-based graph (dofl)", "[6.3.3][reverse_edges][tr
     
     size_t edge_count = 0;
     for (auto&& v : vertices(reversed)) {
-        edge_count += std::ranges::distance(edges(reversed, v));
+        edge_count += static_cast<size_t>(std::ranges::distance(edges(reversed, v)));
     }
     REQUIRE(edge_count == 2);
 }
@@ -442,7 +442,7 @@ TEST_CASE("filter_edges - keep all edges (vov)", "[6.3.3][filter_edges][transfor
     
     size_t edge_count = 0;
     for (auto&& v : vertices(filtered)) {
-        edge_count += std::ranges::distance(edges(filtered, v));
+        edge_count += static_cast<size_t>(std::ranges::distance(edges(filtered, v)));
     }
     REQUIRE(edge_count == 3);
 }
@@ -453,7 +453,7 @@ TEST_CASE("filter_edges - remove all edges (vov)", "[6.3.3][filter_edges][transf
     
     size_t edge_count = 0;
     for (auto&& v : vertices(filtered)) {
-        edge_count += std::ranges::distance(edges(filtered, v));
+        edge_count += static_cast<size_t>(std::ranges::distance(edges(filtered, v)));
     }
     REQUIRE(edge_count == 0);
 }
@@ -464,7 +464,7 @@ TEST_CASE("filter_edges - keep edges where source < target (vov)", "[6.3.3][filt
     
     size_t edge_count = 0;
     for (auto&& v : vertices(filtered)) {
-        edge_count += std::ranges::distance(edges(filtered, v));
+        edge_count += static_cast<size_t>(std::ranges::distance(edges(filtered, v)));
     }
     REQUIRE(edge_count == 2);  // 0->1 and 1->2, but not 2->0
 }
@@ -475,7 +475,7 @@ TEST_CASE("filter_edges - remove self-loops (vov)", "[6.3.3][filter_edges][trans
     
     size_t edge_count = 0;
     for (auto&& v : vertices(filtered)) {
-        edge_count += std::ranges::distance(edges(filtered, v));
+        edge_count += static_cast<size_t>(std::ranges::distance(edges(filtered, v)));
     }
     REQUIRE(edge_count == 2);  // Only 0->1 and 1->2
 }
@@ -487,7 +487,7 @@ TEST_CASE("filter_edges - keep specific targets (vov)", "[6.3.3][filter_edges][t
     
     size_t edge_count = 0;
     for (auto&& v : vertices(filtered)) {
-        edge_count += std::ranges::distance(edges(filtered, v));
+        edge_count += static_cast<size_t>(std::ranges::distance(edges(filtered, v)));
     }
     REQUIRE(edge_count == 2);  // 0->2 and 1->2
 }
@@ -499,7 +499,7 @@ TEST_CASE("filter_edges - map-based graph (mos)", "[6.3.3][filter_edges][transfo
     
     size_t edge_count = 0;
     for (auto&& v : vertices(filtered)) {
-        edge_count += std::ranges::distance(edges(filtered, v));
+        edge_count += static_cast<size_t>(std::ranges::distance(edges(filtered, v)));
     }
     REQUIRE(edge_count == 2);  // A->B and B->C, but not C->A
 }
@@ -511,7 +511,7 @@ TEST_CASE("filter_edges - deque-based graph (dofl)", "[6.3.3][filter_edges][tran
     
     size_t edge_count = 0;
     for (auto&& v : vertices(filtered)) {
-        edge_count += std::ranges::distance(edges(filtered, v));
+        edge_count += static_cast<size_t>(std::ranges::distance(edges(filtered, v)));
     }
     REQUIRE(edge_count == 2);  // 0->1 and 2->3
 }
@@ -533,7 +533,7 @@ TEST_CASE("extract_subgraph - with self-loops (vov)", "[6.3.3][extract_subgraph]
     // Should have self-loop 0->0
     size_t edge_count = 0;
     for (auto&& v : vertices(sub)) {
-        edge_count += std::ranges::distance(edges(sub, v));
+        edge_count += static_cast<size_t>(std::ranges::distance(edges(sub, v)));
     }
     REQUIRE(edge_count == 1);
 }
@@ -545,7 +545,7 @@ TEST_CASE("copy_graph_generic - complex graph (dov)", "[6.3.3][copy_graph][trans
     
     size_t copy_edges = 0;
     for (auto&& v : vertices(copy)) {
-        copy_edges += std::ranges::distance(edges(copy, v));
+        copy_edges += static_cast<size_t>(std::ranges::distance(edges(copy, v)));
     }
     REQUIRE(copy_edges == 4);
 }
@@ -558,7 +558,7 @@ TEST_CASE("reverse_edges - bidirectional edges (vov)", "[6.3.3][reverse_edges][t
     // After reversal, should still be bidirectional
     size_t edge_count = 0;
     for (auto&& v : vertices(reversed)) {
-        edge_count += std::ranges::distance(edges(reversed, v));
+        edge_count += static_cast<size_t>(std::ranges::distance(edges(reversed, v)));
     }
     REQUIRE(edge_count == 2);
 }
@@ -570,7 +570,7 @@ TEST_CASE("filter_edges - complex predicate (vov)", "[6.3.3][filter_edges][trans
     
     size_t edge_count = 0;
     for (auto&& v : vertices(filtered)) {
-        edge_count += std::ranges::distance(edges(filtered, v));
+        edge_count += static_cast<size_t>(std::ranges::distance(edges(filtered, v)));
     }
     REQUIRE(edge_count == 2);  // 0->2 (sum=2), 1->3 (sum=4)
 }

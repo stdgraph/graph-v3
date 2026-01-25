@@ -1164,8 +1164,8 @@ public: // Friend functions
     }
     
     // Return range [partition_[pid], partition_[pid+1])
-    const auto begin_vid = static_cast<std::size_t>(g.partition_[pid]);
-    const auto end_vid = static_cast<std::size_t>(g.partition_[pid + 1]);
+    const auto begin_vid = static_cast<std::size_t>(g.partition_[static_cast<std::size_t>(pid)]);
+    const auto end_vid = static_cast<std::size_t>(g.partition_[static_cast<std::size_t>(pid + 1)]);
     
     return vertex_descriptor_view<vertex_iter_type>(begin_vid, end_vid);
   }

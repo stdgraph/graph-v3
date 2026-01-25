@@ -46,7 +46,7 @@ public:
     size_t num_edges() const override {
         size_t count = 0;
         for (auto&& u : vertices(graph_)) {
-            count += std::ranges::distance(edges(graph_, u));
+            count += static_cast<size_t>(std::ranges::distance(edges(graph_, u)));
         }
         return count;
     }

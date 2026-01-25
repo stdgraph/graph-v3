@@ -42,7 +42,7 @@ overloaded(Ts...) -> overloaded<Ts...>;
 // Helper: Count vertices using generic CPOs
 template<typename G>
 size_t count_vertices(const G& g) {
-    return std::ranges::distance(vertices(g));
+    return static_cast<size_t>(std::ranges::distance(vertices(g)));
 }
 
 // Helper: Count edges using generic CPOs
@@ -50,7 +50,7 @@ template<typename G>
 size_t count_edges(const G& g) {
     size_t count = 0;
     for (auto&& u : vertices(g)) {
-        count += std::ranges::distance(edges(g, u));
+        count += static_cast<size_t>(std::ranges::distance(edges(g, u)));
     }
     return count;
 }
@@ -364,7 +364,7 @@ TEST_CASE("Transform variant graphs", "[6.4.3]") {
     std::vector<size_t> degrees;
     std::visit([&](auto&& graph) {
         for (auto&& u : vertices(graph)) {
-            degrees.push_back(std::ranges::distance(edges(graph, u)));
+            degrees.push_back(static_cast<size_t>(std::ranges::distance(edges(graph, u))));
         }
     }, var);
     

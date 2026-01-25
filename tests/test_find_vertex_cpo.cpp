@@ -73,7 +73,7 @@ struct CustomGraphWithMember {
         if (uid >= adj_list.size()) {
             return std::ranges::end(verts);
         }
-        return std::ranges::next(std::ranges::begin(verts), uid);
+        return std::ranges::next(std::ranges::begin(verts), static_cast<std::iter_difference_t<decltype(std::ranges::begin(verts))>>(uid));
     }
 };
 
@@ -109,7 +109,7 @@ namespace custom_ns {
         if (uid >= g.adj_list.size()) {
             return std::ranges::end(verts);
         }
-        return std::ranges::next(std::ranges::begin(verts), uid);
+        return std::ranges::next(std::ranges::begin(verts), static_cast<std::iter_difference_t<decltype(std::ranges::begin(verts))>>(uid));
     }
 }
 
@@ -371,7 +371,7 @@ TEST_CASE("find_vertex - integration with vertices and vertex_id", "[graph_cpo][
         for (auto v : verts) {
             auto vid = vertex_id(g, v);
             auto found = find_vertex(g, vid);
-            REQUIRE(found == std::ranges::next(std::ranges::begin(verts), vid));
+            REQUIRE(found == std::ranges::next(std::ranges::begin(verts), static_cast<std::iter_difference_t<decltype(std::ranges::begin(verts))>>(vid)));
             REQUIRE(vertex_id(g, *found) == vid);
         }
     }
@@ -380,7 +380,7 @@ TEST_CASE("find_vertex - integration with vertices and vertex_id", "[graph_cpo][
         for (std::size_t i = 0; i < g.size(); ++i) {
             auto v_iter = find_vertex(g, i);
             auto verts = vertices(g);
-            auto direct = std::ranges::next(std::ranges::begin(verts), i);
+            auto direct = std::ranges::next(std::ranges::begin(verts), static_cast<std::iter_difference_t<decltype(std::ranges::begin(verts))>>(i));
             REQUIRE(v_iter == direct);
         }
     }

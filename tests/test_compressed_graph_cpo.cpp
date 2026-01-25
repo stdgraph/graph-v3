@@ -407,7 +407,7 @@ TEST_CASE("edges(g,u) works with STL algorithms", "[edges][api]") {
     SECTION("collect all targets") {
         vector<int> targets;
         for (auto ed : e) {
-            targets.push_back(g.target_id(static_cast<uint32_t>(ed.value())));
+            targets.push_back(static_cast<int>(g.target_id(static_cast<uint32_t>(ed.value()))));
         }
         REQUIRE(targets == vector<int>{1, 2, 3, 4});
     }
@@ -431,8 +431,8 @@ TEST_CASE("edges(g,u) is a lightweight view", "[edges][api]") {
     
     // Both views should produce same results
     vector<int> targets1, targets2;
-    for (auto ed : e1) targets1.push_back(g.target_id(static_cast<uint32_t>(ed.value())));
-    for (auto ed : e2) targets2.push_back(g.target_id(static_cast<uint32_t>(ed.value())));
+    for (auto ed : e1) targets1.push_back(static_cast<int>(g.target_id(static_cast<uint32_t>(ed.value()))));
+    for (auto ed : e2) targets2.push_back(static_cast<int>(g.target_id(static_cast<uint32_t>(ed.value()))));
     
     REQUIRE(targets1 == targets2);
     REQUIRE(targets1.size() == 2);
@@ -526,7 +526,7 @@ TEST_CASE("edges(g,u) with self-loops", "[edges][api]") {
         
         vector<int> targets;
         for (auto ed : e) {
-            targets.push_back(g.target_id(static_cast<uint32_t>(ed.value())));
+            targets.push_back(static_cast<int>(g.target_id(static_cast<uint32_t>(ed.value()))));
         }
         REQUIRE(targets == vector<int>{0, 1});
     }
@@ -540,7 +540,7 @@ TEST_CASE("edges(g,u) with self-loops", "[edges][api]") {
         
         vector<int> targets;
         for (auto ed : e) {
-            targets.push_back(g.target_id(static_cast<uint32_t>(ed.value())));
+            targets.push_back(static_cast<int>(g.target_id(static_cast<uint32_t>(ed.value()))));
         }
         REQUIRE(targets == vector<int>{1});
     }
@@ -840,7 +840,7 @@ TEST_CASE("target_id(g,uv) with const graph", "[target_id][api]") {
     
     vector<int> targets;
     for (auto ed : e) {
-        targets.push_back(target_id(g, ed));
+        targets.push_back(static_cast<int>(target_id(g, ed)));
     }
     
     REQUIRE(targets == vector<int>{1, 2});
@@ -861,7 +861,7 @@ TEST_CASE("target_id(g,uv) with void edge values", "[target_id][api]") {
     
     vector<int> targets;
     for (auto ed : e) {
-        targets.push_back(target_id(g, ed));
+        targets.push_back(static_cast<int>(target_id(g, ed)));
     }
     
     REQUIRE(targets == vector<int>{1, 2, 3});
@@ -883,7 +883,7 @@ TEST_CASE("target_id(g,uv) with self-loops", "[target_id][api]") {
         
         vector<int> targets;
         for (auto ed : e) {
-            targets.push_back(target_id(g, ed));
+            targets.push_back(static_cast<int>(target_id(g, ed)));
         }
         REQUIRE(targets == vector<int>{0, 1});
     }
@@ -913,7 +913,7 @@ TEST_CASE("target_id(g,uv) all edges in graph", "[target_id][api]") {
     vector<int> all_targets;
     for (auto vd : vertices(g)) {
         for (auto ed : edges(g, vd)) {
-            all_targets.push_back(target_id(g, ed));
+            all_targets.push_back(static_cast<int>(target_id(g, ed)));
         }
     }
     
@@ -936,7 +936,7 @@ TEST_CASE("target_id(g,uv) with string edge values", "[target_id][api]") {
     // Verify target_id works independently of edge value type
     vector<int> targets;
     for (auto ed : e) {
-        targets.push_back(target_id(g, ed));
+        targets.push_back(static_cast<int>(target_id(g, ed)));
     }
     
     REQUIRE(targets == vector<int>{1, 2});

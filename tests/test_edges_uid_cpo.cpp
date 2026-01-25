@@ -169,7 +169,7 @@ namespace test_member {
         auto edges(std::size_t uid) {
             // Return edges from the specified vertex ID
             // First get the vertex descriptor, then call edges(g,u)
-            auto v = *std::ranges::next(std::ranges::begin(vertices()), uid);
+            auto v = *std::ranges::next(std::ranges::begin(vertices()), static_cast<std::iter_difference_t<decltype(std::ranges::begin(vertices()))>>(uid));
             return edges(v);  // Call the descriptor version
         }
     };
@@ -215,7 +215,7 @@ namespace test_adl {
     // ADL edges(g, uid) function
     auto edges(CustomGraph& g, std::size_t uid) {
         // First get the vertex descriptor, then call edges(g,u)
-        auto v = *std::ranges::next(std::ranges::begin(g.vertices()), uid);
+        auto v = *std::ranges::next(std::ranges::begin(g.vertices()), static_cast<std::iter_difference_t<decltype(std::ranges::begin(g.vertices()))>>(uid));
         return g.edges(v);  // Call the descriptor version
     }
 }

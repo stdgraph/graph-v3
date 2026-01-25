@@ -37,7 +37,7 @@ using namespace graph::container;
  */
 template<typename G>
 size_t count_vertices(const G& g) {
-    return std::ranges::distance(vertices(g));
+    return static_cast<size_t>(std::ranges::distance(vertices(g)));
 }
 
 /**
@@ -52,7 +52,7 @@ template<typename G>
 size_t count_edges(const G& g) {
     size_t count = 0;
     for (auto&& v : vertices(g)) {
-        count += std::ranges::distance(edges(g, v));
+        count += static_cast<size_t>(std::ranges::distance(edges(g, v)));
     }
     return count;
 }
@@ -78,7 +78,7 @@ std::optional<std::pair<typename G::vertex_id_type, size_t>> max_degree(const G&
     bool found = false;
     
     for (auto&& v : vertices(g)) {
-        size_t deg = std::ranges::distance(edges(g, v));
+        size_t deg = static_cast<size_t>(std::ranges::distance(edges(g, v)));
         if (!found || deg > max_deg) {
             max_deg = deg;
             max_vid = vertex_id(g, v);
@@ -110,7 +110,7 @@ std::optional<std::pair<typename G::vertex_id_type, size_t>> min_degree(const G&
     bool found = false;
     
     for (auto&& v : vertices(g)) {
-        size_t deg = std::ranges::distance(edges(g, v));
+        size_t deg = static_cast<size_t>(std::ranges::distance(edges(g, v)));
         if (!found || deg < min_deg) {
             min_deg = deg;
             min_vid = vertex_id(g, v);
@@ -136,10 +136,10 @@ double avg_degree(const G& g) {
     
     for (auto&& v : vertices(g)) {
         ++vertex_count;
-        total_degree += std::ranges::distance(edges(g, v));
+        total_degree += static_cast<size_t>(std::ranges::distance(edges(g, v)));
     }
     
-    return vertex_count > 0 ? static_cast<double>(total_degree) / vertex_count : 0.0;
+    return vertex_count > 0 ? static_cast<double>(total_degree) / static_cast<double>(vertex_count) : 0.0;
 }
 
 /**

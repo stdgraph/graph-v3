@@ -1519,7 +1519,7 @@ namespace _cpo_impls {
                         } else {
                             // Use the underlying range for distance calculation
                             // edge_descriptor_view exposes the underlying container via begin()/end()
-                            count += std::ranges::distance(edge_range.begin(), edge_range.end());
+                            count += static_cast<std::size_t>(std::ranges::distance(edge_range.begin(), edge_range.end()));
                         }
                     }
                     
