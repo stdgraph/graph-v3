@@ -1167,6 +1167,74 @@ protected: // Utilities
 };
 
 ///-------------------------------------------------------------------------------------
+/// CPO support functions for undirected_adjacency_list (non-member templates)
+///
+/// These functions provide CPO customization via ADL for all undirected_adjacency_list
+/// specializations. They are defined once as non-member templates to avoid redefinition
+/// errors when multiple instantiations of base_undirected_adjacency_list exist.
+///-------------------------------------------------------------------------------------
+
+/// find_vertex(g, id) - returns view iterator yielding vertex_descriptor
+/// REQUIRED: Provides bounds checking - returns end() if id >= size()
+/// The default CPO implementation lacks this bounds checking.
+template <typename VV, typename EV, typename GV, integral VId,
+          template <typename V, typename A> class VContainer, typename Alloc>
+constexpr auto find_vertex(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>& g, VId id) noexcept {
+  using graph_type     = undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>;
+  using vertex_set     = typename graph_type::vertex_set;
+  using container_iter = typename vertex_set::iterator;
+  using view_type      = vertex_descriptor_view<container_iter>;
+  using view_iterator  = typename view_type::iterator;
+  using storage_type   = typename view_iterator::value_type::storage_type;
+
+  if (id >= static_cast<VId>(g.vertices().size())) {
+    return view_iterator{static_cast<storage_type>(g.vertices().size())};
+  }
+  return view_iterator{static_cast<storage_type>(id)};
+}
+
+template <typename VV, typename EV, typename GV, integral VId,
+          template <typename V, typename A> class VContainer, typename Alloc>
+constexpr auto find_vertex(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>& g, VId id) noexcept {
+  using graph_type     = undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>;
+  using vertex_set     = typename graph_type::vertex_set;
+  using container_iter = typename vertex_set::const_iterator;
+  using view_type      = vertex_descriptor_view<container_iter>;
+  using view_iterator  = typename view_type::iterator;
+  using storage_type   = typename view_iterator::value_type::storage_type;
+
+  if (id >= static_cast<VId>(g.vertices().size())) {
+    return view_iterator{static_cast<storage_type>(g.vertices().size())};
+  }
+  return view_iterator{static_cast<storage_type>(id)};
+}
+
+/// target_id(g, edge_descriptor) - get target vertex id from edge descriptor (iteration perspective)
+/// For undirected graphs, the target is the "other" vertex relative to the source we're iterating from
+/// This provides the ITERATION perspective, not the STORAGE perspective.
+/// See ual_edge::list_owner_id()/list_target_id() documentation for the distinction.
+template <typename VV, typename EV, typename GV, integral VId,
+          template <typename V, typename A> class VContainer, typename Alloc, typename E>
+  requires edge_descriptor_type<E>
+constexpr VId target_id(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>& g, const E& e) noexcept {
+  return e.value()->other_vertex_id(g, static_cast<VId>(e.source_id()));
+}
+
+/// source_id(g, edge_descriptor) - get source vertex id from edge descriptor (iteration perspective)
+/// For undirected graphs, the source is the vertex we're iterating from (stored in descriptor)
+/// This provides the ITERATION perspective, not the STORAGE perspective.
+/// 
+/// Uses edge_descriptor.source_id() which returns the source from iteration context,
+/// NOT ual_edge.list_owner_id() which returns the storage location.
+/// See ual_edge::list_owner_id()/list_target_id() documentation for the distinction.
+template <typename VV, typename EV, typename GV, integral VId,
+          template <typename V, typename A> class VContainer, typename Alloc, typename E>
+  requires edge_descriptor_type<E>
+constexpr VId source_id([[maybe_unused]] const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>& g, const E& e) noexcept {
+  return static_cast<VId>(e.source_id());
+}
+
+///-------------------------------------------------------------------------------------
 /// ual_vertex
 ///
 /// @tparam VV     Vertex Value type. default = void.
@@ -1510,12 +1578,6 @@ public:
   using vertex_edge_size_type       = typename vertex_edge_iterator::size_type;
   using vertex_edge_difference_type = typename vertex_edge_iterator::difference_type;
 
-  using neighbor_iterator       = typename vertex_type::neighbor_iterator;
-  using const_neighbor_iterator = typename vertex_type::const_neighbor_iterator;
-  using neighbor_range          = typename vertex_type::neighbor_range;
-  using const_neighbor_range    = typename vertex_type::const_neighbor_range;
-  using neighbor_size_type      = typename vertex_type::neighbor_size_type;
-
   // Use edge iterators from base class
   using edge_iterator       = typename base_type::edge_iterator;
   using const_edge_iterator = typename base_type::const_edge_iterator;
@@ -1747,59 +1809,12 @@ private: // CPO support via ADL (friend functions)
   // Note: num_edges(g) removed - CPO uses base class member function num_edges()
   // Note: num_vertices(g) removed - CPO uses base class member function num_vertices()
   // Note: has_edge(g) removed - CPO uses base class member function has_edge()
-
-  // find_vertex(g, id) - returns view iterator yielding vertex_descriptor
-  friend constexpr auto find_vertex(undirected_adjacency_list& g, vertex_id_type id) noexcept {
-    using container_iter = typename vertex_set::iterator;
-    using view_type      = vertex_descriptor_view<container_iter>;
-    using view_iterator  = typename view_type::iterator;
-    using storage_type   = typename view_iterator::value_type::storage_type;
-
-    if (id >= static_cast<vertex_id_type>(g.vertices_.size())) {
-      return view_iterator{static_cast<storage_type>(g.vertices_.size())};
-    }
-    return view_iterator{static_cast<storage_type>(id)};
-  }
-  friend constexpr auto find_vertex(const undirected_adjacency_list& g, vertex_id_type id) noexcept {
-    using container_iter = typename vertex_set::const_iterator;
-    using view_type      = vertex_descriptor_view<container_iter>;
-    using view_iterator  = typename view_type::iterator;
-    using storage_type   = typename view_iterator::value_type::storage_type;
-
-    if (id >= static_cast<vertex_id_type>(g.vertices_.size())) {
-      return view_iterator{static_cast<storage_type>(g.vertices_.size())};
-    }
-    return view_iterator{static_cast<storage_type>(id)};
-  }
-
+  // Note: find_vertex(g, id) moved to base class - common implementation for all specializations
   // Note: graph_value(g) removed - CPO uses member function graph_value()
-
   // Note: edges(g, u) removed - CPO uses base class member function edges(u)
   // Note: degree(g, u) removed - CPO uses default implementation
-
-  // target_id(g, edge_descriptor) - get target vertex id from edge descriptor (iteration perspective)
-  // For undirected graphs, the target is the "other" vertex relative to the source we're iterating from
-  // This provides the ITERATION perspective, not the STORAGE perspective.
-  // See ual_edge::list_owner_id()/list_target_id() documentation for the distinction.
-  template <typename E>
-    requires edge_descriptor_type<E>
-  friend constexpr vertex_id_type target_id(const undirected_adjacency_list& g, const E& e) noexcept {
-    return e.value()->other_vertex_id(g, static_cast<vertex_id_type>(e.source_id()));
-  }
-
-  // source_id(g, edge_descriptor) - get source vertex id from edge descriptor (iteration perspective)
-  // For undirected graphs, the source is the vertex we're iterating from (stored in descriptor)
-  // This provides the ITERATION perspective, not the STORAGE perspective.
-  // 
-  // Uses edge_descriptor.source_id() which returns the source from iteration context,
-  // NOT ual_edge.list_owner_id() which returns the storage location.
-  // See ual_edge::list_owner_id()/list_target_id() documentation for the distinction.
-  template <typename E>
-    requires edge_descriptor_type<E>
-  friend constexpr vertex_id_type source_id([[maybe_unused]] const undirected_adjacency_list& g, const E& e) noexcept {
-    return static_cast<vertex_id_type>(e.source_id());
-  }
-
+  // Note: target_id(g, e) moved to base class - common implementation for all specializations
+  // Note: source_id(g, e) moved to base class - common implementation for all specializations
   // Note: find_vertex_edge(g, ...) removed - CPO uses default implementation
 };
 
@@ -1858,12 +1873,6 @@ public:
   using const_vertex_edge_range     = typename vertex_type::const_vertex_edge_range;
   using vertex_edge_size_type       = typename vertex_edge_iterator::size_type;
   using vertex_edge_difference_type = typename vertex_edge_iterator::difference_type;
-
-  using neighbor_iterator       = typename vertex_type::neighbor_iterator;
-  using const_neighbor_iterator = typename vertex_type::const_neighbor_iterator;
-  using neighbor_range          = typename vertex_type::neighbor_range;
-  using const_neighbor_range    = typename vertex_type::const_neighbor_range;
-  using neighbor_size_type      = typename vertex_type::neighbor_size_type;
 
   // Use edge iterators from base class
   using edge_iterator       = typename base_type::edge_iterator;
@@ -1966,41 +1975,12 @@ private:
   // Note: num_edges(g) removed - CPO uses base class member function num_edges()
   // Note: num_vertices(g) removed - CPO uses base class member function num_vertices()
   // Note: has_edge(g) removed - CPO uses base class member function has_edge()
-
-  friend constexpr auto find_vertex(undirected_adjacency_list& g, vertex_id_type id) noexcept {
-    using container_iter = typename vertex_set::iterator;
-    using view_type      = vertex_descriptor_view<container_iter>;
-    using view_iterator  = typename view_type::iterator;
-    using storage_type   = typename view_iterator::value_type::storage_type;
-
-    if (id >= static_cast<vertex_id_type>(g.vertices_.size())) {
-      return view_iterator{static_cast<storage_type>(g.vertices_.size())};
-    }
-    return view_iterator{static_cast<storage_type>(id)};
-  }
-  friend constexpr auto find_vertex(const undirected_adjacency_list& g, vertex_id_type id) noexcept {
-    using container_iter = typename vertex_set::const_iterator;
-    using view_type      = vertex_descriptor_view<container_iter>;
-    using view_iterator  = typename view_type::iterator;
-    using storage_type   = typename view_iterator::value_type::storage_type;
-
-    if (id >= static_cast<vertex_id_type>(g.vertices_.size())) {
-      return view_iterator{static_cast<storage_type>(g.vertices_.size())};
-    }
-    return view_iterator{static_cast<storage_type>(id)};
-  }
-
+  // Note: find_vertex(g, id) moved to base class - common implementation for all specializations
   // Note: No graph_value(g) CPO for GV=void specialization
-
   // Note: edges(g, u) removed - CPO uses base class member function edges(u)
   // Note: degree(g, u) removed - CPO uses default implementation
-
-  template <typename E>
-    requires edge_descriptor_type<E>
-  friend constexpr vertex_id_type source_id([[maybe_unused]] const undirected_adjacency_list& g, const E& e) noexcept {
-    return static_cast<vertex_id_type>(e.source_id());
-  }
-
+  // Note: target_id(g, e) moved to base class - common implementation for all specializations
+  // Note: source_id(g, e) moved to base class - common implementation for all specializations
   // Note: find_vertex_edge(g, ...) removed - CPO uses default implementation
 };
 
