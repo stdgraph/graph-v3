@@ -936,7 +936,7 @@ TEST_CASE("compressed_graph vertex_ids() returns correct range", "[api][vertex_i
         
         vector<int> ids;
         for (auto id : g.vertex_ids()) {
-            ids.push_back(id);
+            ids.push_back(static_cast<int>(id));
         }
         
         REQUIRE(ids.size() == 5);

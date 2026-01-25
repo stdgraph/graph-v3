@@ -376,7 +376,7 @@ TEST_CASE("edges(g,uid) - works with const graph", "[edges][cpo][uid][const]") {
 TEST_CASE("edges(g,uid) - vector O(1) access", "[edges][cpo][uid][performance]") {
     std::vector<std::vector<int>> graph(1000);
     for (std::size_t i = 0; i < graph.size(); ++i) {
-        graph[i] = {(int)((i + 1) % graph.size())};
+        graph[i] = {static_cast<int>((i + 1) % graph.size())};
     }
     
     // Should be fast even for large indices (O(1) access)
@@ -420,7 +420,7 @@ TEST_CASE("edges(g,uid) - full graph traversal by ID", "[edges][cpo][uid][traver
     for (std::size_t uid = 0; uid < graph.size(); ++uid) {
         for (auto edge : edges(graph, uid)) {
             auto tid = target_id(graph, edge);
-            edge_list.emplace_back((int)uid, tid);
+            edge_list.emplace_back(static_cast<int>(uid), tid);
         }
     }
     

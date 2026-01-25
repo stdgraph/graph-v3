@@ -474,7 +474,7 @@ TEST_CASE("source(g,uv) - chaining source calls", "[source][cpo][integration]") 
 TEST_CASE("source(g,uv) - vector random access performance", "[source][cpo][performance]") {
     std::vector<std::vector<int>> graph(100);
     for (int i = 0; i < 100; ++i) {
-        graph[i].push_back((i + 1) % 100);
+        graph[static_cast<size_t>(i)].push_back((i + 1) % 100);
     }
     
     // Accessing source should be O(1) for vector

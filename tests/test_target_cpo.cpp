@@ -672,7 +672,7 @@ TEST_CASE("target(g,uv) - vector random access performance", "[target][cpo][perf
     // Large vector graph
     std::vector<std::vector<int>> graph(100);
     for (int i = 0; i < 100; ++i) {
-        graph[i].push_back((i + 1) % 100);
+        graph[static_cast<size_t>(i)].push_back((i + 1) % 100);
     }
     
     auto v0 = *vertices(graph).begin();

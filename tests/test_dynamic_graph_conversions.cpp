@@ -504,9 +504,6 @@ TEST_CASE("Multiple conversions in sequence", "[6.4.2][conversion][sequence]") {
 }
 
 TEST_CASE("Convert graph with no edges (vertices only)", "[6.4.2]") {
-    using vov_uint = dynamic_graph<void, void, void, uint64_t, false, vov_graph_traits<void, void, void, uint64_t, false>>;
-    using vov_int = dynamic_graph<void, void, void, int, false, vov_graph_traits<void, void, void, int, false>>;
-    
     // Create graph with isolated vertices (no edges)
     std::vector<copyable_edge_t<uint64_t, void>> edges_uint;
     std::vector<copyable_vertex_t<uint64_t, void>> vertices_uint = {{0}, {1}, {2}, {3}, {4}};
@@ -535,9 +532,6 @@ TEST_CASE("Convert graph with no edges (vertices only)", "[6.4.2]") {
 }
 
 TEST_CASE("Convert graph with parallel edges (multiple edges between same vertices)", "[6.4.2]") {
-    using vov_uint = dynamic_graph<void, void, void, uint64_t, false, vov_graph_traits<void, void, void, uint64_t, false>>;
-    using mos_string = dynamic_graph<void, void, void, std::string, false, mos_graph_traits<void, void, void, std::string, false>>;
-    
     // Create graph with parallel edges: 0->1 (multiple times)
     std::vector<copyable_edge_t<uint64_t, void>> edges_uint = {
         {0, 1},

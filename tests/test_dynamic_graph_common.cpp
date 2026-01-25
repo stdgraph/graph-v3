@@ -989,11 +989,11 @@ TEMPLATE_TEST_CASE("edge degree queries", "[common][edges]",
     g.load_edges(edges, std::identity{});
     
     auto& v0 = g[0];
-    size_t degree = std::ranges::distance(v0.edges());
+    size_t degree = static_cast<size_t>(std::ranges::distance(v0.edges()));
     REQUIRE(degree == 3);
     
     auto& v1 = g[1];
-    REQUIRE(std::ranges::distance(v1.edges()) == 1);
+    REQUIRE(static_cast<size_t>(std::ranges::distance(v1.edges())) == 1);
 }
 
 TEMPLATE_TEST_CASE("edge empty check", "[common][edges]",
@@ -1157,7 +1157,7 @@ TEMPLATE_TEST_CASE("high degree vertex", "[common][edges]",
     g.load_edges(edges, std::identity{});
     
     auto& v0 = g[0];
-    size_t degree = std::ranges::distance(v0.edges());
+    size_t degree = static_cast<size_t>(std::ranges::distance(v0.edges()));
     REQUIRE(degree == 50);
 }
 
@@ -2086,7 +2086,7 @@ TEMPLATE_TEST_CASE("complete graph small", "[common][edge_case]",
     REQUIRE(g.size() == 4);
     
     for (size_t i = 0; i < 4; ++i) {
-        size_t degree = std::ranges::distance(g[i].edges());
+        size_t degree = static_cast<size_t>(std::ranges::distance(g[i].edges()));
         REQUIRE(degree == 3);
     }
 }
@@ -2110,11 +2110,11 @@ TEMPLATE_TEST_CASE("star graph", "[common][edge_case]",
     }
     g.load_edges(edges, std::identity{});
     
-    size_t center_degree = std::ranges::distance(g[0].edges());
+    size_t center_degree = static_cast<size_t>(std::ranges::distance(g[0].edges()));
     REQUIRE(center_degree == 10);
     
     for (size_t i = 1; i <= 10; ++i) {
-        size_t leaf_degree = std::ranges::distance(g[i].edges());
+        size_t leaf_degree = static_cast<size_t>(std::ranges::distance(g[i].edges()));
         REQUIRE(leaf_degree == 0);
     }
 }
@@ -2141,7 +2141,7 @@ TEMPLATE_TEST_CASE("chain graph", "[common][edge_case]",
     
     // Each vertex (except last) has exactly 1 outgoing edge
     for (size_t i = 0; i < 10; ++i) {
-        size_t degree = std::ranges::distance(g[i].edges());
+        size_t degree = static_cast<size_t>(std::ranges::distance(g[i].edges()));
         REQUIRE(degree == 1);
     }
 }
@@ -2164,7 +2164,7 @@ TEMPLATE_TEST_CASE("duplicate edge loading", "[common][edge_case]",
     g.load_edges(edges, std::identity{});
     
     // All duplicates should be loaded
-    size_t count = std::ranges::distance(g[0].edges());
+    size_t count = static_cast<size_t>(std::ranges::distance(g[0].edges()));
     REQUIRE(count == 3);
 }
 
@@ -2232,7 +2232,7 @@ TEMPLATE_TEST_CASE("cycle graph", "[common][edge_case]",
     
     // Each vertex has exactly 1 outgoing edge
     for (size_t i = 0; i < 4; ++i) {
-        size_t degree = std::ranges::distance(g[i].edges());
+        size_t degree = static_cast<size_t>(std::ranges::distance(g[i].edges()));
         REQUIRE(degree == 1);
     }
 }
@@ -2261,13 +2261,13 @@ TEMPLATE_TEST_CASE("bipartite graph", "[common][edge_case]",
     
     // Group 1 has outgoing edges
     for (size_t i = 0; i < 3; ++i) {
-        size_t degree = std::ranges::distance(g[i].edges());
+        size_t degree = static_cast<size_t>(std::ranges::distance(g[i].edges()));
         REQUIRE(degree == 3);
     }
     
     // Group 2 has no outgoing edges
     for (size_t i = 3; i < 6; ++i) {
-        size_t degree = std::ranges::distance(g[i].edges());
+        size_t degree = static_cast<size_t>(std::ranges::distance(g[i].edges()));
         REQUIRE(degree == 0);
     }
 }
@@ -2430,7 +2430,7 @@ TEMPLATE_TEST_CASE("ranges filter edges", "[common][iterators]",
         return e.value() > 10;
     });
     
-    size_t count = std::ranges::distance(filtered);
+    size_t count = static_cast<size_t>(std::ranges::distance(filtered));
     REQUIRE(count == 3);
 }
 

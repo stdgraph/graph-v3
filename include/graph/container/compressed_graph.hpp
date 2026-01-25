@@ -896,7 +896,7 @@ protected:
         auto lastIt = end(erng);
         --lastIt;
         auto&& e = eprojection(*lastIt); // copyable_edge
-        last_id  = max(e.source_id, e.target_id);
+        last_id  = static_cast<vertex_id_type>(max(e.source_id, e.target_id));
       }
     }
     return last_id;

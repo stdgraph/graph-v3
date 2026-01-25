@@ -329,7 +329,7 @@ TEST_CASE("edges(g,u) - integration with vertices(g)", "[edges][cpo][integration
         for (auto u : vertices(graph)) {
             int uid = static_cast<int>(u.vertex_id());
             for (auto e : edges(graph, u)) {
-                int vid = e.target_id(graph[uid]);
+                int vid = e.target_id(graph[static_cast<size_t>(uid)]);
                 all_edges.emplace_back(uid, vid);
             }
         }

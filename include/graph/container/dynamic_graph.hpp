@@ -1366,7 +1366,7 @@ public: // Load operations
               throw std::runtime_error("source id exceeds the number of vertices in load_edges");
             if (static_cast<size_t>(e.target_id) >= vertices_.size())
               throw std::runtime_error("target id exceeds the number of vertices in load_edges");
-            auto& vertex_edges = vertices_[e.source_id].edges();
+            auto& vertex_edges = vertices_[static_cast<size_t>(e.source_id)].edges();
             if constexpr (Sourced) {
               if constexpr (is_void_v<EV>) {
                 emplace_edge(vertex_edges, e.target_id, edge_type(e.source_id, e.target_id));
@@ -1396,7 +1396,7 @@ public: // Load operations
           throw std::runtime_error("source id exceeds the number of vertices in load_edges");
         if (static_cast<size_t>(e.target_id) >= vertices_.size())
           throw std::runtime_error("target id exceeds the number of vertices in load_edges");
-        auto& vertex_edges = vertices_[e.source_id].edges();
+        auto& vertex_edges = vertices_[static_cast<size_t>(e.source_id)].edges();
         if constexpr (Sourced) {
           if constexpr (is_void_v<EV>) {
             emplace_edge(vertex_edges, e.target_id, edge_type(e.source_id, e.target_id));

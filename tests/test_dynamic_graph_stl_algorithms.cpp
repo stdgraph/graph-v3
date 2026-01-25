@@ -2708,8 +2708,6 @@ TEST_CASE("views::transform with complex lambda (vov)", "[stl][6.2.6][views]") {
 }
 
 TEST_CASE("views with map-based graph (mos)", "[stl][6.2.6][views]") {
-    using mos_void = dynamic_graph<void, void, void, std::string, false,
-                                    mos_graph_traits<void, void, void, std::string, false>>;
     mos_void g({{{"a", "b"}, {"b", "c"}, {"c", "d"}}});
     
     auto filtered = vertices(g) | std::views::filter([&g](auto&& v) {
@@ -3195,8 +3193,6 @@ TEST_CASE("find vertices with specific degree (vov)", "[stl][6.2.7][accumulate]"
 }
 
 TEST_CASE("accumulate with map-based graph (mos)", "[stl][6.2.7][accumulate]") {
-    using mos_void = dynamic_graph<void, void, void, std::string, false,
-                                    mos_graph_traits<void, void, void, std::string, false>>;
     mos_void g({{{"a", "b"}, {"b", "c"}, {"c", "d"}}});
     
     size_t total_degree = 0;

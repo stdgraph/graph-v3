@@ -245,7 +245,7 @@ TEST_CASE("degree works with complete graph K4", "[degree][cpo][topology][comple
     for (int i = 0; i < 4; ++i) {
         for (int j = 0; j < 4; ++j) {
             if (i != j) {
-                graph[i].push_back(j);
+                graph[static_cast<size_t>(i)].push_back(j);
             }
         }
     }

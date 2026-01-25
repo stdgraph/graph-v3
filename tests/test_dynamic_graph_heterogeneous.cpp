@@ -386,8 +386,8 @@ TEST_CASE("Conditional processing based on graph type", "[6.4.3]") {
     graph_variant var = std::move(g);
     
     // Process differently based on type
-    bool is_associative = std::visit([](auto&& g) {
-        using G = std::decay_t<decltype(g)>;
+    bool is_associative = std::visit([](auto&& graph_arg) {
+        using G = std::decay_t<decltype(graph_arg)>;
         if constexpr (std::is_same_v<G, mos_string>) {
             return true;
         } else {
@@ -409,8 +409,8 @@ TEST_CASE("Exception safety with variant graphs", "[6.4.3]") {
     graph_variant var = std::move(g);
     
     // Visit should not throw with valid graphs
-    REQUIRE_NOTHROW(std::visit([](auto&& g) {
-        return count_vertices(g);
+    REQUIRE_NOTHROW(std::visit([](auto&& graph_arg) {
+        return count_vertices(graph_arg);
     }, var));
     
     // Verify variant is still valid after visit
