@@ -2797,6 +2797,20 @@ namespace _cpo_impls {
             }
         }
         
+        // Helper to convert result to vertex descriptor if needed
+        // Supports two cases:
+        // 1. Result is already a vertex_descriptor -> return as-is
+        // 2. Result is an iterator (to vertex_descriptor_view) -> dereference to get vertex_descriptor
+        template<typename G, typename Result>
+        [[nodiscard]] constexpr auto _to_vertex_descriptor(G&&, Result&& result) noexcept {
+            using ResultType = std::remove_cvref_t<Result>;
+            if constexpr (is_vertex_descriptor_v<ResultType>) {
+                return std::forward<Result>(result);
+            } else {
+                return *std::forward<Result>(result);
+            }
+        }
+        
         class _fn {
         private:
             template<typename G, typename E>
