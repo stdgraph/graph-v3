@@ -992,7 +992,7 @@ namespace _cpo_impls {
         template<typename G, typename E>
         concept _has_native_edge_member = is_edge_descriptor_v<std::remove_cvref_t<E>> &&
             requires(G& g, const E& uv) {
-                { (*uv.value()).target(g) };
+                { (*uv.value()).target(g) } -> std::forward_iterator;
             };
         
         // Check for g.target(uv) member function
@@ -2771,7 +2771,7 @@ namespace _cpo_impls {
         template<typename G, typename E>
         concept _has_native_edge_member = is_edge_descriptor_v<std::remove_cvref_t<E>> &&
             requires(G& g, const E& uv) {
-                { (*uv.value()).source(g) };
+                { (*uv.value()).source(g) } -> std::forward_iterator;
             };
         
         // Check for g.source(uv) member function
