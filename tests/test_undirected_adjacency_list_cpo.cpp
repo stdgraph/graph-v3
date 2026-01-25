@@ -541,7 +541,7 @@ TEST_CASE("edges(g) graph-level CPO", "[undirected_adjacency_list][cpo][edges]")
     
     SECTION("unique edge count") {
         // The edges_size() returns unique edge count
-        REQUIRE(g.edges_size() == 3);
+        REQUIRE(g.num_edges() == 3);
     }
 }
 

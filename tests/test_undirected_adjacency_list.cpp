@@ -29,7 +29,7 @@ TEST_CASE("default construction", "[undirected_adjacency_list][construction]") {
     
     REQUIRE(g.vertices().empty());
     REQUIRE(g.vertices().size() == 0);
-    REQUIRE(g.edges_size() == 0);
+    REQUIRE(g.num_edges() == 0);
 }
 
 TEST_CASE("construction with graph value", "[undirected_adjacency_list][construction]") {
@@ -74,7 +74,7 @@ TEST_CASE("create single vertex", "[undirected_adjacency_list][vertex][create]")
     }
     
     SECTION("vertex has no edges") {
-        REQUIRE(v_it->edges_size() == 0);
+        REQUIRE(v_it->num_edges() == 0);
     }
 }
 
@@ -120,7 +120,7 @@ TEST_CASE("create single edge", "[undirected_adjacency_list][edge][create]") {
     auto e_it = g.create_edge(k1, k2, 100);
     
     SECTION("graph has one edge") {
-        REQUIRE(g.edges_size() == 1);
+        REQUIRE(g.num_edges() == 1);
     }
     
     SECTION("edge has correct value") {
@@ -133,8 +133,8 @@ TEST_CASE("create single edge", "[undirected_adjacency_list][edge][create]") {
     }
     
     SECTION("both vertices report the edge") {
-        REQUIRE(g.vertices()[k1].edges_size() == 1);
-        REQUIRE(g.vertices()[k2].edges_size() == 1);
+        REQUIRE(g.vertices()[k1].num_edges() == 1);
+        REQUIRE(g.vertices()[k2].num_edges() == 1);
     }
 }
 
@@ -153,13 +153,13 @@ TEST_CASE("create multiple edges", "[undirected_adjacency_list][edge][create]") 
     g.create_edge(k1, k3, 300);
     
     SECTION("graph has three edges") {
-        REQUIRE(g.edges_size() == 3);
+        REQUIRE(g.num_edges() == 3);
     }
     
     SECTION("vertex degrees are correct") {
-        REQUIRE(g.vertices()[k1].edges_size() == 2);
-        REQUIRE(g.vertices()[k2].edges_size() == 2);
-        REQUIRE(g.vertices()[k3].edges_size() == 2);
+        REQUIRE(g.vertices()[k1].num_edges() == 2);
+        REQUIRE(g.vertices()[k2].num_edges() == 2);
+        REQUIRE(g.vertices()[k3].num_edges() == 2);
     }
 }
 
@@ -177,7 +177,7 @@ TEST_CASE("remove edge", "[undirected_adjacency_list][edge][erase]") {
     g.create_edge(k2, k3, 200);
     g.create_edge(k1, k3, 300);
     
-    REQUIRE(g.edges_size() == 3);
+    REQUIRE(g.num_edges() == 3);
     
     // Remove edge between k1 and k2
     auto& v = g.vertices()[k1];
@@ -185,13 +185,13 @@ TEST_CASE("remove edge", "[undirected_adjacency_list][edge][erase]") {
     v.erase_edge(g, it);
     
     SECTION("graph has two edges") {
-        REQUIRE(g.edges_size() == 2);
+        REQUIRE(g.num_edges() == 2);
     }
     
     SECTION("vertex degrees updated") {
-        REQUIRE(g.vertices()[k1].edges_size() == 1);
-        REQUIRE(g.vertices()[k2].edges_size() == 1);
-        REQUIRE(g.vertices()[k3].edges_size() == 2);
+        REQUIRE(g.vertices()[k1].num_edges() == 1);
+        REQUIRE(g.vertices()[k2].num_edges() == 1);
+        REQUIRE(g.vertices()[k3].num_edges() == 2);
     }
 }
 
@@ -295,7 +295,7 @@ TEST_CASE("self-loop value storage", "[undirected_adjacency_list][edge][self_loo
     g.create_edge(k, k, 100);
     
     SECTION("graph recognizes edge") {
-        REQUIRE(g.edges_size() == 1);
+        REQUIRE(g.num_edges() == 1);
     }
 }
 
@@ -749,7 +749,7 @@ TEST_CASE("self-loops behavior", "[undirected_adjacency_list][edge_cases][self_l
     g.create_edge(k, k, 100);
     
     SECTION("self-loop increases edges_size by 1") {
-        REQUIRE(g.edges_size() == 1);
+        REQUIRE(g.num_edges() == 1);
     }
     
     SECTION("self-loop logic in vertex edge iteration") {
@@ -781,7 +781,7 @@ TEST_CASE("self-loop with regular edges", "[undirected_adjacency_list][edge_case
     g.create_edge(k0, k0, 200);  // Self-loop on v0
     
     SECTION("edges_size reflects both edges") {
-        REQUIRE(g.edges_size() == 2);
+        REQUIRE(g.num_edges() == 2);
     }
     
     SECTION("v0 sees both edges: regular and self-loop") {
@@ -820,7 +820,7 @@ TEST_CASE("multiple self-loops on same vertex", "[undirected_adjacency_list][edg
     g.create_edge(k, k, 300);
     
     SECTION("edges_size reflects all self-loops") {
-        REQUIRE(g.edges_size() == 3);
+        REQUIRE(g.num_edges() == 3);
     }
     
     SECTION("iteration finds all self-loops exactly once each") {
@@ -846,7 +846,7 @@ TEST_CASE("self-loop erasure", "[undirected_adjacency_list][edge_cases][self_loo
     g.create_edge(k, k, 100);
     g.create_edge(k, k, 200);
     
-    REQUIRE(g.edges_size() == 2);
+    REQUIRE(g.num_edges() == 2);
     
     SECTION("erase one self-loop leaves the other") {
         auto& v = g.vertices()[k];
@@ -858,7 +858,7 @@ TEST_CASE("self-loop erasure", "[undirected_adjacency_list][edge_cases][self_loo
         
         v.erase_edge(g, it);
         
-        REQUIRE(g.edges_size() == 1);
+        REQUIRE(g.num_edges() == 1);
         
         // Verify remaining self-loop
         std::vector<int> values;
@@ -883,7 +883,7 @@ TEST_CASE("parallel edges", "[undirected_adjacency_list][edge_cases][parallel]")
     g.create_edge(k1, k2, 300);
     
     SECTION("all edges exist") {
-        REQUIRE(g.edges_size() == 3);
+        REQUIRE(g.num_edges() == 3);
     }
     
     SECTION("iteration finds all parallel edges") {
@@ -913,7 +913,7 @@ TEST_CASE("parallel edges", "[undirected_adjacency_list][edge_cases][parallel]")
         v.erase_edge(g, it);
         
         // Check graph state
-        REQUIRE(g.edges_size() == 2);
+        REQUIRE(g.num_edges() == 2);
         
         vector<int> remaining;
         for (auto& e : v.edges(g, k1)) {
@@ -936,8 +936,8 @@ TEST_CASE("edge erasure consistency", "[undirected_adjacency_list][edge_cases][e
     
     g.create_edge(k1, k2, 100);
     
-    REQUIRE(g.vertices()[k1].edges_size() == 1);
-    REQUIRE(g.vertices()[k2].edges_size() == 1);
+    REQUIRE(g.vertices()[k1].num_edges() == 1);
+    REQUIRE(g.vertices()[k2].num_edges() == 1);
     
     // Erase from k1 side
     auto& v = g.vertices()[k1];
@@ -945,18 +945,18 @@ TEST_CASE("edge erasure consistency", "[undirected_adjacency_list][edge_cases][e
     v.erase_edge(g, it);
     
     SECTION("removed from graph count") {
-        REQUIRE(g.edges_size() == 0);
+        REQUIRE(g.num_edges() == 0);
     }
     
     SECTION("removed from source vertex") {
-        REQUIRE(g.vertices()[k1].edges_size() == 0);
+        REQUIRE(g.vertices()[k1].num_edges() == 0);
         REQUIRE(g.vertices()[k1].edges(g, k1).empty());
     }
     
     SECTION("removed from target vertex") {
         // This is the critical test requested: explicit verification
         // that the edge is gone from the *other* list too
-        REQUIRE(g.vertices()[k2].edges_size() == 0);
+        REQUIRE(g.vertices()[k2].num_edges() == 0);
         REQUIRE(g.vertices()[k2].edges(g, k2).empty());
     }
 }
@@ -978,12 +978,12 @@ TEST_CASE("high degree vertex", "[undirected_adjacency_list][edge_cases][stress]
     }
     
     SECTION("center has correct degree") {
-        REQUIRE(g.vertices()[center_k].edges_size() == NUM_SATELLITES);
+        REQUIRE(g.vertices()[center_k].num_edges() == NUM_SATELLITES);
     }
     
     SECTION("all satellites have degree 1") {
         for (auto k : satellite_keys) {
-            REQUIRE(g.vertices()[k].edges_size() == 1);
+            REQUIRE(g.vertices()[k].num_edges() == 1);
         }
     }
     
@@ -1013,7 +1013,7 @@ TEST_CASE("edge deletion during iteration", "[undirected_adjacency_list][edge_ca
         g.create_edge(k1, k2, i);
     }
     
-    REQUIRE(g.edges_size() == 5);
+    REQUIRE(g.num_edges() == 5);
     
     SECTION("erase even numbered edges") {
         auto& v = g.vertices()[k1];
@@ -1030,7 +1030,7 @@ TEST_CASE("edge deletion during iteration", "[undirected_adjacency_list][edge_ca
         }
         
         // Should have edges 1, 3 remaining
-        REQUIRE(g.edges_size() == 2);
+        REQUIRE(g.num_edges() == 2);
         
         vector<int> remaining;
         for (auto& e : v.edges(g, k1)) {
@@ -1042,7 +1042,7 @@ TEST_CASE("edge deletion during iteration", "[undirected_adjacency_list][edge_ca
         REQUIRE(std::find(remaining.begin(), remaining.end(), 3) != remaining.end());
         
         // Verify erasure from target too
-        REQUIRE(g.vertices()[k2].edges_size() == 2);
+        REQUIRE(g.vertices()[k2].num_edges() == 2);
     }
 }
 
@@ -1059,14 +1059,14 @@ TEST_CASE("move constructor", "[undirected_adjacency_list][memory][move]") {
     g1.create_edge(k1, k2, 100);
     
     REQUIRE(g1.vertices().size() == 2);
-    REQUIRE(g1.edges_size() == 1);
+    REQUIRE(g1.num_edges() == 1);
     
     // Move construct
     undirected_adjacency_list<int, int> g2(std::move(g1));
     
     SECTION("moved-to graph has correct state") {
         REQUIRE(g2.vertices().size() == 2);
-        REQUIRE(g2.edges_size() == 1);
+        REQUIRE(g2.num_edges() == 1);
         REQUIRE(g2.vertices()[k1].value() == 10);
         REQUIRE(g2.vertices()[k2].value() == 20);
     }
@@ -1095,7 +1095,7 @@ TEST_CASE("move assignment", "[undirected_adjacency_list][memory][move]") {
     
     SECTION("moved-to graph has correct state") {
         REQUIRE(g2.vertices().size() == 2);
-        REQUIRE(g2.edges_size() == 1);
+        REQUIRE(g2.num_edges() == 1);
         REQUIRE(g2.vertices()[k1].value() == 10);
     }
     
@@ -1121,7 +1121,7 @@ TEST_CASE("clear method", "[undirected_adjacency_list][memory][clear]") {
     g.create_edge(k1, k3, 300);
     
     REQUIRE(g.vertices().size() == 3);
-    REQUIRE(g.edges_size() == 3);
+    REQUIRE(g.num_edges() == 3);
     
     // Clear
     g.clear();
@@ -1129,7 +1129,7 @@ TEST_CASE("clear method", "[undirected_adjacency_list][memory][clear]") {
     SECTION("graph is empty after clear") {
         REQUIRE(g.vertices().empty());
         REQUIRE(g.vertices().size() == 0);
-        REQUIRE(g.edges_size() == 0);
+        REQUIRE(g.num_edges() == 0);
     }
     
     SECTION("can add new data after clear") {
@@ -1154,7 +1154,7 @@ TEST_CASE("destructor cleanup", "[undirected_adjacency_list][memory][destructor]
         }
         
         REQUIRE(g.vertices().size() == 10);
-        REQUIRE(g.edges_size() == 9);
+        REQUIRE(g.num_edges() == 9);
         
         // g destructs at end of scope
     }
@@ -1186,7 +1186,7 @@ TEST_CASE("swap operation", "[undirected_adjacency_list][memory][swap]") {
     
     SECTION("g1 now has g2's old data") {
         REQUIRE(g1.vertices().size() == 3);
-        REQUIRE(g1.edges_size() == 2);
+        REQUIRE(g1.num_edges() == 2);
         REQUIRE(g1.vertices()[0].value() == 30);
         REQUIRE(g1.vertices()[1].value() == 40);
         REQUIRE(g1.vertices()[2].value() == 50);
@@ -1194,7 +1194,7 @@ TEST_CASE("swap operation", "[undirected_adjacency_list][memory][swap]") {
     
     SECTION("g2 now has g1's old data") {
         REQUIRE(g2.vertices().size() == 2);
-        REQUIRE(g2.edges_size() == 1);
+        REQUIRE(g2.num_edges() == 1);
         REQUIRE(g2.vertices()[0].value() == 10);
         REQUIRE(g2.vertices()[1].value() == 20);
     }
@@ -1236,13 +1236,13 @@ TEST_CASE("large graph cleanup", "[undirected_adjacency_list][memory][stress]") 
     }
     
     REQUIRE(g.vertices().size() == NUM_VERTICES);
-    REQUIRE(g.edges_size() == (NUM_VERTICES - 5) * 5);
+    REQUIRE(g.num_edges() == (NUM_VERTICES - 5) * 5);
     
     // Clear should properly deallocate all edges
     g.clear();
     
     REQUIRE(g.vertices().empty());
-    REQUIRE(g.edges_size() == 0);
+    REQUIRE(g.num_edges() == 0);
 }
 
 // =============================================================================
@@ -1269,7 +1269,7 @@ TEST_CASE("copy constructor", "[undirected_adjacency_list][memory][copy]") {
     }
     
     SECTION("copy has same edge count") {
-        REQUIRE(g2.edges_size() == g1.edges_size());
+        REQUIRE(g2.num_edges() == g1.num_edges());
     }
     
     SECTION("modifying copy does not affect original") {
@@ -1281,7 +1281,7 @@ TEST_CASE("copy constructor", "[undirected_adjacency_list][memory][copy]") {
     SECTION("edges are independent") {
         // Create another edge in copy
         g2.create_edge(0, 1, 200);
-        REQUIRE(g2.edges_size() > g1.edges_size());
+        REQUIRE(g2.num_edges() > g1.num_edges());
     }
 }
 
@@ -1299,7 +1299,7 @@ TEST_CASE("copy constructor with multiple edges", "[undirected_adjacency_list][m
     undirected_adjacency_list<int, int> g2(g1);
     
     REQUIRE(g2.vertices().size() == 5);
-    REQUIRE(g2.edges_size() == g1.edges_size());
+    REQUIRE(g2.num_edges() == g1.num_edges());
     
     // Verify all vertices are correct
     for (size_t i = 0; i < 5; ++i) {
@@ -1322,13 +1322,13 @@ TEST_CASE("copy assignment", "[undirected_adjacency_list][memory][copy]") {
         REQUIRE(g2.vertices().size() == 2);
         REQUIRE(g2.vertices()[0].value() == 10);
         REQUIRE(g2.vertices()[1].value() == 20);
-        REQUIRE(g2.edges_size() == g1.edges_size());
+        REQUIRE(g2.num_edges() == g1.num_edges());
     }
     
     SECTION("self-assignment is safe") {
         g1 = g1;
         REQUIRE(g1.vertices().size() == 2);
-        REQUIRE(g1.edges_size() == 1);  // 1 edge
+        REQUIRE(g1.num_edges() == 1);  // 1 edge
     }
 }
 
@@ -1342,7 +1342,7 @@ TEST_CASE("copy with graph value", "[undirected_adjacency_list][memory][copy]") 
         undirected_adjacency_list<int, int, std::string> g2(g1);
         REQUIRE(g2.graph_value() == "original graph");
         REQUIRE(g2.vertices().size() == 2);
-        REQUIRE(g2.edges_size() == g1.edges_size());
+        REQUIRE(g2.num_edges() == g1.num_edges());
     }
     
     SECTION("copy assignment preserves graph value") {
@@ -1377,7 +1377,7 @@ TEST_CASE("edge range constructor basic", "[undirected_adjacency_list][construct
     }
     
     SECTION("correct number of edges created") {
-        REQUIRE(g.edges_size() == 3);
+        REQUIRE(g.num_edges() == 3);
     }
     
     SECTION("graph value set correctly") {
@@ -1411,7 +1411,7 @@ TEST_CASE("edge range constructor with projection", "[undirected_adjacency_list]
     );
     
     REQUIRE(g.vertices().size() == 4);
-    REQUIRE(g.edges_size() == 3);
+    REQUIRE(g.num_edges() == 3);
 }
 
 TEST_CASE("edge range constructor sparse vertices", "[undirected_adjacency_list][construction][range]") {
@@ -1433,14 +1433,14 @@ TEST_CASE("edge range constructor sparse vertices", "[undirected_adjacency_list]
     }
     
     SECTION("intermediate vertices have no edges") {
-        REQUIRE(g.vertices()[3].edges_size() == 0);
-        REQUIRE(g.vertices()[7].edges_size() == 0);
+        REQUIRE(g.vertices()[3].num_edges() == 0);
+        REQUIRE(g.vertices()[7].num_edges() == 0);
     }
     
     SECTION("endpoint vertices have correct edges") {
-        REQUIRE(g.vertices()[0].edges_size() == 1);
-        REQUIRE(g.vertices()[5].edges_size() == 2);
-        REQUIRE(g.vertices()[10].edges_size() == 1);
+        REQUIRE(g.vertices()[0].num_edges() == 1);
+        REQUIRE(g.vertices()[5].num_edges() == 2);
+        REQUIRE(g.vertices()[10].num_edges() == 1);
     }
 }
 
@@ -1455,7 +1455,7 @@ TEST_CASE("edge range constructor empty range", "[undirected_adjacency_list][con
     );
     
     REQUIRE(g.vertices().empty());
-    REQUIRE(g.edges_size() == 0);
+    REQUIRE(g.num_edges() == 0);
     REQUIRE(g.graph_value() == 99);
 }
 
@@ -1583,20 +1583,20 @@ TEST_CASE("clear_edges per-vertex", "[undirected_adjacency_list][vertex][clear_e
     g.create_edge(0, 2, 200);
     g.create_edge(1, 2, 300);
     
-    REQUIRE(g.edges_size() == 3);
-    REQUIRE(g.vertices()[0].edges_size() == 2);
-    REQUIRE(g.vertices()[1].edges_size() == 2);
-    REQUIRE(g.vertices()[2].edges_size() == 2);
+    REQUIRE(g.num_edges() == 3);
+    REQUIRE(g.vertices()[0].num_edges() == 2);
+    REQUIRE(g.vertices()[1].num_edges() == 2);
+    REQUIRE(g.vertices()[2].num_edges() == 2);
     
     SECTION("clear edges from one vertex") {
         g.vertices()[0].clear_edges(g);
         
         // Edges involving vertex 0 are gone
-        REQUIRE(g.vertices()[0].edges_size() == 0);
+        REQUIRE(g.vertices()[0].num_edges() == 0);
         // Edges to/from vertex 0 are removed from other vertices too
-        REQUIRE(g.vertices()[1].edges_size() == 1);  // Only 1-2 remains
-        REQUIRE(g.vertices()[2].edges_size() == 1);  // Only 1-2 remains
-        REQUIRE(g.edges_size() == 1);
+        REQUIRE(g.vertices()[1].num_edges() == 1);  // Only 1-2 remains
+        REQUIRE(g.vertices()[2].num_edges() == 1);  // Only 1-2 remains
+        REQUIRE(g.num_edges() == 1);
     }
 }
 
@@ -1610,13 +1610,13 @@ TEST_CASE("erase_edge with iterator range", "[undirected_adjacency_list][edge][e
     g.create_edge(0, 2, 200);
     g.create_edge(0, 3, 300);
     
-    REQUIRE(g.vertices()[0].edges_size() == 3);
+    REQUIRE(g.vertices()[0].num_edges() == 3);
     
     SECTION("erase all edges from vertex") {
         auto& v0 = g.vertices()[0];
         v0.erase_edge(g, v0.edges_begin(g, 0), v0.edges_end(g, 0));
-        REQUIRE(v0.edges_size() == 0);
-        REQUIRE(g.edges_size() == 0);
+        REQUIRE(v0.num_edges() == 0);
+        REQUIRE(g.num_edges() == 0);
     }
 }
 
@@ -1634,7 +1634,7 @@ TEST_CASE("graph with void vertex value", "[undirected_adjacency_list][void_type
     g.create_edge(0, 1, 100);
     
     REQUIRE(g.vertices().size() == 2);
-    REQUIRE(g.edges_size() == 1);
+    REQUIRE(g.num_edges() == 1);
     
     // Verify edge has value
     auto& v0 = g.vertices()[0];
@@ -1651,7 +1651,7 @@ TEST_CASE("graph with void edge value", "[undirected_adjacency_list][void_types]
     REQUIRE(g.vertices().size() == 2);
     REQUIRE(g.vertices()[0].value() == 10);
     REQUIRE(g.vertices()[1].value() == 20);
-    REQUIRE(g.edges_size() == 1);
+    REQUIRE(g.num_edges() == 1);
 }
 
 TEST_CASE("graph with void graph value", "[undirected_adjacency_list][void_types]") {
@@ -1661,7 +1661,7 @@ TEST_CASE("graph with void graph value", "[undirected_adjacency_list][void_types
     g.create_edge(0, 1, 100);
     
     REQUIRE(g.vertices().size() == 2);
-    REQUIRE(g.edges_size() == 1);
+    REQUIRE(g.num_edges() == 1);
 }
 
 TEST_CASE("graph with all void values", "[undirected_adjacency_list][void_types]") {
@@ -1673,6 +1673,6 @@ TEST_CASE("graph with all void values", "[undirected_adjacency_list][void_types]
     g.create_edge(1, 2);
     
     REQUIRE(g.vertices().size() == 3);
-    REQUIRE(g.edges_size() == 2);
+    REQUIRE(g.num_edges() == 2);
 }
 */

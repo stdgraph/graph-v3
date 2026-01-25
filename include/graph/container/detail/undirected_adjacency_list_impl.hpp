@@ -1025,7 +1025,7 @@ template <typename VV,
           class VContainer,
           typename Alloc>
 typename ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::vertex_edge_size_type
-ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::edges_size() const {
+ual_vertex<VV, EV, GV, VId, VContainer, Alloc>::num_edges() const {
   return edges_.size();
 }
 
@@ -1540,18 +1540,6 @@ base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::try_find_ver
     return this->vertices_.begin() + id;
   else
     return this->vertices_.end();
-}
-
-template <typename VV,
-          typename EV,
-          typename GV,
-          integral VId,
-          template <typename V, typename A>
-          class VContainer,
-          typename Alloc>
-constexpr typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::edge_size_type
-base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::edges_size() const noexcept {
-  return this->edges_size_;
 }
 
 //-------------------------------------------------------------------------------------

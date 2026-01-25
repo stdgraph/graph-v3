@@ -864,7 +864,7 @@ public: // Type Aliases
     void advance_vertex() {
       // at exit, if u_ != g.vertices().end() then uv_ will refer to a valid edge
       for (; u_ != g_->vertices().end(); ++u_) {
-        if (u_->edges_size() > 0) {
+        if (u_->num_edges() > 0) {
           vertex_id_type uid = static_cast<vertex_id_type>(u_ - g_->vertices().begin());
           uv_                  = u_->edges_begin(*g_, uid);
           return;
@@ -1006,12 +1006,6 @@ public: // Accessors
   /// @brief Get the number of edges in the graph.
   /// @return Edge count (each undirected edge counted TWICE - once from each endpoint).
   /// @note For unique edge count, divide by 2.
-  /// @complexity O(1)
-  constexpr edge_size_type edges_size() const noexcept;
-
-  /// @brief Get the number of edges in the graph (CPO-compatible name).
-  /// @return Edge count (each undirected edge counted TWICE - once from each endpoint).
-  /// @note For unique edge count, divide by 2. This is the same as edges_size().
   /// @complexity O(1)
   constexpr edge_size_type num_edges() const noexcept { return edges_size_; }
 
@@ -1254,7 +1248,7 @@ public:
 #  if 0
   vertex_id_type       vertex_id(const graph_type&) const noexcept;
 #  endif
-  vertex_edge_size_type edges_size() const;
+  vertex_edge_size_type num_edges() const;
 
   vertex_edge_iterator erase_edge(graph_type&, vertex_edge_iterator);
   vertex_edge_iterator erase_edge(graph_type&, vertex_edge_iterator, vertex_edge_iterator);
@@ -1720,7 +1714,6 @@ public: // Accessors
   using base_type::end;
   using base_type::cend;
   using base_type::try_find_vertex;
-  using base_type::edges_size;
   using base_type::edges_begin;
   using base_type::edges_end;
   using base_type::edges_cbegin;
@@ -1827,7 +1820,7 @@ private: // CPO support via ADL (friend functions)
     requires vertex_descriptor_type<U>
   friend constexpr auto degree(const undirected_adjacency_list& g, const U& u) noexcept {
     auto uid = static_cast<vertex_id_type>(u.vertex_id());
-    return g.vertices_[uid].edges_size();
+    return g.vertices_[uid].num_edges();
   }
 
   // target_id(g, edge_descriptor) - get target vertex id from edge descriptor (iteration perspective)
@@ -2035,7 +2028,6 @@ public: // Accessors
   using base_type::end;
   using base_type::cend;
   using base_type::try_find_vertex;
-  using base_type::edges_size;
   using base_type::edges_begin;
   using base_type::edges_end;
   using base_type::edges_cbegin;
@@ -2125,7 +2117,7 @@ private:
     requires vertex_descriptor_type<U>
   friend constexpr auto degree(const undirected_adjacency_list& g, const U& u) noexcept {
     auto uid = static_cast<vertex_id_type>(u.vertex_id());
-    return g.vertices_[uid].edges_size();
+    return g.vertices_[uid].num_edges();
   }
 
   template <typename E>
