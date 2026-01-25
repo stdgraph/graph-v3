@@ -981,11 +981,19 @@ namespace _cpo_impls {
     // =========================================================================
     
     namespace _target {
-        enum class _St { _none, _member, _adl, _default };
+        enum class _St { _none, _native_edge_member, _member, _adl, _default };
         
         // Use the public CPO instances (already declared above)
         using _cpo_instances::find_vertex;
         using _cpo_instances::target_id;
+        
+        // Check if the underlying native edge type has target() member - highest priority
+        // This checks (*uv.value()).target(g) where value() returns iterator to native edge
+        template<typename G, typename E>
+        concept _has_native_edge_member = is_edge_descriptor_v<std::remove_cvref_t<E>> &&
+            requires(G& g, const E& uv) {
+                { (*uv.value()).target(g) };
+            };
         
         // Check for g.target(uv) member function
         // Accepts either edge_descriptor or underlying edge value type
@@ -1014,7 +1022,10 @@ namespace _cpo_impls {
         
         template<typename G, typename E>
         [[nodiscard]] consteval _Choice_t<_St> _Choose() noexcept {
-            if constexpr (_has_member<G, E>) {
+            if constexpr (_has_native_edge_member<G, E>) {
+                return {_St::_native_edge_member,
+                        noexcept((*std::declval<const E&>().value()).target(std::declval<G&>()))};
+            } else if constexpr (_has_member<G, E>) {
                 return {_St::_member, 
                         noexcept(std::declval<G&>().target(std::declval<const E&>()))};
             } else if constexpr (_has_adl<G, E>) {
@@ -1061,14 +1072,16 @@ namespace _cpo_impls {
              * @brief Get target vertex descriptor from an edge
              * 
              * Resolution order:
-             * 1. g.target(uv) - Member function (highest priority)
+             * 1. (*uv.value()).target(g) - Native edge member function (highest priority)
+             *    - May return vertex_descriptor, vertex_iterator, or pointer (auto-converted)
+             * 2. g.target(uv) - Graph member function (high priority)
              *    - May return either vertex_descriptor or vertex_iterator (auto-converted)
-             * 2. target(g, uv) - ADL (medium priority)
+             * 3. target(g, uv) - ADL (medium priority)
              *    - May return either vertex_descriptor or vertex_iterator (auto-converted)
-             * 3. find_vertex(g, target_id(g, uv)) - Default (lowest priority)
+             * 4. *find_vertex(g, target_id(g, uv)) - Default (lowest priority)
              *    - Returns vertex_iterator, dereferenced to get vertex_descriptor
              * 
-             * Custom implementations (member/ADL) can return:
+             * Native edge member and custom implementations (member/ADL) can return:
              * - vertex_descriptor directly (vertex_t<G>) - used as-is
              * - vertex_iterator (iterator to vertices) - dereferenced to get descriptor
              * 
@@ -1096,7 +1109,10 @@ namespace _cpo_impls {
                 using _G = std::remove_cvref_t<G>;
                 using _E = std::remove_cvref_t<E>;
                 
-                if constexpr (_Choice<_G, _E>._Strategy == _St::_member) {
+                if constexpr (_Choice<_G, _E>._Strategy == _St::_native_edge_member) {
+                    // Call target(g) member on the underlying native edge
+                    return _to_vertex_descriptor(g, (*uv.value()).target(g));
+                } else if constexpr (_Choice<_G, _E>._Strategy == _St::_member) {
                     // Member function may return vertex_descriptor or iterator
                     return _to_vertex_descriptor(g, g.target(uv));
                 } else if constexpr (_Choice<_G, _E>._Strategy == _St::_adl) {
@@ -2744,11 +2760,19 @@ namespace _cpo_impls {
     // =========================================================================
     
     namespace _source {
-        enum class _St { _none, _member, _adl, _descriptor, _default };
+        enum class _St { _none, _native_edge_member, _member, _adl, _descriptor, _default };
         
         // Use the public CPO instances (already declared above)
         using _cpo_instances::find_vertex;
         using _cpo_instances::source_id;
+        
+        // Check if the underlying native edge type has source() member - highest priority
+        // This checks (*uv.value()).source(g) where value() returns iterator to native edge
+        template<typename G, typename E>
+        concept _has_native_edge_member = is_edge_descriptor_v<std::remove_cvref_t<E>> &&
+            requires(G& g, const E& uv) {
+                { (*uv.value()).source(g) };
+            };
         
         // Check for g.source(uv) member function
         // Accepts either edge_descriptor or underlying edge value type
@@ -2784,7 +2808,10 @@ namespace _cpo_impls {
         
         template<typename G, typename E>
         [[nodiscard]] consteval _Choice_t<_St> _Choose() noexcept {
-            if constexpr (_has_member<G, E>) {
+            if constexpr (_has_native_edge_member<G, E>) {
+                return {_St::_native_edge_member,
+                        noexcept((*std::declval<const E&>().value()).source(std::declval<G&>()))};
+            } else if constexpr (_has_member<G, E>) {
                 return {_St::_member, 
                         noexcept(std::declval<G&>().source(std::declval<const E&>()))};
             } else if constexpr (_has_adl<G, E>) {
@@ -2834,23 +2861,25 @@ namespace _cpo_impls {
              * @brief Get source vertex descriptor from an edge
              * 
              * Resolution order:
-             * 1. g.source(uv) - Member function (highest priority)
+             * 1. (*uv.value()).source(g) - Native edge member function (highest priority)
+             *    - May return vertex_descriptor, vertex_iterator, or pointer (auto-converted)
+             * 2. g.source(uv) - Graph member function (high priority)
              *    - May return either vertex_descriptor or vertex_iterator (auto-converted)
-             * 2. source(g, uv) - ADL (high priority)
+             * 3. source(g, uv) - ADL (medium-high priority)
              *    - May return either vertex_descriptor or vertex_iterator (auto-converted)
-             * 3. uv.source() - Edge descriptor's source() member (medium priority)
+             * 4. uv.source() - Edge descriptor's source() member (medium priority)
              *    - Returns the stored source vertex descriptor directly
-             * 4. *find_vertex(g, source_id(g, uv)) - Default (lowest priority)
+             * 5. *find_vertex(g, source_id(g, uv)) - Default (lowest priority)
              *    - Uses source_id to get ID, then find_vertex to locate vertex
              * 
-             * The descriptor implementation (tier 3) works for any edge_descriptor that
+             * The descriptor implementation (tier 4) works for any edge_descriptor that
              * stores its source vertex descriptor, returning it directly without lookup.
              * 
-             * The default implementation (tier 4) works for any graph that supports:
+             * The default implementation (tier 5) works for any graph that supports:
              * - source_id(g, uv) to get the source vertex ID
              * - find_vertex(g, id) to find a vertex by ID
              * 
-             * Custom implementations (member/ADL) can return:
+             * Native edge member and custom implementations (member/ADL) can return:
              * - vertex_descriptor directly (vertex_t<G>) - used as-is
              * - vertex_iterator (iterator to vertices) - dereferenced to get descriptor
              * 
@@ -2869,7 +2898,10 @@ namespace _cpo_impls {
                 using _G = std::remove_cvref_t<G>;
                 using _E = std::remove_cvref_t<E>;
                 
-                if constexpr (_Choice<_G, _E>._Strategy == _St::_member) {
+                if constexpr (_Choice<_G, _E>._Strategy == _St::_native_edge_member) {
+                    // Call source(g) member on the underlying native edge
+                    return _to_vertex_descriptor(g, (*uv.value()).source(g));
+                } else if constexpr (_Choice<_G, _E>._Strategy == _St::_member) {
                     // Member function may return vertex_descriptor or iterator
                     return _to_vertex_descriptor(g, g.source(uv));
                 } else if constexpr (_Choice<_G, _E>._Strategy == _St::_adl) {
