@@ -662,13 +662,42 @@ protected:
   void unlink(vertex_type&, vertex_type&) noexcept;
 
 public:
+  // Edge member methods for CPO resolution (iteration perspective)
+  // These return vertex descriptors based on the edge's storage location in the graph
   vertex_iterator       source(graph_type&) noexcept;
   const_vertex_iterator source(const graph_type&) const noexcept;
-  vertex_id_type        list_owner_id() const noexcept; // ID of vertex that owns this edge in its list
-
   vertex_iterator       target(graph_type&) noexcept;
   const_vertex_iterator target(const graph_type&) const noexcept;
-  vertex_id_type        list_target_id() const noexcept; // ID of target vertex from list owner's perspective
+
+  // Internal storage-perspective methods (do NOT use for CPO resolution)
+  // 
+  // IMPORTANT DISTINCTION:
+  // - list_owner_id() returns the ID of the vertex that owns this edge in its edge list
+  // - list_target_id() returns the ID of the other vertex (the target from the owner's perspective)
+  // 
+  // These methods provide the STORAGE perspective of an edge, which is different from
+  // the ITERATION perspective provided by the CPO functions source_id(g,e) and target_id(g,e).
+  // 
+  // For undirected graphs:
+  // - Each edge is stored in BOTH vertices' edge lists
+  // - When iterating edges from vertex A, you get edges stored in A's list (pointing to B)
+  //   AND edges stored in other vertices' lists (pointing to A)
+  // - list_owner_id() tells you which list physically stores this edge instance
+  // - list_target_id() tells you which vertex this instance points to
+  // 
+  // When iterating from vertex 1:
+  // - Edge (0,1) stored in vertex 0's list: list_owner_id()=0, list_target_id()=1
+  // - Edge (1,2) stored in vertex 1's list: list_owner_id()=1, list_target_id()=2
+  // 
+  // But the CPO source_id(g,e) should ALWAYS return 1 (the vertex we're iterating from),
+  // regardless of which list the edge is stored in. This is why the CPO uses the edge
+  // descriptor's source_id() method (iteration perspective) rather than the native edge's
+  // list_owner_id() method (storage perspective).
+  // 
+  // These methods were renamed from source_id()/target_id() to prevent the CPO's tier-1
+  // resolution from incorrectly using them.
+  vertex_id_type        list_owner_id() const noexcept;
+  vertex_id_type        list_target_id() const noexcept;
 
   vertex_iterator       other_vertex(graph_type&, const_vertex_iterator other) noexcept;
   const_vertex_iterator other_vertex(const graph_type&, const_vertex_iterator other) const noexcept;
@@ -1801,16 +1830,23 @@ private: // CPO support via ADL (friend functions)
     return g.vertices_[uid].edges_size();
   }
 
-  // target_id(g, edge_descriptor) - get target vertex id from edge descriptor
+  // target_id(g, edge_descriptor) - get target vertex id from edge descriptor (iteration perspective)
   // For undirected graphs, the target is the "other" vertex relative to the source we're iterating from
+  // This provides the ITERATION perspective, not the STORAGE perspective.
+  // See ual_edge::list_owner_id()/list_target_id() documentation for the distinction.
   template <typename E>
     requires edge_descriptor_type<E>
   friend constexpr vertex_id_type target_id(const undirected_adjacency_list& g, const E& e) noexcept {
     return e.value()->other_vertex_id(g, static_cast<vertex_id_type>(e.source_id()));
   }
 
-  // source_id(g, edge_descriptor) - get source vertex id from edge descriptor
+  // source_id(g, edge_descriptor) - get source vertex id from edge descriptor (iteration perspective)
   // For undirected graphs, the source is the vertex we're iterating from (stored in descriptor)
+  // This provides the ITERATION perspective, not the STORAGE perspective.
+  // 
+  // Uses edge_descriptor.source_id() which returns the source from iteration context,
+  // NOT ual_edge.list_owner_id() which returns the storage location.
+  // See ual_edge::list_owner_id()/list_target_id() documentation for the distinction.
   template <typename E>
     requires edge_descriptor_type<E>
   friend constexpr vertex_id_type source_id([[maybe_unused]] const undirected_adjacency_list& g, const E& e) noexcept {
