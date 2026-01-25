@@ -95,7 +95,7 @@ public: // Type Aliases
   using vertex_set            = VContainer<vertex_type, vertex_allocator_type>;
   using vertex_iterator       = typename vertex_set::iterator;
   using const_vertex_iterator = typename vertex_set::const_iterator;
-  using vertex_key_type       = VId;
+  using vertex_id_type       = VId;
   using vertex_value_type     = VV;
   
   using edge_type            = ual_edge<VV, EV, GV, VId, VContainer, Alloc>;
@@ -368,12 +368,12 @@ base_undirected_adjacency_list(const allocator_type& alloc)
 ```cpp
   // Initializer list with edge values
   base_undirected_adjacency_list(
-    const initializer_list<tuple<vertex_key_type, vertex_key_type, edge_value_type>>& ilist,
+    const initializer_list<tuple<vertex_id_type, vertex_id_type, edge_value_type>>& ilist,
     const Alloc& alloc = Alloc());
   
   // Initializer list without edge values
   base_undirected_adjacency_list(
-    const initializer_list<tuple<vertex_key_type, vertex_key_type>>& ilist,
+    const initializer_list<tuple<vertex_id_type, vertex_id_type>>& ilist,
     const Alloc& alloc = Alloc());
 ```
 
@@ -405,8 +405,8 @@ public: // Accessors
   constexpr const_vertex_iterator end() const;
   constexpr const_vertex_iterator cend() const;
   
-  vertex_iterator       try_find_vertex(vertex_key_type);
-  const_vertex_iterator try_find_vertex(vertex_key_type) const;
+  vertex_iterator       try_find_vertex(vertex_id_type);
+  const_vertex_iterator try_find_vertex(vertex_id_type) const;
   
   constexpr edge_size_type edges_size() const noexcept;
   
@@ -456,12 +456,12 @@ public: // Vertex Creation
 
 ```cpp
 public: // Edge Creation
-  vertex_edge_iterator create_edge(vertex_key_type, vertex_key_type);
-  vertex_edge_iterator create_edge(vertex_key_type, vertex_key_type, edge_value_type&&);
+  vertex_edge_iterator create_edge(vertex_id_type, vertex_id_type);
+  vertex_edge_iterator create_edge(vertex_id_type, vertex_id_type, edge_value_type&&);
   
   template <class EV2>
     requires std::constructible_from<edge_value_type, const EV2&>
-  vertex_edge_iterator create_edge(vertex_key_type, vertex_key_type, const EV2&);
+  vertex_edge_iterator create_edge(vertex_id_type, vertex_id_type, const EV2&);
   
   edge_type* create_edge(vertex_iterator, vertex_iterator);
   edge_type* create_edge(vertex_iterator, vertex_iterator, edge_value_type&&);
@@ -483,7 +483,7 @@ public: // Edge Creation
 
 ```cpp
 public: // Edge Removal
-  vertex_edge_iterator erase_edge(vertex_key_type, vertex_key_type);
+  vertex_edge_iterator erase_edge(vertex_id_type, vertex_id_type);
   void erase_edge(edge_type*);
   
 public: // Graph Modification
@@ -540,7 +540,7 @@ void swap(base_undirected_adjacency_list& other) {
   
   template <typename G>
   requires std::derived_from<std::remove_cvref_t<G>, base_undirected_adjacency_list>
-  [[nodiscard]] friend constexpr auto find_vertex(G&& g, vertex_key_type key) {
+  [[nodiscard]] friend constexpr auto find_vertex(G&& g, vertex_id_type key) {
     auto it = std::forward<G>(g).try_find_vertex(key);
     if (it == std::forward<G>(g).end())
       return vertex_descriptor<G>();
@@ -628,7 +628,7 @@ public:
   using typename base_type::vertex_type;
   using typename base_type::vertex_iterator;
   using typename base_type::const_vertex_iterator;
-  using typename base_type::vertex_key_type;
+  using typename base_type::vertex_id_type;
   using typename base_type::edge_type;
   using typename base_type::edge_iterator;
   using typename base_type::const_edge_iterator;
@@ -725,12 +725,12 @@ public: // Construction/Destruction/Assignment
   
   // Forwarding constructors: initializer_list
   undirected_adjacency_list(
-    const initializer_list<tuple<vertex_key_type, vertex_key_type, edge_value_type>>& ilist,
+    const initializer_list<tuple<vertex_id_type, vertex_id_type, edge_value_type>>& ilist,
     const Alloc& alloc = Alloc())
       : base_type(ilist, alloc) {}
   
   undirected_adjacency_list(
-    const initializer_list<tuple<vertex_key_type, vertex_key_type>>& ilist,
+    const initializer_list<tuple<vertex_id_type, vertex_id_type>>& ilist,
     const Alloc& alloc = Alloc())
       : base_type(ilist, alloc) {}
 ```
@@ -816,7 +816,7 @@ public:
   using typename base_type::vertex_type;
   using typename base_type::vertex_iterator;
   using typename base_type::const_vertex_iterator;
-  using typename base_type::vertex_key_type;
+  using typename base_type::vertex_id_type;
   using typename base_type::edge_type;
   using typename base_type::edge_iterator;
   using typename base_type::const_edge_iterator;
@@ -870,12 +870,12 @@ public: // Construction/Destruction/Assignment
   
   // Forwarding constructors: initializer_list
   undirected_adjacency_list(
-    const initializer_list<tuple<vertex_key_type, vertex_key_type, edge_value_type>>& ilist,
+    const initializer_list<tuple<vertex_id_type, vertex_id_type, edge_value_type>>& ilist,
     const Alloc& alloc = Alloc())
       : base_type(ilist, alloc) {}
   
   undirected_adjacency_list(
-    const initializer_list<tuple<vertex_key_type, vertex_key_type>>& ilist,
+    const initializer_list<tuple<vertex_id_type, vertex_id_type>>& ilist,
     const Alloc& alloc = Alloc())
       : base_type(ilist, alloc) {}
   
@@ -1145,6 +1145,15 @@ If at any phase the refactoring causes issues:
 3. Use `std::derived_from<..., base_undirected_adjacency_list>` in friend functions
 4. Don't forget `[[no_unique_address]]` for `graph_value_`
 5. Test both versions after base class changes
+
+---
+
+## Other Tasks
+- [ ] Review member function names (e.g. uv.value() vs. uv.edge_value()).
+- [ ] Support u.value() (or u.vertex_value()).
+- [ ] Only member functions will be used for CPOs to verify CPOs can adapt to native types & functions.
+- [ ] All public member functions have unit tests for them
+- [ ] Remove extraneous functionality (e.g. neighbor function range on vertex)
 
 ---
 

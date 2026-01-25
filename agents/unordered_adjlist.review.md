@@ -461,7 +461,7 @@ class undirected_adjacency_list { ... };
 ```cpp
 // In const_edge_iterator::advance_edge()
 void advance_edge() {
-  vertex_key_type ukey = vertex_key(*g_, u_);
+  vertex_id_type ukey = vertex_key(*g_, u_);
   if (++uv_ != u_->edges_end(*g_, ukey))
     return;
   ++u_;
@@ -486,7 +486,7 @@ int count = std::distance(g.edges_begin(), g.edges_end());
 #### Issue 2: Const Correctness in find_vertex
 
 ```cpp
-const_iterator begin(const graph_type& g, vertex_key_type ukey) const noexcept {
+const_iterator begin(const graph_type& g, vertex_id_type ukey) const noexcept {
   return const_iterator(g, ukey, head_);  // ← Casts away const in ctor
 }
 ```

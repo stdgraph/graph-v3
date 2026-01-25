@@ -1193,14 +1193,14 @@ base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::base_undirec
     const auto& src_vtx = other.vertices_[uid];
     for (auto uv = src_vtx.edges_begin(static_cast<const graph_type&>(other), uid); 
          uv != src_vtx.edges_end(static_cast<const graph_type&>(other), uid); ++uv) {
-      vertex_id_type src_key = uv->source_vertex_id(static_cast<const graph_type&>(other));
-      vertex_id_type tgt_key = uv->target_vertex_id(static_cast<const graph_type&>(other));
+      vertex_id_type src_id = uv->source_vertex_id(static_cast<const graph_type&>(other));
+      vertex_id_type tgt_id = uv->target_vertex_id(static_cast<const graph_type&>(other));
       // Only copy each edge once: when uid matches source and source <= target
-      if (uid == src_key && src_key <= tgt_key) {
+      if (uid == src_id && src_id <= tgt_id) {
         if constexpr (std::is_void_v<EV>) {
-          g.create_edge(src_key, tgt_key);
+          g.create_edge(src_id, tgt_id);
         } else {
-          g.create_edge(src_key, tgt_key, uv->value());
+          g.create_edge(src_id, tgt_id, uv->value());
         }
       }
     }
@@ -1232,22 +1232,22 @@ base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::base_undirec
   }
 
   // Evaluate max vertex id needed
-  vertex_id_type max_vtx_key = vrng.empty() ? vertex_id_type(0) 
+  vertex_id_type max_vtx_id = vrng.empty() ? vertex_id_type(0) 
                                              : static_cast<vertex_id_type>(vrng.size() - 1);
   for (auto& e : erng) {
     auto&& edge_info = eproj(e);  // copyable_edge_t<VId, EV>
-    max_vtx_key = max(max_vtx_key, max(edge_info.source_id, edge_info.target_id));
+    max_vtx_id = max(max_vtx_id, max(edge_info.source_id, edge_info.target_id));
   }
 
   // add vertices
-  vertices_.reserve(max_vtx_key + 1);
+  vertices_.reserve(max_vtx_id + 1);
   if constexpr (!std::is_void_v<VV>) {
     for (auto& vtx : vrng) {
       auto&& vtx_info = vproj(vtx); // copyable_vertex_t<VId, VV>
       vertices_.push_back(vertex_type(vertices_, static_cast<vertex_id_type>(vertices_.size()), vtx_info.value));
     }
   }
-  vertices_.resize(max_vtx_key + 1); // assure expected vertices exist
+  vertices_.resize(max_vtx_id + 1); // assure expected vertices exist
 
   // Downcast to graph_type to access create_edge
   auto& g = static_cast<graph_type&>(*this);
@@ -1255,10 +1255,10 @@ base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::base_undirec
   // add edges
   if (!ranges::empty(erng)) {
     auto&& first_edge_info = eproj(*ranges::begin(erng)); // first edge
-    vertex_id_type tkey = first_edge_info.source_id;     // last in-vertex id
+    vertex_id_type tid = first_edge_info.source_id;     // last in-vertex id
     for (auto& edge_data : erng) {
       auto&& edge_info = eproj(edge_data); // copyable_edge_t<VId, EV>
-      if (edge_info.source_id < tkey)
+      if (edge_info.source_id < tid)
         g.throw_unordered_edges();
 
       if constexpr (std::is_void_v<EV>) {
@@ -1266,7 +1266,7 @@ base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::base_undirec
       } else {
         g.create_edge(edge_info.source_id, edge_info.target_id, edge_info.value);
       }
-      tkey = edge_info.source_id;
+      tid = edge_info.source_id;
     }
   }
 }
@@ -1285,26 +1285,26 @@ base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::base_undirec
       : vertices_(alloc)
       , edge_alloc_(alloc) {
   // Evaluate max vertex id needed
-  vertex_id_type max_vtx_key = vertex_id_type();
+  vertex_id_type max_vtx_id = vertex_id_type();
   for (auto& edge_data : ilist) {
     const auto& [uid, vid, uv_val] = edge_data;
-    max_vtx_key = max(max_vtx_key, max(uid, vid));
+    max_vtx_id = max(max_vtx_id, max(uid, vid));
   }
-  vertices_.resize(max_vtx_key + 1); // assure expected vertices exist
+  vertices_.resize(max_vtx_id + 1); // assure expected vertices exist
 
   // Downcast to graph_type to access create_edge and throw_unordered_edges
   auto& g = static_cast<graph_type&>(*this);
   
   // add edges
   if (ilist.size() > 0) {
-    auto [tkey, uukey, tu_val] = *ranges::begin(ilist);
+    auto [tid, uuid, tu_val] = *ranges::begin(ilist);
     for (auto& edge_data : ilist) {
       const auto& [uid, vid, uv_val] = edge_data;
-      if (uid < tkey)
+      if (uid < tid)
         g.throw_unordered_edges();
 
       g.create_edge(uid, vid, uv_val);
-      tkey = uid;
+      tid = uid;
     }
   }
 }
@@ -1323,26 +1323,26 @@ base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::base_undirec
       : vertices_(alloc)
       , edge_alloc_(alloc) {
   // Evaluate max vertex id needed
-  vertex_id_type max_vtx_key = vertex_id_type();
+  vertex_id_type max_vtx_id = vertex_id_type();
   for (auto& edge_data : ilist) {
     const auto& [uid, vid] = edge_data;
-    max_vtx_key = max(max_vtx_key, max(uid, vid));
+    max_vtx_id = max(max_vtx_id, max(uid, vid));
   }
-  vertices_.resize(max_vtx_key + 1); // assure expected vertices exist
+  vertices_.resize(max_vtx_id + 1); // assure expected vertices exist
 
   // Downcast to graph_type to access create_edge and throw_unordered_edges
   auto& g = static_cast<graph_type&>(*this);
   
   // add edges
   if (ilist.size() > 0) {
-    auto [tkey, uukey] = *ranges::begin(ilist);
+    auto [tid, uuid] = *ranges::begin(ilist);
     for (auto& edge_data : ilist) {
       const auto& [uid, vid] = edge_data;
-      if (uid < tkey)
+      if (uid < tid)
         g.throw_unordered_edges();
 
       g.create_edge(uid, vid);
-      tkey = uid;
+      tid = uid;
     }
   }
 }
@@ -1520,9 +1520,9 @@ template <typename VV,
           class VContainer,
           typename Alloc>
 typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
-base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::try_find_vertex(vertex_id_type key) {
-  if (key < this->vertices_.size())
-    return this->vertices_.begin() + key;
+base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::try_find_vertex(vertex_id_type id) {
+  if (id < this->vertices_.size())
+    return this->vertices_.begin() + id;
   else
     return this->vertices_.end();
 }
@@ -1535,9 +1535,9 @@ template <typename VV,
           class VContainer,
           typename Alloc>
 typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::const_vertex_iterator
-base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::try_find_vertex(vertex_id_type key) const {
-  if (key < this->vertices_.size())
-    return this->vertices_.begin() + key;
+base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::try_find_vertex(vertex_id_type id) const {
+  if (id < this->vertices_.size())
+    return this->vertices_.begin() + id;
   else
     return this->vertices_.end();
 }
@@ -1611,10 +1611,10 @@ template <typename VV,
           class VContainer,
           typename Alloc>
 typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_edge_iterator
-base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_edge(vertex_id_type from_key,
-                                                                                  vertex_id_type to_key) {
-  vertex_iterator ui = try_find_vertex(from_key);
-  vertex_iterator vi = try_find_vertex(to_key);
+base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_edge(vertex_id_type from_id,
+                                                                                  vertex_id_type to_id) {
+  vertex_iterator ui = try_find_vertex(from_id);
+  vertex_iterator vi = try_find_vertex(to_id);
   return create_edge(ui, vi);
 }
 
@@ -1626,11 +1626,11 @@ template <typename VV,
           class VContainer,
           typename Alloc>
 typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_edge_iterator
-base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_edge(vertex_id_type   from_key,
-                                                                                  vertex_id_type   to_key,
+base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_edge(vertex_id_type   from_id,
+                                                                                  vertex_id_type   to_id,
                                                                                   edge_value_type&& val) {
-  vertex_iterator ui = this->vertices_.begin() + from_key;
-  vertex_iterator vi = this->vertices_.begin() + to_key;
+  vertex_iterator ui = this->vertices_.begin() + from_id;
+  vertex_iterator vi = this->vertices_.begin() + to_id;
   return create_edge(ui, vi, move(val));
 }
 
@@ -1644,11 +1644,11 @@ template <typename VV,
 template <class EV2>
   requires std::constructible_from<typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::edge_value_type, const EV2&>
 typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_edge_iterator
-base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_edge(vertex_id_type from_key,
-                                                                                  vertex_id_type to_key,
+base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_edge(vertex_id_type from_id,
+                                                                                  vertex_id_type to_id,
                                                                                   const EV2&      val) {
-  vertex_iterator ui = this->vertices_.begin() + from_key;
-  vertex_iterator vi = this->vertices_.begin() + to_key;
+  vertex_iterator ui = this->vertices_.begin() + from_id;
+  vertex_iterator vi = this->vertices_.begin() + to_id;
   return create_edge(ui, vi, val);
 }
 
@@ -1905,30 +1905,30 @@ undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjace
   }
 
   // Evaluate max vertex id needed
-  vertex_id_type max_vtx_key = vrng.empty() ? vertex_id_type(0) 
+  vertex_id_type max_vtx_id = vrng.empty() ? vertex_id_type(0) 
                                              : static_cast<vertex_id_type>(vrng.size() - 1);
   for (auto& e : erng) {
     auto&& edge_info = eproj(e);  // copyable_edge_t<VId, EV>
-    max_vtx_key = max(max_vtx_key, max(edge_info.source_id, edge_info.target_id));
+    max_vtx_id = max(max_vtx_id, max(edge_info.source_id, edge_info.target_id));
   }
 
   // add vertices
-  this->vertices_.reserve(max_vtx_key + 1);
+  this->vertices_.reserve(max_vtx_id + 1);
   if constexpr (!std::is_void_v<VV>) {
     for (auto& vtx : vrng) {
       auto&& [id, value] = vproj(vtx);  // copyable_vertex_t<VId, VV>
       create_vertex(value);
     }
   }
-  this->vertices_.resize(max_vtx_key + 1); // assure expected vertices exist
+  this->vertices_.resize(max_vtx_id + 1); // assure expected vertices exist
 
   // add edges
   if (!ranges::empty(erng)) {
     auto&& first_edge_info = eproj(*ranges::begin(erng)); // first edge
-    vertex_id_type tkey = first_edge_info.source_id;     // last in-vertex id
+    vertex_id_type tid = first_edge_info.source_id;     // last in-vertex id
     for (auto& edge_data : erng) {
       auto&& edge_info = eproj(edge_data);  // copyable_edge_t<VId, EV>
-      if (edge_info.source_id < tkey)
+      if (edge_info.source_id < tid)
         this->throw_unordered_edges();
 
       vertex_edge_iterator uv;
@@ -1937,7 +1937,7 @@ undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjace
       } else {
         uv = create_edge(edge_info.source_id, edge_info.target_id, edge_info.value);
       }
-      tkey = edge_info.source_id;
+      tid = edge_info.source_id;
     }
   }
 }

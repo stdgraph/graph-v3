@@ -162,7 +162,7 @@ public:
   using vertex_set = VContainer<vertex_type, vertex_allocator_type>;
   using vertex_iterator = typename vertex_set::iterator;
   using const_vertex_iterator = typename vertex_set::const_iterator;
-  using vertex_key_type = VId;
+  using vertex_id_type = VId;
   using vertex_value_type = VV;
   
   using edge_type = ual_edge<VV, EV, GV, VId, VContainer, Alloc>;
@@ -236,11 +236,11 @@ public:
   
   // Initializer_list constructors
   base_undirected_adjacency_list(
-    const initializer_list<tuple<vertex_key_type, vertex_key_type, edge_value_type>>& ilist,
+    const initializer_list<tuple<vertex_id_type, vertex_id_type, edge_value_type>>& ilist,
     const Alloc& alloc = Alloc());
   
   base_undirected_adjacency_list(
-    const initializer_list<tuple<vertex_key_type, vertex_key_type>>& ilist,
+    const initializer_list<tuple<vertex_id_type, vertex_id_type>>& ilist,
     const Alloc& alloc = Alloc());
 };
 ```
@@ -264,8 +264,8 @@ public:
   constexpr const_vertex_iterator end() const { return vertices_.end(); }
   constexpr const_vertex_iterator cend() const { return vertices_.cend(); }
   
-  vertex_iterator try_find_vertex(vertex_key_type key);
-  const_vertex_iterator try_find_vertex(vertex_key_type key) const;
+  vertex_iterator try_find_vertex(vertex_id_type key);
+  const_vertex_iterator try_find_vertex(vertex_id_type key) const;
   
   constexpr edge_size_type edges_size() const noexcept { return edges_size_; }
   
@@ -294,10 +294,10 @@ public:
   template <class VV2>
   vertex_iterator create_vertex(const VV2&);
   
-  vertex_edge_iterator create_edge(vertex_key_type, vertex_key_type);
-  vertex_edge_iterator create_edge(vertex_key_type, vertex_key_type, edge_value_type&&);
+  vertex_edge_iterator create_edge(vertex_id_type, vertex_id_type);
+  vertex_edge_iterator create_edge(vertex_id_type, vertex_id_type, edge_value_type&&);
   template <class EV2>
-  vertex_edge_iterator create_edge(vertex_key_type, vertex_key_type, const EV2&);
+  vertex_edge_iterator create_edge(vertex_id_type, vertex_id_type, const EV2&);
   
   edge_type* create_edge(vertex_iterator, vertex_iterator);
   edge_type* create_edge(vertex_iterator, vertex_iterator, edge_value_type&&);
@@ -314,7 +314,7 @@ template <class VV, class EV, class GV, class VId,
           template <typename V, typename A> class VContainer, typename Alloc>
 class base_undirected_adjacency_list {
 public:
-  vertex_edge_iterator erase_edge(vertex_key_type, vertex_key_type);
+  vertex_edge_iterator erase_edge(vertex_id_type, vertex_id_type);
   void erase_edge(edge_type*);
   
   void clear();
@@ -346,7 +346,7 @@ class base_undirected_adjacency_list {
   
   template <typename G>
   requires std::derived_from<std::remove_cvref_t<G>, base_undirected_adjacency_list>
-  friend constexpr auto find_vertex(G&& g, vertex_key_type key) {
+  friend constexpr auto find_vertex(G&& g, vertex_id_type key) {
     auto it = std::forward<G>(g).try_find_vertex(key);
     return vertex_descriptor<G>(it, std::forward<G>(g).vertices());
   }
