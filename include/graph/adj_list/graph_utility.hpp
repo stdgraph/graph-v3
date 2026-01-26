@@ -13,7 +13,7 @@
 
 #pragma once
 
-#include <graph/descriptor.hpp>
+#include "descriptor.hpp"
 #include <concepts>
 #include <ranges>
 

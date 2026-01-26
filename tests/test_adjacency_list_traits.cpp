@@ -4,9 +4,9 @@
  */
 
 #include <catch2/catch_test_macros.hpp>
-#include <graph/adjacency_list_traits.hpp>
-#include <graph/vertex_descriptor.hpp>
-#include <graph/edge_descriptor.hpp>
+#include <graph/adj_list/adjacency_list_traits.hpp>
+#include <graph/adj_list/vertex_descriptor.hpp>
+#include <graph/adj_list/edge_descriptor.hpp>
 #include <vector>
 #include <map>
 #include <deque>

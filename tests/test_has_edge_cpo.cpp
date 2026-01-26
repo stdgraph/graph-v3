@@ -9,8 +9,8 @@
 #include <vector>
 #include <map>
 #include <utility>
-#include "graph/descriptor.hpp"
-#include "graph/detail/graph_cpo.hpp"
+#include "graph/adj_list/descriptor.hpp"
+#include "graph/adj_list/detail/graph_cpo.hpp"
 
 using namespace graph;
 using namespace graph::adj_list;

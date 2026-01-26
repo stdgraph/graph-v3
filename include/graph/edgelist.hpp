@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "descriptor.hpp"
+#include "adj_list/descriptor.hpp"
 #include "detail/graph_using.hpp"
 #include <vector>
 #include <utility>

@@ -3,7 +3,7 @@
  * @brief Tests for graph type aliases
  */
 
-#include <graph/detail/graph_cpo.hpp>
+#include <graph/adj_list/detail/graph_cpo.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <vector>
 #include <map>

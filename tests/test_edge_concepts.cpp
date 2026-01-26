@@ -4,7 +4,7 @@
  */
 
 #include <catch2/catch_test_macros.hpp>
-#include <graph/descriptor.hpp>
+#include <graph/adj_list/descriptor.hpp>
 #include <vector>
 #include <tuple>
 #include <string>

@@ -1,11 +1,11 @@
 //
 //	Author: J. Phillip Ratzloff
 //
-#include "../graph_utility.hpp"
+#include "../adj_list/graph_utility.hpp"
 #include "../graph_info.hpp"
-#include "../vertex_descriptor_view.hpp"
-#include "../edge_descriptor_view.hpp"
-#include "../descriptor_traits.hpp"
+#include "../adj_list/vertex_descriptor_view.hpp"
+#include "../adj_list/edge_descriptor_view.hpp"
+#include "../adj_list/descriptor_traits.hpp"
 #include "container_utility.hpp"
 #include <vector>
 #include <ranges>

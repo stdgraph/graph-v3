@@ -1,8 +1,8 @@
 #include <benchmark/benchmark.h>
 #include <vector>
 #include <map>
-#include <graph/vertex_descriptor.hpp>
-#include <graph/vertex_descriptor_view.hpp>
+#include <graph/adj_list/vertex_descriptor.hpp>
+#include <graph/adj_list/vertex_descriptor_view.hpp>
 
 using namespace std;
 using namespace graph;

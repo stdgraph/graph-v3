@@ -6,8 +6,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_template_test_macros.hpp>
 
-#include <graph/vertex_descriptor.hpp>
-#include <graph/vertex_descriptor_view.hpp>
+#include <graph/adj_list/vertex_descriptor.hpp>
+#include <graph/adj_list/vertex_descriptor_view.hpp>
 
 #include <vector>
 #include <map>

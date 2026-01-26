@@ -8,7 +8,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <graph/container/undirected_adjacency_list.hpp>
-#include <graph/detail/graph_cpo.hpp>
+#include <graph/adj_list/detail/graph_cpo.hpp>
 #include <string>
 #include <vector>
 

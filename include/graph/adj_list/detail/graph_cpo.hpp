@@ -16,10 +16,10 @@
 #include <concepts>
 #include <ranges>
 #include <iterator>
-#include "graph/vertex_descriptor_view.hpp"
-#include "graph/edge_descriptor_view.hpp"
-#include "graph/descriptor.hpp"
-#include "graph/descriptor_traits.hpp"
+#include "graph/adj_list/vertex_descriptor_view.hpp"
+#include "graph/adj_list/edge_descriptor_view.hpp"
+#include "graph/adj_list/descriptor.hpp"
+#include "graph/adj_list/descriptor_traits.hpp"
 
 namespace graph::adj_list {
 

@@ -8,7 +8,7 @@
 #include <list>
 #include <string>
 
-#include "graph/detail/graph_cpo.hpp"
+#include "graph/adj_list/detail/graph_cpo.hpp"
 
 using namespace graph;
 using namespace graph::adj_list;
