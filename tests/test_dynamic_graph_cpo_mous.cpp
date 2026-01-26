@@ -165,7 +165,7 @@ TEST_CASE("mous CPO num_vertices(g)", "[dynamic_graph][mous][cpo][num_vertices]"
 
     SECTION("consistency with vertices range") {
         mous_void g({{0, 1}, {1, 2}, {2, 3}, {3, 4}});
-        REQUIRE(num_vertices(g) == std::ranges::distance(vertices(g)));
+        REQUIRE(num_vertices(g) == static_cast<size_t>(std::ranges::distance(vertices(g))));
     }
 
     SECTION("string IDs") {
@@ -745,7 +745,7 @@ TEST_CASE("mous CPO contains_edge(g, u, v)", "[dynamic_graph][mous][cpo][contain
         mous_void g({{0, 1}, {0, 2}});
         
         REQUIRE(contains_edge(g, uint32_t(0), uint32_t(1)));
-        REQUIRE(contains_edge(g, uint32_t(0), uint32_t(2)));
+        REQUIRE(contains_edge(g, 0u, 2u));
         REQUIRE_FALSE(contains_edge(g, uint32_t(1), uint32_t(0)));
     }
 
@@ -1145,7 +1145,7 @@ TEST_CASE("mous CPO find_vertex_edge(g, uid, vid)", "[dynamic_graph][mous][cpo][
         
         // Test finding edges using only vertex IDs
         auto e01 = find_vertex_edge(g, uint32_t(0), uint32_t(1));
-        auto e02 = find_vertex_edge(g, uint32_t(0), uint32_t(2));
+        auto e02 = find_vertex_edge(g, 0u, 2u);
         auto e12 = find_vertex_edge(g, uint32_t(1), uint32_t(2));
         auto e23 = find_vertex_edge(g, uint32_t(2), uint32_t(3));
         
@@ -1160,7 +1160,7 @@ TEST_CASE("mous CPO find_vertex_edge(g, uid, vid)", "[dynamic_graph][mous][cpo][
         
         // Find edges using vertex IDs and verify their values
         auto e01 = find_vertex_edge(g, uint32_t(0), uint32_t(1));
-        auto e02 = find_vertex_edge(g, uint32_t(0), uint32_t(2));
+        auto e02 = find_vertex_edge(g, 0u, 2u);
         auto e12 = find_vertex_edge(g, uint32_t(1), uint32_t(2));
         auto e23 = find_vertex_edge(g, uint32_t(2), uint32_t(3));
         
@@ -1249,12 +1249,12 @@ TEST_CASE("mous CPO contains_edge(g, uid, vid)", "[dynamic_graph][mous][cpo][con
         
         // Test checking edges using only vertex IDs
         REQUIRE(contains_edge(g, uint32_t(0), uint32_t(1)));
-        REQUIRE(contains_edge(g, uint32_t(0), uint32_t(2)));
+        REQUIRE(contains_edge(g, 0u, 2u));
         REQUIRE(contains_edge(g, uint32_t(1), uint32_t(2)));
         REQUIRE(contains_edge(g, uint32_t(2), uint32_t(3)));
         
         // Non-existent edges
-        REQUIRE_FALSE(contains_edge(g, uint32_t(0), uint32_t(3)));
+        REQUIRE_FALSE(contains_edge(g, 0u, 3u));
         REQUIRE_FALSE(contains_edge(g, uint32_t(1), uint32_t(0)));
         REQUIRE_FALSE(contains_edge(g, uint32_t(3), uint32_t(2)));
     }
@@ -1263,7 +1263,7 @@ TEST_CASE("mous CPO contains_edge(g, uid, vid)", "[dynamic_graph][mous][cpo][con
         mous_void g({{0, 1}, {1, 2}});
         
         // Check all possible non-existent edges in opposite directions
-        REQUIRE_FALSE(contains_edge(g, uint32_t(0), uint32_t(2)));  // No transitive edge
+        REQUIRE_FALSE(contains_edge(g, 0u, 2u));  // No transitive edge
         REQUIRE_FALSE(contains_edge(g, uint32_t(1), uint32_t(0)));  // No reverse
         REQUIRE_FALSE(contains_edge(g, uint32_t(2), uint32_t(0)));  // No reverse
         REQUIRE_FALSE(contains_edge(g, uint32_t(2), uint32_t(1)));  // No reverse
@@ -1279,12 +1279,12 @@ TEST_CASE("mous CPO contains_edge(g, uid, vid)", "[dynamic_graph][mous][cpo][con
         
         // Check existing edges using vertex IDs
         REQUIRE(contains_edge(g, uint32_t(0), uint32_t(1)));
-        REQUIRE(contains_edge(g, uint32_t(0), uint32_t(2)));
+        REQUIRE(contains_edge(g, 0u, 2u));
         REQUIRE(contains_edge(g, uint32_t(1), uint32_t(3)));
         REQUIRE(contains_edge(g, uint32_t(2), uint32_t(4)));
         
         // Check non-existent edges
-        REQUIRE_FALSE(contains_edge(g, uint32_t(0), uint32_t(3)));
+        REQUIRE_FALSE(contains_edge(g, 0u, 3u));
         REQUIRE_FALSE(contains_edge(g, uint32_t(0), uint32_t(4)));
         REQUIRE_FALSE(contains_edge(g, uint32_t(1), uint32_t(2)));
         REQUIRE_FALSE(contains_edge(g, uint32_t(3), uint32_t(4)));
@@ -1342,17 +1342,17 @@ TEST_CASE("mous CPO contains_edge(g, uid, vid)", "[dynamic_graph][mous][cpo][con
         
         // Check all chain edges exist
         for (uint32_t i = 0; i < 5; ++i) {
-            REQUIRE(contains_edge(g, uint32_t(i), uint32_t(i + 1)));
+            REQUIRE(contains_edge(g, i, i + 1));
         }
         
         // Check no reverse edges
         for (uint32_t i = 1; i < 6; ++i) {
-            REQUIRE_FALSE(contains_edge(g, uint32_t(i), uint32_t(i - 1)));
+            REQUIRE_FALSE(contains_edge(g, i, i - 1));
         }
         
         // Check no skip edges
-        REQUIRE_FALSE(contains_edge(g, uint32_t(0), uint32_t(2)));
-        REQUIRE_FALSE(contains_edge(g, uint32_t(0), uint32_t(3)));
+        REQUIRE_FALSE(contains_edge(g, 0u, 2u));
+        REQUIRE_FALSE(contains_edge(g, 0u, 3u));
         REQUIRE_FALSE(contains_edge(g, uint32_t(1), uint32_t(3)));
         REQUIRE_FALSE(contains_edge(g, uint32_t(2), uint32_t(5)));
     }
@@ -1368,8 +1368,8 @@ TEST_CASE("mous CPO contains_edge(g, uid, vid)", "[dynamic_graph][mous][cpo][con
         REQUIRE(contains_edge(g, uint32_t(4), uint32_t(0)));  // Closing edge
         
         // Check no shortcuts across cycle
-        REQUIRE_FALSE(contains_edge(g, uint32_t(0), uint32_t(2)));
-        REQUIRE_FALSE(contains_edge(g, uint32_t(0), uint32_t(3)));
+        REQUIRE_FALSE(contains_edge(g, 0u, 2u));
+        REQUIRE_FALSE(contains_edge(g, 0u, 3u));
         REQUIRE_FALSE(contains_edge(g, uint32_t(1), uint32_t(3)));
         REQUIRE_FALSE(contains_edge(g, uint32_t(1), uint32_t(4)));
         REQUIRE_FALSE(contains_edge(g, uint32_t(2), uint32_t(4)));

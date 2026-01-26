@@ -500,7 +500,7 @@ TEST_CASE("target(g,uv) - consistency with target_id", "[target][cpo][integratio
             auto tv = target(graph, e);
             
             // target_id and target should be consistent
-            REQUIRE(vertex_id(graph, tv) == tid);
+            REQUIRE(static_cast<size_t>(tid) == vertex_id(graph, tv));
         }
     }
 }

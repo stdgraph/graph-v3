@@ -544,13 +544,27 @@ namespace _cpo_impls {
                 using _G = std::remove_cvref_t<G>;
                 using _VId = std::remove_cvref_t<VId>;
                 if constexpr (_Choice<_G, _VId>._Strategy == _St::_member) {
-                    return std::forward<G>(g).find_vertex(uid);
+                    if constexpr (requires { typename _G::vertex_id_type; }) {
+                        return std::forward<G>(g).find_vertex(static_cast<typename _G::vertex_id_type>(uid));
+                    } else {
+                        return std::forward<G>(g).find_vertex(uid);
+                    }
                 } else if constexpr (_Choice<_G, _VId>._Strategy == _St::_adl) {
-                    return find_vertex(std::forward<G>(g), uid);
+                    if constexpr (requires { typename _G::vertex_id_type; }) {
+                        return find_vertex(std::forward<G>(g), static_cast<typename _G::vertex_id_type>(uid));
+                    } else {
+                        return find_vertex(std::forward<G>(g), uid);
+                    }
                 } else if constexpr (_Choice<_G, _VId>._Strategy == _St::_associative) {
                     // For associative containers, use find() directly
                     // Construct vertex_descriptor_view iterator directly from map iterator
-                    auto map_iter = g.find(uid);
+                    auto map_iter = [&g, &uid]() {
+                        if constexpr (requires { typename _G::vertex_id_type; }) {
+                            return g.find(static_cast<typename _G::vertex_id_type>(uid));
+                        } else {
+                            return g.find(uid);
+                        }
+                    }();
                     using container_iterator = decltype(map_iter);
                     using view_type = vertex_descriptor_view<container_iterator>;
                     using view_iterator = typename view_type::iterator;
@@ -786,18 +800,30 @@ namespace _cpo_impls {
                     // Member function: g.edges(uid)
                     // Wrap result but we don't have the vertex descriptor yet
                     // The member function must handle this appropriately
-                    auto result = g.edges(uid);
+                    auto result = [&g, &uid]() {
+                        if constexpr (requires { typename _G::vertex_id_type; }) {
+                            return g.edges(static_cast<typename _G::vertex_id_type>(uid));
+                        } else {
+                            return g.edges(uid);
+                        }
+                    }();
                     // For member function, we need to get the vertex descriptor to wrap properly
                     auto v = *find_vertex(g, uid);
                     return _wrap_if_needed(std::move(result), v);
                 } else if constexpr (_Choice_uid<_G, _VId>._Strategy == _St_uid::_adl) {
                     // ADL: edges(g, uid)
-                    auto result = edges(g, uid);
-                    auto v = *find_vertex(g, uid);
+                    auto result = [&g, &uid]() {
+                        if constexpr (requires { typename _G::vertex_id_type; }) {
+                            return edges(g, static_cast<typename _G::vertex_id_type>(uid));
+                        } else {
+                            return edges(g, static_cast<vertex_id_t<_G>>(uid));
+                        }
+                    }();
+                    auto v = *find_vertex(g, static_cast<vertex_id_t<_G>>(uid));
                     return _wrap_if_needed(std::move(result), v);
                 } else if constexpr (_Choice_uid<_G, _VId>._Strategy == _St_uid::_default) {
                     // Default: find vertex then call edges(g, u)
-                    auto v = *find_vertex(std::forward<G>(g), uid);
+                    auto v = *find_vertex(std::forward<G>(g), static_cast<vertex_id_t<_G>>(uid));
                     return (*this)(std::forward<G>(g), v);
                 }
             }
@@ -1734,12 +1760,20 @@ namespace _cpo_impls {
                 using _VId = std::remove_cvref_t<VId>;
                 
                 if constexpr (_Choice_uid<_G, _VId>._Strategy == _St_uid::_member) {
-                    return g.degree(uid);
+                    if constexpr (requires { typename _G::vertex_id_type; }) {
+                        return g.degree(static_cast<typename _G::vertex_id_type>(uid));
+                    } else {
+                        return g.degree(uid);
+                    }
                 } else if constexpr (_Choice_uid<_G, _VId>._Strategy == _St_uid::_adl) {
-                    return degree(g, uid);
+                    if constexpr (requires { typename _G::vertex_id_type; }) {
+                        return degree(g, static_cast<typename _G::vertex_id_type>(uid));
+                    } else {
+                        return degree(g, uid);
+                    }
                 } else if constexpr (_Choice_uid<_G, _VId>._Strategy == _St_uid::_default) {
                     // Default: find vertex then call degree(g, u)
-                    auto v = *find_vertex(std::forward<G>(g), uid);
+                    auto v = *find_vertex(std::forward<G>(g), static_cast<vertex_id_t<_G>>(uid));
                     return (*this)(std::forward<G>(g), v);
                 }
             }
@@ -1909,7 +1943,7 @@ namespace _cpo_impls {
                     auto target_vid = vertex_id(std::forward<G>(g), v);
                     auto edge_range = edges(std::forward<G>(g), u);
                     auto it = std::ranges::find_if(edge_range, [&](const auto& e) {
-                        return target_id(std::forward<G>(g), e) == target_vid;
+                        return static_cast<vertex_id_t<_G>>(target_id(std::forward<G>(g), e)) == static_cast<vertex_id_t<_G>>(target_vid);
                     });
                     // Not found - return end as an edge descriptor
                     // This mimics std::find behavior where end() is returned when not found
@@ -1936,7 +1970,7 @@ namespace _cpo_impls {
                     // Default: iterate edges(g,u) and find edge with matching target_id
                     auto edge_range = edges(std::forward<G>(g), u);
                     auto it = std::ranges::find_if(edge_range, [&](const auto& e) {
-                        return target_id(std::forward<G>(g), e) == static_cast<vertex_id_t<_G>>(vid);
+                        return static_cast<vertex_id_t<_G>>(target_id(std::forward<G>(g), e)) == static_cast<vertex_id_t<_G>>(vid);
                     });
                     // Not found - return end as an edge descriptor
                     return *it;
@@ -1955,9 +1989,17 @@ namespace _cpo_impls {
                 using _VId = std::remove_cvref_t<VId>;
                 
                 if constexpr (_Choice_uidvid<_G, _UId, _VId>._Strategy == _St_uidvid::_member) {
-                    return g.find_vertex_edge(uid, vid);
+                    if constexpr (requires { typename _G::vertex_id_type; }) {
+                        return g.find_vertex_edge(static_cast<typename _G::vertex_id_type>(uid), static_cast<typename _G::vertex_id_type>(vid));
+                    } else {
+                        return g.find_vertex_edge(uid, vid);
+                    }
                 } else if constexpr (_Choice_uidvid<_G, _UId, _VId>._Strategy == _St_uidvid::_adl) {
-                    return find_vertex_edge(g, uid, vid);
+                    if constexpr (requires { typename _G::vertex_id_type; }) {
+                        return find_vertex_edge(g, static_cast<typename _G::vertex_id_type>(uid), static_cast<typename _G::vertex_id_type>(vid));
+                    } else {
+                        return find_vertex_edge(g, uid, vid);
+                    }
                 } else if constexpr (_Choice_uidvid<_G, _UId, _VId>._Strategy == _St_uidvid::_default) {
                     // Default: find source vertex then call find_vertex_edge(g, u, vid)
                     auto u = *find_vertex(std::forward<G>(g), uid);
@@ -2091,7 +2133,7 @@ namespace _cpo_impls {
                     auto target_vid = vertex_id(std::forward<G>(g), v);
                     auto edge_range = edges(std::forward<G>(g), u);
                     auto it = std::ranges::find_if(edge_range, [&](const auto& e) {
-                        return target_id(std::forward<G>(g), e) == target_vid;
+                        return static_cast<vertex_id_t<_G>>(target_id(std::forward<G>(g), e)) == static_cast<vertex_id_t<_G>>(target_vid);
                     });
                     return it != std::ranges::end(edge_range);
                 }
@@ -2109,9 +2151,17 @@ namespace _cpo_impls {
                 using _VId = std::remove_cvref_t<VId>;
                 
                 if constexpr (_Choice_uidvid<_G, _UId, _VId>._Strategy == _St_uidvid::_member) {
-                    return g.contains_edge(uid, vid);
+                    if constexpr (requires { typename _G::vertex_id_type; }) {
+                        return g.contains_edge(static_cast<typename _G::vertex_id_type>(uid), static_cast<typename _G::vertex_id_type>(vid));
+                    } else {
+                        return g.contains_edge(uid, vid);
+                    }
                 } else if constexpr (_Choice_uidvid<_G, _UId, _VId>._Strategy == _St_uidvid::_adl) {
-                    return contains_edge(g, uid, vid);
+                    if constexpr (requires { typename _G::vertex_id_type; }) {
+                        return contains_edge(g, static_cast<typename _G::vertex_id_type>(uid), static_cast<typename _G::vertex_id_type>(vid));
+                    } else {
+                        return contains_edge(g, uid, vid);
+                    }
                 } else if constexpr (_Choice_uidvid<_G, _UId, _VId>._Strategy == _St_uidvid::_default) {
                     // Default: find source vertex then iterate edges and check target
                     auto u = *find_vertex(std::forward<G>(g), uid);

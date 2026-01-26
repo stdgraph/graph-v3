@@ -492,7 +492,7 @@ TEST_CASE("voem CPO degree(g, u)", "[dynamic_graph][voem][cpo][degree]") {
         auto v0 = *find_vertex(g, 0);
         size_t count = 0;
         for ([[maybe_unused]] auto e : edges(g, v0)) ++count;
-        REQUIRE(degree(g, v0) == count);
+        REQUIRE(static_cast<size_t>(degree(g, v0)) == count);
     }
 
     SECTION("deduplication affects degree") {
@@ -1191,7 +1191,7 @@ TEST_CASE("voem CPO integration", "[dynamic_graph][voem][cpo][integration]") {
         auto v_it = find_vertex(g, 0);
         auto start = vertex_id(g, *v_it);
         visited[start] = true;
-        order.push_back(start);
+        order.push_back(static_cast<uint32_t>(start));
         
         std::vector<uint32_t> queue = {static_cast<uint32_t>(start)};
         while (!queue.empty()) {

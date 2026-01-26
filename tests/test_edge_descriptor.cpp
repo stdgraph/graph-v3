@@ -286,7 +286,6 @@ TEST_CASE("edge_descriptor_view with list", "[edge_descriptor_view][forward]") {
     using VectorIter = std::vector<int>::iterator;
     using ListIter = std::list<int>::iterator;
     using VD = vertex_descriptor<VectorIter>;
-    using ED = edge_descriptor<ListIter, VectorIter>;
     using View = edge_descriptor_view<ListIter, VectorIter>;
     
     std::list<int> edges = {100, 200, 300};
@@ -373,7 +372,7 @@ TEST_CASE("edge_descriptor_view with various edge data types", "[edge_descriptor
         
         int idx = 0;
         for (auto ed : view) {
-            REQUIRE(ed.value() == idx);
+            REQUIRE(ed.value() == static_cast<size_t>(idx));
             REQUIRE(ed.source().value() == 100);
             idx++;
         }

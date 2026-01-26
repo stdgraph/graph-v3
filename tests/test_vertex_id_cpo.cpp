@@ -292,7 +292,7 @@ TEST_CASE("vertex_id(g,u) - ADL with inner_value", "[vertex_id][cpo][custom]") {
         
         std::vector<int> ids;
         for (auto v : verts) {
-            ids.push_back(static_cast<int>(vertex_id(g, v)));
+            ids.push_back(vertex_id(g, v));
         }
         
         REQUIRE(ids.size() == 3);

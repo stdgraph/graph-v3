@@ -43,7 +43,7 @@ TEST_CASE("source_id(g,uv) - vector<vector<int>> simple edges", "[source_id][cpo
         
         std::vector<int> sources;
         for (auto e : edges(graph, v0)) {
-            sources.push_back(source_id(graph, e));
+            sources.push_back(static_cast<int>(source_id(graph, e)));
         }
         
         REQUIRE(sources.size() == 3);
@@ -60,7 +60,7 @@ TEST_CASE("source_id(g,uv) - vector<vector<int>> simple edges", "[source_id][cpo
         
         std::vector<int> sources;
         for (auto e : edges(graph, v1)) {
-            sources.push_back(source_id(graph, e));
+            sources.push_back(static_cast<int>(source_id(graph, e)));
         }
         
         REQUIRE(sources.size() == 2);
@@ -88,7 +88,7 @@ TEST_CASE("source_id(g,uv) - vector<vector<pair<int,double>>> weighted edges", "
         
         std::vector<int> sources;
         for (auto e : edges(graph, v0)) {
-            sources.push_back(source_id(graph, e));
+            sources.push_back(static_cast<int>(source_id(graph, e)));
         }
         
         REQUIRE(sources.size() == 3);
@@ -127,7 +127,7 @@ TEST_CASE("source_id(g,uv) - vector<vector<tuple<...>>> multi-property edges", "
         
         std::vector<int> sources;
         for (auto e : edges(graph, v0)) {
-            sources.push_back(source_id(graph, e));
+            sources.push_back(static_cast<int>(source_id(graph, e)));
         }
         
         REQUIRE(sources.size() == 2);
@@ -172,7 +172,7 @@ TEST_CASE("source_id(g,uv) - native edge member function", "[source_id][cpo][mem
     SECTION("Native edge member function is called") {
         std::vector<int> sources;
         for (auto e : edges(g.adjacency_list, v0)) {
-            sources.push_back(source_id(g.adjacency_list, e));
+            sources.push_back(static_cast<int>(source_id(g.adjacency_list, e)));
         }
         
         // Should use CustomEdge::source_id() which returns source * 100
@@ -257,7 +257,7 @@ TEST_CASE("source_id(g,uv) - deque<deque<int>> simple edges", "[source_id][cpo][
     
     std::vector<int> sources;
     for (auto e : edges(graph, v0)) {
-        sources.push_back(source_id(graph, e));
+        sources.push_back(static_cast<int>(source_id(graph, e)));
     }
     
     REQUIRE(sources.size() == 2);
@@ -283,7 +283,7 @@ TEST_CASE("source_id(g,uv) - map<int, vector<int>>", "[source_id][cpo][descripto
         
         std::vector<int> sources;
         for (auto e : edges(graph, v)) {
-            sources.push_back(source_id(graph, e));
+            sources.push_back(static_cast<int>(source_id(graph, e)));
         }
         
         REQUIRE(sources.size() == 2);
@@ -299,7 +299,7 @@ TEST_CASE("source_id(g,uv) - map<int, vector<int>>", "[source_id][cpo][descripto
         
         std::vector<int> sources;
         for (auto e : edges(graph, v)) {
-            sources.push_back(source_id(graph, e));
+            sources.push_back(static_cast<int>(source_id(graph, e)));
         }
         
         REQUIRE(sources.size() == 2);
@@ -355,7 +355,7 @@ TEST_CASE("source_id(g,uv) - const graph", "[source_id][cpo][const]") {
     
     std::vector<int> sources;
     for (auto e : edges(graph, v0)) {
-        sources.push_back(source_id(graph, e));
+        sources.push_back(static_cast<int>(source_id(graph, e)));
     }
     
     REQUIRE(sources.size() == 3);
@@ -458,7 +458,7 @@ TEST_CASE("source_id(g,uv) - large vertex IDs", "[source_id][cpo][large]") {
     
     std::vector<int> sources;
     for (auto e : edges(graph, v)) {
-        sources.push_back(source_id(graph, e));
+        sources.push_back(static_cast<int>(source_id(graph, e)));
     }
     
     REQUIRE(sources.size() == 2);
@@ -483,7 +483,7 @@ TEST_CASE("source_id(g,uv) - map with pair edges", "[source_id][cpo][map][weight
     
     std::vector<int> sources;
     for (auto e : edges(graph, v)) {
-        sources.push_back(source_id(graph, e));
+        sources.push_back(static_cast<int>(source_id(graph, e)));
     }
     
     REQUIRE(sources.size() == 2);
@@ -508,7 +508,7 @@ TEST_CASE("source_id(g,uv) - self-loops", "[source_id][cpo][selfloop]") {
         
         std::vector<int> sources;
         for (auto e : edges(graph, v0)) {
-            sources.push_back(source_id(graph, e));
+            sources.push_back(static_cast<int>(source_id(graph, e)));
         }
         
         REQUIRE(sources.size() == 2);
@@ -524,7 +524,7 @@ TEST_CASE("source_id(g,uv) - self-loops", "[source_id][cpo][selfloop]") {
         
         std::vector<int> sources;
         for (auto e : edges(graph, v1)) {
-            sources.push_back(source_id(graph, e));
+            sources.push_back(static_cast<int>(source_id(graph, e)));
         }
         
         REQUIRE(sources.size() == 1);

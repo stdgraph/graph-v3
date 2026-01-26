@@ -183,7 +183,7 @@ TEST_CASE("num_vertices(g,pid) - works with different partition ID types", "[num
     Graph graph = {{1}, {2}};
     
     SECTION("int partition id") {
-        auto count = num_vertices(graph, int(0));
+        auto count = num_vertices(graph, 0);
         REQUIRE(count == 2);
     }
     

@@ -1432,17 +1432,17 @@ TEST_CASE("mofl CPO contains_edge(g, uid, vid)", "[dynamic_graph][mofl][cpo][con
         
         // Check all chain edges exist
         for (uint32_t i = 0; i < 5; ++i) {
-            REQUIRE(contains_edge(g, uint32_t(i), uint32_t(i + 1)));
+            REQUIRE(contains_edge(g, i, i + 1));
         }
         
         // Check no reverse edges
         for (uint32_t i = 1; i < 6; ++i) {
-            REQUIRE_FALSE(contains_edge(g, uint32_t(i), uint32_t(i - 1)));
+            REQUIRE_FALSE(contains_edge(g, i, i - 1));
         }
         
         // Check no skip edges
-        REQUIRE_FALSE(contains_edge(g, uint32_t(0), uint32_t(2)));
-        REQUIRE_FALSE(contains_edge(g, uint32_t(0), uint32_t(3)));
+        REQUIRE_FALSE(contains_edge(g, 0u, 2u));
+        REQUIRE_FALSE(contains_edge(g, 0u, 3u));
         REQUIRE_FALSE(contains_edge(g, uint32_t(1), uint32_t(3)));
         REQUIRE_FALSE(contains_edge(g, uint32_t(2), uint32_t(5)));
     }

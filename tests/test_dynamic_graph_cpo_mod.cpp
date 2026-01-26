@@ -773,7 +773,7 @@ TEST_CASE("mod CPO find_vertex_edge(g, u, v)", "[dynamic_graph][mod][cpo][find_v
         mod_void g({{0, 1}, {0, 2}});
         
         auto e01 = find_vertex_edge(g, uint32_t(0), uint32_t(1));
-        auto e02 = find_vertex_edge(g, uint32_t(0), uint32_t(2));
+        auto e02 = find_vertex_edge(g, 0u, 2u);
         
         REQUIRE(target_id(g, e01) == 1);
         REQUIRE(target_id(g, e02) == 2);
@@ -828,7 +828,7 @@ TEST_CASE("mod CPO find_vertex_edge(g, uid, vid)", "[dynamic_graph][mod][cpo][fi
         mod_void g({{0, 1}, {0, 2}, {1, 2}, {2, 3}});
         
         auto e01 = find_vertex_edge(g, uint32_t(0), uint32_t(1));
-        auto e02 = find_vertex_edge(g, uint32_t(0), uint32_t(2));
+        auto e02 = find_vertex_edge(g, 0u, 2u);
         auto e12 = find_vertex_edge(g, uint32_t(1), uint32_t(2));
         auto e23 = find_vertex_edge(g, uint32_t(2), uint32_t(3));
         
@@ -842,7 +842,7 @@ TEST_CASE("mod CPO find_vertex_edge(g, uid, vid)", "[dynamic_graph][mod][cpo][fi
         mod_int_ev g({{0, 1, 10}, {0, 2, 20}, {1, 2, 30}, {2, 3, 40}});
         
         auto e01 = find_vertex_edge(g, uint32_t(0), uint32_t(1));
-        auto e02 = find_vertex_edge(g, uint32_t(0), uint32_t(2));
+        auto e02 = find_vertex_edge(g, 0u, 2u);
         auto e12 = find_vertex_edge(g, uint32_t(1), uint32_t(2));
         auto e23 = find_vertex_edge(g, uint32_t(2), uint32_t(3));
         
@@ -948,7 +948,7 @@ TEST_CASE("mod CPO contains_edge(g, u, v)", "[dynamic_graph][mod][cpo][contains_
         mod_void g({{0, 1}, {0, 2}});
         
         REQUIRE(contains_edge(g, uint32_t(0), uint32_t(1)));
-        REQUIRE(contains_edge(g, uint32_t(0), uint32_t(2)));
+        REQUIRE(contains_edge(g, 0u, 2u));
         REQUIRE_FALSE(contains_edge(g, uint32_t(1), uint32_t(0)));
     }
 
@@ -989,11 +989,11 @@ TEST_CASE("mod CPO contains_edge(g, uid, vid)", "[dynamic_graph][mod][cpo][conta
         mod_void g({{0, 1}, {0, 2}, {1, 2}, {2, 3}});
         
         REQUIRE(contains_edge(g, uint32_t(0), uint32_t(1)));
-        REQUIRE(contains_edge(g, uint32_t(0), uint32_t(2)));
+        REQUIRE(contains_edge(g, 0u, 2u));
         REQUIRE(contains_edge(g, uint32_t(1), uint32_t(2)));
         REQUIRE(contains_edge(g, uint32_t(2), uint32_t(3)));
         
-        REQUIRE_FALSE(contains_edge(g, uint32_t(0), uint32_t(3)));
+        REQUIRE_FALSE(contains_edge(g, 0u, 3u));
         REQUIRE_FALSE(contains_edge(g, uint32_t(1), uint32_t(0)));
         REQUIRE_FALSE(contains_edge(g, uint32_t(3), uint32_t(2)));
     }
@@ -1001,7 +1001,7 @@ TEST_CASE("mod CPO contains_edge(g, uid, vid)", "[dynamic_graph][mod][cpo][conta
     SECTION("all edges not found") {
         mod_void g({{0, 1}, {1, 2}});
         
-        REQUIRE_FALSE(contains_edge(g, uint32_t(0), uint32_t(2)));
+        REQUIRE_FALSE(contains_edge(g, 0u, 2u));
         REQUIRE_FALSE(contains_edge(g, uint32_t(1), uint32_t(0)));
         REQUIRE_FALSE(contains_edge(g, uint32_t(2), uint32_t(0)));
         REQUIRE_FALSE(contains_edge(g, uint32_t(2), uint32_t(1)));
@@ -1016,7 +1016,7 @@ TEST_CASE("mod CPO contains_edge(g, uid, vid)", "[dynamic_graph][mod][cpo][conta
         
         REQUIRE(contains_edge(g, uint32_t(0), uint32_t(1)));
         REQUIRE(contains_edge(g, uint32_t(1), uint32_t(2)));
-        REQUIRE_FALSE(contains_edge(g, uint32_t(0), uint32_t(2)));
+        REQUIRE_FALSE(contains_edge(g, 0u, 2u));
     }
 
     SECTION("bidirectional check") {
@@ -1026,7 +1026,7 @@ TEST_CASE("mod CPO contains_edge(g, uid, vid)", "[dynamic_graph][mod][cpo][conta
         REQUIRE(contains_edge(g, uint32_t(1), uint32_t(0)));
         REQUIRE(contains_edge(g, uint32_t(1), uint32_t(2)));
         REQUIRE_FALSE(contains_edge(g, uint32_t(2), uint32_t(1)));
-        REQUIRE_FALSE(contains_edge(g, uint32_t(0), uint32_t(2)));
+        REQUIRE_FALSE(contains_edge(g, 0u, 2u));
     }
 
     SECTION("star graph") {
@@ -1052,15 +1052,15 @@ TEST_CASE("mod CPO contains_edge(g, uid, vid)", "[dynamic_graph][mod][cpo][conta
         mod_int_ev g({{0, 1, 10}, {1, 2, 20}, {2, 3, 30}, {3, 4, 40}, {4, 5, 50}});
         
         for (uint32_t i = 0; i < 5; ++i) {
-            REQUIRE(contains_edge(g, uint32_t(i), uint32_t(i + 1)));
+            REQUIRE(contains_edge(g, i, i + 1));
         }
         
         for (uint32_t i = 1; i < 6; ++i) {
-            REQUIRE_FALSE(contains_edge(g, uint32_t(i), uint32_t(i - 1)));
+            REQUIRE_FALSE(contains_edge(g, i, i - 1));
         }
         
-        REQUIRE_FALSE(contains_edge(g, uint32_t(0), uint32_t(2)));
-        REQUIRE_FALSE(contains_edge(g, uint32_t(0), uint32_t(3)));
+        REQUIRE_FALSE(contains_edge(g, 0u, 2u));
+        REQUIRE_FALSE(contains_edge(g, 0u, 3u));
         REQUIRE_FALSE(contains_edge(g, uint32_t(1), uint32_t(3)));
         REQUIRE_FALSE(contains_edge(g, uint32_t(2), uint32_t(5)));
     }
@@ -1074,8 +1074,8 @@ TEST_CASE("mod CPO contains_edge(g, uid, vid)", "[dynamic_graph][mod][cpo][conta
         REQUIRE(contains_edge(g, uint32_t(3), uint32_t(4)));
         REQUIRE(contains_edge(g, uint32_t(4), uint32_t(0)));
         
-        REQUIRE_FALSE(contains_edge(g, uint32_t(0), uint32_t(2)));
-        REQUIRE_FALSE(contains_edge(g, uint32_t(0), uint32_t(3)));
+        REQUIRE_FALSE(contains_edge(g, 0u, 2u));
+        REQUIRE_FALSE(contains_edge(g, 0u, 3u));
         REQUIRE_FALSE(contains_edge(g, uint32_t(1), uint32_t(3)));
         REQUIRE_FALSE(contains_edge(g, uint32_t(1), uint32_t(4)));
         REQUIRE_FALSE(contains_edge(g, uint32_t(2), uint32_t(4)));

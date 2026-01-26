@@ -804,7 +804,7 @@ template <typename VV,
           class VContainer,
           typename Alloc>
 typename ual_edge<VV, EV, GV, VId, VContainer, Alloc>::vertex_id_type
-ual_edge<VV, EV, GV, VId, VContainer, Alloc>::other_vertex_id(const graph_type& g,
+ual_edge<VV, EV, GV, VId, VContainer, Alloc>::other_vertex_id([[maybe_unused]] const graph_type& g,
                                                                 vertex_id_type   other_id) const noexcept {
   return other_id != list_owner_id() ? list_owner_id() : list_target_id();
 }
@@ -1862,7 +1862,7 @@ undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::undirected_adjace
                                                                               const GV_&   gv, 
                                                                               const Alloc& alloc)
       : undirected_adjacency_list(erng, vector<int>(), eproj, [](auto) 
-{ return copyable_vertex_t<VId, VV>{VId()}; }, gv, alloc)
+{ return copyable_vertex_t<VId, VV>{.id = VId(), .value = VV{}}; }, gv, alloc)
 // clang-format on
 {}
 

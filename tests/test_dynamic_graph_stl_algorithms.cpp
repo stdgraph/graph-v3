@@ -85,7 +85,7 @@ TEST_CASE("for_each - count vertices in vov graph", "[stl][6.2.1][for_each]") {
     vov_void g({{0, 1}, {1, 2}, {2, 3}});
     
     size_t count = 0;
-    std::ranges::for_each(vertices(g), [&count](auto&& v) {
+    std::ranges::for_each(vertices(g), [&count](auto&&) {
         ++count;
     });
     
@@ -96,7 +96,7 @@ TEST_CASE("for_each - count vertices in mos graph", "[stl][6.2.1][for_each]") {
     mos_void g({{"A", "B"}, {"B", "C"}, {"C", "D"}});
     
     size_t count = 0;
-    std::ranges::for_each(vertices(g), [&count](auto&& v) {
+    std::ranges::for_each(vertices(g), [&count](auto&&) {
         ++count;
     });
     
@@ -107,7 +107,7 @@ TEST_CASE("for_each - count vertices in dofl graph", "[stl][6.2.1][for_each]") {
     dofl_void g({{0, 1}, {1, 2}, {2, 3}, {3, 4}});
     
     size_t count = 0;
-    std::ranges::for_each(vertices(g), [&count](auto&& v) {
+    std::ranges::for_each(vertices(g), [&count](auto&&) {
         ++count;
     });
     
@@ -162,7 +162,7 @@ TEST_CASE("for_each - count edges in vov graph", "[stl][6.2.1][for_each]") {
     
     size_t edge_count = 0;
     std::ranges::for_each(vertices(g), [&edge_count, &g](auto&& v) {
-        std::ranges::for_each(edges(g, v), [&edge_count](auto&& e) {
+        std::ranges::for_each(edges(g, v), [&edge_count](auto&&) {
             ++edge_count;
         });
     });
@@ -175,7 +175,7 @@ TEST_CASE("for_each - count edges in mos graph", "[stl][6.2.1][for_each]") {
     
     size_t edge_count = 0;
     std::ranges::for_each(vertices(g), [&edge_count, &g](auto&& v) {
-        std::ranges::for_each(edges(g, v), [&edge_count](auto&& e) {
+        std::ranges::for_each(edges(g, v), [&edge_count](auto&&) {
             ++edge_count;
         });
     });
@@ -188,7 +188,7 @@ TEST_CASE("for_each - count edges in dofl graph", "[stl][6.2.1][for_each]") {
     
     size_t edge_count = 0;
     std::ranges::for_each(vertices(g), [&edge_count, &g](auto&& v) {
-        std::ranges::for_each(edges(g, v), [&edge_count](auto&& e) {
+        std::ranges::for_each(edges(g, v), [&edge_count](auto&&) {
             ++edge_count;
         });
     });
@@ -333,7 +333,7 @@ TEST_CASE("for_each - empty graph vertices", "[stl][6.2.1][for_each]") {
     vov_void g;
     
     size_t count = 0;
-    std::ranges::for_each(vertices(g), [&count](auto&& v) {
+    std::ranges::for_each(vertices(g), [&count](auto&&) {
         ++count;
     });
     
@@ -349,7 +349,7 @@ TEST_CASE("for_each - graph with no edges", "[stl][6.2.1][for_each]") {
     
     std::ranges::for_each(vertices(g), [&vertex_count, &edge_count, &g](auto&& v) {
         ++vertex_count;
-        std::ranges::for_each(edges(g, v), [&edge_count](auto&& e) {
+        std::ranges::for_each(edges(g, v), [&edge_count](auto&&) {
             ++edge_count;
         });
     });
@@ -441,14 +441,14 @@ TEST_CASE("for_each - nested for_each with multiple graphs", "[stl][6.2.1][for_e
     
     std::ranges::for_each(vertices(g1), [&total_vertices, &total_edges, &g1](auto&& v) {
         ++total_vertices;
-        std::ranges::for_each(edges(g1, v), [&total_edges](auto&& e) {
+        std::ranges::for_each(edges(g1, v), [&total_edges](auto&&) {
             ++total_edges;
         });
     });
     
     std::ranges::for_each(vertices(g2), [&total_vertices, &total_edges, &g2](auto&& v) {
         ++total_vertices;
-        std::ranges::for_each(edges(g2, v), [&total_edges](auto&& e) {
+        std::ranges::for_each(edges(g2, v), [&total_edges](auto&&) {
             ++total_edges;
         });
     });
@@ -630,7 +630,7 @@ TEST_CASE("find_if - edge not found returns end", "[stl][6.2.2][find_if]") {
 }
 
 TEST_CASE("find_if - find edge by value predicate in vov graph", "[stl][6.2.2][find_if]") {
-    vov_int_edges g({{0, 1}, {0, 2}, {0, 3}});
+    vov_int_edges g({{0, 1, 0}, {0, 2, 0}, {0, 3, 0}});
     
     // Set edge values
     size_t idx = 0;
@@ -650,7 +650,7 @@ TEST_CASE("find_if - find edge by value predicate in vov graph", "[stl][6.2.2][f
 }
 
 TEST_CASE("find_if - find edge by value predicate in dofl graph", "[stl][6.2.2][find_if]") {
-    dofl_int_edges g({{0, 1}, {0, 2}, {0, 3}});
+    dofl_int_edges g({{0, 1, 0}, {0, 2, 0}, {0, 3, 0}});
     
     // Set edge values
     auto v = *vertices(g).begin();
@@ -670,7 +670,7 @@ TEST_CASE("find_if - find edge by value predicate in dofl graph", "[stl][6.2.2][
 }
 
 TEST_CASE("find_if - find edge with specific target value", "[stl][6.2.2][find_if]") {
-    vov_int_both g({{0, 1}, {0, 2}, {0, 3}});
+    vov_int_both g({{0, 1, 0}, {0, 2, 0}, {0, 3, 0}});
     
     // Set vertex values
     for (auto&& v : vertices(g)) {
@@ -752,7 +752,7 @@ TEST_CASE("find - find specific vertex value", "[stl][6.2.2][find]") {
 }
 
 TEST_CASE("find - find specific edge value", "[stl][6.2.2][find]") {
-    vov_int_edges g({{0, 1}, {0, 2}, {0, 3}});
+    vov_int_edges g({{0, 1, 0}, {0, 2, 0}, {0, 3, 0}});
     
     // Set edge values
     auto v = *vertices(g).begin();
@@ -1115,7 +1115,7 @@ TEST_CASE("count_if - count high-degree vertices (vov)", "[stl][6.2.3][count_if]
 TEST_CASE("count_if - empty graph returns zero (vov)", "[stl][6.2.3][count_if]") {
     vov_void g;
     
-    auto count = std::ranges::count_if(vertices(g), [&g](auto&& v) {
+    auto count = std::ranges::count_if(vertices(g), [&g](auto&&) {
         return true; // Always true, but no vertices
     });
     
@@ -1633,7 +1633,7 @@ TEST_CASE("transform - compute average edge value per vertex (vov)", "[stl][6.2.
             sum += edge_value(g, e);
             ++count;
         }
-        return count > 0 ? static_cast<double>(sum) / count : 0.0;
+        return count > 0 ? static_cast<double>(sum) / static_cast<double>(count) : 0.0;
     });
     
     REQUIRE(averages.size() == 4);
@@ -2937,7 +2937,7 @@ TEST_CASE("compute average degree (vov)", "[stl][6.2.7][accumulate]") {
         ++vertex_count;
     }
     
-    double avg_degree = static_cast<double>(total_degree) / vertex_count;
+    double avg_degree = static_cast<double>(total_degree) / static_cast<double>(vertex_count);
     
     REQUIRE(vertex_count == 4);
     REQUIRE(total_degree == 4);
@@ -3009,7 +3009,7 @@ TEST_CASE("compute average vertex value (vov)", "[stl][6.2.7][accumulate]") {
         ++count;
     }
     
-    double avg = static_cast<double>(sum) / count;
+    double avg = static_cast<double>(sum) / static_cast<double>(count);
     
     REQUIRE(count == 4);
     REQUIRE(sum == 60);
@@ -3030,7 +3030,7 @@ TEST_CASE("compute average edge value (vov)", "[stl][6.2.7][accumulate]") {
         }
     }
     
-    double avg = static_cast<double>(sum) / count;
+    double avg = static_cast<double>(sum) / static_cast<double>(count);
     
     REQUIRE(count == 4);
     REQUIRE(sum == 100);
@@ -3118,7 +3118,7 @@ TEST_CASE("accumulate on empty graph (vov)", "[stl][6.2.7][accumulate]") {
 
 TEST_CASE("accumulate on graph with no edges (vov)", "[stl][6.2.7][accumulate]") {
     using G = vov_int_edges;
-    G g({{0}, {1}});  // Two vertices, no edges
+    G g({});  // No edges
     
     int sum = 0;
     for (auto&& v : vertices(g)) {

@@ -389,7 +389,6 @@ TEST_CASE("storage_category returns correct string", "[traits][utilities]") {
 TEST_CASE("Traits enable generic programming with descriptors", "[traits][integration]") {
     using VectorIter = std::vector<int>::iterator;
     using VD = vertex_descriptor<VectorIter>;
-    using ED = edge_descriptor<VectorIter, VectorIter>;
     
     SECTION("Can write generic code using concepts") {
         auto process_vertex = []<vertex_descriptor_type T>(const T& vd) {

@@ -337,7 +337,7 @@ TEST_CASE("num_partitions(g) - relationship between num_vertices and num_partiti
     REQUIRE(num_parts == 1);
     
     // For default single partition: num_vertices >= num_partitions
-    REQUIRE(num_verts >= num_parts);
+    REQUIRE(num_verts >= static_cast<size_t>(num_parts));
 }
 
 TEST_CASE("num_partitions(g) - empty map graph", "[num_partitions][cpo][default]") {

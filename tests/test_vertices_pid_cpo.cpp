@@ -228,7 +228,7 @@ TEST_CASE("vertices(g,pid) - works with different partition ID types", "[vertice
     Graph graph = {{1}, {2}};
     
     SECTION("int partition id") {
-        auto verts = vertices(graph, int(0));
+        auto verts = vertices(graph, 0);
         size_t count = 0;
         for (auto v : verts) {
             (void)v;

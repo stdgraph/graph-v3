@@ -501,7 +501,7 @@ TEST_CASE("num_edges(g) - average degree calculation", "[num_edges][cpo][integra
     auto edge_count = num_edges(graph);
     
     // Average out-degree = total edges / num vertices
-    double avg_degree = static_cast<double>(edge_count) / vertex_count;
+    double avg_degree = static_cast<double>(edge_count) / static_cast<double>(vertex_count);
     
     REQUIRE(vertex_count == 4);
     REQUIRE(edge_count == 6);

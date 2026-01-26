@@ -422,7 +422,7 @@ TEST_CASE("target_id(g,uv) - full graph traversal", "[target_id][cpo][integratio
         for (auto u : vertices(graph)) {
             int uid = static_cast<int>(vertex_id(graph, u));
             for (auto e : edges(graph, u)) {
-                int vid = static_cast<int>(target_id(graph, e));
+                int vid = target_id(graph, e);
                 all_edges.emplace_back(uid, vid);
             }
         }

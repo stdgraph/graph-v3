@@ -312,7 +312,6 @@ TEST_CASE("edge_value - const overload selection", "[edge_value][const][overload
     g_mutable.data = {{}, {{1, 10.5}, {2, 20.5}}};
     
     using VertexIter = decltype(g_mutable.data.begin());
-    using EdgeIter = decltype(g_mutable.data[0].begin());
     
     auto v1 = vertex_descriptor<VertexIter>(1);
     auto edge_range = edges(g_mutable.data, v1);
@@ -329,7 +328,6 @@ TEST_CASE("edge_value - const overload selection", "[edge_value][const][overload
     // Const graph: should call const overload (const reference)
     const GraphWithConstEdgeOverloads& g_const = g_mutable;
     using ConstVertexIter = decltype(g_const.data.begin());
-    using ConstEdgeIter = decltype(g_const.data[0].begin());
     
     auto v1_const = vertex_descriptor<ConstVertexIter>(1);
     auto edge_range_const = edges(g_const.data, v1_const);

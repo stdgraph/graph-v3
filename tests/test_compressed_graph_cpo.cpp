@@ -503,7 +503,7 @@ TEST_CASE("edges(g,u) with large graph", "[edges][api]") {
     for (auto ed : ee) {
         auto targ = g.target_id(static_cast<uint32_t>(ed.value()));
         auto value = g.edge_value(static_cast<uint32_t>(ed.value()));
-        REQUIRE(targ == static_cast<int>(count + 1));
+        REQUIRE(static_cast<int>(targ) == static_cast<int>(count + 1));
         REQUIRE(value == static_cast<int>((count + 1) * 10));
         ++count;
     }
@@ -4004,7 +4004,7 @@ TEST_CASE("vertices(g, pid) with different integral types", "[vertices_pid][api]
     g.load_edges(ee);
     
     SECTION("int partition id") {
-        auto verts = vertices(g, int(0));
+        auto verts = vertices(g, 0);
         size_t count = 0;
         for (auto v : verts) {
             (void)v;

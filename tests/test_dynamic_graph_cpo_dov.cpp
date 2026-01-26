@@ -867,7 +867,7 @@ TEST_CASE("dov CPO degree(g, u)", "[dynamic_graph][dov][cpo][degree]") {
         size_t idx = 0;
         
         for (auto u : vertices(g)) {
-            REQUIRE(static_cast<size_t>(degree(g, u)) == expected_degrees[idx]);
+            REQUIRE(degree(g, u) == expected_degrees[idx]);
             ++idx;
         }
     }

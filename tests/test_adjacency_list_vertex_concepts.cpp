@@ -103,7 +103,7 @@ TEST_CASE("index_vertex_range concept - vector<vector<int>>", "[adjacency_list][
     // Can iterate vertices
     int count = 0;
     for (auto v : verts) {
-        REQUIRE(vertex_id(g, v) == count);
+        REQUIRE(static_cast<int>(vertex_id(g, v)) == count);
         count++;
     }
     REQUIRE(count == 3);
@@ -219,7 +219,7 @@ TEST_CASE("index_adjacency_list concept - vector<vector<int>>", "[adjacency_list
     // Can iterate vertices
     int count = 0;
     for (auto v : verts) {
-        REQUIRE(vertex_id(g, v) == count);
+        REQUIRE(static_cast<int>(vertex_id(g, v)) == count);
         count++;
     }
 }

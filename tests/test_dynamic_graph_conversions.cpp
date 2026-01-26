@@ -116,9 +116,9 @@ size_t count_vertices(const G& g) {
 template<typename G, typename VId>
 bool has_edge_helper(const G& g, const VId& uid, const VId& vid) {
     for (auto&& u : vertices(g)) {
-        if (vertex_id(g, u) == uid) {
+        if (static_cast<VId>(vertex_id(g, u)) == uid) {
             for (auto&& e : edges(g, u)) {
-                if (target_id(g, e) == vid) {
+                if (static_cast<VId>(target_id(g, e)) == vid) {
                     return true;
                 }
             }

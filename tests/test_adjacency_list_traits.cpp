@@ -104,7 +104,6 @@ TEST_CASE("has_find_vertex_edge trait for DequeGraph", "[adjacency_list_traits][
 
 // NOTE: Disabled - contains_edge CPO works but trait expects exact return type match
 TEST_CASE("has_contains_edge trait for SimpleGraph with vertex descriptors", "[adjacency_list_traits][has_contains_edge][!mayfail]") {
-    using VD = vertex_t<SimpleGraph>;
     // STATIC_REQUIRE(has_contains_edge<SimpleGraph, VD>);
     // STATIC_REQUIRE(has_contains_edge_v<SimpleGraph, VD>);
     SUCCEED("Test disabled - CPO works but trait check needs refinement");
@@ -112,7 +111,6 @@ TEST_CASE("has_contains_edge trait for SimpleGraph with vertex descriptors", "[a
 
 // NOTE: Disabled - contains_edge CPO works but trait expects exact return type match
 TEST_CASE("has_contains_edge trait for SimpleGraph with vertex IDs", "[adjacency_list_traits][has_contains_edge][!mayfail]") {
-    using VId = vertex_id_t<SimpleGraph>;
     // STATIC_REQUIRE(has_contains_edge<SimpleGraph, VId>);
     // STATIC_REQUIRE(has_contains_edge_v<SimpleGraph, VId>);
     SUCCEED("Test disabled - CPO works but trait check needs refinement");
@@ -120,7 +118,6 @@ TEST_CASE("has_contains_edge trait for SimpleGraph with vertex IDs", "[adjacency
 
 // NOTE: Disabled - contains_edge CPO works but trait expects exact return type match
 TEST_CASE("has_contains_edge trait for MapGraph with vertex descriptors", "[adjacency_list_traits][has_contains_edge][!mayfail]") {
-    using VD = vertex_t<MapGraph>;
     // STATIC_REQUIRE(has_contains_edge<MapGraph, VD>);
     // STATIC_REQUIRE(has_contains_edge_v<MapGraph, VD>);
     SUCCEED("Test disabled - CPO works but trait check needs refinement");
@@ -128,7 +125,6 @@ TEST_CASE("has_contains_edge trait for MapGraph with vertex descriptors", "[adja
 
 // NOTE: Disabled - contains_edge CPO works but trait expects exact return type match
 TEST_CASE("has_contains_edge trait for MapGraph with vertex IDs", "[adjacency_list_traits][has_contains_edge][!mayfail]") {
-    using VId = vertex_id_t<MapGraph>;
     // STATIC_REQUIRE(has_contains_edge<MapGraph, VId>);
     // STATIC_REQUIRE(has_contains_edge_v<MapGraph, VId>);
     SUCCEED("Test disabled - CPO works but trait check needs refinement");
@@ -136,7 +132,6 @@ TEST_CASE("has_contains_edge trait for MapGraph with vertex IDs", "[adjacency_li
 
 // NOTE: Disabled - contains_edge CPO works but trait expects exact return type match
 TEST_CASE("has_contains_edge trait for DequeGraph", "[adjacency_list_traits][has_contains_edge][!mayfail]") {
-    using VD = vertex_t<DequeGraph>;
     // STATIC_REQUIRE(has_contains_edge<DequeGraph, VD>);
     // STATIC_REQUIRE(has_contains_edge_v<DequeGraph, VD>);
     SUCCEED("Test disabled - CPO works but trait check needs refinement");
