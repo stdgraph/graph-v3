@@ -4,11 +4,6 @@ add_executable(graph3_container_tests
     compressed_graph/test_compressed_graph.cpp
     compressed_graph/test_compressed_graph_cpo.cpp
     
-    # dynamic_graph - consolidated CPO tests
-    dynamic_graph/test_dynamic_graph_cpo_random_access.cpp
-    dynamic_graph/test_dynamic_graph_cpo_bidirectional.cpp
-    dynamic_graph/test_dynamic_graph_cpo_forward.cpp
-    
     # dynamic_graph - non-CPO tests
     dynamic_graph/test_dynamic_graph_vofl.cpp
     dynamic_graph/test_dynamic_graph_vol.cpp
@@ -50,8 +45,15 @@ add_executable(graph3_container_tests
     dynamic_graph/test_dynamic_graph_conversions.cpp
     dynamic_graph/test_dynamic_graph_heterogeneous.cpp
     
-    # dynamic_graph - CPO tests (consolidated by iterator category)
-    # Removed: vofl, vol, vov, vod, dofl, dol, dov, dod (now in consolidated files above)
+    # dynamic_graph - CPO tests
+    dynamic_graph/test_dynamic_graph_cpo_vofl.cpp
+    dynamic_graph/test_dynamic_graph_cpo_vol.cpp
+    dynamic_graph/test_dynamic_graph_cpo_vov.cpp
+    dynamic_graph/test_dynamic_graph_cpo_vod.cpp
+    dynamic_graph/test_dynamic_graph_cpo_dofl.cpp
+    dynamic_graph/test_dynamic_graph_cpo_dol.cpp
+    dynamic_graph/test_dynamic_graph_cpo_dov.cpp
+    dynamic_graph/test_dynamic_graph_cpo_dod.cpp
     dynamic_graph/test_dynamic_graph_cpo_mofl.cpp
     dynamic_graph/test_dynamic_graph_cpo_mol.cpp
     dynamic_graph/test_dynamic_graph_cpo_mov.cpp
