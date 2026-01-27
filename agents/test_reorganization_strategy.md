@@ -219,84 +219,54 @@ Instead of full consolidation, consider a **hybrid approach**:
 
 **Date:** Session continuation after Phase 1 completion
 
-**Prototype Implemented:** `test_dynamic_graph_cpo_random_access.cpp`
-- Consolidates random-access containers: vov, vod, dov, dod
-- Uses `TEMPLATE_TEST_CASE` across all 4 trait types
-- Covers 9 CPO test categories with 38 test cases and 166 assertions
+**Initial Prototype:** `test_dynamic_graph_cpo_random_access.cpp`
+- Covered only 9 of 29 TEST_CASE categories
+- Was incomplete - missing ~70% of tests
 
-**Key Findings:**
+**REVERTED:** The prototype consolidation was reverted because it only contained 
+a subset of the original tests. Full consolidation requires handling:
 
-1. **Edge Creation Pattern for EV=void:**
-   - `create_edge()` method doesn't exist for `EV=void` graphs
-   - Must use `load_edges()` with `copyable_edge_t<uint64_t, void>` vector
-   - Created helper function `add_edges(g, {{0,1}, {1,2}})` for convenience
+1. **Multiple Type Configurations per Container:**
+   - `xxx_void` - no values (EV=void, VV=void, GV=void)
+   - `xxx_int_ev` - int edge values (EV=int)
+   - `xxx_int_vv` - int vertex values (VV=int)
+   - `xxx_all_int` - all int values (EV=int, VV=int, GV=int)
+   - `xxx_string` - string values
+   - `xxx_sourced_*` - Sourced=true variants
 
-2. **Vertex Access Pattern:**
-   - `vertices(g).begin() + n` iterator arithmetic doesn't work
-   - Must use `find_vertex(g, id)` CPO to access vertices by ID
+2. **29 TEST_CASE Categories to Migrate:**
+   - vertices(g), vertices(g, pid)
+   - num_vertices(g), num_vertices(g, pid)
+   - find_vertex(g, uid), vertex_id(g, u)
+   - num_edges(g), num_edges(g, u), num_edges(g, uid)
+   - edges(g, u), edges(g, uid)
+   - degree(g, u)
+   - target_id(g, uv), target(g, uv)
+   - find_vertex_edge(g, u, v), find_vertex_edge(g, uid, vid)
+   - contains_edge(g, u, v), contains_edge(g, uid, vid)
+   - has_edge(g)
+   - vertex_value(g, u), edge_value(g, uv), graph_value(g)
+   - partition_id(g, u), num_partitions(g)
+   - source_id(g, uv), source(g, uv)
+   - Integration tests
 
-3. **Build and Test Results:**
-   - ✅ Builds successfully with gcc-15
-   - ✅ All 166 assertions pass
-   - ✅ No impact on existing tests (3,948 total tests pass)
+3. **Complexity Assessment:**
+   - Each original file: ~3,500 lines with 29 TEST_CASE blocks
+   - 4 random-access files = ~14,000 lines total
+   - Proper consolidation requires type alias templates that work across containers
+   - Need template infrastructure to share `Graph_void`, `Graph_int_ev` etc. 
+     definitions across vov/vod/dov/dod traits
 
-4. **Code Reduction Potential:**
-   - Each container-specific file is ~3,000 lines
-   - 4 random-access files = ~12,000 lines → consolidated to ~400 lines
-   - **~97% reduction** for the random-access category
+**Recommendation: Phase 2 DEFERRED**
 
-**Recommendation:** Proceed with **Option B (Grouping by Container Category)**
+The consolidation effort requires significant template infrastructure that
+may not provide enough value for the complexity. Options:
 
-| Category | Containers | Files | Estimated Lines |
-|----------|------------|-------|-----------------|
-| Random-access | vov, vod, dov, dod | 4 → 1 | ~12,000 → ~400 |
-| Bidirectional | vol, dol | 2 → 1 | ~6,000 → ~400 |
-| Forward-only | vofl, dofl | 2 → 1 | ~6,000 → ~400 |
-| Map/unordered | mos, mous, mol, mofl, mod, moem | 6 | Keep separate or consolidate by behavior |
+1. **Keep as-is**: 8 container-specific files work and are well-tested
+2. **Partial consolidation**: Only consolidate `EV=void, VV=void` tests  
+3. **Template infrastructure**: Create reusable test type generators
 
-**Total estimated reduction:** ~40,000 lines → ~3,000 lines (~93% reduction)
-
-#### Phase 2 Implementation Progress
-
-**Completed Consolidated Files:**
-
-1. **`test_dynamic_graph_cpo_random_access.cpp`** (vov, vod, dov, dod)
-   - 38 test cases, 166 assertions
-   - ~390 lines
-   - Status: ✅ Complete and passing
-
-2. **`test_dynamic_graph_cpo_bidirectional.cpp`** (vol, dol)
-   - 22 test cases, 91 assertions
-   - ~380 lines
-   - Status: ✅ Complete and passing
-
-3. **`test_dynamic_graph_cpo_forward.cpp`** (vofl, dofl)
-   - 20 test cases, 74 assertions
-   - ~380 lines
-   - Status: ✅ Complete and passing
-
-**Total Test Count:** 3,988 tests (up from 3,912 original)
-
-**Remaining Work:**
-- Map/unordered containers (mos, mous, mol, mofl, mod, moem) - to be evaluated
-- Remove original per-container CPO files once fully migrated
-- Currently the consolidated files add NEW tests; migration would remove ~24,000 lines
-
-**Key Technical Patterns Established:**
-```cpp
-// Helper for EV=void graphs
-template <typename Graph>
-void add_edges(Graph& g, std::initializer_list<std::pair<uint64_t, uint64_t>> edges_list) {
-    std::vector<copyable_edge_t<uint64_t, void>> edge_data;
-    for (auto [src, tgt] : edges_list) {
-        edge_data.push_back({src, tgt});
-    }
-    g.load_edges(edge_data);
-}
-
-// Use find_vertex instead of iterator arithmetic
-auto v0 = *find_vertex(g, uint64_t{0});
-```
+Current state: All 3,912 original tests pass. No consolidation applied.
 
 ---
 
