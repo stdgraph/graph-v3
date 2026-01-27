@@ -72,6 +72,7 @@ add_executable(graph3_container_tests
     dynamic_graph/test_dynamic_graph_cpo_dous.cpp
     dynamic_graph/test_dynamic_graph_cpo_mous.cpp
     dynamic_graph/test_dynamic_graph_cpo_uous.cpp
+    dynamic_graph/test_dynamic_graph_cpo_random_access.cpp
     
     # undirected_adjacency_list
     undirected_adjacency_list/test_undirected_adjacency_list.cpp
