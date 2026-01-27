@@ -266,6 +266,40 @@ TEMPLATE_TEST_CASE("random_access CPO num_edges(g, u)", "[dynamic_graph][cpo][nu
 }
 
 //==================================================================================================
+// 7b. num_edges(g, uid) CPO Tests
+//==================================================================================================
+
+TEMPLATE_TEST_CASE("random_access CPO num_edges(g, uid)", "[dynamic_graph][cpo][num_edges]",
+                   vov_tag, vod_tag, dov_tag, dod_tag) {
+    using Types = graph_test_types<TestType>;
+    using Graph_void = typename Types::void_type;
+
+    SECTION("by vertex ID - no edges") {
+        Graph_void g;
+        g.resize_vertices(3);
+        
+        REQUIRE(num_edges(g, 0u) == 0);
+    }
+
+    SECTION("by vertex ID - with edges") {
+        Graph_void g({{0, 1}, {0, 2}, {1, 2}});
+        
+        REQUIRE(num_edges(g, 0u) == 2);
+        REQUIRE(num_edges(g, 1u) == 1);
+        REQUIRE(num_edges(g, 2u) == 0);
+    }
+
+    SECTION("consistency with descriptor overload") {
+        Graph_void g({{0, 1}, {0, 2}, {1, 2}, {2, 0}});
+        
+        for (auto u : vertices(g)) {
+            auto uid = vertex_id(g, u);
+            REQUIRE(num_edges(g, u) == num_edges(g, uid));
+        }
+    }
+}
+
+//==================================================================================================
 // 8. edges(g, u) CPO Tests
 //==================================================================================================
 
@@ -495,6 +529,64 @@ TEMPLATE_TEST_CASE("random_access CPO find_vertex_edge(g, uid, vid)", "[dynamic_
 }
 
 //==================================================================================================
+// 13b. find_vertex_edge(g, u, v) CPO Tests - descriptor overload
+//==================================================================================================
+
+TEMPLATE_TEST_CASE("random_access CPO find_vertex_edge(g, u, v)", "[dynamic_graph][cpo][find_vertex_edge]",
+                   vov_tag, vod_tag, dov_tag, dod_tag) {
+    using Types = graph_test_types<TestType>;
+    using Graph_void = typename Types::void_type;
+    using Graph_int_ev = typename Types::int_ev;
+
+    SECTION("basic edge found") {
+        Graph_void g({{0, 1}, {0, 2}, {1, 2}});
+        
+        auto u0 = *find_vertex(g, 0);
+        auto u1 = *find_vertex(g, 1);
+        auto u2 = *find_vertex(g, 2);
+        
+        auto e01 = find_vertex_edge(g, u0, u1);
+        auto e02 = find_vertex_edge(g, u0, u2);
+        auto e12 = find_vertex_edge(g, u1, u2);
+        
+        REQUIRE(target_id(g, e01) == 1);
+        REQUIRE(target_id(g, e02) == 2);
+        REQUIRE(target_id(g, e12) == 2);
+    }
+
+    SECTION("with edge values") {
+        Graph_int_ev g;
+        g.resize_vertices(3);
+        
+        std::vector<copyable_edge_t<uint32_t, int>> edge_data = {
+            {0, 1, 100}, {0, 2, 200}, {1, 2, 300}
+        };
+        g.load_edges(edge_data);
+        
+        auto u0 = *find_vertex(g, 0);
+        auto u1 = *find_vertex(g, 1);
+        auto u2 = *find_vertex(g, 2);
+        
+        auto e01 = find_vertex_edge(g, u0, u1);
+        auto e02 = find_vertex_edge(g, u0, u2);
+        auto e12 = find_vertex_edge(g, u1, u2);
+        
+        REQUIRE(edge_value(g, e01) == 100);
+        REQUIRE(edge_value(g, e02) == 200);
+        REQUIRE(edge_value(g, e12) == 300);
+    }
+
+    SECTION("with self-loop") {
+        Graph_void g({{0, 0}, {0, 1}});
+        
+        auto u0 = *find_vertex(g, 0);
+        auto e00 = find_vertex_edge(g, u0, u0);
+        
+        REQUIRE(target_id(g, e00) == 0);
+    }
+}
+
+//==================================================================================================
 // 14. contains_edge(g, uid, vid) CPO Tests
 //==================================================================================================
 
@@ -524,6 +616,71 @@ TEMPLATE_TEST_CASE("random_access CPO contains_edge(g, uid, vid)", "[dynamic_gra
         
         REQUIRE(contains_edge(g, 0, 0));
         REQUIRE(contains_edge(g, 0, 1));
+    }
+}
+
+//==================================================================================================
+// 14b. contains_edge(g, u, v) CPO Tests - descriptor overload
+//==================================================================================================
+
+TEMPLATE_TEST_CASE("random_access CPO contains_edge(g, u, v)", "[dynamic_graph][cpo][contains_edge]",
+                   vov_tag, vod_tag, dov_tag, dod_tag) {
+    using Types = graph_test_types<TestType>;
+    using Graph_void = typename Types::void_type;
+    using Graph_int_ev = typename Types::int_ev;
+
+    SECTION("edge exists") {
+        Graph_void g({{0, 1}, {0, 2}, {1, 2}});
+        
+        auto u0 = *find_vertex(g, 0);
+        auto u1 = *find_vertex(g, 1);
+        auto u2 = *find_vertex(g, 2);
+        
+        REQUIRE(contains_edge(g, u0, u1));
+        REQUIRE(contains_edge(g, u0, u2));
+        REQUIRE(contains_edge(g, u1, u2));
+    }
+
+    SECTION("edge does not exist") {
+        Graph_void g({{0, 1}, {1, 2}});
+        
+        auto u0 = *find_vertex(g, 0);
+        auto u1 = *find_vertex(g, 1);
+        auto u2 = *find_vertex(g, 2);
+        
+        REQUIRE_FALSE(contains_edge(g, u0, u2));
+        REQUIRE_FALSE(contains_edge(g, u1, u0));
+        REQUIRE_FALSE(contains_edge(g, u2, u1));
+    }
+
+    SECTION("with edge values") {
+        Graph_int_ev g;
+        g.resize_vertices(4);
+        
+        std::vector<copyable_edge_t<uint32_t, int>> edge_data = {
+            {0, 1, 100}, {0, 2, 200}, {1, 2, 300}
+        };
+        g.load_edges(edge_data);
+        
+        auto u0 = *find_vertex(g, 0);
+        auto u1 = *find_vertex(g, 1);
+        auto u2 = *find_vertex(g, 2);
+        auto u3 = *find_vertex(g, 3);
+        
+        REQUIRE(contains_edge(g, u0, u1));
+        REQUIRE(contains_edge(g, u0, u2));
+        REQUIRE(contains_edge(g, u1, u2));
+        REQUIRE_FALSE(contains_edge(g, u0, u3));
+    }
+
+    SECTION("self-loop") {
+        Graph_void g({{0, 0}, {0, 1}});
+        
+        auto u0 = *find_vertex(g, 0);
+        auto u1 = *find_vertex(g, 1);
+        
+        REQUIRE(contains_edge(g, u0, u0));
+        REQUIRE(contains_edge(g, u0, u1));
     }
 }
 
@@ -574,6 +731,73 @@ TEMPLATE_TEST_CASE("random_access CPO vertex_value(g, u)", "[dynamic_graph][cpo]
         
         it = vertices(g).begin();
         REQUIRE(vertex_value(g, *it) == "first");
+    }
+}
+
+//==================================================================================================
+// 15b. edge_value(g, uv) CPO Tests
+//==================================================================================================
+
+TEMPLATE_TEST_CASE("random_access CPO edge_value(g, uv)", "[dynamic_graph][cpo][edge_value]",
+                   vov_tag, vod_tag, dov_tag, dod_tag) {
+    using Types = graph_test_types<TestType>;
+    using Graph_int_ev = typename Types::int_ev;
+    using Graph_all_int = typename Types::all_int;
+    using Graph_string = typename Types::string_type;
+
+    SECTION("basic access") {
+        Graph_int_ev g({{0, 1, 42}, {1, 2, 99}});
+        
+        auto u0 = *find_vertex(g, 0);
+        for (auto uv : edges(g, u0)) {
+            REQUIRE(edge_value(g, uv) == 42);
+        }
+    }
+
+    SECTION("multiple edges") {
+        Graph_int_ev g;
+        g.resize_vertices(3);
+        
+        std::vector<copyable_edge_t<uint32_t, int>> edge_data = {
+            {0, 1, 100}, {0, 2, 200}, {1, 2, 300}
+        };
+        g.load_edges(edge_data);
+        
+        auto u0 = *find_vertex(g, 0);
+        std::vector<int> values;
+        for (auto uv : edges(g, u0)) {
+            values.push_back(edge_value(g, uv));
+        }
+        
+        REQUIRE(values.size() == 2);
+        REQUIRE(values[0] == 100);
+        REQUIRE(values[1] == 200);
+    }
+
+    SECTION("modification") {
+        Graph_all_int g({{0, 1, 50}});
+        
+        auto u0 = *find_vertex(g, 0);
+        for (auto uv : edges(g, u0)) {
+            REQUIRE(edge_value(g, uv) == 50);
+            edge_value(g, uv) = 75;
+            REQUIRE(edge_value(g, uv) == 75);
+        }
+    }
+
+    SECTION("with string values") {
+        Graph_string g;
+        g.resize_vertices(3);
+        
+        std::vector<copyable_edge_t<uint32_t, std::string>> edge_data = {
+            {0, 1, "edge01"}, {1, 2, "edge12"}
+        };
+        g.load_edges(edge_data);
+        
+        auto u0 = *find_vertex(g, 0);
+        for (auto uv : edges(g, u0)) {
+            REQUIRE(edge_value(g, uv) == "edge01");
+        }
     }
 }
 
@@ -786,5 +1010,86 @@ TEMPLATE_TEST_CASE("random_access CPO integration", "[dynamic_graph][cpo][integr
         REQUIRE(num_vertices(g) == 0);
         REQUIRE(num_edges(g) == 0);
         REQUIRE(!has_edge(g));
+    }
+}
+
+//==================================================================================================
+// 24. Integration Tests - Values
+//==================================================================================================
+
+TEMPLATE_TEST_CASE("random_access CPO integration: values", "[dynamic_graph][cpo][integration]",
+                   vov_tag, vod_tag, dov_tag, dod_tag) {
+    using Types = graph_test_types<TestType>;
+    using Graph_all_int = typename Types::all_int;
+
+    SECTION("vertex values only") {
+        Graph_all_int g;
+        g.resize_vertices(5);
+        
+        int val = 0;
+        for (auto u : vertices(g)) {
+            vertex_value(g, u) = val;
+            val += 100;
+        }
+        
+        val = 0;
+        for (auto u : vertices(g)) {
+            REQUIRE(vertex_value(g, u) == val);
+            val += 100;
+        }
+    }
+
+    SECTION("vertex and edge values") {
+        Graph_all_int g;
+        g.resize_vertices(3);
+        
+        std::vector<copyable_edge_t<uint32_t, int>> edge_data = {
+            {0, 1, 5}, {1, 2, 10}
+        };
+        g.load_edges(edge_data);
+        
+        int val = 0;
+        for (auto u : vertices(g)) {
+            vertex_value(g, u) = val;
+            val += 100;
+        }
+        
+        val = 0;
+        for (auto u : vertices(g)) {
+            REQUIRE(vertex_value(g, u) == val);
+            val += 100;
+        }
+    }
+}
+
+//==================================================================================================
+// 25. Integration Tests - Modify Vertex and Edge Values
+//==================================================================================================
+
+TEMPLATE_TEST_CASE("random_access CPO integration: modify vertex and edge values", "[dynamic_graph][cpo][integration]",
+                   vov_tag, vod_tag, dov_tag, dod_tag) {
+    using Types = graph_test_types<TestType>;
+    using Graph_all_int = typename Types::all_int;
+
+    SECTION("accumulate edge values into vertices") {
+        Graph_all_int g({{0, 1, 1}, {1, 2, 2}});
+        
+        for (auto u : vertices(g)) {
+            vertex_value(g, u) = 0;
+        }
+        
+        for (auto u : vertices(g)) {
+            for (auto uv : edges(g, u)) {
+                vertex_value(g, u) += edge_value(g, uv);
+            }
+        }
+        
+        int expected_values[] = {1, 2, 0};
+        int idx = 0;
+        for (auto u : vertices(g)) {
+            REQUIRE(vertex_value(g, u) == expected_values[idx]);
+            ++idx;
+            if (idx >= 3) break;
+        }
     }
 }
