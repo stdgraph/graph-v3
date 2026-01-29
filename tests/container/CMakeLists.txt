@@ -45,28 +45,27 @@ add_executable(graph3_container_tests
     dynamic_graph/test_dynamic_graph_conversions.cpp
     dynamic_graph/test_dynamic_graph_heterogeneous.cpp
     
-    # dynamic_graph - CPO tests
-    dynamic_graph/test_dynamic_graph_cpo_vofl.cpp
-    dynamic_graph/test_dynamic_graph_cpo_dofl.cpp
+    # dynamic_graph - CPO tests (consolidated)
+    dynamic_graph/test_dynamic_graph_cpo_random_access.cpp
+    dynamic_graph/test_dynamic_graph_cpo_forward_list.cpp
+    dynamic_graph/test_dynamic_graph_cpo_sorted.cpp
+    dynamic_graph/test_dynamic_graph_cpo_unordered.cpp
+    
+    # dynamic_graph - CPO tests (remaining individual files - map-based containers)
     dynamic_graph/test_dynamic_graph_cpo_mofl.cpp
     dynamic_graph/test_dynamic_graph_cpo_mol.cpp
     dynamic_graph/test_dynamic_graph_cpo_mov.cpp
     dynamic_graph/test_dynamic_graph_cpo_mod.cpp
+    dynamic_graph/test_dynamic_graph_cpo_mos.cpp
+    dynamic_graph/test_dynamic_graph_cpo_mous.cpp
     dynamic_graph/test_dynamic_graph_cpo_uofl.cpp
     dynamic_graph/test_dynamic_graph_cpo_uol.cpp
     dynamic_graph/test_dynamic_graph_cpo_uov.cpp
     dynamic_graph/test_dynamic_graph_cpo_uod.cpp
-    dynamic_graph/test_dynamic_graph_cpo_vos.cpp
+    dynamic_graph/test_dynamic_graph_cpo_uos.cpp
+    dynamic_graph/test_dynamic_graph_cpo_uous.cpp
     dynamic_graph/test_dynamic_graph_cpo_voem.cpp
     dynamic_graph/test_dynamic_graph_cpo_moem.cpp
-    dynamic_graph/test_dynamic_graph_cpo_dos.cpp
-    dynamic_graph/test_dynamic_graph_cpo_mos.cpp
-    dynamic_graph/test_dynamic_graph_cpo_uos.cpp
-    dynamic_graph/test_dynamic_graph_cpo_vous.cpp
-    dynamic_graph/test_dynamic_graph_cpo_dous.cpp
-    dynamic_graph/test_dynamic_graph_cpo_mous.cpp
-    dynamic_graph/test_dynamic_graph_cpo_uous.cpp
-    dynamic_graph/test_dynamic_graph_cpo_random_access.cpp
     
     # undirected_adjacency_list
     undirected_adjacency_list/test_undirected_adjacency_list.cpp

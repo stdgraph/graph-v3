@@ -30,6 +30,17 @@
 #include <graph/container/traits/dod_graph_traits.hpp>
 #include <graph/container/traits/vol_graph_traits.hpp>
 #include <graph/container/traits/dol_graph_traits.hpp>
+#include <graph/container/traits/vofl_graph_traits.hpp>
+#include <graph/container/traits/dofl_graph_traits.hpp>
+#include <graph/container/traits/mofl_graph_traits.hpp>
+#include <graph/container/traits/vos_graph_traits.hpp>
+#include <graph/container/traits/dos_graph_traits.hpp>
+#include <graph/container/traits/mos_graph_traits.hpp>
+#include <graph/container/traits/uos_graph_traits.hpp>
+#include <graph/container/traits/vous_graph_traits.hpp>
+#include <graph/container/traits/dous_graph_traits.hpp>
+#include <graph/container/traits/mous_graph_traits.hpp>
+#include <graph/container/traits/uous_graph_traits.hpp>
 #include <string>
 
 namespace graph::test {
@@ -96,6 +107,139 @@ struct dol_tag {
     
     template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
     using traits = graph::container::dol_graph_traits<EV, VV, GV, VId, Sourced>;
+};
+
+// =============================================================================
+// Tag types for forward_list edge containers (reverse insertion order)
+// =============================================================================
+
+/**
+ * @brief Tag for vector<vertex> + forward_list<edge> container type
+ * @note Edges appear in reverse insertion order (push_front semantics)
+ */
+struct vofl_tag {
+    static constexpr const char* name = "vofl";
+    
+    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+    using traits = graph::container::vofl_graph_traits<EV, VV, GV, VId, Sourced>;
+};
+
+/**
+ * @brief Tag for deque<vertex> + forward_list<edge> container type
+ * @note Edges appear in reverse insertion order (push_front semantics)
+ */
+struct dofl_tag {
+    static constexpr const char* name = "dofl";
+    
+    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+    using traits = graph::container::dofl_graph_traits<EV, VV, GV, VId, Sourced>;
+};
+
+/**
+ * @brief Tag for map<vertex> + forward_list<edge> container type
+ * @note Edges appear in reverse insertion order (push_front semantics)
+ */
+struct mofl_tag {
+    static constexpr const char* name = "mofl";
+    
+    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+    using traits = graph::container::mofl_graph_traits<EV, VV, GV, VId, Sourced>;
+};
+
+// =============================================================================
+// Tag types for sorted edge containers (edges ordered by target_id)
+// =============================================================================
+
+/**
+ * @brief Tag for vector<vertex> + set<edge> container type
+ * @note Edges are ordered by target_id (sorted set semantics)
+ */
+struct vos_tag {
+    static constexpr const char* name = "vos";
+    
+    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+    using traits = graph::container::vos_graph_traits<EV, VV, GV, VId, Sourced>;
+};
+
+/**
+ * @brief Tag for deque<vertex> + set<edge> container type
+ * @note Edges are ordered by target_id (sorted set semantics)
+ */
+struct dos_tag {
+    static constexpr const char* name = "dos";
+    
+    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+    using traits = graph::container::dos_graph_traits<EV, VV, GV, VId, Sourced>;
+};
+
+/**
+ * @brief Tag for map<vertex> + set<edge> container type
+ * @note Edges are ordered by target_id (sorted set semantics)
+ */
+struct mos_tag {
+    static constexpr const char* name = "mos";
+    
+    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+    using traits = graph::container::mos_graph_traits<EV, VV, GV, VId, Sourced>;
+};
+
+/**
+ * @brief Tag for unordered_map<vertex> + set<edge> container type (undirected)
+ * @note Edges are ordered by target_id (sorted set semantics)
+ */
+struct uos_tag {
+    static constexpr const char* name = "uos";
+    
+    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+    using traits = graph::container::uos_graph_traits<EV, VV, GV, VId, Sourced>;
+};
+
+// =============================================================================
+// Tag types for unordered edge containers (edges in unspecified order)
+// =============================================================================
+
+/**
+ * @brief Tag for vector<vertex> + unordered_set<edge> container type
+ * @note Edge order is unspecified (hash-based container)
+ */
+struct vous_tag {
+    static constexpr const char* name = "vous";
+    
+    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+    using traits = graph::container::vous_graph_traits<EV, VV, GV, VId, Sourced>;
+};
+
+/**
+ * @brief Tag for deque<vertex> + unordered_set<edge> container type
+ * @note Edge order is unspecified (hash-based container)
+ */
+struct dous_tag {
+    static constexpr const char* name = "dous";
+    
+    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+    using traits = graph::container::dous_graph_traits<EV, VV, GV, VId, Sourced>;
+};
+
+/**
+ * @brief Tag for map<vertex> + unordered_set<edge> container type
+ * @note Edge order is unspecified (hash-based container)
+ */
+struct mous_tag {
+    static constexpr const char* name = "mous";
+    
+    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+    using traits = graph::container::mous_graph_traits<EV, VV, GV, VId, Sourced>;
+};
+
+/**
+ * @brief Tag for unordered_map<vertex> + unordered_set<edge> container type
+ * @note Edge order is unspecified (hash-based container)
+ */
+struct uous_tag {
+    static constexpr const char* name = "uous";
+    
+    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+    using traits = graph::container::uous_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 // =============================================================================
