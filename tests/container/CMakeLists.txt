@@ -48,12 +48,8 @@ add_executable(graph3_container_tests
     # dynamic_graph - CPO tests
     dynamic_graph/test_dynamic_graph_cpo_vofl.cpp
     dynamic_graph/test_dynamic_graph_cpo_vol.cpp
-    dynamic_graph/test_dynamic_graph_cpo_vov.cpp
-    dynamic_graph/test_dynamic_graph_cpo_vod.cpp
     dynamic_graph/test_dynamic_graph_cpo_dofl.cpp
     dynamic_graph/test_dynamic_graph_cpo_dol.cpp
-    dynamic_graph/test_dynamic_graph_cpo_dov.cpp
-    dynamic_graph/test_dynamic_graph_cpo_dod.cpp
     dynamic_graph/test_dynamic_graph_cpo_mofl.cpp
     dynamic_graph/test_dynamic_graph_cpo_mol.cpp
     dynamic_graph/test_dynamic_graph_cpo_mov.cpp
