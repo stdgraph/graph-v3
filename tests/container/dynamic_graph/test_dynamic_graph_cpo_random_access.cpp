@@ -1,9 +1,13 @@
 /**
  * @file test_dynamic_graph_cpo_random_access.cpp
- * @brief Consolidated CPO tests for all random-access container types (vov, vod, dov, dod)
+ * @brief Consolidated CPO tests for all random-access vertex container types (vov, vod, dov, dod, vol, dol)
  * 
- * Uses template infrastructure from graph_test_types.hpp to test all 4 container
+ * Uses template infrastructure from graph_test_types.hpp to test all 6 container
  * types with a single set of test cases.
+ * 
+ * Note: vol (vector of list) and dol (deque of list) have random-access vertex iteration
+ * but bidirectional edge iteration. They're included here because the vertex container
+ * uses random-access iterators.
  */
 
 #include <catch2/catch_test_macros.hpp>
@@ -24,7 +28,7 @@ using namespace graph::test;
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO vertices(g)", "[dynamic_graph][cpo][vertices]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_void = typename Types::void_type;
     using Graph_int_vv = typename Types::int_vv;
@@ -65,7 +69,7 @@ TEMPLATE_TEST_CASE("random_access CPO vertices(g)", "[dynamic_graph][cpo][vertic
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO num_vertices(g)", "[dynamic_graph][cpo][num_vertices]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_void = typename Types::void_type;
     using Graph_int_vv = typename Types::int_vv;
@@ -93,7 +97,7 @@ TEMPLATE_TEST_CASE("random_access CPO num_vertices(g)", "[dynamic_graph][cpo][nu
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO find_vertex(g, uid)", "[dynamic_graph][cpo][find_vertex]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_void = typename Types::void_type;
 
@@ -130,7 +134,7 @@ TEMPLATE_TEST_CASE("random_access CPO find_vertex(g, uid)", "[dynamic_graph][cpo
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO vertex_id(g, u)", "[dynamic_graph][cpo][vertex_id]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_void = typename Types::void_type;
 
@@ -237,7 +241,7 @@ TEMPLATE_TEST_CASE("random_access CPO vertex_id(g, u)", "[dynamic_graph][cpo][ve
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO num_edges(g)", "[dynamic_graph][cpo][num_edges]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_void = typename Types::void_type;
 
@@ -269,7 +273,7 @@ TEMPLATE_TEST_CASE("random_access CPO num_edges(g)", "[dynamic_graph][cpo][num_e
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO has_edge(g)", "[dynamic_graph][cpo][has_edge]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_void = typename Types::void_type;
 
@@ -297,7 +301,7 @@ TEMPLATE_TEST_CASE("random_access CPO has_edge(g)", "[dynamic_graph][cpo][has_ed
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO num_edges(g, u)", "[dynamic_graph][cpo][num_edges]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_void = typename Types::void_type;
 
@@ -349,7 +353,7 @@ TEMPLATE_TEST_CASE("random_access CPO num_edges(g, u)", "[dynamic_graph][cpo][nu
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO num_edges(g, uid)", "[dynamic_graph][cpo][num_edges]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_void = typename Types::void_type;
 
@@ -383,7 +387,7 @@ TEMPLATE_TEST_CASE("random_access CPO num_edges(g, uid)", "[dynamic_graph][cpo][
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO edges(g, u)", "[dynamic_graph][cpo][edges]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_void = typename Types::void_type;
     using Graph_int_ev = typename Types::int_ev;
@@ -603,7 +607,7 @@ TEMPLATE_TEST_CASE("random_access CPO edges(g, u)", "[dynamic_graph][cpo][edges]
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO edges(g, uid)", "[dynamic_graph][cpo][edges]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_void = typename Types::void_type;
 
@@ -797,7 +801,7 @@ TEMPLATE_TEST_CASE("random_access CPO edges(g, uid)", "[dynamic_graph][cpo][edge
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO degree(g, u)", "[dynamic_graph][cpo][degree]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_void = typename Types::void_type;
     using Graph_int_ev = typename Types::int_ev;
@@ -971,7 +975,7 @@ TEMPLATE_TEST_CASE("random_access CPO degree(g, u)", "[dynamic_graph][cpo][degre
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO target_id(g, uv)", "[dynamic_graph][cpo][target_id]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_void = typename Types::void_type;
     using Graph_int_ev = typename Types::int_ev;
@@ -1154,7 +1158,7 @@ TEMPLATE_TEST_CASE("random_access CPO target_id(g, uv)", "[dynamic_graph][cpo][t
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO target(g, uv)", "[dynamic_graph][cpo][target]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_void = typename Types::void_type;
     using Graph_int_ev = typename Types::int_ev;
@@ -1390,7 +1394,7 @@ TEMPLATE_TEST_CASE("random_access CPO target(g, uv)", "[dynamic_graph][cpo][targ
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO find_vertex_edge(g, uid, vid)", "[dynamic_graph][cpo][find_vertex_edge]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_void = typename Types::void_type;
     using Graph_int_ev = typename Types::int_ev;
@@ -1600,7 +1604,7 @@ TEMPLATE_TEST_CASE("random_access CPO find_vertex_edge(g, uid, vid)", "[dynamic_
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO find_vertex_edge(g, u, v)", "[dynamic_graph][cpo][find_vertex_edge]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_void = typename Types::void_type;
     using Graph_int_ev = typename Types::int_ev;
@@ -1803,7 +1807,7 @@ TEMPLATE_TEST_CASE("random_access CPO find_vertex_edge(g, u, v)", "[dynamic_grap
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO contains_edge(g, uid, vid)", "[dynamic_graph][cpo][contains_edge]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_void = typename Types::void_type;
     using Graph_int_ev = typename Types::int_ev;
@@ -2017,7 +2021,7 @@ TEMPLATE_TEST_CASE("random_access CPO contains_edge(g, uid, vid)", "[dynamic_gra
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO contains_edge(g, u, v)", "[dynamic_graph][cpo][contains_edge]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_void = typename Types::void_type;
     using Graph_int_ev = typename Types::int_ev;
@@ -2130,7 +2134,7 @@ TEMPLATE_TEST_CASE("random_access CPO contains_edge(g, u, v)", "[dynamic_graph][
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO vertex_value(g, u)", "[dynamic_graph][cpo][vertex_value]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_int_vv = typename Types::int_vv;
     using Graph_string = typename Types::string_type;
@@ -2244,7 +2248,7 @@ TEMPLATE_TEST_CASE("random_access CPO vertex_value(g, u)", "[dynamic_graph][cpo]
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO edge_value(g, uv)", "[dynamic_graph][cpo][edge_value]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_int_ev = typename Types::int_ev;
     using Graph_all_int = typename Types::all_int;
@@ -2398,7 +2402,7 @@ TEMPLATE_TEST_CASE("random_access CPO edge_value(g, uv)", "[dynamic_graph][cpo][
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO graph_value(g)", "[dynamic_graph][cpo][graph_value]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_all_int = typename Types::all_int;
     using Graph_string = typename Types::string_type;
@@ -2485,7 +2489,7 @@ TEMPLATE_TEST_CASE("random_access CPO graph_value(g)", "[dynamic_graph][cpo][gra
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO partition_id(g, u)", "[dynamic_graph][cpo][partition_id]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_void = typename Types::void_type;
     using Graph_int_ev = typename Types::int_ev;
@@ -2538,7 +2542,7 @@ TEMPLATE_TEST_CASE("random_access CPO partition_id(g, u)", "[dynamic_graph][cpo]
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO num_partitions(g)", "[dynamic_graph][cpo][num_partitions]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_void = typename Types::void_type;
     using Graph_int_ev = typename Types::int_ev;
@@ -2595,7 +2599,7 @@ TEMPLATE_TEST_CASE("random_access CPO num_partitions(g)", "[dynamic_graph][cpo][
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO vertices(g, pid)", "[dynamic_graph][cpo][vertices][partition]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_void = typename Types::void_type;
     using Graph_int_ev = typename Types::int_ev;
@@ -2654,7 +2658,7 @@ TEMPLATE_TEST_CASE("random_access CPO vertices(g, pid)", "[dynamic_graph][cpo][v
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO num_vertices(g, pid)", "[dynamic_graph][cpo][num_vertices][partition]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_void = typename Types::void_type;
     using Graph_int_ev = typename Types::int_ev;
@@ -2712,7 +2716,7 @@ TEMPLATE_TEST_CASE("random_access CPO num_vertices(g, pid)", "[dynamic_graph][cp
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO source_id(g, uv)", "[dynamic_graph][cpo][source_id]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_sourced_void = typename Types::sourced_void;
     using Graph_sourced_int = typename Types::sourced_int;
@@ -2877,7 +2881,7 @@ TEMPLATE_TEST_CASE("random_access CPO source_id(g, uv)", "[dynamic_graph][cpo][s
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO source(g, uv)", "[dynamic_graph][cpo][source]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_sourced_void = typename Types::sourced_void;
     using Graph_sourced_int = typename Types::sourced_int;
@@ -3089,7 +3093,7 @@ TEMPLATE_TEST_CASE("random_access CPO source(g, uv)", "[dynamic_graph][cpo][sour
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO integration", "[dynamic_graph][cpo][integration]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_void = typename Types::void_type;
 
@@ -3152,7 +3156,7 @@ TEMPLATE_TEST_CASE("random_access CPO integration", "[dynamic_graph][cpo][integr
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO integration: values", "[dynamic_graph][cpo][integration]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_all_int = typename Types::all_int;
 
@@ -3201,7 +3205,7 @@ TEMPLATE_TEST_CASE("random_access CPO integration: values", "[dynamic_graph][cpo
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("random_access CPO integration: modify vertex and edge values", "[dynamic_graph][cpo][integration]",
-                   vov_tag, vod_tag, dov_tag, dod_tag) {
+                   vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
     using Types = graph_test_types<TestType>;
     using Graph_all_int = typename Types::all_int;
 

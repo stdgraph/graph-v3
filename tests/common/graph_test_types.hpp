@@ -3,11 +3,11 @@
  * @brief Template infrastructure for consolidated CPO testing across container types
  * 
  * This header provides a tag-based type generation system that allows Catch2's
- * TEMPLATE_TEST_CASE to test multiple container types (vov, vod, dov, dod) with
+ * TEMPLATE_TEST_CASE to test multiple container types (vov, vod, dov, dod, vol, dol) with
  * multiple value configurations (void, int, string, sourced) in a single test file.
  * 
  * Usage:
- *   TEMPLATE_TEST_CASE("test name", "[tags]", vov_tag, vod_tag, dov_tag, dod_tag) {
+ *   TEMPLATE_TEST_CASE("test name", "[tags]", vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
  *       using Types = graph_test_types<TestType>;
  *       using Graph_void = typename Types::void_type;
  *       using Graph_int_ev = typename Types::int_ev;
@@ -28,6 +28,8 @@
 #include <graph/container/traits/vod_graph_traits.hpp>
 #include <graph/container/traits/dov_graph_traits.hpp>
 #include <graph/container/traits/dod_graph_traits.hpp>
+#include <graph/container/traits/vol_graph_traits.hpp>
+#include <graph/container/traits/dol_graph_traits.hpp>
 #include <string>
 
 namespace graph::test {
@@ -74,6 +76,26 @@ struct dod_tag {
     
     template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
     using traits = graph::container::dod_graph_traits<EV, VV, GV, VId, Sourced>;
+};
+
+/**
+ * @brief Tag for vector<vertex> + list<edge> container type
+ */
+struct vol_tag {
+    static constexpr const char* name = "vol";
+    
+    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+    using traits = graph::container::vol_graph_traits<EV, VV, GV, VId, Sourced>;
+};
+
+/**
+ * @brief Tag for deque<vertex> + list<edge> container type
+ */
+struct dol_tag {
+    static constexpr const char* name = "dol";
+    
+    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+    using traits = graph::container::dol_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 // =============================================================================

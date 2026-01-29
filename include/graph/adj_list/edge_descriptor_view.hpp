@@ -87,7 +87,13 @@ public:
      * @param source Source vertex descriptor for all edges in this view
      */
     constexpr edge_descriptor_view(edge_storage_type begin_val, edge_storage_type end_val, vertex_desc source) noexcept
-        : begin_(begin_val), end_(end_val), source_(source) {}
+        : begin_(begin_val), end_(end_val), source_(source) {
+        if constexpr (std::random_access_iterator<EdgeIter>) {
+            size_ = end_val - begin_val;
+        } else {
+            size_ = static_cast<std::size_t>(std::distance(begin_val, end_val));
+        }
+    }
     
     /**
      * @brief Construct view from non-const edge container and source vertex (per-vertex adjacency)
@@ -104,9 +110,11 @@ public:
         if constexpr (std::random_access_iterator<EdgeIter>) {
             begin_ = 0;
             end_ = static_cast<edge_storage_type>(container.size());
+            size_ = container.size();
         } else {
             begin_ = container.begin();
             end_ = container.end();
+            size_ = static_cast<std::size_t>(std::distance(begin_, end_));
         }
     }
     
@@ -128,9 +136,11 @@ public:
         if constexpr (std::random_access_iterator<EdgeIter>) {
             begin_ = 0;
             end_ = static_cast<edge_storage_type>(container.size());
+            size_ = container.size();
         } else {
             begin_ = container.begin();
             end_ = container.end();
+            size_ = static_cast<std::size_t>(std::distance(begin_, end_));
         }
     }
     
@@ -150,11 +160,9 @@ public:
         return end();
     }
     
-    // Size if available (for random access)
-    [[nodiscard]] constexpr auto size() const noexcept
-        requires std::random_access_iterator<EdgeIter>
-    {
-        return end_ - begin_;
+    // Size - O(1) for all iterator types (cached during construction)
+    [[nodiscard]] constexpr std::size_t size() const noexcept {
+        return size_;
     }
     
     // Get the source vertex for this view
@@ -166,6 +174,7 @@ private:
     edge_storage_type begin_{};
     edge_storage_type end_{};
     vertex_desc source_{};
+    std::size_t size_{0};
 };
 
 // Deduction guides for per-vertex adjacency
