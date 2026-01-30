@@ -53,9 +53,8 @@ add_executable(graph3_container_tests
     dynamic_graph/test_dynamic_graph_cpo_map_vertices.cpp
     dynamic_graph/test_dynamic_graph_cpo_unordered_map_vertices.cpp
     
-    # dynamic_graph - CPO tests (edge_multiset containers)
-    dynamic_graph/test_dynamic_graph_cpo_voem.cpp
-    dynamic_graph/test_dynamic_graph_cpo_moem.cpp
+    # dynamic_graph - CPO tests (edge map containers - voem, moem)
+    dynamic_graph/test_dynamic_graph_cpo_edge_map.cpp
     
     # undirected_adjacency_list
     undirected_adjacency_list/test_undirected_adjacency_list.cpp

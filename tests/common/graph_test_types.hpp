@@ -49,9 +49,11 @@
 #include <graph/container/traits/uov_graph_traits.hpp>
 #include <graph/container/traits/uod_graph_traits.hpp>
 #include <graph/container/traits/uofl_graph_traits.hpp>
+// Edge multiset containers (sorted edges with duplicates allowed)
+#include <graph/container/traits/voem_graph_traits.hpp>
+#include <graph/container/traits/moem_graph_traits.hpp>
 #include <string>
-
-namespace graph::test {
+ namespace graph::test {
 
 // =============================================================================
 // Tag types for each random-access container type
@@ -59,8 +61,7 @@ namespace graph::test {
 
 /**
  * @brief Tag for vector<vertex> + vector<edge> container type
- */
-struct vov_tag {
+ */ struct vov_tag {
     static constexpr const char* name = "vov";
     
     template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
@@ -104,7 +105,7 @@ struct vol_tag {
     static constexpr const char* name = "vol";
     
     template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::vol_graph_traits<EV, VV, GV, VId, Sourced>;
+    using traits = graph::container::vol_graph_traits<EV, VV, GV, VId, Sourced>; 
 };
 
 /**
@@ -336,6 +337,33 @@ struct uofl_tag {
     
     template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
     using traits = graph::container::uofl_graph_traits<EV, VV, GV, VId, Sourced>;
+};
+
+// =============================================================================
+// Tag types for edge multiset containers (sorted edges with duplicates)
+// Allows multiple edges between same vertex pair (parallel edges)
+// =============================================================================
+
+/**
+ * @brief Tag for vector<vertex> + map<edge> container type
+ * @note Edges are sorted by target_id (map key), deduplicated (only one edge per target)
+ */
+struct voem_tag {
+    static constexpr const char* name = "voem";
+    
+    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+    using traits = graph::container::voem_graph_traits<EV, VV, GV, VId, Sourced>;
+};
+
+/**
+ * @brief Tag for map<vertex> + map<edge> container type
+ * @note Vertices are sparse, edges are sorted by target_id (map key), deduplicated
+ */
+struct moem_tag {
+    static constexpr const char* name = "moem";
+    
+    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+    using traits = graph::container::moem_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 // =============================================================================
