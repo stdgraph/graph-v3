@@ -13,9 +13,9 @@
 #include "graph/detail/graph_using.hpp"
 #include "graph/graph_info.hpp"
 #include "graph/graph.hpp"
-#include "graph/descriptor_traits.hpp"
-#include "graph/vertex_descriptor_view.hpp"
-#include "graph/edge_descriptor_view.hpp"
+#include "graph/adj_list/descriptor_traits.hpp"
+#include "graph/adj_list/vertex_descriptor_view.hpp"
+#include "graph/adj_list/edge_descriptor_view.hpp"
 
 // NOTES
 //  have public load_edges(...), load_vertices(...), and load()

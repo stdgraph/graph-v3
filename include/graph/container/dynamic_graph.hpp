@@ -7,7 +7,7 @@
 #include <stdexcept>
 #include <cassert>
 #include "graph/graph.hpp"
-#include "graph/vertex_descriptor_view.hpp"
+#include "graph/adj_list/vertex_descriptor_view.hpp"
 #include "container_utility.hpp"
 
 // load_vertices(vrng, vvalue_fnc) -> [uid,vval]
