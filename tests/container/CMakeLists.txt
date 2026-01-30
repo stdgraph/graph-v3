@@ -53,19 +53,7 @@ add_executable(graph3_container_tests
     dynamic_graph/test_dynamic_graph_cpo_map_vertices.cpp
     dynamic_graph/test_dynamic_graph_cpo_unordered_map_vertices.cpp
     
-    # dynamic_graph - CPO tests (remaining individual files - map-based containers)
-    dynamic_graph/test_dynamic_graph_cpo_mofl.cpp
-    dynamic_graph/test_dynamic_graph_cpo_mol.cpp
-    dynamic_graph/test_dynamic_graph_cpo_mov.cpp
-    dynamic_graph/test_dynamic_graph_cpo_mod.cpp
-    dynamic_graph/test_dynamic_graph_cpo_mos.cpp
-    dynamic_graph/test_dynamic_graph_cpo_mous.cpp
-    dynamic_graph/test_dynamic_graph_cpo_uofl.cpp
-    dynamic_graph/test_dynamic_graph_cpo_uol.cpp
-    dynamic_graph/test_dynamic_graph_cpo_uov.cpp
-    dynamic_graph/test_dynamic_graph_cpo_uod.cpp
-    dynamic_graph/test_dynamic_graph_cpo_uos.cpp
-    dynamic_graph/test_dynamic_graph_cpo_uous.cpp
+    # dynamic_graph - CPO tests (edge_multiset containers)
     dynamic_graph/test_dynamic_graph_cpo_voem.cpp
     dynamic_graph/test_dynamic_graph_cpo_moem.cpp
     
