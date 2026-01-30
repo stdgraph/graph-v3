@@ -50,6 +50,8 @@ add_executable(graph3_container_tests
     dynamic_graph/test_dynamic_graph_cpo_forward_list.cpp
     dynamic_graph/test_dynamic_graph_cpo_sorted.cpp
     dynamic_graph/test_dynamic_graph_cpo_unordered.cpp
+    dynamic_graph/test_dynamic_graph_cpo_map_vertices.cpp
+    dynamic_graph/test_dynamic_graph_cpo_unordered_map_vertices.cpp
     
     # dynamic_graph - CPO tests (remaining individual files - map-based containers)
     dynamic_graph/test_dynamic_graph_cpo_mofl.cpp

@@ -41,6 +41,14 @@
 #include <graph/container/traits/dous_graph_traits.hpp>
 #include <graph/container/traits/mous_graph_traits.hpp>
 #include <graph/container/traits/uous_graph_traits.hpp>
+// Map-based vertex containers (mo* = map, uo* = unordered_map)
+#include <graph/container/traits/mol_graph_traits.hpp>
+#include <graph/container/traits/mov_graph_traits.hpp>
+#include <graph/container/traits/mod_graph_traits.hpp>
+#include <graph/container/traits/uol_graph_traits.hpp>
+#include <graph/container/traits/uov_graph_traits.hpp>
+#include <graph/container/traits/uod_graph_traits.hpp>
+#include <graph/container/traits/uofl_graph_traits.hpp>
 #include <string>
 
 namespace graph::test {
@@ -240,6 +248,94 @@ struct uous_tag {
     
     template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
     using traits = graph::container::uous_graph_traits<EV, VV, GV, VId, Sourced>;
+};
+
+// =============================================================================
+// Tag types for map-based vertex containers (sparse vertex IDs)
+// Vertices are created on-demand from edge endpoints, not via resize_vertices()
+// =============================================================================
+
+/**
+ * @brief Tag for map<vertex> + list<edge> container type
+ * @note Vertices are sparse (on-demand creation), iterated in sorted order
+ */
+struct mol_tag {
+    static constexpr const char* name = "mol";
+    
+    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+    using traits = graph::container::mol_graph_traits<EV, VV, GV, VId, Sourced>;
+};
+
+/**
+ * @brief Tag for map<vertex> + vector<edge> container type
+ * @note Vertices are sparse (on-demand creation), iterated in sorted order
+ */
+struct mov_tag {
+    static constexpr const char* name = "mov";
+    
+    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+    using traits = graph::container::mov_graph_traits<EV, VV, GV, VId, Sourced>;
+};
+
+/**
+ * @brief Tag for map<vertex> + deque<edge> container type
+ * @note Vertices are sparse (on-demand creation), iterated in sorted order
+ */
+struct mod_tag {
+    static constexpr const char* name = "mod";
+    
+    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+    using traits = graph::container::mod_graph_traits<EV, VV, GV, VId, Sourced>;
+};
+
+// =============================================================================
+// Tag types for unordered_map-based vertex containers (sparse vertex IDs)
+// Vertices are created on-demand from edge endpoints, not via resize_vertices()
+// =============================================================================
+
+/**
+ * @brief Tag for unordered_map<vertex> + list<edge> container type
+ * @note Vertices are sparse (on-demand creation), iteration order unspecified
+ */
+struct uol_tag {
+    static constexpr const char* name = "uol";
+    
+    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+    using traits = graph::container::uol_graph_traits<EV, VV, GV, VId, Sourced>;
+};
+
+/**
+ * @brief Tag for unordered_map<vertex> + vector<edge> container type
+ * @note Vertices are sparse (on-demand creation), iteration order unspecified
+ */
+struct uov_tag {
+    static constexpr const char* name = "uov";
+    
+    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+    using traits = graph::container::uov_graph_traits<EV, VV, GV, VId, Sourced>;
+};
+
+/**
+ * @brief Tag for unordered_map<vertex> + deque<edge> container type
+ * @note Vertices are sparse (on-demand creation), iteration order unspecified
+ */
+struct uod_tag {
+    static constexpr const char* name = "uod";
+    
+    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+    using traits = graph::container::uod_graph_traits<EV, VV, GV, VId, Sourced>;
+};
+
+/**
+ * @brief Tag for unordered_map<vertex> + forward_list<edge> container type
+ * @note Vertices are sparse (on-demand creation), iteration order unspecified
+ * @note Edges appear in reverse insertion order (push_front semantics)
+ */
+struct uofl_tag {
+    static constexpr const char* name = "uofl";
+    
+    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+    using traits = graph::container::uofl_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 // =============================================================================

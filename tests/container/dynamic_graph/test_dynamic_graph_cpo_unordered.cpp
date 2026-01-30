@@ -2298,8 +2298,8 @@ TEMPLATE_TEST_CASE("unordered CPO edge_value(g, uv)", "[dynamic_graph][cpo][edge
         REQUIRE(values[1] == 200);
     }
 
-    // NOTE: Set containers store edges in a const container, so edge_value
-    // cannot be modified. Modification tests are skipped for sorted containers.
+    // NOTE: Unordered_set containers store edges in a const container, so edge_value
+    // cannot be modified. Modification tests are skipped for unordered containers.
 
     SECTION("with string values") {
         Graph_string g;
