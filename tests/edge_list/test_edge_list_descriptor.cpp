@@ -81,6 +81,22 @@ TEST_CASE("edge_list::edge_descriptor move constructor", "[edge_list][descriptor
     REQUIRE(e2.value() == "moved");
 }
 
+TEST_CASE("edge_list::edge_descriptor perfect forwarding", "[edge_list][descriptor]") {
+    // Verify we can construct from rvalue strings (move semantics)
+    std::string src = "source_vertex";
+    std::string tgt = "target_vertex";
+    std::string val = "edge_data";
+    
+    edge_descriptor<std::string, std::string> e(std::move(src), std::move(tgt), std::move(val));
+    
+    REQUIRE(e.source_id() == "source_vertex");
+    REQUIRE(e.target_id() == "target_vertex");
+    REQUIRE(e.value() == "edge_data");
+    
+    // Original strings should be moved-from (empty or unspecified state)
+    // We don't test their state as it's implementation-defined, but construction should succeed
+}
+
 // =============================================================================
 // Trait Tests
 // =============================================================================

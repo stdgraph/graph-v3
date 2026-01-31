@@ -35,16 +35,24 @@ struct edge_descriptor {
     // Default constructor
     constexpr edge_descriptor() = default;
     
-    // Constructor without value (for void EV)
-    constexpr edge_descriptor(VId src, VId tgt) 
-        requires std::is_void_v<EV>
-        : source_id_(src), target_id_(tgt), value_() {}
+    // Constructor without value (for void EV) - use forwarding references to avoid copies
+    template<typename V1, typename V2>
+        requires std::is_void_v<EV> && 
+                 std::constructible_from<VId, V1> && 
+                 std::constructible_from<VId, V2>
+    constexpr edge_descriptor(V1&& src, V2&& tgt) 
+        : source_id_(std::forward<V1>(src)), target_id_(std::forward<V2>(tgt)), value_() {}
     
-    // Constructor with value (for non-void EV) - use template to avoid instantiation with void
-    template<typename E = EV>
-        requires (!std::is_void_v<E>)
-    constexpr edge_descriptor(VId src, VId tgt, E val) 
-        : source_id_(src), target_id_(tgt), value_(std::move(val)) {}
+    // Constructor with value (for non-void EV) - use forwarding references to avoid copies
+    template<typename V1, typename V2, typename E>
+        requires (!std::is_void_v<EV>) && 
+                 std::constructible_from<VId, V1> && 
+                 std::constructible_from<VId, V2> &&
+                 std::constructible_from<EV, E>
+    constexpr edge_descriptor(V1&& src, V2&& tgt, E&& val) 
+        : source_id_(std::forward<V1>(src)), 
+          target_id_(std::forward<V2>(tgt)), 
+          value_(std::forward<E>(val)) {}
     
     // Copy constructor
     constexpr edge_descriptor(const edge_descriptor&) = default;
