@@ -17,10 +17,12 @@ executed by an agent and includes specific tasks, files to modify, and tests to 
 | Step | Description | Status | Commit |
 |------|-------------|--------|--------|
 | 1.1 | Add `is_edge_list_descriptor_v` trait | ✅ Complete | 4997cb3 |
-| 1.2 | Add `_has_edge_info_member` concept to `source_id` CPO | ⬜ Not Started | |
-| 1.3 | Add `_is_tuple_like_edge` concept to `source_id` CPO | ⬜ Not Started | |
-| 1.4 | Extend `source_id` CPO with tiers 5-7 | ⬜ Not Started | |
-| 1.5 | Create tests for `source_id` CPO extensions | ⬜ Not Started | |
+| 1.2 | Add `_has_edge_info_member` concept to `source_id` CPO | ✅ Complete | |
+| 1.3 | Add `_is_tuple_like_edge` concept to `source_id` CPO | ✅ Complete | |
+| 1.3a | Add `_has_edge_info_member` and `_is_tuple_like_edge` to `target_id` CPO | ✅ Complete | |
+| 1.3b | Add `_has_edge_info_member` and `_is_tuple_like_edge` to `edge_value` CPO | ✅ Complete | |
+| 1.4 | Extend `source_id` CPO with tiers 5-7 | ✅ Complete | |
+| 1.5 | Create tests for `source_id` CPO extensions | ✅ Complete (partial - source_id only) | |
 | 2.1 | Extend `target_id` CPO with tiers 5-7 | ⬜ Not Started | |
 | 2.2 | Create tests for `target_id` CPO extensions | ⬜ Not Started | |
 | 3.1 | Extend `edge_value` CPO with tiers 5-7 | ⬜ Not Started | |
@@ -150,6 +152,40 @@ concept _is_tuple_like_edge =
 **Tests**: Created in Step 1.5
 
 **Commit message**: `Add _is_tuple_like_edge concept to source_id CPO`
+
+---
+
+### Step 1.3a: Add Concepts to `target_id` CPO
+
+**Goal**: Add the same concepts to `target_id` for consistency.
+
+**Files to modify**:
+- `include/graph/adj_list/detail/graph_cpo.hpp`
+
+**Tasks**:
+1. Locate `namespace _target_id` in `graph_cpo.hpp`
+2. Add `_has_edge_info_member` concept (checks `uv.target_id` data member)
+3. Add `_is_tuple_like_edge` concept (same as source_id)
+
+**Status**: ✅ Complete (implemented alongside source_id concepts)
+
+---
+
+### Step 1.3b: Add Concepts to `edge_value` CPO
+
+**Goal**: Add the same concepts to `edge_value` for consistency.
+
+**Files to modify**:
+- `include/graph/adj_list/detail/graph_cpo.hpp`
+
+**Tasks**:
+1. Locate `namespace _edge_value` in `graph_cpo.hpp`
+2. Add `_has_edge_info_member` concept (checks `uv.value` data member)
+3. Add `_is_tuple_like_edge` concept (checks for `std::get<2>` since edge value is third element)
+
+**Status**: ✅ Complete (implemented alongside source_id concepts)
+
+**Commit message** (for 1.2, 1.3, 1.3a, 1.3b combined): `Add edge_info and tuple-like concepts to all three CPOs`
 
 ---
 

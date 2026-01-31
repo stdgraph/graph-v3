@@ -20,6 +20,7 @@
 #include "graph/adj_list/edge_descriptor_view.hpp"
 #include "graph/adj_list/descriptor.hpp"
 #include "graph/adj_list/descriptor_traits.hpp"
+#include "graph/edge_list/edge_list_traits.hpp"
 
 namespace graph::adj_list {
 
@@ -909,6 +910,34 @@ namespace _cpo_impls {
             requires(G& g, const E& uv) {
                 { uv.source().underlying_value(g) };
                 { uv.target_id(uv.source().underlying_value(g)) };
+            };
+        
+        // Tier 6: Check for edge_info-style direct data member access
+        // Must NOT be a descriptor type (to avoid ambiguity with method calls)
+        template<typename UV>
+        concept _has_edge_info_member = 
+            !is_edge_descriptor_v<std::remove_cvref_t<UV>> &&
+            !edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> &&
+            requires(const UV& uv) {
+                uv.target_id;  // data member, not method
+            } &&
+            !requires(const UV& uv) {
+                uv.target_id();  // exclude if it's callable (i.e., a method)
+            };
+        
+        // Tier 7: Check for tuple-like edge (pair, tuple)
+        // Must NOT be any descriptor type or have edge_info members
+        template<typename UV>
+        concept _is_tuple_like_edge = 
+            !is_edge_descriptor_v<std::remove_cvref_t<UV>> &&
+            !edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> &&
+            !_has_edge_info_member<UV> &&
+            requires {
+                std::tuple_size<std::remove_cvref_t<UV>>::value;
+            } &&
+            requires(const UV& uv) {
+                { std::get<0>(uv) };
+                { std::get<1>(uv) };
             };
         
         template<typename G, typename E>
@@ -2464,6 +2493,36 @@ namespace _cpo_impls {
                 { uv.inner_value(uv.source().underlying_value(g)) };
             };
         
+        // Tier 6: Check for edge_info-style direct data member access
+        // Must NOT be a descriptor type (to avoid ambiguity with method calls)
+        template<typename UV>
+        concept _has_edge_info_member = 
+            !is_edge_descriptor_v<std::remove_cvref_t<UV>> &&
+            !edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> &&
+            requires(const UV& uv) {
+                uv.value;  // data member, not method
+            } &&
+            !requires(const UV& uv) {
+                uv.value();  // exclude if it's callable (i.e., a method)
+            };
+        
+        // Tier 7: Check for tuple-like edge (pair, tuple)
+        // Must NOT be any descriptor type or have edge_info members
+        // Note: For edge values, this would be std::get<2> (third element)
+        template<typename UV>
+        concept _is_tuple_like_edge = 
+            !is_edge_descriptor_v<std::remove_cvref_t<UV>> &&
+            !edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> &&
+            !_has_edge_info_member<UV> &&
+            requires {
+                std::tuple_size<std::remove_cvref_t<UV>>::value;
+            } &&
+            requires(const UV& uv) {
+                { std::get<0>(uv) };
+                { std::get<1>(uv) };
+                { std::get<2>(uv) };  // edge value is third element
+            };
+        
         template<typename G, typename E>
         [[nodiscard]] consteval _Choice_t<_St> _Choose() noexcept {
             if constexpr (_has_member<G, E>) {
@@ -2657,7 +2716,16 @@ namespace _cpo_impls {
     // =========================================================================
     
     namespace _source_id {
-        enum class _St { _none, _native_edge_member, _member, _adl, _descriptor };
+        enum class _St { 
+            _none, 
+            _native_edge_member, 
+            _member, 
+            _adl, 
+            _adj_list_descriptor,   // Tier 4: adj_list::edge_descriptor (renamed from _descriptor)
+            _edge_list_descriptor,  // Tier 5: edge_list::edge_descriptor
+            _edge_info_member,      // Tier 6: edge_info data member
+            _tuple_like             // Tier 7: tuple/pair
+        };
         
         // Check if the underlying native edge type has source_id() member - highest priority
         // This checks uv.value()->source_id() where value() returns iterator to native edge
@@ -2681,11 +2749,46 @@ namespace _cpo_impls {
             { source_id(g, uv) };
         };
         
-        // Check if edge descriptor has source_id() member (default)
+        // Check if adj_list edge descriptor has source_id() member (Tier 4)
         template<typename E>
-        concept _has_descriptor = is_edge_descriptor_v<std::remove_cvref_t<E>> &&
+        concept _has_adj_list_descriptor = is_edge_descriptor_v<std::remove_cvref_t<E>> &&
             requires(const E& uv) {
                 { uv.source_id() };
+            };
+        
+        // Tier 5: Check if edge_list descriptor has source_id() member
+        template<typename UV>
+        concept _has_edge_list_descriptor = edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> &&
+            requires(const UV& uv) {
+                { uv.source_id() };
+            };
+        
+        // Tier 6: Check for edge_info-style direct data member access
+        // Must NOT be a descriptor type (to avoid ambiguity with method calls)
+        template<typename UV>
+        concept _has_edge_info_member = 
+            !is_edge_descriptor_v<std::remove_cvref_t<UV>> &&
+            !edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> &&
+            requires(const UV& uv) {
+                uv.source_id;  // data member, not method
+            } &&
+            !requires(const UV& uv) {
+                uv.source_id();  // exclude if it's callable (i.e., a method)
+            };
+        
+        // Tier 7: Check for tuple-like edge (pair, tuple)
+        // Must NOT be any descriptor type or have edge_info members
+        template<typename UV>
+        concept _is_tuple_like_edge = 
+            !is_edge_descriptor_v<std::remove_cvref_t<UV>> &&
+            !edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> &&
+            !_has_edge_info_member<UV> &&
+            requires {
+                std::tuple_size<std::remove_cvref_t<UV>>::value;
+            } &&
+            requires(const UV& uv) {
+                { std::get<0>(uv) };
+                { std::get<1>(uv) };
             };
         
         template<typename G, typename E>
@@ -2699,9 +2802,18 @@ namespace _cpo_impls {
             } else if constexpr (_has_adl<G, E>) {
                 return {_St::_adl, 
                         noexcept(source_id(std::declval<G>(), std::declval<const E&>()))};
-            } else if constexpr (_has_descriptor<E>) {
-                return {_St::_descriptor,
+            } else if constexpr (_has_adj_list_descriptor<E>) {
+                return {_St::_adj_list_descriptor,
                         noexcept(std::declval<const E&>().source_id())};
+            } else if constexpr (_has_edge_list_descriptor<E>) {
+                return {_St::_edge_list_descriptor,
+                        noexcept(std::declval<const E&>().source_id())};
+            } else if constexpr (_has_edge_info_member<E>) {
+                return {_St::_edge_info_member,
+                        noexcept(std::declval<const E&>().source_id)};
+            } else if constexpr (_is_tuple_like_edge<E>) {
+                return {_St::_tuple_like,
+                        noexcept(std::get<0>(std::declval<const E&>()))};
             } else {
                 return {_St::_none, false};
             }
@@ -2716,23 +2828,26 @@ namespace _cpo_impls {
             /**
              * @brief Get the source vertex ID for an edge
              * 
-             * Resolution order (four-tier approach):
+             * Resolution order (seven-tier approach):
              * 1. (*uv.value()).source_id() - Native edge member function (highest priority)
-             * 2. g.source_id(uv) - Graph member function (high priority)
-             * 3. source_id(g, uv) - ADL (medium priority)
-             * 4. uv.source_id() - Edge descriptor's source_id() member (lowest priority)
+             * 2. g.source_id(uv) - Graph member function
+             * 3. source_id(g, uv) - ADL
+             * 4. uv.source_id() - adj_list::edge_descriptor member (Tier 4)
+             * 5. uv.source_id() - edge_list::edge_descriptor member (Tier 5)
+             * 6. uv.source_id - edge_info data member (Tier 6)
+             * 7. std::get<0>(uv) - tuple-like edge (Tier 7, lowest priority)
              * 
              * Where:
              * - uv must be edge_t<G> (the edge descriptor type for graph G)
              * - The native edge member function is called if the underlying edge type has source_id()
              * - ADL allows customization by providing a free function that takes the descriptor
+             * - Tier 4-7 provide fallback implementations for various edge representations
              * 
-             * The default implementation (tier 4) works for any edge_descriptor that
-             * stores its source vertex. This is available for standard adjacency list
-             * graphs where edge descriptors maintain their source vertex reference.
-             * 
-             * For specialized graph types (bidirectional graphs, edge lists), provide
-             * a custom member function or ADL override.
+             * Tiers 4-7 support:
+             * - adj_list edge descriptors (existing adjacency list edges)
+             * - edge_list descriptors (new edge list support)
+             * - edge_info structs with direct data members
+             * - tuple/pair representations (source, target, [value])
              * 
              * @tparam G Graph type
              * @tparam E Edge descriptor or edge type
@@ -2754,8 +2869,14 @@ namespace _cpo_impls {
                     return g.source_id(uv);
                 } else if constexpr (_Choice<_G, _E>._Strategy == _St::_adl) {
                     return source_id(g, uv);
-                } else if constexpr (_Choice<_G, _E>._Strategy == _St::_descriptor) {
+                } else if constexpr (_Choice<_G, _E>._Strategy == _St::_adj_list_descriptor) {
                     return uv.source_id();
+                } else if constexpr (_Choice<_G, _E>._Strategy == _St::_edge_list_descriptor) {
+                    return uv.source_id();
+                } else if constexpr (_Choice<_G, _E>._Strategy == _St::_edge_info_member) {
+                    return uv.source_id;
+                } else if constexpr (_Choice<_G, _E>._Strategy == _St::_tuple_like) {
+                    return std::get<0>(uv);
                 }
             }
         };

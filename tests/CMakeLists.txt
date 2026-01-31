@@ -17,6 +17,7 @@ include(Catch)
 # Add subdirectories with their own test executables
 add_subdirectory(adj_list)
 add_subdirectory(container)
+add_subdirectory(edge_list)
 
 # Keep test_main.cpp in root for now (can be moved to common/ later)
 # No main executable needed - each subdirectory creates its own
