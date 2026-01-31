@@ -5,7 +5,7 @@
 namespace graph::edge_list {
 
 // Forward declaration - actual type defined in edge_list_descriptor.hpp
-template<typename VId, typename EV = void>
+template<typename VId, typename EV>
 struct edge_descriptor;
 
 // Type trait to identify edge_list descriptors

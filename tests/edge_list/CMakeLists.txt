@@ -4,3 +4,8 @@ cmake_minimum_required(VERSION 3.20)
 add_executable(test_edge_list_cpo test_edge_list_cpo.cpp)
 target_link_libraries(test_edge_list_cpo PRIVATE graph3 Catch2::Catch2WithMain)
 add_test(NAME test_edge_list_cpo COMMAND test_edge_list_cpo)
+
+# Test for edge_list::edge_descriptor type
+add_executable(test_edge_list_descriptor test_edge_list_descriptor.cpp)
+target_link_libraries(test_edge_list_descriptor PRIVATE graph3 Catch2::Catch2WithMain)
+add_test(NAME test_edge_list_descriptor COMMAND test_edge_list_descriptor)
