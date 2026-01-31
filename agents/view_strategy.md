@@ -584,55 +584,63 @@ struct vertex_info {
 **Problem**: Separate `id` and `vertex` members are redundant with descriptors. A vertex 
 descriptor already contains the ID (accessible via `vertex_id()` or CPO `vertex_id(g, desc)`).
 
-**New Design** (descriptor-based):
+**New Design** (all members optional via void):
 ```cpp
-template <class V, class VV>
+template <class VId, class V, class VV>
 struct vertex_info {
-  using vertex_type = V;   // vertex_descriptor<...> - always required
-  using value_type  = VV;  // from vvf - optional (void to omit)
+  using id_type     = VId;  // vertex_id_t<G> - optional (void to omit)
+  using vertex_type = V;    // vertex_t<G> or vertex_descriptor<...> - optional (void to omit)
+  using value_type  = VV;   // from vvf - optional (void to omit)
 
-  vertex_type vertex;  // The vertex descriptor (contains ID)
-  value_type  value;   // User-extracted value
+  id_type     id;      // Conditionally present when VId != void
+  vertex_type vertex;  // Conditionally present when V != void
+  value_type  value;   // Conditionally present when VV != void
 };
-
-template <class V>
-struct vertex_info<V, void> {
-  using vertex_type = V;
-  using value_type  = void;
-
-  vertex_type vertex;
-};
+// Specializations for void combinations follow...
 ```
 
 **Key Changes**:
-1. Remove `VId` template parameter - ID type is derived from `V::storage_type`
-2. Remove `id` member - access via `vertex.vertex_id()` or CPO
-3. `vertex` member is always present and always a descriptor
-4. Only `VV` (value) remains optional with void specialization
+1. **All three template parameters can now be void** (previously only V and VV could be void)
+2. **VId = void** suppresses the `id` member (useful when V is a descriptor that contains ID)
+3. **V = void** suppresses the `vertex` member (useful for ID-only iteration)
+4. **VV = void** suppresses the `value` member (useful when no value function provided)
+5. This creates flexibility: with descriptors, `id` becomes redundant; without descriptors, `id` is essential
 
 **Usage Comparison**:
 ```cpp
-// Old (graph-v2 style):
+// Current design (all members present):
 for (auto&& [id, v, val] : vertexlist(g, vvf)) {
     // id is vertex_id_t<G>
     // v is vertex_t<G> (reference or descriptor)
 }
 
-// New (graph-v3 descriptor style):
+// With descriptor (VId=void, V=descriptor, VV present):
+vertex_info<void, vertex_descriptor<...>, int>  // only vertex and value members
 for (auto&& [v, val] : vertexlist(g, vvf)) {
-    auto id = v.vertex_id();  // or vertex_id(g, v)
-    // v is vertex_descriptor<...>
+    auto id = v.vertex_id();  // extract ID from descriptor
 }
 
-// Without value function:
+// ID-only (VId present, V=void, VV=void):
+vertex_info<size_t, void, void>  // only id member
+for (auto&& [id] : vertexlist(g)) {
+    // Just the ID, no vertex reference or value
+}
+
+// Descriptor-only (VId=void, V=descriptor, VV=void):
+vertex_info<void, vertex_descriptor<...>, void>  // only vertex member
 for (auto&& [v] : vertexlist(g)) {
     auto id = v.vertex_id();
 }
 ```
 
-**Structured Binding Impact**:
-- Old: `auto&& [id, vertex, value]` or `auto&& [id, vertex]` or `auto&& [id, value]` or `auto&& [id]`
-- New: `auto&& [vertex, value]` or `auto&& [vertex]`
+**Structured Binding Patterns**:
+- `vertex_info<VId, V, VV>`: `auto&& [id, vertex, value]`
+- `vertex_info<VId, V, void>`: `auto&& [id, vertex]`
+- `vertex_info<VId, void, VV>`: `auto&& [id, value]`
+- `vertex_info<VId, void, void>`: `auto&& [id]`
+- `vertex_info<void, V, VV>`: `auto&& [vertex, value]`
+- `vertex_info<void, V, void>`: `auto&& [vertex]`
+- `vertex_info<void, void, VV>`: `auto&& [value]` (unlikely use case)
 
 **Migration Helpers** (optional):
 ```cpp
@@ -663,41 +671,50 @@ edge descriptors. An edge descriptor already provides:
 - `target_id(container)` - the target vertex ID  
 - Access to the underlying edge data
 
-**New Design** (descriptor-based):
+**New Design** (all members optional via void):
 ```cpp
-template <class E, class EV>
+template <class VId, bool Sourced, class E, class EV>
 struct edge_info {
-  using edge_type  = E;   // edge_descriptor<...> - always required
-  using value_type = EV;  // from evf - optional (void to omit)
+  using source_id_type = conditional_t<Sourced, VId, void>;  // optional based on Sourced
+  using target_id_type = VId;    // optional (void to omit)
+  using edge_type      = E;      // optional (void to omit)
+  using value_type     = EV;     // optional (void to omit)
 
-  edge_type  edge;   // The edge descriptor (contains source_id, target_id)
-  value_type value;  // User-extracted value
+  source_id_type source_id;  // Conditionally present when Sourced==true && VId != void
+  target_id_type target_id;  // Conditionally present when VId != void
+  edge_type      edge;       // Conditionally present when E != void
+  value_type     value;      // Conditionally present when EV != void
 };
-
-template <class E>
-struct edge_info<E, void> {
-  using edge_type  = E;
-  using value_type = void;
-
-  edge_type edge;
-};
+// Specializations for Sourced × void combinations follow...
 ```
 
 **Key Changes**:
-1. Remove `VId` template parameter - ID types derived from descriptor
-2. Remove `Sourced` bool parameter - descriptor always has source context
-3. Remove `source_id`, `target_id` members - access via `edge.source_id()`, `edge.target_id(g)`
-4. `edge` member is always present and always a descriptor
-5. Only `EV` (value) remains optional with void specialization
-6. Reduces from 8 specializations to 2
+1. **VId can now be void** to suppress both `source_id` and `target_id` members
+2. When VId=void and E=descriptor, IDs are accessible via `edge.source_id()` and `edge.target_id(g)`
+3. **Sourced bool** determines if source_id is present (when VId != void)
+4. **E = void** suppresses the `edge` member (for ID-only edge info)
+5. **EV = void** suppresses the `value` member
+6. Specialization count depends on combinations: Sourced × VId × E × EV
 
 **Usage Comparison**:
 ```cpp
-// Old (graph-v2 style):
+// Current design with IDs (sourced):
 for (auto&& [src, tgt, e, val] : sourced_edges(g, u, evf)) {
     // src is source vertex ID
     // tgt is target vertex ID
     // e is edge_t<G>
+}
+
+// With descriptor (VId=void, Sourced=true, E=descriptor, EV present):
+edge_info<void, true, edge_descriptor<...>, int>  // only edge and value members
+for (auto&& [e, val] : incidence(g, u, evf)) {
+    auto src = e.source_id();       // extract from descriptor
+    auto tgt = e.target_id(g);      // extract from descriptor
+}
+
+// IDs-only (VId present, Sourced=true, E=void, EV=void):
+edge_info<size_t, true, void, void>  // only source_id and target_id members
+for (auto&& [src, tgt] : incidence(g, u)) {
 }
 
 // New (graph-v3 descriptor style):
@@ -771,73 +788,79 @@ struct neighbor_info<E, void> {
 
 **Usage Comparison**:
 ```cpp
-// Old (graph-v2 style):
+// Current design with IDs (sourced):
 for (auto&& [src, tgt_id, tgt, val] : neighbors(g, u, vvf)) {
     // src is source vertex ID
     // tgt_id is target vertex ID
     // tgt is target vertex reference
 }
 
-// New (graph-v3 descriptor style):
-for (auto&& [e, val] : neighbors(g, u, vvf)) {
-    auto src = e.source_id();           // source vertex ID
-    auto tgt_id = e.target_id(g);       // target vertex ID
-    auto& tgt = target(g, e);           // target vertex (via CPO)
-    // val is vvf(target(g, e))
+// With edge descriptor for navigation (VId=void, Sourced=true, V=edge_descriptor, VV present):
+// Note: Using edge_descriptor in V position for navigation capability
+neighbor_info<void, true, edge_descriptor<...>, int>
+for (auto&& [edge_nav, val] : neighbors(g, u, vvf)) {
+    auto src = edge_nav.source_id();
+    auto tgt_id = edge_nav.target_id(g);
+    auto& tgt = target(g, edge_nav);
 }
 
-// Without value function:
-for (auto&& [e] : neighbors(g, u)) {
-    auto tgt_id = e.target_id(g);
-    auto& tgt = target(g, e);
+// IDs-only (VId present, Sourced=false, V=void, VV=void):
+neighbor_info<size_t, false, void, void>  // only target_id member
+for (auto&& [tgt_id] : neighbors(g, u)) {
+    // Just target ID, no source, no vertex reference
 }
 ```
 
-**Design Rationale**: Using edge descriptor (not vertex descriptor) for neighbor_info 
-because:
-1. We need source context for traversal algorithms
-2. Edge descriptor provides both source_id and target_id
-3. Target vertex is accessible via `target(g, edge)` CPO
+**Design Rationale**: 
+- When V is an edge descriptor (or similar navigation type), it can provide source, target IDs and vertex access
+- When V is void and VId is present, we get lightweight ID-only neighbor iteration
+- VId=void is useful when V provides all necessary navigation (e.g., edge descriptors)
 4. Consistent with edge_info design
 
 ### 8.4 Implementation Tasks
 
 **Phase 0.1: vertex_info Refactoring**
-1. Create new `vertex_info<V, VV>` template with void specialization
-2. Add `id()` convenience function
-3. Update `copyable_vertex_t` alias
-4. Update any existing code using old vertex_info
-5. Update tests
+1. Make VId template parameter optional (void to suppress id member)
+2. Ensure all three members (id, vertex, value) can be conditionally present
+3. Update specializations to handle all void combinations
+4. Keep `copyable_vertex_t<VId, VV>` = `vertex_info<VId, void, VV>` alias
+5. Update any existing code and tests
 
 **Phase 0.2: edge_info Refactoring**
-1. Create new `edge_info<E, EV>` template with void specialization
-2. Remove all 8 old specializations
-3. Update `copyable_edge_t` and `edgelist_edge` aliases
-4. Update `is_sourced_v` trait (may no longer be needed)
-5. Update any existing code using old edge_info
-6. Update tests
+1. Make VId template parameter optional (void to suppress source_id/target_id members)
+2. Ensure all four members (source_id, target_id, edge, value) can be conditionally present
+3. Update specializations to handle Sourced × void combinations
+4. Keep `copyable_edge_t<VId, EV>` = `edge_info<VId, true, void, EV>` alias
+5. Keep `is_sourced_v` trait (still useful)
+6. Update any existing code and tests
 
 **Phase 0.3: neighbor_info Refactoring**
-1. Create new `neighbor_info<E, VV>` template with void specialization
-2. Remove all 8 old specializations
-3. Update `copyable_neighbor_t` alias
-4. Update `is_sourced_v` trait for neighbor_info
-5. Update any existing code using old neighbor_info
-6. Update tests
+1. Make VId template parameter optional (void to suppress source_id/target_id members)
+2. Ensure all four members (source_id, target_id, target, value) can be conditionally present
+3. Update specializations to handle Sourced × void combinations
+4. Keep `copyable_neighbor_t` alias if it exists
+5. Keep `is_sourced_v` trait for neighbor_info
+6. Update any existing code and tests
 
 ### 8.5 Summary of Info Struct Changes
 
-| Struct | Old Template | New Template | Old Members | New Members |
-|--------|--------------|--------------|-------------|-------------|
-| `vertex_info` | `<VId, V, VV>` | `<V, VV>` | `id`, `vertex`, `value` | `vertex`, `value` |
-| `edge_info` | `<VId, Sourced, E, EV>` | `<E, EV>` | `source_id`, `target_id`, `edge`, `value` | `edge`, `value` |
-| `neighbor_info` | `<VId, Sourced, V, VV>` | `<E, VV>` | `source_id`, `target_id`, `target`, `value` | `edge`, `value` |
+**Key Insight**: All members of info structs are now **optional via void template parameters**.
+This provides maximum flexibility for different use cases:
+- **With descriptors**: VId can be void (descriptor contains ID)
+- **Without descriptors**: VId is required, V/E can be void for lightweight iteration
+- **Copyable types**: Use `copyable_vertex_t<VId, VV>` = `vertex_info<VId, void, VV>`
 
-**Specialization Count**:
-- `vertex_info`: 4 → 2
-- `edge_info`: 8 → 2
-- `neighbor_info`: 8 → 2
-- **Total**: 20 → 6
+| Struct | Template Parameters | Members (when not void) | Flexibility |
+|--------|---------------------|-------------------------|-------------|
+| `vertex_info` | `<VId, V, VV>` | `id`, `vertex`, `value` | All 3 can be void |
+| `edge_info` | `<VId, Sourced, E, EV>` | `source_id`, `target_id`, `edge`, `value` | VId, E, EV can be void |
+| `neighbor_info` | `<VId, Sourced, V, VV>` | `source_id`, `target_id`, `target`, `value` | VId, V, VV can be void |
+
+**Specialization Impact**:
+- `vertex_info`: 4 specializations (2³ - 4 = all-void cases handled separately)
+- `edge_info`: 16 specializations (2 Sourced × 2³ void combinations)
+- `neighbor_info`: 16 specializations (2 Sourced × 2³ void combinations)
+- **Total**: ~36 specializations (implementation can reduce with SFINAE or conditional members)
 
 ---
 
