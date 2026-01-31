@@ -262,7 +262,7 @@ auto vertices_dfs(G&& g, vertex_id_t<G> seed, VVF&& vvf = {}, Alloc alloc = {})
     -> /* dfs_view yielding vertex_info */
 ```
 
-**Yields**: `vertex_info<VId, V, VV>` in DFS order
+**Yields**: `vertex_info<void, V, VV>` in DFS order (VId=void; IDs accessible via descriptor)
 
 #### 4.2.2 edges_dfs
 
@@ -272,7 +272,7 @@ auto edges_dfs(G&& g, vertex_id_t<G> seed, EVF&& evf = {}, Alloc alloc = {})
     -> /* dfs_view yielding edge_info */
 ```
 
-**Yields**: `edge_info<VId, false, E, EV>` (non-sourced) in DFS order
+**Yields**: `edge_info<void, false, E, EV>` (non-sourced) in DFS order (VId=void; IDs accessible via descriptor)
 
 #### 4.2.3 sourced_edges_dfs
 
@@ -282,7 +282,7 @@ auto sourced_edges_dfs(G&& g, vertex_id_t<G> seed, EVF&& evf = {}, Alloc alloc =
     -> /* dfs_view yielding sourced edge_info */
 ```
 
-**Yields**: `edge_info<VId, true, E, EV>` (sourced) in DFS order
+**Yields**: `edge_info<void, true, E, EV>` (sourced) in DFS order (VId=void; IDs accessible via descriptor)
 
 **DFS Implementation Strategy**:
 ```cpp
@@ -323,6 +323,8 @@ auto vertices_bfs(G&& g, vertex_id_t<G> seed, VVF&& vvf = {}, Alloc alloc = {})
     -> /* bfs_view yielding vertex_info */
 ```
 
+**Yields**: `vertex_info<void, V, VV>` in BFS order (VId=void; IDs accessible via descriptor)
+
 #### 4.3.2 edges_bfs
 
 ```cpp
@@ -331,6 +333,8 @@ auto edges_bfs(G&& g, vertex_id_t<G> seed, EVF&& evf = {}, Alloc alloc = {})
     -> /* bfs_view yielding edge_info */
 ```
 
+**Yields**: `edge_info<void, false, E, EV>` (non-sourced) in BFS order (VId=void; IDs accessible via descriptor)
+
 #### 4.3.3 sourced_edges_bfs
 
 ```cpp
@@ -338,6 +342,8 @@ template<index_adjacency_list G, class EVF = void, class Alloc = std::allocator<
 auto sourced_edges_bfs(G&& g, vertex_id_t<G> seed, EVF&& evf = {}, Alloc alloc = {})
     -> /* bfs_view yielding sourced edge_info */
 ```
+
+**Yields**: `edge_info<void, true, E, EV>` (sourced) in BFS order (VId=void; IDs accessible via descriptor)
 
 **BFS Implementation**: Same as DFS but uses `std::queue` instead of `std::stack`.
 
@@ -357,6 +363,8 @@ auto vertices_topological_sort(G&& g, VVF&& vvf = {}, Alloc alloc = {})
     -> /* topological_view yielding vertex_info */
 ```
 
+**Yields**: `vertex_info<void, V, VV>` in topological order (VId=void; IDs accessible via descriptor)
+
 #### 4.4.2 edges_topological_sort
 
 ```cpp
@@ -365,6 +373,8 @@ auto edges_topological_sort(G&& g, EVF&& evf = {}, Alloc alloc = {})
     -> /* topological_view yielding edge_info */
 ```
 
+**Yields**: `edge_info<void, false, E, EV>` (non-sourced) in topological order (VId=void; IDs accessible via descriptor)
+
 #### 4.4.3 sourced_edges_topological_sort
 
 ```cpp
@@ -372,6 +382,8 @@ template<index_adjacency_list G, class EVF = void, class Alloc = std::allocator<
 auto sourced_edges_topological_sort(G&& g, EVF&& evf = {}, Alloc alloc = {})
     -> /* topological_view yielding sourced edge_info */
 ```
+
+**Yields**: `edge_info<void, true, E, EV>` (sourced) in topological order (VId=void; IDs accessible via descriptor)
 
 **Implementation**: Uses reverse DFS post-order (Kahn's algorithm alternative available).
 
