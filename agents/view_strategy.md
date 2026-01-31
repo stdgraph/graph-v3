@@ -596,6 +596,13 @@ struct vertex_info {
 **Problem**: Separate `id` and `vertex` members are redundant with descriptors. A vertex 
 descriptor already contains the ID (accessible via `vertex_id()` or CPO `vertex_id(g, desc)`).
 
+**However**: The `{id, value}` combination (`vertex_info<VId, void, VV>`) remains useful for 
+external data scenarios, such as:
+- Providing vertex data to graph constructors before the graph exists
+- Exporting vertex data from one graph for use in another
+- Serialization/deserialization where descriptors aren't available
+- External algorithms that operate on ID-value pairs without graph context
+
 **New Design** (all members optional via void):
 ```cpp
 template <class VId, class V, class VV>
@@ -682,6 +689,14 @@ edge descriptors. An edge descriptor already provides:
 - `source_id()` - the source vertex ID
 - `target_id(container)` - the target vertex ID  
 - Access to the underlying edge data
+
+**However**: The `{source_id, target_id, value}` combination (`edge_info<VId, true, void, EV>`) 
+remains useful for external data scenarios, such as:
+- Providing edge data to graph constructors before the graph exists
+- Exporting edge lists from one graph for use in another
+- Serialization/deserialization where descriptors aren't available
+- External algorithms that operate on edge triples (src, tgt, value) without graph context
+- CSV/JSON edge list import/export
 
 **New Design** (all members optional via void):
 ```cpp
