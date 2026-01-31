@@ -916,32 +916,36 @@ vertex_descriptor<Iter> desc(idx);  // Just stores the index
 auto& vertex_data = desc.underlying_value(container);  // Needs container to access data
 ```
 
-### 9.2 Edge Descriptor Source Dependency
+### 9.2 Edge Descriptor Source Context
 
-**Problem**: `edge_descriptor` requires a source vertex descriptor to be complete. This 
-creates challenges for:
+**Note**: `edge_descriptor` contains a source vertex descriptor as a member variable, 
+providing complete source vertex context. This design simplifies edge-yielding views:
 
-1. **edgelist view**: When flattening `for u: for e in edges(g,u)`, we must capture the 
-   source vertex at each outer iteration.
+1. **edgelist view**: When flattening `for u: for e in edges(g,u)`, the edge descriptor 
+   created from the edge iterator naturally captures the source vertex.
 
-2. **Search views returning edges**: DFS/BFS edge views must track the current source 
-   vertex as they traverse.
+2. **Search views returning edges**: DFS/BFS edge views create edge descriptors that 
+   inherently contain the source vertex context.
 
-**Solution**: Views that yield edges must maintain source vertex context:
+**Implementation**: Views that yield edges create descriptors with source context:
 
 ```cpp
 class edgelist_iterator {
     G* g_;
-    vertex_id_t<G> current_source_;  // Track source as we iterate
+    vertex_descriptor<...> current_source_;  // Current source vertex descriptor
     edge_iterator_t<G> current_edge_;
     edge_iterator_t<G> edge_end_;
     
     auto operator*() const {
-        // Construct edge descriptor with tracked source
-        return edge_info{edge_descriptor{current_edge_, current_source_}, ...};
+        // Construct edge descriptor with source vertex descriptor
+        auto edge_desc = edge_descriptor{current_edge_, current_source_};
+        return edge_info{edge_desc, ...};
     }
 };
 ```
+
+The source vertex descriptor member in `edge_descriptor` eliminates the need for separate 
+source ID tracking—it's built into the descriptor itself.
 
 ### 9.3 Value Function Design
 
