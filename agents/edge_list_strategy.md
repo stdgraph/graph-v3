@@ -332,7 +332,9 @@ clean separation while maintaining consistent API.
 
 | Type | Tier | `source_id(g,uv)` | `target_id(g,uv)` | `edge_value(g,uv)` |
 |------|------|-------------------|-------------------|--------------------|
-| `adj_list::edge_descriptor` | 4 | `uv.source_id()` | `uv.target_id()` | `uv.value()` |
+| `adj_list::edge_descriptor` (native edge has `source_id()`) | 1 | `(*uv.value()).source_id()` | `(*uv.value()).target_id()` | via native edge |
+| Custom types (graph member or ADL) | 2-3 | `g.source_id(uv)` or ADL | `g.target_id(uv)` or ADL | `g.edge_value(uv)` or ADL |
+| `adj_list::edge_descriptor` (default) | 4 | `uv.source_id()` | `uv.target_id()` | `uv.value()` |
 | `edge_list::edge_descriptor<VId,EV>` | 5 | `uv.source_id()` | `uv.target_id()` | `uv.value()` |
 | `edge_info<VId,true,void,void>` | 6 | `uv.source_id` | `uv.target_id` | N/A |
 | `edge_info<VId,true,void,EV>` | 6 | `uv.source_id` | `uv.target_id` | `uv.value` |
@@ -342,7 +344,11 @@ clean separation while maintaining consistent API.
 | `tuple<T,T>` | 7 | `get<0>(uv)` | `get<1>(uv)` | N/A |
 | `tuple<T,T,EV>` | 7 | `get<0>(uv)` | `get<1>(uv)` | `get<2>(uv)` |
 | `tuple<T,T,EV,...>` | 7 | `get<0>(uv)` | `get<1>(uv)` | `get<2>(uv)` |
-| Custom types | 2-3 | ADL or member | ADL or member | ADL or member |
+
+**Note**: Tier 1 applies when an `adj_list::edge_descriptor` wraps a native edge type that provides 
+its own `source_id()`/`target_id()` methods. The CPO dereferences the descriptor's iterator 
+(`*uv.value()`) to access the native edge's member. This is highest priority because it honors 
+the underlying data structure's semantics.
 
 #### 3.2 Implementation in CPO - Tier 6 and 7
 
@@ -467,10 +473,10 @@ include/graph/
 ## Implementation Order
 
 ### Milestone 1: CPO Unification (Critical Path)
-1. [ ] Extend `source_id` CPO in `graph_cpo.hpp` to support edge_info and tuple types
-2. [ ] Extend `target_id` CPO in `graph_cpo.hpp` to support edge_info and tuple types
-3. [ ] Extend `edge_value` CPO in `graph_cpo.hpp` to support edge_info and tuple types
-4. [ ] Add type traits for edge_list types in descriptor_traits.hpp or new file
+1. [ ] Add type traits for edge_list types in descriptor_traits.hpp or new file
+2. [ ] Extend `source_id` CPO in `graph_cpo.hpp` to support edge_info and tuple types
+3. [ ] Extend `target_id` CPO in `graph_cpo.hpp` to support edge_info and tuple types
+4. [ ] Extend `edge_value` CPO in `graph_cpo.hpp` to support edge_info and tuple types
 
 ### Milestone 2: Edge List Descriptor
 5. [ ] Create `include/graph/edge_list/edge_list_descriptor.hpp`
