@@ -2496,7 +2496,16 @@ namespace _cpo_impls {
     // =========================================================================
     
     namespace _edge_value {
-        enum class _St { _none, _member, _adl, _value_fn, _default };
+        enum class _St { 
+            _none, 
+            _member, 
+            _adl, 
+            _value_fn, 
+            _adj_list_descriptor,   // Tier 4: adj_list::edge_descriptor (renamed from _default)
+            _edge_list_descriptor,  // Tier 5: edge_list::edge_descriptor
+            _edge_info_member,      // Tier 6: edge_info data member
+            _tuple_like             // Tier 7: tuple (3+ elements)
+        };
         
         // Check for g.edge_value(uv) member function
         // Note: Uses G (not G&) to preserve const qualification
@@ -2521,16 +2530,23 @@ namespace _cpo_impls {
                 { uv.value() };
             };
         
-        // Check if we can use default: uv.inner_value(v) where v = uv.source().underlying_value(g)
+        // Check if we can use adj_list descriptor default: uv.inner_value(v) where v = uv.source().underlying_value(g)
         // Note: Uses G (not G&) to preserve const qualification
         // underlying_value() gives us the vertex for vov or the edge container for raw adjacency lists
         // The edge_descriptor.inner_value() handles extracting properties correctly in both cases
         template<typename G, typename E>
-        concept _has_default = 
+        concept _has_adj_list_descriptor = 
             is_edge_descriptor_v<std::remove_cvref_t<E>> &&
             requires(G g, const E& uv) {
                 { uv.source().underlying_value(g) };
                 { uv.inner_value(uv.source().underlying_value(g)) };
+            };
+        
+        // Tier 5: Check if edge_list descriptor has value() member
+        template<typename UV>
+        concept _has_edge_list_descriptor = edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> &&
+            requires(const UV& uv) {
+                { uv.value() };
             };
         
         // Tier 6: Check for edge_info-style direct data member access
@@ -2574,9 +2590,18 @@ namespace _cpo_impls {
             } else if constexpr (_has_value_fn<G, E>) {
                 return {_St::_value_fn, 
                         noexcept(std::declval<const E&>().value())};
-            } else if constexpr (_has_default<G, E>) {
+            } else if constexpr (_has_adj_list_descriptor<G, E>) {
                 // Default to false (safe) since we have conditional logic
-                return {_St::_default, false};
+                return {_St::_adj_list_descriptor, false};
+            } else if constexpr (_has_edge_list_descriptor<E>) {
+                return {_St::_edge_list_descriptor,
+                        noexcept(std::declval<const E&>().value())};
+            } else if constexpr (_has_edge_info_member<E>) {
+                return {_St::_edge_info_member,
+                        noexcept(std::declval<const E&>().value)};
+            } else if constexpr (_is_tuple_like_edge<E>) {
+                return {_St::_tuple_like,
+                        noexcept(std::get<2>(std::declval<const E&>()))};
             } else {
                 return {_St::_none, false};
             }
@@ -2591,13 +2616,26 @@ namespace _cpo_impls {
             /**
              * @brief Get the user-defined value associated with an edge
              * 
-             * Resolution order:
+             * Resolution order (seven-tier approach):
              * 1. g.edge_value(uv) - Member function (highest priority)
-             * 2. edge_value(g, uv) - ADL (high priority)
-             * 3. uv.value() - Member function on edge (medium priority)
-             * 4. uv.inner_value(edges) - Default using edge descriptor's inner_value (lowest priority)
+             * 2. edge_value(g, uv) - ADL
+             * 3. uv.value() - Member function on edge
+             * 4. uv.inner_value(edges) - adj_list::edge_descriptor (Tier 4)
+             * 5. uv.value() - edge_list::edge_descriptor member (Tier 5)
+             * 6. uv.value - edge_info data member (Tier 6)
+             * 7. std::get<2>(uv) - tuple-like edge (Tier 7, lowest priority)
              * 
-             * The default implementation:
+             * Where:
+             * - uv must be edge_t<G> (the edge descriptor type for graph G) for tiers 1-4
+             * - For tiers 5-7, uv can be edge_list descriptors, edge_info structs, or tuple-like types
+             * 
+             * Tiers 4-7 support:
+             * - adj_list edge descriptors (existing adjacency list edges)
+             * - edge_list descriptors (new edge list support)
+             * - edge_info structs with direct data members
+             * - tuple/triple representations (source, target, value)
+             * 
+             * The tier 4 default implementation:
              * - Uses uv.inner_value(edges) where edges = uv.source().inner_value(g)
              * - For simple edges (int): returns the value itself (the target ID)
              * - For pair edges (target, weight): returns .second (the weight/property)
@@ -2607,12 +2645,12 @@ namespace _cpo_impls {
              * This provides access to user-defined edge properties/weights stored in the graph.
              * 
              * @tparam G Graph type
-             * @tparam E Edge descriptor type (constrained to be an edge_descriptor_type)
+             * @tparam E Edge descriptor or edge type
              * @param g Graph container
-             * @param uv Edge descriptor
+             * @param uv Edge descriptor or edge
              * @return Reference to the edge value/properties (or by-value if custom implementation returns by-value)
              */
-            template<typename G, edge_descriptor_type E>
+            template<typename G, typename E>
             [[nodiscard]] constexpr decltype(auto) operator()(G&& g, E&& uv) const
                 noexcept(_Choice<std::remove_cvref_t<G>, std::remove_cvref_t<E>>._No_throw)
                 requires (_Choice<std::remove_cvref_t<G>, std::remove_cvref_t<E>>._Strategy != _St::_none)
@@ -2626,13 +2664,19 @@ namespace _cpo_impls {
                     return edge_value(g, std::forward<E>(uv));
                 } else if constexpr (_Choice<_G, _E>._Strategy == _St::_value_fn) {
                     return std::forward<E>(uv).value();
-                } else if constexpr (_Choice<_G, _E>._Strategy == _St::_default) {
+                } else if constexpr (_Choice<_G, _E>._Strategy == _St::_adj_list_descriptor) {
                     // Get vertex from underlying_value - works for both vov and raw adjacency lists
                     // For vov: gives vertex, edge_descriptor extracts properties from it
                     // For raw adjacency lists: gives edge container directly
                     return std::forward<E>(uv).inner_value(
                         std::forward<E>(uv).source().underlying_value(std::forward<G>(g))
                     );
+                } else if constexpr (_Choice<_G, _E>._Strategy == _St::_edge_list_descriptor) {
+                    return uv.value();
+                } else if constexpr (_Choice<_G, _E>._Strategy == _St::_edge_info_member) {
+                    return uv.value;
+                } else if constexpr (_Choice<_G, _E>._Strategy == _St::_tuple_like) {
+                    return std::get<2>(uv);
                 }
             }
         };

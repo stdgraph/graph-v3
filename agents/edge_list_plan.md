@@ -25,8 +25,8 @@ executed by an agent and includes specific tasks, files to modify, and tests to 
 | 1.5 | Create tests for `source_id` CPO extensions | ✅ Complete (partial - source_id only) | |
 | 2.1 | Extend `target_id` CPO with tiers 5-7 | ✅ Complete | |
 | 2.2 | Create tests for `target_id` CPO extensions | ✅ Complete | |
-| 3.1 | Extend `edge_value` CPO with tiers 5-7 | ⬜ Not Started | |
-| 3.2 | Create tests for `edge_value` CPO extensions | ⬜ Not Started | |
+| 3.1 | Extend `edge_value` CPO with tiers 5-7 | ✅ Complete | |
+| 3.2 | Create tests for `edge_value` CPO extensions | ✅ Complete | |
 | 4.1 | Create `edge_list::edge_descriptor` type | ⬜ Not Started | |
 | 4.2 | Add `is_edge_list_descriptor` specialization | ⬜ Not Started | |
 | 4.3 | Create tests for `edge_list::edge_descriptor` | ⬜ Not Started | |

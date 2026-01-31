@@ -53,10 +53,8 @@ TEST_CASE("edge_value with edge_info (with value)", "[cpo][edge_value][tier6]") 
     EI ei{9, 10, 3.5};
     std::vector<EI> el{ei};
     
-    // TODO: Implement after Step 3.1
-    // auto val = edge_value(el, ei);
-    // REQUIRE(val == 3.5);
-    SUCCEED("edge_value tier 6 not yet implemented - waiting for Step 3.1");
+    auto val = edge_value(el, ei);
+    REQUIRE(val == 3.5);
 }
 
 TEST_CASE("edge_value with edge_info (unidirectional, with value)", "[cpo][edge_value][tier6]") {
@@ -64,10 +62,8 @@ TEST_CASE("edge_value with edge_info (unidirectional, with value)", "[cpo][edge_
     EI ei{11, 4.5};
     std::vector<EI> el{ei};
     
-    // TODO: Implement after Step 3.1
-    // auto val = edge_value(el, ei);
-    // REQUIRE(val == 4.5);
-    SUCCEED("edge_value tier 6 not yet implemented - waiting for Step 3.1");
+    auto val = edge_value(el, ei);
+    REQUIRE(val == 4.5);
 }
 
 // =============================================================================
@@ -110,10 +106,8 @@ TEST_CASE("edge_value with tuple (3 elements)", "[cpo][edge_value][tier7]") {
     std::tuple<int, int, double> edge{20, 21, 7.5};
     std::vector<std::tuple<int, int, double>> el{edge};
     
-    // TODO: Implement after Step 3.1
-    // auto val = edge_value(el, edge);
-    // REQUIRE(val == 7.5);
-    SUCCEED("edge_value tier 7 not yet implemented - waiting for Step 3.1");
+    auto val = edge_value(el, edge);
+    REQUIRE(val == 7.5);
 }
 
 TEST_CASE("source_id with tuple (4 elements)", "[cpo][source_id][tier7]") {
@@ -136,10 +130,8 @@ TEST_CASE("edge_value with tuple (4 elements)", "[cpo][edge_value][tier7]") {
     std::tuple<int, int, double, std::string> edge{26, 27, 10.5, "test"};
     std::vector<std::tuple<int, int, double, std::string>> el{edge};
     
-    // TODO: Implement after Step 3.1
-    // auto val = edge_value(el, edge);
-    // REQUIRE(val == 10.5);
-    SUCCEED("edge_value tier 7 not yet implemented - waiting for Step 3.1");
+    auto val = edge_value(el, edge);
+    REQUIRE(val == 10.5);
 }
 
 // =============================================================================
@@ -216,10 +208,9 @@ TEST_CASE("edge_value prefers data member over tuple", "[cpo][edge_value][ambigu
     EdgeWithAllThree e{34, 35, 11.5};
     std::vector<EdgeWithAllThree> el{e};
     
-    // TODO: Implement after Step 3.1
-    // auto val = edge_value(el, e);
-    // REQUIRE(val == 11.5);
-    SUCCEED("edge_value ambiguity test not yet implemented - waiting for Step 3.1");
+    // Should use data member (11.5), not tuple get<2> (111.5)
+    auto val = edge_value(el, e);
+    REQUIRE(val == 11.5);
 }
 
 // =============================================================================
@@ -261,16 +252,12 @@ TEST_CASE("edge_value with edge_info is noexcept", "[cpo][edge_value][noexcept]"
     EI ei{48, 49, 13.5};
     std::vector<EI> el{ei};
     
-    // TODO: Implement after Step 3.1
-    // STATIC_REQUIRE(noexcept(edge_value(el, ei)));
-    SUCCEED("edge_value noexcept test not yet implemented - waiting for Step 3.1");
+    STATIC_REQUIRE(noexcept(edge_value(el, ei)));
 }
 
 TEST_CASE("edge_value with tuple is noexcept", "[cpo][edge_value][noexcept]") {
     std::tuple<int, int, double> edge{50, 51, 14.5};
     std::vector<std::tuple<int, int, double>> el{edge};
     
-    // TODO: Implement after Step 3.1
-    // STATIC_REQUIRE(noexcept(edge_value(el, edge)));
-    SUCCEED("edge_value noexcept test not yet implemented - waiting for Step 3.1");
+    STATIC_REQUIRE(noexcept(edge_value(el, edge)));
 }
