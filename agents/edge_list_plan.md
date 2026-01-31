@@ -399,16 +399,26 @@ add_test(NAME test_edge_list_cpo COMMAND test_edge_list_cpo)
 
 ### Step 4.1: Create `edge_list::edge_descriptor` Type
 
-**Goal**: Implement the lightweight edge descriptor for edge lists.
+**Goal**: Implement the lightweight reference-based edge descriptor for edge lists.
 
 **Files to create**:
 - `include/graph/edge_list/edge_list_descriptor.hpp` (NEW)
 
 **Tasks**:
-1. Create new file with proper includes
-2. Implement `edge_descriptor<VId, EV>` template
-3. Handle `EV = void` case with empty value optimization
-4. Implement `source_id()`, `target_id()`, and `value()` methods
+1. Create new file with proper includes (type_traits, concepts, functional, utility)
+2. Implement `edge_descriptor<VId, EV>` as a class with private members
+3. Use references for all data members to avoid copies
+4. Handle `EV = void` case with empty value optimization
+5. Use `std::reference_wrapper<const EV>` for non-void edge values
+6. Implement `source_id()`, `target_id()`, and `value()` accessor methods
+7. Implement custom comparison operators (compare values, not reference addresses)
+8. Delete assignment operators (reference semantics)
+
+**Key Design Requirements**:
+- **Zero-copy construction**: All members are references (`const VId&`, `std::reference_wrapper<const EV>`)
+- **Lightweight handle**: Descriptor size is ~3 pointers (24 bytes on 64-bit)
+- **Reference semantics**: Descriptor refers to data, does not own it
+- **Encapsulation**: Use class with private members
 
 **Code to implement**:
 ```cpp
@@ -416,46 +426,76 @@ add_test(NAME test_edge_list_cpo COMMAND test_edge_list_cpo)
 
 #include <type_traits>
 #include <concepts>
+#include <functional>
+#include <utility>
 
 namespace graph::edge_list {
 
 namespace detail {
-    struct empty_value {};
+    struct empty_value {
+        constexpr auto operator<=>(const empty_value&) const noexcept = default;
+    };
 }
 
 template<typename VId, typename EV = void>
-struct edge_descriptor {
-    VId source_id_;
-    VId target_id_;
-    [[no_unique_address]] std::conditional_t<std::is_void_v<EV>, 
-        detail::empty_value, EV> value_;
+class edge_descriptor {
+public:
+    using vertex_id_type = VId;
+    using edge_value_type = EV;
     
-    constexpr edge_descriptor() = default;
-    
-    constexpr edge_descriptor(VId src, VId tgt) 
+    // Constructor without value (for void EV)
+    constexpr edge_descriptor(const VId& src, const VId& tgt) 
         requires std::is_void_v<EV>
-        : source_id_(src), target_id_(tgt) {}
+        : source_id_(src), target_id_(tgt), value_() {}
     
-    constexpr edge_descriptor(VId src, VId tgt, EV val) 
-        requires (!std::is_void_v<EV>)
-        : source_id_(src), target_id_(tgt), value_(std::move(val)) {}
+    // Constructor with value (for non-void EV)
+    template<typename E = EV>
+        requires (!std::is_void_v<E>)
+    constexpr edge_descriptor(const VId& src, const VId& tgt, const E& val) 
+        : source_id_(src), target_id_(tgt), value_(std::cref(val)) {}
     
-    [[nodiscard]] constexpr VId source_id() const noexcept { return source_id_; }
-    [[nodiscard]] constexpr VId target_id() const noexcept { return target_id_; }
+    // Copy/move allowed, assignment deleted (reference semantics)
+    edge_descriptor(const edge_descriptor&) = default;
+    edge_descriptor(edge_descriptor&&) = default;
+    edge_descriptor& operator=(const edge_descriptor&) = delete;
+    edge_descriptor& operator=(edge_descriptor&&) = delete;
     
-    [[nodiscard]] constexpr const EV& value() const noexcept 
-        requires (!std::is_void_v<EV>) 
-    { return value_; }
+    [[nodiscard]] constexpr const VId& source_id() const noexcept { 
+        return source_id_; 
+    }
     
-    [[nodiscard]] constexpr EV& value() noexcept 
-        requires (!std::is_void_v<EV>) 
-    { return value_; }
+    [[nodiscard]] constexpr const VId& target_id() const noexcept { 
+        return target_id_; 
+    }
+    
+    template<typename E = EV>
+        requires (!std::is_void_v<E>)
+    [[nodiscard]] constexpr const E& value() const noexcept { 
+        return value_.get(); 
+    }
+    
+    // Custom comparison operators
+    constexpr bool operator==(const edge_descriptor& other) const noexcept;
+    constexpr auto operator<=>(const edge_descriptor& other) const noexcept;
+
+private:
+    const VId& source_id_;
+    const VId& target_id_;
+    [[no_unique_address]] std::conditional_t<std::is_void_v<EV>, 
+        detail::empty_value, std::reference_wrapper<const EV>> value_;
 };
+
+// Deduction guides
+template<typename VId>
+edge_descriptor(VId, VId) -> edge_descriptor<VId, void>;
+
+template<typename VId, typename EV>
+edge_descriptor(VId, VId, EV) -> edge_descriptor<VId, EV>;
 
 } // namespace graph::edge_list
 ```
 
-**Commit message**: `Add edge_list::edge_descriptor type`
+**Commit message**: `Add edge_list::edge_descriptor as reference-based lightweight handle`
 
 ---
 
@@ -478,26 +518,54 @@ struct edge_descriptor {
 
 ### Step 4.3: Create Tests for `edge_list::edge_descriptor`
 
-**Goal**: Test the edge descriptor type and its integration with CPOs.
+**Goal**: Test the reference-based edge descriptor type and its integration with CPOs.
 
 **Files to create/modify**:
 - `tests/edge_list/test_edge_list_descriptor.cpp` (NEW)
 
 **Tasks**:
-1. Test construction (with and without value)
-2. Test accessor methods
+1. Test construction (with and without value, from lvalues with references)
+2. Test accessor methods return references to underlying data
 3. Test `is_edge_list_descriptor_v` trait
 4. Test CPOs work with edge_list::edge_descriptor (Tier 5)
+5. Test that descriptors reflect changes to underlying data
+6. Test with non-trivial types (strings) to verify zero-copy behavior
+7. Test comparison operators
 
 **Test cases**:
 ```cpp
 TEST_CASE("edge_list::edge_descriptor construction", "[edge_list][descriptor]") {
     using namespace graph::edge_list;
     
-    // Without value
-    edge_descriptor<int, void> e1(1, 2);
+    // Without value - must use lvalues (descriptor stores references)
+    int src = 1, tgt = 2;
+    edge_descriptor<int, void> e1(src, tgt);
     REQUIRE(e1.source_id() == 1);
     REQUIRE(e1.target_id() == 2);
+    REQUIRE(&e1.source_id() == &src);  // Verify it's a reference
+    
+    // With value
+    double val = 1.5;
+    edge_descriptor<int, double> e2(src, tgt, val);
+    REQUIRE(e2.source_id() == 1);
+    REQUIRE(e2.target_id() == 2);
+    REQUIRE(e2.value() == 1.5);
+    REQUIRE(&e2.value() == &val);  // Verify it's a reference
+}
+
+TEST_CASE("edge_list::edge_descriptor references underlying data", "[edge_list][descriptor]") {
+    using namespace graph::edge_list;
+    
+    std::string src = "vertex_a", tgt = "vertex_b", val = "edge_data";
+    edge_descriptor<std::string, std::string> e(src, tgt, val);
+    
+    // Modify underlying data - should be visible through descriptor
+    src = "new_source";
+    REQUIRE(e.source_id() == "new_source");
+    
+    val = "new_data";
+    REQUIRE(e.value() == "new_data");
+}
     
     // With value
     edge_descriptor<int, double> e2(3, 4, 1.5);
