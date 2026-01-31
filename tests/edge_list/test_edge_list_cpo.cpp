@@ -35,10 +35,8 @@ TEST_CASE("target_id with edge_info (bidirectional, no value)", "[cpo][target_id
     EI ei{5, 6};
     std::vector<EI> el{ei};
     
-    // TODO: Implement after Step 2.1  
-    // auto vid = target_id(el, ei);
-    // REQUIRE(vid == 6);
-    SUCCEED("target_id tier 6 not yet implemented - waiting for Step 2.1");
+    auto vid = target_id(el, ei);
+    REQUIRE(vid == 6);
 }
 
 TEST_CASE("target_id with edge_info (bidirectional, with value)", "[cpo][target_id][tier6]") {
@@ -46,10 +44,8 @@ TEST_CASE("target_id with edge_info (bidirectional, with value)", "[cpo][target_
     EI ei{7, 8, 2.5};
     std::vector<EI> el{ei};
     
-    // TODO: Implement after Step 2.1
-    // auto vid = target_id(el, ei);
-    // REQUIRE(vid == 8);
-    SUCCEED("target_id tier 6 not yet implemented - waiting for Step 2.1");
+    auto vid = target_id(el, ei);
+    REQUIRE(vid == 8);
 }
 
 TEST_CASE("edge_value with edge_info (with value)", "[cpo][edge_value][tier6]") {
@@ -90,10 +86,8 @@ TEST_CASE("target_id with pair", "[cpo][target_id][tier7]") {
     std::pair<int, int> edge{14, 15};
     std::vector<std::pair<int, int>> el{edge};
     
-    // TODO: Implement after Step 2.1
-    // auto vid = target_id(el, edge);
-    // REQUIRE(vid == 15);
-    SUCCEED("target_id tier 7 not yet implemented - waiting for Step 2.1");
+    auto vid = target_id(el, edge);
+    REQUIRE(vid == 15);
 }
 
 TEST_CASE("source_id with tuple (3 elements)", "[cpo][source_id][tier7]") {
@@ -108,10 +102,8 @@ TEST_CASE("target_id with tuple (3 elements)", "[cpo][target_id][tier7]") {
     std::tuple<int, int, double> edge{18, 19, 6.5};
     std::vector<std::tuple<int, int, double>> el{edge};
     
-    // TODO: Implement after Step 2.1
-    // auto vid = target_id(el, edge);
-    // REQUIRE(vid == 19);
-    SUCCEED("target_id tier 7 not yet implemented - waiting for Step 2.1");
+    auto vid = target_id(el, edge);
+    REQUIRE(vid == 19);
 }
 
 TEST_CASE("edge_value with tuple (3 elements)", "[cpo][edge_value][tier7]") {
@@ -136,10 +128,8 @@ TEST_CASE("target_id with tuple (4 elements)", "[cpo][target_id][tier7]") {
     std::tuple<int, int, double, std::string> edge{24, 25, 9.5, "test"};
     std::vector<std::tuple<int, int, double, std::string>> el{edge};
     
-    // TODO: Implement after Step 2.1
-    // auto vid = target_id(el, edge);
-    // REQUIRE(vid == 25);
-    SUCCEED("target_id tier 7 not yet implemented - waiting for Step 2.1");
+    auto vid = target_id(el, edge);
+    REQUIRE(vid == 25);
 }
 
 TEST_CASE("edge_value with tuple (4 elements)", "[cpo][edge_value][tier7]") {
@@ -217,10 +207,9 @@ TEST_CASE("target_id prefers data member over tuple", "[cpo][target_id][ambiguit
     EdgeWithSourceAndTarget e{32, 33};
     std::vector<EdgeWithSourceAndTarget> el{e};
     
-    // TODO: Implement after Step 2.1
-    // auto vid = target_id(el, e);
-    // REQUIRE(vid == 33);
-    SUCCEED("target_id ambiguity test not yet implemented - waiting for Step 2.1");
+    // Should use data member (33), not tuple get<1> (133)
+    auto vid = target_id(el, e);
+    REQUIRE(vid == 33);
 }
 
 TEST_CASE("edge_value prefers data member over tuple", "[cpo][edge_value][ambiguity]") {
@@ -257,18 +246,14 @@ TEST_CASE("target_id with edge_info is noexcept", "[cpo][target_id][noexcept]") 
     EI ei{44, 45};
     std::vector<EI> el{ei};
     
-    // TODO: Implement after Step 2.1
-    // STATIC_REQUIRE(noexcept(target_id(el, ei)));
-    SUCCEED("target_id noexcept test not yet implemented - waiting for Step 2.1");
+    STATIC_REQUIRE(noexcept(target_id(el, ei)));
 }
 
 TEST_CASE("target_id with tuple is noexcept", "[cpo][target_id][noexcept]") {
     std::tuple<int, int, double> edge{46, 47, 12.5};
     std::vector<std::tuple<int, int, double>> el{edge};
     
-    // TODO: Implement after Step 2.1
-    // STATIC_REQUIRE(noexcept(target_id(el, edge)));
-    SUCCEED("target_id noexcept test not yet implemented - waiting for Step 2.1");
+    STATIC_REQUIRE(noexcept(target_id(el, edge)));
 }
 
 TEST_CASE("edge_value with edge_info is noexcept", "[cpo][edge_value][noexcept]") {

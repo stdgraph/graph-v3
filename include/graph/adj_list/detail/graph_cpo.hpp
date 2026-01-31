@@ -882,7 +882,15 @@ namespace _cpo_impls {
     // =========================================================================
     
     namespace _target_id {
-        enum class _St { _none, _native_edge_member, _adl_descriptor, _descriptor };
+        enum class _St { 
+            _none, 
+            _native_edge_member, 
+            _adl_descriptor, 
+            _adj_list_descriptor,   // Tier 4: adj_list::edge_descriptor (renamed from _descriptor)
+            _edge_list_descriptor,  // Tier 5: edge_list::edge_descriptor
+            _edge_info_member,      // Tier 6: edge_info data member
+            _tuple_like             // Tier 7: tuple/pair
+        };
         
         // Check if the underlying native edge type has target_id() member - highest priority
         // This checks uv.value()->target_id() where value() returns iterator to native edge
@@ -901,15 +909,22 @@ namespace _cpo_impls {
                 { target_id(g, uv) };
             };
         
-        // Check if descriptor has target_id() member (default lowest priority)
+        // Check if adj_list descriptor has target_id() member (Tier 4)
         // Note: edge_descriptor.target_id() requires the edge container, not the graph
         // underlying_value() gives us the vertex for vov or the edge container for raw adjacency lists
         // The edge_descriptor.target_id() handles extracting the target ID correctly in both cases
         template<typename G, typename E>
-        concept _has_descriptor = is_edge_descriptor_v<std::remove_cvref_t<E>> &&
+        concept _has_adj_list_descriptor = is_edge_descriptor_v<std::remove_cvref_t<E>> &&
             requires(G& g, const E& uv) {
                 { uv.source().underlying_value(g) };
                 { uv.target_id(uv.source().underlying_value(g)) };
+            };
+        
+        // Tier 5: Check if edge_list descriptor has target_id() member
+        template<typename UV>
+        concept _has_edge_list_descriptor = edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> &&
+            requires(const UV& uv) {
+                { uv.target_id() };
             };
         
         // Tier 6: Check for edge_info-style direct data member access
@@ -948,9 +963,18 @@ namespace _cpo_impls {
             } else if constexpr (_has_adl_descriptor<G, E>) {
                 return {_St::_adl_descriptor, 
                         noexcept(target_id(std::declval<const G&>(), std::declval<const E&>()))};
-            } else if constexpr (_has_descriptor<G, E>) {
+            } else if constexpr (_has_adj_list_descriptor<G, E>) {
                 // Default to false (safe) since we have conditional logic
-                return {_St::_descriptor, false};
+                return {_St::_adj_list_descriptor, false};
+            } else if constexpr (_has_edge_list_descriptor<E>) {
+                return {_St::_edge_list_descriptor,
+                        noexcept(std::declval<const E&>().target_id())};
+            } else if constexpr (_has_edge_info_member<E>) {
+                return {_St::_edge_info_member,
+                        noexcept(std::declval<const E&>().target_id)};
+            } else if constexpr (_is_tuple_like_edge<E>) {
+                return {_St::_tuple_like,
+                        noexcept(std::get<1>(std::declval<const E&>()))};
             } else {
                 return {_St::_none, false};
             }
@@ -965,29 +989,39 @@ namespace _cpo_impls {
             /**
              * @brief Get target vertex ID from an edge
              * 
-             * Resolution order (three-tier approach):
+             * Resolution order (seven-tier approach):
              * 1. (*uv.value()).target_id() - Native edge member function (highest priority)
-             * 2. target_id(g, uv) - ADL with edge_descriptor (medium priority)
-             * 3. uv.target_id(uv.source().inner_value(g)) - descriptor's default method (lowest priority)
+             * 2. target_id(g, uv) - ADL with edge_descriptor
+             * 3. uv.target_id(uv.source().inner_value(g)) - adj_list::edge_descriptor (Tier 4)
+             * 4. uv.target_id() - edge_list::edge_descriptor member (Tier 5)
+             * 5. uv.target_id - edge_info data member (Tier 6)
+             * 6. std::get<1>(uv) - tuple-like edge (Tier 7, lowest priority)
              * 
              * Where:
-             * - uv must be edge_t<G> (the edge descriptor type for graph G)
+             * - uv must be edge_t<G> (the edge descriptor type for graph G) for tiers 1-4
+             * - For tiers 5-7, uv can be edge_list descriptors, edge_info structs, or tuple-like types
              * - The native edge member function is called if the underlying edge type has target_id()
-             * - The default implementation uses the edge container from the source vertex
+             * - ADL allows customization by providing a free function
              * 
-             * Edge data extraction (default implementation):
+             * Tiers 4-7 support:
+             * - adj_list edge descriptors (existing adjacency list edges)
+             * - edge_list descriptors (new edge list support)
+             * - edge_info structs with direct data members
+             * - tuple/pair representations (source, target, [value])
+             * 
+             * Edge data extraction (tier 4 default implementation):
              * - Simple integral type (int): Returns the value itself (the target ID)
              * - Pair<target, property>: Returns .first (the target ID)
              * - Tuple<target, prop1, ...>: Returns std::get<0> (the target ID)
              * - Custom struct/type: User provides custom extraction via member function or ADL
              * 
              * @tparam G Graph type
-             * @tparam E Edge descriptor type (constrained to be an edge_descriptor_type)
+             * @tparam E Edge descriptor or edge type
              * @param g Graph container
-             * @param uv Edge descriptor (must be edge_t<G> - the edge descriptor type for the graph)
+             * @param uv Edge descriptor or edge
              * @return Target vertex identifier
              */
-            template<typename G, edge_descriptor_type E>
+            template<typename G, typename E>
             [[nodiscard]] constexpr auto operator()(G& g, const E& uv) const
                 noexcept(_Choice<std::remove_cvref_t<G>, std::remove_cvref_t<E>>._No_throw)
                 -> decltype(auto)
@@ -1001,11 +1035,17 @@ namespace _cpo_impls {
                     return (*uv.value()).target_id();
                 } else if constexpr (_Choice<_G, _E>._Strategy == _St::_adl_descriptor) {
                     return target_id(g, uv);
-                } else if constexpr (_Choice<_G, _E>._Strategy == _St::_descriptor) {
+                } else if constexpr (_Choice<_G, _E>._Strategy == _St::_adj_list_descriptor) {
                     // Default: use edge_descriptor.target_id() with vertex from underlying_value
                     // For vov: underlying_value gives vertex, edge_descriptor extracts from it
                     // For raw adjacency lists: underlying_value gives edge container directly
                     return uv.target_id(uv.source().underlying_value(g));
+                } else if constexpr (_Choice<_G, _E>._Strategy == _St::_edge_list_descriptor) {
+                    return uv.target_id();
+                } else if constexpr (_Choice<_G, _E>._Strategy == _St::_edge_info_member) {
+                    return uv.target_id;
+                } else if constexpr (_Choice<_G, _E>._Strategy == _St::_tuple_like) {
+                    return std::get<1>(uv);
                 }
             }
         };

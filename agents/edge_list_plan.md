@@ -23,8 +23,8 @@ executed by an agent and includes specific tasks, files to modify, and tests to 
 | 1.3b | Add `_has_edge_info_member` and `_is_tuple_like_edge` to `edge_value` CPO | ✅ Complete | |
 | 1.4 | Extend `source_id` CPO with tiers 5-7 | ✅ Complete | |
 | 1.5 | Create tests for `source_id` CPO extensions | ✅ Complete (partial - source_id only) | |
-| 2.1 | Extend `target_id` CPO with tiers 5-7 | ⬜ Not Started | |
-| 2.2 | Create tests for `target_id` CPO extensions | ⬜ Not Started | |
+| 2.1 | Extend `target_id` CPO with tiers 5-7 | ✅ Complete | |
+| 2.2 | Create tests for `target_id` CPO extensions | ✅ Complete | |
 | 3.1 | Extend `edge_value` CPO with tiers 5-7 | ⬜ Not Started | |
 | 3.2 | Create tests for `edge_value` CPO extensions | ⬜ Not Started | |
 | 4.1 | Create `edge_list::edge_descriptor` type | ⬜ Not Started | |
