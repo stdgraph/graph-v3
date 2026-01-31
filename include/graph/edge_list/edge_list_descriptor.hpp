@@ -2,6 +2,7 @@
 
 #include <type_traits>
 #include <concepts>
+#include <functional>
 #include <utility>
 
 namespace graph::edge_list {
@@ -16,8 +17,9 @@ namespace detail {
 /**
  * @brief Lightweight edge descriptor for edge lists
  * 
- * This descriptor stores source and target vertex IDs and optionally an edge value.
- * When EV is void, the value member is optimized away using [[no_unique_address]].
+ * This descriptor is a non-owning reference to edge data stored in an edge list.
+ * It stores references to the source ID, target ID, and optionally the edge value,
+ * avoiding any copies. The descriptor is only valid as long as the referenced data exists.
  * 
  * @tparam VId Vertex ID type
  * @tparam EV Edge value type (void for edges without values)
@@ -27,42 +29,31 @@ struct edge_descriptor {
     using vertex_id_type = VId;
     using edge_value_type = EV;
     
-    VId source_id_;
-    VId target_id_;
+    const VId& source_id_;
+    const VId& target_id_;
     [[no_unique_address]] std::conditional_t<std::is_void_v<EV>, 
-        detail::empty_value, EV> value_;
+        detail::empty_value, std::reference_wrapper<const EV>> value_;
     
-    // Default constructor
-    constexpr edge_descriptor() = default;
+    // Constructor without value (for void EV)
+    constexpr edge_descriptor(const VId& src, const VId& tgt) 
+        requires std::is_void_v<EV>
+        : source_id_(src), target_id_(tgt), value_() {}
     
-    // Constructor without value (for void EV) - use forwarding references to avoid copies
-    template<typename V1, typename V2>
-        requires std::is_void_v<EV> && 
-                 std::constructible_from<VId, V1> && 
-                 std::constructible_from<VId, V2>
-    constexpr edge_descriptor(V1&& src, V2&& tgt) 
-        : source_id_(std::forward<V1>(src)), target_id_(std::forward<V2>(tgt)), value_() {}
+    // Constructor with value (for non-void EV)
+    template<typename E = EV>
+        requires (!std::is_void_v<E>)
+    constexpr edge_descriptor(const VId& src, const VId& tgt, const E& val) 
+        : source_id_(src), target_id_(tgt), value_(std::cref(val)) {}
     
-    // Constructor with value (for non-void EV) - use forwarding references to avoid copies
-    template<typename V1, typename V2, typename E>
-        requires (!std::is_void_v<EV>) && 
-                 std::constructible_from<VId, V1> && 
-                 std::constructible_from<VId, V2> &&
-                 std::constructible_from<EV, E>
-    constexpr edge_descriptor(V1&& src, V2&& tgt, E&& val) 
-        : source_id_(std::forward<V1>(src)), 
-          target_id_(std::forward<V2>(tgt)), 
-          value_(std::forward<E>(val)) {}
+    // Copy constructor and assignment - this is a reference type
+    edge_descriptor(const edge_descriptor&) = default;
+    edge_descriptor& operator=(const edge_descriptor&) = delete;
     
-    // Copy constructor
-    constexpr edge_descriptor(const edge_descriptor&) = default;
-    constexpr edge_descriptor& operator=(const edge_descriptor&) = default;
+    // Move constructor and assignment - this is a reference type  
+    edge_descriptor(edge_descriptor&&) = default;
+    edge_descriptor& operator=(edge_descriptor&&) = delete;
     
-    // Move constructor
-    constexpr edge_descriptor(edge_descriptor&&) noexcept = default;
-    constexpr edge_descriptor& operator=(edge_descriptor&&) noexcept = default;
-    
-    // Accessors - return by const reference to avoid copying non-trivial types
+    // Accessors - return the stored references
     [[nodiscard]] constexpr const VId& source_id() const noexcept { 
         return source_id_; 
     }
@@ -71,22 +62,33 @@ struct edge_descriptor {
         return target_id_; 
     }
     
-    // Value accessors (only for non-void EV) - use template to avoid forming reference to void
+    // Value accessor (only for non-void EV)
     template<typename E = EV>
         requires (!std::is_void_v<E>)
     [[nodiscard]] constexpr const E& value() const noexcept { 
-        return value_; 
+        return value_.get(); 
     }
     
-    template<typename E = EV>
-        requires (!std::is_void_v<E>)
-    [[nodiscard]] constexpr E& value() noexcept { 
-        return value_; 
+    // Comparison operators - compare referenced values, not references themselves
+    constexpr bool operator==(const edge_descriptor& other) const noexcept {
+        if constexpr (std::is_void_v<EV>) {
+            return source_id_ == other.source_id_ && target_id_ == other.target_id_;
+        } else {
+            return source_id_ == other.source_id_ && 
+                   target_id_ == other.target_id_ && 
+                   value_.get() == other.value_.get();
+        }
     }
     
-    // Comparison operators
-    constexpr bool operator==(const edge_descriptor&) const noexcept = default;
-    constexpr auto operator<=>(const edge_descriptor&) const noexcept = default;
+    constexpr auto operator<=>(const edge_descriptor& other) const noexcept {
+        if (auto cmp = source_id_ <=> other.source_id_; cmp != 0) return cmp;
+        if (auto cmp = target_id_ <=> other.target_id_; cmp != 0) return cmp;
+        if constexpr (!std::is_void_v<EV>) {
+            return value_.get() <=> other.value_.get();
+        } else {
+            return std::strong_ordering::equal;
+        }
+    }
 };
 
 // Deduction guides
