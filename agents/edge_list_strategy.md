@@ -37,7 +37,7 @@ This unification enables algorithms to work with any edge source without special
    - `graph::edge_list::basic_sourced_index_edgelist<EL>` - Integral vertex IDs
    - `graph::edge_list::has_edge_value<EL>` - Concept for valued edges
    - Type aliases: `edge_range_t`, `edge_iterator_t`, `edge_t`, `edge_reference_t`, `edge_value_t`, `vertex_id_t`
-   - Currently uses unqualified `source_id(e)`, `target_id(e)` - needs adjustment for unified CPOs
+   - Currently uses unqualified `source_id(uv)`, `target_id(uv)` - needs adjustment for unified CPOs
 
 2. **`include/graph/graph_info.hpp`** - Shared types:
    - `edge_info<VId, Sourced, E, EV>` - Template specializations for edge projections
@@ -73,13 +73,13 @@ The current architecture has a fundamental tension:
 - The edge descriptor needs the graph to resolve vertex references
 - The graph provides the context for source/target resolution
 
-**Edge List CPOs**: `source_id(e)` - edge-only because:
+**Edge List CPOs**: `source_id(uv)` - edge-only because:
 - Edge list elements are self-contained (source_id, target_id, value stored directly)
 - No graph context needed
 
 **Resolution Strategy**: We need a unified approach where both forms work:
 - For adjacency lists: `source_id(g, uv)` remains the canonical form
-- For edge lists: `source_id(g, e)` where `g` is the edge_list container (or use sentinel)
+- For edge lists: `source_id(el, uv)` where `el` is the edge_list container (or use sentinel)
 - CPOs detect edge type and dispatch appropriately
 
 ---
@@ -96,23 +96,46 @@ The unified CPO approach extends the existing `adj_list` CPOs to handle edge_lis
 
 ```cpp
 // Current: source_id(g, uv) where uv is edge_descriptor<G>
-// Extended: source_id(g, e) where e can be:
-//   - edge_descriptor (adjacency list edge)
-//   - edge_info (edge list value)
+// Extended: source_id(g, uv) where uv can be:
+//   - adj_list::edge_descriptor (adjacency list edge)
+//   - edge_list::edge_descriptor (edge list descriptor)
+//   - edge_info (edge list value with source_id/target_id members)
 //   - tuple/pair (generic edge representation)
 //   - any type satisfying edge_list::basic_edge concept
 ```
 
-**CPO Resolution Order** (extended from current 4-tier to 6-tier):
+**CPO Resolution Order** (extended from current 4-tier to 7-tier):
 
-| Priority | Strategy | Description |
-|----------|----------|-------------|
-| 1 | Native edge member | `(*uv.value()).source_id()` - Native edge type member |
-| 2 | Graph member | `g.source_id(uv)` - Graph's member function |
-| 3 | ADL with graph | `source_id(g, uv)` - ADL-findable free function |
-| 4 | Descriptor member | `uv.source_id()` - Edge descriptor's member |
-| 5 | **Edge-only member** | `e.source_id` - Direct member access (edge_info) |
-| 6 | **Tuple/pair access** | `get<0>(e)` - For tuple-like edge types |
+| Priority | Strategy | Concept Check | Description |
+|----------|----------|---------------|-------------|
+| 1 | Native edge member | `is_edge_descriptor_v` + `(*uv.value()).source_id()` | Native edge type member |
+| 2 | Graph member | `g.source_id(uv)` exists | Graph's member function |
+| 3 | ADL with graph | `source_id(g, uv)` exists | ADL-findable free function |
+| 4 | adj_list descriptor | `is_edge_descriptor_v` + `uv.source_id()` | adj_list edge descriptor method |
+| 5 | **edge_list descriptor** | `is_edge_list_descriptor_v` + `uv.source_id()` | edge_list descriptor method |
+| 6 | **Edge-only data member** | `uv.source_id` exists (not callable) | Direct member access (edge_info) |
+| 7 | **Tuple/pair access** | `!is_*_descriptor_v` + `get<0>(uv)` | For tuple-like edge types |
+
+**Key Design Considerations**:
+
+1. **Descriptor Type Gates**: Tiers 1, 4-5 are gated by descriptor type traits to prevent 
+   ambiguity. The `is_edge_descriptor_v` trait only matches `adj_list::edge_descriptor`, 
+   while `is_edge_list_descriptor_v` only matches `edge_list::edge_descriptor`.
+
+2. **Method vs Member Disambiguation**: 
+   - Tier 4-5: `uv.source_id()` is a **method call** (requires parentheses)
+   - Tier 6: `uv.source_id` is a **data member access** (no parentheses)
+   - The concept checks distinguish these: `requires { uv.source_id(); }` vs `requires { uv.source_id; }`
+
+3. **Fallback Order**: Tuple-like access (tier 7) is last to allow custom types with 
+    `source_id` members to take precedence over generic tuple decomposition.
+
+4. **noexcept propagation**: Each tier mirrors the noexcept of the expression it calls, matching
+    tiers 1–4 in the existing CPO; implement the same for tiers 5–7.
+
+5. **Mutual exclusivity guardrails**: Ensure tier 6 (data member) explicitly excludes any type that
+    satisfies either descriptor trait or has a callable `source_id()`/`target_id()`. Likewise, tier 7
+    must exclude descriptor traits and edge_info-like types to avoid ambiguity.
 
 #### 1.2 Extend `graph_cpo.hpp`
 
@@ -125,29 +148,81 @@ namespace _source_id {
         _native_edge_member, 
         _member, 
         _adl, 
-        _descriptor,
-        _edge_info_member,    // NEW: for edge_info<VId, true, ...>
-        _tuple_like           // NEW: for pair/tuple
+        _adj_list_descriptor,      // RENAMED: was _descriptor
+        _edge_list_descriptor,     // NEW: for edge_list::edge_descriptor
+        _edge_info_member,         // NEW: for edge_info<VId, true, ...>
+        _tuple_like                // NEW: for pair/tuple
     };
     
-    // NEW: Check for edge_info-style direct member access
-    template<typename G, typename E>
-    concept _has_edge_info_member = requires(const E& e) {
-        { e.source_id } -> std::integral;
-    };
-    
-    // NEW: Check for tuple-like edge (pair, tuple)
-    template<typename G, typename E>
-    concept _is_tuple_like_edge = 
-        !is_edge_descriptor_v<std::remove_cvref_t<E>> &&
-        requires(const E& e) {
-            { std::get<0>(e) } -> std::integral;
-            { std::get<1>(e) } -> std::integral;
+    // Existing: Check for adj_list edge descriptor (unchanged)
+    template<typename UV>
+    concept _has_adj_list_descriptor = is_edge_descriptor_v<std::remove_cvref_t<UV>> &&
+        requires(const UV& uv) {
+            { uv.source_id() };  // method call
         };
     
-    // Extended _Choose function...
+    // NEW: Check for edge_list edge descriptor
+    template<typename UV>
+    concept _has_edge_list_descriptor = 
+        edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> &&
+        requires(const UV& uv) {
+            { uv.source_id() };  // method call
+        };
+    
+    // NEW: Check for edge_info-style direct data member access
+    // Must NOT be a descriptor type (to avoid ambiguity with method calls)
+    template<typename UV>
+    concept _has_edge_info_member = 
+        !is_edge_descriptor_v<std::remove_cvref_t<UV>> &&
+        !edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> &&
+        requires(const UV& uv) {
+            uv.source_id;  // data member, not method
+        } &&
+        !requires(const UV& uv) {
+            uv.source_id();  // exclude if it's callable (i.e., a method)
+        };
+    
+    // NEW: Check for tuple-like edge (pair, tuple)
+    // Must NOT be any descriptor type
+    template<typename UV>
+    concept _is_tuple_like_edge = 
+        !is_edge_descriptor_v<std::remove_cvref_t<UV>> &&
+        !edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> &&
+        requires(const UV& uv) {
+            { std::get<0>(uv) };
+            { std::get<1>(uv) };
+        };
+    
+    // Extended _Choose function adds new tiers after existing ones...
+    template<typename G, typename UV>
+    [[nodiscard]] consteval _Choice_t<_St> _Choose() noexcept {
+        if constexpr (_has_native_edge_member<G, UV>) {
+            return {_St::_native_edge_member, /*noexcept*/};
+        } else if constexpr (_has_member<G, UV>) {
+            return {_St::_member, /*noexcept*/};
+        } else if constexpr (_has_adl<G, UV>) {
+            return {_St::_adl, /*noexcept*/};
+        } else if constexpr (_has_adj_list_descriptor<UV>) {
+            return {_St::_adj_list_descriptor, /*noexcept*/};
+        } else if constexpr (_has_edge_list_descriptor<UV>) {       // NEW
+            return {_St::_edge_list_descriptor, /*noexcept*/};
+        } else if constexpr (_has_edge_info_member<UV>) {           // NEW
+            return {_St::_edge_info_member, /*noexcept*/};
+        } else if constexpr (_is_tuple_like_edge<UV>) {             // NEW
+            return {_St::_tuple_like, /*noexcept*/};
+        } else {
+            return {_St::_none, false};
+        }
+    }
 }
 ```
+
+**Symmetry requirement**: Apply the same tiering and trait gates to `target_id` and `edge_value`
+to preserve unified behavior across all edge properties.
+
+**API note**: When the context object is an edge_list container, `source_id(el, uv)` must not depend
+on `el` at runtime; keep it a no-op parameter to remain noexcept-friendly and uniform with
+adjacency-list usage.
 
 #### 1.3 Update Edge List Concepts
 
@@ -163,10 +238,10 @@ template <class EL>
 concept basic_sourced_edgelist = 
     std::ranges::input_range<EL> &&
     !std::ranges::range<std::ranges::range_value_t<EL>> && // distinguish from adj_list
-    requires(EL& el, std::ranges::range_value_t<EL> e) {
+    requires(EL& el, std::ranges::range_value_t<EL> uv) {
         // Use unified CPO with edge_list as context
-        { graph::source_id(el, e) };
-        { graph::target_id(el, e) } -> std::same_as<decltype(graph::source_id(el, e))>;
+        { graph::source_id(el, uv) };
+        { graph::target_id(el, uv) } -> std::same_as<decltype(graph::source_id(el, uv))>;
     };
 
 } // namespace graph::edge_list
@@ -224,16 +299,28 @@ inline constexpr bool is_edge_list_descriptor_v = is_edge_list_descriptor<T>::va
 
 #### 2.2 CPO Support for Edge List Descriptors
 
-The unified CPOs detect edge_list descriptors and access members directly:
+The unified CPOs detect edge_list descriptors via the type trait and dispatch to the method call:
 
 ```cpp
 // In graph_cpo.hpp _source_id namespace
-template<typename E>
-concept _is_edge_list_descriptor = 
-    edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<E>>;
 
-// Resolution adds: if constexpr (_is_edge_list_descriptor<E>) { return e.source_id(); }
+// Tier 5: edge_list descriptor (method call, like adj_list but different trait)
+template<typename UV>
+concept _has_edge_list_descriptor = 
+    edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> &&
+    requires(const UV& uv) {
+        { uv.source_id() };  // method call with parentheses
+    };
+
+// In _fn::operator():
+// else if constexpr (_Choice<_G, _UV>._Strategy == _St::_edge_list_descriptor) {
+//     return uv.source_id();  // method call
+// }
 ```
+
+**Note**: Both `adj_list::edge_descriptor` and `edge_list::edge_descriptor` use method syntax 
+(`uv.source_id()`), but they are distinguished by their respective type traits. This allows 
+clean separation while maintaining consistent API.
 
 ---
 
@@ -243,41 +330,54 @@ concept _is_edge_list_descriptor =
 
 #### 3.1 Supported Types Matrix
 
-| Type | `source_id(g,e)` | `target_id(g,e)` | `edge_value(g,e)` |
-|------|------------------|------------------|-------------------|
-| `pair<T,T>` | `e.first` | `e.second` | N/A |
-| `tuple<T,T>` | `get<0>(e)` | `get<1>(e)` | N/A |
-| `tuple<T,T,EV>` | `get<0>(e)` | `get<1>(e)` | `get<2>(e)` |
-| `tuple<T,T,EV,...>` | `get<0>(e)` | `get<1>(e)` | `get<2>(e)` |
-| `edge_info<VId,true,void,void>` | `e.source_id` | `e.target_id` | N/A |
-| `edge_info<VId,true,void,EV>` | `e.source_id` | `e.target_id` | `e.value` |
-| `edge_info<VId,true,E&,void>` | `e.source_id` | `e.target_id` | N/A |
-| `edge_info<VId,true,E&,EV>` | `e.source_id` | `e.target_id` | `e.value` |
-| `edge_list::edge_descriptor<VId,EV>` | `e.source_id()` | `e.target_id()` | `e.value()` |
-| Custom types | ADL or member | ADL or member | ADL or member |
+| Type | Tier | `source_id(g,uv)` | `target_id(g,uv)` | `edge_value(g,uv)` |
+|------|------|-------------------|-------------------|--------------------|
+| `adj_list::edge_descriptor` | 4 | `uv.source_id()` | `uv.target_id()` | `uv.value()` |
+| `edge_list::edge_descriptor<VId,EV>` | 5 | `uv.source_id()` | `uv.target_id()` | `uv.value()` |
+| `edge_info<VId,true,void,void>` | 6 | `uv.source_id` | `uv.target_id` | N/A |
+| `edge_info<VId,true,void,EV>` | 6 | `uv.source_id` | `uv.target_id` | `uv.value` |
+| `edge_info<VId,true,E&,void>` | 6 | `uv.source_id` | `uv.target_id` | N/A |
+| `edge_info<VId,true,E&,EV>` | 6 | `uv.source_id` | `uv.target_id` | `uv.value` |
+| `pair<T,T>` | 7 | `uv.first` | `uv.second` | N/A |
+| `tuple<T,T>` | 7 | `get<0>(uv)` | `get<1>(uv)` | N/A |
+| `tuple<T,T,EV>` | 7 | `get<0>(uv)` | `get<1>(uv)` | `get<2>(uv)` |
+| `tuple<T,T,EV,...>` | 7 | `get<0>(uv)` | `get<1>(uv)` | `get<2>(uv)` |
+| Custom types | 2-3 | ADL or member | ADL or member | ADL or member |
 
-#### 3.2 Implementation in CPO
+#### 3.2 Implementation in CPO - Tier 6 and 7
 
 ```cpp
 namespace _source_id {
-    // Tuple-like detection and access
-    template<typename E>
-    concept _is_tuple_like = requires(const E& e) {
-        { std::tuple_size_v<std::remove_cvref_t<E>> } -> std::convertible_to<std::size_t>;
-        { std::get<0>(e) };
-    };
+    // Tier 6: edge_info-style data member access
+    // Excludes descriptor types to avoid ambiguity with method calls
+    template<typename UV>
+    concept _has_edge_info_member = 
+        !is_edge_descriptor_v<std::remove_cvref_t<UV>> &&
+        !edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> &&
+        requires(const UV& uv) {
+            uv.source_id;  // data member access (no parens)
+        } &&
+        !requires(const UV& uv) {
+            uv.source_id();  // must NOT be callable
+        };
     
-    template<typename E>
-    concept _has_source_id_member = requires(const E& e) {
-        { e.source_id } -> std::integral;
-    };
+    // Tier 7: Tuple-like detection and access
+    // Excludes all descriptor types
+    template<typename UV>
+    concept _is_tuple_like_edge = 
+        !is_edge_descriptor_v<std::remove_cvref_t<UV>> &&
+        !edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> &&
+        requires(const UV& uv) {
+            { std::tuple_size_v<std::remove_cvref_t<UV>> } -> std::convertible_to<std::size_t>;
+            { std::get<0>(uv) };
+        };
     
     // In _fn::operator():
-    // ... existing priority checks ...
-    // else if constexpr (_has_source_id_member<E>) {
-    //     return e.source_id;
-    // } else if constexpr (_is_tuple_like<E>) {
-    //     return std::get<0>(e);
+    // ... tiers 1-5 ...
+    // else if constexpr (_Choice<_G, _UV>._Strategy == _St::_edge_info_member) {
+    //     return uv.source_id;  // data member
+    // } else if constexpr (_Choice<_G, _UV>._Strategy == _St::_tuple_like) {
+    //     return std::get<0>(uv);
     // }
 }
 ```
@@ -334,9 +434,9 @@ With the unified CPO design, algorithms can accept both:
 template<typename EdgeRange>
     requires edge_list::basic_sourced_edgelist<EdgeRange>
 void some_edge_algorithm(EdgeRange&& edges) {
-    for (auto&& e : edges) {
-        auto src = graph::source_id(edges, e);  // Works for edge_list
-        auto tgt = graph::target_id(edges, e);  // Works for edgelist view
+    for (auto&& uv : edges) {
+        auto uid = graph::source_id(edges, uv);  // Works for edge_list
+        auto vid = graph::target_id(edges, uv);  // Works for edgelist view
         // ...
     }
 }
@@ -416,9 +516,9 @@ include/graph/
 ### Decision 2: Graph Parameter for Edge Lists
 
 **Options**:
-- A) Require graph parameter: `source_id(el, e)` where `el` is the edge list container
-- B) Optional graph parameter: `source_id(e)` when edge is self-describing
-- C) Tag dispatch: Use `source_id(edge_list_tag{}, e)` for edge lists
+- A) Require graph parameter: `source_id(el, uv)` where `el` is the edge list container
+- B) Optional graph parameter: `source_id(uv)` when edge is self-describing
+- C) Tag dispatch: Use `source_id(edge_list_tag{}, uv)` for edge lists
 
 **Decision**: Option A - Require graph parameter (edge list container)
 
@@ -461,8 +561,8 @@ include/graph/
 ### Decision 5: Concept Constraint Style
 
 **Options**:
-- A) Concepts require specific member names (e.g., `e.source_id`)
-- B) Concepts require CPO expressions (e.g., `graph::source_id(el, e)`)
+- A) Concepts require specific member names (e.g., `uv.source_id`)
+- B) Concepts require CPO expressions (e.g., `graph::source_id(el, uv)`)
 - C) Concepts use both approaches with fallback
 
 **Decision**: Option B - Concepts require CPO expressions
@@ -480,10 +580,14 @@ include/graph/
 ### Unit Tests
 
 1. **CPO Tests with Various Edge Types**:
-   - `source_id(el, pair<int,int>)` → returns `e.first`
-   - `source_id(el, tuple<int,int,double>)` → returns `get<0>(e)`
-   - `source_id(el, edge_info<int,true,void,void>)` → returns `e.source_id`
+   - `source_id(el, pair<int,int>)` → returns `uv.first`
+   - `source_id(el, tuple<int,int,double>)` → returns `get<0>(uv)`
+   - `source_id(el, edge_info<int,true,void,void>)` → returns `uv.source_id`
    - `source_id(g, edge_descriptor)` → returns via descriptor (existing)
+    - Ambiguity guards:
+      - Type with both `source_id()` method and `source_id` data member → picks method tier
+      - Tuple-like type that also has `source_id` data member → picks data-member tier, not tuple
+      - `edge_list::edge_descriptor` vs `adj_list::edge_descriptor` → verify distinct tiers
 
 2. **Concept Satisfaction Tests**:
    ```cpp
