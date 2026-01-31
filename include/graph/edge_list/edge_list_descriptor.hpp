@@ -25,14 +25,10 @@ namespace detail {
  * @tparam EV Edge value type (void for edges without values)
  */
 template<typename VId, typename EV = void>
-struct edge_descriptor {
+class edge_descriptor {
+public:
     using vertex_id_type = VId;
     using edge_value_type = EV;
-    
-    const VId& source_id_;
-    const VId& target_id_;
-    [[no_unique_address]] std::conditional_t<std::is_void_v<EV>, 
-        detail::empty_value, std::reference_wrapper<const EV>> value_;
     
     // Constructor without value (for void EV)
     constexpr edge_descriptor(const VId& src, const VId& tgt) 
@@ -89,6 +85,12 @@ struct edge_descriptor {
             return std::strong_ordering::equal;
         }
     }
+
+private:
+    const VId& source_id_;
+    const VId& target_id_;
+    [[no_unique_address]] std::conditional_t<std::is_void_v<EV>, 
+        detail::empty_value, std::reference_wrapper<const EV>> value_;
 };
 
 // Deduction guides
