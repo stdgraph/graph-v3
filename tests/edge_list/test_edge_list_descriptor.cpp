@@ -51,6 +51,18 @@ TEST_CASE("edge_list::edge_descriptor with string value", "[edge_list][descripto
     REQUIRE(e.value() == "test");
 }
 
+TEST_CASE("edge_list::edge_descriptor with string vertex IDs", "[edge_list][descriptor]") {
+    edge_descriptor<std::string, double> e("vertex_a", "vertex_b", 1.5);
+    
+    REQUIRE(e.source_id() == "vertex_a");
+    REQUIRE(e.target_id() == "vertex_b");
+    REQUIRE(e.value() == 1.5);
+    
+    // Verify accessors return const references (no copy)
+    static_assert(std::is_same_v<decltype(e.source_id()), const std::string&>);
+    static_assert(std::is_same_v<decltype(e.target_id()), const std::string&>);
+}
+
 TEST_CASE("edge_list::edge_descriptor copy constructor", "[edge_list][descriptor]") {
     edge_descriptor<int, double> e1(11, 12, 3.5);
     edge_descriptor<int, double> e2(e1);

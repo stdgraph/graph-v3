@@ -54,12 +54,12 @@ struct edge_descriptor {
     constexpr edge_descriptor(edge_descriptor&&) noexcept = default;
     constexpr edge_descriptor& operator=(edge_descriptor&&) noexcept = default;
     
-    // Accessors
-    [[nodiscard]] constexpr VId source_id() const noexcept { 
+    // Accessors - return by const reference to avoid copying non-trivial types
+    [[nodiscard]] constexpr const VId& source_id() const noexcept { 
         return source_id_; 
     }
     
-    [[nodiscard]] constexpr VId target_id() const noexcept { 
+    [[nodiscard]] constexpr const VId& target_id() const noexcept { 
         return target_id_; 
     }
     
