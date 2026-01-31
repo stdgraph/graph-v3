@@ -27,9 +27,9 @@ executed by an agent and includes specific tasks, files to modify, and tests to 
 | 2.2 | Create tests for `target_id` CPO extensions | ✅ Complete | |
 | 3.1 | Extend `edge_value` CPO with tiers 5-7 | ✅ Complete | |
 | 3.2 | Create tests for `edge_value` CPO extensions | ✅ Complete | |
-| 4.1 | Create `edge_list::edge_descriptor` type | ⬜ Not Started | |
-| 4.2 | Add `is_edge_list_descriptor` specialization | ⬜ Not Started | |
-| 4.3 | Create tests for `edge_list::edge_descriptor` | ⬜ Not Started | |
+| 4.1 | Create `edge_list::edge_descriptor` type | ✅ Complete | 187d8b7 |
+| 4.2 | Add `is_edge_list_descriptor` specialization | ✅ Complete | 187d8b7 |
+| 4.3 | Create tests for `edge_list::edge_descriptor` | ✅ Complete | 187d8b7 |
 | 5.1 | Update `edge_list.hpp` concepts to use unified CPOs | ⬜ Not Started | |
 | 5.2 | Create tests for updated edge_list concepts | ⬜ Not Started | |
 | 6.1 | Update `graph.hpp` imports | ⬜ Not Started | |
