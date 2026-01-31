@@ -1,6 +1,8 @@
 #pragma once
 
-#include "graph.hpp"
+#include "../graph.hpp"
+#include "../adj_list/detail/graph_cpo.hpp"
+#include <ranges>
 
 #ifndef EDGELIST_HPP
 #  define EDGELIST_HPP
@@ -83,27 +85,30 @@ namespace edge_list {
   //
   // edgelist concepts
   //
+  // basic_sourced_edgelist: Supports ANY vertex ID type (int, string, custom types, etc.)
   template <class EL>                                           // For exposition only
-  concept basic_sourced_edgelist = input_range<EL> &&           //
-                                   !range<range_value_t<EL>> && // distinguish from adjacency list
-                                   requires(range_value_t<EL> e) {
-                                     { source_id(e) };
-                                     { target_id(e) } -> same_as<decltype(source_id(e))>;
+  concept basic_sourced_edgelist = std::ranges::input_range<EL> &&           //
+                                   !std::ranges::range<std::ranges::range_value_t<EL>> && // distinguish from adjacency list
+                                   requires(EL& el, std::ranges::range_value_t<EL> uv) {
+                                     { graph::adj_list::_cpo_instances::source_id(el, uv) };
+                                     { graph::adj_list::_cpo_instances::target_id(el, uv) } -> std::convertible_to<decltype(graph::adj_list::_cpo_instances::source_id(el, uv))>;
                                    };
 
+  // basic_sourced_index_edgelist: Requires INTEGRAL vertex IDs (int, size_t, etc.)
   template <class EL>                                                  // For exposition only
   concept basic_sourced_index_edgelist = basic_sourced_edgelist<EL> && //
-                                         requires(range_value_t<EL> e) {
-                                           { source_id(e) } -> integral;
-                                           { target_id(e) } -> integral; // this is redundant, but makes it clear
-                                         };
+                                         std::integral<std::remove_cvref_t<decltype(graph::adj_list::_cpo_instances::source_id(
+                                                 std::declval<EL&>(), std::declval<std::ranges::range_value_t<EL>>()))>> &&
+                                         std::integral<std::remove_cvref_t<decltype(graph::adj_list::_cpo_instances::target_id(
+                                                 std::declval<EL&>(), std::declval<std::ranges::range_value_t<EL>>()))>>;
+
 
   // (non-basic concepts imply inclusion of an edge reference which doesn't make much sense)
 
   template <class EL>                                    // For exposition only
   concept has_edge_value = basic_sourced_edgelist<EL> && //
-                           requires(range_value_t<EL> e) {
-                             { edge_value(e) };
+                           requires(EL& el, std::ranges::range_value_t<EL> uv) {
+                             { graph::adj_list::_cpo_instances::edge_value(el, uv) };
                            };
 
   template <class EL>
@@ -120,19 +125,23 @@ namespace edge_list {
   using edge_range_t = EL;
 
   template <basic_sourced_edgelist EL> // For exposition only
-  using edge_iterator_t = iterator_t<edge_range_t<EL>>;
+  using edge_iterator_t = std::ranges::iterator_t<edge_range_t<EL>>;
 
   template <basic_sourced_edgelist EL> // For exposition only
-  using edge_t = range_value_t<edge_range_t<EL>>;
+  using edge_t = std::ranges::range_value_t<edge_range_t<EL>>;
 
   template <basic_sourced_edgelist EL> // For exposition only
-  using edge_reference_t = range_reference_t<edge_range_t<EL>>;
+  using edge_reference_t = std::ranges::range_reference_t<edge_range_t<EL>>;
+
+  template <has_edge_value EL> // For exposition only
+  using edge_value_t = std::remove_cvref_t<decltype(graph::adj_list::_cpo_instances::edge_value(
+      std::declval<edge_range_t<EL>&>(), 
+      std::declval<edge_t<edge_range_t<EL>>>()))>;
 
   template <basic_sourced_edgelist EL> // For exposition only
-  using edge_value_t = decltype(edge_value(declval<edge_t<edge_range_t<EL>>>()));
-
-  template <basic_sourced_edgelist EL> // For exposition only
-  using vertex_id_t = decltype(source_id(declval<edge_t<edge_range_t<EL>>>()));
+  using vertex_id_t = std::remove_cvref_t<decltype(graph::adj_list::_cpo_instances::source_id(
+      std::declval<edge_range_t<EL>&>(), 
+      std::declval<edge_t<edge_range_t<EL>>>()))>;
 
 
   // template aliases can't be distinguished with concepts :(

@@ -258,7 +258,8 @@ the graph parameter becomes a no-op context. This preserves API consistency.
 
 #### 2.1 Edge List Descriptor Design
 
-Unlike adjacency list edge descriptors (which wrap iterators), edge list descriptors are simpler:
+Unlike adjacency list edge descriptors (which wrap iterators), edge list descriptors are lightweight
+reference wrappers:
 
 ```cpp
 namespace graph::edge_list {
@@ -266,22 +267,45 @@ namespace graph::edge_list {
 /**
  * @brief Lightweight edge descriptor for edge lists
  * 
- * For edge lists, the "descriptor" is essentially the edge value itself
- * since edges in an edge list are self-contained.
+ * This descriptor is a non-owning reference to edge data stored in an edge list.
+ * It stores references to source ID, target ID, and optionally edge value, avoiding
+ * any copies. The descriptor is only valid as long as the referenced data exists.
+ * 
+ * This is a true lightweight handle - construction is O(1) with zero copies.
  */
 template<typename VId, typename EV = void>
-struct edge_descriptor {
-    VId source_id_;
-    VId target_id_;
+class edge_descriptor {
+public:
+    using vertex_id_type = VId;
+    using edge_value_type = EV;
+    
+    // Constructor without value (for void EV)
+    constexpr edge_descriptor(const VId& src, const VId& tgt) 
+        requires std::is_void_v<EV>;
+    
+    // Constructor with value (for non-void EV)
+    template<typename E = EV>
+        requires (!std::is_void_v<E>)
+    constexpr edge_descriptor(const VId& src, const VId& tgt, const E& val);
+    
+    // Accessors return references to the underlying data
+    [[nodiscard]] constexpr const VId& source_id() const noexcept;
+    [[nodiscard]] constexpr const VId& target_id() const noexcept;
+    
+    // Value accessor (only for non-void EV)
+    template<typename E = EV>
+        requires (!std::is_void_v<E>)
+    [[nodiscard]] constexpr const E& value() const noexcept;
+    
+    // Comparison operators compare values, not reference addresses
+    constexpr bool operator==(const edge_descriptor& other) const noexcept;
+    constexpr auto operator<=>(const edge_descriptor& other) const noexcept;
+
+private:
+    const VId& source_id_;
+    const VId& target_id_;
     [[no_unique_address]] std::conditional_t<std::is_void_v<EV>, 
-        detail::empty_value, EV> value_;
-    
-    constexpr VId source_id() const noexcept { return source_id_; }
-    constexpr VId target_id() const noexcept { return target_id_; }
-    
-    // Only available when EV is not void
-    constexpr auto& value() const noexcept 
-        requires (!std::is_void_v<EV>) { return value_; }
+        detail::empty_value, std::reference_wrapper<const EV>> value_;
 };
 
 // Type trait to distinguish edge_list descriptors
@@ -296,6 +320,13 @@ inline constexpr bool is_edge_list_descriptor_v = is_edge_list_descriptor<T>::va
 
 } // namespace graph::edge_list
 ```
+
+**Key Design Properties**:
+- **Zero-copy**: All data members are references (`const VId&`, `std::reference_wrapper<const EV>`)
+- **Lightweight**: Descriptor size is ~3 pointers (24 bytes on 64-bit systems)
+- **Reference semantics**: Changes to underlying data are visible through descriptor
+- **No ownership**: Descriptor lifetime is independent of data lifetime (user responsibility)
+- **Encapsulated**: Class with private members and public interface
 
 #### 2.2 CPO Support for Edge List Descriptors
 
