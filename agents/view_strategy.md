@@ -782,8 +782,13 @@ struct neighbor_info {
 ```
 
 **Problem**: The `neighbors` view iterates over edges but yields target vertex info. 
-We need an edge descriptor to navigate (it knows source and target), but the user 
-primarily cares about the target vertex.
+Internally, the view has an edge descriptor for navigation (it knows source and target), 
+and it creates a `neighbor_info` for the target edge. The user primarily cares about the 
+target vertex, but the edge descriptor provides the necessary context for accessing it.
+
+**However**: Similar to vertex_info and edge_info, the `{source_id, target_id, value}` 
+combination (`neighbor_info<VId, true, void, VV>`) remains useful for external data 
+scenarios where the graph isn't available.
 
 **New Design** (descriptor-based):
 ```cpp
