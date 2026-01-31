@@ -30,7 +30,11 @@
 
 // Graph information and utilities (shared between adj_list and edge_list)
 #include <graph/graph_info.hpp>
-#include <graph/edgelist.hpp>
+
+// Edge list interface
+#include <graph/edge_list/edge_list_traits.hpp>
+#include <graph/edge_list/edge_list_descriptor.hpp>
+#include <graph/edge_list/edge_list.hpp>
 
 // Adjacency list interface
 #include <graph/adj_list/adjacency_list_concepts.hpp>

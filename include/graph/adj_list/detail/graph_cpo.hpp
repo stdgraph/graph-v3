@@ -2572,6 +2572,7 @@ namespace _cpo_impls {
             !_has_edge_info_member<UV> &&
             requires {
                 std::tuple_size<std::remove_cvref_t<UV>>::value;
+                requires std::tuple_size<std::remove_cvref_t<UV>>::value >= 3;
             } &&
             requires(const UV& uv) {
                 { std::get<0>(uv) };
