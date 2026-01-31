@@ -52,8 +52,6 @@ struct neighbor_info { source_id_type source_id; target_id_type target_id; verte
 // + 8 specializations for Sourced × V × VV combinations
 ```
 
-**Note**: These structs will be refactored to use descriptor-based design (see Section 8). The signatures below reflect the **target** design after refactoring.
-
 ### 2.2 Required Enhancements
 
 **Task 2.2.1**: Add search-specific info struct extensions for DFS/BFS/topological views:
@@ -95,15 +93,16 @@ struct search_neighbor_info : neighbor_info<VId, Sourced, V, VV> {
 ```cpp
 template<index_adjacency_list G, class VVF = void>
 auto vertexlist(G&& g, VVF&& vvf = {})
-    -> /* range of vertex_info<vertex_descriptor<G>, invoke_result_t<VVF, const vertex_value_t<G>&>> */
+    -> /* range of vertex_info<vertex_id_t<G>, vertex_t<G>, invoke_result_t<VVF, const vertex_value_t<G>&>> */
 ```
 
 **Parameters**:
 - `g`: The graph (lvalue or rvalue reference)
 - `vvf`: Optional vertex value function `VV vvf(const vertex_value_t<G>&)`
 
-**Returns**: Range yielding `vertex_info<V, VV>` where:
-- `V = vertex_descriptor<...>` (vertex descriptor, always present)
+**Returns**: Range yielding `vertex_info<VId, V, VV>` where:
+- `VId = vertex_id_t<G>`
+- `V = vertex_t<G>` (or `void` for ID-only access)
 - `VV = invoke_result_t<VVF, const vertex_value_t<G>&>` (or `void` if no vvf)
 
 **Implementation Strategy**:
@@ -118,13 +117,8 @@ class vertexlist_view : public std::ranges::view_interface<vertexlist_view<G>> {
         vertex_id_t<G> current_;
         
         auto operator*() const -> vertex_info<...> {
-            auto v_desc = vertex_descriptor(*g_, current_);  // vertex descriptor
-            if constexpr (!std::is_void_v<VVF>) {
-                auto&& val = vertex_value(*g_, v_desc);
-                return {v_desc, vvf_(val)};  // {vertex, value}
-            } else {
-                return {v_desc};  // {vertex} only
-            }
+            auto&& v = vertex(*g_, current_);
+            return {current_, v, vvf_(vertex_value(*g_, v))};  // or subset based on template args
         }
     };
 };
@@ -142,7 +136,7 @@ class vertexlist_view : public std::ranges::view_interface<vertexlist_view<G>> {
 ```cpp
 template<adjacency_list G, class EVF = void>
 auto incidence(G&& g, vertex_id_t<G> uid, EVF&& evf = {})
-    -> /* range of edge_info<edge_descriptor<G>, invoke_result_t<EVF, const edge_value_t<G>&>> */
+    -> /* range of edge_info<vertex_id_t<G>, false, edge_t<G>, ...> */
 ```
 
 **Parameters**:
@@ -150,14 +144,19 @@ auto incidence(G&& g, vertex_id_t<G> uid, EVF&& evf = {})
 - `uid`: Source vertex ID
 - `evf`: Optional edge value function `EV evf(const edge_value_t<G>&)`
 
-**Returns**: Range yielding `edge_info<E, EV>` where:
-- `E = edge_descriptor<...>` (edge descriptor with source context, always present)
-- `EV = invoke_result_t<EVF, const edge_value_t<G>&>` (or `void` if no evf)
+**Returns**: Range yielding `edge_info<VId, false, E, EV>` (non-sourced by default)
+
+**Sourced Variant**:
+```cpp
+template<sourced_adjacency_list G, class EVF = void>
+auto incidence(G&& g, vertex_id_t<G> uid, EVF&& evf = {})
+    -> /* range of edge_info<vertex_id_t<G>, true, edge_t<G>, ...> */
+```
 
 **Implementation Notes**:
 - Wraps `edges(g, u)` CPO
 - Synthesizes edge_info on each dereference
-- Edge descriptor already contains source context (via `uid` parameter or stored source vertex)
+- Source ID comes from the `uid` parameter (or via `source_id(g, e)` if sourced)
 
 **File Location**: `include/graph/views/incidence.hpp`
 
@@ -171,7 +170,7 @@ auto incidence(G&& g, vertex_id_t<G> uid, EVF&& evf = {})
 ```cpp
 template<adjacency_list G, class VVF = void>
 auto neighbors(G&& g, vertex_id_t<G> uid, VVF&& vvf = {})
-    -> /* range of neighbor_info<edge_descriptor<G>, invoke_result_t<VVF, const vertex_value_t<G>&>> */
+    -> /* range of neighbor_info<vertex_id_t<G>, false, vertex_t<G>, ...> */
 ```
 
 **Parameters**:
@@ -179,14 +178,11 @@ auto neighbors(G&& g, vertex_id_t<G> uid, VVF&& vvf = {})
 - `uid`: Source vertex ID  
 - `vvf`: Optional vertex value function applied to target vertices (const vertex_value_t<G>&)
 
-**Returns**: Range yielding `neighbor_info<E, VV>` where:
-- `E = edge_descriptor<...>` (provides source_id, target_id, and access to target vertex)
-- `VV = invoke_result_t<VVF, const vertex_value_t<G>&>` (or `void` if no vvf)
+**Returns**: Range yielding `neighbor_info<VId, false, V, VV>`
 
 **Implementation Notes**:
 - Iterates over `edges(g, u)` but yields neighbor (target vertex) info
-- Edge descriptor provides both source and target context
-- Access target vertex via `target(g, edge)` CPO
+- Uses `target_id(g, e)` and optionally `target(g, e)` to access neighbors
 
 **File Location**: `include/graph/views/neighbors.hpp`
 
@@ -200,21 +196,19 @@ auto neighbors(G&& g, vertex_id_t<G> uid, VVF&& vvf = {})
 ```cpp
 template<adjacency_list G, class EVF = void>
 auto edgelist(G&& g, EVF&& evf = {})
-    -> /* range of edge_info<edge_descriptor<G>, invoke_result_t<EVF, const edge_value_t<G>&>> */
+    -> /* range of edge_info<vertex_id_t<G>, true, edge_t<G>, ...> */
 ```
 
 **Parameters**:
 - `g`: The graph
 - `evf`: Optional edge value function `EV evf(const edge_value_t<G>&)`
 
-**Returns**: Range yielding `edge_info<E, EV>` where:
-- `E = edge_descriptor<...>` (always includes source context)
-- `EV = invoke_result_t<EVF, const edge_value_t<G>&>` (or `void` if no evf)
+**Returns**: Range yielding `edge_info<VId, true, E, EV>` (always sourced)
 
 **Implementation Notes**:
 - Flattens the two-level `for u in vertices(g): for e in edges(g, u)` iteration
 - Uses `std::views::join` or custom join iterator
-- Edge descriptors naturally carry source context from outer vertex loop
+- Each edge includes source_id from the outer loop
 
 **File Location**: `include/graph/views/edgelist.hpp`
 
@@ -265,34 +259,30 @@ public:
 ```cpp
 template<index_adjacency_list G, class VVF = void, class Alloc = std::allocator<...>>
 auto vertices_dfs(G&& g, vertex_id_t<G> seed, VVF&& vvf = {}, Alloc alloc = {})
-    -> /* dfs_view yielding vertex_info<vertex_descriptor<G>, VV> */
+    -> /* dfs_view yielding vertex_info */
 ```
 
-**Yields**: `vertex_info<V, VV>` in DFS order where:
-- `V = vertex_descriptor<...>`
-- `VV = invoke_result_t<VVF, const vertex_value_t<G>&>` (or `void`)
+**Yields**: `vertex_info<VId, V, VV>` in DFS order
 
 #### 4.2.2 edges_dfs
 
 ```cpp
 template<index_adjacency_list G, class EVF = void, class Alloc = std::allocator<...>>
 auto edges_dfs(G&& g, vertex_id_t<G> seed, EVF&& evf = {}, Alloc alloc = {})
-    -> /* dfs_view yielding edge_info<edge_descriptor<G>, EV> */
+    -> /* dfs_view yielding edge_info */
 ```
 
-**Yields**: `edge_info<E, EV>` in DFS order where:
-- `E = edge_descriptor<...>` (with source context)
-- `EV = invoke_result_t<EVF, const edge_value_t<G>&>` (or `void`)
+**Yields**: `edge_info<VId, false, E, EV>` (non-sourced) in DFS order
 
 #### 4.2.3 sourced_edges_dfs
 
 ```cpp
 template<index_adjacency_list G, class EVF = void, class Alloc = std::allocator<...>>
 auto sourced_edges_dfs(G&& g, vertex_id_t<G> seed, EVF&& evf = {}, Alloc alloc = {})
-    -> /* dfs_view yielding edge_info<edge_descriptor<G>, EV> */
+    -> /* dfs_view yielding sourced edge_info */
 ```
 
-**Yields**: `edge_info<E, EV>` in DFS order (same as edges_dfs; distinction is in traversal behavior)
+**Yields**: `edge_info<VId, true, E, EV>` (sourced) in DFS order
 
 **DFS Implementation Strategy**:
 ```cpp
@@ -330,30 +320,24 @@ class dfs_view : public std::ranges::view_interface<dfs_view<G, Kind, VF, Alloc>
 ```cpp
 template<index_adjacency_list G, class VVF = void, class Alloc = std::allocator<...>>
 auto vertices_bfs(G&& g, vertex_id_t<G> seed, VVF&& vvf = {}, Alloc alloc = {})
-    -> /* bfs_view yielding vertex_info<vertex_descriptor<G>, VV> */
+    -> /* bfs_view yielding vertex_info */
 ```
-
-**Yields**: `vertex_info<V, VV>`
 
 #### 4.3.2 edges_bfs
 
 ```cpp
 template<index_adjacency_list G, class EVF = void, class Alloc = std::allocator<...>>  
 auto edges_bfs(G&& g, vertex_id_t<G> seed, EVF&& evf = {}, Alloc alloc = {})
-    -> /* bfs_view yielding edge_info<edge_descriptor<G>, EV> */
+    -> /* bfs_view yielding edge_info */
 ```
-
-**Yields**: `edge_info<E, EV>`
 
 #### 4.3.3 sourced_edges_bfs
 
 ```cpp
 template<index_adjacency_list G, class EVF = void, class Alloc = std::allocator<...>>
 auto sourced_edges_bfs(G&& g, vertex_id_t<G> seed, EVF&& evf = {}, Alloc alloc = {})
-    -> /* bfs_view yielding edge_info<edge_descriptor<G>, EV> */
+    -> /* bfs_view yielding sourced edge_info */
 ```
-
-**Yields**: `edge_info<E, EV>` (same type as edges_bfs)
 
 **BFS Implementation**: Same as DFS but uses `std::queue` instead of `std::stack`.
 
@@ -370,30 +354,24 @@ auto sourced_edges_bfs(G&& g, vertex_id_t<G> seed, EVF&& evf = {}, Alloc alloc =
 ```cpp
 template<index_adjacency_list G, class VVF = void, class Alloc = std::allocator<...>>
 auto vertices_topological_sort(G&& g, VVF&& vvf = {}, Alloc alloc = {})
-    -> /* topological_view yielding vertex_info<vertex_descriptor<G>, VV> */
+    -> /* topological_view yielding vertex_info */
 ```
-
-**Yields**: `vertex_info<V, VV>`
 
 #### 4.4.2 edges_topological_sort
 
 ```cpp
 template<index_adjacency_list G, class EVF = void, class Alloc = std::allocator<...>>
 auto edges_topological_sort(G&& g, EVF&& evf = {}, Alloc alloc = {})
-    -> /* topological_view yielding edge_info<edge_descriptor<G>, EV> */
+    -> /* topological_view yielding edge_info */
 ```
-
-**Yields**: `edge_info<E, EV>`
 
 #### 4.4.3 sourced_edges_topological_sort
 
 ```cpp
 template<index_adjacency_list G, class EVF = void, class Alloc = std::allocator<...>>
 auto sourced_edges_topological_sort(G&& g, EVF&& evf = {}, Alloc alloc = {})
-    -> /* topological_view yielding edge_info<edge_descriptor<G>, EV> */
+    -> /* topological_view yielding sourced edge_info */
 ```
-
-**Yields**: `edge_info<E, EV>` (same type as edges_topological_sort)
 
 **Implementation**: Uses reverse DFS post-order (Kahn's algorithm alternative available).
 
