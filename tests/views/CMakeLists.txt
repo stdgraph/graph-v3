@@ -3,6 +3,7 @@ add_executable(graph3_views_tests
     test_vertex_info.cpp
     test_edge_info.cpp
     test_neighbor_info.cpp
+    test_search_base.cpp
 )
 
 target_link_libraries(graph3_views_tests
