@@ -2,7 +2,7 @@
 
 **Branch**: `feature/views-implementation`  
 **Based on**: [view_strategy.md](view_strategy.md)  
-**Status**: Phase 2 In Progress (2026-02-01)
+**Status**: Phase 2 Complete (2026-02-01)
 
 ---
 
@@ -37,7 +37,7 @@ This plan implements graph views as described in D3129 and detailed in view_stra
 - [x] **Step 2.3**: Implement neighbors view + tests ✅ (2026-02-01)
 - [x] **Step 2.4**: Implement edgelist view for adjacency_list + tests ✅ (2026-02-01)
 - [x] **Step 2.4.1**: Implement edgelist view for edge_list + tests ✅ (2026-02-01)
-- [ ] **Step 2.5**: Create basic_views.hpp header
+- [x] **Step 2.5**: Create basic_views.hpp header ✅ (2026-02-01)
 
 ### Phase 3: DFS Views
 - [ ] **Step 3.1**: Implement DFS infrastructure + vertices_dfs + tests
@@ -874,7 +874,11 @@ auto edgelist(EL&& el, EVF&& evf) {
 
 ---
 
-### Step 2.5: Create basic_views.hpp header
+### Step 2.5: Create basic_views.hpp header ✅ COMPLETE
+
+**Completion Date**: 2026-02-01  
+**Commit**: 8003441 "[views] Step 2.5: Add basic_views.hpp convenience header"  
+**Test Results**: ✅ 109 test cases (2 new), 860 assertions, all passing
 
 **Goal**: Create convenience header that includes all basic views.
 
