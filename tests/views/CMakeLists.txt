@@ -9,6 +9,7 @@ add_executable(graph3_views_tests
     test_incidence.cpp
     test_neighbors.cpp
     test_edgelist.cpp
+    test_basic_views.cpp
 )
 
 target_link_libraries(graph3_views_tests
