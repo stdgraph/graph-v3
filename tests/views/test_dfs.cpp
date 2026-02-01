@@ -537,3 +537,450 @@ TEST_CASE("vertices_dfs - pre-order property", "[dfs][vertices][order]") {
     REQUIRE(pos(2) < pos(5));
     REQUIRE(pos(2) < pos(6));
 }
+
+// =============================================================================
+// edges_dfs Tests
+// =============================================================================
+
+// =============================================================================
+// Test 15: edges_dfs Basic Traversal
+// =============================================================================
+
+TEST_CASE("edges_dfs - basic traversal order", "[dfs][edges]") {
+    //     0
+    //    / \
+    //   1   2
+    //  / \
+    // 3   4
+    using Graph = std::vector<std::vector<int>>;
+    Graph g = {
+        {1, 2},     // 0 -> 1, 2
+        {3, 4},     // 1 -> 3, 4
+        {},         // 2 (leaf)
+        {},         // 3 (leaf)
+        {}          // 4 (leaf)
+    };
+
+    SECTION("edges from vertex 0") {
+        std::vector<std::pair<int, int>> edges_visited;
+        
+        for (auto [e] : edges_dfs(g, 0)) {
+            auto src = static_cast<int>(source_id(g, e));
+            auto tgt = static_cast<int>(target_id(g, e));
+            edges_visited.emplace_back(src, tgt);
+        }
+        
+        // DFS tree edges: 0->1, 1->3, 1->4, 0->2
+        // Note: Seed vertex 0 has no incoming edge, so we get 4 tree edges
+        REQUIRE(edges_visited.size() == 4);
+        
+        // All edges are tree edges to unvisited vertices
+        std::set<int> targets;
+        for (auto [src, tgt] : edges_visited) {
+            targets.insert(tgt);
+        }
+        REQUIRE(targets == std::set<int>{1, 2, 3, 4});
+    }
+
+    SECTION("edges from leaf vertex") {
+        std::vector<std::pair<int, int>> edges_visited;
+        
+        for (auto [e] : edges_dfs(g, 3)) {
+            auto src = static_cast<int>(source_id(g, e));
+            auto tgt = static_cast<int>(target_id(g, e));
+            edges_visited.emplace_back(src, tgt);
+        }
+        
+        // Leaf vertex has no outgoing edges
+        REQUIRE(edges_visited.empty());
+    }
+}
+
+// =============================================================================
+// Test 16: edges_dfs Structured Bindings
+// =============================================================================
+
+TEST_CASE("edges_dfs - structured bindings", "[dfs][edges][bindings]") {
+    using Graph = std::vector<std::vector<int>>;
+    Graph g = {
+        {1, 2},
+        {2},
+        {}
+    };
+
+    SECTION("structured binding [e]") {
+        int count = 0;
+        
+        for (auto [e] : edges_dfs(g, 0)) {
+            // Access edge through structured binding
+            [[maybe_unused]] auto tgt = target_id(g, e);
+            count++;
+        }
+        
+        // Two edges: 0->1, 1->2 (note: 0->2 is skipped because 2 already visited via 1)
+        REQUIRE(count == 2);
+    }
+
+    SECTION("structured binding [e, val] with value function") {
+        auto dfs = edges_dfs(g, 0, [&g](auto e) { 
+            return target_id(g, e) * 10; 
+        });
+        
+        std::vector<std::pair<int, int>> results;
+        for (auto [e, val] : dfs) {
+            results.emplace_back(static_cast<int>(target_id(g, e)), val);
+        }
+        
+        REQUIRE(results.size() == 2);
+        for (auto& [tgt, val] : results) {
+            REQUIRE(val == tgt * 10);
+        }
+    }
+}
+
+// =============================================================================
+// Test 17: edges_dfs Value Function Types
+// =============================================================================
+
+TEST_CASE("edges_dfs - value function types", "[dfs][edges][evf]") {
+    using Graph = std::vector<std::vector<int>>;
+    Graph g = {
+        {1, 2},
+        {},
+        {}
+    };
+
+    SECTION("returning int") {
+        auto dfs = edges_dfs(g, 0, [&g](auto e) { 
+            return static_cast<int>(target_id(g, e)); 
+        });
+        
+        int sum = 0;
+        for (auto [e, val] : dfs) {
+            sum += val;
+        }
+        REQUIRE(sum == 1 + 2);
+    }
+
+    SECTION("returning string") {
+        auto dfs = edges_dfs(g, 0, [&g](auto e) { 
+            return "e" + std::to_string(source_id(g, e)) + "_" + std::to_string(target_id(g, e)); 
+        });
+        
+        std::vector<std::string> names;
+        for (auto [e, name] : dfs) {
+            names.push_back(name);
+        }
+        
+        REQUIRE(names.size() == 2);
+        // Order depends on DFS, but should have both edges
+        std::set<std::string> name_set(names.begin(), names.end());
+        REQUIRE(name_set == std::set<std::string>{"e0_1", "e0_2"});
+    }
+
+    SECTION("capturing lambda") {
+        int multiplier = 5;
+        auto dfs = edges_dfs(g, 0, [&g, multiplier](auto e) { 
+            return static_cast<int>(target_id(g, e)) * multiplier; 
+        });
+        
+        std::vector<int> values;
+        for (auto [e, val] : dfs) {
+            values.push_back(val);
+        }
+        
+        REQUIRE(values.size() == 2);
+        std::set<int> value_set(values.begin(), values.end());
+        REQUIRE(value_set == std::set<int>{5, 10});  // 1*5, 2*5
+    }
+}
+
+// =============================================================================
+// Test 18: edges_dfs Cycle Handling
+// =============================================================================
+
+TEST_CASE("edges_dfs - cycle handling", "[dfs][edges][visited]") {
+    // Graph with cycle: 0 -> 1 -> 2 -> 0
+    using Graph = std::vector<std::vector<int>>;
+    Graph g = {
+        {1},        // 0 -> 1
+        {2},        // 1 -> 2
+        {0}         // 2 -> 0 (back edge)
+    };
+
+    std::vector<std::pair<int, int>> edges_visited;
+    
+    for (auto [e] : edges_dfs(g, 0)) {
+        auto src = static_cast<int>(source_id(g, e));
+        auto tgt = static_cast<int>(target_id(g, e));
+        edges_visited.emplace_back(src, tgt);
+    }
+    
+    // Only tree edges: 0->1, 1->2
+    // The back edge 2->0 is NOT yielded because vertex 0 is already visited
+    REQUIRE(edges_visited.size() == 2);
+    REQUIRE(edges_visited[0] == std::pair<int, int>{0, 1});
+    REQUIRE(edges_visited[1] == std::pair<int, int>{1, 2});
+}
+
+// =============================================================================
+// Test 19: edges_dfs Diamond DAG
+// =============================================================================
+
+TEST_CASE("edges_dfs - diamond DAG", "[dfs][edges][topology]") {
+    // Diamond DAG
+    //     0
+    //    / \
+    //   1   2
+    //    \ /
+    //     3
+    using Graph = std::vector<std::vector<int>>;
+    Graph g = {
+        {1, 2},
+        {3},
+        {3},
+        {}
+    };
+
+    std::vector<std::pair<int, int>> edges_visited;
+    for (auto [e] : edges_dfs(g, 0)) {
+        auto src = static_cast<int>(source_id(g, e));
+        auto tgt = static_cast<int>(target_id(g, e));
+        edges_visited.emplace_back(src, tgt);
+    }
+    
+    // Tree edges: 0->1, 1->3, 0->2 (2->3 skipped because 3 already visited)
+    REQUIRE(edges_visited.size() == 3);
+    
+    // Verify all tree edges reach unique targets
+    std::set<int> targets;
+    for (auto [src, tgt] : edges_visited) {
+        targets.insert(tgt);
+    }
+    REQUIRE(targets == std::set<int>{1, 2, 3});
+}
+
+// =============================================================================
+// Test 20: edges_dfs Disconnected Graph
+// =============================================================================
+
+TEST_CASE("edges_dfs - disconnected graph", "[dfs][edges][topology]") {
+    // Two components: 0-1-2 and 3-4
+    using Graph = std::vector<std::vector<int>>;
+    Graph g = {
+        {1},
+        {2},
+        {},
+        {4},
+        {}
+    };
+
+    SECTION("edges from component 1") {
+        std::vector<std::pair<int, int>> edges_visited;
+        for (auto [e] : edges_dfs(g, 0)) {
+            auto src = static_cast<int>(source_id(g, e));
+            auto tgt = static_cast<int>(target_id(g, e));
+            edges_visited.emplace_back(src, tgt);
+        }
+        
+        // Only edges in component 1
+        REQUIRE(edges_visited.size() == 2);
+        REQUIRE(edges_visited[0] == std::pair<int, int>{0, 1});
+        REQUIRE(edges_visited[1] == std::pair<int, int>{1, 2});
+    }
+
+    SECTION("edges from component 2") {
+        std::vector<std::pair<int, int>> edges_visited;
+        for (auto [e] : edges_dfs(g, 3)) {
+            auto src = static_cast<int>(source_id(g, e));
+            auto tgt = static_cast<int>(target_id(g, e));
+            edges_visited.emplace_back(src, tgt);
+        }
+        
+        // Only edge in component 2
+        REQUIRE(edges_visited.size() == 1);
+        REQUIRE(edges_visited[0] == std::pair<int, int>{3, 4});
+    }
+}
+
+// =============================================================================
+// Test 21: edges_dfs Single Vertex
+// =============================================================================
+
+TEST_CASE("edges_dfs - single vertex graph", "[dfs][edges][edge_cases]") {
+    using Graph = std::vector<std::vector<int>>;
+    Graph g = {
+        {}  // Single vertex with no edges
+    };
+
+    std::vector<int> edge_count;
+    for (auto [e] : edges_dfs(g, 0)) {
+        edge_count.push_back(1);
+    }
+    
+    REQUIRE(edge_count.empty());
+}
+
+// =============================================================================
+// Test 22: edges_dfs search_view Concept
+// =============================================================================
+
+TEST_CASE("edges_dfs - search_view concept", "[dfs][edges][concepts]") {
+    using Graph = std::vector<std::vector<int>>;
+    Graph g = {{1}, {}};
+    
+    auto dfs = edges_dfs(g, 0);
+    
+    STATIC_REQUIRE(search_view<decltype(dfs)>);
+    
+    // Verify accessors exist and return correct types
+    REQUIRE(dfs.cancel() == cancel_search::continue_search);
+    REQUIRE(dfs.depth() >= 0);
+    REQUIRE(dfs.size() >= 0);
+}
+
+// =============================================================================
+// Test 23: edges_dfs Range Concepts
+// =============================================================================
+
+TEST_CASE("edges_dfs - range concepts", "[dfs][edges][concepts]") {
+    using Graph = std::vector<std::vector<int>>;
+    Graph g = {{1}, {}};
+    
+    auto dfs = edges_dfs(g, 0);
+    
+    STATIC_REQUIRE(std::ranges::input_range<decltype(dfs)>);
+    STATIC_REQUIRE(std::ranges::view<decltype(dfs)>);
+}
+
+// =============================================================================
+// Test 24: edges_dfs edge_info Type Verification
+// =============================================================================
+
+TEST_CASE("edges_dfs - edge_info type verification", "[dfs][edges][types]") {
+    using Graph = std::vector<std::vector<int>>;
+    using EdgeType = edge_t<Graph>;
+
+    SECTION("no value function") {
+        using ViewType = edges_dfs_view<Graph, void, std::allocator<bool>>;
+        using InfoType = typename ViewType::info_type;
+        
+        STATIC_REQUIRE(std::is_same_v<InfoType, edge_info<void, false, EdgeType, void>>);
+    }
+
+    SECTION("with value function") {
+        using EVF = int(*)(EdgeType);
+        using ViewType = edges_dfs_view<Graph, EVF, std::allocator<bool>>;
+        using InfoType = typename ViewType::info_type;
+        
+        STATIC_REQUIRE(std::is_same_v<InfoType, edge_info<void, false, EdgeType, int>>);
+    }
+}
+
+// =============================================================================
+// Test 25: edges_dfs Weighted Graph
+// =============================================================================
+
+TEST_CASE("edges_dfs - weighted graph", "[dfs][edges][weighted]") {
+    using Graph = std::vector<std::vector<std::pair<int, double>>>;
+    Graph g = {
+        {{1, 1.5}, {2, 2.5}},
+        {{2, 3.5}},
+        {}
+    };
+
+    std::vector<double> weights;
+    for (auto [e] : edges_dfs(g, 0)) {
+        // Edge value is the weight in the pair
+        weights.push_back(edge_value(g, e));
+    }
+    
+    // Two tree edges: 0->1 (1.5), 1->2 (3.5)
+    // Note: 0->2 is skipped because 2 is already visited via 1
+    REQUIRE(weights.size() == 2);
+    REQUIRE(weights[0] == 1.5);
+    REQUIRE(weights[1] == 3.5);
+}
+
+// =============================================================================
+// Test 26: edges_dfs Large Graph
+// =============================================================================
+
+TEST_CASE("edges_dfs - large linear graph", "[dfs][edges][performance]") {
+    // Linear chain: 0 -> 1 -> 2 -> ... -> 999
+    using Graph = std::vector<std::vector<int>>;
+    Graph g(1000);
+    for (int i = 0; i < 999; ++i) {
+        g[i].push_back(i + 1);
+    }
+
+    int edge_count = 0;
+    for (auto [e] : edges_dfs(g, 0)) {
+        ++edge_count;
+    }
+    
+    // 999 tree edges
+    REQUIRE(edge_count == 999);
+}
+
+// =============================================================================
+// Test 27: edges_dfs Deque-based Graph
+// =============================================================================
+
+TEST_CASE("edges_dfs - deque-based graph", "[dfs][edges][deque]") {
+    using Graph = std::deque<std::deque<int>>;
+    Graph g = {
+        {1, 2},
+        {},
+        {}
+    };
+
+    std::vector<int> targets;
+    for (auto [e] : edges_dfs(g, 0)) {
+        targets.push_back(static_cast<int>(target_id(g, e)));
+    }
+    
+    REQUIRE(targets.size() == 2);
+    std::set<int> target_set(targets.begin(), targets.end());
+    REQUIRE(target_set == std::set<int>{1, 2});
+}
+
+// =============================================================================
+// Test 28: edges_dfs Depth and Size Accessors
+// =============================================================================
+
+TEST_CASE("edges_dfs - depth and size accessors", "[dfs][edges][accessors]") {
+    //     0
+    //    /|\
+    //   1 2 3
+    //   |
+    //   4
+    //   |
+    //   5
+    using Graph = std::vector<std::vector<int>>;
+    Graph g = {
+        {1, 2, 3},  // 0 -> 1, 2, 3
+        {4},        // 1 -> 4
+        {},         // 2 (leaf)
+        {},         // 3 (leaf)
+        {5},        // 4 -> 5
+        {}          // 5 (leaf)
+    };
+
+    auto dfs = edges_dfs(g, 0);
+    
+    // Before iteration
+    REQUIRE(dfs.depth() == 1);  // seed is on stack
+    REQUIRE(dfs.size() == 0);   // no edges counted yet
+    
+    // Iterate
+    int edge_count = 0;
+    for ([[maybe_unused]] auto [e] : dfs) {
+        edge_count++;
+    }
+    
+    // 5 tree edges (one for each non-seed vertex)
+    REQUIRE(edge_count == 5);
+    REQUIRE(dfs.size() == 5);
+}
+
