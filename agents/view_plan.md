@@ -34,8 +34,9 @@ This plan implements graph views as described in D3129 and detailed in view_stra
 ### Phase 2: Basic Views
 - [x] **Step 2.1**: Implement vertexlist view + tests ✅ (2026-02-01)
 - [x] **Step 2.2**: Implement incidence view + tests ✅ (2026-02-01)
-- [ ] **Step 2.3**: Implement neighbors view + tests
-- [ ] **Step 2.4**: Implement edgelist view + tests
+- [x] **Step 2.3**: Implement neighbors view + tests ✅ (2026-02-01)
+- [x] **Step 2.4**: Implement edgelist view for adjacency_list + tests ✅ (2026-02-01)
+- [ ] **Step 2.4.1**: Implement edgelist view for edge_list + tests
 - [ ] **Step 2.5**: Create basic_views.hpp header
 
 ### Phase 3: DFS Views
@@ -644,51 +645,148 @@ concept search_view = requires(V& v, const V& cv) {
 
 ---
 
-### Step 2.3: Implement neighbors view
+### Step 2.3: Implement neighbors view ✅ COMPLETE
 
-**Goal**: Implement neighbors view yielding `neighbor_info<void, false, vertex_descriptor, VV>`.
+**Status**: Implemented and tested (82 assertions, 15 test cases)
 
-**Files to Create**:
-- `include/graph/views/neighbors.hpp`
+**Files Created**:
+- `include/graph/views/neighbors.hpp` - View implementation
+- `tests/views/test_neighbors.cpp` - Comprehensive test suite
+
+**Implementation Summary**:
+- `neighbors_view<G, void>` - No value function variant
+- `neighbors_view<G, VVF>` - With value function variant
+- Yields `neighbor_info<void, false, vertex_t<G>, VV>` where VV is void or invoke result
+- Factory functions: `neighbors(g, u)` and `neighbors(g, u, vvf)`
+- Uses `adjacency_list` concept
+- Constrained with `vertex_value_function` concept
+- Uses `target()` CPO to get target vertex descriptor from edge
+- Uses `edges()` CPO for proper iterator-based container support
+
+**Test Coverage** (15 test cases, 82 assertions):
+- Empty vertex (no neighbors) iteration
+- Single and multiple neighbor iteration
+- Structured bindings: `[v]` and `[v, val]`
+- Various value function types (string, double, capturing lambda)
+- Vertex descriptor access (vertex_id)
+- Weighted graph (pair edges)
+- Range concepts verified (input_range, forward_range, sized_range)
+- Iterator properties (pre/post increment, equality)
+- neighbor_info type verification
+- Deque-based graph support
+- All-vertices iteration pattern (vertexlist + neighbors)
+- **Map vertices + vector edges** (sparse vertex IDs)
+- **Vector vertices + map edges** (sorted edges)
+- **Map vertices + map edges** (fully sparse graph)
+
+**Commit Message**:
+```
+[views] Phase 2.3: Implement neighbors view
+
+- Yields neighbor_info<void, false, vertex_descriptor, VV>
+- Provides target vertex descriptors via target() CPO
+- Value function receives target vertex descriptor
+- Supports structured bindings: [v] and [v, val]
+- Map-based container coverage for vertices and edges
+- 82 assertions in 15 test cases
+```
+
+---
+
+### Step 2.4: Implement edgelist view for adjacency_list ✅ COMPLETED (2026-02-01)
+
+**Goal**: Implement edgelist view that flattens all edges from an adjacency_list, yielding `edge_info<void, false, edge_descriptor, EV>`.
+
+**Implementation Summary**:
+
+Created `include/graph/views/edgelist.hpp`:
+- `edgelist_view<G, void>` - Version without value function
+- `edgelist_view<G, EVF>` - Version with edge value function
+- Iterator uses vertex_descriptor_view to iterate all vertices
+- For each vertex, iterates its edges using `edges(g, v)` CPO
+- Skips vertices with no edges automatically
+- Factory functions: `edgelist(g)` and `edgelist(g, evf)`
+
+Created `tests/views/test_edgelist.cpp`:
+- 15 test cases covering:
+  - Empty graph and vertices with no edges
+  - Single edge
+  - Multiple edges from single vertex
+  - Flattening multiple vertex edge lists
+  - Skipping empty vertices
+  - Value function types (string, double, capturing lambda)
+  - Range algorithms (distance, count_if, for_each, find_if)
+  - Container variants (vector of deques, deque of vectors)
+  - Iterator operations (post-increment, equality, end comparison)
+  - Range concepts satisfaction
+  - Map-based vertex containers
+  - Map-based edge containers (weighted edges)
+  - Fully sparse graphs (map vertices + map edges)
+- 80 assertions in 15 test cases
+
+**Acceptance Criteria**: ✅ All met
+- View correctly flattens all edges
+- Edge descriptors contain source context (source_id/target_id work)
+- Value function receives descriptor
+- Structured bindings work: `for (auto [e] : edgelist(g))` and `for (auto [e, val] : edgelist(g, evf))`
+- Tests pass with sanitizers
+- Map-based containers supported (vov, voem, mov, moem)
+
+**Commit Message**:
+```
+[views] Implement edgelist view for adjacency_list
+
+- Yields edge_info<void, false, edge_descriptor, EV>
+- Flattens adjacency list structure
+- Edge descriptor contains source vertex descriptor
+- Value function receives edge descriptor
+- Tests verify flattening and edge access
+```
+
+---
+
+### Step 2.4.1: Implement edgelist view for edge_list
+
+**Goal**: Implement edgelist view that iterates over an edge_list data structure, yielding `edge_info<void, false, edge_descriptor, EV>`.
+
+**Files to Modify**:
+- `include/graph/views/edgelist.hpp` (add edge_list overloads)
 
 **Implementation**:
 ```cpp
 namespace graph::views {
 
-template<adjacency_list G, class VVF>
-class neighbors_view : public std::ranges::view_interface<neighbors_view<G, VVF>> {
-    G* g_;
-    vertex_id_t<G> source_id_;
-    [[no_unique_address]] VVF vvf_;
+// Edge list view - wraps an edge_list range directly
+template<edge_list_range EL, class EVF>
+class edge_list_edgelist_view : public std::ranges::view_interface<edge_list_edgelist_view<EL, EVF>> {
+    EL* el_;
+    [[no_unique_address]] EVF evf_;
     
 public:
-    neighbors_view(G& g, vertex_id_t<G> uid, VVF vvf) 
-        : g_(&g), source_id_(uid), vvf_(std::move(vvf)) {}
+    edge_list_edgelist_view(EL& el, EVF evf) : el_(&el), evf_(std::move(evf)) {}
     
     class iterator {
-        G* g_;
-        edge_iterator_t<G> current_;
-        [[no_unique_address]] VVF* vvf_;
+        using base_iter = std::ranges::iterator_t<EL>;
+        base_iter current_;
+        [[no_unique_address]] EVF* evf_;
         
     public:
         using iterator_category = std::forward_iterator_tag;
         using difference_type   = std::ptrdiff_t;
-        using value_type        = neighbor_info<void, false, vertex_descriptor_t<G>, 
-                                               std::invoke_result_t<VVF, vertex_descriptor_t<G>>>;
+        using value_type        = edge_info<void, false, edge_list::edge_t<EL>, 
+                                           std::invoke_result_t<EVF, edge_list::edge_t<EL>>>;
         
-        iterator(G* g, edge_iterator_t<G> it, VVF* vvf)
-            : g_(g), current_(it), vvf_(vvf) {}
+        iterator(base_iter it, EVF* evf)
+            : current_(it), evf_(evf) {}
         
         auto operator*() const {
-            auto target_id = graph::target_id(*g_, *current_);
-            auto target_desc = create_vertex_descriptor(*g_, target_id);
-            
-            if constexpr (std::is_void_v<VVF>) {
-                return neighbor_info<void, false, vertex_descriptor_t<G>, void>{target_desc};
+            auto edesc = *current_;  // edge_list edge descriptor
+            if constexpr (std::is_void_v<EVF>) {
+                return edge_info<void, false, edge_list::edge_t<EL>, void>{edesc};
             } else {
-                return neighbor_info<void, false, vertex_descriptor_t<G>, 
-                                   std::invoke_result_t<VVF, vertex_descriptor_t<G>>>{
-                    target_desc, (*vvf_)(target_desc)
+                return edge_info<void, false, edge_list::edge_t<EL>, 
+                               std::invoke_result_t<EVF, edge_list::edge_t<EL>>>{
+                    edesc, (*evf_)(edesc)
                 };
             }
         }
@@ -704,169 +802,27 @@ public:
             return tmp;
         }
         
-        bool operator==(const iterator& other) const = default;
-    };
-    
-    auto begin() { 
-        auto [first, last] = edges(*g_, source_id_);
-        return iterator(g_, first, &vvf_); 
-    }
-    
-    auto end() { 
-        auto [first, last] = edges(*g_, source_id_);
-        return iterator(g_, last, &vvf_); 
-    }
-};
-
-// Factory function - no value function
-template<adjacency_list G>
-auto neighbors(G&& g, vertex_id_t<G> uid) {
-    return neighbors_view<std::remove_reference_t<G>, void>(g, uid, void{});
-}
-
-// Factory function - with value function
-template<adjacency_list G, class VVF>
-    requires vertex_value_function<VVF, vertex_descriptor_t<G>>
-auto neighbors(G&& g, vertex_id_t<G> uid, VVF&& vvf) {
-    return neighbors_view<std::remove_reference_t<G>, std::decay_t<VVF>>(
-        g, uid, std::forward<VVF>(vvf)
-    );
-}
-
-} // namespace graph::views
-```
-
-**Tests to Create**:
-- `tests/views/test_neighbors.cpp`
-  - Test iteration over neighbor vertices
-  - Test structured binding `[v]` and `[v, val]`
-  - Test value function receives target vertex descriptor
-  - Test with vertices having 0, 1, many neighbors
-  - Test descriptor provides access to target vertex data
-  - Test const graph behavior
-
-**Acceptance Criteria**:
-- View iterates over neighbor vertices correctly
-- Yields target vertex descriptor
-- Value function receives target descriptor
-- Structured bindings work
-- Tests pass with sanitizers
-
-**Commit Message**:
-```
-[views] Implement neighbors view
-
-- Yields neighbor_info<void, false, vertex_descriptor, VV>
-- Provides target vertex descriptors
-- Value function receives target vertex descriptor
-- Supports structured bindings: [v] and [v, val]
-- Tests verify neighbor access and value functions
-```
-
----
-
-### Step 2.4: Implement edgelist view
-
-**Goal**: Implement edgelist view that flattens all edges, yielding `edge_info<void, false, edge_descriptor, EV>`.
-
-**Files to Create**:
-- `include/graph/views/edgelist.hpp`
-
-**Implementation**:
-```cpp
-namespace graph::views {
-
-template<adjacency_list G, class EVF>
-class edgelist_view : public std::ranges::view_interface<edgelist_view<G, EVF>> {
-    G* g_;
-    [[no_unique_address]] EVF evf_;
-    
-public:
-    edgelist_view(G& g, EVF evf) : g_(&g), evf_(std::move(evf)) {}
-    
-    class iterator {
-        G* g_;
-        vertex_id_t<G> vertex_id_;
-        vertex_descriptor_t<G> vertex_desc_;
-        edge_iterator_t<G> edge_it_;
-        edge_iterator_t<G> edge_end_;
-        [[no_unique_address]] EVF* evf_;
-        
-        void advance_to_next_edge() {
-            while (edge_it_ == edge_end_ && vertex_id_ < num_vertices(*g_)) {
-                ++vertex_id_;
-                if (vertex_id_ < num_vertices(*g_)) {
-                    vertex_desc_ = create_vertex_descriptor(*g_, vertex_id_);
-                    auto [first, last] = edges(*g_, vertex_id_);
-                    edge_it_ = first;
-                    edge_end_ = last;
-                }
-            }
-        }
-        
-    public:
-        using iterator_category = std::forward_iterator_tag;
-        using difference_type   = std::ptrdiff_t;
-        using value_type        = edge_info<void, false, edge_descriptor_t<G>, 
-                                           std::invoke_result_t<EVF, edge_descriptor_t<G>>>;
-        
-        iterator(G* g, vertex_id_t<G> vid, EVF* evf, bool is_end = false)
-            : g_(g), vertex_id_(vid), evf_(evf) {
-            if (!is_end && vertex_id_ < num_vertices(*g_)) {
-                vertex_desc_ = create_vertex_descriptor(*g_, vertex_id_);
-                auto [first, last] = edges(*g_, vertex_id_);
-                edge_it_ = first;
-                edge_end_ = last;
-                advance_to_next_edge();
-            }
-        }
-        
-        auto operator*() const {
-            auto edesc = create_edge_descriptor(*g_, edge_it_, vertex_desc_);
-            if constexpr (std::is_void_v<EVF>) {
-                return edge_info<void, false, edge_descriptor_t<G>, void>{edesc};
-            } else {
-                return edge_info<void, false, edge_descriptor_t<G>, 
-                               std::invoke_result_t<EVF, edge_descriptor_t<G>>>{
-                    edesc, (*evf_)(edesc)
-                };
-            }
-        }
-        
-        iterator& operator++() {
-            ++edge_it_;
-            advance_to_next_edge();
-            return *this;
-        }
-        
-        iterator operator++(int) {
-            auto tmp = *this;
-            ++*this;
-            return tmp;
-        }
-        
         bool operator==(const iterator& other) const {
-            return vertex_id_ == other.vertex_id_ && 
-                   (vertex_id_ >= num_vertices(*g_) || edge_it_ == other.edge_it_);
+            return current_ == other.current_;
         }
     };
     
-    auto begin() { return iterator(g_, 0, &evf_); }
-    auto end() { return iterator(g_, num_vertices(*g_), &evf_, true); }
+    auto begin() { return iterator(std::ranges::begin(*el_), &evf_); }
+    auto end() { return iterator(std::ranges::end(*el_), &evf_); }
 };
 
-// Factory function - no value function
-template<adjacency_list G>
-auto edgelist(G&& g) {
-    return edgelist_view<std::remove_reference_t<G>, void>(g, void{});
+// Factory function for edge_list - no value function
+template<edge_list_range EL>
+auto edgelist(EL&& el) {
+    return edge_list_edgelist_view<std::remove_reference_t<EL>, void>(el, void{});
 }
 
-// Factory function - with value function
-template<adjacency_list G, class EVF>
-    requires edge_value_function<EVF, edge_descriptor_t<G>>
-auto edgelist(G&& g, EVF&& evf) {
-    return edgelist_view<std::remove_reference_t<G>, std::decay_t<EVF>>(
-        g, std::forward<EVF>(evf)
+// Factory function for edge_list - with value function
+template<edge_list_range EL, class EVF>
+    requires edge_value_function<EVF, edge_list::edge_t<EL>>
+auto edgelist(EL&& el, EVF&& evf) {
+    return edge_list_edgelist_view<std::remove_reference_t<EL>, std::decay_t<EVF>>(
+        el, std::forward<EVF>(evf)
     );
 }
 
@@ -874,31 +830,32 @@ auto edgelist(G&& g, EVF&& evf) {
 ```
 
 **Tests to Create**:
-- `tests/views/test_edgelist.cpp`
-  - Test iteration over all edges in graph
+- Extend `tests/views/test_edgelist.cpp`
+  - Test iteration over edge_list
   - Test structured binding `[e]` and `[e, val]`
-  - Test edge descriptor contains source vertex descriptor
-  - Test with empty graph, single edge, multiple edges
-  - Test correct flattening of adjacency list structure
+  - Test edge_list edge descriptor provides source_id, target_id access
+  - Test with empty edge_list, single edge, multiple edges
   - Test value function receives edge descriptor
-  - Test const graph behavior
+  - Test const edge_list behavior
+  - Test weighted edge_list (with edge values)
 
 **Acceptance Criteria**:
-- View correctly flattens all edges
-- Edge descriptors contain source context
+- View iterates over edge_list correctly
+- Edge descriptors provide source/target access via CPOs
 - Value function receives descriptor
 - Structured bindings work
+- Works with various edge_list configurations
 - Tests pass with sanitizers
 
 **Commit Message**:
 ```
-[views] Implement edgelist view
+[views] Implement edgelist view for edge_list
 
-- Yields edge_info<void, false, edge_descriptor, EV>
-- Flattens adjacency list structure
-- Edge descriptor contains source vertex descriptor
+- Yields edge_info<void, false, edge_list::edge_descriptor, EV>
+- Directly wraps edge_list range iteration
+- Edge descriptor provides source_id/target_id via CPOs
 - Value function receives edge descriptor
-- Tests verify flattening and edge access
+- Tests verify edge_list iteration and access
 ```
 
 ---
