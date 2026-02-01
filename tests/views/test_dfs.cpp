@@ -984,3 +984,332 @@ TEST_CASE("edges_dfs - depth and size accessors", "[dfs][edges][accessors]") {
     REQUIRE(dfs.size() == 5);
 }
 
+// =============================================================================
+// DFS Cancel Functionality Tests (Step 3.3)
+// =============================================================================
+
+// =============================================================================
+// Test 29: vertices_dfs cancel_all
+// =============================================================================
+
+TEST_CASE("vertices_dfs - cancel_all stops traversal", "[dfs][vertices][cancel]") {
+    //     0
+    //    / \
+    //   1   2
+    //  / \
+    // 3   4
+    using Graph = std::vector<std::vector<int>>;
+    Graph g = {
+        {1, 2},     // 0 -> 1, 2
+        {3, 4},     // 1 -> 3, 4
+        {},         // 2 (leaf)
+        {},         // 3 (leaf)
+        {}          // 4 (leaf)
+    };
+
+    std::vector<int> visited;
+    auto dfs = vertices_dfs(g, 0);
+    
+    for (auto [v] : dfs) {
+        visited.push_back(static_cast<int>(vertex_id(g, v)));
+        if (vertex_id(g, v) == 1) {
+            dfs.cancel(cancel_search::cancel_all);
+        }
+    }
+    
+    // Should stop immediately after setting cancel_all
+    // Visited: 0, 1 (cancel_all set after visiting 1)
+    REQUIRE(visited.size() == 2);
+    REQUIRE(visited[0] == 0);
+    REQUIRE(visited[1] == 1);
+    
+    // Cancel state should be cancel_all
+    REQUIRE(dfs.cancel() == cancel_search::cancel_all);
+}
+
+// =============================================================================
+// Test 30: vertices_dfs cancel_branch skips subtree
+// =============================================================================
+
+TEST_CASE("vertices_dfs - cancel_branch skips subtree", "[dfs][vertices][cancel]") {
+    //     0
+    //    / \
+    //   1   2
+    //  / \
+    // 3   4
+    using Graph = std::vector<std::vector<int>>;
+    Graph g = {
+        {1, 2},     // 0 -> 1, 2
+        {3, 4},     // 1 -> 3, 4
+        {},         // 2 (leaf)
+        {},         // 3 (leaf)
+        {}          // 4 (leaf)
+    };
+
+    std::vector<int> visited;
+    auto dfs = vertices_dfs(g, 0);
+    
+    for (auto [v] : dfs) {
+        visited.push_back(static_cast<int>(vertex_id(g, v)));
+        if (vertex_id(g, v) == 1) {
+            // Skip vertex 1's subtree (3, 4)
+            dfs.cancel(cancel_search::cancel_branch);
+        }
+    }
+    
+    // Should visit 0, 1, then skip 3 and 4 (subtree of 1), then visit 2
+    // Visited: 0, 1, 2
+    REQUIRE(visited.size() == 3);
+    std::set<int> visited_set(visited.begin(), visited.end());
+    REQUIRE(visited_set == std::set<int>{0, 1, 2});
+    
+    // 3 and 4 should NOT be visited
+    REQUIRE(std::find(visited.begin(), visited.end(), 3) == visited.end());
+    REQUIRE(std::find(visited.begin(), visited.end(), 4) == visited.end());
+    
+    // Cancel state should be reset to continue_search
+    REQUIRE(dfs.cancel() == cancel_search::continue_search);
+}
+
+// =============================================================================
+// Test 31: vertices_dfs continue_search normal behavior
+// =============================================================================
+
+TEST_CASE("vertices_dfs - continue_search normal behavior", "[dfs][vertices][cancel]") {
+    using Graph = std::vector<std::vector<int>>;
+    Graph g = {
+        {1, 2},
+        {},
+        {}
+    };
+
+    auto dfs = vertices_dfs(g, 0);
+    
+    // Default is continue_search
+    REQUIRE(dfs.cancel() == cancel_search::continue_search);
+    
+    std::vector<int> visited;
+    for (auto [v] : dfs) {
+        visited.push_back(static_cast<int>(vertex_id(g, v)));
+    }
+    
+    // All vertices visited
+    REQUIRE(visited.size() == 3);
+}
+
+// =============================================================================
+// Test 32: vertices_dfs cancel state propagates through iterator copies
+// =============================================================================
+
+TEST_CASE("vertices_dfs - cancel state propagates through shared state", "[dfs][vertices][cancel]") {
+    using Graph = std::vector<std::vector<int>>;
+    Graph g = {
+        {1, 2},
+        {3},
+        {}
+    };
+
+    auto dfs = vertices_dfs(g, 0);
+    auto it = dfs.begin();
+    
+    // Advance a bit
+    ++it;  // now at vertex 1
+    
+    // Cancel via view
+    dfs.cancel(cancel_search::cancel_all);
+    
+    // Iterator should also see the cancel (shared state)
+    ++it;  // should stop
+    
+    REQUIRE(it.at_end());
+}
+
+// =============================================================================
+// Test 33: edges_dfs cancel_all stops traversal
+// =============================================================================
+
+TEST_CASE("edges_dfs - cancel_all stops traversal", "[dfs][edges][cancel]") {
+    using Graph = std::vector<std::vector<int>>;
+    Graph g = {
+        {1, 2},
+        {3, 4},
+        {},
+        {},
+        {}
+    };
+
+    std::vector<std::pair<int, int>> edges_visited;
+    auto dfs = edges_dfs(g, 0);
+    
+    for (auto [e] : dfs) {
+        auto src = static_cast<int>(source_id(g, e));
+        auto tgt = static_cast<int>(target_id(g, e));
+        edges_visited.emplace_back(src, tgt);
+        if (tgt == 3) {
+            dfs.cancel(cancel_search::cancel_all);
+        }
+    }
+    
+    // Should stop after edge to 3
+    // Edges: 0->1, 1->3 (cancel_all set after this)
+    REQUIRE(edges_visited.size() == 2);
+    REQUIRE(dfs.cancel() == cancel_search::cancel_all);
+}
+
+// =============================================================================
+// Test 34: edges_dfs cancel_branch skips subtree
+// =============================================================================
+
+TEST_CASE("edges_dfs - cancel_branch skips subtree", "[dfs][edges][cancel]") {
+    //     0
+    //    / \
+    //   1   2
+    //  / \
+    // 3   4
+    using Graph = std::vector<std::vector<int>>;
+    Graph g = {
+        {1, 2},
+        {3, 4},
+        {},
+        {},
+        {}
+    };
+
+    std::vector<std::pair<int, int>> edges_visited;
+    auto dfs = edges_dfs(g, 0);
+    
+    for (auto [e] : dfs) {
+        auto src = static_cast<int>(source_id(g, e));
+        auto tgt = static_cast<int>(target_id(g, e));
+        edges_visited.emplace_back(src, tgt);
+        if (tgt == 1) {
+            // Skip subtree rooted at 1 (edges 1->3, 1->4)
+            dfs.cancel(cancel_search::cancel_branch);
+        }
+    }
+    
+    // Should see edge 0->1 (then skip subtree), then edge 0->2
+    // Edges: 0->1, 0->2
+    REQUIRE(edges_visited.size() == 2);
+    
+    std::set<int> targets;
+    for (auto [src, tgt] : edges_visited) {
+        targets.insert(tgt);
+    }
+    REQUIRE(targets == std::set<int>{1, 2});
+    
+    // 3 and 4 should NOT be reached
+    REQUIRE(targets.find(3) == targets.end());
+    REQUIRE(targets.find(4) == targets.end());
+}
+
+// =============================================================================
+// Test 35: cancel_branch at root has no subtree to skip
+// =============================================================================
+
+TEST_CASE("vertices_dfs - cancel_branch at seed vertex", "[dfs][vertices][cancel]") {
+    using Graph = std::vector<std::vector<int>>;
+    Graph g = {
+        {1, 2},
+        {},
+        {}
+    };
+
+    std::vector<int> visited;
+    auto dfs = vertices_dfs(g, 0);
+    
+    for (auto [v] : dfs) {
+        visited.push_back(static_cast<int>(vertex_id(g, v)));
+        if (vertex_id(g, v) == 0) {
+            // Cancel at root - should skip entire traversal
+            dfs.cancel(cancel_search::cancel_branch);
+        }
+    }
+    
+    // Only seed vertex visited, subtree (1, 2) skipped
+    REQUIRE(visited.size() == 1);
+    REQUIRE(visited[0] == 0);
+}
+
+// =============================================================================
+// Test 36: Multiple cancel_branch calls
+// =============================================================================
+
+TEST_CASE("vertices_dfs - multiple cancel_branch calls", "[dfs][vertices][cancel]") {
+    //       0
+    //    /  |  \
+    //   1   2   3
+    //  /|   |   |\
+    // 4 5   6   7 8
+    using Graph = std::vector<std::vector<int>>;
+    Graph g = {
+        {1, 2, 3},  // 0 -> 1, 2, 3
+        {4, 5},     // 1 -> 4, 5
+        {6},        // 2 -> 6
+        {7, 8},     // 3 -> 7, 8
+        {},         // 4
+        {},         // 5
+        {},         // 6
+        {},         // 7
+        {}          // 8
+    };
+
+    std::vector<int> visited;
+    auto dfs = vertices_dfs(g, 0);
+    
+    for (auto [v] : dfs) {
+        int vid = static_cast<int>(vertex_id(g, v));
+        visited.push_back(vid);
+        // Skip subtrees of vertices 1 and 3
+        if (vid == 1 || vid == 3) {
+            dfs.cancel(cancel_search::cancel_branch);
+        }
+    }
+    
+    // Should visit: 0, 1 (skip 4,5), 2, 6, 3 (skip 7,8)
+    // Note: exact order depends on DFS exploration
+    std::set<int> visited_set(visited.begin(), visited.end());
+    REQUIRE(visited_set == std::set<int>{0, 1, 2, 3, 6});
+    
+    // Vertices 4, 5, 7, 8 should NOT be visited
+    REQUIRE(visited_set.find(4) == visited_set.end());
+    REQUIRE(visited_set.find(5) == visited_set.end());
+    REQUIRE(visited_set.find(7) == visited_set.end());
+    REQUIRE(visited_set.find(8) == visited_set.end());
+}
+
+// =============================================================================
+// Test 37: cancel with value function
+// =============================================================================
+
+TEST_CASE("vertices_dfs - cancel with value function", "[dfs][vertices][cancel]") {
+    using Graph = std::vector<std::vector<int>>;
+    Graph g = {
+        {1, 2},
+        {3, 4},
+        {},
+        {},
+        {}
+    };
+
+    std::vector<std::pair<int, int>> results;
+    auto dfs = vertices_dfs(g, 0, [&g](auto v) { 
+        return static_cast<int>(vertex_id(g, v)) * 10; 
+    });
+    
+    for (auto [v, val] : dfs) {
+        int vid = static_cast<int>(vertex_id(g, v));
+        results.emplace_back(vid, val);
+        if (vid == 1) {
+            dfs.cancel(cancel_search::cancel_branch);
+        }
+    }
+    
+    // Should visit 0, 1 (skip subtree), 2
+    REQUIRE(results.size() == 3);
+    
+    // Verify value function was called correctly
+    for (auto& [id, val] : results) {
+        REQUIRE(val == id * 10);
+    }
+}

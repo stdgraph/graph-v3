@@ -184,6 +184,13 @@ public:
                 return;
             }
             
+            // Handle cancel_branch: skip current subtree, continue with siblings
+            if (state_->cancel_ == cancel_search::cancel_branch) {
+                state_->stack_.pop();
+                if (state_->depth_ > 0) --state_->depth_;
+                state_->cancel_ = cancel_search::continue_search;
+            }
+            
             // Find next unvisited vertex using DFS
             while (!state_->stack_.empty()) {
                 auto& top = state_->stack_.top();
@@ -346,6 +353,13 @@ public:
             if (state_->cancel_ == cancel_search::cancel_all) {
                 while (!state_->stack_.empty()) state_->stack_.pop();
                 return;
+            }
+            
+            // Handle cancel_branch: skip current subtree, continue with siblings
+            if (state_->cancel_ == cancel_search::cancel_branch) {
+                state_->stack_.pop();
+                if (state_->depth_ > 0) --state_->depth_;
+                state_->cancel_ = cancel_search::continue_search;
             }
             
             // Find next unvisited vertex using DFS
@@ -645,6 +659,13 @@ public:
                 return;
             }
             
+            // Handle cancel_branch: skip current subtree, continue with siblings
+            if (state_->cancel_ == cancel_search::cancel_branch) {
+                state_->stack_.pop();
+                if (state_->depth_ > 0) --state_->depth_;
+                state_->cancel_ = cancel_search::continue_search;
+            }
+            
             // Find next tree edge using DFS
             while (!state_->stack_.empty()) {
                 auto& top = state_->stack_.top();
@@ -809,6 +830,13 @@ public:
             if (state_->cancel_ == cancel_search::cancel_all) {
                 while (!state_->stack_.empty()) state_->stack_.pop();
                 return;
+            }
+            
+            // Handle cancel_branch: skip current subtree, continue with siblings
+            if (state_->cancel_ == cancel_search::cancel_branch) {
+                state_->stack_.pop();
+                if (state_->depth_ > 0) --state_->depth_;
+                state_->cancel_ = cancel_search::continue_search;
             }
             
             while (!state_->stack_.empty()) {

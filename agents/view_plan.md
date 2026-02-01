@@ -41,12 +41,12 @@ This plan implements graph views as described in D3129 and detailed in view_stra
 - [x] **Step 2.5**: Create basic_views.hpp header ✅ (2026-02-01)
 
 ### Phase 3: DFS Views
-- [ ] **Step 3.1**: Implement DFS infrastructure + vertices_dfs + tests
+- [x] **Step 3.1**: Implement DFS infrastructure + vertices_dfs + tests ✅ (2026-02-01)
   - Accept both vertex_id and vertex_descriptor as seed parameter
   - vertex_id constructor delegates to vertex_descriptor constructor
-- [ ] **Step 3.2**: Implement edges_dfs + tests
+- [x] **Step 3.2**: Implement edges_dfs + tests ✅ (2026-02-01)
   - Accept both vertex_id and vertex_descriptor as seed parameter
-- [ ] **Step 3.3**: Test DFS cancel functionality
+- [x] **Step 3.3**: Test DFS cancel functionality ✅ (2026-02-01)
 
 ### Phase 4: BFS Views
 - [ ] **Step 4.1**: Implement BFS infrastructure + vertices_bfs + tests
