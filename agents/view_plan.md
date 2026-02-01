@@ -232,7 +232,7 @@ struct edge_info<void, Sourced, E, void> {
 - `tests/views/test_edge_info.cpp`
   - Test all 16 specializations compile
   - Test structured bindings for each variant
-  - Test `edge_info<void, true, edge_descriptor<...>, EV>` pattern
+  - Test `edge_info<void, false, edge_descriptor<...>, EV>` pattern
   - Test `edge_info<size_t, true, void, EV>` for external data
   - Test Sourced=true vs Sourced=false behavior
   - Test copyability and movability
@@ -249,7 +249,7 @@ struct edge_info<void, Sourced, E, void> {
 
 - VId, E, EV can all be void to suppress corresponding members
 - Sourced bool controls source_id presence (when VId != void)
-- Primary pattern: edge_info<void, true, edge_descriptor, EV>
+- Primary pattern: edge_info<void, false, edge_descriptor, EV>
 - External data pattern: edge_info<VId, true, void, EV>
 - Add 16 specializations for Sourced × void combinations
 - Tests cover all variants and structured bindings
@@ -593,7 +593,7 @@ concept search_view = requires(V& v, const V& cv) {
 
 ### Step 2.2: Implement incidence view
 
-**Goal**: Implement incidence view yielding `edge_info<void, true, edge_descriptor, EV>`.
+**Goal**: Implement incidence view yielding `edge_info<void, false, edge_descriptor, EV>`.
 
 **Files to Create**:
 - `include/graph/views/incidence.hpp`
@@ -621,7 +621,7 @@ public:
     public:
         using iterator_category = std::forward_iterator_tag;
         using difference_type   = std::ptrdiff_t;
-        using value_type        = edge_info<void, true, edge_descriptor_t<G>, 
+        using value_type        = edge_info<void, false, edge_descriptor_t<G>, 
                                            std::invoke_result_t<EVF, edge_descriptor_t<G>>>;
         
         iterator(G* g, vertex_descriptor_t<G> src, edge_iterator_t<G> it, EVF* evf)
@@ -630,9 +630,9 @@ public:
         auto operator*() const {
             auto edesc = create_edge_descriptor(*g_, current_, source_);
             if constexpr (std::is_void_v<EVF>) {
-                return edge_info<void, true, edge_descriptor_t<G>, void>{edesc};
+                return edge_info<void, false, edge_descriptor_t<G>, void>{edesc};
             } else {
-                return edge_info<void, true, edge_descriptor_t<G>, 
+                return edge_info<void, false, edge_descriptor_t<G>, 
                                std::invoke_result_t<EVF, edge_descriptor_t<G>>>{
                     edesc, (*evf_)(edesc)
                 };
@@ -705,7 +705,7 @@ auto incidence(G&& g, vertex_id_t<G> uid, EVF&& evf) {
 ```
 [views] Implement incidence view
 
-- Yields edge_info<void, true, edge_descriptor, EV>
+- Yields edge_info<void, false, edge_descriptor, EV>
 - Edge descriptor contains source vertex descriptor
 - Value function receives edge descriptor
 - Supports structured bindings: [e] and [e, val]
@@ -837,7 +837,7 @@ auto neighbors(G&& g, vertex_id_t<G> uid, VVF&& vvf) {
 
 ### Step 2.4: Implement edgelist view
 
-**Goal**: Implement edgelist view that flattens all edges, yielding `edge_info<void, true, edge_descriptor, EV>`.
+**Goal**: Implement edgelist view that flattens all edges, yielding `edge_info<void, false, edge_descriptor, EV>`.
 
 **Files to Create**:
 - `include/graph/views/edgelist.hpp`
@@ -877,7 +877,7 @@ public:
     public:
         using iterator_category = std::forward_iterator_tag;
         using difference_type   = std::ptrdiff_t;
-        using value_type        = edge_info<void, true, edge_descriptor_t<G>, 
+        using value_type        = edge_info<void, false, edge_descriptor_t<G>, 
                                            std::invoke_result_t<EVF, edge_descriptor_t<G>>>;
         
         iterator(G* g, vertex_id_t<G> vid, EVF* evf, bool is_end = false)
@@ -894,9 +894,9 @@ public:
         auto operator*() const {
             auto edesc = create_edge_descriptor(*g_, edge_it_, vertex_desc_);
             if constexpr (std::is_void_v<EVF>) {
-                return edge_info<void, true, edge_descriptor_t<G>, void>{edesc};
+                return edge_info<void, false, edge_descriptor_t<G>, void>{edesc};
             } else {
-                return edge_info<void, true, edge_descriptor_t<G>, 
+                return edge_info<void, false, edge_descriptor_t<G>, 
                                std::invoke_result_t<EVF, edge_descriptor_t<G>>>{
                     edesc, (*evf_)(edesc)
                 };
@@ -964,7 +964,7 @@ auto edgelist(G&& g, EVF&& evf) {
 ```
 [views] Implement edgelist view
 
-- Yields edge_info<void, true, edge_descriptor, EV>
+- Yields edge_info<void, false, edge_descriptor, EV>
 - Flattens adjacency list structure
 - Edge descriptor contains source vertex descriptor
 - Value function receives edge descriptor
@@ -1231,7 +1231,7 @@ auto vertices_dfs(G&& g, vertex_id_t<G> seed, VVF&& vvf = {}, Alloc alloc = {}) 
 ```
 [views] Implement sourced DFS edges view
 
-- Yields edge_info<void, true, edge_descriptor, EV>
+- Yields edge_info<void, false, edge_descriptor, EV>
 - Source context always available via edge descriptor
 - Tests verify sourced behavior
 ```
@@ -1347,7 +1347,7 @@ auto vertices_dfs(G&& g, vertex_id_t<G> seed, VVF&& vvf = {}, Alloc alloc = {}) 
 ```
 [views] Implement sourced BFS edges view
 
-- Yields edge_info<void, true, edge_descriptor, EV>
+- Yields edge_info<void, false, edge_descriptor, EV>
 - Tests verify sourced behavior
 ```
 
@@ -1456,7 +1456,7 @@ auto vertices_dfs(G&& g, vertex_id_t<G> seed, VVF&& vvf = {}, Alloc alloc = {}) 
 ```
 [views] Implement sourced topological sort edges view
 
-- Yields edge_info<void, true, edge_descriptor, EV>
+- Yields edge_info<void, false, edge_descriptor, EV>
 - Tests verify sourced behavior
 ```
 

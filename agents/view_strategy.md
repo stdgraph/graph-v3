@@ -144,7 +144,7 @@ class vertexlist_view : public std::ranges::view_interface<vertexlist_view<G, VV
 ```cpp
 template<adjacency_list G, class EVF = void>
 auto incidence(G&& g, vertex_id_t<G> uid, EVF&& evf = {})
-    -> /* range of edge_info<void, true, edge_descriptor_t<G>, invoke_result_t<EVF, edge_descriptor_t<G>>> */
+    -> /* range of edge_info<void, false, edge_descriptor_t<G>, invoke_result_t<EVF, edge_descriptor_t<G>>> */
 ```
 
 **Parameters**:
@@ -152,7 +152,7 @@ auto incidence(G&& g, vertex_id_t<G> uid, EVF&& evf = {})
 - `uid`: Source vertex ID
 - `evf`: Optional edge value function `EV evf(edge_descriptor_t<G>)`
 
-**Returns**: Range yielding `edge_info<void, true, E, EV>` where:
+**Returns**: Range yielding `edge_info<void, false, E, EV>` where:
 - `VId = void` (descriptor contains source/target IDs)
 - `Sourced = true` (edge descriptor contains source vertex descriptor)
 - `E = edge_descriptor_t<G>`
@@ -207,14 +207,14 @@ auto neighbors(G&& g, vertex_id_t<G> uid, VVF&& vvf = {})
 ```cpp
 template<adjacency_list G, class EVF = void>
 auto edgelist(G&& g, EVF&& evf = {})
-    -> /* range of edge_info<void, true, edge_descriptor_t<G>, invoke_result_t<EVF, edge_descriptor_t<G>>> */
+    -> /* range of edge_info<void, false, edge_descriptor_t<G>, invoke_result_t<EVF, edge_descriptor_t<G>>> */
 ```
 
 **Parameters**:
 - `g`: The graph
 - `evf`: Optional edge value function `EV evf(edge_descriptor_t<G>)`
 
-**Returns**: Range yielding `edge_info<void, true, E, EV>` where:
+**Returns**: Range yielding `edge_info<void, false, E, EV>` where:
 - `VId = void` (descriptor contains IDs)
 - `Sourced = true` (always sourced)
 - `E = edge_descriptor_t<G>`
@@ -304,7 +304,7 @@ auto sourced_edges_dfs(G&& g, vertex_id_t<G> seed, EVF&& evf = {}, Alloc alloc =
     -> /* dfs_view yielding sourced edge_info */
 ```
 
-**Yields**: `edge_info<void, true, E, EV>` (sourced) in DFS order (VId=void; IDs accessible via descriptor)
+**Yields**: `edge_info<void, false, E, EV>` in DFS order (VId=void; source/target IDs accessible via descriptor)
 
 **DFS Implementation Strategy**:
 ```cpp
@@ -365,7 +365,7 @@ auto sourced_edges_bfs(G&& g, vertex_id_t<G> seed, EVF&& evf = {}, Alloc alloc =
     -> /* bfs_view yielding sourced edge_info */
 ```
 
-**Yields**: `edge_info<void, true, E, EV>` (sourced) in BFS order (VId=void; IDs accessible via descriptor)
+**Yields**: `edge_info<void, false, E, EV>` (sourced) in BFS order (VId=void; IDs accessible via descriptor)
 
 **BFS Implementation**: Same as DFS but uses `std::queue` instead of `std::stack`.
 
@@ -405,7 +405,7 @@ auto sourced_edges_topological_sort(G&& g, EVF&& evf = {}, Alloc alloc = {})
     -> /* topological_view yielding sourced edge_info */
 ```
 
-**Yields**: `edge_info<void, true, E, EV>` (sourced) in topological order (VId=void; IDs accessible via descriptor)
+**Yields**: `edge_info<void, false, E, EV>` in topological order (VId=void; source/target IDs accessible via descriptor)
 
 **Implementation**: Uses reverse DFS post-order (Kahn's algorithm alternative available).
 
@@ -784,7 +784,7 @@ for (auto&& [src, tgt, e, val] : sourced_edges(g, u, evf)) {
 }
 
 // With descriptor (VId=void, Sourced=true, E=descriptor, EV present):
-edge_info<void, true, edge_descriptor<...>, int>  // only edge and value members
+edge_info<void, false, edge_descriptor<...>, int>  // only edge and value members
 for (auto&& [e, val] : incidence(g, u, evf)) {
     auto src = e.source_id();       // extract from descriptor
     auto tgt = e.target_id(g);      // extract from descriptor
@@ -963,7 +963,7 @@ This provides maximum flexibility for different use cases:
 
 **Primary Usage Patterns**:
 - **vertex_info**: `vertex_info<void, vertex_descriptor<...>, VV>` → `{vertex, value}`
-- **edge_info**: `edge_info<void, true, edge_descriptor<...>, EV>` → `{edge, value}` (Sourced always true for edge descriptors)
+- **edge_info**: `edge_info<void, false, edge_descriptor<...>, EV>` → `{edge, value}` (Sourced=false when VId=void; source accessible via descriptor)
 - **neighbor_info**: `neighbor_info<void, false, vertex_descriptor<...>, VV>` → `{vertex, value}` (Sourced=false; target vertex only)
 
 **Specialization Impact**:

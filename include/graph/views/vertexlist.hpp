@@ -48,36 +48,35 @@ public:
         using difference_type = std::ptrdiff_t;
         using value_type = info_type;
         using pointer = const value_type*;
-        using reference = value_type;
+        using reference = const value_type&;
 
         constexpr iterator() noexcept = default;
 
-        constexpr iterator(G* g, vertex_id_type id) noexcept
-            : g_(g), current_(id) {}
+        constexpr iterator(G* g, vertex_type v) noexcept
+            : g_(g), current_{v} {}
 
-        [[nodiscard]] constexpr value_type operator*() const {
-            vertex_type vdesc{current_};
-            return value_type{vdesc};
+        [[nodiscard]] constexpr reference operator*() const noexcept {
+            return current_;
         }
 
         constexpr iterator& operator++() noexcept {
-            ++current_;
+            ++current_.vertex;
             return *this;
         }
 
         constexpr iterator operator++(int) noexcept {
             auto tmp = *this;
-            ++current_;
+            ++current_.vertex;
             return tmp;
         }
 
         [[nodiscard]] constexpr bool operator==(const iterator& other) const noexcept {
-            return current_ == other.current_;
+            return current_.vertex == other.current_.vertex;
         }
 
     private:
         G* g_ = nullptr;
-        vertex_id_type current_{};
+        value_type current_{};
     };
 
     using const_iterator = iterator;
@@ -88,11 +87,11 @@ public:
         : g_(&g) {}
 
     [[nodiscard]] constexpr iterator begin() const noexcept {
-        return iterator(g_, vertex_id_type{0});
+        return iterator(g_, vertex_type{typename vertex_type::storage_type{0}});
     }
 
     [[nodiscard]] constexpr iterator end() const noexcept {
-        return iterator(g_, static_cast<vertex_id_type>(adj_list::num_vertices(*g_)));
+        return iterator(g_, vertex_type{static_cast<typename vertex_type::storage_type>(adj_list::num_vertices(*g_))});
     }
 
     [[nodiscard]] constexpr std::size_t size() const noexcept {
@@ -134,12 +133,11 @@ public:
 
         constexpr iterator() noexcept = default;
 
-        constexpr iterator(G* g, vertex_id_type id, VVF* vvf) noexcept
-            : g_(g), current_(id), vvf_(vvf) {}
+        constexpr iterator(G* g, vertex_type v, VVF* vvf) noexcept
+            : g_(g), current_(v), vvf_(vvf) {}
 
         [[nodiscard]] constexpr value_type operator*() const {
-            vertex_type vdesc{current_};
-            return value_type{vdesc, std::invoke(*vvf_, vdesc)};
+            return value_type{current_, std::invoke(*vvf_, current_)};
         }
 
         constexpr iterator& operator++() noexcept {
@@ -159,7 +157,7 @@ public:
 
     private:
         G* g_ = nullptr;
-        vertex_id_type current_{};
+        vertex_type current_{};
         VVF* vvf_ = nullptr;
     };
 
@@ -171,11 +169,11 @@ public:
         : g_(&g), vvf_(std::move(vvf)) {}
 
     [[nodiscard]] constexpr iterator begin() noexcept {
-        return iterator(g_, vertex_id_type{0}, &vvf_);
+        return iterator(g_, vertex_type{typename vertex_type::storage_type{0}}, &vvf_);
     }
 
     [[nodiscard]] constexpr iterator end() noexcept {
-        return iterator(g_, static_cast<vertex_id_type>(adj_list::num_vertices(*g_)), &vvf_);
+        return iterator(g_, vertex_type{static_cast<typename vertex_type::storage_type>(adj_list::num_vertices(*g_))}, &vvf_);
     }
 
     [[nodiscard]] constexpr std::size_t size() const noexcept {
