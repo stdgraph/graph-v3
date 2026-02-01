@@ -2,6 +2,9 @@
 
 This document describes the strategy for implementing graph views as described in D3129.
 
+**Status**: Phase 0 Complete (2026-01-31)
+**Next Phase**: Phase 1 (Foundation)
+
 ## 1. Overview
 
 Views provide lazy, range-based access to graph elements during traversal. They enable algorithms 
@@ -412,6 +415,31 @@ auto sourced_edges_topological_sort(G&& g, EVF&& evf = {}, Alloc alloc = {})
 
 ## 5. Implementation Phases
 
+### Phase 0: Info Struct Refactoring ✅ COMPLETE (2026-01-31)
+
+**Completion Date**: 2026-01-31  
+**Duration**: 1 day  
+**Commit**: 330c7d8 "[views] Phase 0: Info struct refactoring complete"
+
+**Tasks Completed**:
+1. ✅ Refactored vertex_info (4 specializations for VId × V × VV void combinations)
+2. ✅ Refactored edge_info (8 specializations for Sourced × VId × E × EV void combinations)
+3. ✅ Refactored neighbor_info (8 specializations for Sourced × VId × V × VV void combinations)
+4. ✅ Implemented all 20 new VId=void specializations
+5. ✅ Created comprehensive test suite (27 test cases, 392 assertions)
+
+**Key Discoveries**:
+- edge_info uses `source_id` and `target_id` (vertex IDs), not `edge_id`
+- neighbor_info uses `target` member when VId present, `vertex` when VId=void
+- Sourced parameter controls presence of `source_id` member
+- sizeof tests account for struct padding
+
+**Files Modified**:
+- `include/graph/graph_info.hpp` - Added 20 new specializations
+- `tests/views/test_info_structs.cpp` - Created comprehensive test suite
+
+---
+
 ### Phase 1: Foundation (2-3 days)
 
 **Tasks**:
@@ -594,15 +622,19 @@ tests/views/
 
 ---
 
-## 8. Info Struct Refactoring for Descriptors
+## 8. Info Struct Refactoring (Phase 0) ✅ COMPLETE
+
+**Completion Date**: 2026-01-31  
+**Commit**: 330c7d8 "[views] Phase 0: Info struct refactoring complete"  
+**Test Results**: ✅ 27 test cases, 392 assertions, all passing
 
 The existing info structs in `graph_info.hpp` were designed for compatibility with the 
-reference-based graph-v2 model. They need to be simplified to align with the descriptor-based 
+reference-based graph-v2 model. They have been refactored to align with the descriptor-based 
 architecture of graph-v3.
 
-### 8.1 vertex_info Refactoring
+### 8.1 vertex_info Refactoring ✅ COMPLETE
 
-**Current Design** (graph-v2 compatible):
+**Original Design** (graph-v2 compatible):
 ```cpp
 template <class VId, class V, class VV>
 struct vertex_info {
@@ -689,9 +721,9 @@ constexpr auto id(const vertex_info<V, VV>& vi) {
 }
 ```
 
-### 8.2 edge_info Refactoring
+### 8.2 edge_info Refactoring ✅ COMPLETE
 
-**Current Design** (graph-v2 compatible):
+**Original Design** (graph-v2 compatible):
 ```cpp
 template <class VId, bool Sourced, class E, class EV>
 struct edge_info {
@@ -786,9 +818,9 @@ edge descriptors in graph-v3 always carry their source vertex context. The disti
 between "sourced" and "non-sourced" edges is now a property of how the view is used, 
 not the info struct type.
 
-### 8.3 neighbor_info Refactoring
+### 8.3 neighbor_info Refactoring ✅ COMPLETE
 
-**Current Design** (graph-v2 compatible):
+**Original Design** (graph-v2 compatible):
 ```cpp
 template <class VId, bool Sourced, class V, class VV>
 struct neighbor_info {
@@ -825,6 +857,13 @@ struct neighbor_info {
 };
 // Specializations for Sourced × void combinations follow...
 ```
+
+**IMPLEMENTATION NOTE** (as of 2026-01-31):
+The actual implementation uses different member names based on VId:
+- When **VId is present**: member is named `target` (not `vertex`)
+- When **VId=void**: member is named `vertex`
+
+This naming distinction exists in the codebase and is reflected in Phase 0 tests.
 
 **Key Changes**:
 1. **VId can now be void** to suppress both `source_id` and `target_id` members
@@ -878,31 +917,33 @@ for (auto&& [src, tgt, val] : neighbors(g, u, vvf)) {
 - Sourced=true adds source_id when VId != void (for edge-like neighbor info)
 - Consistent with vertex_info and edge_info optional-members design
 
-### 8.4 Implementation Tasks
+### 8.4 Implementation Summary ✅ COMPLETE
 
-**Phase 0.1: vertex_info Refactoring**
-1. Make VId template parameter optional (void to suppress id member)
-2. Ensure all three members (id, vertex, value) can be conditionally present
-3. Update specializations to handle all void combinations
-4. Keep `copyable_vertex_t<VId, VV>` = `vertex_info<VId, void, VV>` alias
-5. Update any existing code and tests
+**Phase 0 was completed in three steps:**
 
-**Phase 0.2: edge_info Refactoring**
-1. Make VId template parameter optional (void to suppress source_id/target_id members)
-2. Ensure all four members (source_id, target_id, edge, value) can be conditionally present
-3. Update specializations to handle Sourced × void combinations
-4. Keep `copyable_edge_t<VId, EV>` = `edge_info<VId, true, void, EV>` alias
-5. Keep `is_sourced_v` trait (still useful)
-6. Update any existing code and tests
+**Step 0.1: vertex_info Refactoring** ✅
+1. ✅ Made VId template parameter optional (void to suppress id member)
+2. ✅ Ensured all three members (id, vertex, value) can be conditionally present
+3. ✅ Updated specializations to handle all void combinations (4 specializations)
+4. ✅ Kept `copyable_vertex_t<VId, VV>` = `vertex_info<VId, void, VV>` alias
+5. ✅ Created comprehensive tests
 
-**Phase 0.3: neighbor_info Refactoring**
-1. Make VId template parameter optional (void to suppress source_id/target_id members)
-2. Ensure all four members (source_id, target_id, vertex, value) can be conditionally present
-3. Update specializations to handle Sourced × void combinations
-4. Primary pattern: `neighbor_info<void, false, vertex_descriptor<...>, VV>` yields `{vertex, value}`
-5. Keep `copyable_neighbor_t` alias if it exists (likely `neighbor_info<VId, true, void, VV>` for external data)
-6. Keep `is_sourced_v` trait for neighbor_info
-7. Update any existing code and tests
+**Step 0.2: edge_info Refactoring** ✅
+1. ✅ Made VId template parameter optional (void to suppress source_id/target_id members)
+2. ✅ Ensured all four members (source_id, target_id, edge, value) can be conditionally present
+3. ✅ Updated specializations to handle Sourced × void combinations (8 specializations)
+4. ✅ Kept `copyable_edge_t<VId, EV>` = `edge_info<VId, true, void, EV>` alias
+5. ✅ Kept `is_sourced_v` trait
+6. ✅ Created comprehensive tests
+
+**Step 0.3: neighbor_info Refactoring** ✅
+1. ✅ Made VId template parameter optional (void to suppress source_id/target_id members)
+2. ✅ Ensured all four members (source_id, target_id, vertex, value) can be conditionally present
+3. ✅ Updated specializations to handle Sourced × void combinations (8 specializations)
+4. ✅ Implemented naming convention: `target` when VId present, `vertex` when VId=void
+5. ✅ Kept `copyable_neighbor_t` alias
+6. ✅ Kept `is_sourced_v` trait for neighbor_info
+7. ✅ Created comprehensive tests
 
 ### 8.5 Summary of Info Struct Changes
 
@@ -916,7 +957,9 @@ This provides maximum flexibility for different use cases:
 |--------|---------------------|-------------------------|-------------|
 | `vertex_info` | `<VId, V, VV>` | `id`, `vertex`, `value` | All 3 can be void |
 | `edge_info` | `<VId, Sourced, E, EV>` | `source_id`, `target_id`, `edge`, `value` | VId, E, EV can be void |
-| `neighbor_info` | `<VId, Sourced, V, VV>` | `source_id`, `target_id`, `target`, `value` | VId, V, VV can be void |
+| `neighbor_info` | `<VId, Sourced, V, VV>` | `source_id`, `target_id`, `target`/`vertex`*, `value` | VId, V, VV can be void |
+
+*`neighbor_info` uses `target` when VId present, `vertex` when VId=void (implementation detail)
 
 **Primary Usage Patterns**:
 - **vertex_info**: `vertex_info<void, vertex_descriptor<...>, VV>` → `{vertex, value}`
@@ -928,6 +971,11 @@ This provides maximum flexibility for different use cases:
 - `edge_info`: 16 specializations (2 Sourced × 2³ void combinations: VId, E, EV)
 - `neighbor_info`: 16 specializations (2 Sourced × 2³ void combinations: VId, V, VV)
 - **Total**: 40 specializations (implementation can reduce with SFINAE or conditional members)
+
+**Implementation Status** (as of 2026-01-31):
+- ✅ **Phase 0 Complete**: All 40 specializations implemented in `graph_info.hpp`
+- ✅ **Tests**: 27 test cases, 392 assertions, all passing
+- ✅ **Commit**: 330c7d8 "[views] Phase 0: Info struct refactoring complete"
 
 ---
 

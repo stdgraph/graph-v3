@@ -2,7 +2,7 @@
 
 **Branch**: `feature/views-implementation`  
 **Based on**: [view_strategy.md](view_strategy.md)  
-**Status**: Not Started
+**Status**: Phase 0 Complete (2026-01-31)
 
 ---
 
@@ -21,13 +21,13 @@ This plan implements graph views as described in D3129 and detailed in view_stra
 
 ## Progress Tracking
 
-### Phase 0: Info Struct Refactoring
-- [ ] **Step 0.1**: Refactor vertex_info (all members optional via void)
-- [ ] **Step 0.2**: Refactor edge_info (all members optional via void)
-- [ ] **Step 0.3**: Refactor neighbor_info (all members optional via void)
+### Phase 0: Info Struct Refactoring ✅ (2026-01-31)
+- [x] **Step 0.1**: Refactor vertex_info (all members optional via void)
+- [x] **Step 0.2**: Refactor edge_info (all members optional via void)
+- [x] **Step 0.3**: Refactor neighbor_info (all members optional via void)
 
 ### Phase 1: Foundation
-- [ ] **Step 1.1**: Create directory structure
+- [x] **Step 1.1**: Create directory structure ✅ (2026-02-01)
 - [ ] **Step 1.2**: Implement search_base.hpp (cancel_search, visited_tracker)
 - [ ] **Step 1.3**: Create view_concepts.hpp
 
@@ -70,9 +70,32 @@ This plan implements graph views as described in D3129 and detailed in view_stra
 
 ---
 
-## Phase 0: Info Struct Refactoring
+## Phase 0: Info Struct Refactoring ✅ COMPLETE
 
-### Step 0.1: Refactor vertex_info
+**Completion Date**: 2026-01-31  
+**Commit**: 330c7d8 "[views] Phase 0: Info struct refactoring complete"  
+**Test Results**: ✅ 27 test cases, 392 assertions, all passing
+
+**Implementation Summary**:
+- Added 20 new VId=void specializations (4 vertex_info, 8 edge_info, 8 neighbor_info)
+- Total specializations: 40 (8 vertex_info, 16 edge_info, 16 neighbor_info)
+- All void template parameters physically omit corresponding members
+- Comprehensive test suite created in `tests/views/`
+
+**Key Implementation Details Discovered**:
+1. **edge_info member naming**: Uses `source_id` and `target_id` (vertex IDs), NOT `edge_id`
+2. **neighbor_info member naming**: 
+   - Uses `source_id` and `target_id` (vertex IDs), NOT `vertex_id`
+   - Uses `target` member when VId is present
+   - Uses `vertex` member when VId=void (descriptor-based pattern)
+3. **Sourced parameter behavior**:
+   - `Sourced=true`: Includes `source_id` member (when VId present)
+   - `Sourced=false`: Omits `source_id` member
+4. **Padding considerations**: sizeof tests account for struct padding
+
+---
+
+### Step 0.1: Refactor vertex_info ✅ COMPLETE
 
 **Goal**: Make all members of vertex_info optional via void template parameters.
 
@@ -136,6 +159,8 @@ struct vertex_info<void, V, void> {
 - `sizeof()` confirms space savings for void specializations
 - Tests pass with sanitizers
 
+**Status**: ✅ COMPLETE
+
 **Commit Message**:
 ```
 [views] Refactor vertex_info: all members optional via void
@@ -149,9 +174,11 @@ struct vertex_info<void, V, void> {
 
 ---
 
-### Step 0.2: Refactor edge_info
+### Step 0.2: Refactor edge_info ✅ COMPLETE
 
 **Goal**: Make all members of edge_info optional via void template parameters.
+
+**Status**: ✅ COMPLETE
 
 **Files to Modify**:
 - `include/graph/graph_info.hpp`
@@ -230,9 +257,13 @@ struct edge_info<void, Sourced, E, void> {
 
 ---
 
-### Step 0.3: Refactor neighbor_info
+### Step 0.3: Refactor neighbor_info ✅ COMPLETE
 
 **Goal**: Make all members of neighbor_info optional via void template parameters.
+
+**Status**: ✅ COMPLETE
+
+**Implementation Note**: The actual implementation uses `target` as the member name when VId is present, and `vertex` when VId=void. This differs from the original plan which assumed consistent naming.
 
 **Files to Modify**:
 - `include/graph/graph_info.hpp`
@@ -254,6 +285,7 @@ struct neighbor_info {
 };
 
 // Example specialization: VId=void (suppresses source_id/target_id)
+// ACTUAL IMPLEMENTATION: member named 'vertex' when VId=void
 template <bool Sourced, class V, class VV>
 struct neighbor_info<void, Sourced, V, VV> {
   using source_id_type = void;
@@ -261,7 +293,7 @@ struct neighbor_info<void, Sourced, V, VV> {
   using vertex_type    = V;
   using value_type     = VV;
 
-  vertex_type vertex;
+  vertex_type vertex;  // NOTE: 'vertex' not 'target' when VId=void
   value_type  value;
   // No source_id or target_id members
 };
@@ -274,7 +306,7 @@ struct neighbor_info<void, Sourced, V, void> {
   using vertex_type    = V;
   using value_type     = void;
 
-  vertex_type vertex;
+  vertex_type vertex;  // NOTE: 'vertex' not 'target' when VId=void
   // No source_id, target_id, or value members
 };
 
@@ -319,8 +351,10 @@ struct neighbor_info<void, Sourced, V, void> {
 
 **Files to Create**:
 - `include/graph/views/` (directory)
-- `tests/views/` (directory)
-- `tests/views/CMakeLists.txt`
+- `tests/views/` (directory) ✅ DONE in Phase 0
+- `tests/views/CMakeLists.txt` ✅ DONE in Phase 0
+
+**Note**: `tests/views/` directory and CMakeLists.txt already created during Phase 0.
 
 **Implementation**:
 ```cmake
@@ -350,14 +384,20 @@ add_test(NAME views_tests COMMAND graph3_views_tests)
 - Test executable builds and runs (even if empty)
 - Integrated with parent CMakeLists.txt
 
+**Status**: ✅ COMPLETE (2026-02-01)
+
+**Implementation Notes**:
+- `include/graph/views/` directory created
+- `tests/views/` directory and infrastructure already existed from Phase 0
+- CMakeLists.txt already configured with test files from Phase 0
+- Test executable already builds and runs with Phase 0 tests
+
 **Commit Message**:
 ```
-[views] Create directory structure and test framework
+[views] Phase 1.1: Create views directory structure
 
-- Add include/graph/views/ directory
-- Add tests/views/ directory with CMakeLists.txt
-- Create test_main.cpp with Catch2 integration
-- Update parent CMakeLists.txt to include views tests
+- Add include/graph/views/ directory for view implementations
+- tests/views/ infrastructure already completed in Phase 0
 ```
 
 ---
