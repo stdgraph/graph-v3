@@ -186,13 +186,16 @@ concept vertex_range =
 /**
  * @brief Concept for a graph with random access range of vertices
  * 
- * An index_vertex_range is a vertex_range where vertices additionally support
- * random access, allowing O(1) access to any vertex by index.
+ * An index_vertex_range is a vertex_range where the underlying vertex container
+ * supports random access, allowing O(1) access to any vertex by index.
  * 
  * Requirements:
  * - Must satisfy vertex_range
- * - vertices(g) must return a std::ranges::random_access_range
- * - Supports operator[] or equivalent for O(1) access
+ * - The underlying iterator of the vertex_descriptor_view must be a random_access_iterator
+ * 
+ * Note: We check the underlying iterator type, not the view itself, because
+ * vertex_descriptor_view is always a forward_range (synthesizes descriptors on-the-fly)
+ * but the underlying container may still support random access.
  * 
  * Examples:
  * - vertex_descriptor_view over std::vector<T> (index-based)
@@ -206,7 +209,7 @@ concept vertex_range =
 template<typename G>
 concept index_vertex_range = 
     vertex_range<G> &&
-    std::ranges::random_access_range<vertex_range_t<G>>;
+    std::random_access_iterator<typename vertex_range_t<G>::vertex_desc::iterator_type>;
 
 // =============================================================================
 // Adjacency List Concepts

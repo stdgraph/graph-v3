@@ -42,16 +42,24 @@ This plan implements graph views as described in D3129 and detailed in view_stra
 
 ### Phase 3: DFS Views
 - [ ] **Step 3.1**: Implement DFS infrastructure + vertices_dfs + tests
+  - Accept both vertex_id and vertex_descriptor as seed parameter
+  - vertex_id constructor delegates to vertex_descriptor constructor
 - [ ] **Step 3.2**: Implement edges_dfs + tests
+  - Accept both vertex_id and vertex_descriptor as seed parameter
 - [ ] **Step 3.3**: Test DFS cancel functionality
 
 ### Phase 4: BFS Views
 - [ ] **Step 4.1**: Implement BFS infrastructure + vertices_bfs + tests
+  - Accept both vertex_id and vertex_descriptor as seed parameter
+  - vertex_id constructor delegates to vertex_descriptor constructor
 - [ ] **Step 4.2**: Implement edges_bfs + tests
+  - Accept both vertex_id and vertex_descriptor as seed parameter
 - [ ] **Step 4.3**: Test BFS depth/size accessors
 
 ### Phase 5: Topological Sort Views
 - [ ] **Step 5.1**: Implement topological sort algorithm + vertices_topological_sort + tests
+  - Accept both vertex_id and vertex_descriptor as seed parameter (if seed-based)
+  - vertex_id constructor delegates to vertex_descriptor constructor
 - [ ] **Step 5.2**: Implement edges_topological_sort + tests
 - [ ] **Step 5.3**: Test cycle detection
 
@@ -919,6 +927,12 @@ auto edgelist(EL&& el, EVF&& evf) {
 
 **Goal**: Implement DFS traversal infrastructure and vertices_dfs view.
 
+**Design Requirements**:
+- Accept both `vertex_id_t<G>` and `vertex_t<G>` (vertex descriptor) as seed parameter
+- Constructors accepting vertex_id delegate to vertex_descriptor constructors
+- Factory functions provide overloads for both seed types
+- All 4 factory function variants (no VVF, with VVF, with Alloc, with VVF+Alloc) support both seed types
+
 **Files to Create**:
 - `include/graph/views/dfs.hpp`
 
@@ -946,12 +960,21 @@ class dfs_vertex_view : public std::ranges::view_interface<dfs_vertex_view<G, VV
     
     G* g_;
     [[no_unique_address]] VVF vvf_;
-    std::shared_ptr<state_t> state_;
+    std::shared_ptr<state_t> state_;  // See "Why shared_ptr?" below
     
 public:
     dfs_vertex_view(G& g, vertex_id_t<G> seed, VVF vvf, Alloc alloc)
         : g_(&g), vvf_(std::move(vvf)), 
           state_(std::make_shared<state_t>(seed, num_vertices(g), alloc)) {}
+    
+    // Why shared_ptr for state_?
+    // 1. Iterator copies must share state: When you copy an iterator (e.g., auto it2 = it1),
+    //    both must refer to the same DFS traversal. Advancing it1 affects what it2 sees.
+    // 2. View and iterators share state: The view exposes depth(), size(), and cancel()
+    //    accessors that reflect current traversal state modified by iterators.
+    // 3. Range-based for loop: The view's cancel() must be able to stop iteration in progress.
+    // 4. Input iterator semantics: DFS is single-pass; shared state correctly models this.
+    // An alternative (state by value + raw pointers) would break if the view is moved.
     
     cancel_search cancel() const { return state_->cancel_; }
     void cancel(cancel_search c) { state_->cancel_ = c; }
@@ -1081,6 +1104,11 @@ auto vertices_dfs(G&& g, vertex_id_t<G> seed, VVF&& vvf = {}, Alloc alloc = {}) 
 
 **Goal**: Implement DFS edge traversal yielding `edge_info<void, false, edge_descriptor, EV>`.
 
+**Design Requirements**:
+- Accept both `vertex_id_t<G>` and `vertex_t<G>` (vertex descriptor) as seed parameter
+- Constructors accepting vertex_id delegate to vertex_descriptor constructors
+- Factory functions provide overloads for both seed types
+
 **Files to Modify**:
 - `include/graph/views/dfs.hpp` (add edges_dfs implementation)
 
@@ -1145,6 +1173,12 @@ auto vertices_dfs(G&& g, vertex_id_t<G> seed, VVF&& vvf = {}, Alloc alloc = {}) 
 
 **Goal**: Implement BFS traversal infrastructure and vertices_bfs view.
 
+**Design Requirements**:
+- Accept both `vertex_id_t<G>` and `vertex_t<G>` (vertex descriptor) as seed parameter
+- Constructors accepting vertex_id delegate to vertex_descriptor constructors  
+- Factory functions provide overloads for both seed types
+- All 4 factory function variants support both seed types
+
 **Files to Create**:
 - `include/graph/views/bfs.hpp`
 
@@ -1181,6 +1215,11 @@ auto vertices_dfs(G&& g, vertex_id_t<G> seed, VVF&& vvf = {}, Alloc alloc = {}) 
 ### Step 4.2: Implement edges_bfs
 
 **Goal**: Implement BFS edge traversal.
+
+**Design Requirements**:
+- Accept both `vertex_id_t<G>` and `vertex_t<G>` (vertex descriptor) as seed parameter
+- Constructors accepting vertex_id delegate to vertex_descriptor constructors
+- Factory functions provide overloads for both seed types
 
 **Files to Modify**:
 - `include/graph/views/bfs.hpp`
@@ -1233,6 +1272,11 @@ auto vertices_dfs(G&& g, vertex_id_t<G> seed, VVF&& vvf = {}, Alloc alloc = {}) 
 ### Step 5.1: Implement topological sort + vertices_topological_sort
 
 **Goal**: Implement topological sort algorithm and vertices view.
+
+**Design Requirements**:
+- If seed-based: Accept both `vertex_id_t<G>` and `vertex_t<G>` as seed parameter
+- Constructors accepting vertex_id delegate to vertex_descriptor constructors
+- Factory functions provide overloads for both seed types
 
 **Files to Create**:
 - `include/graph/views/topological_sort.hpp`
@@ -1709,7 +1753,11 @@ Closes #<issue-number>
 - Use `[[no_unique_address]]` for empty base optimization
 - Avoid unnecessary copies (use references where appropriate)
 - Consider lazy evaluation for value functions
-- Share state between iterators using `std::shared_ptr`
+- Share state between iterators using `std::shared_ptr` for search views:
+  - Enables iterator copies to share traversal state (required for input iterators)
+  - Allows view's cancel()/depth()/size() to reflect iterator progress
+  - Survives view moves (raw pointers would dangle)
+  - Slight overhead vs. raw pointers, but correctness requires it
 
 ### Common Pitfalls to Avoid
 - Don't forget to handle empty graphs

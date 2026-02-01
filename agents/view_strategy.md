@@ -282,6 +282,11 @@ public:
 template<index_adjacency_list G, class VVF = void, class Alloc = std::allocator<...>>
 auto vertices_dfs(G&& g, vertex_id_t<G> seed, VVF&& vvf = {}, Alloc alloc = {})
     -> /* dfs_view yielding vertex_info */
+
+// Vertex descriptor overload
+template<index_adjacency_list G, class VVF = void, class Alloc = std::allocator<...>>
+auto vertices_dfs(G&& g, vertex_t<G> seed_vertex, VVF&& vvf = {}, Alloc alloc = {})
+    -> /* dfs_view yielding vertex_info */
 ```
 
 **Yields**: `vertex_info<void, V, VV>` in DFS order (VId=void; IDs accessible via descriptor)
@@ -291,6 +296,11 @@ auto vertices_dfs(G&& g, vertex_id_t<G> seed, VVF&& vvf = {}, Alloc alloc = {})
 ```cpp
 template<index_adjacency_list G, class EVF = void, class Alloc = std::allocator<...>>
 auto edges_dfs(G&& g, vertex_id_t<G> seed, EVF&& evf = {}, Alloc alloc = {})
+    -> /* dfs_view yielding edge_info */
+
+// Vertex descriptor overload
+template<index_adjacency_list G, class EVF = void, class Alloc = std::allocator<...>>
+auto edges_dfs(G&& g, vertex_t<G> seed_vertex, EVF&& evf = {}, Alloc alloc = {})
     -> /* dfs_view yielding edge_info */
 ```
 
@@ -343,6 +353,11 @@ class dfs_view : public std::ranges::view_interface<dfs_view<G, Kind, VF, Alloc>
 template<index_adjacency_list G, class VVF = void, class Alloc = std::allocator<...>>
 auto vertices_bfs(G&& g, vertex_id_t<G> seed, VVF&& vvf = {}, Alloc alloc = {})
     -> /* bfs_view yielding vertex_info */
+
+// Vertex descriptor overload
+template<index_adjacency_list G, class VVF = void, class Alloc = std::allocator<...>>
+auto vertices_bfs(G&& g, vertex_t<G> seed_vertex, VVF&& vvf = {}, Alloc alloc = {})
+    -> /* bfs_view yielding vertex_info */
 ```
 
 **Yields**: `vertex_info<void, V, VV>` in BFS order (VId=void; IDs accessible via descriptor)
@@ -352,6 +367,11 @@ auto vertices_bfs(G&& g, vertex_id_t<G> seed, VVF&& vvf = {}, Alloc alloc = {})
 ```cpp
 template<index_adjacency_list G, class EVF = void, class Alloc = std::allocator<...>>  
 auto edges_bfs(G&& g, vertex_id_t<G> seed, EVF&& evf = {}, Alloc alloc = {})
+    -> /* bfs_view yielding edge_info */
+
+// Vertex descriptor overload
+template<index_adjacency_list G, class EVF = void, class Alloc = std::allocator<...>>  
+auto edges_bfs(G&& g, vertex_t<G> seed_vertex, EVF&& evf = {}, Alloc alloc = {})
     -> /* bfs_view yielding edge_info */
 ```
 
@@ -574,7 +594,43 @@ parameter with default `std::allocator`.
 **Decision**: Views from `const G&` yield `const` references in info structs. The `vertex` 
 and `edge` members will be const references.
 
-### 6.6 Freestanding Support
+### 6.6 Seed Parameter Overloads
+
+**Question**: Should search views accept vertex descriptors as well as vertex IDs for the seed?
+
+**Decision**: Yes. All search views (`vertices_dfs`, `edges_dfs`, `vertices_bfs`, `edges_bfs`, 
+`vertices_topological_sort`, `edges_topological_sort`) should provide overloads accepting either:
+- `vertex_id_t<G>` - The traditional vertex ID (integer index)
+- `vertex_t<G>` - A vertex descriptor
+
+**Rationale**: 
+1. Users iterating over vertices via `vertices()` CPO already have descriptors
+2. Avoids unnecessary `vertex_id(g, v)` call at call site
+3. Consistent with CPO design which accepts descriptors
+4. View constructors that accept vertex_id should delegate to vertex_descriptor constructors
+
+**Implementation Pattern**:
+```cpp
+// Constructor accepting vertex descriptor (primary)
+vertices_dfs_view(G& g, vertex_type seed_vertex, Alloc alloc = {})
+    : g_(&g)
+    , state_(std::make_shared<state_type>(g, seed_vertex, num_vertices(g), alloc))
+{}
+
+// Constructor accepting vertex ID (delegates to descriptor constructor)
+vertices_dfs_view(G& g, vertex_id_type seed, Alloc alloc = {})
+    : vertices_dfs_view(g, *find_vertex(g, seed), alloc)
+{}
+
+// Factory functions for both
+template <dfs_adjacency_list G>
+auto vertices_dfs(G& g, vertex_id_t<G> seed);  // From vertex ID
+
+template <dfs_adjacency_list G>
+auto vertices_dfs(G& g, vertex_t<G> seed_vertex);  // From vertex descriptor
+```
+
+### 6.7 Freestanding Support
 
 **Question**: Should views support graphs without random-access vertices?
 

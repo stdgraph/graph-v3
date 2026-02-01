@@ -89,12 +89,14 @@ TEST_CASE("vertex_range concept - empty graph", "[adjacency_list][concepts][vert
 TEST_CASE("index_vertex_range concept - vector<vector<int>>", "[adjacency_list][concepts][index_vertex_range]") {
     using Graph = std::vector<std::vector<int>>;
     
-    // Vector's underlying storage is random access, but vertex_descriptor_view 
-    // only provides forward iteration (descriptors are synthesized on-the-fly)
-    STATIC_REQUIRE_FALSE(index_vertex_range<Graph>);
+    // Vector's underlying iterator is random access, so index_vertex_range is satisfied
+    // Note: vertex_descriptor_view itself is forward-only, but we check the underlying iterator
+    STATIC_REQUIRE(index_vertex_range<Graph>);
+    
+    // The view is still forward-only (descriptors synthesized on-the-fly)
     STATIC_REQUIRE_FALSE(std::ranges::random_access_range<vertex_range_t<Graph>>);
     
-    // But it does satisfy vertex_range
+    // And it satisfies vertex_range
     STATIC_REQUIRE(vertex_range<Graph>);
     
     Graph g = {{1, 2}, {2, 3}, {0}};
@@ -112,11 +114,13 @@ TEST_CASE("index_vertex_range concept - vector<vector<int>>", "[adjacency_list][
 TEST_CASE("index_vertex_range concept - deque<deque<int>>", "[adjacency_list][concepts][index_vertex_range]") {
     using Graph = std::deque<std::deque<int>>;
     
-    // Deque's iterator is random access, but vertex_descriptor_view only provides forward iteration
-    STATIC_REQUIRE_FALSE(index_vertex_range<Graph>);
+    // Deque's underlying iterator is random access, so index_vertex_range is satisfied
+    STATIC_REQUIRE(index_vertex_range<Graph>);
+    
+    // The view is still forward-only
     STATIC_REQUIRE_FALSE(std::ranges::random_access_range<vertex_range_t<Graph>>);
     
-    // But it does satisfy the basic vertex_range
+    // And it satisfies the basic vertex_range
     STATIC_REQUIRE(vertex_range<Graph>);
 }
 
@@ -204,12 +208,10 @@ TEST_CASE("adjacency_list concept - empty graph", "[adjacency_list][concepts][gr
 TEST_CASE("index_adjacency_list concept - vector<vector<int>>", "[adjacency_list][concepts][index_graph]") {
     using Graph = std::vector<std::vector<int>>;
     
-    // Currently, vertex_descriptor_view only provides forward iteration
-    // So vector-based graphs don't satisfy index_adjacency_list
-    STATIC_REQUIRE_FALSE(index_adjacency_list<Graph>);
+    // Vector's underlying iterator is random access, so index_adjacency_list is satisfied
+    STATIC_REQUIRE(index_adjacency_list<Graph>);
     
-    // But they do satisfy adjacency_list
-    STATIC_REQUIRE(adjacency_list<Graph>);
+    // And they satisfy adjacency_list
     STATIC_REQUIRE(adjacency_list<Graph>);
     
     Graph g = {{1, 2}, {2, 3}, {0}};
@@ -227,8 +229,8 @@ TEST_CASE("index_adjacency_list concept - vector<vector<int>>", "[adjacency_list
 TEST_CASE("index_adjacency_list concept - deque<deque<int>>", "[adjacency_list][concepts][index_graph]") {
     using Graph = std::deque<std::deque<int>>;
     
-    // Deque doesn't satisfy index_adjacency_list because vertex_descriptor_view is forward-only
-    STATIC_REQUIRE_FALSE(index_adjacency_list<Graph>);
+    // Deque's underlying iterator is random access, so index_adjacency_list is satisfied
+    STATIC_REQUIRE(index_adjacency_list<Graph>);
     STATIC_REQUIRE(adjacency_list<Graph>);
 }
 
@@ -248,15 +250,13 @@ TEST_CASE("index_adjacency_list concept - map does NOT satisfy", "[adjacency_lis
 TEST_CASE("Concept hierarchy - index_adjacency_list implies adjacency_list", "[adjacency_list][concepts][hierarchy]") {
     using Graph1 = std::vector<std::vector<int>>;
     
-    // Currently vertex_descriptor_view is forward-only, so index_adjacency_list is not satisfied
-    // even for vector-based graphs
-    STATIC_REQUIRE_FALSE(index_adjacency_list<Graph1>);
+    // Vector's underlying iterator is random access, so index_adjacency_list is satisfied
+    STATIC_REQUIRE(index_adjacency_list<Graph1>);
     STATIC_REQUIRE(adjacency_list<Graph1>);
     
-    // Deque satisfies adjacency_list but not index_adjacency_list
-    // because vertex_descriptor_view only provides forward iteration
+    // Deque also satisfies index_adjacency_list (random access underlying iterator)
     using Graph2 = std::deque<std::deque<int>>;
-    STATIC_REQUIRE_FALSE(index_adjacency_list<Graph2>);
+    STATIC_REQUIRE(index_adjacency_list<Graph2>);
     STATIC_REQUIRE(adjacency_list<Graph2>);
 }
 
@@ -265,12 +265,11 @@ TEST_CASE("Concept hierarchy - index_vertex_range implies vertex_range", "[adjac
     using Graph2 = std::map<int, std::vector<int>>;
     
     
-    // Currently, vertex_descriptor_view only provides forward iteration
-    // So even vector-based graphs don't satisfy index_vertex_range
-    STATIC_REQUIRE_FALSE(index_vertex_range<Graph1>);
+    // Vector's underlying iterator is random access, so index_vertex_range is satisfied
+    STATIC_REQUIRE(index_vertex_range<Graph1>);
     STATIC_REQUIRE(vertex_range<Graph1>);
     
-    // But not all vertex_ranges are index_vertex_ranges
+    // Map's underlying iterator is NOT random access, so index_vertex_range is NOT satisfied
     STATIC_REQUIRE(vertex_range<Graph2>);
     STATIC_REQUIRE_FALSE(index_vertex_range<Graph2>);
 }
@@ -283,8 +282,8 @@ TEST_CASE("Concepts work with actual graph operations", "[adjacency_list][concep
     using Graph = std::vector<std::vector<int>>;
     
     STATIC_REQUIRE(adjacency_list<Graph>);
-    // Note: index_adjacency_list not satisfied because vertex_descriptor_view is forward-only
-    STATIC_REQUIRE_FALSE(index_adjacency_list<Graph>);
+    // Vector's underlying iterator is random access, so index_adjacency_list is satisfied
+    STATIC_REQUIRE(index_adjacency_list<Graph>);
     
     Graph g = {{1, 2, 3}, {0, 2, 3}, {0, 1, 3}, {0, 1, 2}};
     
@@ -307,11 +306,11 @@ TEST_CASE("Concepts work with actual graph operations", "[adjacency_list][concep
 }
 
 TEST_CASE("Concepts distinguish container types correctly", "[adjacency_list][concepts][integration]") {
-    // All container types satisfy adjacency_list
-    // None satisfy index_adjacency_list because vertex_descriptor_view is forward-only
+    // Vector and deque satisfy index_adjacency_list (random access underlying iterator)
+    // Map does NOT (bidirectional iterator)
     
     using VectorGraph = std::vector<std::vector<int>>;
-    STATIC_REQUIRE_FALSE(index_adjacency_list<VectorGraph>);
+    STATIC_REQUIRE(index_adjacency_list<VectorGraph>);
     STATIC_REQUIRE(adjacency_list<VectorGraph>);
     
     using MapGraph = std::map<int, std::vector<int>>;
@@ -319,6 +318,6 @@ TEST_CASE("Concepts distinguish container types correctly", "[adjacency_list][co
     STATIC_REQUIRE_FALSE(index_adjacency_list<MapGraph>);
     
     using DequeGraph = std::deque<std::deque<int>>;
-    STATIC_REQUIRE_FALSE(index_adjacency_list<DequeGraph>);
+    STATIC_REQUIRE(index_adjacency_list<DequeGraph>);
     STATIC_REQUIRE(adjacency_list<DequeGraph>);
 }
