@@ -234,4 +234,32 @@ template <adj_list::adjacency_list G, class EVF>
     return incidence_view<G, std::decay_t<EVF>>(g, u, std::forward<EVF>(evf));
 }
 
+/**
+ * @brief Create an incidence view using vertex id (convenience overload)
+ * 
+ * @param g The graph to iterate over
+ * @param uid The source vertex id
+ * @return incidence_view yielding edge_info<void, false, edge_descriptor, void>
+ */
+template <adj_list::adjacency_list G>
+[[nodiscard]] constexpr auto incidence(G& g, adj_list::vertex_id_t<G> uid) noexcept {
+    auto u = *adj_list::find_vertex(g, uid);
+    return incidence_view<G, void>(g, u);
+}
+
+/**
+ * @brief Create an incidence view with value function using vertex id (convenience overload)
+ * 
+ * @param g The graph to iterate over
+ * @param uid The source vertex id
+ * @param evf Value function invoked for each edge
+ * @return incidence_view yielding edge_info<void, false, edge_descriptor, EV>
+ */
+template <adj_list::adjacency_list G, class EVF>
+    requires edge_value_function<EVF, adj_list::edge_t<G>>
+[[nodiscard]] constexpr auto incidence(G& g, adj_list::vertex_id_t<G> uid, EVF&& evf) {
+    auto u = *adj_list::find_vertex(g, uid);
+    return incidence_view<G, std::decay_t<EVF>>(g, u, std::forward<EVF>(evf));
+}
+
 } // namespace graph::views

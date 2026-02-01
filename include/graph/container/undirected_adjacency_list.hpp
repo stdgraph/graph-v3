@@ -1234,6 +1234,23 @@ constexpr VId source_id([[maybe_unused]] const undirected_adjacency_list<VV, EV,
   return static_cast<VId>(e.source_id());
 }
 
+/// edge_value(g, edge_descriptor) - get edge value from edge descriptor
+/// Extracts the edge value from the underlying edge pointed to by the descriptor.
+/// Only enabled when EV is not void.
+template <typename VV, typename EV, typename GV, integral VId,
+          template <typename V, typename A> class VContainer, typename Alloc, typename E>
+  requires edge_descriptor_type<E> && (!std::is_void_v<EV>)
+constexpr decltype(auto) edge_value(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&, const E& e) noexcept {
+  return e.value()->value();
+}
+
+template <typename VV, typename EV, typename GV, integral VId,
+          template <typename V, typename A> class VContainer, typename Alloc, typename E>
+  requires edge_descriptor_type<E> && (!std::is_void_v<EV>)
+constexpr decltype(auto) edge_value(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&, const E& e) noexcept {
+  return e.value()->value();
+}
+
 ///-------------------------------------------------------------------------------------
 /// ual_vertex
 ///

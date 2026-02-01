@@ -14,7 +14,8 @@ This plan implements graph views as described in D3129 and detailed in view_stra
 - Value functions receive descriptors (not underlying values)
 - Info structs use `void` template parameters for optional members
 - Primary pattern: `VId=void` with descriptors (IDs accessible via descriptor)
-- Edge descriptors contain source vertex descriptor as member
+- Edge descriptors contain source vertex descriptor as member (source_id always retrievable)
+- No separate "sourced" edge views needed - source accessible via edge descriptor's source_id()
 - Views are lazy, zero-copy where possible
 
 ---
@@ -42,20 +43,17 @@ This plan implements graph views as described in D3129 and detailed in view_stra
 ### Phase 3: DFS Views
 - [ ] **Step 3.1**: Implement DFS infrastructure + vertices_dfs + tests
 - [ ] **Step 3.2**: Implement edges_dfs + tests
-- [ ] **Step 3.3**: Implement sourced_edges_dfs + tests
-- [ ] **Step 3.4**: Test DFS cancel functionality
+- [ ] **Step 3.3**: Test DFS cancel functionality
 
 ### Phase 4: BFS Views
 - [ ] **Step 4.1**: Implement BFS infrastructure + vertices_bfs + tests
 - [ ] **Step 4.2**: Implement edges_bfs + tests
-- [ ] **Step 4.3**: Implement sourced_edges_bfs + tests
-- [ ] **Step 4.4**: Test BFS depth/size accessors
+- [ ] **Step 4.3**: Test BFS depth/size accessors
 
 ### Phase 5: Topological Sort Views
 - [ ] **Step 5.1**: Implement topological sort algorithm + vertices_topological_sort + tests
 - [ ] **Step 5.2**: Implement edges_topological_sort + tests
-- [ ] **Step 5.3**: Implement sourced_edges_topological_sort + tests
-- [ ] **Step 5.4**: Test cycle detection
+- [ ] **Step 5.3**: Test cycle detection
 
 ### Phase 6: Range Adaptors
 - [ ] **Step 6.1**: Implement range adaptor closures for basic views
@@ -1114,36 +1112,7 @@ auto vertices_dfs(G&& g, vertex_id_t<G> seed, VVF&& vvf = {}, Alloc alloc = {}) 
 
 ---
 
-### Step 3.3: Implement sourced_edges_dfs
-
-**Goal**: Implement sourced DFS edge traversal (Sourced=true in edge_info).
-
-**Files to Modify**:
-- `include/graph/views/dfs.hpp` (add sourced_edges_dfs)
-
-**Implementation**: Same as edges_dfs but with Sourced=true.
-
-**Tests to Create**:
-- Extend `tests/views/test_dfs.cpp`
-  - Test sourced_edges_dfs
-  - Verify source context accessible
-
-**Acceptance Criteria**:
-- Sourced edges yield correct info
-- Tests pass
-
-**Commit Message**:
-```
-[views] Implement sourced DFS edges view
-
-- Yields edge_info<void, false, edge_descriptor, EV>
-- Source context always available via edge descriptor
-- Tests verify sourced behavior
-```
-
----
-
-### Step 3.4: Test DFS cancel functionality
+### Step 3.3: Test DFS cancel functionality
 
 **Goal**: Verify cancel_search control works correctly.
 
@@ -1234,31 +1203,7 @@ auto vertices_dfs(G&& g, vertex_id_t<G> seed, VVF&& vvf = {}, Alloc alloc = {}) 
 
 ---
 
-### Step 4.3: Implement sourced_edges_bfs
-
-**Goal**: Implement sourced BFS edge traversal.
-
-**Files to Modify**:
-- `include/graph/views/bfs.hpp`
-
-**Tests to Create**:
-- Extend `tests/views/test_bfs.cpp`
-
-**Acceptance Criteria**:
-- Sourced BFS works correctly
-- Tests pass
-
-**Commit Message**:
-```
-[views] Implement sourced BFS edges view
-
-- Yields edge_info<void, false, edge_descriptor, EV>
-- Tests verify sourced behavior
-```
-
----
-
-### Step 4.4: Test BFS depth/size accessors
+### Step 4.3: Test BFS depth/size accessors
 
 **Goal**: Verify depth() and size() tracking is accurate.
 
@@ -1343,31 +1288,7 @@ auto vertices_dfs(G&& g, vertex_id_t<G> seed, VVF&& vvf = {}, Alloc alloc = {}) 
 
 ---
 
-### Step 5.3: Implement sourced_edges_topological_sort
-
-**Goal**: Implement sourced topological edge traversal.
-
-**Files to Modify**:
-- `include/graph/views/topological_sort.hpp`
-
-**Tests to Create**:
-- Extend `tests/views/test_topological_sort.cpp`
-
-**Acceptance Criteria**:
-- Sourced topological edges work correctly
-- Tests pass
-
-**Commit Message**:
-```
-[views] Implement sourced topological sort edges view
-
-- Yields edge_info<void, false, edge_descriptor, EV>
-- Tests verify sourced behavior
-```
-
----
-
-### Step 5.4: Test cycle detection
+### Step 5.3: Test cycle detection
 
 **Goal**: Verify behavior on graphs with cycles.
 
@@ -1748,9 +1669,9 @@ This PR implements graph views as described in D3129:
 - edgelist: iterate over all edges (flattened)
 
 **Search Views**:
-- vertices_dfs/edges_dfs/sourced_edges_dfs
-- vertices_bfs/edges_bfs/sourced_edges_bfs
-- vertices_topological_sort/edges_topological_sort/sourced_edges_topological_sort
+- vertices_dfs/edges_dfs (source accessible via edge descriptor)
+- vertices_bfs/edges_bfs (source accessible via edge descriptor)
+- vertices_topological_sort/edges_topological_sort (source accessible via edge descriptor)
 
 **Features**:
 - Descriptor-based design (value functions receive descriptors)
