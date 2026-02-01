@@ -6,6 +6,7 @@ add_executable(graph3_views_tests
     test_search_base.cpp
     test_view_concepts.cpp
     test_vertexlist.cpp
+    test_incidence.cpp
 )
 
 target_link_libraries(graph3_views_tests

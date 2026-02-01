@@ -8,6 +8,7 @@
 
 #include <vector>
 #include <deque>
+#include <map>
 #include <string>
 
 using namespace graph;
@@ -458,5 +459,163 @@ TEST_CASE("vertexlist - std::ranges algorithms", "[vertexlist][algorithms]") {
         });
         
         REQUIRE(count == 3);  // vertices 0, 1, and 3 have edges
+    }
+}
+
+// =============================================================================
+// Test 12: Map-Based Vertex Container (Sparse Vertex IDs)
+// =============================================================================
+
+TEST_CASE("vertexlist - map vertices vector edges", "[vertexlist][map]") {
+    // Map-based graphs have sparse, non-contiguous vertex IDs
+    using Graph = std::map<int, std::vector<int>>;
+    Graph g = {
+        {100, {200, 300}},   // vertex 100 -> edges to 200, 300
+        {200, {300}},        // vertex 200 -> edge to 300
+        {300, {}}            // vertex 300 -> no edges
+    };
+
+    SECTION("iteration over sparse vertex IDs") {
+        auto vlist = vertexlist(g);
+        
+        REQUIRE(vlist.size() == 3);
+        
+        std::vector<int> ids;
+        for (auto [v] : vlist) {
+            ids.push_back(v.vertex_id());
+        }
+        
+        // Map maintains sorted order
+        REQUIRE(ids == std::vector<int>{100, 200, 300});
+    }
+
+    SECTION("with value function") {
+        auto vlist = vertexlist(g, [&g](auto v) {
+            // Return edge count for each vertex
+            return g.at(v.vertex_id()).size();
+        });
+        
+        std::vector<std::size_t> edge_counts;
+        for (auto [v, count] : vlist) {
+            edge_counts.push_back(count);
+        }
+        
+        REQUIRE(edge_counts == std::vector<std::size_t>{2, 1, 0});
+    }
+
+    SECTION("empty map graph") {
+        Graph empty_g;
+        auto vlist = vertexlist(empty_g);
+        
+        REQUIRE(vlist.size() == 0);
+        REQUIRE(vlist.begin() == vlist.end());
+    }
+
+    SECTION("single vertex map") {
+        Graph single_g = {{42, {}}};
+        auto vlist = vertexlist(single_g);
+        
+        REQUIRE(vlist.size() == 1);
+        
+        auto [v] = *vlist.begin();
+        REQUIRE(v.vertex_id() == 42);
+    }
+}
+
+// =============================================================================
+// Test 13: Map-Based Edge Container (Sorted Edges)
+// =============================================================================
+
+TEST_CASE("vertexlist - vector vertices map edges", "[vertexlist][edge_map]") {
+    // Edges stored in map (sorted by target, deduplicated)
+    using Graph = std::vector<std::map<int, double>>;
+    Graph g = {
+        {{1, 1.5}, {2, 2.5}},   // vertex 0 -> (1, 1.5), (2, 2.5)
+        {{2, 3.5}},              // vertex 1 -> (2, 3.5)
+        {}                       // vertex 2 -> no edges
+    };
+
+    SECTION("iteration") {
+        auto vlist = vertexlist(g);
+        
+        REQUIRE(vlist.size() == 3);
+        
+        std::vector<std::size_t> ids;
+        for (auto [v] : vlist) {
+            ids.push_back(v.vertex_id());
+        }
+        
+        REQUIRE(ids == std::vector<std::size_t>{0, 1, 2});
+    }
+
+    SECTION("with value function accessing edge weights") {
+        auto vlist = vertexlist(g, [&g](auto v) {
+            // Sum of edge weights for this vertex
+            double sum = 0.0;
+            for (auto& [target, weight] : g[v.vertex_id()]) {
+                sum += weight;
+            }
+            return sum;
+        });
+        
+        std::vector<double> sums;
+        for (auto [v, sum] : vlist) {
+            sums.push_back(sum);
+        }
+        
+        REQUIRE(sums[0] == 4.0);   // 1.5 + 2.5
+        REQUIRE(sums[1] == 3.5);
+        REQUIRE(sums[2] == 0.0);
+    }
+}
+
+// =============================================================================
+// Test 14: Map Vertices + Map Edges (Fully Sparse Graph)
+// =============================================================================
+
+TEST_CASE("vertexlist - map vertices map edges", "[vertexlist][map][edge_map]") {
+    // Both vertices and edges in maps - fully sparse graph
+    using Graph = std::map<int, std::map<int, double>>;
+    Graph g = {
+        {10, {{20, 1.0}, {30, 2.0}}},   // vertex 10 -> (20, 1.0), (30, 2.0)
+        {20, {{30, 3.0}}},               // vertex 20 -> (30, 3.0)
+        {30, {}}                         // vertex 30 -> no edges
+    };
+
+    SECTION("iteration") {
+        auto vlist = vertexlist(g);
+        
+        REQUIRE(vlist.size() == 3);
+        
+        std::vector<int> ids;
+        for (auto [v] : vlist) {
+            ids.push_back(v.vertex_id());
+        }
+        
+        REQUIRE(ids == std::vector<int>{10, 20, 30});
+    }
+
+    SECTION("with value function") {
+        auto vlist = vertexlist(g, [&g](auto v) {
+            return g.at(v.vertex_id()).size();
+        });
+        
+        std::vector<std::size_t> counts;
+        for (auto [v, count] : vlist) {
+            counts.push_back(count);
+        }
+        
+        REQUIRE(counts == std::vector<std::size_t>{2, 1, 0});
+    }
+
+    SECTION("structured binding access") {
+        auto vlist = vertexlist(g, [](auto v) { return v.vertex_id() * 10; });
+        
+        std::vector<int> scaled_ids;
+        for (auto [v, scaled] : vlist) {
+            scaled_ids.push_back(scaled);
+        }
+        
+        REQUIRE(scaled_ids == std::vector<int>{100, 200, 300});
     }
 }

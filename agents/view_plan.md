@@ -32,8 +32,8 @@ This plan implements graph views as described in D3129 and detailed in view_stra
 - [x] **Step 1.3**: Create view_concepts.hpp ✅ (2026-02-01)
 
 ### Phase 2: Basic Views
-- [ ] **Step 2.1**: Implement vertexlist view + tests
-- [ ] **Step 2.2**: Implement incidence view + tests
+- [x] **Step 2.1**: Implement vertexlist view + tests ✅ (2026-02-01)
+- [x] **Step 2.2**: Implement incidence view + tests ✅ (2026-02-01)
 - [ ] **Step 2.3**: Implement neighbors view + tests
 - [ ] **Step 2.4**: Implement edgelist view + tests
 - [ ] **Step 2.5**: Create basic_views.hpp header
@@ -551,7 +551,7 @@ concept search_view = requires(V& v, const V& cv) {
 
 ### Step 2.1: Implement vertexlist view ✅ COMPLETE
 
-**Status**: Implemented and tested (67 new assertions, 547 total)
+**Status**: Implemented and tested (83 assertions, 14 test cases)
 
 **Files Created**:
 - `include/graph/views/vertexlist.hpp` - View implementation
@@ -564,8 +564,9 @@ concept search_view = requires(V& v, const V& cv) {
 - Factory functions: `vertexlist(g)` and `vertexlist(g, vvf)`
 - Uses `adjacency_list` concept (not `index_adjacency_list`)
 - Constrained with `vertex_value_function` concept
+- Uses `vertices()` CPO for proper iterator-based container support
 
-**Test Coverage** (11 test cases, 67 assertions):
+**Test Coverage** (14 test cases, 83 assertions):
 - Empty graph iteration
 - Single and multiple vertex iteration  
 - Structured bindings: `[v]` and `[v, val]`
@@ -577,6 +578,9 @@ concept search_view = requires(V& v, const V& cv) {
 - Const graph access
 - Weighted graph (pair edges)
 - std::ranges algorithms (distance, count_if)
+- **Map vertices + vector edges** (sparse vertex IDs)
+- **Vector vertices + map edges** (sorted edges)
+- **Map vertices + map edges** (fully sparse graph)
 
 **Commit Message**:
 ```
@@ -586,130 +590,56 @@ concept search_view = requires(V& v, const V& cv) {
 - Value function receives vertex descriptor
 - Supports structured bindings: [v] and [v, val]
 - Tests cover iteration, value functions, const correctness
-- 67 new assertions (547 total views tests)
+- Map-based container coverage for vertices and edges
+- 83 assertions in 14 test cases
 ```
 
 ---
 
-### Step 2.2: Implement incidence view
+### Step 2.2: Implement incidence view ✅ COMPLETE
 
-**Goal**: Implement incidence view yielding `edge_info<void, false, edge_descriptor, EV>`.
+**Status**: Implemented and tested (84 assertions, 15 test cases)
 
-**Files to Create**:
-- `include/graph/views/incidence.hpp`
+**Files Created**:
+- `include/graph/views/incidence.hpp` - View implementation
+- `tests/views/test_incidence.cpp` - Comprehensive test suite
 
-**Implementation**:
-```cpp
-namespace graph::views {
+**Implementation Summary**:
+- `incidence_view<G, void>` - No value function variant
+- `incidence_view<G, EVF>` - With value function variant
+- Yields `edge_info<void, false, edge_t<G>, EV>` where EV is void or invoke result
+- Factory functions: `incidence(g, u)` and `incidence(g, u, evf)`
+- Uses `adjacency_list` concept
+- Constrained with `edge_value_function` concept
+- Iterator stores `edge_type` directly (same pattern as vertexlist)
+- Uses `edges()` CPO for proper iterator-based container support
 
-template<adjacency_list G, class EVF>
-class incidence_view : public std::ranges::view_interface<incidence_view<G, EVF>> {
-    G* g_;
-    vertex_id_t<G> source_id_;
-    [[no_unique_address]] EVF evf_;
-    
-public:
-    incidence_view(G& g, vertex_id_t<G> uid, EVF evf) 
-        : g_(&g), source_id_(uid), evf_(std::move(evf)) {}
-    
-    class iterator {
-        G* g_;
-        vertex_descriptor_t<G> source_;
-        edge_iterator_t<G> current_;
-        [[no_unique_address]] EVF* evf_;
-        
-    public:
-        using iterator_category = std::forward_iterator_tag;
-        using difference_type   = std::ptrdiff_t;
-        using value_type        = edge_info<void, false, edge_descriptor_t<G>, 
-                                           std::invoke_result_t<EVF, edge_descriptor_t<G>>>;
-        
-        iterator(G* g, vertex_descriptor_t<G> src, edge_iterator_t<G> it, EVF* evf)
-            : g_(g), source_(src), current_(it), evf_(evf) {}
-        
-        auto operator*() const {
-            auto edesc = create_edge_descriptor(*g_, current_, source_);
-            if constexpr (std::is_void_v<EVF>) {
-                return edge_info<void, false, edge_descriptor_t<G>, void>{edesc};
-            } else {
-                return edge_info<void, false, edge_descriptor_t<G>, 
-                               std::invoke_result_t<EVF, edge_descriptor_t<G>>>{
-                    edesc, (*evf_)(edesc)
-                };
-            }
-        }
-        
-        iterator& operator++() {
-            ++current_;
-            return *this;
-        }
-        
-        iterator operator++(int) {
-            auto tmp = *this;
-            ++*this;
-            return tmp;
-        }
-        
-        bool operator==(const iterator& other) const = default;
-    };
-    
-    auto begin() { 
-        auto src_desc = create_vertex_descriptor(*g_, source_id_);
-        auto [first, last] = edges(*g_, source_id_);
-        return iterator(g_, src_desc, first, &evf_); 
-    }
-    
-    auto end() { 
-        auto src_desc = create_vertex_descriptor(*g_, source_id_);
-        auto [first, last] = edges(*g_, source_id_);
-        return iterator(g_, src_desc, last, &evf_); 
-    }
-};
-
-// Factory function - no value function
-template<adjacency_list G>
-auto incidence(G&& g, vertex_id_t<G> uid) {
-    return incidence_view<std::remove_reference_t<G>, void>(g, uid, void{});
-}
-
-// Factory function - with value function
-template<adjacency_list G, class EVF>
-    requires edge_value_function<EVF, edge_descriptor_t<G>>
-auto incidence(G&& g, vertex_id_t<G> uid, EVF&& evf) {
-    return incidence_view<std::remove_reference_t<G>, std::decay_t<EVF>>(
-        g, uid, std::forward<EVF>(evf)
-    );
-}
-
-} // namespace graph::views
-```
-
-**Tests to Create**:
-- `tests/views/test_incidence.cpp`
-  - Test iteration over edges from a vertex
-  - Test structured binding `[e]` and `[e, val]`
-  - Test value function receives edge descriptor
-  - Test edge descriptor provides source_id, target_id, edge data access
-  - Test with vertices having 0, 1, many edges
-  - Test const graph behavior
-  - Test edge descriptor contains source vertex descriptor
-
-**Acceptance Criteria**:
-- View iterates over outgoing edges correctly
-- Edge descriptor contains source vertex descriptor member
-- Value function receives descriptor
-- Structured bindings work
-- Tests pass with sanitizers
+**Test Coverage** (15 test cases, 84 assertions):
+- Empty vertex (no edges) iteration
+- Single and multiple edge iteration
+- Structured bindings: `[e]` and `[e, val]`
+- Various value function types (target_id access, edge_value access)
+- Edge descriptor access (source_id, target_id)
+- Weighted graph (pair edges) with edge_value
+- Range concepts verified (input_range, forward_range, sized_range)
+- Iterator properties (pre/post increment, equality)
+- edge_info type verification
+- Deque-based graph support
+- All-vertices iteration pattern
+- **Map vertices + vector edges** (sparse vertex IDs)
+- **Vector vertices + map edges** (sorted edges)
+- **Map vertices + map edges** (fully sparse graph)
 
 **Commit Message**:
 ```
-[views] Implement incidence view
+[views] Phase 2.2: Implement incidence view
 
 - Yields edge_info<void, false, edge_descriptor, EV>
 - Edge descriptor contains source vertex descriptor
 - Value function receives edge descriptor
 - Supports structured bindings: [e] and [e, val]
-- Tests verify source context and value functions
+- Map-based container coverage for vertices and edges
+- 84 assertions in 15 test cases
 ```
 
 ---

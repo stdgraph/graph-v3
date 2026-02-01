@@ -598,7 +598,35 @@ Create test utilities with standard graph types:
 - DAG (for topological sort)
 - Disconnected graph (multiple components)
 
-### 7.2 Test Categories
+### 7.2 Container Type Coverage
+
+Views must be tested with multiple container configurations to ensure they work correctly
+with both index-based and iterator-based vertex/edge storage:
+
+**Vertex Container Types**:
+- `vector<vertex>` (vov, vol, etc.) - Random-access, contiguous vertex IDs starting at 0
+- `map<VId, vertex>` (mov, mol, etc.) - Sparse vertex IDs, iterator-based storage, sorted order
+- `deque<vertex>` (dov, dol, etc.) - Random-access but non-contiguous
+
+**Edge Container Types**:
+- `vector<edge>` - Random-access edges
+- `map<VId, EV>` (voem, moem, etc.) - Sorted edges by target, deduplicated
+- `list<edge>` - Forward-only edges
+
+**Test Matrix** (minimum coverage per view):
+| View | vov | mov | voem | moem |
+|------|-----|-----|------|------|
+| vertexlist | ✓ | ✓ | ✓ | ✓ |
+| incidence | ✓ | ✓ | ✓ | ✓ |
+| neighbors | ✓ | ✓ | ✓ | ✓ |
+| edgelist | ✓ | ✓ | ✓ | ✓ |
+
+**Key Differences to Test**:
+- **Map vertices**: Sparse, non-contiguous IDs; `vertices()` returns iterator-based descriptors
+- **Map edges**: Edges sorted by target_id; duplicate targets deduplicated
+- **Descriptor storage**: For maps, `vertex_descriptor::storage_type` is an iterator, not an index
+
+### 7.3 Test Categories
 
 1. **Basic Functionality**: Verify correct elements are yielded
 2. **Ordering**: DFS/BFS produce correct visit order
@@ -608,8 +636,9 @@ Create test utilities with standard graph types:
 6. **Depth/Size Tracking**: Accurate depth and count during traversal
 7. **Const Correctness**: Views from const graphs compile and work
 8. **Edge Cases**: Empty graphs, single vertex, disconnected components
+9. **Container Variance**: Views work with map-based and vector-based containers
 
-### 7.3 Test File Organization
+### 7.4 Test File Organization
 
 ```
 tests/views/

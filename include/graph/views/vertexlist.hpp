@@ -87,11 +87,13 @@ public:
         : g_(&g) {}
 
     [[nodiscard]] constexpr iterator begin() const noexcept {
-        return iterator(g_, vertex_type{typename vertex_type::storage_type{0}});
+        auto vert_range = adj_list::vertices(*g_);
+        return iterator(g_, *std::ranges::begin(vert_range));
     }
 
     [[nodiscard]] constexpr iterator end() const noexcept {
-        return iterator(g_, vertex_type{static_cast<typename vertex_type::storage_type>(adj_list::num_vertices(*g_))});
+        auto vert_range = adj_list::vertices(*g_);
+        return iterator(g_, *std::ranges::end(vert_range));
     }
 
     [[nodiscard]] constexpr std::size_t size() const noexcept {
@@ -169,11 +171,13 @@ public:
         : g_(&g), vvf_(std::move(vvf)) {}
 
     [[nodiscard]] constexpr iterator begin() noexcept {
-        return iterator(g_, vertex_type{typename vertex_type::storage_type{0}}, &vvf_);
+        auto vert_range = adj_list::vertices(*g_);
+        return iterator(g_, *std::ranges::begin(vert_range), &vvf_);
     }
 
     [[nodiscard]] constexpr iterator end() noexcept {
-        return iterator(g_, vertex_type{static_cast<typename vertex_type::storage_type>(adj_list::num_vertices(*g_))}, &vvf_);
+        auto vert_range = adj_list::vertices(*g_);
+        return iterator(g_, *std::ranges::end(vert_range), &vvf_);
     }
 
     [[nodiscard]] constexpr std::size_t size() const noexcept {
