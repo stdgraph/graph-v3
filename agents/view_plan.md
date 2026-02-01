@@ -549,112 +549,44 @@ concept search_view = requires(V& v, const V& cv) {
 
 ## Phase 2: Basic Views
 
-### Step 2.1: Implement vertexlist view
+### Step 2.1: Implement vertexlist view ✅ COMPLETE
 
-**Goal**: Implement vertexlist view yielding `vertex_info<void, vertex_descriptor, VV>`.
+**Status**: Implemented and tested (67 new assertions, 547 total)
 
-**Files to Create**:
-- `include/graph/views/vertexlist.hpp`
+**Files Created**:
+- `include/graph/views/vertexlist.hpp` - View implementation
+- `tests/views/test_vertexlist.cpp` - Comprehensive test suite
 
-**Implementation**:
-```cpp
-namespace graph::views {
+**Implementation Summary**:
+- `vertexlist_view<G, void>` - No value function variant
+- `vertexlist_view<G, VVF>` - With value function variant  
+- Yields `vertex_info<void, vertex_t<G>, VV>` where VV is void or invoke result
+- Factory functions: `vertexlist(g)` and `vertexlist(g, vvf)`
+- Uses `adjacency_list` concept (not `index_adjacency_list`)
+- Constrained with `vertex_value_function` concept
 
-template<index_adjacency_list G, class VVF>
-class vertexlist_view : public std::ranges::view_interface<vertexlist_view<G, VVF>> {
-    G* g_;
-    [[no_unique_address]] VVF vvf_;
-    
-public:
-    vertexlist_view(G& g, VVF vvf) : g_(&g), vvf_(std::move(vvf)) {}
-    
-    class iterator {
-        G* g_;
-        vertex_id_t<G> current_;
-        [[no_unique_address]] VVF* vvf_;
-        
-    public:
-        using iterator_category = std::forward_iterator_tag;
-        using difference_type   = std::ptrdiff_t;
-        using value_type        = vertex_info<void, vertex_descriptor_t<G>, 
-                                              std::invoke_result_t<VVF, vertex_descriptor_t<G>>>;
-        
-        iterator(G* g, vertex_id_t<G> id, VVF* vvf) 
-            : g_(g), current_(id), vvf_(vvf) {}
-        
-        auto operator*() const {
-            auto vdesc = create_vertex_descriptor(*g_, current_);
-            if constexpr (std::is_void_v<VVF>) {
-                return vertex_info<void, vertex_descriptor_t<G>, void>{vdesc};
-            } else {
-                return vertex_info<void, vertex_descriptor_t<G>, 
-                                 std::invoke_result_t<VVF, vertex_descriptor_t<G>>>{
-                    vdesc, (*vvf_)(vdesc)
-                };
-            }
-        }
-        
-        iterator& operator++() {
-            ++current_;
-            return *this;
-        }
-        
-        iterator operator++(int) {
-            auto tmp = *this;
-            ++*this;
-            return tmp;
-        }
-        
-        bool operator==(const iterator& other) const = default;
-    };
-    
-    auto begin() { return iterator(g_, 0, &vvf_); }
-    auto end() { return iterator(g_, num_vertices(*g_), &vvf_); }
-};
-
-// Factory function - no value function
-template<index_adjacency_list G>
-auto vertexlist(G&& g) {
-    return vertexlist_view<std::remove_reference_t<G>, void>(g, void{});
-}
-
-// Factory function - with value function
-template<index_adjacency_list G, class VVF>
-    requires vertex_value_function<VVF, vertex_descriptor_t<G>>
-auto vertexlist(G&& g, VVF&& vvf) {
-    return vertexlist_view<std::remove_reference_t<G>, std::decay_t<VVF>>(
-        g, std::forward<VVF>(vvf)
-    );
-}
-
-} // namespace graph::views
-```
-
-**Tests to Create**:
-- `tests/views/test_vertexlist.cpp`
-  - Test iteration over vertices (empty, single, multiple)
-  - Test structured binding `[v]` and `[v, val]`
-  - Test value function receives vertex descriptor
-  - Test value function can access vertex_id and vertex_value
-  - Test const graph yields const behavior
-  - Test with vector-based and deque-based graphs
-  - Test ranges::input_range concept satisfied
-
-**Acceptance Criteria**:
-- View compiles and iterates correctly
-- Structured bindings work for both variants
-- Value function receives descriptor, not underlying value
-- Vertex descriptor provides access to ID and data
-- Tests pass with sanitizers
+**Test Coverage** (11 test cases, 67 assertions):
+- Empty graph iteration
+- Single and multiple vertex iteration  
+- Structured bindings: `[v]` and `[v, val]`
+- Various value function types (string, double, capturing, mutable)
+- Deque-based graph support
+- Range concepts verified (input_range, forward_range, sized_range, view)
+- Iterator properties (pre/post increment, equality)
+- vertex_info type verification
+- Const graph access
+- Weighted graph (pair edges)
+- std::ranges algorithms (distance, count_if)
 
 **Commit Message**:
 ```
-[views] Implement vertexlist view
+[views] Phase 2.1: Implement vertexlist view
 
 - Yields vertex_info<void, vertex_descriptor, VV>
 - Value function receives vertex descriptor
 - Supports structured bindings: [v] and [v, val]
 - Tests cover iteration, value functions, const correctness
+- 67 new assertions (547 total views tests)
 ```
 
 ---
