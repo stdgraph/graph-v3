@@ -5,6 +5,10 @@
  * Provides views that traverse a graph in breadth-first order from a seed vertex,
  * yielding vertex_info or edge_info for each visited element.
  * 
+ * @complexity Time: O(V + E) where V is reachable vertices and E is reachable edges
+ *             BFS visits each reachable vertex once and traverses each reachable edge once
+ * @complexity Space: O(V) for the queue and visited tracker
+ * 
  * @par Examples:
  * @code
  * // Vertex traversal
@@ -71,7 +75,12 @@ struct edge_queue_entry {
     EdgeIter    edge_current;
 };
 
-/// Shared BFS state - allows iterator copies to share traversal state
+/**
+ * @brief Shared BFS state for vertex traversal
+ * 
+ * @complexity Time: O(V + E) - visits each reachable vertex once, traverses each reachable edge once
+ * @complexity Space: O(V) - queue stores up to V vertices, visited tracker uses O(V) space
+ */
 template <class G, class Alloc>
 struct bfs_state {
     using graph_type = G;
@@ -96,7 +105,12 @@ struct bfs_state {
     }
 };
 
-/// Shared BFS state for edge traversal
+/**
+ * @brief Shared BFS state for edge traversal
+ * 
+ * @complexity Time: O(V + E) - visits each reachable vertex once, traverses each reachable edge once
+ * @complexity Space: O(V) - queue and visited tracker use O(V) space
+ */
 template <class G, class Alloc>
 struct bfs_edge_state {
     using graph_type = G;

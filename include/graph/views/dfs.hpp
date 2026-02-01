@@ -5,6 +5,10 @@
  * Provides views that traverse a graph in depth-first order from a seed vertex,
  * yielding vertex_info or edge_info for each visited element.
  * 
+ * @complexity Time: O(V + E) where V is reachable vertices and E is reachable edges
+ *             DFS visits each reachable vertex once and traverses each reachable edge once
+ * @complexity Space: O(V) for the stack and visited tracker
+ * 
  * @par Examples:
  * @code
  * // Vertex traversal
@@ -78,6 +82,12 @@ struct stack_entry {
 /// 3. Range-based for loop: The view's cancel() must be able to stop iteration in progress.
 /// 4. Input iterator semantics: DFS is single-pass; shared state correctly models this.
 /// An alternative (state by value + raw pointers) would break if the view is moved.
+/**
+ * @brief Shared DFS state for vertex traversal
+ * 
+ * @complexity Time: O(V + E) - visits each reachable vertex once, traverses each reachable edge once
+ * @complexity Space: O(V) - stack stores up to V vertices, visited tracker uses O(V) space
+ */
 template <class G, class Alloc>
 struct dfs_state {
     using graph_type = G;

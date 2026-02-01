@@ -224,6 +224,19 @@ template <adj_list::adjacency_list G>
 }
 
 /**
+ * @brief Create a neighbors view without value function (vertex_id overload)
+ * 
+ * @param g The graph to iterate over
+ * @param uid The source vertex id
+ * @return neighbors_view yielding neighbor_info<void, false, vertex_descriptor, void>
+ */
+template <adj_list::adjacency_list G>
+[[nodiscard]] constexpr auto neighbors(G& g, adj_list::vertex_id_t<G> uid) noexcept {
+    auto u = adj_list::find_vertex(g, uid);
+    return neighbors_view<G, void>(g, *u);
+}
+
+/**
  * @brief Create a neighbors view with value function
  * 
  * @param g The graph to iterate over
@@ -235,6 +248,21 @@ template <adj_list::adjacency_list G, class VVF>
     requires vertex_value_function<VVF, adj_list::vertex_t<G>>
 [[nodiscard]] constexpr auto neighbors(G& g, adj_list::vertex_t<G> u, VVF&& vvf) {
     return neighbors_view<G, std::decay_t<VVF>>(g, u, std::forward<VVF>(vvf));
+}
+
+/**
+ * @brief Create a neighbors view with value function (vertex_id overload)
+ * 
+ * @param g The graph to iterate over
+ * @param uid The source vertex id
+ * @param vvf Value function invoked for each target vertex
+ * @return neighbors_view yielding neighbor_info<void, false, vertex_descriptor, VV>
+ */
+template <adj_list::adjacency_list G, class VVF>
+    requires vertex_value_function<VVF, adj_list::vertex_t<G>>
+[[nodiscard]] constexpr auto neighbors(G& g, adj_list::vertex_id_t<G> uid, VVF&& vvf) {
+    auto u = adj_list::find_vertex(g, uid);
+    return neighbors_view<G, std::decay_t<VVF>>(g, *u, std::forward<VVF>(vvf));
 }
 
 } // namespace graph::views

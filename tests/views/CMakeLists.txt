@@ -12,6 +12,8 @@ add_executable(graph3_views_tests
     test_basic_views.cpp
     test_dfs.cpp
     test_bfs.cpp
+    test_topological_sort.cpp
+    test_adaptors.cpp
 )
 
 target_link_libraries(graph3_views_tests

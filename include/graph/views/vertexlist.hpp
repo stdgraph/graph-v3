@@ -5,6 +5,57 @@
  * Provides a view that iterates over all vertices in a graph, yielding
  * vertex_info<void, vertex_descriptor, VV> for each vertex. Supports
  * optional value functions to compute per-vertex values.
+ * 
+ * @section chaining_with_std_views Chaining with std::views
+ * 
+ * Views created WITHOUT value functions chain perfectly with std::views:
+ * @code
+ *   auto view = g | vertexlist()
+ *                 | std::views::transform([&g](auto vi) { return vertex_id(g, vi.vertex); })
+ *                 | std::views::filter([](auto id) { return id > 0; });
+ * @endcode
+ * 
+ * @warning LIMITATION: Views with capturing lambda value functions cannot chain with std::views
+ * 
+ * This FAILS to compile in C++20:
+ * @code
+ *   auto vvf = [&g](auto v) { return vertex_id(g, v) * 10; };
+ *   auto view = g | vertexlist(vvf) | std::views::take(2);  // ❌ Won't compile
+ * @endcode
+ * 
+ * The reason: When a view stores a capturing lambda as VVF, the lambda is not
+ * default_initializable or semiregular, which prevents the view from satisfying
+ * std::ranges::view. This is a fundamental C++20 limitation.
+ * 
+ * @section workarounds Workarounds
+ * 
+ * 1. RECOMMENDED: Use views without value functions, then transform:
+ * @code
+ *   auto view = g | vertexlist()
+ *                 | std::views::transform([&g](auto vi) { 
+ *                     return std::make_tuple(vi.vertex, vertex_id(g, vi.vertex) * 10);
+ *                   });
+ * @endcode
+ * 
+ * 2. Don't chain - use value functions standalone:
+ * @code
+ *   auto vvf = [&g](auto v) { return vertex_id(g, v) * 10; };
+ *   auto view = g | vertexlist(vvf);  // ✅ Works fine, just don't chain further
+ * @endcode
+ * 
+ * 3. Extract to container first, then chain:
+ * @code
+ *   std::vector<vertex_info<...>> vertices;
+ *   for (auto vi : g | vertexlist()) vertices.push_back(vi);
+ *   auto view = vertices | std::views::transform(...);
+ * @endcode
+ * 
+ * @section cpp26_fix C++26 Fix
+ * 
+ * C++26 will introduce std::copyable_function (P2548) or similar type-erased
+ * function wrappers that are always semiregular, which will solve this issue.
+ * Future implementation could wrap VVF in such a type to enable chaining
+ * with capturing lambdas.
  */
 
 #pragma once
@@ -166,6 +217,12 @@ public:
     using const_iterator = iterator;
 
     constexpr vertexlist_view() noexcept = default;
+    
+    constexpr vertexlist_view(vertexlist_view&&) = default;
+    constexpr vertexlist_view& operator=(vertexlist_view&&) = default;
+    
+    constexpr vertexlist_view(const vertexlist_view&) = default;
+    constexpr vertexlist_view& operator=(const vertexlist_view&) = default;
 
     constexpr vertexlist_view(G& g, VVF vvf) noexcept(std::is_nothrow_move_constructible_v<VVF>)
         : g_(&g), vvf_(std::move(vvf)) {}

@@ -19,6 +19,7 @@ include(Sanitizers)
 include(CodeCoverage)
 include(CompilerCache)
 include(PrecompiledHeaders)
+include(CPM)
 
 # C++ standard
 set(CMAKE_CXX_STANDARD 20)
@@ -55,6 +56,9 @@ target_include_directories(graph3 INTERFACE
 )
 
 target_compile_features(graph3 INTERFACE cxx_std_20)
+
+# Link tl::expected for optional cycle detection in topological sort
+target_link_libraries(graph3 INTERFACE tl::expected)
 
 # Apply compiler warnings
 set_project_warnings(graph3)

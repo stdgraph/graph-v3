@@ -27,6 +27,15 @@ endif()
 
 include(${CPM_DOWNLOAD_LOCATION})
 
+# Fetch tl::expected for C++20 std::expected polyfill
+CPMAddPackage(
+    NAME expected
+    GITHUB_REPOSITORY TartanLlama/expected
+    GIT_TAG v1.1.0
+    OPTIONS
+        "EXPECTED_BUILD_TESTS OFF"
+)
+
 # Usage example:
 # include(CPM)
 # CPMAddPackage("gh:catchorg/Catch2@3.5.0")
