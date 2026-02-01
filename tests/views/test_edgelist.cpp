@@ -626,3 +626,365 @@ TEST_CASE("edgelist - map vertices map edges", "[edgelist][map][edge_map]") {
         REQUIRE(std::get<2>(all_edges[2]) == 3.0);
     }
 }
+
+// =============================================================================
+// =============================================================================
+// EDGE_LIST TESTS (Step 2.4.1)
+// =============================================================================
+// =============================================================================
+
+// =============================================================================
+// Test 16: edge_list with pairs
+// =============================================================================
+
+TEST_CASE("edgelist - edge_list with pairs", "[edgelist][edge_list]") {
+    using EdgeList = std::vector<std::pair<int, int>>;
+    EdgeList el = {{1, 2}, {2, 3}, {3, 4}, {4, 5}};
+
+    SECTION("no value function") {
+        auto elist = edgelist(el);
+        
+        REQUIRE(elist.size() == 4);
+        
+        std::vector<std::pair<int, int>> edges;
+        for (auto [e] : elist) {
+            edges.emplace_back(source_id(el, e), target_id(el, e));
+        }
+        
+        REQUIRE(edges.size() == 4);
+        REQUIRE(edges[0] == std::pair<int, int>{1, 2});
+        REQUIRE(edges[1] == std::pair<int, int>{2, 3});
+        REQUIRE(edges[2] == std::pair<int, int>{3, 4});
+        REQUIRE(edges[3] == std::pair<int, int>{4, 5});
+    }
+
+    SECTION("with value function") {
+        auto elist = edgelist(el, [](auto& el, auto e) {
+            return source_id(el, e) + target_id(el, e);
+        });
+        
+        std::vector<int> sums;
+        for (auto [e, sum] : elist) {
+            sums.push_back(sum);
+        }
+        
+        REQUIRE(sums == std::vector<int>{3, 5, 7, 9});
+    }
+}
+
+// =============================================================================
+// Test 17: edge_list with tuples (2-tuples, no value)
+// =============================================================================
+
+TEST_CASE("edgelist - edge_list with 2-tuples", "[edgelist][edge_list]") {
+    using EdgeList = std::vector<std::tuple<int, int>>;
+    EdgeList el = {{0, 1}, {1, 2}, {2, 0}};
+
+    SECTION("iteration") {
+        auto elist = edgelist(el);
+        
+        REQUIRE(elist.size() == 3);
+        
+        std::vector<std::pair<int, int>> edges;
+        for (auto [e] : elist) {
+            edges.emplace_back(source_id(el, e), target_id(el, e));
+        }
+        
+        REQUIRE(edges[0] == std::pair<int, int>{0, 1});
+        REQUIRE(edges[1] == std::pair<int, int>{1, 2});
+        REQUIRE(edges[2] == std::pair<int, int>{2, 0});
+    }
+}
+
+// =============================================================================
+// Test 18: edge_list with 3-tuples (weighted edges)
+// =============================================================================
+
+TEST_CASE("edgelist - edge_list with 3-tuples (weighted)", "[edgelist][edge_list]") {
+    using EdgeList = std::vector<std::tuple<int, int, double>>;
+    EdgeList el = {{0, 1, 1.5}, {1, 2, 2.5}, {2, 3, 3.5}};
+
+    SECTION("no value function") {
+        auto elist = edgelist(el);
+        
+        std::vector<std::pair<int, int>> edges;
+        for (auto [e] : elist) {
+            edges.emplace_back(source_id(el, e), target_id(el, e));
+        }
+        
+        REQUIRE(edges.size() == 3);
+        REQUIRE(edges[0] == std::pair<int, int>{0, 1});
+        REQUIRE(edges[2] == std::pair<int, int>{2, 3});
+    }
+
+    SECTION("value function accessing edge_value") {
+        auto elist = edgelist(el, [](auto& el, auto e) {
+            return edge_value(el, e);
+        });
+        
+        std::vector<double> weights;
+        for (auto [e, w] : elist) {
+            weights.push_back(w);
+        }
+        
+        REQUIRE(weights == std::vector<double>{1.5, 2.5, 3.5});
+    }
+
+    SECTION("value function computing derived value") {
+        auto elist = edgelist(el, [](auto& el, auto e) {
+            return edge_value(el, e) * 2.0;
+        });
+        
+        std::vector<double> doubled;
+        for (auto [e, val] : elist) {
+            doubled.push_back(val);
+        }
+        
+        REQUIRE(doubled == std::vector<double>{3.0, 5.0, 7.0});
+    }
+}
+
+// =============================================================================
+// Test 19: edge_list with edge_info
+// =============================================================================
+
+TEST_CASE("edgelist - edge_list with edge_info", "[edgelist][edge_list]") {
+    using EdgeType = edge_info<int, true, void, void>;
+    using EdgeList = std::vector<EdgeType>;
+    
+    EdgeList el = {
+        EdgeType{10, 20},
+        EdgeType{20, 30},
+        EdgeType{30, 40}
+    };
+
+    SECTION("no value function") {
+        auto elist = edgelist(el);
+        
+        REQUIRE(elist.size() == 3);
+        
+        std::vector<std::pair<int, int>> edges;
+        for (auto [e] : elist) {
+            edges.emplace_back(source_id(el, e), target_id(el, e));
+        }
+        
+        REQUIRE(edges[0] == std::pair<int, int>{10, 20});
+        REQUIRE(edges[1] == std::pair<int, int>{20, 30});
+        REQUIRE(edges[2] == std::pair<int, int>{30, 40});
+    }
+
+    SECTION("with value function") {
+        auto elist = edgelist(el, [](auto& el, auto e) {
+            return target_id(el, e) - source_id(el, e);
+        });
+        
+        std::vector<int> diffs;
+        for (auto [e, diff] : elist) {
+            diffs.push_back(diff);
+        }
+        
+        REQUIRE(diffs == std::vector<int>{10, 10, 10});
+    }
+}
+
+// =============================================================================
+// Test 20: edge_list with edge_info (with value)
+// =============================================================================
+
+TEST_CASE("edgelist - edge_list with edge_info with value", "[edgelist][edge_list]") {
+    using EdgeType = edge_info<int, true, void, double>;
+    using EdgeList = std::vector<EdgeType>;
+    
+    EdgeList el = {
+        EdgeType{1, 2, 0.5},
+        EdgeType{2, 3, 1.5},
+        EdgeType{3, 1, 2.5}
+    };
+
+    SECTION("accessing edge_value") {
+        auto elist = edgelist(el, [](auto& el, auto e) {
+            return edge_value(el, e);
+        });
+        
+        std::vector<double> weights;
+        for (auto [e, w] : elist) {
+            weights.push_back(w);
+        }
+        
+        REQUIRE(weights == std::vector<double>{0.5, 1.5, 2.5});
+    }
+}
+
+// =============================================================================
+// Test 21: Empty edge_list
+// =============================================================================
+
+TEST_CASE("edgelist - empty edge_list", "[edgelist][edge_list][empty]") {
+    using EdgeList = std::vector<std::pair<int, int>>;
+    EdgeList el;
+
+    SECTION("no value function") {
+        auto elist = edgelist(el);
+        
+        REQUIRE(elist.size() == 0);
+        REQUIRE(elist.begin() == elist.end());
+    }
+
+    SECTION("with value function") {
+        auto elist = edgelist(el, [](auto& /*el*/, auto /*e*/) { return 42; });
+        
+        REQUIRE(elist.begin() == elist.end());
+    }
+}
+
+// =============================================================================
+// Test 22: edge_list range concepts
+// =============================================================================
+
+TEST_CASE("edgelist - edge_list satisfies range concepts", "[edgelist][edge_list][concepts]") {
+    using EdgeList = std::vector<std::pair<int, int>>;
+    EdgeList el = {{1, 2}, {3, 4}};
+
+    SECTION("view without value function") {
+        auto elist = edgelist(el);
+        
+        STATIC_REQUIRE(std::ranges::range<decltype(elist)>);
+        STATIC_REQUIRE(std::ranges::forward_range<decltype(elist)>);
+        STATIC_REQUIRE(std::ranges::view<decltype(elist)>);
+        STATIC_REQUIRE(std::ranges::sized_range<decltype(elist)>);
+    }
+
+    SECTION("view with value function") {
+        auto elist = edgelist(el, [](auto& el, auto e) { return source_id(el, e); });
+        
+        STATIC_REQUIRE(std::ranges::range<decltype(elist)>);
+        STATIC_REQUIRE(std::ranges::forward_range<decltype(elist)>);
+        STATIC_REQUIRE(std::ranges::view<decltype(elist)>);
+        STATIC_REQUIRE(std::ranges::sized_range<decltype(elist)>);
+    }
+}
+
+// =============================================================================
+// Test 23: edge_list iterator operations
+// =============================================================================
+
+TEST_CASE("edgelist - edge_list iterator operations", "[edgelist][edge_list][iterator]") {
+    using EdgeList = std::vector<std::pair<int, int>>;
+    EdgeList el = {{1, 2}, {2, 3}, {3, 4}};
+
+    SECTION("post-increment") {
+        auto elist = edgelist(el);
+        auto it = elist.begin();
+        
+        auto old_it = it++;
+        REQUIRE(target_id(el, (*old_it).edge) == 2);
+        REQUIRE(target_id(el, (*it).edge) == 3);
+    }
+
+    SECTION("equality comparison") {
+        auto elist = edgelist(el);
+        auto it1 = elist.begin();
+        auto it2 = elist.begin();
+        
+        REQUIRE(it1 == it2);
+        ++it1;
+        REQUIRE(it1 != it2);
+    }
+
+    SECTION("end iterator comparison") {
+        auto elist = edgelist(el);
+        auto it = elist.begin();
+        
+        ++it; ++it; ++it;
+        REQUIRE(it == elist.end());
+    }
+}
+
+// =============================================================================
+// Test 24: edge_list with string vertex IDs
+// =============================================================================
+
+TEST_CASE("edgelist - edge_list with string vertex IDs", "[edgelist][edge_list][string]") {
+    using EdgeList = std::vector<std::pair<std::string, std::string>>;
+    EdgeList el = {{"A", "B"}, {"B", "C"}, {"C", "A"}};
+
+    SECTION("iteration") {
+        auto elist = edgelist(el);
+        
+        REQUIRE(elist.size() == 3);
+        
+        std::vector<std::pair<std::string, std::string>> edges;
+        for (auto [e] : elist) {
+            edges.emplace_back(source_id(el, e), target_id(el, e));
+        }
+        
+        REQUIRE(edges[0] == std::pair<std::string, std::string>{"A", "B"});
+        REQUIRE(edges[1] == std::pair<std::string, std::string>{"B", "C"});
+        REQUIRE(edges[2] == std::pair<std::string, std::string>{"C", "A"});
+    }
+
+    SECTION("with value function creating labels") {
+        auto elist = edgelist(el, [](auto& el, auto e) {
+            return source_id(el, e) + "->" + target_id(el, e);
+        });
+        
+        std::vector<std::string> labels;
+        for (auto [e, label] : elist) {
+            labels.push_back(label);
+        }
+        
+        REQUIRE(labels == std::vector<std::string>{"A->B", "B->C", "C->A"});
+    }
+}
+
+// =============================================================================
+// Test 25: edge_list with range algorithms
+// =============================================================================
+
+TEST_CASE("edgelist - edge_list with range algorithms", "[edgelist][edge_list][algorithm]") {
+    using EdgeList = std::vector<std::pair<int, int>>;
+    EdgeList el = {{1, 2}, {2, 3}, {3, 4}, {4, 5}, {5, 6}};
+
+    SECTION("std::ranges::distance") {
+        auto elist = edgelist(el);
+        REQUIRE(std::ranges::distance(elist) == 5);
+    }
+
+    SECTION("std::ranges::count_if") {
+        auto elist = edgelist(el);
+        auto count = std::ranges::count_if(elist, [&el](auto ei) {
+            return target_id(el, ei.edge) > 3;
+        });
+        REQUIRE(count == 3);  // edges to 4, 5, 6
+    }
+
+    SECTION("std::ranges::for_each") {
+        auto elist = edgelist(el);
+        int sum = 0;
+        std::ranges::for_each(elist, [&el, &sum](auto ei) {
+            sum += target_id(el, ei.edge);
+        });
+        REQUIRE(sum == 20);  // 2+3+4+5+6
+    }
+}
+
+// =============================================================================
+// Test 26: Deque-based edge_list
+// =============================================================================
+
+TEST_CASE("edgelist - deque-based edge_list", "[edgelist][edge_list][container]") {
+    using EdgeList = std::deque<std::pair<int, int>>;
+    EdgeList el = {{1, 2}, {2, 3}, {3, 4}};
+
+    SECTION("iteration") {
+        auto elist = edgelist(el);
+        
+        std::vector<std::pair<int, int>> edges;
+        for (auto [e] : elist) {
+            edges.emplace_back(source_id(el, e), target_id(el, e));
+        }
+        
+        REQUIRE(edges.size() == 3);
+        REQUIRE(edges[0] == std::pair<int, int>{1, 2});
+    }
+}

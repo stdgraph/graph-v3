@@ -154,9 +154,6 @@ namespace edge_list {
 
 } // namespace edge_list
 
-// Temporary compatibility alias
-namespace edgelist = edge_list;
-
 } // namespace graph
 
 #endif

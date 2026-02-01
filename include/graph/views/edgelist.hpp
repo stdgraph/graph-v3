@@ -17,6 +17,7 @@
 #include <graph/graph_info.hpp>
 #include <graph/adj_list/detail/graph_cpo.hpp>
 #include <graph/adj_list/adjacency_list_concepts.hpp>
+#include <graph/edge_list/edge_list.hpp>
 #include <graph/views/view_concepts.hpp>
 
 namespace graph::views {
@@ -306,6 +307,214 @@ template <adj_list::adjacency_list G, class EVF>
     noexcept(std::is_nothrow_constructible_v<std::decay_t<EVF>, EVF>)
 {
     return edgelist_view<G, std::decay_t<EVF>>(g, std::forward<EVF>(evf));
+}
+
+// =============================================================================
+// Edge List Views (for edge_list data structures)
+// =============================================================================
+
+// Forward declaration
+template <edge_list::basic_sourced_edgelist EL, class EVF = void>
+class edge_list_edgelist_view;
+
+/**
+ * @brief Edgelist view for edge_list without value function
+ * 
+ * Wraps an edge_list range directly, yielding edge_info<void, false, edge_t<EL>, void>
+ * 
+ * @tparam EL Edge list type satisfying basic_sourced_edgelist concept
+ */
+template <edge_list::basic_sourced_edgelist EL>
+class edge_list_edgelist_view<EL, void> : public std::ranges::view_interface<edge_list_edgelist_view<EL, void>> {
+public:
+    using edge_list_type = EL;
+    using edge_type = edge_list::edge_t<EL>;
+    using info_type = edge_info<void, false, edge_type, void>;
+
+    /**
+     * @brief Forward iterator wrapping edge_list iteration
+     */
+    class iterator {
+    public:
+        using base_iterator = std::ranges::iterator_t<EL>;
+        using iterator_category = std::forward_iterator_tag;
+        using difference_type = std::ptrdiff_t;
+        using value_type = info_type;
+        using pointer = const value_type*;
+        using reference = value_type;
+
+        constexpr iterator() noexcept = default;
+
+        constexpr iterator(base_iterator it) noexcept
+            : current_(it) {}
+
+        [[nodiscard]] constexpr value_type operator*() const {
+            return value_type{*current_};
+        }
+
+        constexpr iterator& operator++() noexcept {
+            ++current_;
+            return *this;
+        }
+
+        constexpr iterator operator++(int) noexcept {
+            auto tmp = *this;
+            ++current_;
+            return tmp;
+        }
+
+        [[nodiscard]] constexpr bool operator==(const iterator& other) const noexcept {
+            return current_ == other.current_;
+        }
+
+    private:
+        base_iterator current_{};
+    };
+
+    using const_iterator = iterator;
+
+    constexpr edge_list_edgelist_view() noexcept = default;
+
+    constexpr edge_list_edgelist_view(EL& el) noexcept
+        : el_(&el) {}
+
+    [[nodiscard]] constexpr iterator begin() const noexcept {
+        return iterator(std::ranges::begin(*el_));
+    }
+
+    [[nodiscard]] constexpr iterator end() const noexcept {
+        return iterator(std::ranges::end(*el_));
+    }
+
+    [[nodiscard]] constexpr auto size() const noexcept
+        requires std::ranges::sized_range<EL>
+    {
+        return std::ranges::size(*el_);
+    }
+
+private:
+    EL* el_ = nullptr;
+};
+
+/**
+ * @brief Edgelist view for edge_list with value function
+ * 
+ * Wraps an edge_list range, yielding edge_info<void, false, edge_t<EL>, EV>
+ * where EV is the result of invoking the value function on the edge.
+ * 
+ * @tparam EL Edge list type satisfying basic_sourced_edgelist concept
+ * @tparam EVF Edge value function type
+ */
+template <edge_list::basic_sourced_edgelist EL, class EVF>
+class edge_list_edgelist_view : public std::ranges::view_interface<edge_list_edgelist_view<EL, EVF>> {
+public:
+    using edge_list_type = EL;
+    using edge_type = edge_list::edge_t<EL>;
+    using value_type_result = std::invoke_result_t<EVF, EL&, edge_type>;
+    using info_type = edge_info<void, false, edge_type, value_type_result>;
+
+    /**
+     * @brief Forward iterator wrapping edge_list iteration with value computation
+     */
+    class iterator {
+    public:
+        using base_iterator = std::ranges::iterator_t<EL>;
+        using iterator_category = std::forward_iterator_tag;
+        using difference_type = std::ptrdiff_t;
+        using value_type = info_type;
+        using pointer = const value_type*;
+        using reference = value_type;
+
+        constexpr iterator() noexcept = default;
+
+        constexpr iterator(EL* el, base_iterator it, EVF* evf) noexcept
+            : el_(el), current_(it), evf_(evf) {}
+
+        [[nodiscard]] constexpr value_type operator*() const {
+            auto& edge = *current_;
+            return value_type{edge, std::invoke(*evf_, *el_, edge)};
+        }
+
+        constexpr iterator& operator++() noexcept {
+            ++current_;
+            return *this;
+        }
+
+        constexpr iterator operator++(int) noexcept {
+            auto tmp = *this;
+            ++current_;
+            return tmp;
+        }
+
+        [[nodiscard]] constexpr bool operator==(const iterator& other) const noexcept {
+            return current_ == other.current_;
+        }
+
+    private:
+        EL* el_ = nullptr;
+        base_iterator current_{};
+        EVF* evf_ = nullptr;
+    };
+
+    using const_iterator = iterator;
+
+    constexpr edge_list_edgelist_view() noexcept = default;
+
+    constexpr edge_list_edgelist_view(EL& el, EVF evf) noexcept(std::is_nothrow_move_constructible_v<EVF>)
+        : el_(&el), evf_(std::move(evf)) {}
+
+    [[nodiscard]] constexpr iterator begin() noexcept {
+        return iterator(el_, std::ranges::begin(*el_), &evf_);
+    }
+
+    [[nodiscard]] constexpr iterator end() noexcept {
+        return iterator(el_, std::ranges::end(*el_), &evf_);
+    }
+
+    [[nodiscard]] constexpr auto size() const noexcept
+        requires std::ranges::sized_range<EL>
+    {
+        return std::ranges::size(*el_);
+    }
+
+private:
+    EL* el_ = nullptr;
+    [[no_unique_address]] EVF evf_{};
+};
+
+// =============================================================================
+// Factory Functions for edge_list
+// =============================================================================
+
+/**
+ * @brief Create an edgelist view over an edge_list
+ * 
+ * @tparam EL Edge list type satisfying basic_sourced_edgelist concept
+ * @param el The edge list to iterate over
+ * @return edge_list_edgelist_view<EL, void> yielding edge_info<void, false, edge_t<EL>, void>
+ */
+template <edge_list::basic_sourced_edgelist EL>
+    requires (!adj_list::adjacency_list<EL>)  // Disambiguation: prefer adjacency_list overload
+[[nodiscard]] constexpr auto edgelist(EL& el) noexcept {
+    return edge_list_edgelist_view<EL, void>(el);
+}
+
+/**
+ * @brief Create an edgelist view with value function over an edge_list
+ * 
+ * @tparam EL Edge list type satisfying basic_sourced_edgelist concept
+ * @tparam EVF Edge value function type (receives edge_list& and edge)
+ * @param el The edge list to iterate over
+ * @param evf Function to compute values from edges
+ * @return edge_list_edgelist_view<EL, EVF> yielding edge_info<void, false, edge_t<EL>, EV>
+ */
+template <edge_list::basic_sourced_edgelist EL, class EVF>
+    requires (!adj_list::adjacency_list<EL>) &&  // Disambiguation: prefer adjacency_list overload
+             std::invocable<EVF, EL&, edge_list::edge_t<EL>>
+[[nodiscard]] constexpr auto edgelist(EL& el, EVF&& evf) 
+    noexcept(std::is_nothrow_constructible_v<std::decay_t<EVF>, EVF>)
+{
+    return edge_list_edgelist_view<EL, std::decay_t<EVF>>(el, std::forward<EVF>(evf));
 }
 
 } // namespace graph::views
