@@ -36,6 +36,8 @@ struct vertex_info {
   vertex_type vertex;
   value_type  value;
 };
+
+// Specializations with VId present
 template <class VId, class V>
 struct vertex_info<VId, V, void> {
   using id_type     = VId;
@@ -63,6 +65,39 @@ struct vertex_info<VId, void, void> {
   id_type id;
 };
 
+// Specializations with VId=void (descriptor-based pattern)
+template <class V, class VV>
+struct vertex_info<void, V, VV> {
+  using id_type     = void;
+  using vertex_type = V;
+  using value_type  = VV;
+
+  vertex_type vertex;
+  value_type  value;
+};
+template <class V>
+struct vertex_info<void, V, void> {
+  using id_type     = void;
+  using vertex_type = V;
+  using value_type  = void;
+
+  vertex_type vertex;
+};
+template <class VV>
+struct vertex_info<void, void, VV> {
+  using id_type     = void;
+  using vertex_type = void;
+  using value_type  = VV;
+
+  value_type value;
+};
+template <>
+struct vertex_info<void, void, void> {
+  using id_type     = void;
+  using vertex_type = void;
+  using value_type  = void;
+};
+
 template <class VId, class VV>
 using copyable_vertex_t = vertex_info<VId, void, VV>; // {id, value}
 
@@ -88,6 +123,7 @@ struct edge_info {
   value_type     value;
 };
 
+// Sourced=true specializations with VId present
 template <class VId, class E>
 struct edge_info<VId, true, E, void> {
   using source_id_type = VId;
@@ -121,6 +157,7 @@ struct edge_info<VId, true, void, EV> {
   value_type     value;
 };
 
+// Sourced=false specializations with VId present
 template <class VId, class E, class EV>
 struct edge_info<VId, false, E, EV> {
   using source_id_type = void;
@@ -161,6 +198,80 @@ struct edge_info<VId, false, void, void> {
   using value_type     = void;
 
   target_id_type target_id;
+};
+
+// Sourced=true specializations with VId=void (descriptor-based pattern)
+template <class E, class EV>
+struct edge_info<void, true, E, EV> {
+  using source_id_type = void;
+  using target_id_type = void;
+  using edge_type      = E;
+  using value_type     = EV;
+
+  edge_type  edge;
+  value_type value;
+};
+template <class E>
+struct edge_info<void, true, E, void> {
+  using source_id_type = void;
+  using target_id_type = void;
+  using edge_type      = E;
+  using value_type     = void;
+
+  edge_type edge;
+};
+template <class EV>
+struct edge_info<void, true, void, EV> {
+  using source_id_type = void;
+  using target_id_type = void;
+  using edge_type      = void;
+  using value_type     = EV;
+
+  value_type value;
+};
+template <>
+struct edge_info<void, true, void, void> {
+  using source_id_type = void;
+  using target_id_type = void;
+  using edge_type      = void;
+  using value_type     = void;
+};
+
+// Sourced=false specializations with VId=void (descriptor-based pattern)
+template <class E, class EV>
+struct edge_info<void, false, E, EV> {
+  using source_id_type = void;
+  using target_id_type = void;
+  using edge_type      = E;
+  using value_type     = EV;
+
+  edge_type  edge;
+  value_type value;
+};
+template <class E>
+struct edge_info<void, false, E, void> {
+  using source_id_type = void;
+  using target_id_type = void;
+  using edge_type      = E;
+  using value_type     = void;
+
+  edge_type edge;
+};
+template <class EV>
+struct edge_info<void, false, void, EV> {
+  using source_id_type = void;
+  using target_id_type = void;
+  using edge_type      = void;
+  using value_type     = EV;
+
+  value_type value;
+};
+template <>
+struct edge_info<void, false, void, void> {
+  using source_id_type = void;
+  using target_id_type = void;
+  using edge_type      = void;
+  using value_type     = void;
 };
 
 //
@@ -209,6 +320,7 @@ struct neighbor_info {
   value_type     value;
 };
 
+// Sourced=false specializations with VId present
 template <class VId, class V, class VV>
 struct neighbor_info<VId, false, V, VV> {
   using source_id_type = void;
@@ -253,6 +365,7 @@ struct neighbor_info<VId, false, void, void> {
   target_id_type target_id;
 };
 
+// Sourced=true specializations with VId present
 template <class VId, class V>
 struct neighbor_info<VId, true, V, void> {
   using source_id_type = VId;
@@ -286,6 +399,86 @@ struct neighbor_info<VId, true, void, void> {
 
   source_id_type source_id;
   target_id_type target_id;
+};
+
+// Sourced=false specializations with VId=void (descriptor-based pattern)
+template <class V, class VV>
+struct neighbor_info<void, false, V, VV> {
+  using source_id_type = void;
+  using target_id_type = void;
+  using vertex_type    = V;
+  using value_type     = VV;
+
+  vertex_type vertex;
+  value_type  value;
+};
+
+template <class V>
+struct neighbor_info<void, false, V, void> {
+  using source_id_type = void;
+  using target_id_type = void;
+  using vertex_type    = V;
+  using value_type     = void;
+
+  vertex_type vertex;
+};
+
+template <class VV>
+struct neighbor_info<void, false, void, VV> {
+  using source_id_type = void;
+  using target_id_type = void;
+  using vertex_type    = void;
+  using value_type     = VV;
+
+  value_type value;
+};
+
+template <>
+struct neighbor_info<void, false, void, void> {
+  using source_id_type = void;
+  using target_id_type = void;
+  using vertex_type    = void;
+  using value_type     = void;
+};
+
+// Sourced=true specializations with VId=void (descriptor-based pattern)
+template <class V, class VV>
+struct neighbor_info<void, true, V, VV> {
+  using source_id_type = void;
+  using target_id_type = void;
+  using vertex_type    = V;
+  using value_type     = VV;
+
+  vertex_type vertex;
+  value_type  value;
+};
+
+template <class V>
+struct neighbor_info<void, true, V, void> {
+  using source_id_type = void;
+  using target_id_type = void;
+  using vertex_type    = V;
+  using value_type     = void;
+
+  vertex_type vertex;
+};
+
+template <class VV>
+struct neighbor_info<void, true, void, VV> {
+  using source_id_type = void;
+  using target_id_type = void;
+  using vertex_type    = void;
+  using value_type     = VV;
+
+  value_type value;
+};
+
+template <>
+struct neighbor_info<void, true, void, void> {
+  using source_id_type = void;
+  using target_id_type = void;
+  using vertex_type    = void;
+  using value_type     = void;
 };
 
 //
