@@ -2,7 +2,7 @@
 
 **Branch**: `feature/views-implementation`  
 **Based on**: [view_strategy.md](view_strategy.md)  
-**Status**: Phase 2 Complete (2026-02-01)
+**Status**: Phase 4 Complete (2026-02-01)
 
 ---
 
@@ -49,12 +49,12 @@ This plan implements graph views as described in D3129 and detailed in view_stra
 - [x] **Step 3.3**: Test DFS cancel functionality ✅ (2026-02-01)
 
 ### Phase 4: BFS Views
-- [ ] **Step 4.1**: Implement BFS infrastructure + vertices_bfs + tests
+- [x] **Step 4.1**: Implement BFS infrastructure + vertices_bfs + tests ✅ (2026-02-01)
   - Accept both vertex_id and vertex_descriptor as seed parameter
   - vertex_id constructor delegates to vertex_descriptor constructor
-- [ ] **Step 4.2**: Implement edges_bfs + tests
+- [x] **Step 4.2**: Implement edges_bfs + tests ✅ (2026-02-01)
   - Accept both vertex_id and vertex_descriptor as seed parameter
-- [ ] **Step 4.3**: Test BFS depth/size accessors
+- [x] **Step 4.3**: Test BFS depth/size accessors ✅ (2026-02-01)
 
 ### Phase 5: Topological Sort Views
 - [ ] **Step 5.1**: Implement topological sort algorithm + vertices_topological_sort + tests

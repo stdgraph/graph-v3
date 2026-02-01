@@ -11,6 +11,7 @@ add_executable(graph3_views_tests
     test_edgelist.cpp
     test_basic_views.cpp
     test_dfs.cpp
+    test_bfs.cpp
 )
 
 target_link_libraries(graph3_views_tests
