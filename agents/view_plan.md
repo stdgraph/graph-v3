@@ -81,22 +81,44 @@ This plan implements graph views as described in D3129 and detailed in view_stra
 
 **Implementation**:
 ```cpp
-// Primary template
+// Primary template - all members present
 template <class VId, class V, class VV>
 struct vertex_info {
   using id_type     = VId;
   using vertex_type = V;
   using value_type  = VV;
 
-  [[no_unique_address]] id_type     id;
-  [[no_unique_address]] vertex_type vertex;
-  [[no_unique_address]] value_type  value;
+  id_type     id;
+  vertex_type vertex;
+  value_type  value;
 };
 
 // Specializations for void combinations (8 total: 2^3)
-// VId=void: suppress id member
-// V=void: suppress vertex member
-// VV=void: suppress value member
+// Example specialization: VId=void
+template <class V, class VV>
+struct vertex_info<void, V, VV> {
+  using id_type     = void;
+  using vertex_type = V;
+  using value_type  = VV;
+
+  vertex_type vertex;
+  value_type  value;
+  // No 'id' member
+};
+
+// Example specialization: VId=void, VV=void
+template <class V>
+struct vertex_info<void, V, void> {
+  using id_type     = void;
+  using vertex_type = V;
+  using value_type  = void;
+
+  vertex_type vertex;
+  // No 'id' or 'value' members
+};
+
+// ... 6 more specializations for other void combinations
+// Key: Members are physically absent when their type parameter is void
 ```
 
 **Tests to Create**:
@@ -108,9 +130,10 @@ struct vertex_info {
   - Test copyability and movability
 
 **Acceptance Criteria**:
-- All specializations compile without errors
+- All 8 specializations compile without errors
 - Structured bindings work for all variants
-- `[[no_unique_address]]` ensures no storage for void members
+- Void template parameters result in members being physically absent (not just zero-sized)
+- `sizeof()` confirms space savings for void specializations
 - Tests pass with sanitizers
 
 **Commit Message**:
@@ -135,7 +158,7 @@ struct vertex_info {
 
 **Implementation**:
 ```cpp
-// Primary template
+// Primary template - all members present
 template <class VId, bool Sourced, class E, class EV>
 struct edge_info {
   using source_id_type = conditional_t<Sourced, VId, void>;
@@ -143,16 +166,39 @@ struct edge_info {
   using edge_type      = E;
   using value_type     = EV;
 
-  [[no_unique_address]] source_id_type source_id;
-  [[no_unique_address]] target_id_type target_id;
-  [[no_unique_address]] edge_type      edge;
-  [[no_unique_address]] value_type     value;
+  source_id_type source_id;  // Present only when Sourced==true
+  target_id_type target_id;
+  edge_type      edge;
+  value_type     value;
 };
 
-// Specializations for Sourced × void combinations (16 total: 2 × 2^3)
-// VId=void: suppress source_id/target_id
-// E=void: suppress edge member
-// EV=void: suppress value member
+// Example specialization: VId=void (suppresses source_id/target_id)
+template <bool Sourced, class E, class EV>
+struct edge_info<void, Sourced, E, EV> {
+  using source_id_type = void;
+  using target_id_type = void;
+  using edge_type      = E;
+  using value_type     = EV;
+
+  edge_type edge;
+  value_type value;
+  // No source_id or target_id members
+};
+
+// Example specialization: VId=void, EV=void
+template <bool Sourced, class E>
+struct edge_info<void, Sourced, E, void> {
+  using source_id_type = void;
+  using target_id_type = void;
+  using edge_type      = E;
+  using value_type     = void;
+
+  edge_type edge;
+  // No source_id, target_id, or value members
+};
+
+// ... 14 more specializations for Sourced × void combinations (16 total: 2 × 2^3)
+// Key: source_id only present when Sourced==true AND VId != void
 ```
 
 **Tests to Create**:
@@ -193,7 +239,7 @@ struct edge_info {
 
 **Implementation**:
 ```cpp
-// Primary template
+// Primary template - all members present
 template <class VId, bool Sourced, class V, class VV>
 struct neighbor_info {
   using source_id_type = conditional_t<Sourced, VId, void>;
@@ -201,16 +247,39 @@ struct neighbor_info {
   using vertex_type    = V;
   using value_type     = VV;
 
-  [[no_unique_address]] source_id_type source_id;
-  [[no_unique_address]] target_id_type target_id;
-  [[no_unique_address]] vertex_type    vertex;
-  [[no_unique_address]] value_type     value;
+  source_id_type source_id;  // Present only when Sourced==true
+  target_id_type target_id;
+  vertex_type    vertex;
+  value_type     value;
 };
 
-// Specializations for Sourced × void combinations (16 total: 2 × 2^3)
-// VId=void: suppress source_id/target_id
-// V=void: suppress vertex member
-// VV=void: suppress value member
+// Example specialization: VId=void (suppresses source_id/target_id)
+template <bool Sourced, class V, class VV>
+struct neighbor_info<void, Sourced, V, VV> {
+  using source_id_type = void;
+  using target_id_type = void;
+  using vertex_type    = V;
+  using value_type     = VV;
+
+  vertex_type vertex;
+  value_type  value;
+  // No source_id or target_id members
+};
+
+// Example specialization: VId=void, VV=void (primary pattern for neighbors)
+template <bool Sourced, class V>
+struct neighbor_info<void, Sourced, V, void> {
+  using source_id_type = void;
+  using target_id_type = void;
+  using vertex_type    = V;
+  using value_type     = void;
+
+  vertex_type vertex;
+  // No source_id, target_id, or value members
+};
+
+// ... 14 more specializations for Sourced × void combinations (16 total: 2 × 2^3)
+// Key: source_id only present when Sourced==true AND VId != void
 ```
 
 **Tests to Create**:
