@@ -2,7 +2,7 @@
 
 **Branch**: `feature/views-implementation`  
 **Based on**: [view_strategy.md](view_strategy.md)  
-**Status**: Phase 0 Complete (2026-01-31)
+**Status**: Phase 2 In Progress (2026-02-01)
 
 ---
 
@@ -36,7 +36,7 @@ This plan implements graph views as described in D3129 and detailed in view_stra
 - [x] **Step 2.2**: Implement incidence view + tests ✅ (2026-02-01)
 - [x] **Step 2.3**: Implement neighbors view + tests ✅ (2026-02-01)
 - [x] **Step 2.4**: Implement edgelist view for adjacency_list + tests ✅ (2026-02-01)
-- [ ] **Step 2.4.1**: Implement edgelist view for edge_list + tests
+- [x] **Step 2.4.1**: Implement edgelist view for edge_list + tests ✅ (2026-02-01)
 - [ ] **Step 2.5**: Create basic_views.hpp header
 
 ### Phase 3: DFS Views
@@ -745,7 +745,11 @@ Created `tests/views/test_edgelist.cpp`:
 
 ---
 
-### Step 2.4.1: Implement edgelist view for edge_list
+### Step 2.4.1: Implement edgelist view for edge_list ✅ COMPLETE
+
+**Completion Date**: 2026-02-01  
+**Commit**: baeea27 "[views] Step 2.4.1: Implement edgelist view for edge_list"  
+**Test Results**: ✅ 26 test cases (11 new), 128 assertions, all passing
 
 **Goal**: Implement edgelist view that iterates over an edge_list data structure, yielding `edge_info<void, false, edge_descriptor, EV>`.
 
@@ -847,15 +851,25 @@ auto edgelist(EL&& el, EVF&& evf) {
 - Works with various edge_list configurations
 - Tests pass with sanitizers
 
+**Status**: ✅ COMPLETE
+
+**Implementation Notes**:
+- EVF signature is `EVF(EL&, edge)` not `EVF(edge)` since edge_list CPOs require edge_list reference
+- Disambiguate from adjacency_list via `requires (!adj_list::adjacency_list<EL>)`
+- Removed conflicting `namespace edgelist = edge_list;` alias from edge_list.hpp
+- Added 11 test cases covering pairs, tuples, edge_info, weighted, empty, concepts, iterators, string VIds, algorithms, deque
+
 **Commit Message**:
 ```
-[views] Implement edgelist view for edge_list
+[views] Step 2.4.1: Implement edgelist view for edge_list
 
-- Yields edge_info<void, false, edge_list::edge_descriptor, EV>
-- Directly wraps edge_list range iteration
-- Edge descriptor provides source_id/target_id via CPOs
-- Value function receives edge descriptor
-- Tests verify edge_list iteration and access
+- Add edge_list_edgelist_view<EL, void> and <EL, EVF> specializations
+- Wraps edge_list ranges, yields edge_info<void, false, edge, EV>
+- Factory functions: edgelist(el) and edgelist(el, evf)
+- EVF receives (EL&, edge) to support edge_list CPOs (source_id, target_id)
+- Disambiguate from adjacency_list via requires (!adjacency_list<EL>)
+- Remove conflicting namespace edgelist = edge_list; alias
+- Add 11 new tests (Tests 16-26)
 ```
 
 ---
