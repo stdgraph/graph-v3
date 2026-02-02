@@ -54,10 +54,6 @@
 // #include <graph/algorithm/depth_first_search.hpp>
 // #include <graph/algorithm/dijkstra_shortest_paths.hpp>
 
-// Future: View implementations will be included here
-// #include <graph/views/vertices.hpp>
-// #include <graph/views/edges.hpp>
-
 /**
  * @namespace graph
  * @brief Root namespace for the graph library

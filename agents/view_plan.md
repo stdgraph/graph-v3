@@ -72,8 +72,8 @@ This plan implements graph views as described in D3129 and detailed in view_stra
 - [x] **Step 6.3**: Test pipe syntax and chaining ✅ (2026-02-01)
 
 ### Phase 7: Integration & Polish
-- [ ] **Step 7.1**: Create unified views.hpp header
-- [ ] **Step 7.2**: Update graph.hpp to include views
+- [x] **Step 7.1**: Create unified views.hpp header ✅ (2026-02-01)
+- [x] **Step 7.2**: Update graph.hpp to include views ✅ (2026-02-01)
 - [ ] **Step 7.3**: Write documentation
 - [ ] **Step 7.4**: Performance benchmarks
 - [ ] **Step 7.5**: Edge case testing
