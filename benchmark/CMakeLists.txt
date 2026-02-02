@@ -22,6 +22,7 @@ FetchContent_MakeAvailable(benchmark)
 add_executable(graph_benchmarks
     benchmark_main.cpp
     benchmark_vertex_access.cpp
+    benchmark_views.cpp
 )
 
 target_link_libraries(graph_benchmarks

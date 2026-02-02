@@ -5,7 +5,7 @@
 #include <graph/adj_list/vertex_descriptor_view.hpp>
 
 using namespace std;
-using namespace graph;
+using namespace graph::adj_list;
 
 // Benchmark vertex_descriptor creation with vector
 static void BM_VertexDescriptor_Vector_Creation(benchmark::State& state) {
