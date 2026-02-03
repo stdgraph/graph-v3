@@ -17,8 +17,8 @@ template<typename EdgeRange>
 auto count_self_loops(EdgeRange&& edges) {
     int count = 0;
     for (auto&& uv : edges) {
-        auto src = adj_list::_cpo_instances::source_id(edges, uv);
-        auto tgt = adj_list::_cpo_instances::target_id(edges, uv);
+        auto src = graph::source_id(edges, uv);
+        auto tgt = graph::target_id(edges, uv);
         if (src == tgt) {
             ++count;
         }
@@ -33,7 +33,7 @@ auto sum_edge_values(EdgeRange&& edges) {
     using value_t = edge_list::edge_value_t<EdgeRange>;
     value_t sum = 0;
     for (auto&& uv : edges) {
-        sum += adj_list::_cpo_instances::edge_value(edges, uv);
+        sum += graph::edge_value(edges, uv);
     }
     return sum;
 }

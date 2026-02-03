@@ -39,6 +39,42 @@ This library provides the foundation for a complete graph library following the 
 - **CPO implementation guide**: Detailed patterns for creating customization point objects
 - **Common guidelines**: Architectural commitments and project structure requirements
 
+### Enhancements and Differences From graph-v2
+
+A significant shift occurred with the use of descriptors to the underlying containers for vertices
+and edges. This changed the implementation from a reference-based to a value-based implementation and had
+subtle changes that rippled through the library.
+
+Here's a summary of the major changes
+- Benefits from descriptors
+  - "sourced" functions no longer needed because source vertex is always available with the edge descriptor
+  - Function overloads for separate vertex_id-only and vertex references are no longer needed
+  - Fewer concepts needed
+  - No need to tag an adjacency list as "undirected"
+- Graph Container changes
+  - The `undirected_adjacency_list` graph data structure was added to test important use cases.
+  - Support was added to `dynamic_graph` to store vertices in `map` and `unordered_map`.
+  - Support was added to `dynamic_graph` to store edges in `map`, `set`, `unordered_map` and `unordered_set`.
+  - Support was added to `dynamic_graph` for non-integral vertex_ids.
+- Graph Container Interface changes
+  - Add support for vertices in `map` and `unordered_map`.
+  - Add support for edges in `map`, `set`, `unordered_map` and `unordered_set`.
+  - Add support for non-integral vertex_ids.
+- View changes
+  - The `topological_sort_view` was implemented. It was in the graph proposal documents but never implemented.
+    A "_safe" version of the view was added to detect cycles. (The implementation works on the whole graph.)
+  - Cancellation and depth() was added to the `vertices_bfs` and `edges_bfs` views.
+- Improved organization and use of namespaces
+  - The `graph::adj_list` namespace was added
+  - Edge lists are now a peer of adjacency lists in `graph::edge_list`
+  - Directories have been created that roughtly resemble the namespace organization
+- Extensive documentation was added
+- Extensive unit tests have been added
+
+We're trying to stay with C++20. However, `std::expected` from C++23 has been introduced and is being used
+for `topological_sort_view`. An open-source library is being used for it until C++23 is enabled. There is
+no target date for doing that.
+
 ## Requirements
 
 - C++20 compliant compiler (GCC 10+, Clang 10+, MSVC 2019+)

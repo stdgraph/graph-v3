@@ -88,7 +88,6 @@ TEST_CASE("edge_list type aliases", "[edge_list][types]") {
     using edge_range = edge_list::edge_range_t<EL>;
     using edge_iter = edge_list::edge_iterator_t<EL>;
     using edge = edge_list::edge_t<EL>;
-    using edge_ref = edge_list::edge_reference_t<EL>;
     using edge_val = edge_list::edge_value_t<EL>;
     using vid = edge_list::vertex_id_t<EL>;
     
@@ -105,7 +104,6 @@ TEST_CASE("edge_list type aliases without edge value", "[edge_list][types]") {
     using edge_range = edge_list::edge_range_t<EL>;
     using edge_iter = edge_list::edge_iterator_t<EL>;
     using edge = edge_list::edge_t<EL>;
-    using edge_ref = edge_list::edge_reference_t<EL>;
     using vid = edge_list::vertex_id_t<EL>;
     
     STATIC_REQUIRE(std::is_same_v<edge, std::pair<int, int>>);
@@ -124,8 +122,8 @@ TEST_CASE("basic_sourced_edgelist runtime behavior with pairs", "[edge_list][run
     STATIC_REQUIRE(edge_list::basic_sourced_edgelist<decltype(edges)>);
     
     for (const auto& e : edges) {
-        auto src = graph::adj_list::_cpo_instances::source_id(edges, e);
-        auto tgt = graph::adj_list::_cpo_instances::target_id(edges, e);
+        auto src = graph::source_id(edges, e);
+        auto tgt = graph::target_id(edges, e);
         REQUIRE(src < tgt);  // All our test edges have src < tgt
     }
 }
@@ -141,8 +139,8 @@ TEST_CASE("basic_sourced_edgelist runtime behavior with edge_descriptor", "[edge
     
     STATIC_REQUIRE(edge_list::basic_sourced_edgelist<decltype(edges)>);
     
-    auto src = graph::adj_list::_cpo_instances::source_id(edges, e1);
-    auto tgt = graph::adj_list::_cpo_instances::target_id(edges, e1);
+    auto src = graph::source_id(edges, e1);
+    auto tgt = graph::target_id(edges, e1);
     
     REQUIRE(src == 1);
     REQUIRE(tgt == 2);
@@ -157,6 +155,6 @@ TEST_CASE("has_edge_value runtime behavior", "[edge_list][runtime]") {
     
     STATIC_REQUIRE(edge_list::has_edge_value<decltype(edges)>);
     
-    auto val = graph::adj_list::_cpo_instances::edge_value(edges, e);
+    auto val = graph::edge_value(edges, e);
     REQUIRE(val == 3.14);
 }

@@ -1,8 +1,9 @@
 #pragma once
 
-#include "../graph.hpp"
-#include "../adj_list/detail/graph_cpo.hpp"
+#include "../detail/edge_cpo.hpp"
+#include "../graph_info.hpp"
 #include <ranges>
+#include <type_traits>
 
 #ifndef EDGELIST_HPP
 #  define EDGELIST_HPP
@@ -30,7 +31,6 @@
 // edge_range_t<EL>     = EL
 // edge_iterator_t<EL>  = range_iterator_t<EL>
 // edge_t<EL>           = range_value_t<EL>
-// edge_reference_t<EL> = range_value_t<EL>
 // edge_value_t<EL>     = decltype(edge_value(e)) (optional)
 // vertex_id_t<EL>      = decltype(source_id(e))
 //
@@ -129,9 +129,6 @@ namespace edge_list {
 
   template <basic_sourced_edgelist EL> // For exposition only
   using edge_t = std::ranges::range_value_t<edge_range_t<EL>>;
-
-  template <basic_sourced_edgelist EL> // For exposition only
-  using edge_reference_t = std::ranges::range_reference_t<edge_range_t<EL>>;
 
   template <has_edge_value EL> // For exposition only
   using edge_value_t = std::remove_cvref_t<decltype(graph::edge_value(
