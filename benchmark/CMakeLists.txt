@@ -34,3 +34,6 @@ target_link_libraries(graph_benchmarks
 # Register benchmarks with CTest
 add_test(NAME graph_benchmarks 
     COMMAND graph_benchmarks --benchmark_min_time=0.1)
+
+# Add algorithm benchmarks subdirectory
+add_subdirectory(algorithms)

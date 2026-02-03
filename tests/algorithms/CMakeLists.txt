@@ -1,0 +1,28 @@
+# Algorithm Tests CMakeLists.txt
+# Tests for graph algorithms
+
+# Note: Uncomment the sections below when algorithm tests are added
+
+# Algorithm test executable
+# add_executable(test_algorithms
+#     # Test files will be added here as algorithms are implemented
+#     # Example:
+#     # test_dijkstra.cpp
+#     # test_bfs.cpp
+#     # test_dfs.cpp
+# )
+# 
+# target_link_libraries(test_algorithms
+#     PRIVATE
+#         graph::graph3
+#         Catch2::Catch2WithMain
+# )
+# 
+# # Discover and register tests
+# catch_discover_tests(test_algorithms
+#     TEST_PREFIX "algorithms."
+#     PROPERTIES
+#         LABELS "algorithms"
+# )
+
+# Note: Add new algorithm test files in the add_executable() section above

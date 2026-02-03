@@ -16,6 +16,7 @@ include(Catch)
 
 # Add subdirectories with their own test executables
 add_subdirectory(adj_list)
+add_subdirectory(algorithms)
 add_subdirectory(container)
 add_subdirectory(edge_list)
 add_subdirectory(views)
