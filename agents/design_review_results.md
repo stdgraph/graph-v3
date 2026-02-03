@@ -42,23 +42,26 @@ graph::views::adaptors::   # (implied) - adaptor functions for pipe syntax
 
 | Issue | Severity | Description |
 |-------|----------|-------------|
-| Views namespace placement | Medium | Views in `graph::views::` but CPOs in `graph::adj_list::`. Documentation says views would be in `graph::adj_list::views::` but actual implementation is `graph::views::` |
+| ~~Views namespace placement~~ | ~~Medium~~ | ~~Views in `graph::views::` but CPOs in `graph::adj_list::`. Documentation says views would be in `graph::adj_list::views::` but actual implementation is `graph::views::`~~ ✅ **RESOLVED** - Documentation updated |
 | ~~CPO sharing between namespaces~~ | ~~High~~ | ~~Edge list concepts use `graph::adj_list::_cpo_instances::source_id` directly - tight coupling~~ ✅ **RESOLVED** (Feb 2, 2026) |
 | Symbol import inconsistency | Medium | `graph.hpp` imports many adj_list symbols into `graph::` but views are not imported |
-| Documented vs actual structure | Medium | `graph.hpp` documents `graph::adj_list::views::` and `graph::edge_list::views::` but only `graph::views::` exists |
+| ~~Documented vs actual structure~~ | ~~Medium~~ | ~~`graph.hpp` documents `graph::adj_list::views::` and `graph::edge_list::views::` but only `graph::views::` exists~~ ✅ **RESOLVED** - Documentation updated |
 
 ### Recommendations
 
 | Priority | Recommendation | Status |
 |----------|----------------|--------|
 | ~~**Critical**~~ | ~~Move shared CPOs (`source_id`, `target_id`, `edge_value`) to `graph::` namespace and have both adj_list and edge_list use them~~ | ✅ **COMPLETED** (Feb 2, 2026) |
-| **Important** | Either move views to `graph::adj_list::views::` (matching documented design) OR update documentation to reflect `graph::views::` placement | ⏳ Pending |
+| ~~**Important**~~ | ~~Either move views to `graph::adj_list::views::` (matching documented design) OR update documentation to reflect `graph::views::` placement~~ | ✅ **COMPLETED** - Documentation updated |
 | **Important** | Add using declarations in `graph.hpp` to import view types into `graph::` namespace | ⏳ Pending |
 | **Nice-to-have** | Consider single unified namespace `graph::` with sub-namespaces only for implementation details | ⏳ Pending |
 
-### Verdict: ✅ IMPROVED (Was: ⚠️ NEEDS IMPROVEMENT)
+### Verdict: ✅ GOOD (Was: ⚠️ NEEDS IMPROVEMENT)
 
-The namespace structure works and the critical CPO sharing issue has been resolved. Remaining inconsistencies are between documentation and implementation and are lower priority.
+The namespace structure works well and critical issues have been resolved:
+- CPO sharing issue resolved (Feb 2, 2026)
+- Documentation now matches implementation (Feb 2, 2026)
+- Remaining improvement is importing view types into root namespace for convenience
 
 ---
 
@@ -112,7 +115,7 @@ views.hpp
 
 | Priority | Recommendation |
 |----------|----------------|
-| **Critical** | Update `graph.hpp` comments to reflect views are now implemented |
+| ~~**Critical**~~ | ~~Update `graph.hpp` comments to reflect views are now implemented~~ ✅ **COMPLETED** - Namespace documentation updated |
 | **Important** | Add `#include <graph/views.hpp>` to `graph.hpp` for complete library access |
 | **Important** | Create `containers.hpp` umbrella header for all concrete containers |
 | **Nice-to-have** | Document the minimal include strategy: `graph.hpp` for concepts/CPOs, add views/containers as needed |
@@ -283,6 +286,36 @@ Container implementations are mature, well-documented, and fully conformant with
 | **Important** | Consider `basic_edgelist_view` that works with `edge_list::basic_sourced_edgelist` concept |
 | **Nice-to-have** | Standardize naming: either `vertex_list` or `vertexlist` consistently |
 | **Nice-to-have** | Add `filtered_graph` and `reverse_graph` views as mentioned in README roadmap |
+
+### Future: Edge List-Specific Views
+
+Edge lists would benefit from specialized views that bridge the gap between edge list and adjacency list representations:
+
+**High Priority:**
+- **`group_by_source(el)`** - Group edges by source vertex (simulate adjacency list structure)
+- **`unique_vertices(el)`** - Extract all unique vertex IDs (union of sources and targets)
+- **`filter_by_source(el, vid)`** / **`filter_by_target(el, vid)`** - Filter edges by endpoint vertices
+
+**Medium Priority:**
+- **`reverse_edges(el)`** - Swap source and target for each edge (transpose operation)
+- **`sorted_by_source(el)`** / **`sorted_by_target(el)`** - Sort edges by endpoints
+- **`unique_edges(el)`** - Remove duplicate edges
+- **`with_index(el)`** - Add sequential edge IDs to edge range
+
+**Lower Priority:**
+- **`group_by_target(el)`** - Group edges by target vertex (for in-edge queries)
+- **`undirected_edges(el)`** - Emit both (u,v) and (v,u) for each edge
+- **`source_vertices(el)`** / **`target_vertices(el)`** - Extract unique source or target vertex sets
+- **`sorted_by_weight(el)`** - Sort by edge value (when `has_edge_value<EL>`)
+- **`unique_undirected_edges(el)`** - Treat (u,v) and (v,u) as equivalent
+- **`filter_by_vertices(el, v1, v2)`** - Filter edges between two specific vertices
+
+**Rationale:**
+These views would enable edge lists to be used more effectively in algorithms:
+- `group_by_source` allows edge lists to be viewed as adjacency lists
+- `unique_vertices` is essential for determining vertex count from an edge list
+- Filtering and sorting operations are common preprocessing steps
+- Transformation views (reverse, undirected) support graph variations
 
 ### Verdict: ✅ EXCELLENT
 
@@ -468,7 +501,7 @@ Build system is well-configured and follows modern CMake practices. Minor verifi
 | Issue | Severity | Description |
 |-------|----------|-------------|
 | README outdated | Medium | Says "Phase 9: Basic Algorithms (PLANNED)" but views are complete; status sections need update |
-| Namespace documentation mismatch | Medium | Documents `graph::adj_list::views::` but implementation is `graph::views::` |
+| ~~Namespace documentation mismatch~~ | ~~Medium~~ | ~~Documents `graph::adj_list::views::` but implementation is `graph::views::`~~ ✅ **RESOLVED** - Documentation updated |
 | No getting started guide | Low | README has examples but no dedicated "Getting Started" page |
 | P1709 alignment not verified | Medium | Claims P1709 conformance but specific alignment not documented |
 
@@ -487,7 +520,7 @@ Build system is well-configured and follows modern CMake practices. Minor verifi
 | Priority | Recommendation |
 |----------|----------------|
 | **Critical** | Update README to reflect views are COMPLETE, not PLANNED |
-| **Critical** | Fix namespace documentation to match implementation |
+| ~~**Critical**~~ | ~~Fix namespace documentation to match implementation~~ ✅ **COMPLETED** - graph.hpp updated |
 | **Important** | Create "Getting Started" guide as separate doc |
 | **Important** | Document P1709 alignment with specific section references |
 | **Nice-to-have** | Add API reference documentation (Doxygen output) |
@@ -602,7 +635,8 @@ Library follows standard library conventions closely and would fit naturally int
 ### Critical (Must Fix Before Algorithm Implementation)
 
 1. ~~**Unify shared CPOs** - Move `source_id`, `target_id`, `edge_value` to shared location~~ ✅ **COMPLETED** (Feb 2, 2026)
-2. **Update documentation** - Fix namespace mismatches, update outdated status
+2. ~~**Update namespace documentation** - Fix namespace mismatches~~ ✅ **COMPLETED** (Feb 2, 2026)
+3. **Update README status** - Reflect views are COMPLETE, not PLANNED
 
 ### Important (Should Fix Soon)
 

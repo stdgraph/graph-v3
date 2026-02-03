@@ -63,12 +63,12 @@
  * for all graph operations, allowing adaptation to existing graph data structures.
  * 
  * Namespace Organization:
- * - graph::                   # Root namespace for algorithms, common types, info structures
- * - graph::adj_list::         # Adjacency list abstractions (GCI: CPOs, descriptors, concepts, traits)
- * - graph::adj_list::views::  # Adjacency list views (future)
- * - graph::edge_list::        # Edge list abstractions (future)
- * - graph::edge_list::views:: # Edge list views (future)
+ * - graph::                   # Root namespace for algorithms, common types, info structures, shared CPOs
+ * - graph::adj_list::         # Adjacency list abstractions (CPOs, descriptors, concepts, traits)
+ * - graph::edge_list::        # Edge list abstractions (concepts, traits, descriptors)
+ * - graph::views::            # Graph views (vertexlist, edgelist, neighbors, BFS, DFS, etc.)
  * - graph::container::        # Concrete graph containers
+ * - graph::detail::           # Internal implementation details
  * - graph::experimental::     # Unstable features
  */
 
