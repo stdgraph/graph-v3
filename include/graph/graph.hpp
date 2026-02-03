@@ -7,9 +7,9 @@
  * - Graph concepts and traits
  * - Graph information structures
  * - Basic containers (edgelist)
+ * - Graph views (vertexlist, edgelist, neighbors, incidence, BFS, DFS, topological sort)
  * - Graph containers (when implemented)
  * - Graph algorithms (when implemented)
- * - Graph views (when implemented)
  * 
  * Include this file to access the full graph library functionality.
  */
@@ -45,6 +45,18 @@
 #include <graph/detail/graph_using.hpp>
 #include <graph/adj_list/detail/graph_cpo.hpp>
 
+// Views
+#include <graph/views/view_concepts.hpp>
+#include <graph/views/adaptors.hpp>
+#include <graph/views/basic_views.hpp>
+#include <graph/views/vertexlist.hpp>
+#include <graph/views/edgelist.hpp>
+#include <graph/views/neighbors.hpp>
+#include <graph/views/incidence.hpp>
+#include <graph/views/bfs.hpp>
+#include <graph/views/dfs.hpp>
+#include <graph/views/topological_sort.hpp>
+
 // Future: Container implementations will be included here
 // #include <graph/container/adjacency_list.hpp>
 // #include <graph/container/compressed_sparse_row.hpp>
@@ -63,12 +75,12 @@
  * for all graph operations, allowing adaptation to existing graph data structures.
  * 
  * Namespace Organization:
- * - graph::                   # Root namespace for algorithms, common types, info structures
- * - graph::adj_list::         # Adjacency list abstractions (GCI: CPOs, descriptors, concepts, traits)
- * - graph::adj_list::views::  # Adjacency list views (future)
- * - graph::edge_list::        # Edge list abstractions (future)
- * - graph::edge_list::views:: # Edge list views (future)
+ * - graph::                   # Root namespace for algorithms, common types, info structures, shared CPOs
+ * - graph::adj_list::         # Adjacency list abstractions (CPOs, descriptors, concepts, traits)
+ * - graph::edge_list::        # Edge list abstractions (concepts, traits, descriptors)
+ * - graph::views::            # Graph views (vertexlist, edgelist, neighbors, BFS, DFS, etc.)
  * - graph::container::        # Concrete graph containers
+ * - graph::detail::           # Internal implementation details
  * - graph::experimental::     # Unstable features
  */
 

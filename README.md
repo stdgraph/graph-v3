@@ -12,7 +12,7 @@ This library provides the foundation for a complete graph library following the 
 - **Range-Based Design**: Graphs as ranges of vertices, where each vertex is a range of edges
 - **Documentation**: Comprehensive documentation following P1709 conventions
 
-**Current Status**: Phase 8 complete - All graph containers implemented (`dynamic_graph`, `compressed_graph`, `undirected_adjacency_list`) with comprehensive test coverage (3866 tests, 36004 assertions). Core CPOs, value access CPOs, partitioning/sourced edge CPOs, adjacency list concepts, and traits are all fully implemented.
+**Current Status**: Phase 9 complete - All graph containers (`dynamic_graph`, `compressed_graph`, `undirected_adjacency_list`) and comprehensive graph views (`vertexlist`, `edgelist`, `neighbors`, `incidence`, `BFS`, `DFS`, `topological_sort`) fully implemented with 3931 tests passing. Core CPOs, value access CPOs, partitioning/sourced edge CPOs, adjacency list concepts, traits, and complete view system are production-ready.
 
 ## Features
 
@@ -38,6 +38,42 @@ This library provides the foundation for a complete graph library following the 
 - **Container interface specification**: Comprehensive summary of concepts, traits, types, and functions
 - **CPO implementation guide**: Detailed patterns for creating customization point objects
 - **Common guidelines**: Architectural commitments and project structure requirements
+
+### Enhancements and Differences From graph-v2
+
+A significant shift occurred with the use of descriptors to the underlying containers for vertices
+and edges. This changed the implementation from a reference-based to a value-based implementation and had
+subtle changes that rippled through the library.
+
+Here's a summary of the major changes
+- Benefits from descriptors
+  - "sourced" functions no longer needed because source vertex is always available with the edge descriptor
+  - Function overloads for separate vertex_id-only and vertex references are no longer needed
+  - Fewer concepts needed
+  - No need to tag an adjacency list as "undirected"
+- Graph Container changes
+  - The `undirected_adjacency_list` graph data structure was added to test important use cases.
+  - Support was added to `dynamic_graph` to store vertices in `map` and `unordered_map`.
+  - Support was added to `dynamic_graph` to store edges in `map`, `set`, `unordered_map` and `unordered_set`.
+  - Support was added to `dynamic_graph` for non-integral vertex_ids.
+- Graph Container Interface changes
+  - Add support for vertices in `map` and `unordered_map`.
+  - Add support for edges in `map`, `set`, `unordered_map` and `unordered_set`.
+  - Add support for non-integral vertex_ids.
+- View changes
+  - The `topological_sort_view` was implemented. It was in the graph proposal documents but never implemented.
+    A "_safe" version of the view was added to detect cycles. (The implementation works on the whole graph.)
+  - Cancellation and depth() was added to the `vertices_bfs` and `edges_bfs` views.
+- Improved organization and use of namespaces
+  - The `graph::adj_list` namespace was added
+  - Edge lists are now a peer of adjacency lists in `graph::edge_list`
+  - Directories have been created that roughtly resemble the namespace organization
+- Extensive documentation was added
+- Extensive unit tests have been added
+
+We're trying to stay with C++20. However, `std::expected` from C++23 has been introduced and is being used
+for `topological_sort_view`. An open-source library is being used for it until C++23 is enabled. There is
+no target date for doing that.
 
 ## Requirements
 
@@ -437,19 +473,34 @@ Unit tests and documentation for each CPO added.
   - 94 test cases, 525 assertions
   - Full CPO conformance (47+ functions)
 
-### 📋 Phase 9: Basic Algorithms (PLANNED)
-- [ ] Foundational algorithms in `include/graph/algorithm/`:
-  - `breadth_first_search.hpp` - BFS traversal
-  - `depth_first_search.hpp` - DFS traversal
-  - `dijkstra_shortest_paths.hpp` - Single-source shortest paths
-  - `topological_sort.hpp` - Topological ordering
+### ✅ Phase 9: Graph Views (COMPLETE)
+- [x] **Graph Views** in `include/graph/views/` ✅ **COMPLETE**
+  - Basic views:
+    * `vertexlist` - Vertex range view with structured bindings (vertex_info)
+    * `edgelist` - Edge range view with structured bindings (edge_info)
+    * `neighbors` - Neighbor range view (neighbor_info)
+    * `incidence` - Incidence edge range view
+  - Search views:
+    * `vertices_bfs` / `edges_bfs` - Breadth-first search traversal
+    * `vertices_dfs` / `edges_dfs` - Depth-first search traversal
+    * `vertices_topological_sort` / `edges_topological_sort` - Topological ordering
+  - Features:
+    * Range adaptor closures for pipe syntax (`g | vertexlist()`)
+    * Optional value functions (VVF, EVF) for property access
+    * Cancellation support for search views
+    * Depth tracking in BFS/DFS
+    * Chainable with standard library views
+  - Test coverage: Comprehensive view tests in `tests/views/`
 
-### 📋 Phase 10: Views and Adaptors (PLANNED)
-- [ ] Graph views in `include/graph/views/`:
-  - `vertices.hpp` - Vertex range views
-  - `edges.hpp` - Edge range views
-  - `filtered_graph.hpp` - Filtered graph views
-  - `reverse_graph.hpp` - Reversed graph views
+### 📋 Phase 10: Algorithms and Advanced Views (PLANNED)
+- [ ] Standalone algorithms in `include/graph/algorithm/`:
+  - `dijkstra_shortest_paths.hpp` - Single-source shortest paths
+  - `bellman_ford.hpp` - Shortest paths with negative weights
+  - `minimum_spanning_tree.hpp` - MST algorithms
+- [ ] Advanced views:
+  - `filtered_graph` - Filtered graph views
+  - `reverse_graph` - Reversed graph views
+  - Edge list views for edge_list namespace
 
 ## Project Structure
 
@@ -466,11 +517,25 @@ desc/
 ├── include/                # Public headers
 │   └── graph/
 │       ├── algorithm/     # Graph algorithms (future)
-│       ├── container/     # Graph containers (future)
+│       ├── container/     # Graph containers
+│       │   ├── dynamic_graph.hpp
+│       │   ├── compressed_graph.hpp
+│       │   ├── undirected_adjacency_list.hpp
+│       │   └── traits/    # Container trait specializations
 │       ├── detail/        # Implementation details
-│       │   ├── graph_cpo.hpp      # CPO framework
+│       │   ├── cpo_common.hpp     # Shared CPO infrastructure
+│       │   ├── edge_cpo.hpp       # Shared edge CPOs
 │       │   └── graph_using.hpp    # Common std imports
-│       ├── views/         # Graph views (future)
+│       ├── adj_list/      # Adjacency list abstractions
+│       │   ├── detail/
+│       │   │   └── graph_cpo.hpp  # Adjacency list CPOs
+│       │   ├── adjacency_list_concepts.hpp
+│       │   ├── adjacency_list_traits.hpp
+│       │   └── (descriptors and traits)
+│       ├── edge_list/     # Edge list abstractions
+│       │   ├── edge_list.hpp
+│       │   └── (descriptors and traits)
+│       ├── views/         # Graph views
 │       ├── descriptor.hpp           # Core descriptor concepts
 │       ├── descriptor_traits.hpp    # Descriptor type traits
 │       ├── vertex_descriptor.hpp    # Vertex descriptor
@@ -483,7 +548,25 @@ desc/
 │       └── graph_utility.hpp       # Utility CPOs (stub)
 ├── scripts/                # Build and maintenance scripts
 │   └── format.sh          # Code formatting script
-├── tests/                  # Unit tests (3866 tests, all passing)
+├── tests/                  # Unit tests (3931 tests, all passing)
+│   ├── adj_list/          # Adjacency list tests
+│   │   ├── cpo/          # CPO tests
+│   │   ├── concepts/     # Concept tests
+│   │   └── traits/       # Trait tests
+│   ├── container/         # Container tests
+│   │   ├── dynamic_graph/
+│   │   ├── compressed_graph/
+│   │   └── undirected_adjacency_list/
+│   ├── edge_list/         # Edge list tests
+│   ├── views/             # View tests
+│   │   ├── test_adaptors.cpp
+│   │   ├── test_bfs.cpp
+│   │   ├── test_dfs.cpp
+│   │   ├── test_topological_sort.cpp
+│   │   ├── test_vertexlist.cpp
+│   │   ├── test_edgelist.cpp
+│   │   ├── test_neighbors.cpp
+│   │   └── test_incidence.cpp
 │   ├── test_adjacency_list_edge_concepts.cpp
 │   ├── test_adjacency_list_traits.cpp
 │   ├── test_adjacency_list_vertex_concepts.cpp
@@ -756,11 +839,15 @@ This library follows the design principles and specifications from:
 
 ---
 
-**Status**: Phase 1-7 Complete ✅ | 535/535 Tests Passing ✅ | All Core CPOs + Value Access + Sourced Edges + Partitioning + Adjacency List Concepts + Traits Complete ✅
+**Status**: Phase 1-9 Complete ✅ | 3931/3931 Tests Passing ✅ | Core CPOs + Containers + Views Complete ✅
 
-**Implemented CPOs**: vertices(g) • vertex_id(g,u) • find_vertex(g,uid) • edges(g,u) • edges(g,uid) • target_id(g,uv) • target(g,uv) • num_vertices(g) • num_edges(g) • degree(g,u) • degree(g,uid) • find_vertex_edge • contains_edge • has_edge(g) • vertex_value(g,u) • edge_value(g,uv) • graph_value(g) • source_id(g,uv) • source(g,uv) • partition_id(g,u) • num_partitions(g) • Type Aliases
+**Implemented CPOs**: vertices • vertex_id • find_vertex • edges • target_id • target • source_id • source • num_vertices • num_edges • degree • find_vertex_edge • contains_edge • has_edge • vertex_value • edge_value • graph_value • partition_id • num_partitions
 
 **Implemented Concepts**: targeted_edge • sourced_edge • sourced_targeted_edge • targeted_edge_range • sourced_targeted_edge_range • vertex_range • index_vertex_range • adjacency_list • index_adjacency_list • sourced_adjacency_list • index_sourced_adjacency_list
+
+**Implemented Containers**: dynamic_graph • compressed_graph • undirected_adjacency_list
+
+**Implemented Views**: vertexlist • edgelist • neighbors • incidence • vertices_bfs • edges_bfs • vertices_dfs • edges_dfs • vertices_topological_sort • edges_topological_sort
 
 **Implemented Traits**: has_degree • has_find_vertex • has_find_vertex_edge • has_contains_edge • define_unordered_edge • has_basic_queries • has_full_queries
 
