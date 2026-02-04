@@ -24,7 +24,7 @@
 #define GRAPH_ALGORITHMS_HPP
 
 // Shortest Path Algorithms
-// #include "algorithm/dijkstra.hpp"
+#include "algorithm/dijkstra.hpp"
 // #include "algorithm/bellman_ford.hpp"
 // #include "algorithm/bfs.hpp"
 

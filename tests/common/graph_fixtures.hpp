@@ -72,7 +72,7 @@ struct single_vertex_results {
 template <typename Graph>
 Graph single_vertex() {
     Graph g;
-    resize_vertices(g, 1);
+    g.resize_vertices(1);
     return g;
 }
 
@@ -91,7 +91,6 @@ Graph single_edge() {
 }
 
 template <typename Graph>
-requires std::same_as<edge_value_t<Graph>, int>
 Graph single_edge_weighted() {
     return Graph({{0, 1, 10}});
 }
@@ -132,7 +131,6 @@ Graph path_graph_4() {
 }
 
 template <typename Graph>
-requires std::same_as<edge_value_t<Graph>, int>
 Graph path_graph_4_weighted() {
     return Graph({{0, 1, 1}, {1, 2, 1}, {2, 3, 1}});
 }
@@ -155,7 +153,6 @@ Graph cycle_graph_5() {
 }
 
 template <typename Graph>
-requires std::same_as<edge_value_t<Graph>, int>
 Graph cycle_graph_5_weighted() {
     return Graph({{0, 1, 1}, {1, 2, 1}, {2, 3, 1}, {3, 4, 1}, {4, 0, 1}});
 }
@@ -248,7 +245,6 @@ Graph diamond_dag() {
 }
 
 template <typename Graph>
-requires std::same_as<edge_value_t<Graph>, int>
 Graph diamond_dag_weighted() {
     return Graph({{0, 1, 5}, {0, 2, 3}, {1, 3, 2}, {2, 3, 7}});
 }
@@ -283,7 +279,6 @@ struct multi_edge_graph_results {
 };
 
 template <typename Graph>
-requires std::same_as<edge_value_t<Graph>, int>
 Graph multi_edge_graph() {
     return Graph({{0, 1, 10}, {0, 1, 5}, {1, 2, 3}});
 }
@@ -311,7 +306,6 @@ struct clrs_dijkstra_results {
 };
 
 template <typename Graph>
-requires std::same_as<edge_value_t<Graph>, int>
 Graph clrs_dijkstra_graph() {
     return Graph({
         {0, 1, 10}, {0, 3, 5},      // s -> t, s -> y
@@ -364,7 +358,6 @@ struct road_network_results {
 };
 
 template <typename Graph>
-requires std::same_as<edge_value_t<Graph>, int>
 Graph road_network() {
     return Graph({
         {0, 1, 173}, {1, 0, 173},  // Seattle <-> Portland (bidirectional)
@@ -415,7 +408,7 @@ struct medium_graph_results {
 template <typename Graph>
 Graph medium_graph_sparse() {
     // Create a graph with ~100 edges (average degree ~2)
-    std::vector<copyable_edge_t<vertex_id_t<Graph>, edge_value_t<Graph>>> edges;
+    std::vector<std::pair<uint32_t, uint32_t>> edges;
     
     // Create a connected backbone (path)
     for (uint32_t i = 0; i < 49; ++i) {

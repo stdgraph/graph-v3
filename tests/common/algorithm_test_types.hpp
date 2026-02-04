@@ -208,10 +208,6 @@ template <typename Graph>
 struct fixture_selector {
     // Use sparse fixtures for sparse vertex containers
     static constexpr bool use_sparse = is_sparse_vertex_container_v<Graph>;
-    
-    // Use weighted fixtures if edge_value_t is numeric
-    static constexpr bool use_weighted = std::is_arithmetic_v<edge_value_t<Graph>> && 
-                                         !std::same_as<edge_value_t<Graph>, void>;
 };
 
 } // namespace graph::test::algorithm
