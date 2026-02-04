@@ -3,7 +3,6 @@
 
 # Algorithm test executable
 add_executable(test_algorithms
-    test_dijkstra.cpp
     test_dijkstra_shortest_paths.cpp
 )
 

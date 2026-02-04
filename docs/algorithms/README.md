@@ -16,7 +16,7 @@ The algorithm library provides efficient, STL-style implementations of classic g
 
 ```cpp
 #include <graph/graph.hpp>
-#include <graph/algorithm/dijkstra.hpp>
+#include <graph/algorithm/dijkstra_shortest_paths.hpp>
 
 using namespace graph;
 
@@ -42,7 +42,7 @@ std::cout << "Distance to vertex 2: " << distance[2] << "\n"; // Output: 8
 
 | Algorithm | File | Time Complexity | Space | Notes |
 |-----------|------|-----------------|-------|-------|
-| Dijkstra | `dijkstra.hpp` | O((V+E) log V) | O(V) | Non-negative weights only |
+| Dijkstra | `dijkstra_shortest_paths.hpp` | O((V+E) log V) | O(V) | Non-negative weights only |
 | Bellman-Ford | `bellman_ford.hpp` | O(VE) | O(V) | Handles negative weights |
 | BFS | `bfs.hpp` | O(V+E) | O(V) | Unweighted shortest path |
 | A* | `astar.hpp` | O(E log V) | O(V) | Heuristic-guided |

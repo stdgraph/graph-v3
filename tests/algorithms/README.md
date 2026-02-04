@@ -30,7 +30,7 @@ Each algorithm test file follows this structure:
 ```cpp
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_template_test_macros.hpp>
-#include <graph/algorithm/dijkstra.hpp>
+#include <graph/algorithm/dijkstra_shortest_paths.hpp>
 #include "tests/common/graph_fixtures.hpp"
 #include "tests/common/algorithm_test_types.hpp"
 

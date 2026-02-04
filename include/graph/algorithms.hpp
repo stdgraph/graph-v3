@@ -11,12 +11,12 @@
  * #include <graph/algorithms.hpp>
  * 
  * // All algorithms are now available
- * dijkstra(g, source, distance, predecessor, weight);
+ * dijkstra_shortest_paths(g, source, distance, predecessor, weight);
  * ```
  * 
  * For faster compilation, include specific headers:
  * ```cpp
- * #include <graph/algorithm/dijkstra.hpp>
+ * #include <graph/algorithm/dijkstra_shortest_paths.hpp>
  * ```
  */
 
@@ -24,7 +24,7 @@
 #define GRAPH_ALGORITHMS_HPP
 
 // Shortest Path Algorithms
-#include "algorithm/dijkstra.hpp"
+#include "algorithm/dijkstra_shortest_paths.hpp"
 // #include "algorithm/bellman_ford.hpp"
 // #include "algorithm/bfs.hpp"
 

@@ -247,7 +247,7 @@ These constraints are enforced via C++20 concepts and will produce a compilation
 
 ```cpp
 #include <graph/graph.hpp>
-#include <graph/algorithm/dijkstra.hpp>
+#include <graph/algorithm/dijkstra_shortest_paths.hpp>
 #include <vector>
 #include <iostream>
 

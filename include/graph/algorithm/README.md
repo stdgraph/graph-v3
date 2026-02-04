@@ -10,7 +10,7 @@ This directory contains the header-only implementations of graph algorithms.
 ## File Naming Convention
 
 Each algorithm is in its own header file:
-- `dijkstra.hpp` - Dijkstra's shortest path algorithm
+- `dijkstra_shortest_paths.hpp` - Dijkstra's shortest path algorithm
 - `bellman_ford.hpp` - Bellman-Ford shortest path algorithm
 - `bfs.hpp` - Breadth-first search
 - `dfs.hpp` - Depth-first search

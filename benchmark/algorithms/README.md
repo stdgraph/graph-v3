@@ -55,7 +55,7 @@ Each algorithm benchmark file follows this pattern:
 ```cpp
 // benchmark_shortest_path.cpp
 #include <benchmark/benchmark.h>
-#include <graph/algorithm/dijkstra.hpp>
+#include <graph/algorithm/dijkstra_shortest_paths.hpp>
 #include "tests/common/graph_fixtures.hpp"
 
 // Benchmark for specific graph size and container type
