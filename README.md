@@ -57,12 +57,12 @@ Here's a summary of the major changes
   - No need to tag an adjacency list as "undirected"
 - Graph Container changes
   - The `undirected_adjacency_list` graph data structure was added to test important use cases.
-  - Support was added to `dynamic_graph` to store vertices in `map` and `unordered_map`.
-  - Support was added to `dynamic_graph` to store edges in `map`, `set`, `unordered_map` and `unordered_set`.
-  - Support was added to `dynamic_graph` for non-integral vertex_ids.
+  - Vertices can be stored in `map` and `unordered_map` containers in `dynamic_graph` for sparse vertex_ids.
+  - Edges can be stored in `map`, `set`, `unordered_map` and `unordered_set` in `dynamic_graph`.
+  - Non-integral vertex_ids Support can be used in `dynamic_graph`.
 - Graph Container Interface changes
-  - Add support for vertices in `map` and `unordered_map`.
-  - Add support for edges in `map`, `set`, `unordered_map` and `unordered_set`.
+  - Vertices can be stored in bidirectional (e.g. `map`) and forward (e.g. )`unordered_map`) ranges.
+  - Edges can be stored in `map`, `set`, `unordered_map` and `unordered_set`.
   - Add support for non-integral vertex_ids.
 - View changes
   - The `topological_sort_view` was implemented. It was in the graph proposal documents but never implemented.

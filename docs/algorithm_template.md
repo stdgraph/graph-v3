@@ -170,10 +170,26 @@ void algorithm_name(
 
 **Type:** `void` (results stored in output parameters)
 
-**Side Effects:**
+**Effects:**
 - Modifies `distance` range: Sets `distance[v]` for all vertices v
 - Modifies `predecessor` range: Sets `predecessor[v]` for all reachable vertices
 - Does not modify the graph `g`
+
+---
+
+## Mandates (Compile-Time Requirements)
+
+```cpp
+requires adjacency_list<G>
+requires forward_range<vertex_range_t<G>>
+requires integral<vertex_id_t<G>>
+requires random_access_range<Distance>
+requires is_arithmetic_v<range_value_t<Distance>>
+requires convertible_to<vertex_id_t<G>, range_value_t<Predecessor>>
+requires edge_weight_function<G, WF>
+```
+
+These constraints are enforced via C++20 concepts and will produce a compilation error if not satisfied.
 
 ---
 
@@ -207,22 +223,6 @@ assert(distance.size() >= num_vertices(g));
 
 ---
 
-## Mandates (Compile-Time Requirements)
-
-```cpp
-requires adjacency_list<G>
-requires forward_range<vertex_range_t<G>>
-requires integral<vertex_id_t<G>>
-requires random_access_range<Distance>
-requires is_arithmetic_v<range_value_t<Distance>>
-requires convertible_to<vertex_id_t<G>, range_value_t<Predecessor>>
-requires edge_weight_function<G, WF>
-```
-
-These constraints are enforced via C++20 concepts and will produce a compilation error if not satisfied.
-
----
-
 ## Exception Safety
 
 **Guarantee:** Basic exception safety
@@ -238,6 +238,17 @@ These constraints are enforced via C++20 concepts and will produce a compilation
 - Client must re-initialize output containers before retry
 
 **Recommendation:** Use `noexcept` weight functions when possible for strong guarantee.
+
+---
+
+## Remarks *(Optional)*
+
+Include any additional information, clarifications, or important notes that don't fit in other sections:
+- Implementation quirks or special behaviors
+- Performance characteristics beyond complexity analysis
+- Compatibility notes with other algorithms or graph types
+- Historical context or design rationale
+- Known limitations or caveats
 
 ---
 

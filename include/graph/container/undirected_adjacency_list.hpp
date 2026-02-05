@@ -108,6 +108,8 @@ namespace ranges = std::ranges;
 /// - Algorithms needing fast neighbor iteration
 /// - Graphs where edge count dominates vertex count
 /// - Graphs with moderate vertex degrees
+/// - Edges with many properties (value storage amortizes overhead)
+/// - Edges with property updates (changes made in one place)
 ///
 /// Consider alternatives when:
 /// - Memory overhead is critical (use compressed_graph for read-only)

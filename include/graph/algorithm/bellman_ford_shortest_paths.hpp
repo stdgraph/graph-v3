@@ -70,42 +70,89 @@ void find_negative_cycle(G&                              g,
 
 
 /**
- * @brief Bellman-Ford's single-source shortest paths algorithm with a visitor.
+ * @brief Multi-source shortest paths using Bellman-Ford algorithm.
  * 
- * The implementation was taken from boost::graph bellman_ford_shortest_paths.
+ * Finds shortest paths from one or more source vertices to all other vertices in a weighted graph.
+ * Unlike Dijkstra's algorithm, Bellman-Ford can handle negative edge weights and detects negative
+ * weight cycles. Returns an optional vertex ID indicating whether a negative cycle was detected.
  * 
- * Complexity: O(V * E)
+ * @tparam G            The graph type. Must satisfy index_adjacency_list concept.
+ * @tparam Sources      Input range of source vertex IDs.
+ * @tparam Distances    Random access range for storing distances. Value type must be arithmetic.
+ * @tparam Predecessors Random access range for storing predecessor information. Can use _null_predecessors
+ *                      if path reconstruction is not needed.
+ * @tparam WF           Edge weight function. Defaults to returning 1 for all edges (unweighted).
+ * @tparam Visitor      Visitor type with callbacks for algorithm events. Defaults to empty_visitor.
+ *                      Visitor calls are optimized away if not used.
+ * @tparam Compare      Comparison function for distance values. Defaults to less<>.
+ * @tparam Combine      Function to combine distances and weights. Defaults to plus<>.
  * 
- * Pre-conditions:
- *  - 0 <= source < num_vertices(g)
- *  - predecessors has been initialized with init_shortest_paths().
- *  - distances has been initialized with init_shortest_paths().
- *  - The weight function must return a value that can be compared (e.g. <) with the Distance 
- *    type and combined (e.g. +) with the Distance type.
- *  - The visitor must implement the bellman_visitor concept and is typically derived from
- *    bellman_visitor_base.
+ * @param g            The graph to process.
+ * @param sources      Range of source vertex IDs to start from.
+ * @param distances    [out] Shortest distances from sources. Must be sized >= num_vertices(g).
+ * @param predecessor  [out] Predecessor information for path reconstruction. Must be sized >= num_vertices(g).
+ * @param weight       Edge weight function: (const edge_t<G>&) -> Distance.
+ * @param visitor      Visitor for algorithm events (examine, relax, not_relaxed, minimized, not_minimized).
+ * @param compare      Distance comparison function: (Distance, Distance) -> bool.
+ * @param combine      Distance combination function: (Distance, Weight) -> Distance.
  * 
- * Throws:
- *  - out_of_range if a source vertex id is out of range.
+ * @return optional<vertex_id_t<G>>. Returns empty if no negative cycle detected. Returns a vertex ID
+ *         in the negative cycle if one exists. Use find_negative_cycle() to extract all cycle vertices.
  * 
- * @tparam G            The graph type,
- * @tparam Distances    The distance random access range.
- * @tparam Predecessors The predecessor random access range.
- * @tparam WF           Edge weight function. Defaults to a function that returns 1.
- * @tparam Visitor      Visitor type with functions called for different events in the algorithm.
- *                      Function calls are removed by the optimizer if not used.
- * @tparam Compare      Comparison function for Distance values. Defaults to less<DistanceValue>.
- * @tparam Combine      Combine function for Distance values. Defaults to plus<DistanceValue>.
+ * **Complexity:**
+ * - Time: O(V * E) - iterates over all edges V times
+ * - Space: O(1) auxiliary space (excluding output parameters)
  * 
- * @return optional<vertex_id_t<G>>, where no vertex id is returned if all edges were minimized.
- *         If an edge was not minimized, the on_edge_not_minimized event is called and a vertex id
- *         in the negative weight cycle is returned.
+ * **Mandates:**
+ * - G must satisfy index_adjacency_list (integral vertex IDs)
+ * - Sources must be input_range with values convertible to vertex_id_t<G>
+ * - Distances must be random_access_range with arithmetic value type
+ * - Predecessors must be random_access_range with values convertible from vertex_id_t<G>
+ * - WF must satisfy basic_edge_weight_function
+ * 
+ * **Preconditions:**
+ * - All source vertices must be valid: source < num_vertices(g) for vector-based containers
+ * - distances.size() >= num_vertices(g)
+ * - predecessor.size() >= num_vertices(g) (unless using _null_predecessors)
+ * - Weight function must not throw or modify graph state
+ * 
+ * **Postconditions:**
+ * - distances[s] == 0 for all sources s
+ * - If no negative cycle: For reachable v, distances[v] contains shortest distance from nearest source
+ * - If no negative cycle: For reachable v, predecessor[v] contains predecessor in shortest path tree
+ * - If negative cycle detected: distances and predecessor may contain intermediate values
+ * - For unreachable vertices v: distances[v] == numeric_limits<Distance>::max()
+ * 
+ * **Effects:**
+ * - Modifies distances: Sets distances[v] for all vertices v
+ * - Modifies predecessor: Sets predecessor[v] for all processed edges
+ * - Does not modify the graph g
+ * 
+ * **Exception Safety:**
+ * Basic guarantee. If an exception is thrown:
+ * - Graph g remains unchanged
+ * - distances and predecessor may be partially modified (indeterminate state)
+ * 
+ * **Throws:**
+ * - std::out_of_range if a source vertex ID is out of range
+ * - std::out_of_range if distances or predecessor are undersized
+ * 
+ * **Remarks:**
+ * - Use Bellman-Ford when: graph has negative weights, need cycle detection, or edges processed sequentially
+ * - Use Dijkstra when: all weights non-negative and need better performance O((V+E) log V)
+ * - Negative cycle detection: Algorithm performs V iterations. If any edge relaxes on iteration V, a
+ *   negative cycle exists. The returned vertex ID can be used with find_negative_cycle() to extract
+ *   all vertices in the cycle.
+ * - Based on Boost.Graph bellman_ford_shortest_paths implementation
+ * 
+ * @see find_negative_cycle() to extract vertices in detected negative cycle
+ * @see dijkstra_shortest_paths() for faster algorithm with non-negative weights
  */
 template <index_adjacency_list G,
           input_range          Sources,
           random_access_range  Distances,
           random_access_range  Predecessors,
-          class WF      = function<range_value_t<Distances>(edge_t<G>)>,
+          class WF      = function<range_value_t<Distances>(const edge_t<G>&)>,
           class Visitor = empty_visitor,
           class Compare = less<range_value_t<Distances>>,
           class Combine = plus<range_value_t<Distances>>>
@@ -120,7 +167,7 @@ requires convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&      //
       const Sources& sources,
       Distances&     distances,
       Predecessors&  predecessor,
-      WF&&      weight  = [](edge_t<G> uv) { return range_value_t<Distances>(1); }, // default weight(uv) -> 1
+      WF&&      weight  = [](const edge_t<G>& uv) { return range_value_t<Distances>(1); }, // default weight(uv) -> 1
       Visitor&& visitor = empty_visitor(),
       Compare&& compare = less<range_value_t<Distances>>(),
       Combine&& combine = plus<range_value_t<Distances>>()) {
@@ -131,7 +178,7 @@ requires convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&      //
 
   // relaxing the target is the function of reducing the distance from the source to the target
   auto relax_target = [&g, &predecessor, &distances, &compare, &combine] //
-        (edge_t<G> e, vertex_id_t<G> uid, const weight_type& w_e) -> bool {
+        (const edge_t<G>& e, vertex_id_t<G> uid, const weight_type& w_e) -> bool {
     id_type             vid = target_id(g, e);
     const DistanceValue d_u = distances[static_cast<size_t>(uid)];
     const DistanceValue d_v = distances[static_cast<size_t>(vid)];
@@ -226,10 +273,21 @@ requires convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&      //
   return return_type();
 }
 
+/**
+ * @brief Single-source shortest paths using Bellman-Ford algorithm.
+ * 
+ * Convenience overload for single source vertex. See multi-source version for full documentation.
+ * 
+ * @param source Single source vertex ID instead of range.
+ * 
+ * @return optional<vertex_id_t<G>> indicating negative cycle detection.
+ * 
+ * @see bellman_ford_shortest_paths(G&&, const Sources&, Distances&, Predecessors&, WF&&, Visitor&&, Compare&&, Combine&&)
+ */
 template <index_adjacency_list G,
           random_access_range  Distances,
           random_access_range  Predecessors,
-          class WF      = function<range_value_t<Distances>(edge_t<G>)>,
+          class WF      = function<range_value_t<Distances>(const edge_t<G>&)>,
           class Visitor = empty_visitor,
           class Compare = less<range_value_t<Distances>>,
           class Combine = plus<range_value_t<Distances>>>
@@ -243,7 +301,7 @@ requires is_arithmetic_v<range_value_t<Distances>> &&                   //
       vertex_id_t<G> source,
       Distances&     distances,
       Predecessors&  predecessor,
-      WF&&      weight  = [](edge_t<G> uv) { return range_value_t<Distances>(1); }, // default weight(uv) -> 1
+      WF&&      weight  = [](const edge_t<G>& uv) { return range_value_t<Distances>(1); }, // default weight(uv) -> 1
       Visitor&& visitor = empty_visitor(),
       Compare&& compare = less<range_value_t<Distances>>(),
       Combine&& combine = plus<range_value_t<Distances>>()) {
@@ -253,39 +311,41 @@ requires is_arithmetic_v<range_value_t<Distances>> &&                   //
 
 
 /**
- * @brief Shortest distances from a single source using Bellman-Ford's single-source shortest paths 
- *        algorithm with a visitor.
+ * @brief Multi-source shortest distances using Bellman-Ford algorithm (no predecessor tracking).
  * 
- * This is identical to bellman_ford_shortest_paths() except that it does not require a predecessors range.
+ * Computes shortest distances without tracking predecessor information. More efficient when
+ * path reconstruction is not needed. Can detect negative weight cycles.
  * 
- * Complexity: O(V * E)
+ * @tparam G            The graph type. Must satisfy index_adjacency_list concept.
+ * @tparam Sources      Input range of source vertex IDs.
+ * @tparam Distances    Random access range for storing distances. Value type must be arithmetic.
+ * @tparam WF           Edge weight function. Defaults to returning 1 for all edges (unweighted).
+ * @tparam Visitor      Visitor type with callbacks for algorithm events. Defaults to empty_visitor.
+ * @tparam Compare      Comparison function for distance values. Defaults to less<>.
+ * @tparam Combine      Function to combine distances and weights. Defaults to plus<>.
  * 
- * Pre-conditions:
- *  - distances has been initialized with init_shortest_paths().
- *  - The weight function must return a value that can be compared (e.g. <) with the Distance 
- *    type and combined (e.g. +) with the Distance type.
- *  - The visitor must implement the bellman_visitor concept and is typically derived from
- *    bellman_visitor_base.
+ * @param g            The graph to process.
+ * @param sources      Range of source vertex IDs to start from.
+ * @param distances    [out] Shortest distances from sources. Must be sized >= num_vertices(g).
+ * @param weight       Edge weight function: (const edge_t<G>&) -> Distance.
+ * @param visitor      Visitor for algorithm events.
+ * @param compare      Distance comparison function: (Distance, Distance) -> bool.
+ * @param combine      Distance combination function: (Distance, Weight) -> Distance.
  * 
- * Throws:
- *  - out_of_range if the source vertex is out of range.
+ * @return optional<vertex_id_t<G>>. Returns empty if no negative cycle. Returns vertex ID in cycle if detected.
  * 
- * @tparam G            The graph type,
- * @tparam Distances    The distance random access range.
- * @tparam WF           Edge weight function. Defaults to a function that returns 1.
- * @tparam Visitor      Visitor type with functions called for different events in the algorithm.
- *                      Function calls are removed by the optimizer if not used.
- * @tparam Compare      Comparison function for Distance values. Defaults to less<DistanceValue>.
- * @tparam Combine      Combine function for Distance values. Defaults to plus<DistanceValue>.
+ * **Effects:**
+ * - Modifies distances: Sets distances[v] for all vertices v
+ * - Does not modify the graph g
+ * - Internally uses _null_predecessors to skip predecessor tracking
  * 
- * @return optional<vertex_id_t<G>>, where no vertex id is returned if all edges were minimized.
- *         If an edge was not minimized, the on_edge_not_minimized event is called and a vertex id
- *         in the negative weight cycle is returned.
+ * @see bellman_ford_shortest_paths() for full documentation and complexity analysis.
+ * @see find_negative_cycle() to extract cycle vertices (requires predecessor tracking version).
  */
 template <index_adjacency_list G,
           input_range          Sources,
           random_access_range  Distances,
-          class WF      = function<range_value_t<Distances>(edge_t<G>)>,
+          class WF      = function<range_value_t<Distances>(const edge_t<G>&)>,
           class Visitor = empty_visitor,
           class Compare = less<range_value_t<Distances>>,
           class Combine = plus<range_value_t<Distances>>>
@@ -297,7 +357,7 @@ requires convertible_to<range_value_t<Sources>, vertex_id_t<G>> && //
       G&&            g,
       const Sources& sources,
       Distances&     distances,
-      WF&&      weight  = [](edge_t<G> uv) { return range_value_t<Distances>(1); }, // default weight(uv) -> 1
+      WF&&      weight  = [](const edge_t<G>& uv) { return range_value_t<Distances>(1); }, // default weight(uv) -> 1
       Visitor&& visitor = empty_visitor(),
       Compare&& compare = less<range_value_t<Distances>>(),
       Combine&& combine = plus<range_value_t<Distances>>()) {
@@ -305,9 +365,20 @@ requires convertible_to<range_value_t<Sources>, vertex_id_t<G>> && //
                                      forward<Visitor>(visitor), forward<Compare>(compare), forward<Combine>(combine));
 }
 
+/**
+ * @brief Single-source shortest distances using Bellman-Ford algorithm (no predecessor tracking).
+ * 
+ * Convenience overload for single source vertex without predecessor tracking.
+ * 
+ * @param source Single source vertex ID instead of range.
+ * 
+ * @return optional<vertex_id_t<G>> indicating negative cycle detection.
+ * 
+ * @see bellman_ford_shortest_distances(G&&, const Sources&, Distances&, WF&&, Visitor&&, Compare&&, Combine&&)
+ */
 template <index_adjacency_list G,
           random_access_range  Distances,
-          class WF      = function<range_value_t<Distances>(edge_t<G>)>,
+          class WF      = function<range_value_t<Distances>(const edge_t<G>&)>,
           class Visitor = empty_visitor,
           class Compare = less<range_value_t<Distances>>,
           class Combine = plus<range_value_t<Distances>>>
@@ -318,7 +389,7 @@ requires is_arithmetic_v<range_value_t<Distances>> && //
       G&&            g,
       vertex_id_t<G> source,
       Distances&     distances,
-      WF&&      weight  = [](edge_t<G> uv) { return range_value_t<Distances>(1); }, // default weight(uv) -> 1
+      WF&&      weight  = [](const edge_t<G>& uv) { return range_value_t<Distances>(1); }, // default weight(uv) -> 1
       Visitor&& visitor = empty_visitor(),
       Compare&& compare = less<range_value_t<Distances>>(),
       Combine&& combine = plus<range_value_t<Distances>>()) {
