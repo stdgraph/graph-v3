@@ -609,23 +609,10 @@ namespace _cpo_impls {
         // Strategy enum for edges(g, u) - vertex descriptor version
         enum class _St_u { _none, _vertex_member, _adl, _vertex_inner_edges, _edge_value_pattern };
         
-        // Check for u.edges() member function on vertex descriptor (most natural)
-        template<typename G, typename U>
-        concept _has_vertex_member_u = requires(const U& u) {
-            { u.edges() } -> std::ranges::forward_range;
-        };
-        
         // Check for ADL edges(g, u)
         template<typename G, typename U>
         concept _has_adl_u = requires(G& g, const U& u) {
             { edges(g, u) } -> std::ranges::forward_range;
-        };
-        
-        // Check for vertex inner edges pattern: u.inner_value(g).edges()
-        // This is used by dynamic_graph where the vertex object has an edges() method
-        template<typename G, typename U>
-        concept _has_vertex_inner_edges = requires(G& g, const U& u) {
-            { u.inner_value(g).edges() } -> std::ranges::forward_range;
         };
         
         // Check if the vertex descriptor's inner value is a forward range
@@ -643,12 +630,8 @@ namespace _cpo_impls {
         
         template<typename G, typename U>
         [[nodiscard]] consteval _Choice_t<_St_u> _Choose_u() noexcept {
-            if constexpr (_has_vertex_member_u<G, U>) {
-                return {_St_u::_vertex_member, noexcept(std::declval<const U&>().edges())};
-            } else if constexpr (_has_adl_u<G, U>) {
+            if constexpr (_has_adl_u<G, U>) {
                 return {_St_u::_adl, noexcept(edges(std::declval<G&>(), std::declval<const U&>()))};
-            } else if constexpr (_has_vertex_inner_edges<G, U>) {
-                return {_St_u::_vertex_inner_edges, noexcept(std::declval<const U&>().inner_value(std::declval<G&>()).edges())};
             } else if constexpr (_has_edge_value_pattern<G, U>) {
                 return {_St_u::_edge_value_pattern, noexcept(std::declval<const U&>().inner_value(std::declval<G&>()))};
             } else {
@@ -678,9 +661,7 @@ namespace _cpo_impls {
         concept _has_default_uid = requires(G& g, const VId& uid) {
             { find_vertex(g, uid) } -> std::input_iterator;
             requires vertex_descriptor_type<decltype(*find_vertex(g, uid))>;
-        } && (_has_vertex_member_u<G, decltype(*find_vertex(std::declval<G&>(), std::declval<const VId&>()))> ||
-              _has_adl_u<G, decltype(*find_vertex(std::declval<G&>(), std::declval<const VId&>()))> ||
-              _has_vertex_inner_edges<G, decltype(*find_vertex(std::declval<G&>(), std::declval<const VId&>()))> ||
+        } && (_has_adl_u<G, decltype(*find_vertex(std::declval<G&>(), std::declval<const VId&>()))> ||
               _has_edge_value_pattern<G, decltype(*find_vertex(std::declval<G&>(), std::declval<const VId&>()))>);
         
         template<typename G, typename VId>

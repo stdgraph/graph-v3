@@ -700,27 +700,23 @@ private: // CPO properties
     using type = V; // For pairs, use the second element
   };
 
-  template <typename U>
-  using vertex_from_descriptor_t = typename extract_vertex_from_value<typename U::value_type>::type;
-
   // ADL friend function - CPO will find this via ADL
   template <typename U>
-  requires vertex_descriptor_type<U> && std::same_as<vertex_from_descriptor_t<U>, vertex_type>
+  requires vertex_descriptor_type<U>
   [[nodiscard]] friend constexpr auto edges(graph_type& g, const U& u) noexcept {
-    auto& edges_container    = u.inner_value(g).edges_;
-    using actual_container_t = std::remove_reference_t<decltype(edges_container)>;
-    using edge_iter_t   = std::conditional_t<std::is_const_v<actual_container_t>, typename edges_type::const_iterator,
-                                           typename edges_type::iterator>;
     using vertex_iter_t = typename U::iterator_type;
-    return edge_descriptor_view<edge_iter_t, vertex_iter_t>(edges_container, u);
+    auto& edges_ref = u.inner_value(g).edges_;
+    using edge_iter_t = decltype(edges_ref.begin());
+    return edge_descriptor_view<edge_iter_t, vertex_iter_t>(edges_ref, u);
   }
 
   template <typename U>
-  requires vertex_descriptor_type<U> && std::same_as<vertex_from_descriptor_t<U>, vertex_type>
+  requires vertex_descriptor_type<U>
   [[nodiscard]] friend constexpr auto edges(const graph_type& g, const U& u) noexcept {
-    using edge_iter_t   = typename edges_type::const_iterator;
     using vertex_iter_t = typename U::iterator_type;
-    return edge_descriptor_view<edge_iter_t, vertex_iter_t>(u.inner_value(g).edges_, u);
+    const auto& edges_ref = u.inner_value(g).edges_;
+    using edge_iter_t = decltype(edges_ref.begin());
+    return edge_descriptor_view<edge_iter_t, vertex_iter_t>(edges_ref, u);
   }
 
   // friend constexpr typename edges_type::iterator
