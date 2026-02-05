@@ -1,10 +1,9 @@
 /**
  * @file connected_components.hpp
  * 
- * @brief Single-Source Shortest paths and shortest sistances algorithms using Dijkstra & 
- * Bellman-Ford algorithms.
+ * @brief Connected components algorithms for undirected and directed graphs.
  * 
- * @copyright Copyright (c) 2022
+ * @copyright Copyright (c) 2024
  * 
  * SPDX-License-Identifier: BSL-1.0
  *
@@ -15,7 +14,6 @@
  */
 
 #include "graph/graph.hpp"
-#include "graph/views/incidence.hpp"
 #include "graph/views/vertexlist.hpp"
 #include "graph/views/depth_first_search.hpp"
 #include "graph/views/breadth_first_search.hpp"
@@ -32,8 +30,11 @@ namespace graph {
 using adj_list::index_adjacency_list;
 using adj_list::adjacency_list;
 using adj_list::vertex_id_t;
-using adj_list::edge_reference_t;
+using adj_list::edge_t;
 using adj_list::vertex_range_t;
+using adj_list::vertices;
+using adj_list::edges;
+using adj_list::target_id;
 
 template <adjacency_list      G,
           adjacency_list      GT,
