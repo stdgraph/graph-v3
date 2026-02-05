@@ -703,26 +703,10 @@ private: // CPO properties
   template <typename U>
   using vertex_from_descriptor_t = typename extract_vertex_from_value<typename U::value_type>::type;
 
-  /**
-   * @brief Get the edges for a vertex as an edge_descriptor_view (ADL customization)
-   * @param g The graph
-   * @param u The vertex descriptor (must reference vertex_type in this graph)
-   * @return edge_descriptor_view over the vertex's edges
-   * @note Complexity: O(1) - direct member access
-   * @note This is the ADL customization point for the edges(g, u) CPO
-   */
-  /**
-   * @brief Get range of outgoing edges from a vertex (non-const graph)
-   * 
-   * For random-access vertex containers (vector), the edge iterator type is determined
-   * by the graph's const-ness. For bidirectional containers (map), the iterator type
-   * is determined by what the vertex descriptor's stored iterator provides.
-   */
+  // ADL friend function - CPO will find this via ADL
   template <typename U>
   requires vertex_descriptor_type<U> && std::same_as<vertex_from_descriptor_t<U>, vertex_type>
   [[nodiscard]] friend constexpr auto edges(graph_type& g, const U& u) noexcept {
-    // Get the edges container - its type depends on the vertex descriptor's iterator
-    // For map-based containers, a const_iterator gives const access regardless of graph const-ness
     auto& edges_container    = u.inner_value(g).edges_;
     using actual_container_t = std::remove_reference_t<decltype(edges_container)>;
     using edge_iter_t   = std::conditional_t<std::is_const_v<actual_container_t>, typename edges_type::const_iterator,
@@ -731,11 +715,6 @@ private: // CPO properties
     return edge_descriptor_view<edge_iter_t, vertex_iter_t>(edges_container, u);
   }
 
-  /**
-   * @brief Get range of outgoing edges from a vertex (const graph)
-   * 
-   * Always uses const_iterator since the graph is const.
-   */
   template <typename U>
   requires vertex_descriptor_type<U> && std::same_as<vertex_from_descriptor_t<U>, vertex_type>
   [[nodiscard]] friend constexpr auto edges(const graph_type& g, const U& u) noexcept {
