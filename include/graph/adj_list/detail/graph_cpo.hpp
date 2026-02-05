@@ -607,18 +607,12 @@ namespace _cpo_impls {
         using _cpo_instances::find_vertex;
         
         // Strategy enum for edges(g, u) - vertex descriptor version
-        enum class _St_u { _none, _vertex_member, _member, _adl, _vertex_inner_edges, _edge_value_pattern };
+        enum class _St_u { _none, _vertex_member, _adl, _vertex_inner_edges, _edge_value_pattern };
         
         // Check for u.edges() member function on vertex descriptor (most natural)
         template<typename G, typename U>
         concept _has_vertex_member_u = requires(const U& u) {
             { u.edges() } -> std::ranges::forward_range;
-        };
-        
-        // Check for g.edges(u) member function - graph member
-        template<typename G, typename U>
-        concept _has_member_u = requires(G& g, const U& u) {
-            { g.edges(u) } -> std::ranges::forward_range;
         };
         
         // Check for ADL edges(g, u)
@@ -651,8 +645,6 @@ namespace _cpo_impls {
         [[nodiscard]] consteval _Choice_t<_St_u> _Choose_u() noexcept {
             if constexpr (_has_vertex_member_u<G, U>) {
                 return {_St_u::_vertex_member, noexcept(std::declval<const U&>().edges())};
-            } else if constexpr (_has_member_u<G, U>) {
-                return {_St_u::_member, noexcept(std::declval<G&>().edges(std::declval<const U&>()))};
             } else if constexpr (_has_adl_u<G, U>) {
                 return {_St_u::_adl, noexcept(edges(std::declval<G&>(), std::declval<const U&>()))};
             } else if constexpr (_has_vertex_inner_edges<G, U>) {
@@ -687,7 +679,6 @@ namespace _cpo_impls {
             { find_vertex(g, uid) } -> std::input_iterator;
             requires vertex_descriptor_type<decltype(*find_vertex(g, uid))>;
         } && (_has_vertex_member_u<G, decltype(*find_vertex(std::declval<G&>(), std::declval<const VId&>()))> ||
-              _has_member_u<G, decltype(*find_vertex(std::declval<G&>(), std::declval<const VId&>()))> ||
               _has_adl_u<G, decltype(*find_vertex(std::declval<G&>(), std::declval<const VId&>()))> ||
               _has_vertex_inner_edges<G, decltype(*find_vertex(std::declval<G&>(), std::declval<const VId&>()))> ||
               _has_edge_value_pattern<G, decltype(*find_vertex(std::declval<G&>(), std::declval<const VId&>()))>);
@@ -741,8 +732,8 @@ namespace _cpo_impls {
              * 
              * Resolution order:
              * 1. If u.edges() exists -> use it (wrap in descriptor view if needed)
-             * 2. If g.edges(u) exists -> use it (wrap in descriptor view if needed)
-             * 3. If ADL edges(g, u) exists -> use it (wrap in descriptor view if needed)
+             * 2. If ADL edges(g, u) exists -> use it (wrap in descriptor view if needed)
+             * 3. If u.inner_value(g).edges() exists -> use it (wrap in descriptor view if needed)
              * 4. If u.inner_value(g) is a forward range of edge_value_type elements 
              *    -> return edge_descriptor_view(u.inner_value(g), u)
              * 
@@ -771,8 +762,6 @@ namespace _cpo_impls {
                 using _U = std::remove_cvref_t<U>;
                 if constexpr (_Choice_u<_G, _U>._Strategy == _St_u::_vertex_member) {
                     return _wrap_if_needed(u.edges(), u);
-                } else if constexpr (_Choice_u<_G, _U>._Strategy == _St_u::_member) {
-                    return _wrap_if_needed(g.edges(u), u);
                 } else if constexpr (_Choice_u<_G, _U>._Strategy == _St_u::_adl) {
                     return _wrap_if_needed(edges(g, u), u);
                 } else if constexpr (_Choice_u<_G, _U>._Strategy == _St_u::_vertex_inner_edges) {
