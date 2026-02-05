@@ -15,8 +15,8 @@
 
 #include "graph/graph.hpp"
 #include "graph/views/vertexlist.hpp"
-#include "graph/views/depth_first_search.hpp"
-#include "graph/views/breadth_first_search.hpp"
+#include "graph/views/dfs.hpp"
+#include "graph/views/bfs.hpp"
 #include <stack>
 #include <random>
 #include <numeric>
@@ -36,10 +36,9 @@ using adj_list::vertices;
 using adj_list::edges;
 using adj_list::target_id;
 
-template <adjacency_list      G,
-          adjacency_list      GT,
-          random_access_range Component>
-requires random_access_range<vertex_range_t<G>> && integral<vertex_id_t<G>>
+template <index_adjacency_list G,
+          index_adjacency_list GT,
+          random_access_range  Component>
 void kosaraju(G&&        g,        // graph
               GT&&       g_t,      // graph transpose
               Component& component // out: strongly connected component assignment
@@ -51,29 +50,44 @@ void kosaraju(G&&        g,        // graph
   std::fill(component.begin(), component.end(), std::numeric_limits<CT>::max());
   std::vector<vertex_id_t<G>> order;
 
-  for (auto&& [uid, u] : views::vertexlist(g)) {
-    if (visited[uid]) {
-      continue;
-    }
-    visited[uid] = true;
-    std::stack<vertex_id_t<G>> active;
-    active.push(uid);
-    auto dfs = graph::views::sourced_edges_depth_first_search(g, uid);
-    for (auto&& [vid, wid, vw] : dfs) {
-      while (vid != active.top()) {
-        order.push_back(active.top());
-        active.pop();
-      }
-      if (visited[wid]) {
-        dfs.cancel(cancel_search::cancel_branch);
+  // Store a reference to avoid forwarding reference issues in lambda
+  auto& g_ref = g;
+
+  // Helper: iterative DFS to compute finish times (post-order)
+  auto dfs_finish_order = [&](vertex_id_t<G> start) {
+    std::stack<std::pair<vertex_id_t<G>, bool>> stack; // (vertex, children_visited)
+    stack.push({start, false});
+    visited[start] = true;
+
+    while (!stack.empty()) {
+      auto [uid, children_visited] = stack.top();
+      stack.pop();
+
+      if (children_visited) {
+        // All children have been visited, add to finish order
+        order.push_back(uid);
       } else {
-        active.push(wid);
-        visited[wid] = true;
+        // Mark that we'll process this vertex after its children
+        stack.push({uid, true});
+
+        // Push all unvisited neighbors
+        auto uid_vertex = *find_vertex(g_ref, uid);
+        for (auto&& [e] : views::incidence(g_ref, uid_vertex)) {
+          auto vid = target_id(g_ref, e);
+          if (!visited[vid]) {
+            visited[vid] = true;
+            stack.push({vid, false});
+          }
+        }
       }
     }
-    while (!active.empty()) {
-      order.push_back(active.top());
-      active.pop();
+  };
+
+  // First pass: compute finish times on original graph
+  for (auto&& vinfo : views::vertexlist(g_ref)) {
+    auto uid = vertex_id(g_ref, vinfo.vertex);
+    if (!visited[uid]) {
+      dfs_finish_order(uid);
     }
   }
 
@@ -81,11 +95,11 @@ void kosaraju(G&&        g,        // graph
   std::ranges::reverse_view reverse{order};
   for (auto& uid : reverse) {
     if (component[uid] == std::numeric_limits<CT>::max()) {
-      component[uid] = cid;
-      vertices_depth_first_search_view<GT> dfs(g_t, uid);
-      for (auto&& [vid, v] : dfs) {
+      graph::views::vertices_dfs_view<std::remove_reference_t<GT>> dfs(g_t, uid);
+      for (auto&& [v] : dfs) {
+        auto vid = vertex_id(g_t, v);
         if (component[vid] != std::numeric_limits<CT>::max()) {
-          dfs.cancel(cancel_search::cancel_branch);
+          dfs.cancel(graph::views::cancel_search::cancel_branch);
         } else {
           component[vid] = cid;
         }
@@ -95,9 +109,8 @@ void kosaraju(G&&        g,        // graph
   }
 }
 
-template <adjacency_list      G,
-          random_access_range Component>
-requires random_access_range<vertex_range_t<G>> && integral<vertex_id_t<G>>
+template <index_adjacency_list G,
+          random_access_range  Component>
 size_t connected_components(G&&        g,        // graph
                             Component& component // out: connected component assignment
 ) {
@@ -122,7 +135,8 @@ size_t connected_components(G&&        g,        // graph
     while (!S.empty()) {
       auto vid = S.top();
       S.pop();
-      for (auto&& [wid, vw] : views::incidence(g, vid)) {
+      for (auto&& einfo : views::incidence(g, vid)) {
+        auto wid = target_id(g, einfo.edge);
         if (component[wid] == std::numeric_limits<CT>::max()) {
           component[wid] = cid;
           S.push(wid);
@@ -183,9 +197,8 @@ static vertex_id_t sample_frequent_element(Component& component, size_t num_samp
   return num;
 }
 
-template <adjacency_list G, random_access_range Component>
-requires random_access_range<vertex_range_t<G>> && integral<vertex_id_t<G>> &&
-         std::convertible_to<range_value_t<Component>, vertex_id_t<G>> &&
+template <index_adjacency_list G, random_access_range Component>
+requires std::convertible_to<range_value_t<Component>, vertex_id_t<G>> &&
          std::convertible_to<vertex_id_t<G>, range_value_t<Component>>
 void afforest(G&&          g,         // graph
               Component&   component, // out: connected component assignment
@@ -194,11 +207,12 @@ void afforest(G&&          g,         // graph
   std::iota(component.begin(), component.end(), 0);
 
   for (size_t r = 0; r < neighbor_rounds; ++r) {
-    for (auto&& [uid, u] : views::vertexlist(g)) {
+    for (auto&& [u] : views::vertexlist(g)) {
+      auto uid = vertex_id(g, u);
       if (r < size(edges(g, u))) {
         auto it = edges(g, u).begin();
         std::advance(it, r);
-        link(uid, target_id(g, *it), component);
+        link(static_cast<vertex_id_t<G>>(uid), static_cast<vertex_id_t<G>>(target_id(g, *it)), component);
       }
     }
     compress(component);
@@ -206,15 +220,16 @@ void afforest(G&&          g,         // graph
 
   vertex_id_t<G> c = sample_frequent_element<vertex_id_t<G>>(component);
 
-  for (auto&& [uid, u] : views::vertexlist(g)) {
+  for (auto&& vinfo : views::vertexlist(g)) {
+    auto uid = vertex_id(g, vinfo.vertex);
     if (component[uid] == c) {
       continue;
     }
     if (neighbor_rounds < edges(g, uid).size()) {
-      auto it = edges(g, u).begin();
+      auto it = edges(g, vinfo.vertex).begin();
       std::advance(it, neighbor_rounds);
-      for (; it != edges(g, u).end(); ++it) {
-        link(uid, target_id(g, *it), component);
+      for (; it != edges(g, vinfo.vertex).end(); ++it) {
+        link(static_cast<vertex_id_t<G>>(uid), static_cast<vertex_id_t<G>>(target_id(g, *it)), component);
       }
     }
   }
@@ -222,9 +237,8 @@ void afforest(G&&          g,         // graph
   compress(component);
 }
 
-template <adjacency_list G, adjacency_list GT, random_access_range Component>
-requires random_access_range<vertex_range_t<G>> && integral<vertex_id_t<G>> &&
-         std::convertible_to<range_value_t<Component>, vertex_id_t<G>> &&
+template <index_adjacency_list G, adjacency_list GT, random_access_range Component>
+requires std::convertible_to<range_value_t<Component>, vertex_id_t<G>> &&
          std::convertible_to<vertex_id_t<G>, range_value_t<Component>>
 void afforest(G&&          g,         // graph
               GT&&         g_t,       // graph transpose
@@ -234,11 +248,12 @@ void afforest(G&&          g,         // graph
   std::iota(component.begin(), component.end(), 0);
 
   for (size_t r = 0; r < neighbor_rounds; ++r) {
-    for (auto&& [uid, u] : views::vertexlist(g)) {
+    for (auto&& [u] : views::vertexlist(g)) {
+      auto uid = vertex_id(g, u);
       if (r < size(edges(g, u))) {
         auto it = edges(g, u).begin();
         std::advance(it, r);
-        link(uid, target_id(g, *it), component);
+        link(static_cast<vertex_id_t<G>>(uid), static_cast<vertex_id_t<G>>(target_id(g, *it)), component);
       }
     }
     compress(component);
@@ -246,7 +261,8 @@ void afforest(G&&          g,         // graph
 
   vertex_id_t<G> c = sample_frequent_element<vertex_id_t<G>>(component);
 
-  for (auto&& [uid, u] : views::vertexlist(g)) {
+  for (auto&& [u] : views::vertexlist(g)) {
+    auto uid = vertex_id(g, u);
     if (component[uid] == c) {
       continue;
     }
@@ -254,11 +270,11 @@ void afforest(G&&          g,         // graph
       auto it = edges(g, u).begin();
       std::advance(it, neighbor_rounds);
       for (; it != edges(g, u).end(); ++it) {
-        link(uid, target_id(g, *it), component);
+        link(static_cast<vertex_id_t<G>>(uid), static_cast<vertex_id_t<G>>(target_id(g, *it)), component);
       }
     }
     for (auto it2 = edges(g_t, u).begin(); it2 != edges(g_t, u).end(); ++it2) {
-      link(uid, target_id(g_t, *it2), component);
+      link(static_cast<vertex_id_t<G>>(uid), static_cast<vertex_id_t<G>>(target_id(g_t, *it2)), component);
     }
   }
 

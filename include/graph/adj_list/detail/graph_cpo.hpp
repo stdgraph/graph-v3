@@ -664,12 +664,14 @@ namespace _cpo_impls {
         
         // Check if we can use default implementation: edges(g, *find_vertex(g, uid))
         // We check that find_vertex works and returns something dereferenceable to a vertex descriptor
+        // and that edges(g, vertex_descriptor) is callable via member or ADL (not recursively via uid)
         template<typename G, typename VId>
         concept _has_default_uid = requires(G& g, const VId& uid) {
             { find_vertex(g, uid) } -> std::input_iterator;
             requires vertex_descriptor_type<decltype(*find_vertex(g, uid))>;
-            requires _has_edge_value_pattern<G, decltype(*find_vertex(g, uid))>;
-        };
+        } && (_has_member_u<G, decltype(*find_vertex(std::declval<G&>(), std::declval<const VId&>()))> ||
+              _has_adl_u<G, decltype(*find_vertex(std::declval<G&>(), std::declval<const VId&>()))> ||
+              _has_edge_value_pattern<G, decltype(*find_vertex(std::declval<G&>(), std::declval<const VId&>()))>);
         
         template<typename G, typename VId>
         [[nodiscard]] consteval _Choice_t<_St_uid> _Choose_uid() noexcept {
@@ -692,8 +694,14 @@ namespace _cpo_impls {
             if constexpr (is_edge_descriptor_view_v<ResultType>) {
                 // Already an edge_descriptor_view, return as-is
                 return std::forward<Result>(result);
+            } else if constexpr (std::ranges::range<ResultType>) {
+                // Range (including subrange) - construct directly with iterators
+                using VertexIterType = typename U::iterator_type;
+                using EdgeIterType = std::ranges::iterator_t<ResultType>;
+                return edge_descriptor_view<EdgeIterType, VertexIterType>(
+                    std::ranges::begin(result), std::ranges::end(result), source_vertex);
             } else {
-                // Not an edge_descriptor_view, wrap it
+                // Not a range, assume it's a container - use deduction guide
                 return edge_descriptor_view(std::forward<Result>(result), source_vertex);
             }
         }

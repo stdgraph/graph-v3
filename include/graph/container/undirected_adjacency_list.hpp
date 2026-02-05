@@ -1023,32 +1023,27 @@ public: // Accessors
   /// @complexity O(1)
   constexpr bool has_edge() const noexcept { return edges_size_ > 0; }
 
-  /// @brief Get edges from a vertex descriptor (CPO-compatible).
+private: // CPO support via ADL (friend functions)
+  /// @brief Get edges from a vertex descriptor (CPO: edges(g, u)).
   /// @tparam U Vertex descriptor type.
+  /// @param g The graph.
   /// @param u The vertex descriptor.
-  /// @return edge_descriptor_view over the vertex's edges.
+  /// @return Native vertex_edge_range (CPO will wrap in edge_descriptor_view).
   /// @complexity O(1)
   template <typename U>
     requires adj_list::vertex_descriptor_type<U>
-  constexpr auto edges(const U& u) noexcept {
+  friend constexpr auto edges(graph_type& g, const U& u) noexcept {
     auto uid = static_cast<vertex_id_type>(u.vertex_id());
-    auto& vtx = vertices_[uid];
-    auto edges_rng = vtx.edges(*static_cast<graph_type*>(this), uid);
-    using edge_iter_t = vertex_edge_iterator;
-    using vertex_iter_t = typename U::iterator_type;
-    return adj_list::edge_descriptor_view<edge_iter_t, vertex_iter_t>(edges_rng, u);
+    return g.vertices_[uid].edges(g, uid);
   }
   template <typename U>
     requires adj_list::vertex_descriptor_type<U>
-  constexpr auto edges(const U& u) const noexcept {
+  friend constexpr auto edges(const graph_type& g, const U& u) noexcept {
     auto uid = static_cast<vertex_id_type>(u.vertex_id());
-    const auto& vtx = vertices_[uid];
-    auto edges_rng = vtx.edges(*static_cast<const graph_type*>(this), uid);
-    using edge_iter_t = const_vertex_edge_iterator;
-    using vertex_iter_t = typename U::iterator_type;
-    return adj_list::edge_descriptor_view<edge_iter_t, vertex_iter_t>(edges_rng, u);
+    return g.vertices_[uid].edges(g, uid);
   }
 
+public:
   /// @brief Get range of all edges.
   /// @note Each undirected edge appears twice in iteration (once from each endpoint).
   /// @complexity O(1) to create range, O(V+E) to iterate.

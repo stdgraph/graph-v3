@@ -5,6 +5,7 @@
 add_executable(test_algorithms
     test_dijkstra_shortest_paths.cpp
     test_bellman_ford_shortest_paths.cpp
+    test_connected_components.cpp
 )
 
 target_link_libraries(test_algorithms
