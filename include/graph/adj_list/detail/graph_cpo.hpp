@@ -607,7 +607,7 @@ namespace _cpo_impls {
         using _cpo_instances::find_vertex;
         
         // Strategy enum for edges(g, u) - vertex descriptor version
-        enum class _St_u { _none, _vertex_member, _adl, _vertex_inner_edges, _edge_value_pattern };
+        enum class _St_u { _none, _adl, _edge_value_pattern };
         
         // Check for ADL edges(g, u)
         template<typename G, typename U>
@@ -741,12 +741,8 @@ namespace _cpo_impls {
             {
                 using _G = std::remove_cvref_t<G>;
                 using _U = std::remove_cvref_t<U>;
-                if constexpr (_Choice_u<_G, _U>._Strategy == _St_u::_vertex_member) {
-                    return _wrap_if_needed(u.edges(), u);
-                } else if constexpr (_Choice_u<_G, _U>._Strategy == _St_u::_adl) {
+                if constexpr (_Choice_u<_G, _U>._Strategy == _St_u::_adl) {
                     return _wrap_if_needed(edges(g, u), u);
-                } else if constexpr (_Choice_u<_G, _U>._Strategy == _St_u::_vertex_inner_edges) {
-                    return _wrap_if_needed(u.inner_value(g).edges(), u);
                 } else if constexpr (_Choice_u<_G, _U>._Strategy == _St_u::_edge_value_pattern) {
                     return edge_descriptor_view(u.inner_value(g), u);
                 }
