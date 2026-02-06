@@ -72,7 +72,7 @@ constexpr void init_shortest_paths(Distances& distances) {
 template <class Distances, class Predecessors>
 constexpr void init_shortest_paths(Distances& distances, Predecessors& predecessors) {
   init_shortest_paths(distances);
-  iota(predecessors.begin(), predecessors.end(), 0);
+  std::iota(predecessors.begin(), predecessors.end(), 0);
 }
 
 //

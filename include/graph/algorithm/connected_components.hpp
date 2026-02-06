@@ -550,7 +550,26 @@ static vertex_id_t sample_frequent_element(Component& component, size_t num_samp
  * - Neighbor sampling reduces total edge processing for many graphs
  * - Sampling step identifies largest component to skip redundant work
  * - More efficient than DFS for graphs with large components
- * - Serial implementation; parallel version would use atomic operations
+ * - **Serial implementation**: Current code is single-threaded
+ * 
+ * @par Parallelization Potential
+ * 
+ * Afforest is designed to be highly parallelizable and is based on the parallel
+ * algorithm by Sutton et al. (2018). To implement a multi-threaded version:
+ * 
+ * - **Atomic operations in `link()`**: Replace regular reads/writes to `component[]`
+ *   with atomic compare-and-swap operations to ensure thread-safe union-find merging
+ * - **Parallel loop constructs**: Use OpenMP, TBB, or C++17 parallel algorithms
+ *   to parallelize the vertex/edge processing loops
+ * - **Lock-free union-find**: The algorithm's union-find operations can resolve
+ *   conflicts through atomic CAS, allowing concurrent execution without locks
+ * - **Phase synchronization**: Barrier synchronization after neighbor rounds
+ *   and compress operations to ensure consistency
+ * 
+ * The algorithm's design (neighbor sampling + union-find) makes it particularly
+ * well-suited for parallelization compared to DFS-based approaches, as different
+ * threads can independently process edges and conflicts are naturally resolved
+ * by the union-find structure
  * 
  * @par Performance Tuning
  * 
