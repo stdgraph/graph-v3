@@ -77,56 +77,6 @@ struct CountingVisitor {
 };
 
 // =============================================================================
-// Helper Function Tests
-// =============================================================================
-
-TEST_CASE("bfs_infinite_distance - returns max distance", "[algorithm][bfs][helpers]") {
-    auto inf = bfs_infinite_distance();
-    REQUIRE(inf == std::numeric_limits<Distance>::max());
-}
-
-TEST_CASE("bfs_zero - returns zero distance", "[algorithm][bfs][helpers]") {
-    auto zero = bfs_zero();
-    REQUIRE(zero == 0);
-}
-
-TEST_CASE("init_bfs - initializes distances only", "[algorithm][bfs][helpers]") {
-    Distances distances(5);
-    
-    // Set some non-infinite values
-    distances[0] = 10;
-    distances[2] = 20;
-    
-    init_bfs(distances);
-    
-    // All should be infinite after initialization
-    for (size_t i = 0; i < distances.size(); ++i) {
-        REQUIRE(distances[i] == bfs_infinite_distance());
-    }
-}
-
-TEST_CASE("init_bfs - initializes distances and predecessors", "[algorithm][bfs][helpers]") {
-    Distances distances(5);
-    Predecessors predecessors(5);
-    
-    // Set some values
-    distances[0] = 10;
-    predecessors[1] = 99;
-    
-    init_bfs(distances, predecessors);
-    
-    // All distances should be infinite
-    for (size_t i = 0; i < distances.size(); ++i) {
-        REQUIRE(distances[i] == bfs_infinite_distance());
-    }
-    
-    // Predecessors should be initialized to their own indices
-    for (size_t i = 0; i < predecessors.size(); ++i) {
-        REQUIRE(predecessors[i] == static_cast<int>(i));
-    }
-}
-
-// =============================================================================
 // Single-Source BFS Tests
 // =============================================================================
 

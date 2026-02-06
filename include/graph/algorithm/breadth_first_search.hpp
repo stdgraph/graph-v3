@@ -36,46 +36,6 @@ namespace graph {
 using adj_list::index_adjacency_list;
 using adj_list::vertex_id_t;
 
-using Distance     = int;
-using Distances    = std::vector<Distance>;
-using Predecessors = std::vector<int>;
-
-/**
- * @ingroup graph_algorithms
- * @brief Returns the largest value used to represent an infinite distance.
- * 
- * @return The largest possible distance value.
- */
-inline Distance bfs_infinite_distance() { return std::numeric_limits<Distance>::max(); }
-
-/**
- * @ingroup graph_algorithms
- * @brief Returns a distance value of zero.
- * 
- * @return A value of zero distance.
- */
-inline Distance bfs_zero() { return 0; }
-
-/**
- * @ingroup graph_algorithms
- * @brief Initializes the distance values to the infinite value.
- * 
- * @param distances The range of distance values to initialize.
- */
-inline void init_bfs(Distances& distances) { std::ranges::fill(distances, bfs_infinite_distance()); }
-
-/**
- * @ingroup graph_algorithms
- * @brief Initializes the distance and predecessor values for BFS.
- * 
- * @param distances The range of distance values to initialize. Each value will be assigned the infinite distance.
- * @param predecessors The range of predecessors to initialize. Each value will be assigned the vertex id.
- */
-inline void init_bfs(Distances& distances, Predecessors& predecessors) {
-  init_bfs(distances);
-  std::iota(predecessors.begin(), predecessors.end(), 0);
-}
-
 /**
  * @brief Multi-source breadth-first search with visitor pattern.
  * 
