@@ -144,50 +144,12 @@ TEST_CASE("edges(g,uid) - weighted graph with tuples", "[edges][cpo][uid][tuple]
 }
 
 // =============================================================================
-// Test: Custom Member Function
+// Test: Custom Member Function (removed - no longer supported)
 // =============================================================================
 
-namespace test_member {
-    struct CustomGraph {
-        std::vector<std::vector<int>> adjacency_list;
-        
-        auto& operator[](std::size_t idx) { return adjacency_list[idx]; }
-        const auto& operator[](std::size_t idx) const { return adjacency_list[idx]; }
-        
-        auto vertices() {
-            return vertex_descriptor_view(adjacency_list);
-        }
-        
-        // edges(g,u) - takes vertex descriptor
-        template<typename U>
-            requires vertex_descriptor_type<U>
-        auto edges(const U& u) {
-            return edge_descriptor_view(u.inner_value(adjacency_list), u);
-        }
-        
-        // Custom edges(uid) member function
-        auto edges(std::size_t uid) {
-            // Return edges from the specified vertex ID
-            // First get the vertex descriptor, then call edges(g,u)
-            auto v = *std::ranges::next(std::ranges::begin(vertices()), static_cast<std::iter_difference_t<decltype(std::ranges::begin(vertices()))>>(uid));
-            return edges(v);  // Call the descriptor version
-        }
-    };
-}
-
-TEST_CASE("edges(g,uid) - custom member function", "[edges][cpo][uid][member]") {
-    test_member::CustomGraph graph{
-        {{1, 2}, {3}, {}, {0, 1}}
-    };
-    
-    auto e0 = edges(graph, 0);
-    auto e1 = edges(graph, 1);
-    auto e3 = edges(graph, 3);
-    
-    REQUIRE(std::ranges::distance(e0) == 2);
-    REQUIRE(std::ranges::distance(e1) == 1);
-    REQUIRE(std::ranges::distance(e3) == 2);
-}
+// NOTE: The g.edges(uid) member function pattern is no longer a supported
+// customization point for edges(g, uid). Use ADL edges(g, uid) instead,
+// as shown in the ADL test below.
 
 // =============================================================================
 // Test: ADL Customization

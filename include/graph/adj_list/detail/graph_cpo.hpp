@@ -652,13 +652,7 @@ namespace _cpo_impls {
         }
         
         // Strategy enum for edges(g, uid) - vertex ID version
-        enum class _St_uid { _none, _member, _adl, _default };
-        
-        // Check for g.edges(uid) member function - vertex ID
-        template<typename G, typename VId>
-        concept _has_member_uid = requires(G& g, const VId& uid) {
-            { g.edges(uid) } -> std::ranges::forward_range;
-        };
+        enum class _St_uid { _none, _adl, _default };
         
         // Check for ADL edges(g, uid) - vertex ID
         template<typename G, typename VId>
@@ -678,9 +672,7 @@ namespace _cpo_impls {
         
         template<typename G, typename VId>
         [[nodiscard]] consteval _Choice_t<_St_uid> _Choose_uid() noexcept {
-            if constexpr (_has_member_uid<G, VId>) {
-                return {_St_uid::_member, noexcept(std::declval<G&>().edges(std::declval<const VId&>()))};
-            } else if constexpr (_has_adl_uid<G, VId>) {
+            if constexpr (_has_adl_uid<G, VId>) {
                 return {_St_uid::_adl, noexcept(edges(std::declval<G&>(), std::declval<const VId&>()))};
             } else if constexpr (_has_default_uid<G, VId>) {
                 // Default is not noexcept as it depends on find_vertex and edges(g,u)
@@ -763,9 +755,8 @@ namespace _cpo_impls {
              * This is a convenience function that combines find_vertex + edges(g,u).
              * 
              * Resolution order:
-             * 1. g.edges(uid) - Member function (highest priority)
-             * 2. edges(g, uid) - ADL (medium priority)
-             * 3. edges(g, *find_vertex(g, uid)) - Default (lowest priority)
+             * 1. edges(g, uid) - ADL (highest priority)
+             * 2. edges(g, *find_vertex(g, uid)) - Default (lowest priority)
              * 
              * The default implementation:
              * - Uses find_vertex(g, uid) to get the vertex iterator
@@ -792,21 +783,7 @@ namespace _cpo_impls {
                 using _G = std::remove_cvref_t<G>;
                 using _VId = std::remove_cvref_t<VId>;
                 
-                if constexpr (_Choice_uid<_G, _VId>._Strategy == _St_uid::_member) {
-                    // Member function: g.edges(uid)
-                    // Wrap result but we don't have the vertex descriptor yet
-                    // The member function must handle this appropriately
-                    auto result = [&g, &uid]() {
-                        if constexpr (requires { typename _G::vertex_id_type; }) {
-                            return g.edges(static_cast<typename _G::vertex_id_type>(uid));
-                        } else {
-                            return g.edges(uid);
-                        }
-                    }();
-                    // For member function, we need to get the vertex descriptor to wrap properly
-                    auto v = *find_vertex(g, uid);
-                    return _wrap_if_needed(std::move(result), v);
-                } else if constexpr (_Choice_uid<_G, _VId>._Strategy == _St_uid::_adl) {
+                if constexpr (_Choice_uid<_G, _VId>._Strategy == _St_uid::_adl) {
                     // ADL: edges(g, uid)
                     auto result = [&g, &uid]() {
                         if constexpr (requires { typename _G::vertex_id_type; }) {
