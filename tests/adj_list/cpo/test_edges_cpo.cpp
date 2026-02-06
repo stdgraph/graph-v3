@@ -238,39 +238,116 @@ TEST_CASE("edges(g,u) - map<int, vector<int>>", "[edges][cpo][default][map]") {
 }
 
 // =============================================================================
-// Test: Custom Member Function Override
+// Test: Custom Graph Member edges(g,u) -> Use ADL instead
 // =============================================================================
 
-TEST_CASE("edges(g,u) - custom member function", "[edges][cpo][member]") {
-    struct CustomGraph {
-        std::vector<std::vector<int>> adj_list = {
-            {1, 2},
-            {2},
-            {}
-        };
+// NOTE: Graph member function g.edges(u) is no longer a supported customization point.
+// Use ADL edges(g, u) instead, as shown in the ADL test below.
+
+// =============================================================================
+// Test: Vertex Member Function (u.inner_value(g).edges())
+// =============================================================================
+
+TEST_CASE("edges(g,u) - vertex with edges() member function", "[edges][cpo][vertex_member]") {
+    // Native vertex type with edges() member function
+    struct Vertex {
+        std::vector<int> edge_list;
         
-        // Custom edges member function - return mutable reference to allow edge_descriptor_view construction
-        auto edges(vertex_descriptor<std::vector<std::vector<int>>::iterator> u) {
-            auto& edge_container = adj_list[u.vertex_id()];
-            return edge_descriptor_view(edge_container, u);
+        // Member function that returns edges
+        auto& edges() {
+            return edge_list;
+        }
+        
+        const auto& edges() const {
+            return edge_list;
         }
     };
     
-    CustomGraph g;
-    auto verts = vertices(g.adj_list);
-    auto v0 = *verts.begin();
+    std::vector<Vertex> graph = {
+        {{1, 2, 3}},    // vertex 0 -> edges to 1, 2, 3
+        {{2, 3}},       // vertex 1 -> edges to 2, 3
+        {{3}},          // vertex 2 -> edge to 3
+        {{}}            // vertex 3 -> no edges
+    };
     
-    // This should use g.edges(v0) member function
-    auto edge_range = edges(g, v0);
-    
-    std::vector<int> targets;
-    for (auto e : edge_range) {
-        targets.push_back(e.target_id(g.adj_list[0]));
+    SECTION("Get edges from vertex 0 via vertex member") {
+        auto verts = vertices(graph);
+        auto v0 = *verts.begin();
+        
+        // This should use u.inner_value(g).edges() member function (highest priority)
+        auto edge_range = edges(graph, v0);
+        
+        // Check type
+        REQUIRE(std::ranges::forward_range<decltype(edge_range)>);
+        
+        // Collect target IDs
+        std::vector<int> targets;
+        for (auto e : edge_range) {
+            targets.push_back(e.target_id(graph[0].edge_list));
+        }
+        
+        REQUIRE(targets.size() == 3);
+        REQUIRE(targets[0] == 1);
+        REQUIRE(targets[1] == 2);
+        REQUIRE(targets[2] == 3);
     }
     
-    REQUIRE(targets.size() == 2);
-    REQUIRE(targets[0] == 1);
-    REQUIRE(targets[1] == 2);
+    SECTION("Get edges from vertex 1") {
+        auto verts = vertices(graph);
+        auto it = verts.begin();
+        ++it;
+        auto v1 = *it;
+        
+        auto edge_range = edges(graph, v1);
+        
+        std::vector<int> targets;
+        for (auto e : edge_range) {
+            targets.push_back(e.target_id(graph[1].edge_list));
+        }
+        
+        REQUIRE(targets.size() == 2);
+        REQUIRE(targets[0] == 2);
+        REQUIRE(targets[1] == 3);
+    }
+    
+    SECTION("Get edges from vertex with no edges") {
+        auto verts = vertices(graph);
+        auto it = verts.begin();
+        std::advance(it, 3);
+        auto v3 = *it;
+        
+        auto edge_range = edges(graph, v3);
+        
+        REQUIRE(std::ranges::empty(edge_range));
+    }
+    
+    SECTION("Edge descriptors maintain source vertex") {
+        auto verts = vertices(graph);
+        auto v0 = *verts.begin();
+        
+        auto edge_range = edges(graph, v0);
+        for (auto e : edge_range) {
+            REQUIRE(e.source().vertex_id() == 0);
+        }
+    }
+    
+    SECTION("Const graph access") {
+        const auto& const_graph = graph;
+        auto verts = vertices(const_graph);
+        auto v0 = *verts.begin();
+        
+        auto edge_range = edges(const_graph, v0);
+        
+        std::vector<int> targets;
+        for (auto e : edge_range) {
+            targets.push_back(e.target_id(const_graph[0].edge_list));
+        }
+        
+        REQUIRE(targets.size() == 3);
+        REQUIRE(targets[0] == 1);
+        REQUIRE(targets[1] == 2);
+        REQUIRE(targets[2] == 3);
+    }
 }
 
 // =============================================================================
