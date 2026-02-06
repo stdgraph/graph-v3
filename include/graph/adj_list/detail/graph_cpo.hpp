@@ -690,7 +690,7 @@ namespace _cpo_impls {
                 // Already an edge_descriptor_view, return as-is
                 return std::forward<Result>(result);
             } else {
-                // Range or container - use 2-arg deduction guide
+                // Container or range - use 2-arg deduction guide which works for both
                 return edge_descriptor_view(std::forward<Result>(result), source_vertex);
             }
         }

@@ -179,12 +179,20 @@ private:
 
 // Deduction guides for per-vertex adjacency
 template<typename Container, typename VertexDesc>
+    requires requires { typename Container::iterator; }
 edge_descriptor_view(Container&, VertexDesc) 
     -> edge_descriptor_view<typename Container::iterator, typename VertexDesc::iterator_type>;
 
 template<typename Container, typename VertexDesc>
+    requires requires { typename Container::const_iterator; }
 edge_descriptor_view(const Container&, VertexDesc) 
     -> edge_descriptor_view<typename Container::const_iterator, typename VertexDesc::iterator_type>;
+
+// Deduction guide for ranges (including subrange which lacks ::iterator typedef)
+template<typename Range, typename VertexDesc>
+    requires std::ranges::range<Range> && (!requires { typename std::remove_cvref_t<Range>::iterator; })
+edge_descriptor_view(Range&&, VertexDesc)
+    -> edge_descriptor_view<std::ranges::iterator_t<Range>, typename VertexDesc::iterator_type>;
 
 } // namespace graph::adj_list
 
