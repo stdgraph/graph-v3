@@ -9,6 +9,7 @@ add_executable(test_algorithms
     test_breadth_first_search.cpp
     test_depth_first_search.cpp
     test_topological_sort.cpp
+    test_triangle_count.cpp
 )
 
 target_link_libraries(test_algorithms
