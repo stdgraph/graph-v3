@@ -8,6 +8,7 @@ add_executable(test_algorithms
     test_connected_components.cpp
     test_breadth_first_search.cpp
     test_depth_first_search.cpp
+    test_topological_sort.cpp
 )
 
 target_link_libraries(test_algorithms
