@@ -22,10 +22,10 @@ struct CountingVisitor {
     int edges_relaxed = 0;
     int edges_not_relaxed = 0;
     
-    template<typename T> void on_discover_vertex(T) { ++vertices_discovered; }
-    template<typename T> void on_examine_vertex(T) { ++vertices_examined; }
-    template<typename T> void on_edge_relaxed(T) { ++edges_relaxed; }
-    template<typename T> void on_edge_not_relaxed(T) { ++edges_not_relaxed; }
+    template<typename G, typename T> void on_discover_vertex(const G&, const T&) { ++vertices_discovered; }
+    template<typename G, typename T> void on_examine_vertex(const G&, const T&) { ++vertices_examined; }
+    template<typename G, typename T> void on_edge_relaxed(const G&, const T&) { ++edges_relaxed; }
+    template<typename G, typename T> void on_edge_not_relaxed(const G&, const T&) { ++edges_not_relaxed; }
 };
 
 TEST_CASE("dijkstra_shortest_paths - CLRS example", "[algorithm][dijkstra_shortest_paths]") {

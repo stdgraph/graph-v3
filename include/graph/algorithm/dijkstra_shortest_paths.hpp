@@ -187,7 +187,7 @@ constexpr void dijkstra_shortest_paths(
   // (The optimizer removes this loop if on_initialize_vertex() is empty.)
   if constexpr (has_on_initialize_vertex<G, Visitor>) {
     for (id_type uid = 0; uid < N; ++uid) {
-      visitor.on_initialize_vertex({uid, *find_vertex(g, uid)});
+      visitor.on_initialize_vertex(g, *find_vertex(g, uid));
     }
   }
 
@@ -199,7 +199,7 @@ constexpr void dijkstra_shortest_paths(
     queue.push(source);
     distances[static_cast<size_t>(source)] = zero; // mark source as discovered
     if constexpr (has_on_discover_vertex<G, Visitor>) {
-      visitor.on_discover_vertex(vertex_info<id_type, vertex_t<G>, void>{source, *find_vertex(g, source)});
+      visitor.on_discover_vertex(g, *find_vertex(g, source));
     }
   }
 
@@ -208,14 +208,14 @@ constexpr void dijkstra_shortest_paths(
     const id_type uid = queue.top();
     queue.pop();
     if constexpr (has_on_examine_vertex<G, Visitor>) {
-      visitor.on_examine_vertex(vertex_info<id_type, vertex_t<G>, void>{uid, *find_vertex(g, uid)});
+      visitor.on_examine_vertex(g, *find_vertex(g, uid));
     }
 
     // Process all outgoing edges from the current vertex
     for (auto&& [uv, w] : views::incidence(g, uid, weight)) {
       const id_type vid = target_id(g, uv);
       if constexpr (has_on_examine_edge<G, Visitor>) {
-        visitor.on_examine_edge(edge_info<id_type, true, edge_t<G>, void>{uid, vid, uv});
+        visitor.on_examine_edge(g, uv);
       }
 
       // Negative weights are not allowed for Dijkstra's algorithm
@@ -233,10 +233,10 @@ constexpr void dijkstra_shortest_paths(
         // tree_edge
         if (was_edge_relaxed) {
           if constexpr (has_on_edge_relaxed<G, Visitor>) {
-            visitor.on_edge_relaxed(edge_info<id_type, true, edge_t<G>, void>{uid, vid, uv});
+            visitor.on_edge_relaxed(g, uv);
           }
           if constexpr (has_on_discover_vertex<G, Visitor>) {
-            visitor.on_discover_vertex(vertex_info<id_type, vertex_t<G>, void>{vid, *find_vertex(g, vid)});
+            visitor.on_discover_vertex(g, *find_vertex(g, vid));
           }
           queue.push(vid);
         } else {
@@ -248,12 +248,12 @@ constexpr void dijkstra_shortest_paths(
         // non-tree edge
         if (was_edge_relaxed) {
           if constexpr (has_on_edge_relaxed<G, Visitor>) {
-            visitor.on_edge_relaxed(edge_info<id_type, true, edge_t<G>, void>{uid, vid, uv});
+            visitor.on_edge_relaxed(g, uv);
           }
           queue.push(vid); // re-enqueue vid to re-evaluate its neighbors with a shorter path
         } else {
           if constexpr (has_on_edge_not_relaxed<G, Visitor>) {
-            visitor.on_edge_not_relaxed(edge_info<id_type, true, edge_t<G>, void>{uid, vid, uv});
+            visitor.on_edge_not_relaxed(g, uv);
           }
         }
       }
@@ -263,7 +263,7 @@ constexpr void dijkstra_shortest_paths(
     // and another path to this vertex has a lower accumulated weight, we'll process it again.
     // A consequence is that examine_vertex could be called twice (or more) on the same vertex.
     if constexpr (has_on_finish_vertex<G, Visitor>) {
-      visitor.on_finish_vertex(vertex_info<id_type, vertex_t<G>, void>{uid, *find_vertex(g, uid)});
+      visitor.on_finish_vertex(g, *find_vertex(g, uid));
     }
   } // while(!queue.empty())
 }

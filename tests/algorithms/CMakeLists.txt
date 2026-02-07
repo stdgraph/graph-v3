@@ -7,6 +7,7 @@ add_executable(test_algorithms
     test_bellman_ford_shortest_paths.cpp
     test_connected_components.cpp
     test_breadth_first_search.cpp
+    test_depth_first_search.cpp
 )
 
 target_link_libraries(test_algorithms

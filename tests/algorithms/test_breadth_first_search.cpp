@@ -28,28 +28,28 @@ struct BFSTrackingVisitor {
     std::vector<int> finished;
     std::vector<std::pair<int, int>> edges_examined;
     
-    template<typename T>
-    void on_initialize_vertex(T v) { 
-        initialized.push_back(static_cast<int>(v)); 
+    template<typename G, typename T>
+    void on_initialize_vertex(const G& g, const T& v) { 
+        initialized.push_back(static_cast<int>(vertex_id(g, v))); 
     }
     
-    template<typename T>
-    void on_discover_vertex(T v) { 
-        discovered.push_back(static_cast<int>(v)); 
+    template<typename G, typename T>
+    void on_discover_vertex(const G& g, const T& v) { 
+        discovered.push_back(static_cast<int>(vertex_id(g, v))); 
     }
     
-    template<typename T>
-    void on_examine_vertex(T v) { 
-        examined.push_back(static_cast<int>(v)); 
+    template<typename G, typename T>
+    void on_examine_vertex(const G& g, const T& v) { 
+        examined.push_back(static_cast<int>(vertex_id(g, v))); 
     }
     
-    template<typename T>
-    void on_finish_vertex(T v) { 
-        finished.push_back(static_cast<int>(v)); 
+    template<typename G, typename T>
+    void on_finish_vertex(const G& g, const T& v) { 
+        finished.push_back(static_cast<int>(vertex_id(g, v))); 
     }
     
-    template<typename Edge>
-    void on_examine_edge(const Edge& e) {
+    template<typename G, typename Edge>
+    void on_examine_edge(const G& g, const Edge& e) {
         // Store edge endpoints for verification
         edges_examined.push_back({-1, -1}); // Placeholder, actual implementation would extract source/target
     }
@@ -70,10 +70,10 @@ struct CountingVisitor {
     int vertices_finished = 0;
     int edges_examined = 0;
     
-    template<typename T> void on_discover_vertex(T) { ++vertices_discovered; }
-    template<typename T> void on_examine_vertex(T) { ++vertices_examined; }
-    template<typename T> void on_finish_vertex(T) { ++vertices_finished; }
-    template<typename T> void on_examine_edge(T) { ++edges_examined; }
+    template<typename G, typename T> void on_discover_vertex(const G&, const T&) { ++vertices_discovered; }
+    template<typename G, typename T> void on_examine_vertex(const G&, const T&) { ++vertices_examined; }
+    template<typename G, typename T> void on_finish_vertex(const G&, const T&) { ++vertices_finished; }
+    template<typename G, typename T> void on_examine_edge(const G&, const T&) { ++edges_examined; }
 };
 
 // =============================================================================
@@ -461,7 +461,7 @@ TEST_CASE("breadth_first_search - visitor callback ordering", "[algorithm][bfs][
 // Visitor with only some methods - defined at namespace scope  
 struct MinimalDiscoverVisitor {
     int discovered = 0;
-    template<typename T> void on_discover_vertex(T) { ++discovered; }
+    template<typename G, typename T> void on_discover_vertex(const G&, const T&) { ++discovered; }
 };
 
 TEST_CASE("breadth_first_search - visitor without optional methods", "[algorithm][bfs][visitor]") {

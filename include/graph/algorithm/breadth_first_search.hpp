@@ -35,6 +35,7 @@ namespace graph {
 // Using declarations for new namespace structure
 using adj_list::index_adjacency_list;
 using adj_list::vertex_id_t;
+using adj_list::find_vertex;
 
 /**
  * @brief Multi-source breadth-first search with visitor pattern.
@@ -219,10 +220,10 @@ void breadth_first_search(G&&            g, // graph
   for (auto uid : sources) {
     // Notify visitor of initialization
     if constexpr (has_on_initialize_vertex<G, Visitor>) {
-      visitor.on_initialize_vertex(uid);
+      visitor.on_initialize_vertex(g, *find_vertex(g, uid));
     }
     if constexpr (has_on_discover_vertex<G, Visitor>) {
-      visitor.on_discover_vertex(uid);
+      visitor.on_discover_vertex(g, *find_vertex(g, uid));
     }
     // Mark source as visited and add to queue
     visited[uid] = true;
@@ -237,7 +238,7 @@ void breadth_first_search(G&&            g, // graph
 
     // Notify visitor that we're examining this vertex
     if constexpr (has_on_examine_vertex<G, Visitor>) {
-      visitor.on_examine_vertex(uid);
+      visitor.on_examine_vertex(g, *find_vertex(g, uid));
     }
 
     // Explore all edges from current vertex
@@ -246,14 +247,14 @@ void breadth_first_search(G&&            g, // graph
 
       // Notify visitor about this edge
       if constexpr (has_on_examine_edge<G, Visitor>) {
-        visitor.on_examine_edge(uv);
+        visitor.on_examine_edge(g, uv);
       }
 
       // If target vertex not yet visited, discover it
       if (!visited[vid]) {
         visited[vid] = true; // Mark as visited before queueing
         if constexpr (has_on_discover_vertex<G, Visitor>) {
-          visitor.on_discover_vertex(vid);
+          visitor.on_discover_vertex(g, *find_vertex(g, vid));
         }
         Q.push(vid); // Add to queue for later examination
       }
@@ -261,7 +262,7 @@ void breadth_first_search(G&&            g, // graph
 
     // Notify visitor that we've finished examining all edges from this vertex
     if constexpr (has_on_finish_vertex<G, Visitor>) {
-      visitor.on_finish_vertex(uid);
+      visitor.on_finish_vertex(g, *find_vertex(g, uid));
     }
   }
 }

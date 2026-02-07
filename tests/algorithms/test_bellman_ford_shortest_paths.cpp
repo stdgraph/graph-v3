@@ -23,11 +23,11 @@ struct BellmanCountingVisitor {
     int edges_minimized = 0;
     int edges_not_minimized = 0;
     
-    template<typename T> void on_examine_edge(T) { ++edges_examined; }
-    template<typename T> void on_edge_relaxed(T) { ++edges_relaxed; }
-    template<typename T> void on_edge_not_relaxed(T) { ++edges_not_relaxed; }
-    template<typename T> void on_edge_minimized(T) { ++edges_minimized; }
-    template<typename T> void on_edge_not_minimized(T) { ++edges_not_minimized; }
+    template<typename G, typename T> void on_examine_edge(const G&, const T&) { ++edges_examined; }
+    template<typename G, typename T> void on_edge_relaxed(const G&, const T&) { ++edges_relaxed; }
+    template<typename G, typename T> void on_edge_not_relaxed(const G&, const T&) { ++edges_not_relaxed; }
+    template<typename G, typename T> void on_edge_minimized(const G&, const T&) { ++edges_minimized; }
+    template<typename G, typename T> void on_edge_not_minimized(const G&, const T&) { ++edges_not_minimized; }
 };
 
 TEST_CASE("bellman_ford_shortest_paths - CLRS example", "[algorithm][bellman_ford_shortest_paths]") {

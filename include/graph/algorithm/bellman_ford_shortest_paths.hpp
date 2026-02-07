@@ -220,7 +220,7 @@ requires convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&      //
     }
     distances[static_cast<size_t>(source)] = zero; // mark source as discovered
     if constexpr (has_on_discover_vertex<G, Visitor>) {
-      visitor.on_discover_vertex({source, *find_vertex(g, source)});
+      visitor.on_discover_vertex(g, *find_vertex(g, source));
     }
   }
 
@@ -229,19 +229,18 @@ requires convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&      //
   for (id_type k = 0; k < N; ++k) {
     at_least_one_edge_relaxed = false;
     for (auto&& [uv, w] : views::edgelist(g, weight)) {
-      using edge_info_t = edge_info<id_type, true, decltype(uv), void>;
       id_type uid = source_id(g, uv);
       id_type vid = target_id(g, uv);
       if constexpr (has_on_examine_edge<G, Visitor>) {
-        visitor.on_examine_edge(edge_info_t{uid, vid, uv});
+        visitor.on_examine_edge(g, uv);
       }
       if (relax_target(uv, uid, w)) {
         at_least_one_edge_relaxed = true;
         if constexpr (has_on_edge_relaxed<G, Visitor>) {
-          visitor.on_edge_relaxed(edge_info_t{uid, vid, uv});
+          visitor.on_edge_relaxed(g, uv);
         }
       } else if constexpr (has_on_edge_not_relaxed<G, Visitor>) {
-        visitor.on_edge_not_relaxed(edge_info_t{uid, vid, uv});
+        visitor.on_edge_not_relaxed(g, uv);
       }
     }
     if (!at_least_one_edge_relaxed)
@@ -251,7 +250,6 @@ requires convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&      //
   // Check for negative weight cycles
   if (at_least_one_edge_relaxed) {
     for (auto&& [uv, w] : views::edgelist(g, weight)) {
-      using edge_info_t = edge_info<id_type, true, decltype(uv), void>;
       id_type uid = source_id(g, uv);
       id_type vid = target_id(g, uv);
       if (compare(combine(distances[uid], w), distances[vid])) {
@@ -259,12 +257,12 @@ requires convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&      //
           predecessor[vid] = uid; // close the cycle
         }
         if constexpr (has_on_edge_not_minimized<G, Visitor>) {
-          visitor.on_edge_not_minimized(edge_info_t{uid, vid, uv});
+          visitor.on_edge_not_minimized(g, uv);
         }
         return return_type(uid);
       } else {
         if constexpr (has_on_edge_minimized<G, Visitor>) {
-          visitor.on_edge_minimized(edge_info_t{uid, vid, uv});
+          visitor.on_edge_minimized(g, uv);
         }
       }
     }
