@@ -304,7 +304,7 @@ The code uses `_null_range_type` and `_null_predecessors` which are already prop
 
 **Tasks**:
 1. Check if `dijkstra.hpp` includes `common_shortest_paths.hpp`
-   - If not, add: `#include "graph/algorithm/common_shortest_paths.hpp"`
+   - If not, add: `#include "graph/algorithm/traversal_common.hpp"`
 
 2. Remove duplicate `_null_range_type` class definition
    - Currently at lines 50-70 in `dijkstra.hpp`

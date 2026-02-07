@@ -20,7 +20,7 @@
 
 #include "graph/graph.hpp"
 #include "graph/views/incidence.hpp"
-#include "graph/algorithm/common_shortest_paths.hpp"
+#include "graph/algorithm/traversal_common.hpp"
 
 #include <vector>
 #include <queue>

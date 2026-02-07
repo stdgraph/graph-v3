@@ -14,7 +14,7 @@
 
 #include "graph/graph.hpp"
 #include "graph/views/edgelist.hpp"
-#include "graph/algorithm/common_shortest_paths.hpp"
+#include "graph/algorithm/traversal_common.hpp"
 
 #include <ranges>
 #include <optional>

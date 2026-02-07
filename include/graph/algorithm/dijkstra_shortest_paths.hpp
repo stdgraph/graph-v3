@@ -13,7 +13,7 @@
  */
 
 #include "graph/graph.hpp"
-#include "graph/algorithm/common_shortest_paths.hpp"
+#include "graph/algorithm/traversal_common.hpp"
 
 #include <queue>
 #include <vector>
