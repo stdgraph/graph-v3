@@ -7,6 +7,7 @@
 #include <catch2/catch_template_test_macros.hpp>
 #include <graph/algorithm/tc.hpp>
 #include <graph/container/dynamic_graph.hpp>
+#include <graph/container/undirected_adjacency_list.hpp>
 #include <graph/container/traits/vos_graph_traits.hpp>
 #include <graph/container/traits/uos_graph_traits.hpp>
 #include <graph/container/traits/dos_graph_traits.hpp>
@@ -16,6 +17,9 @@ using namespace graph::container;
 
 // Graph type with sorted edges (required for triangle_count)
 using vos_void = dynamic_graph<void, void, void, uint32_t, false, vos_graph_traits<void, void, void, uint32_t, false>>;
+
+// Undirected adjacency list (automatically handles bidirectional edges)
+using ual_int = undirected_adjacency_list<int, int>;
 
 //=============================================================================
 // Basic Triangle Tests
@@ -193,4 +197,134 @@ TEST_CASE("triangle_count - chordal cycle", "[algorithm][triangle_count]") {
                 {3, 4}, {4, 3}, {4, 0}, {0, 4}, {0, 2}, {2, 0}});
     
     REQUIRE(triangle_count(g) == 1);  // Only {0,1,2}
+}
+
+//=============================================================================
+// undirected_adjacency_list Tests (no manual bidirectional edges needed)
+//=============================================================================
+
+TEST_CASE("triangle_count - UAL single triangle", "[algorithm][triangle_count][ual]") {
+    ual_int g;
+    for (int i = 0; i < 3; ++i) g.create_vertex(0);
+    
+    // Triangle: 0-1-2-0 (only create once, automatic bidirectional)
+    g.create_edge(0, 1, 0);
+    g.create_edge(1, 2, 0);
+    g.create_edge(0, 2, 0);
+    
+    REQUIRE(triangle_count(g) == 1);
+}
+
+TEST_CASE("triangle_count - UAL complete graph K4", "[algorithm][triangle_count][ual]") {
+    ual_int g;
+    for (int i = 0; i < 4; ++i) g.create_vertex(0);
+    
+    // Complete graph on 4 vertices has C(4,3) = 4 triangles
+    for (int i = 0; i < 4; ++i) {
+        for (int j = i + 1; j < 4; ++j) {
+            g.create_edge(i, j, 0);
+        }
+    }
+    
+    REQUIRE(triangle_count(g) == 4);
+}
+
+TEST_CASE("triangle_count - UAL two separate triangles", "[algorithm][triangle_count][ual]") {
+    ual_int g;
+    for (int i = 0; i < 6; ++i) g.create_vertex(0);
+    
+    // Triangle 1: 0-1-2
+    g.create_edge(0, 1, 0);
+    g.create_edge(1, 2, 0);
+    g.create_edge(0, 2, 0);
+    
+    // Triangle 2: 3-4-5
+    g.create_edge(3, 4, 0);
+    g.create_edge(4, 5, 0);
+    g.create_edge(3, 5, 0);
+    
+    REQUIRE(triangle_count(g) == 2);
+}
+
+TEST_CASE("triangle_count - UAL path graph (no triangles)", "[algorithm][triangle_count][ual]") {
+    ual_int g;
+    for (int i = 0; i < 5; ++i) g.create_vertex(0);
+    
+    // Path: 0-1-2-3-4
+    for (int i = 0; i < 4; ++i) {
+        g.create_edge(i, i + 1, 0);
+    }
+    
+    REQUIRE(triangle_count(g) == 0);
+}
+
+TEST_CASE("triangle_count - UAL star graph (no triangles)", "[algorithm][triangle_count][ual]") {
+    ual_int g;
+    for (int i = 0; i < 6; ++i) g.create_vertex(0);
+    
+    // Star: center vertex 0 connected to all others
+    for (int i = 1; i < 6; ++i) {
+        g.create_edge(0, i, 0);
+    }
+    
+    REQUIRE(triangle_count(g) == 0);
+}
+
+TEST_CASE("triangle_count - UAL diamond graph", "[algorithm][triangle_count][ual]") {
+    ual_int g;
+    for (int i = 0; i < 4; ++i) g.create_vertex(0);
+    
+    // Diamond: 0 at top, 1,2 in middle (connected), 3 at bottom
+    g.create_edge(0, 1, 0);
+    g.create_edge(0, 2, 0);
+    g.create_edge(1, 2, 0);
+    g.create_edge(1, 3, 0);
+    g.create_edge(2, 3, 0);
+    
+    REQUIRE(triangle_count(g) == 2); // {0,1,2} and {1,2,3}
+}
+
+TEST_CASE("triangle_count - UAL wheel graph", "[algorithm][triangle_count][ual]") {
+    ual_int g;
+    for (int i = 0; i < 6; ++i) g.create_vertex(0);
+    
+    // Wheel: center vertex 0, rim vertices 1-5 forming cycle
+    for (int i = 1; i < 6; ++i) {
+        g.create_edge(0, i, 0);
+    }
+    // Rim cycle
+    for (int i = 1; i < 5; ++i) {
+        g.create_edge(i, i + 1, 0);
+    }
+    g.create_edge(5, 1, 0);
+    
+    REQUIRE(triangle_count(g) == 5); // One triangle for each rim edge with center
+}
+
+TEST_CASE("triangle_count - UAL graph with isolated vertices", "[algorithm][triangle_count][ual]") {
+    ual_int g;
+    for (int i = 0; i < 7; ++i) g.create_vertex(0);
+    
+    // Triangle: 0-1-2
+    g.create_edge(0, 1, 0);
+    g.create_edge(1, 2, 0);
+    g.create_edge(0, 2, 0);
+    
+    // Vertices 3, 4, 5, 6 are isolated
+    
+    REQUIRE(triangle_count(g) == 1);
+}
+
+TEST_CASE("triangle_count - UAL bipartite graph (no triangles)", "[algorithm][triangle_count][ual]") {
+    ual_int g;
+    for (int i = 0; i < 6; ++i) g.create_vertex(0);
+    
+    // Complete bipartite K(3,3): {0,1,2} to {3,4,5}
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 3; j < 6; ++j) {
+            g.create_edge(i, j, 0);
+        }
+    }
+    
+    REQUIRE(triangle_count(g) == 0);
 }
