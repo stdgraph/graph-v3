@@ -11,6 +11,7 @@ add_executable(test_algorithms
     test_topological_sort.cpp
     test_triangle_count.cpp
     test_mis.cpp
+    test_mst.cpp
 )
 
 target_link_libraries(test_algorithms
