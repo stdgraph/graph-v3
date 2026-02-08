@@ -309,5 +309,41 @@ concept index_sourced_adjacency_list =
     index_adjacency_list<G> &&
     sourced_adjacency_list<G>;
 
+/**
+ * @brief Concept for graphs with sorted adjacency lists.
+ * 
+ * A graph satisfies ordered_edges if the adjacency list for each vertex is sorted by
+ * target vertex ID in ascending order. This property enables efficient set intersection
+ * algorithms using linear merge operations.
+ * 
+ * Requirements:
+ * - Must satisfy adjacency_list
+ * - Edge range must be a forward_range
+ * 
+ * @tparam G Graph type
+ * 
+ * @note This is a semantic requirement that cannot be fully checked at compile time.
+ *       The algorithm assumes adjacency lists are sorted by target_id in ascending order.
+ *       Graph types using std::set, std::map, or similar ordered containers satisfy this.
+ * 
+ * @note Required for algorithms like triangle_count. Graphs with unsorted adjacency
+ *       lists will produce incorrect results.
+ * 
+ * Examples:
+ * - Graphs using std::set for edges (vos, uos, dos)
+ * - Graphs using std::map for edges
+ * - Any graph where edges are maintained in sorted order by target_id
+ * 
+ * Counter-examples:
+ * - Graphs using std::vector without sorted order (vov)
+ * - Graphs using std::unordered_set for edges (vous, mous)
+ */
+template<typename G>
+concept ordered_edges = 
+    adjacency_list<G> &&
+    requires(G& g, vertex_id_t<G> u) {
+        requires std::forward_iterator<decltype(std::ranges::begin(edges(g, u)))>;
+    };
+
 
 } // namespace graph::adj_list

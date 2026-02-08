@@ -31,27 +31,8 @@ namespace graph {
 
 // Using declarations for new namespace structure
 using adj_list::index_adjacency_list;
+using adj_list::ordered_edges;
 using adj_list::vertex_id_t;
-
-/**
- * @brief Concept for graphs with sorted adjacency lists.
- * 
- * A graph satisfies ordered_edges if the adjacency list for each vertex is sorted by
- * target vertex ID in ascending order. This property enables efficient set intersection
- * algorithms using linear merge operations.
- * 
- * @tparam G Graph type
- * 
- * @note Required for triangle_count algorithm correctness. Graphs with unsorted adjacency
- *       lists will produce incorrect results.
- */
-template <class G>
-concept ordered_edges = adjacency_list<G> && requires(G& g, vertex_id_t<G> u) {
-  requires std::forward_iterator<decltype(std::ranges::begin(edges(g, u)))>;
-  // Note: This is a semantic requirement that cannot be fully checked at compile time.
-  // The algorithm assumes adjacency lists are sorted by target_id in ascending order.
-  // Graph types using std::set, std::map, or similar ordered containers satisfy this.
-};
 
 /**
  * @ingroup graph_algorithms
