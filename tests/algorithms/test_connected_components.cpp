@@ -239,10 +239,7 @@ TEST_CASE("connected_components - undirected single edge (vov vs UAL)", "[algori
     
     SECTION("undirected_adjacency_list with single edge") {
         // Undirected edge 0-1: only add once
-        undirected_adjacency_list<int, int> g;
-        g.create_vertex(0);
-        g.create_vertex(1);
-        g.create_edge(0, 1, 1);
+        undirected_adjacency_list<int, int> g({{0, 1, 1}});
         std::vector<uint32_t> component(2);
         
         size_t num = connected_components(g, component);
@@ -269,14 +266,9 @@ TEST_CASE("connected_components - undirected path (vov vs UAL)", "[algorithm][co
     }
     
     SECTION("undirected_adjacency_list: Path 0-1-2-3 with single edges") {
-        undirected_adjacency_list<int, int> g;
-        g.create_vertex(0);
-        g.create_vertex(1);
-        g.create_vertex(2);
-        g.create_vertex(3);
-        g.create_edge(0, 1, 1);  // Add each edge only once
-        g.create_edge(1, 2, 1);
-        g.create_edge(2, 3, 1);
+        undirected_adjacency_list<int, int> g({
+            {0, 1, 1}, {1, 2, 1}, {2, 3, 1}
+        });
         std::vector<uint32_t> component(4);
         
         size_t num = connected_components(g, component);
@@ -303,13 +295,9 @@ TEST_CASE("connected_components - undirected disconnected (vov vs UAL)", "[algor
     }
     
     SECTION("undirected_adjacency_list: Two components {0,1} and {2,3}") {
-        undirected_adjacency_list<int, int> g;
-        g.create_vertex(0);
-        g.create_vertex(1);
-        g.create_vertex(2);
-        g.create_vertex(3);
-        g.create_edge(0, 1, 1);
-        g.create_edge(2, 3, 1);
+        undirected_adjacency_list<int, int> g({
+            {0, 1, 1}, {2, 3, 1}
+        });
         std::vector<uint32_t> component(4);
         
         size_t num = connected_components(g, component);
@@ -339,13 +327,9 @@ TEST_CASE("connected_components - undirected cycle (vov vs UAL)", "[algorithm][c
     }
     
     SECTION("undirected_adjacency_list: Cycle 0-1-2-3-4-0") {
-        undirected_adjacency_list<int, int> g;
-        for (int i = 0; i < 5; ++i) g.create_vertex(i);
-        g.create_edge(0, 1, 1);
-        g.create_edge(1, 2, 1);
-        g.create_edge(2, 3, 1);
-        g.create_edge(3, 4, 1);
-        g.create_edge(4, 0, 1);
+        undirected_adjacency_list<int, int> g({
+            {0, 1, 1}, {1, 2, 1}, {2, 3, 1}, {3, 4, 1}, {4, 0, 1}
+        });
         std::vector<uint32_t> component(5);
         
         size_t num = connected_components(g, component);
@@ -371,13 +355,9 @@ TEST_CASE("connected_components - undirected triangle (vov vs UAL)", "[algorithm
     }
     
     SECTION("undirected_adjacency_list: Triangle 0-1-2-0") {
-        undirected_adjacency_list<int, int> g;
-        g.create_vertex(0);
-        g.create_vertex(1);
-        g.create_vertex(2);
-        g.create_edge(0, 1, 1);
-        g.create_edge(1, 2, 1);
-        g.create_edge(2, 0, 1);
+        undirected_adjacency_list<int, int> g({
+            {0, 1, 1}, {1, 2, 1}, {2, 0, 1}
+        });
         std::vector<uint32_t> component(3);
         
         size_t num = connected_components(g, component);
@@ -404,12 +384,9 @@ TEST_CASE("connected_components - undirected star (vov vs UAL)", "[algorithm][co
     }
     
     SECTION("undirected_adjacency_list: Star with center 0") {
-        undirected_adjacency_list<int, int> g;
-        for (int i = 0; i < 5; ++i) g.create_vertex(i);
-        g.create_edge(0, 1, 1);
-        g.create_edge(0, 2, 1);
-        g.create_edge(0, 3, 1);
-        g.create_edge(0, 4, 1);
+        undirected_adjacency_list<int, int> g({
+            {0, 1, 1}, {0, 2, 1}, {0, 3, 1}, {0, 4, 1}
+        });
         std::vector<uint32_t> component(5);
         
         size_t num = connected_components(g, component);
@@ -442,12 +419,10 @@ TEST_CASE("connected_components - undirected complex (vov vs UAL)", "[algorithm]
     }
     
     SECTION("undirected_adjacency_list: Three components of different sizes") {
-        undirected_adjacency_list<int, int> g;
-        for (int i = 0; i < 6; ++i) g.create_vertex(i);
-        g.create_edge(0, 1, 1);
-        g.create_edge(1, 2, 1);
-        g.create_edge(2, 0, 1);
-        g.create_edge(3, 4, 1);
+        undirected_adjacency_list<int, int> g({
+            {0, 1, 1}, {1, 2, 1}, {2, 0, 1}, {3, 4, 1}
+        });
+        g.resize_vertices(6);  // Add isolated vertex 5
         std::vector<uint32_t> component(6);
         
         size_t num = connected_components(g, component);
@@ -481,10 +456,7 @@ TEST_CASE("connected_components (UAL) - single vertex", "[algorithm][connected_c
 TEST_CASE("connected_components (UAL) - single edge", "[algorithm][connected_components][ual]") {
     using Graph = undirected_adjacency_list<int, int>;
     
-    Graph g;
-    g.create_vertex(0);
-    g.create_vertex(1);
-    g.create_edge(0, 1, 1);  // Use IDs instead of iterators
+    Graph g({{0, 1, 1}});
     std::vector<uint32_t> component(num_vertices(g));
     
     size_t num_components = connected_components(g, component);
@@ -497,14 +469,7 @@ TEST_CASE("connected_components (UAL) - path graph", "[algorithm][connected_comp
     using Graph = undirected_adjacency_list<int, int>;
     
     // Path: 0 - 1 - 2 - 3
-    Graph g;
-    g.create_vertex(0);
-    g.create_vertex(1);
-    g.create_vertex(2);
-    g.create_vertex(3);
-    g.create_edge(0, 1, 1);
-    g.create_edge(1, 2, 1);
-    g.create_edge(2, 3, 1);
+    Graph g({{0, 1, 1}, {1, 2, 1}, {2, 3, 1}});
     std::vector<uint32_t> component(num_vertices(g));
     
     size_t num_components = connected_components(g, component);
@@ -517,17 +482,7 @@ TEST_CASE("connected_components (UAL) - cycle graph", "[algorithm][connected_com
     using Graph = undirected_adjacency_list<int, int>;
     
     // Cycle: 0 - 1 - 2 - 3 - 4 - 0
-    Graph g;
-    g.create_vertex(0);
-    g.create_vertex(1);
-    g.create_vertex(2);
-    g.create_vertex(3);
-    g.create_vertex(4);
-    g.create_edge(0, 1, 1);
-    g.create_edge(1, 2, 1);
-    g.create_edge(2, 3, 1);
-    g.create_edge(3, 4, 1);
-    g.create_edge(4, 0, 1);
+    Graph g({{0, 1, 1}, {1, 2, 1}, {2, 3, 1}, {3, 4, 1}, {4, 0, 1}});
     std::vector<uint32_t> component(num_vertices(g));
     
     size_t num_components = connected_components(g, component);
@@ -540,13 +495,7 @@ TEST_CASE("connected_components (UAL) - disconnected graph", "[algorithm][connec
     using Graph = undirected_adjacency_list<int, int>;
     
     // Two components: {0, 1} and {2, 3}
-    Graph g;
-    g.create_vertex(0);
-    g.create_vertex(1);
-    g.create_vertex(2);
-    g.create_vertex(3);
-    g.create_edge(0, 1, 1);
-    g.create_edge(2, 3, 1);
+    Graph g({{0, 1, 1}, {2, 3, 1}});
     std::vector<uint32_t> component(num_vertices(g));
     
     size_t num_components = connected_components(g, component);
@@ -581,16 +530,7 @@ TEST_CASE("connected_components (UAL) - star graph", "[algorithm][connected_comp
     using Graph = undirected_adjacency_list<int, int>;
     
     // Star: center 0 connected to 1, 2, 3, 4
-    Graph g;
-    g.create_vertex(0);
-    g.create_vertex(1);
-    g.create_vertex(2);
-    g.create_vertex(3);
-    g.create_vertex(4);
-    g.create_edge(0, 1, 1);
-    g.create_edge(0, 2, 1);
-    g.create_edge(0, 3, 1);
-    g.create_edge(0, 4, 1);
+    Graph g({{0, 1, 1}, {0, 2, 1}, {0, 3, 1}, {0, 4, 1}});
     std::vector<uint32_t> component(num_vertices(g));
     
     size_t num_components = connected_components(g, component);
@@ -603,17 +543,10 @@ TEST_CASE("connected_components (UAL) - complete graph", "[algorithm][connected_
     using Graph = undirected_adjacency_list<int, int>;
     
     // Complete graph K4: all vertices connected to each other
-    Graph g;
-    g.create_vertex(0);
-    g.create_vertex(1);
-    g.create_vertex(2);
-    g.create_vertex(3);
-    g.create_edge(0, 1, 1);
-    g.create_edge(0, 2, 1);
-    g.create_edge(0, 3, 1);
-    g.create_edge(1, 2, 1);
-    g.create_edge(1, 3, 1);
-    g.create_edge(2, 3, 1);
+    Graph g({
+        {0, 1, 1}, {0, 2, 1}, {0, 3, 1},
+        {1, 2, 1}, {1, 3, 1}, {2, 3, 1}
+    });
     std::vector<uint32_t> component(num_vertices(g));
     
     size_t num_components = connected_components(g, component);
@@ -626,20 +559,11 @@ TEST_CASE("connected_components (UAL) - tree structure", "[algorithm][connected_
     using Graph = undirected_adjacency_list<int, int>;
     
     // Binary tree: 0 is root, 1 and 2 are children, 3,4,5,6 are grandchildren
-    Graph g;
-    g.create_vertex(0);
-    g.create_vertex(1);
-    g.create_vertex(2);
-    g.create_vertex(3);
-    g.create_vertex(4);
-    g.create_vertex(5);
-    g.create_vertex(6);
-    g.create_edge(0, 1, 1);
-    g.create_edge(0, 2, 1);
-    g.create_edge(1, 3, 1);
-    g.create_edge(1, 4, 1);
-    g.create_edge(2, 5, 1);
-    g.create_edge(2, 6, 1);
+    Graph g({
+        {0, 1, 1}, {0, 2, 1},
+        {1, 3, 1}, {1, 4, 1},
+        {2, 5, 1}, {2, 6, 1}
+    });
     std::vector<uint32_t> component(num_vertices(g));
     
     size_t num_components = connected_components(g, component);
@@ -654,17 +578,11 @@ TEST_CASE("connected_components (UAL) - multiple components of different sizes",
     // Component 1: {0, 1, 2} (triangle)
     // Component 2: {3, 4} (edge)
     // Component 3: {5} (isolated)
-    Graph g;
-    g.create_vertex(0);
-    g.create_vertex(1);
-    g.create_vertex(2);
-    g.create_vertex(3);
-    g.create_vertex(4);
-    g.create_vertex(5);
-    g.create_edge(0, 1, 1);
-    g.create_edge(0, 2, 1);
-    g.create_edge(1, 2, 1);
-    g.create_edge(3, 4, 1);
+    Graph g({
+        {0, 1, 1}, {0, 2, 1}, {1, 2, 1},  // triangle
+        {3, 4, 1}                         // edge
+    });
+    g.resize_vertices(6);  // Add isolated vertex 5
     std::vector<uint32_t> component(num_vertices(g));
     
     size_t num_components = connected_components(g, component);
@@ -681,11 +599,10 @@ TEST_CASE("connected_components (UAL) - self loop", "[algorithm][connected_compo
     using Graph = undirected_adjacency_list<int, int>;
     
     // Graph with self-loop: 0 - 0, 0 - 1
-    Graph g;
-    g.create_vertex(0);
-    g.create_vertex(1);
-    g.create_edge(0, 0, 1);  // self-loop
-    g.create_edge(0, 1, 1);
+    Graph g({
+        {0, 0, 1},  // self-loop
+        {0, 1, 1}
+    });
     std::vector<uint32_t> component(num_vertices(g));
     
     size_t num_components = connected_components(g, component);
@@ -698,12 +615,7 @@ TEST_CASE("connected_components (UAL) - with edge values", "[algorithm][connecte
     using Graph = undirected_adjacency_list<int, int>;
     
     // Path graph with different edge weights
-    Graph g;
-    g.create_vertex(0);
-    g.create_vertex(1);
-    g.create_vertex(2);
-    g.create_edge(0, 1, 10);
-    g.create_edge(1, 2, 20);
+    Graph g({{0, 1, 10}, {1, 2, 20}});
     std::vector<uint32_t> component(num_vertices(g));
     
     size_t num_components = connected_components(g, component);

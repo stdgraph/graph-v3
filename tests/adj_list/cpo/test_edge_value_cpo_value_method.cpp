@@ -15,14 +15,9 @@ constexpr VKey vertex_id(Iter it, const G& g) {
 
 // Test that edge_value CPO recognizes the .value() member function pattern
 TEST_CASE("edge_value CPO with .value() method", "[cpo][edge_value][value_method]") {
-    undirected_adjacency_list<int, int> g;
-    
-    auto v1 = g.create_vertex(10);
-    VKey k1 = vertex_id(v1, g);
-    auto v2 = g.create_vertex(20);
-    VKey k2 = vertex_id(v2, g);
-    
-    g.create_edge(k1, k2, 100);
+    undirected_adjacency_list<int, int> g({{0, 1, 100}});
+    VKey k1 = 0;
+    VKey k2 = 1;
     
     SECTION("edge_value CPO works with undirected_adjacency_list edges") {
         // Get edge through vertex edge list
@@ -61,14 +56,9 @@ TEST_CASE("edge_value CPO with .value() method", "[cpo][edge_value][value_method
 
 // Test to verify the resolution priority order
 TEST_CASE("edge_value CPO resolution priority", "[cpo][edge_value][priority]") {
-    undirected_adjacency_list<int, int> g;
-    
-    auto v1 = g.create_vertex(10);
-    VKey k1 = vertex_id(v1, g);
-    auto v2 = g.create_vertex(20);
-    VKey k2 = vertex_id(v2, g);
-    
-    g.create_edge(k1, k2, 42);
+    undirected_adjacency_list<int, int> g({{0, 1, 42}});
+    VKey k1 = 0;
+    VKey k2 = 1;
     
     // Get edge
     auto& v = g.vertices()[k1];

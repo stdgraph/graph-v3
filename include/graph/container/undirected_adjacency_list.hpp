@@ -1731,6 +1731,9 @@ public:
   /// Constructor for easy creation of a graph that takes an initializer
   /// list with edge values.
   ///
+  /// Automatically resizes the vertex container to accommodate the largest
+  /// vertex ID referenced in the edge list. No need to pre-create vertices.
+  ///
   /// @param ilist Initializer list of tuples with source_vertex_id,
   ///              target_vertex_id and the edge value.
   /// @param alloc Allocator.
@@ -1743,7 +1746,10 @@ public:
   // clang-format on
 
   /// Constructor for easy creation of a graph that takes an initializer
-  /// list with edge values.
+  /// list without edge values.
+  ///
+  /// Automatically resizes the vertex container to accommodate the largest
+  /// vertex ID referenced in the edge list. No need to pre-create vertices.
   ///
   /// @param ilist Initializer list of tuples with source_vertex_id and
   ///              target_vertex_id.
@@ -1799,6 +1805,8 @@ public: // Edge removal
 public: // Graph operations
   // Base class graph operations
   using base_type::clear;
+  using base_type::reserve_vertices;
+  using base_type::resize_vertices;
   
   /// @brief Swap contents with another graph.
   /// @param other The graph to swap with.
@@ -1808,8 +1816,6 @@ public: // Graph operations
 
 protected:
   // Base class utility methods
-  using base_type::reserve_vertices;
-  using base_type::resize_vertices;
   
   //vertex_iterator finalize_outward_edges(vertex_range);
 
@@ -1926,11 +1932,31 @@ public:
                             const EProj& eproj = {}, 
                             const Alloc& alloc = Alloc());
 
+  /// Constructor for easy creation of a graph that takes an initializer
+  /// list with edge values.
+  ///
+  /// Automatically resizes the vertex container to accommodate the largest
+  /// vertex ID referenced in the edge list. No need to pre-create vertices.
+  ///
+  /// @param ilist Initializer list of tuples with source_vertex_id,
+  ///              target_vertex_id and the edge value.
+  /// @param alloc Allocator.
+  ///
   undirected_adjacency_list(
     const initializer_list<
           tuple<vertex_id_type, vertex_id_type, edge_value_type>>& ilist,
     const Alloc&                                                     alloc = Alloc());
 
+  /// Constructor for easy creation of a graph that takes an initializer
+  /// list without edge values.
+  ///
+  /// Automatically resizes the vertex container to accommodate the largest
+  /// vertex ID referenced in the edge list. No need to pre-create vertices.
+  ///
+  /// @param ilist Initializer list of tuples with source_vertex_id and
+  ///              target_vertex_id.
+  /// @param alloc Allocator.
+  ///
   undirected_adjacency_list(
     const initializer_list<tuple<vertex_id_type, vertex_id_type>>& ilist,
     const Alloc&                                                     alloc = Alloc());
@@ -1968,6 +1994,8 @@ public: // Edge removal
 public: // Graph operations
   // Base class graph operations
   using base_type::clear;
+  using base_type::reserve_vertices;
+  using base_type::resize_vertices;
   
   /// @brief Swap contents with another graph.
   /// @param rhs The graph to swap with.
@@ -1977,8 +2005,6 @@ public: // Graph operations
 
 protected:
   // Base class utility methods
-  using base_type::reserve_vertices;
-  using base_type::resize_vertices;
 
 private:
   // Note: No graph_value_ member in GV=void specialization
