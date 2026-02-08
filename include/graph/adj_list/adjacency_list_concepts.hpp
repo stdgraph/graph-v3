@@ -190,6 +190,7 @@ concept vertex_range =
  * supports random access, allowing O(1) access to any vertex by index.
  * 
  * Requirements:
+ * - The vertex ID type must be integral
  * - Must satisfy vertex_range
  * - The underlying iterator of the vertex_descriptor_view must be a random_access_iterator
  * 
@@ -208,7 +209,8 @@ concept vertex_range =
  */
 template<typename G>
 concept index_vertex_range = 
-    vertex_range<G> &&
+    std::integral<vertex_id_t<G>> &&
+    vertex_range<G> && 
     std::random_access_iterator<typename vertex_range_t<G>::vertex_desc::iterator_type>;
 
 // =============================================================================
