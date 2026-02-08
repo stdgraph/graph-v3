@@ -1292,20 +1292,13 @@ base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::base_undirec
   }
   vertices_.resize(max_vtx_id + 1); // assure expected vertices exist
 
-  // Downcast to graph_type to access create_edge and throw_unordered_edges
+  // Downcast to graph_type to access create_edge
   auto& g = static_cast<graph_type&>(*this);
   
-  // add edges
-  if (ilist.size() > 0) {
-    auto [tid, uuid, tu_val] = *ranges::begin(ilist);
-    for (auto& edge_data : ilist) {
-      const auto& [uid, vid, uv_val] = edge_data;
-      if (uid < tid)
-        g.throw_unordered_edges();
-
-      g.create_edge(uid, vid, uv_val);
-      tid = uid;
-    }
+  // add edges - no ordering requirement, just insert them
+  for (auto& edge_data : ilist) {
+    const auto& [uid, vid, uv_val] = edge_data;
+    g.create_edge(uid, vid, uv_val);
   }
 }
 
@@ -1330,20 +1323,13 @@ base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::base_undirec
   }
   vertices_.resize(max_vtx_id + 1); // assure expected vertices exist
 
-  // Downcast to graph_type to access create_edge and throw_unordered_edges
+  // Downcast to graph_type to access create_edge
   auto& g = static_cast<graph_type&>(*this);
   
-  // add edges
-  if (ilist.size() > 0) {
-    auto [tid, uuid] = *ranges::begin(ilist);
-    for (auto& edge_data : ilist) {
-      const auto& [uid, vid] = edge_data;
-      if (uid < tid)
-        g.throw_unordered_edges();
-
-      g.create_edge(uid, vid);
-      tid = uid;
-    }
+  // add edges - no ordering requirement, just insert them
+  for (auto& edge_data : ilist) {
+    const auto& [uid, vid] = edge_data;
+    g.create_edge(uid, vid);
   }
 }
 
@@ -2329,6 +2315,29 @@ template <typename VV,
 undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::undirected_adjacency_list(
       const undirected_adjacency_list& other)
       : base_type(other) {}
+
+// Initializer list constructors
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::undirected_adjacency_list(
+      const initializer_list<tuple<vertex_id_type, vertex_id_type, edge_value_type>>& ilist,
+      const Alloc& alloc)
+      : base_type(ilist, alloc) {}
+
+template <typename VV,
+          typename EV,
+          integral VId,
+          template <typename V, typename A>
+          class VContainer,
+          typename Alloc>
+undirected_adjacency_list<VV, EV, void, VId, VContainer, Alloc>::undirected_adjacency_list(
+      const initializer_list<tuple<vertex_id_type, vertex_id_type>>& ilist,
+      const Alloc& alloc)
+      : base_type(ilist, alloc) {}
 
 // Destructor
 template <typename VV,
