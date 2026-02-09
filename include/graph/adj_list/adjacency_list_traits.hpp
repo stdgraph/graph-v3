@@ -172,40 +172,6 @@ template<typename G, typename V>
 inline constexpr bool has_contains_edge_v = has_contains_edge<G, V>;
 
 // =============================================================================
-// Unordered Edge Trait
-// =============================================================================
-
-/**
- * @brief Trait to specify that edges in a graph are unordered
- * 
- * When this trait is true, it indicates that the graph's edge traversal
- * guarantees that the target vertex ID is never the same as the source vertex ID.
- * This is important for algorithms that need to avoid self-loops or need to
- * distinguish between directed and undirected edges.
- * 
- * Default: false (edges may include self-loops or be ordered)
- * 
- * Usage: Specialize this template for your graph type to return true
- * if your graph guarantees no self-loops during traversal.
- * 
- * Example specialization:
- * @code
- * namespace graph {
- *     template<>
- *     struct define_unordered_edge<MyGraphType> : std::true_type {};
- * }
- * @endcode
- * 
- * @tparam G Graph type
- */
-template<typename G>
-struct define_unordered_edge : std::false_type {};
-
-// Convenience variable template
-template<typename G>
-inline constexpr bool define_unordered_edge_v = define_unordered_edge<G>::value;
-
-// =============================================================================
 // Combined Trait Queries
 // =============================================================================
 

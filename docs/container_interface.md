@@ -72,7 +72,6 @@ The Graph Container Interface provides:
 | `has_find_vertex<G>` | concept | Are `find_vertex(g,_)` functions available? |
 | `has_find_vertex_edge<G>` | concept | Are `find_vertex_edge(g,_)` functions available? |
 | `has_contains_edge<G>` | concept | Is `contains_edge(g,uid,vid)` available? |
-| `define_unordered_edge<G>` | struct (false_type) | Specialize to derive from `true_type` for unordered edges |
 | `unordered_edge<G>` | concept | Graph has unordered edges |
 | `ordered_edge<G>` | concept | Graph has ordered edges |
 | `define_adjacency_matrix<G>` | struct (false_type) | Specialize to derive from `true_type` for adjacency matrix |

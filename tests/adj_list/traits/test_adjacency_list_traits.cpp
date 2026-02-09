@@ -140,29 +140,6 @@ TEST_CASE("has_contains_edge trait for DequeGraph", "[adjacency_list_traits][has
 // Custom graph tests removed
 
 // =============================================================================
-// define_unordered_edge Tests
-// =============================================================================
-
-TEST_CASE("define_unordered_edge default is false", "[adjacency_list_traits][define_unordered_edge]") {
-    STATIC_REQUIRE(!define_unordered_edge_v<SimpleGraph>);
-    STATIC_REQUIRE(!define_unordered_edge_v<MapGraph>);
-    STATIC_REQUIRE(!define_unordered_edge_v<DequeGraph>);
-}
-
-// Custom graph type with specialization
-struct UnorderedGraph {
-    std::vector<std::vector<int>> adj_list;
-};
-
-// Specialize the trait
-template<>
-struct graph::adj_list::define_unordered_edge<UnorderedGraph> : std::true_type {};
-
-TEST_CASE("define_unordered_edge can be specialized", "[adjacency_list_traits][define_unordered_edge]") {
-    STATIC_REQUIRE(define_unordered_edge_v<UnorderedGraph>);
-}
-
-// =============================================================================
 // Combined Trait Tests
 // =============================================================================
 

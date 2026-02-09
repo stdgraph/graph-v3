@@ -123,8 +123,6 @@ namespace graph {
     using adj_list::has_find_vertex_edge_v;
     using adj_list::has_contains_edge;
     using adj_list::has_contains_edge_v;
-    using adj_list::define_unordered_edge;
-    using adj_list::define_unordered_edge_v;
     using adj_list::has_basic_queries;
     using adj_list::has_basic_queries_v;
     using adj_list::has_full_queries;

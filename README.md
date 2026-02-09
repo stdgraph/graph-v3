@@ -538,6 +538,6 @@ This library follows the design principles and specifications from:
 
 **Implemented Views**: vertexlist • edgelist • neighbors • incidence • vertices_bfs • edges_bfs • vertices_dfs • edges_dfs • vertices_topological_sort • edges_topological_sort
 
-**Implemented Traits**: has_degree • has_find_vertex • has_find_vertex_edge • has_contains_edge • define_unordered_edge • has_basic_queries • has_full_queries
+**Implemented Traits**: has_degree • has_find_vertex • has_find_vertex_edge • has_contains_edge • has_basic_queries • has_full_queries
 
 ````
