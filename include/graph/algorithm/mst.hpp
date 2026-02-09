@@ -254,6 +254,7 @@
 #include "graph/graph.hpp"
 #include "graph/edge_list/edge_list.hpp"
 #include "graph/views/edgelist.hpp"
+#include "graph/algorithm/traversal_common.hpp"
 #include <queue>
 #include <format>
 
@@ -773,6 +774,7 @@ auto inplace_kruskal(IELR&&    e,      // graph
  * @tparam G Graph type satisfying index_adjacency_list
  * @tparam Predecessor Random access range for predecessor output
  * @tparam Weight Random access range for edge weight output
+ * @tparam WF Edge weight function type
  * 
  * @param g [in] The graph to process
  * @param predecessor [out] predecessor[v] = parent of v in MST, predecessor[seed] = seed.
@@ -780,6 +782,7 @@ auto inplace_kruskal(IELR&&    e,      // graph
  * @param weight [out] weight[v] = edge weight from predecessor[v] to v.
  *                     Caller should ensure size >= num_vertices(g).
  * @param seed [in] Starting vertex (default = 0)
+ * @param weight_fn [in] Edge weight function: (const edge_t<G>&) -> Weight. Defaults to returning 1.
  * 
  * **Complexity:** O(E log V) time, O(V) space
  * 
@@ -817,8 +820,13 @@ auto inplace_kruskal(IELR&&    e,      // graph
  * Graph g({{0,1,4}, {1,2,8}, {2,0,11}, {0,2,2}});
  * std::vector<uint32_t> pred(num_vertices(g));
  * std::vector<int> wt(num_vertices(g));
+ * 
+ * // Default uses edge_value(g, uv)
  * auto total_weight = prim(g, pred, wt, 0);
  * // MST edges: {0,2,2}, {0,1,4}, total_weight = 6
+ * 
+ * // For unweighted graphs (all edges weight 1), provide custom function
+ * auto count = prim(unweighted_g, pred, wt, 0, [](const auto&) { return 1; });
  * @endcode
  */
 template <index_adjacency_list      G,
@@ -829,9 +837,16 @@ auto prim(G&&            g,           // graph
           Weight&        weight,      // out: edge value weight[uid] from tree edge uid to predecessor[uid]
           vertex_id_t<G> seed = 0     // seed vtx
 ) {
+  // Default weight function: use edge_value CPO
+  auto weight_fn = [&g](const edge_t<G>& uv) -> range_value_t<Weight> { 
+    return edge_value(g, uv); 
+  };
+  
   return prim(
-        g, predecessor, weight, [](auto&& i, auto&& j) { return i < j; },
-        std::numeric_limits<range_value_t<Weight>>::max(), seed);
+        g, predecessor, weight,
+        [](auto&& i, auto&& j) { return i < j; },
+        std::numeric_limits<range_value_t<Weight>>::max(), seed,
+        weight_fn);
 }
 
 /**
@@ -845,6 +860,7 @@ auto prim(G&&            g,           // graph
  * @tparam Predecessor Random access range for predecessor output
  * @tparam Weight Random access range for edge weight output  
  * @tparam CompareOp Comparison operator type
+ * @tparam WF Edge weight function type
  * 
  * @param g [in] The graph to process
  * @param predecessor [out] predecessor[v] = parent of v in spanning tree.
@@ -853,6 +869,7 @@ auto prim(G&&            g,           // graph
  *                     Caller should ensure size >= num_vertices(g).
  * @param compare [in] Comparison for edge weights: compare(w1, w2) returns true if w1 is "better" than w2
  * @param init_dist [in] Initial distance value (typically infinity: numeric_limits<Weight>::max())
+ * @param weight_fn [in] Edge weight function: (const edge_t<G>&) -> Weight
  * @param seed [in] Starting vertex (default = 0)
  * 
  * **Complexity:** O(E log V) time, O(V) space
@@ -889,12 +906,15 @@ auto prim(G&&            g,           // graph
 template <index_adjacency_list      G,
           random_access_range Predecessor,
           random_access_range Weight,
-          class CompareOp>
+          class CompareOp,
+          class WF>
+requires basic_edge_weight_function<G, WF, range_value_t<Weight>, CompareOp, plus<range_value_t<Weight>>>
 auto prim(G&&                   g,           // graph
           Predecessor&          predecessor, // out: predecessor[uid] of uid in tree
           Weight&               weight,      // out: edge value weight[uid] from tree edge uid to predecessor[uid]
           CompareOp             compare,     // edge value comparator
           range_value_t<Weight> init_dist,   // initial distance
+          WF&&                  weight_fn,   // edge weight function
           vertex_id_t<G>        seed = 0     // seed vtx
 ) {
   typedef range_value_t<Weight> EV;
@@ -928,8 +948,6 @@ auto prim(G&&                   g,           // graph
 
   using weighted_vertex = tuple<vertex_id_t<G>, EV>;  // (vertex_id, edge_weight)
 
-  // Edge value function: extracts weight from edge descriptor
-  auto evf           = [&g](adj_list::edge_t<G> uv) { return edge_value(g, uv); };
   // Priority queue comparator: compare by edge weight (second element of tuple)
   auto outer_compare = [&](auto&& i, auto&& j) { return compare(get<1>(i), get<1>(j)); };
 
@@ -943,7 +961,7 @@ auto prim(G&&                   g,           // graph
     Q.pop();
 
     // Examine all edges incident to current vertex
-    for (auto&& [uv, w] : views::incidence(g, uid, evf)) {
+    for (auto&& [uv, w] : views::incidence(g, uid, weight_fn)) {
       auto vid = target_id(g, uv);  // Get neighbor vertex
       
       // Relaxation: if edge weight is better than current distance to neighbor

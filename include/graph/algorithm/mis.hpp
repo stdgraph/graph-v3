@@ -153,15 +153,15 @@ size_t maximal_independent_set(G&&            g,       // graph
   if (N == 0) {
     return 0;
   }
-  
+
   assert(seed < N);
 
-  size_t count = 0;
+  size_t               count = 0;
   std::vector<uint8_t> removed_vertices(N);
-  
+
   // Mark seed vertex as removed
   removed_vertices[seed] = 1;
-  
+
   // Check if seed vertex has a self-loop
   bool seed_has_self_loop = false;
   for (auto uv : edges(g, seed)) {
@@ -170,7 +170,7 @@ size_t maximal_independent_set(G&&            g,       // graph
       break;
     }
   }
-  
+
   // Only add seed to MIS if it has no self-loop
   if (!seed_has_self_loop) {
     *mis++ = seed;
@@ -192,7 +192,7 @@ size_t maximal_independent_set(G&&            g,       // graph
       }
     }
   }
-  
+
   return count;
 }
 
