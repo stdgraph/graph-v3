@@ -845,8 +845,8 @@ auto prim(G&&            g,           // graph
   return prim(
         g, predecessor, weight,
         [](auto&& i, auto&& j) { return i < j; },
-        std::numeric_limits<range_value_t<Weight>>::max(), seed,
-        weight_fn);
+        std::numeric_limits<range_value_t<Weight>>::max(),
+        weight_fn, seed);
 }
 
 /**
