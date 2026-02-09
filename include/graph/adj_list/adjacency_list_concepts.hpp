@@ -19,131 +19,97 @@ namespace graph::adj_list {
 // =============================================================================
 
 /**
- * @brief Concept for edges that have a target vertex
+ * @brief Concept for edge descriptors
  * 
- * A targeted_edge is an edge that can provide the target vertex ID and descriptor.
- * This is the most basic edge concept.
+ * An edge is an edge descriptor that provides access to both source and target vertices.
+ * All edge descriptors in the graph library provide these operations.
  * 
  * Requirements:
- * - target_id(g, e) must be valid (returns vertex ID)
- * - target(g, e) must be valid (returns vertex descriptor)
  * - e must be an edge_descriptor
+ * - source_id(g, e) must be valid (returns source vertex ID)
+ * - source(g, e) must be valid (returns source vertex descriptor)
+ * - target_id(g, e) must be valid (returns target vertex ID)
+ * - target(g, e) must be valid (returns target vertex descriptor)
  * 
  * Note: Return types are not constrained to allow better compiler error messages.
  * 
  * Examples:
- * - Simple edge list: vector<int> where each int is a target vertex ID
- * - Weighted edges: vector<pair<int, double>> where first is target
+ * - Edge in adjacency list: edge_descriptor<vector<vector<int>>::iterator, int>
+ * - Edge in edge list: edge_descriptor<vector<tuple<int, int, double>>::iterator>
+ * - Weighted edge: edge_descriptor with value access
  * 
  * @tparam G Graph type
  * @tparam E Edge type (must be edge_descriptor)
  */
-template<typename G, typename E>
-concept targeted_edge = 
-    is_edge_descriptor_v<std::remove_cvref_t<E>> &&
-    requires(G& g, const E& e) {
-        target_id(g, e);
-        target(g, e);
-    };
-
-/**
- * @brief Concept for edges that have a source vertex
- * 
- * A sourced_edge is an edge that can provide the source vertex ID and descriptor.
- * This is used for bidirectional graphs and edge lists where edges
- * need to track their source.
- * 
- * Requirements:
- * - source_id(g, e) must be valid (returns vertex ID)
- * - source(g, e) must be valid (returns vertex descriptor)
- * - e must be an edge_descriptor
- * 
- * Note: Return types are not constrained to allow better compiler error messages.
- * 
- * Examples:
- * - Edge list: vector<pair<int, int>> where first is source, second is target
- * - Bidirectional edge: struct { int from; int to; }
- * 
- * @tparam G Graph type
- * @tparam E Edge type (must be edge_descriptor)
- */
-template<typename G, typename E>
-concept sourced_edge = 
+template<class G, class E>
+concept edge = 
     is_edge_descriptor_v<std::remove_cvref_t<E>> &&
     requires(G& g, const E& e) {
         source_id(g, e);
         source(g, e);
+        target_id(g, e);
+        target(g, e);
     };
-
-/**
- * @brief Concept for edges that have both source and target vertices
- * 
- * A sourced_targeted_edge combines both sourced_edge and targeted_edge,
- * providing access to both the source and target vertex IDs.
- * 
- * Requirements:
- * - Must satisfy both targeted_edge and sourced_edge
- * - Both source_id(g, e) and target_id(g, e) must be valid
- * 
- * Examples:
- * - Full edge list: vector<tuple<int, int, double>> where elements are source, target, weight
- * - Bidirectional weighted edge: struct { int from; int to; double weight; }
- * 
- * @tparam G Graph type
- * @tparam E Edge type
- */
-template<typename G, typename E>
-concept sourced_targeted_edge = targeted_edge<G, E> && sourced_edge<G, E>;
 
 // =============================================================================
 // Edge Range Concepts
 // =============================================================================
 
 /**
- * @brief Concept for a forward range of targeted edges
+ * @brief Concept for a forward range of edges
  * 
- * A targeted_edge_range is a range where each element satisfies the
- * targeted_edge concept. This is used to represent the outgoing edges
- * from a vertex in an adjacency list.
+ * A vertex_edge_range is a range where each element satisfies the edge concept.
+ * This is used to represent the outgoing edges from a vertex in an adjacency list,
+ * or all edges in an edge list.
  * 
  * Requirements:
  * - Must be a std::ranges::forward_range
- * - Range value type must satisfy targeted_edge
+ * - Range value type must satisfy the edge concept
  * 
  * Examples:
- * - Adjacency list: vector<vector<int>> where inner vector is target IDs
- * - Weighted adjacency: vector<vector<pair<int, double>>> where pair is {target, weight}
+ * - Adjacency list: vector<vector<int>> where inner vector contains edges
+ * - Edge list: vector<tuple<int, int, double>> where elements are edges
+ * - Weighted adjacency: vector<vector<pair<int, double>>> where pairs are edges
  * 
  * @tparam R Range type
- * @tparam G Graph type (optional, for compatibility)
+ * @tparam G Graph type
  */
-template<typename R, typename G = void>
-concept targeted_edge_range = 
+template<class R, class G>
+concept vertex_edge_range = 
     std::ranges::forward_range<R> &&
-    targeted_edge<G, std::ranges::range_value_t<R>>;
+    edge<G, std::ranges::range_value_t<R>>;
+
+// =============================================================================
+// Vertex Concepts
+// =============================================================================
 
 /**
- * @brief Concept for a forward range of sourced and targeted edges
+ * @brief Concept for vertex descriptors
  * 
- * A sourced_targeted_edge_range is a range where each element satisfies
- * both the sourced_edge and targeted_edge concepts. This is used for
- * bidirectional graphs and edge lists where edges need to know both endpoints.
+ * A vertex is a vertex descriptor that provides access to the vertex ID
+ * and supports looking up vertices by ID.
  * 
  * Requirements:
- * - Must be a std::ranges::forward_range
- * - Range value type must satisfy sourced_targeted_edge
+ * - uv must be a vertex_descriptor
+ * - vertex_id(g, uv) must be valid (returns vertex ID)
+ * - find_vertex(g, uid) must be valid (returns vertex descriptor for given ID)
+ * 
+ * Note: Return types are not constrained to allow better compiler error messages.
  * 
  * Examples:
- * - Edge list: vector<tuple<int, int, double>> where elements are {source, target, weight}
- * - Bidirectional adjacency: where edges store both source and target explicitly
+ * - Vertex in vector-based graph: vertex_descriptor<vector<T>::iterator>
+ * - Vertex in map-based graph: vertex_descriptor<map<K, V>::iterator>
  * 
- * @tparam R Range type
- * @tparam G Graph type (optional, for compatibility)
+ * @tparam G Graph type
+ * @tparam V Vertex type (must be vertex_descriptor)
  */
-template<typename R, typename G = void>
-concept sourced_targeted_edge_range = 
-    std::ranges::forward_range<R> &&
-    sourced_targeted_edge<G, std::ranges::range_value_t<R>>;
+template<class G, class V>
+concept vertex = 
+    is_vertex_descriptor_v<std::remove_cvref_t<V>> &&
+    requires(G& g, const V& u, vertex_id_t<G> uid) { 
+        vertex_id(g, u);
+        find_vertex(g, uid);
+    };
 
 // =============================================================================
 // Vertex Range Concepts
@@ -158,14 +124,10 @@ concept sourced_targeted_edge_range =
  * Requirements:
  * - vertices(g) must return a std::ranges::forward_range
  * - vertices(g) must return a std::ranges::sized_range (size() available)
- * - Range value type must be a vertex_descriptor
+ * - Range value type must satisfy the vertex concept
  * 
  * Note: sized_range is required as a functional requirement even though
  * performance may be substandard for some containers (e.g., O(n) for map).
- * 
- * Note: The vertex_id(g, v) operation is expected to be available but not
- * checked in the concept to avoid circular dependencies and provide better
- * error messages when used incorrectly.
  * 
  * Note: forward_range has been chosen over bidirectional_range to allow
  * the use of std::unordered_map as a vertex container.
@@ -175,13 +137,14 @@ concept sourced_targeted_edge_range =
  * - vertex_descriptor_view over std::map<K, V>
  * - vertex_descriptor_view over std::deque<T>
  * 
+ * @tparam R Range type
  * @tparam G Graph type
  */
-template<typename G>
+template<class R, class G>
 concept vertex_range = 
-    std::ranges::forward_range<vertex_range_t<G>> &&
-    std::ranges::sized_range<vertex_range_t<G>> &&
-    is_vertex_descriptor_v<std::remove_cvref_t<std::ranges::range_value_t<vertex_range_t<G>>>>;
+    std::ranges::forward_range<R> &&
+    std::ranges::sized_range<R> &&
+    vertex<G, std::remove_cvref_t<std::ranges::range_value_t<R>>>;
 
 /**
  * @brief Concept for a graph with random access range of vertices
@@ -207,10 +170,12 @@ concept vertex_range =
  * 
  * @tparam G Graph type
  */
-template<typename G>
+template<class G>
 concept index_vertex_range = 
+    requires(G& g) {
+        { vertices(g) } -> vertex_range<G>;
+    } &&
     std::integral<vertex_id_t<G>> &&
-    vertex_range<G> && 
     std::random_access_iterator<typename vertex_range_t<G>::vertex_desc::iterator_type>;
 
 // =============================================================================
@@ -222,13 +187,13 @@ concept index_vertex_range =
  * 
  * An adjacency_list is a graph where:
  * - Vertices can be iterated as a vertex_range (forward)
- * - Each vertex has outgoing edges as a targeted_edge_range
+ * - Each vertex has outgoing edges as a vertex_edge_range
  * 
  * Requirements:
  * - vertices(g) returns a vertex_range
- * - edges(g, u) returns a targeted_edge_range for vertex u
+ * - edges(g, u) returns a vertex_edge_range for vertex u
  * - Supports vertex_id(g, u) for each vertex
- * - Supports target_id(g, e) and target(g, e) for each edge
+ * - Supports source_id(g, e), source(g, e), target_id(g, e), and target(g, e) for each edge
  * 
  * Examples:
  * - std::vector<std::vector<int>> - vector-based adjacency list
@@ -237,11 +202,11 @@ concept index_vertex_range =
  * 
  * @tparam G Graph type
  */
-template<typename G>
+template<class G>
 concept adjacency_list = 
-    vertex_range<G> &&
     requires(G& g, vertex_t<G> u) {
-        { edges(g, u) } -> targeted_edge_range<G>;
+        { vertices(g) } -> vertex_range<G>;
+        { edges(g, u) } -> vertex_edge_range<G>;
     };
 
 /**
@@ -262,59 +227,15 @@ concept adjacency_list =
  * 
  * @tparam G Graph type
  */
-template<typename G>
+template<class G>
 concept index_adjacency_list = 
     adjacency_list<G> &&
     index_vertex_range<G>;
 
 /**
- * @brief Concept for graphs with sourced adjacency list structure
- * 
- * A sourced_adjacency_list is an adjacency_list where edges also
- * provide source vertex information (sourced_targeted_edge_range).
- * 
- * Requirements:
- * - Must satisfy adjacency_list
- * - edges(g, u) returns a sourced_targeted_edge_range
- * - Supports source_id(g, e) and source(g, e) for each edge
- * 
- * Examples:
- * - Adjacency lists where edges know their source vertex
- * - Useful for bidirectional graph traversal
- * 
- * @tparam G Graph type
- */
-template<typename G>
-concept sourced_adjacency_list = 
-    adjacency_list<G> &&
-    requires(G& g, vertex_t<G> u) {
-        { edges(g, u) } -> sourced_targeted_edge_range<G>;
-    };
-
-/**
- * @brief Concept for graphs with index-based sourced adjacency list structure
- * 
- * An index_sourced_adjacency_list combines the requirements of both
- * index_adjacency_list and sourced_adjacency_list.
- * 
- * Requirements:
- * - Must satisfy index_adjacency_list
- * - Must satisfy sourced_adjacency_list
- * 
- * Examples:
- * - std::vector<std::vector<edge_with_source>> where edges track their source
- * 
- * @tparam G Graph type
- */
-template<typename G>
-concept index_sourced_adjacency_list = 
-    index_adjacency_list<G> &&
-    sourced_adjacency_list<G>;
-
-/**
  * @brief Concept for graphs with sorted adjacency lists.
  * 
- * A graph satisfies ordered_edges if the adjacency list for each vertex is sorted by
+ * A graph satisfies ordered_vertex_edges if the adjacency list for each vertex is sorted by
  * target vertex ID in ascending order. This property enables efficient set intersection
  * algorithms using linear merge operations.
  * 
@@ -340,10 +261,10 @@ concept index_sourced_adjacency_list =
  * - Graphs using std::vector without sorted order (vov)
  * - Graphs using std::unordered_set for edges (vous, mous)
  */
-template<typename G>
-concept ordered_edges = 
+template<class G>
+concept ordered_vertex_edges = 
     adjacency_list<G> &&
-    requires(G& g, vertex_id_t<G> u) {
+    requires(G& g, vertex_t<G> u) {
         requires std::forward_iterator<decltype(std::ranges::begin(edges(g, u)))>;
     };
 

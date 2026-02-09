@@ -20,7 +20,10 @@ using namespace graph::adj_list;
 TEST_CASE("vertex_range concept - vector<vector<int>>", "[adjacency_list][concepts][vertex_range]") {
     using Graph = std::vector<std::vector<int>>;
     
-    STATIC_REQUIRE(vertex_range<Graph>);
+    // Check the graph provides a valid vertex range
+    STATIC_REQUIRE(requires(Graph& g) {
+        { vertices(g) } -> vertex_range<Graph>;
+    });
     
     Graph g = {{1, 2}, {2, 3}, {0}};
     auto verts = vertices(g);
@@ -46,7 +49,10 @@ TEST_CASE("vertex_range concept - vector<vector<int>>", "[adjacency_list][concep
 TEST_CASE("vertex_range concept - map<int, vector<int>>", "[adjacency_list][concepts][vertex_range]") {
     using Graph = std::map<int, std::vector<int>>;
     
-    STATIC_REQUIRE(vertex_range<Graph>);
+    // Check the graph provides a valid vertex range
+    STATIC_REQUIRE(requires(Graph& g) {
+        { vertices(g) } -> vertex_range<Graph>;
+    });
     
     Graph g = {{0, {1, 2}}, {1, {2}}, {2, {}}};
     auto verts = vertices(g);
@@ -65,7 +71,10 @@ TEST_CASE("vertex_range concept - map<int, vector<int>>", "[adjacency_list][conc
 TEST_CASE("vertex_range concept - deque<deque<int>>", "[adjacency_list][concepts][vertex_range]") {
     using Graph = std::deque<std::deque<int>>;
     
-    STATIC_REQUIRE(vertex_range<Graph>);
+    // Check the graph provides a valid vertex range
+    STATIC_REQUIRE(requires(Graph& g) {
+        { vertices(g) } -> vertex_range<Graph>;
+    });
     
     Graph g = {{1, 2}, {0, 2}, {0, 1}};
     auto verts = vertices(g);
@@ -96,8 +105,10 @@ TEST_CASE("index_vertex_range concept - vector<vector<int>>", "[adjacency_list][
     // The view is still forward-only (descriptors synthesized on-the-fly)
     STATIC_REQUIRE_FALSE(std::ranges::random_access_range<vertex_range_t<Graph>>);
     
-    // And it satisfies vertex_range
-    STATIC_REQUIRE(vertex_range<Graph>);
+    // And it satisfies the vertex_range constraint
+    STATIC_REQUIRE(requires(Graph& g) {
+        { vertices(g) } -> vertex_range<Graph>;
+    });
     
     Graph g = {{1, 2}, {2, 3}, {0}};
     auto verts = vertices(g);
@@ -120,8 +131,10 @@ TEST_CASE("index_vertex_range concept - deque<deque<int>>", "[adjacency_list][co
     // The view is still forward-only
     STATIC_REQUIRE_FALSE(std::ranges::random_access_range<vertex_range_t<Graph>>);
     
-    // And it satisfies the basic vertex_range
-    STATIC_REQUIRE(vertex_range<Graph>);
+    // And it satisfies the basic vertex_range constraint
+    STATIC_REQUIRE(requires(Graph& g) {
+        { vertices(g) } -> vertex_range<Graph>;
+    });
 }
 
 TEST_CASE("index_vertex_range concept - map does NOT satisfy", "[adjacency_list][concepts][index_vertex_range]") {
@@ -131,8 +144,10 @@ TEST_CASE("index_vertex_range concept - map does NOT satisfy", "[adjacency_list]
     STATIC_REQUIRE_FALSE(index_vertex_range<Graph>);
     STATIC_REQUIRE_FALSE(std::ranges::random_access_range<vertex_range_t<Graph>>);
     
-    // But it does satisfy vertex_range
-    STATIC_REQUIRE(vertex_range<Graph>);
+    // But it does satisfy the vertex_range constraint
+    STATIC_REQUIRE(requires(Graph& g) {
+        { vertices(g) } -> vertex_range<Graph>;
+    });
 }
 
 // =============================================================================
@@ -267,10 +282,14 @@ TEST_CASE("Concept hierarchy - index_vertex_range implies vertex_range", "[adjac
     
     // Vector's underlying iterator is random access, so index_vertex_range is satisfied
     STATIC_REQUIRE(index_vertex_range<Graph1>);
-    STATIC_REQUIRE(vertex_range<Graph1>);
+    STATIC_REQUIRE(requires(Graph1& g) {
+        { vertices(g) } -> vertex_range<Graph1>;
+    });
     
     // Map's underlying iterator is NOT random access, so index_vertex_range is NOT satisfied
-    STATIC_REQUIRE(vertex_range<Graph2>);
+    STATIC_REQUIRE(requires(Graph2& g) {
+        { vertices(g) } -> vertex_range<Graph2>;
+    });
     STATIC_REQUIRE_FALSE(index_vertex_range<Graph2>);
 }
 

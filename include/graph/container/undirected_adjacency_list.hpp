@@ -89,7 +89,7 @@ namespace ranges = std::ranges;
 /// INTERFACE CONFORMANCE:
 /// ----------------------
 /// Satisfies Graph Container Interface requirements:
-/// - vertex_range<G>, adjacency_list<G>, sourced_adjacency_list<G>
+/// - vertex_range<G>, adjacency_list<G>
 /// - Provides 47+ CPO functions (vertices, edges, degree, find_vertex, etc.)
 /// - Full const-correctness with const/non-const overloads
 /// - C++20 iterator concepts (bidirectional/forward iterators)

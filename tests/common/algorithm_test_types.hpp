@@ -156,7 +156,7 @@ concept random_access_edges = std::ranges::random_access_range<vertex_edge_range
  * Useful for algorithms that can optimize with sorted edges
  */
 template <typename G>
-concept ordered_edges = requires(G& g, vertex_id_t<G> u) {
+concept ordered_vertex_edges = requires(G& g, vertex_id_t<G> u) {
     { std::ranges::is_sorted(edges(g, u)) };
 };
 

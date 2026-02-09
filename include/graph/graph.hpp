@@ -105,14 +105,14 @@ namespace graph {
     using adj_list::is_edge_descriptor_view_v;
     
     // Adjacency list concepts
-    using adj_list::targeted_edge;
-    using adj_list::sourced_edge;
-    using adj_list::sourced_targeted_edge;
+    using adj_list::edge;
+    using adj_list::vertex;
+    using adj_list::vertex_edge_range;
     using adj_list::vertex_range;
+    using adj_list::index_vertex_range;
     using adj_list::adjacency_list;
     using adj_list::index_adjacency_list;
-    using adj_list::sourced_adjacency_list;
-    using adj_list::index_sourced_adjacency_list;
+    using adj_list::ordered_vertex_edges;
     
     // Adjacency list traits
     using adj_list::has_degree;

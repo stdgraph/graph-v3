@@ -31,7 +31,7 @@ namespace graph {
 
 // Using declarations for new namespace structure
 using adj_list::index_adjacency_list;
-using adj_list::ordered_edges;
+using adj_list::ordered_vertex_edges;
 using adj_list::vertex_id_t;
 
 /**
@@ -82,7 +82,7 @@ using adj_list::vertex_id_t;
  * 
  * ### Container Requirements
  * - **Required:** `index_adjacency_list` concept (includes forward_range and integral vertex_id)
- * - **Required:** `ordered_edges<G>` - adjacency lists must be sorted by target ID
+ * - **Required:** `ordered_vertex_edges<G>` - adjacency lists must be sorted by target ID
  * - **Works with:** `vos`, `uos`, `dos` graph types (vector/map + set edges)
  * - **Not compatible:** `vov`, `vous`, `mous` (unsorted edge containers)
  * 
@@ -96,12 +96,12 @@ using adj_list::vertex_id_t;
  * 
  * ```cpp
  * requires index_adjacency_list<G>
- * requires ordered_edges<G>
+ * requires ordered_vertex_edges<G>
  * ```
  * 
  * These constraints are enforced via C++20 concepts and will produce a compilation error
  * if not satisfied. The `index_adjacency_list` concept ensures forward_range vertex
- * iteration and integral vertex IDs. The `ordered_edges` concept requires sorted adjacency
+ * iteration and integral vertex IDs. The `ordered_vertex_edges` concept requires sorted adjacency
  * lists (semantic requirement verified by graph type's container choice).
  * 
  * ## Preconditions (Runtime Requirements)
@@ -141,7 +141,7 @@ using adj_list::vertex_id_t;
  * 
  * ### Design Decisions
  * 
- * 1. **Why require ordered_edges?**
+ * 1. **Why require ordered_vertex_edges?**
  *    - Enables O(d) intersection instead of O(d²) nested loops
  *    - Critical for performance on high-degree vertices
  *    - Natural for graphs using std::set, std::map edge containers
@@ -226,7 +226,7 @@ using adj_list::vertex_id_t;
  * @see "Finding, Counting and Listing all Triangles in Large Graphs" by Schank & Wagner (2005)
  */
 template <index_adjacency_list G>
-requires ordered_edges<G>
+requires ordered_vertex_edges<G>
 size_t triangle_count(G&& g) {
   const size_t vertex_count = size(vertices(g));
   size_t triangles = 0;

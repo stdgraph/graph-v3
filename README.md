@@ -532,7 +532,7 @@ This library follows the design principles and specifications from:
 
 **Implemented CPOs**: vertices • vertex_id • find_vertex • edges • target_id • target • source_id • source • num_vertices • num_edges • degree • find_vertex_edge • contains_edge • has_edge • vertex_value • edge_value • graph_value • partition_id • num_partitions
 
-**Implemented Concepts**: targeted_edge • sourced_edge • sourced_targeted_edge • targeted_edge_range • sourced_targeted_edge_range • vertex_range • index_vertex_range • adjacency_list • index_adjacency_list • sourced_adjacency_list • index_sourced_adjacency_list
+**Implemented Concepts**: edge • vertex • vertex_edge_range • vertex_range • index_vertex_range • adjacency_list • index_adjacency_list • ordered_vertex_edges
 
 **Implemented Containers**: dynamic_graph • compressed_graph • undirected_adjacency_list
 
