@@ -32,8 +32,7 @@ bool is_valid_topological_order(const G& g, const Order& order) {
     
     // Check every edge
     for (auto uid : order) {
-        for (auto&& [uv] : views::incidence(g, uid)) {
-            auto vid = target_id(g, uv);
+        for (auto&& [vid, uv] : views::incidence(g, uid)) {
             // If target is in the ordering, it must come after source
             if (position.count(vid) && position[uid] >= position[vid]) {
                 return false;

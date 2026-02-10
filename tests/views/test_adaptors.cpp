@@ -127,8 +127,8 @@ TEST_CASE("incidence adaptor - basic pipe syntax", "[adaptors][incidence]") {
     REQUIRE(size(view) == 2);  // vertex 0 has 2 outgoing edges
     
     std::vector<int> target_ids;
-    for (auto [e] : view) {
-        target_ids.push_back(vertex_id(g, target(g, e)));
+    for (auto [tid, e] : view) {
+        target_ids.push_back(tid);
     }
     
     REQUIRE(target_ids == std::vector{1, 2});
@@ -144,7 +144,7 @@ TEST_CASE("incidence adaptor - with value function", "[adaptors][incidence]") {
     REQUIRE(size(view) == 2);
     
     std::vector<int> values;
-    for (auto [e, val] : view) {
+    for (auto [tid, e, val] : view) {
         values.push_back(val);
     }
     
@@ -158,8 +158,8 @@ TEST_CASE("incidence adaptor - chaining with std::views::take", "[adaptors][inci
     auto view = g | incidence(0) | std::views::take(1);
     
     std::vector<int> target_ids;
-    for (auto [e] : view) {
-        target_ids.push_back(vertex_id(g, target(g, e)));
+    for (auto [tid, e] : view) {
+        target_ids.push_back(tid);
     }
     
     REQUIRE(target_ids.size() == 1);
@@ -173,8 +173,8 @@ TEST_CASE("incidence adaptor - chaining with transform", "[adaptors][incidence]"
     // This pattern works because incidence(uid) (without EVF) creates a semiregular view
     auto view = g | incidence(0)
                   | std::views::transform([&g](auto&& tuple) {
-                      auto [e] = tuple;
-                      return target_id(g, e) * 10;
+                      auto [tid, e] = tuple;
+                      return tid * 10;
                   })
                   | std::views::transform([](auto val) {
                       return val * 2;
@@ -838,8 +838,8 @@ TEST_CASE("chaining incidence with transforms", "[adaptors][chaining]") {
     std::vector<int> results;
     for (auto val : g | incidence(0)
                       | std::views::transform([&g](auto info) {
-                          auto [e] = info;
-                          return vertex_id(g, target(g, e));
+                          auto [tid, e] = info;
+                          return tid;
                         })
                       | std::views::filter([](int tgt) { return tgt < 2; })
                       | std::views::transform([](int id) { return id * 3; })) {

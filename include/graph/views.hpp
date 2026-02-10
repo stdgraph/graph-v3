@@ -28,8 +28,8 @@
  * auto g = make_graph();
  * 
  * // Basic views with pipe syntax
- * for (auto [v] : g | vertexlist()) { ... }
- * for (auto [e] : g | incidence(uid)) { ... }
+ * for (auto [id, v] : g | vertexlist()) { ... }
+ * for (auto [tid, e] : g | incidence(uid)) { ... }
  * for (auto [v] : g | neighbors(uid)) { ... }
  * for (auto [e] : g | edgelist()) { ... }
  * 

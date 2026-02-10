@@ -203,8 +203,7 @@ void topological_sort_dfs_visit(
     }
     
     // Process next edge from this vertex
-    auto&& [uv] = *frame.it;
-    id_type vid = target_id(g, uv);
+    auto&& [vid, uv] = *frame.it;
     ++frame.it;
     
     if (color[vid] == Color::White) {

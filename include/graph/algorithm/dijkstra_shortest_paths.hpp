@@ -212,8 +212,7 @@ constexpr void dijkstra_shortest_paths(
     }
 
     // Process all outgoing edges from the current vertex
-    for (auto&& [uv, w] : views::incidence(g, uid, weight)) {
-      const id_type vid = target_id(g, uv);
+    for (auto&& [vid, uv, w] : views::incidence(g, uid, weight)) {
       if constexpr (has_on_examine_edge<G, Visitor>) {
         visitor.on_examine_edge(g, uv);
       }

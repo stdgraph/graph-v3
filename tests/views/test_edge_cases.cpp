@@ -101,7 +101,7 @@ TEST_CASE("Single vertex - self-loop", "[views][edge_cases][single_vertex][self_
         auto view = g | incidence(0);
         REQUIRE(std::ranges::distance(view) == 1);
         
-        for (auto [e] : view) {
+        for (auto [tid, e] : view) {
             REQUIRE(source_id(g, e) == 0);
             REQUIRE(target_id(g, e) == 0);
         }
@@ -261,7 +261,7 @@ TEST_CASE("Self-loops - multiple vertices with self-loops", "[views][edge_cases]
             auto view = g | incidence(u);
             REQUIRE(std::ranges::distance(view) == 1);
             
-            for (auto [e] : view) {
+            for (auto [tid, e] : view) {
                 REQUIRE(source_id(g, e) == u);
                 REQUIRE(target_id(g, e) == u);
             }
@@ -289,7 +289,7 @@ TEST_CASE("Parallel edges - multiple edges between same vertices", "[views][edge
         auto view = g | incidence(0);
         REQUIRE(std::ranges::distance(view) == 3);  // Three parallel edges
         
-        for (auto [e] : view) {
+        for (auto [tid, e] : view) {
             REQUIRE(source_id(g, e) == 0);
             REQUIRE(target_id(g, e) == 1);
         }
@@ -333,7 +333,7 @@ TEST_CASE("Const graph - incidence", "[views][edge_cases][const]") {
     auto view = g | incidence(0);
     REQUIRE(std::ranges::distance(view) == 2);
     
-    for (auto [e] : view) {
+    for (auto [tid, e] : view) {
         REQUIRE(source_id(g, e) == 0);
     }
 }

@@ -133,7 +133,7 @@ TEST_CASE("incidence - vertex with multiple edges", "[incidence][multiple]") {
         auto ilist = incidence(g, v0);
         
         std::vector<int> targets;
-        for (auto [e] : ilist) {
+        for (auto [tid, e] : ilist) {
             targets.push_back(target_id(g, e));
         }
         REQUIRE(targets == std::vector<int>{1, 2, 3});
@@ -147,7 +147,7 @@ TEST_CASE("incidence - vertex with multiple edges", "[incidence][multiple]") {
         
         std::vector<int> edge_targets;
         std::vector<int> values;
-        for (auto [e, val] : ilist) {
+        for (auto [tid, e, val] : ilist) {
             edge_targets.push_back(target_id(g, e));
             values.push_back(val);
         }
@@ -176,7 +176,7 @@ TEST_CASE("incidence - value function types", "[incidence][evf]") {
         });
         
         std::vector<std::string> names;
-        for (auto [e, name] : ilist) {
+        for (auto [tid, e, name] : ilist) {
             names.push_back(name);
         }
         
@@ -189,7 +189,7 @@ TEST_CASE("incidence - value function types", "[incidence][evf]") {
         });
         
         std::vector<double> values;
-        for (auto [e, val] : ilist) {
+        for (auto [tid, e, val] : ilist) {
             values.push_back(val);
         }
         
@@ -204,7 +204,7 @@ TEST_CASE("incidence - value function types", "[incidence][evf]") {
         });
         
         std::vector<int> values;
-        for (auto [e, val] : ilist) {
+        for (auto [tid, e, val] : ilist) {
             values.push_back(val);
         }
         
@@ -229,7 +229,7 @@ TEST_CASE("incidence - edge descriptor access", "[incidence][descriptor]") {
     SECTION("source_id access") {
         auto ilist = incidence(g, v0);
         
-        for (auto [e] : ilist) {
+        for (auto [tid, e] : ilist) {
             // Every edge from v0 should have source_id == 0
             REQUIRE(source_id(g, e) == 0);
         }
@@ -239,7 +239,7 @@ TEST_CASE("incidence - edge descriptor access", "[incidence][descriptor]") {
         auto ilist = incidence(g, v0);
         
         std::vector<int> targets;
-        for (auto [e] : ilist) {
+        for (auto [tid, e] : ilist) {
             targets.push_back(target_id(g, e));
         }
         
@@ -267,7 +267,7 @@ TEST_CASE("incidence - weighted graph", "[incidence][weighted]") {
         REQUIRE(ilist.size() == 2);
         
         std::vector<int> targets;
-        for (auto [e] : ilist) {
+        for (auto [tid, e] : ilist) {
             targets.push_back(target_id(g, e));
         }
         
@@ -281,7 +281,7 @@ TEST_CASE("incidence - weighted graph", "[incidence][weighted]") {
         });
         
         std::vector<double> weights;
-        for (auto [e, w] : ilist) {
+        for (auto [tid, e, w] : ilist) {
             weights.push_back(w);
         }
         
@@ -360,29 +360,29 @@ TEST_CASE("incidence - edge_info type verification", "[incidence][types]") {
     using Graph = std::vector<std::vector<int>>;
     using EdgeType = edge_t<Graph>;
 
-    SECTION("no value function - edge_info<void, false, edge_t, void>") {
+    SECTION("no value function - edge_info<vertex_id_t<Graph>, false, edge_t, void>") {
         using ViewType = incidence_view<Graph, void>;
         using InfoType = typename ViewType::info_type;
         
-        STATIC_REQUIRE(std::is_same_v<InfoType, edge_info<void, false, EdgeType, void>>);
+        STATIC_REQUIRE(std::is_same_v<InfoType, edge_info<vertex_id_t<Graph>, false, EdgeType, void>>);
         
         // Verify edge_info members
         STATIC_REQUIRE(std::is_same_v<typename InfoType::source_id_type, void>);
-        STATIC_REQUIRE(std::is_same_v<typename InfoType::target_id_type, void>);
+        STATIC_REQUIRE(std::is_same_v<typename InfoType::target_id_type, vertex_id_t<Graph>>);
         STATIC_REQUIRE(std::is_same_v<typename InfoType::edge_type, EdgeType>);
         STATIC_REQUIRE(std::is_same_v<typename InfoType::value_type, void>);
     }
 
-    SECTION("with value function - edge_info<void, false, edge_t, int>") {
+    SECTION("with value function - edge_info<vertex_id_t<Graph>, false, edge_t, int>") {
         using VVF = int(*)(EdgeType);
         using ViewType = incidence_view<Graph, VVF>;
         using InfoType = typename ViewType::info_type;
         
-        STATIC_REQUIRE(std::is_same_v<InfoType, edge_info<void, false, EdgeType, int>>);
+        STATIC_REQUIRE(std::is_same_v<InfoType, edge_info<vertex_id_t<Graph>, false, EdgeType, int>>);
         
         // Verify edge_info members
         STATIC_REQUIRE(std::is_same_v<typename InfoType::source_id_type, void>);
-        STATIC_REQUIRE(std::is_same_v<typename InfoType::target_id_type, void>);
+        STATIC_REQUIRE(std::is_same_v<typename InfoType::target_id_type, vertex_id_t<Graph>>);
         STATIC_REQUIRE(std::is_same_v<typename InfoType::edge_type, EdgeType>);
         STATIC_REQUIRE(std::is_same_v<typename InfoType::value_type, int>);
     }
@@ -411,8 +411,8 @@ TEST_CASE("incidence - std::ranges algorithms", "[incidence][algorithms]") {
 
     SECTION("std::ranges::count_if") {
         auto ilist = incidence(g, v0);
-        auto count = std::ranges::count_if(ilist, [&g](auto& ei) {
-            return target_id(g, ei.edge) > 2;
+        auto count = std::ranges::count_if(ilist, [&g](auto&& ei) {
+            return ei.target_id > 2;
         });
         REQUIRE(count == 3);  // targets 3, 4, 5
     }
@@ -434,7 +434,7 @@ TEST_CASE("incidence - deque-based graph", "[incidence][deque]") {
     auto ilist = incidence(g, v0);
     
     std::vector<int> targets;
-    for (auto [e] : ilist) {
+    for (auto [tid, e] : ilist) {
         targets.push_back(target_id(g, e));
     }
     
@@ -457,8 +457,8 @@ TEST_CASE("incidence - iterating all vertices", "[incidence][all]") {
     std::vector<std::pair<int, int>> all_edges;
     
     for (auto [id, v] : vertexlist(g)) {
-        for (auto [e] : incidence(g, v)) {
-            all_edges.emplace_back(source_id(g, e), target_id(g, e));
+        for (auto [tid, e] : incidence(g, v)) {
+            all_edges.emplace_back(source_id(g, e), tid);
         }
     }
     
@@ -492,7 +492,7 @@ TEST_CASE("incidence - map vertices vector edges", "[incidence][map]") {
         REQUIRE(ilist.size() == 2);
         
         std::vector<int> targets;
-        for (auto [e] : ilist) {
+        for (auto [tid, e] : ilist) {
             targets.push_back(target_id(g, e));
         }
         
@@ -503,9 +503,12 @@ TEST_CASE("incidence - map vertices vector edges", "[incidence][map]") {
         auto verts = vertices(g);
         auto v100 = *verts.begin();
         
-        for (auto [e] : incidence(g, v100)) {
+        std::vector<int> targets_found;
+        for (auto [tid, e] : incidence(g, v100)) {
             REQUIRE(source_id(g, e) == 100);
+            targets_found.push_back(tid);
         }
+        REQUIRE(targets_found == std::vector<int>{200, 300});
     }
 
     SECTION("empty edge list") {
@@ -529,7 +532,7 @@ TEST_CASE("incidence - map vertices vector edges", "[incidence][map]") {
         });
         
         std::vector<int> offsets;
-        for (auto [e, offset] : ilist) {
+        for (auto [tid, e, offset] : ilist) {
             offsets.push_back(offset);
         }
         
@@ -540,8 +543,8 @@ TEST_CASE("incidence - map vertices vector edges", "[incidence][map]") {
         std::vector<std::pair<int, int>> all_edges;
         
         for (auto [id, v] : vertexlist(g)) {
-            for (auto [e] : incidence(g, v)) {
-                all_edges.emplace_back(source_id(g, e), target_id(g, e));
+            for (auto [tid, e] : incidence(g, v)) {
+                all_edges.emplace_back(source_id(g, e), tid);
             }
         }
         
@@ -572,7 +575,7 @@ TEST_CASE("incidence - vector vertices map edges", "[incidence][edge_map]") {
         REQUIRE(ilist.size() == 2);
         
         std::vector<int> targets;
-        for (auto [e] : ilist) {
+        for (auto [tid, e] : ilist) {
             targets.push_back(target_id(g, e));
         }
         
@@ -587,7 +590,7 @@ TEST_CASE("incidence - vector vertices map edges", "[incidence][edge_map]") {
         });
         
         std::vector<double> weights;
-        for (auto [e, w] : ilist) {
+        for (auto [tid, e, w] : ilist) {
             weights.push_back(w);
         }
         
@@ -600,7 +603,7 @@ TEST_CASE("incidence - vector vertices map edges", "[incidence][edge_map]") {
         
         REQUIRE(ilist.size() == 1);
         
-        auto [e] = *ilist.begin();
+        auto [tid, e] = *ilist.begin();
         REQUIRE(target_id(g, e) == 2);
         REQUIRE(edge_value(g, e) == 3.5);
     }
@@ -629,7 +632,7 @@ TEST_CASE("incidence - map vertices map edges", "[incidence][map][edge_map]") {
         REQUIRE(ilist.size() == 2);
         
         std::vector<int> targets;
-        for (auto [e] : ilist) {
+        for (auto [tid, e] : ilist) {
             targets.push_back(target_id(g, e));
         }
         
@@ -645,7 +648,7 @@ TEST_CASE("incidence - map vertices map edges", "[incidence][map][edge_map]") {
         });
         
         std::vector<double> weights;
-        for (auto [e, w] : ilist) {
+        for (auto [tid, e, w] : ilist) {
             weights.push_back(w);
         }
         
@@ -658,9 +661,9 @@ TEST_CASE("incidence - map vertices map edges", "[incidence][map][edge_map]") {
         ++it;  // vertex 20
         auto v20 = *it;
         
-        for (auto [e] : incidence(g, v20)) {
+        for (auto [tid, e] : incidence(g, v20)) {
             REQUIRE(source_id(g, e) == 20);
-            REQUIRE(target_id(g, e) == 30);
+            REQUIRE(tid == 30);
         }
     }
 
@@ -668,8 +671,8 @@ TEST_CASE("incidence - map vertices map edges", "[incidence][map][edge_map]") {
         std::vector<std::tuple<int, int, double>> all_edges;
         
         for (auto [id, v] : vertexlist(g)) {
-            for (auto [e, w] : incidence(g, v, [&g](auto e) { return edge_value(g, e); })) {
-                all_edges.emplace_back(source_id(g, e), target_id(g, e), w);
+            for (auto [tid, e, w] : incidence(g, v, [&g](auto e) { return edge_value(g, e); })) {
+                all_edges.emplace_back(source_id(g, e), tid, w);
             }
         }
         
@@ -721,7 +724,7 @@ TEST_CASE("incidence - undirected_adjacency_list basic", "[incidence][undirected
         
         // Collect all target IDs
         std::set<unsigned int> targets;
-        for (auto [e] : inc) {
+        for (auto [tid, e] : inc) {
             targets.insert(target_id(g, e));
         }
         
@@ -740,7 +743,7 @@ TEST_CASE("incidence - undirected_adjacency_list basic", "[incidence][undirected
         auto inc = incidence(g, v1);
         REQUIRE(inc.size() == 1);
         
-        auto [e] = *inc.begin();
+        auto [tid, e] = *inc.begin();
         REQUIRE(target_id(g, e) == 0);  // Points back to vertex 0
     }
     
@@ -752,7 +755,7 @@ TEST_CASE("incidence - undirected_adjacency_list basic", "[incidence][undirected
         REQUIRE(inc.size() == 3);
         
         std::set<unsigned int> targets;
-        for (auto [e] : inc) {
+        for (auto [tid, e] : inc) {
             targets.insert(target_id(g, e));
         }
         
@@ -770,7 +773,7 @@ TEST_CASE("incidence - undirected_adjacency_list basic", "[incidence][undirected
         
         std::vector<int> weights;
         std::vector<unsigned int> targets;
-        for (auto [e, w] : inc) {
+        for (auto [tid, e, w] : inc) {
             targets.push_back(target_id(g, e));
             weights.push_back(w);
         }
@@ -788,7 +791,7 @@ TEST_CASE("incidence - undirected_adjacency_list basic", "[incidence][undirected
         auto v2_it = find_vertex(g, 2u);
         auto v2 = *v2_it;
         
-        for (auto [e] : incidence(g, v2)) {
+        for (auto [tid, e] : incidence(g, v2)) {
             REQUIRE(source_id(g, e) == 2);
         }
     }
@@ -818,8 +821,8 @@ TEST_CASE("incidence - undirected_adjacency_list iteration order", "[incidence][
         std::vector<std::pair<unsigned int, unsigned int>> all_edges;
         
         for (auto [id, v] : vertexlist(g)) {
-            for (auto [e] : incidence(g, v)) {
-                all_edges.emplace_back(source_id(g, e), target_id(g, e));
+            for (auto [tid, e] : incidence(g, v)) {
+                all_edges.emplace_back(source_id(g, e), tid);
             }
         }
         
@@ -887,7 +890,7 @@ TEST_CASE("incidence - undirected_adjacency_list range algorithms", "[incidence]
         });
         
         std::vector<std::string> weight_strs;
-        for (auto [e, w_str] : inc) {
+        for (auto [tid, e, w_str] : inc) {
             weight_strs.push_back(w_str);
         }
         
@@ -926,17 +929,17 @@ TEST_CASE("incidence - undirected_adjacency_list empty and single edge", "[incid
         // From vertex 0
         auto inc0 = incidence(g, v0);
         REQUIRE(inc0.size() == 1);
-        auto [e0] = *inc0.begin();
+        auto [tid0, e0] = *inc0.begin();
         REQUIRE(source_id(g, e0) == 0);
-        REQUIRE(target_id(g, e0) == 1);
+        REQUIRE(tid0 == 1);
         REQUIRE(edge_value(g, e0) == 42);
         
         // From vertex 1
         auto inc1 = incidence(g, v1);
         REQUIRE(inc1.size() == 1);
-        auto [e1] = *inc1.begin();
+        auto [tid1, e1] = *inc1.begin();
         REQUIRE(source_id(g, e1) == 1);
-        REQUIRE(target_id(g, e1) == 0);
+        REQUIRE(tid1 == 0);
         REQUIRE(edge_value(g, e1) == 42);  // Same edge, same weight
     }
 }
@@ -959,7 +962,7 @@ TEST_CASE("incidence - undirected_adjacency_list with vertex_id convenience", "[
         REQUIRE(inc.size() == 2);
         
         std::set<unsigned int> targets;
-        for (auto [e] : inc) {
+        for (auto [tid, e] : inc) {
             targets.insert(target_id(g, e));
         }
         REQUIRE(targets.count(1) == 1);
@@ -970,7 +973,7 @@ TEST_CASE("incidence - undirected_adjacency_list with vertex_id convenience", "[
         auto inc = incidence(g, 0u, [&g](auto e) { return edge_value(g, e); });
         
         std::vector<int> weights;
-        for (auto [e, w] : inc) {
+        for (auto [tid, e, w] : inc) {
             (void)e;
             weights.push_back(w);
         }
@@ -1055,7 +1058,7 @@ TEST_CASE("incidence - undirected_adjacency_list dense graph", "[incidence][undi
         
         // Collect all targets and weights
         std::map<unsigned int, int> target_to_weight;
-        for (auto [e] : inc) {
+        for (auto [tid, e] : inc) {
             target_to_weight[target_id(g, e)] = edge_value(g, e);
         }
         
@@ -1086,7 +1089,7 @@ TEST_CASE("incidence - undirected_adjacency_list dense graph", "[incidence][undi
         REQUIRE(inc.size() == 8);
         
         std::set<unsigned int> targets;
-        for (auto [e] : inc) {
+        for (auto [tid, e] : inc) {
             targets.insert(target_id(g, e));
         }
         
@@ -1098,7 +1101,7 @@ TEST_CASE("incidence - undirected_adjacency_list dense graph", "[incidence][undi
         REQUIRE(inc.size() == 8);
         
         std::set<unsigned int> targets;
-        for (auto [e] : inc) {
+        for (auto [tid, e] : inc) {
             targets.insert(target_id(g, e));
         }
         
@@ -1110,8 +1113,8 @@ TEST_CASE("incidence - undirected_adjacency_list dense graph", "[incidence][undi
         REQUIRE(inc.size() == 8);
         
         std::set<unsigned int> targets;
-        for (auto [e] : inc) {
-            targets.insert(target_id(g, e));
+        for (auto [tid, e] : inc) {
+            targets.insert(tid);
         }
         
         REQUIRE(targets == std::set<unsigned int>{0, 1, 2, 4, 5, 6, 7, 8});
@@ -1123,9 +1126,9 @@ TEST_CASE("incidence - undirected_adjacency_list dense graph", "[incidence][undi
         int total_weight = 0;
         std::vector<std::pair<unsigned int, int>> edges_found;
         
-        for (auto [e, w] : inc) {
+        for (auto [tid, e, w] : inc) {
             total_weight += w;
-            edges_found.emplace_back(target_id(g, e), w);
+            edges_found.emplace_back(tid, w);
         }
         
         REQUIRE(edges_found.size() == 8);
@@ -1139,7 +1142,7 @@ TEST_CASE("incidence - undirected_adjacency_list dense graph", "[incidence][undi
         int total_weight = 0;
         size_t count = 0;
         
-        for (auto [e, w] : inc) {
+        for (auto [tid, e, w] : inc) {
             total_weight += w;
             ++count;
             
@@ -1154,7 +1157,7 @@ TEST_CASE("incidence - undirected_adjacency_list dense graph", "[incidence][undi
     
     SECTION("source_id is consistent when iterating from each vertex") {
         for (unsigned int uid = 0; uid < 10; ++uid) {
-            for (auto [e] : incidence(g, uid)) {
+            for (auto [tid, e] : incidence(g, uid)) {
                 REQUIRE(source_id(g, e) == uid);
             }
         }
@@ -1162,14 +1165,13 @@ TEST_CASE("incidence - undirected_adjacency_list dense graph", "[incidence][undi
     
     SECTION("each edge is seen from both endpoints with same weight") {
         // For each edge from vertex 0, verify it's visible from the other end
-        for (auto [e0] : incidence(g, 0u)) {
-            auto tid = target_id(g, e0);
+        for (auto [tid, e0] : incidence(g, 0u)) {
             auto weight = edge_value(g, e0);
             
             // Find the reverse edge from target back to 0
             bool found_reverse = false;
-            for (auto [e_rev] : incidence(g, tid)) {
-                if (target_id(g, e_rev) == 0) {
+            for (auto [tid_rev, e_rev] : incidence(g, tid)) {
+                if (tid_rev == 0) {
                     found_reverse = true;
                     REQUIRE(edge_value(g, e_rev) == weight);
                     REQUIRE(source_id(g, e_rev) == tid);
@@ -1185,9 +1187,9 @@ TEST_CASE("incidence - undirected_adjacency_list dense graph", "[incidence][undi
         std::map<std::pair<unsigned int, unsigned int>, int> edge_count;
         
         for (unsigned int uid = 0; uid < 10; ++uid) {
-            for (auto [e] : incidence(g, uid)) {
+            for (auto [tid, e] : incidence(g, uid)) {
                 auto src = source_id(g, e);
-                auto tgt = target_id(g, e);
+                auto tgt = static_cast<unsigned int>(tid);
                 // Normalize to (min, max) for counting
                 auto key = std::make_pair(std::min(src, tgt), std::max(src, tgt));
                 edge_count[key]++;

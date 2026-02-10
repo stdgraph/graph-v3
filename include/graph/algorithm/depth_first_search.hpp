@@ -303,8 +303,7 @@ void depth_first_search(G&&                   g,      // graph
     }
     
     // Process next edge from this vertex
-    auto&& [uv] = *frame.it;  // structured binding extracts the edge
-    id_type vid = target_id(g, uv);
+    auto&& [vid, uv] = *frame.it;  // structured binding extracts target_id and edge
     ++frame.it;  // advance iterator before potential push (simulates recursion past this edge)
     
     if constexpr (has_on_examine_edge<G, Visitor>) {

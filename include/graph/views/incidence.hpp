@@ -40,7 +40,7 @@ public:
     using edge_range_type = adj_list::vertex_edge_range_t<G>;
     using edge_iterator_type = adj_list::vertex_edge_iterator_t<G>;
     using edge_type = adj_list::edge_t<G>;
-    using info_type = edge_info<void, false, edge_type, void>;
+    using info_type = edge_info<vertex_id_type, false, edge_type, void>;
 
     /**
      * @brief Forward iterator yielding edge_info values
@@ -51,34 +51,35 @@ public:
         using difference_type = std::ptrdiff_t;
         using value_type = info_type;
         using pointer = const value_type*;
-        using reference = const value_type&;
+        using reference = value_type;
 
         constexpr iterator() noexcept = default;
 
-        constexpr iterator(edge_type e) noexcept
-            : current_{e} {}
+        constexpr iterator(G* g, edge_type e) noexcept
+            : g_(g), current_(e) {}
 
-        [[nodiscard]] constexpr reference operator*() const noexcept {
-            return current_;
+        [[nodiscard]] constexpr value_type operator*() const noexcept {
+            return info_type{adj_list::target_id(*g_, current_), current_};
         }
 
         constexpr iterator& operator++() noexcept {
-            ++current_.edge;
+            ++current_;
             return *this;
         }
 
         constexpr iterator operator++(int) noexcept {
             auto tmp = *this;
-            ++current_.edge;
+            ++current_;
             return tmp;
         }
 
         [[nodiscard]] constexpr bool operator==(const iterator& other) const noexcept {
-            return current_.edge == other.current_.edge;
+            return current_ == other.current_;
         }
 
     private:
-        value_type current_{};
+        G* g_ = nullptr;
+        edge_type current_{};
     };
 
     using const_iterator = iterator;
@@ -90,14 +91,14 @@ public:
 
     [[nodiscard]] constexpr iterator begin() const noexcept {
         auto edge_range = adj_list::edges(*g_, source_);
-        return iterator(*std::ranges::begin(edge_range));
+        return iterator(g_, *std::ranges::begin(edge_range));
     }
 
     [[nodiscard]] constexpr iterator end() const noexcept {
         auto edge_range = adj_list::edges(*g_, source_);
         // edge_descriptor_view's end iterator can be dereferenced to get
         // an edge_descriptor with the end storage position
-        return iterator(*std::ranges::end(edge_range));
+        return iterator(g_, *std::ranges::end(edge_range));
     }
 
     [[nodiscard]] constexpr auto size() const noexcept 
@@ -130,7 +131,7 @@ public:
     using edge_iterator_type = adj_list::vertex_edge_iterator_t<G>;
     using edge_type = adj_list::edge_t<G>;
     using value_type_result = std::invoke_result_t<EVF, edge_type>;
-    using info_type = edge_info<void, false, edge_type, value_type_result>;
+    using info_type = edge_info<vertex_id_type, false, edge_type, value_type_result>;
 
     /**
      * @brief Forward iterator yielding edge_info values with computed value
@@ -145,11 +146,11 @@ public:
 
         constexpr iterator() noexcept = default;
 
-        constexpr iterator(edge_type e, EVF* evf) noexcept
-            : current_(e), evf_(evf) {}
+        constexpr iterator(G* g, edge_type e, EVF* evf) noexcept
+            : g_(g), current_(e), evf_(evf) {}
 
         [[nodiscard]] constexpr value_type operator*() const {
-            return value_type{current_, std::invoke(*evf_, current_)};
+            return value_type{adj_list::target_id(*g_, current_), current_, std::invoke(*evf_, current_)};
         }
 
         constexpr iterator& operator++() noexcept {
@@ -168,6 +169,7 @@ public:
         }
 
     private:
+        G* g_ = nullptr;
         edge_type current_{};
         EVF* evf_ = nullptr;
     };
@@ -181,12 +183,12 @@ public:
 
     [[nodiscard]] constexpr iterator begin() noexcept {
         auto edge_range = adj_list::edges(*g_, source_);
-        return iterator(*std::ranges::begin(edge_range), &evf_);
+        return iterator(g_, *std::ranges::begin(edge_range), &evf_);
     }
 
     [[nodiscard]] constexpr iterator end() noexcept {
         auto edge_range = adj_list::edges(*g_, source_);
-        return iterator(*std::ranges::end(edge_range), &evf_);
+        return iterator(g_, *std::ranges::end(edge_range), &evf_);
     }
 
     [[nodiscard]] constexpr auto size() const noexcept 

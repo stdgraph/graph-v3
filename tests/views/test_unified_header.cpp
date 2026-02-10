@@ -36,7 +36,7 @@ TEST_CASE("unified header - all basic views accessible", "[unified][basic_views]
     REQUIRE(vertex_count == 3);
     
     int edge_count = 0;
-    for (auto [e] : g | incidence(0)) {
+    for (auto [tid, e] : g | incidence(0)) {
         ++edge_count;
     }
     REQUIRE(edge_count == 2);

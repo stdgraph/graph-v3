@@ -171,8 +171,7 @@ void kosaraju(G&&        g,        // graph
         // Push all unvisited neighbors onto stack
         // They will be processed (and finish) before this vertex
         auto uid_vertex = *find_vertex(g_ref, uid);
-        for (auto&& [e] : views::incidence(g_ref, uid_vertex)) {
-          auto vid = target_id(g_ref, e);
+        for (auto&& [vid, e] : views::incidence(g_ref, uid_vertex)) {
           if (!visited[vid]) {
             visited[vid] = true;
             stack.push({vid, false});
