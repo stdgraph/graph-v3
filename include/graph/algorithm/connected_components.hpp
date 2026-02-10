@@ -600,8 +600,7 @@ void afforest(G&&          g,         // graph
   // Phase 1: Neighbor sampling - link vertices through first few neighbors
   // This quickly forms large components without processing all edges
   for (size_t r = 0; r < neighbor_rounds; ++r) {
-    for (auto&& [u] : views::vertexlist(g)) {
-      auto uid = vertex_id(g, u);
+    for (auto&& [uid, u] : views::vertexlist(g)) {
       if (r < size(edges(g, u))) {
         auto it = edges(g, u).begin();
         std::advance(it, r); // Get r-th neighbor
@@ -707,8 +706,7 @@ void afforest(G&&          g,         // graph
 
   // Phase 1: Neighbor sampling (same as single-graph version)
   for (size_t r = 0; r < neighbor_rounds; ++r) {
-    for (auto&& [u] : views::vertexlist(g)) {
-      auto uid = vertex_id(g, u);
+    for (auto&& [uid, u] : views::vertexlist(g)) {
       if (r < size(edges(g, u))) {
         auto it = edges(g, u).begin();
         std::advance(it, r); // Get r-th neighbor
@@ -722,8 +720,7 @@ void afforest(G&&          g,         // graph
   vertex_id_t<G> c = sample_frequent_element<vertex_id_t<G>>(component);
 
   // Phase 3: Process remaining edges in both directions
-  for (auto&& [u] : views::vertexlist(g)) {
-    auto uid = vertex_id(g, u);
+  for (auto&& [uid, u] : views::vertexlist(g)) {
     if (component[uid] == c) {
       continue; // Skip largest component
     }
