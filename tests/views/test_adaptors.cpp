@@ -275,8 +275,8 @@ TEST_CASE("edgelist adaptor - basic pipe syntax", "[adaptors][edgelist]") {
     auto view = g | edgelist();
     
     std::vector<std::pair<int, int>> edge_pairs;
-    for (auto [e] : view) {
-        edge_pairs.emplace_back(vertex_id(g, source(g, e)), vertex_id(g, target(g, e)));
+    for (auto [sid, tid, e] : view) {
+        edge_pairs.emplace_back(sid, tid);
     }
     
     REQUIRE(edge_pairs.size() == 3);  // 3 edges total
@@ -291,7 +291,7 @@ TEST_CASE("edgelist adaptor - with value function", "[adaptors][edgelist]") {
     auto view = g | edgelist(evf);
     
     std::vector<int> values;
-    for (auto [e, val] : view) {
+    for (auto [sid, tid, e, val] : view) {
         values.push_back(val);
     }
     
@@ -306,8 +306,8 @@ TEST_CASE("edgelist adaptor - chaining with std::views::take", "[adaptors][edgel
     auto view = g | edgelist() | std::views::take(2);
     
     std::vector<std::pair<int, int>> edge_pairs;
-    for (auto [e] : view) {
-        edge_pairs.emplace_back(vertex_id(g, source(g, e)), vertex_id(g, target(g, e)));
+    for (auto [sid, tid, e] : view) {
+        edge_pairs.emplace_back(sid, tid);
     }
     
     REQUIRE(edge_pairs.size() == 2);
@@ -321,8 +321,8 @@ TEST_CASE("edgelist adaptor - chaining with transform and filter", "[adaptors][e
     // This pattern works because edgelist() (without EVF) creates a semiregular view
     auto view = g | edgelist()
                   | std::views::transform([&g](auto&& tuple) {
-                      auto [e] = tuple;
-                      return std::make_tuple(e, target_id(g, e) * 10);
+                      auto [sid, tid, e] = tuple;
+                      return std::make_tuple(e, tid * 10);
                   })
                   | std::views::filter([](auto&& tuple) {
                       auto [e, val] = tuple;
@@ -344,10 +344,10 @@ TEST_CASE("edgelist adaptor - direct call compatibility", "[adaptors][edgelist]"
     auto view1 = graph::views::edgelist(g);
     auto view2 = g | edgelist();
     
-    // Count elements by iteration
+ // Count elements by iteration
     size_t count1 = 0, count2 = 0;
-    for (auto [e] : view1) { ++count1; }
-    for (auto [e] : view2) { ++count2; }
+    for (auto [sid1, tid1, e] : view1) { ++count1; }
+    for (auto [sid2, tid2, e] : view2) { ++count2; }
     
     REQUIRE(count1 == count2);
     REQUIRE(count1 == 3);
@@ -372,7 +372,7 @@ TEST_CASE("multiple views can be used independently with pipe syntax", "[adaptor
     
     // Count all_edges by iteration (edgelist may not be sized_range)
     size_t count = 0;
-    for (auto [e] : all_edges) { ++count; }
+    for (auto [sid, tid, e] : all_edges) { ++count; }
     REQUIRE(count == 3);
 }
 
@@ -643,12 +643,10 @@ TEST_CASE("vertices_topological_sort adaptor - basic pipe syntax", "[adaptors][t
         pos[vertices[i]] = i;
     }
     
-    for (auto [e] : g | edgelist()) {
-        auto src = vertex_id(g, source(g, e));
-        auto tgt = vertex_id(g, target(g, e));
+    for (auto [sid, tid, e] : g | edgelist()) {
         // In topological sort, each vertex appears before all vertices it has edges to
-        // so source comes before target: pos[src] < pos[tgt]
-        REQUIRE(pos[src] < pos[tgt]);
+        // so source comes before target: pos[sid] < pos[tid]
+        REQUIRE(pos[sid] < pos[tid]);
     }
 }
 
@@ -782,8 +780,8 @@ TEST_CASE("complex chaining - transform, filter, transform", "[adaptors][chainin
     std::vector<int> results;
     for (auto val : g | edgelist()
                       | std::views::transform([&g](auto info) {
-                          auto [e] = info;
-                          return vertex_id(g, target(g, e));
+                          auto [sid, tid, e] = info;
+                          return tid;
                         })
                       | std::views::filter([](int tgt) { return tgt == 2; })
                       | std::views::transform([](int id) { return id * 7; })) {
@@ -949,11 +947,8 @@ TEST_CASE("edgelist chaining with reverse", "[adaptors][chaining]") {
     std::vector<std::pair<int, int>> edges;
     auto edge_view = g | edgelist()
                        | std::views::transform([&g](auto info) {
-                           auto [e] = info;
-                           return std::make_pair(
-                               vertex_id(g, source(g, e)),
-                               vertex_id(g, target(g, e))
-                           );
+                           auto [sid, tid, e] = info;
+                           return std::make_pair(sid, tid);
                          });
     
     for (auto edge : edge_view) {

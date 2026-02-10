@@ -48,7 +48,7 @@ TEST_CASE("unified header - all basic views accessible", "[unified][basic_views]
     REQUIRE(neighbor_count == 2);
     
     int total_edges = 0;
-    for (auto [e] : g | edgelist()) {
+    for (auto [sid, tid, e] : g | edgelist()) {
         ++total_edges;
     }
     REQUIRE(total_edges == 3);

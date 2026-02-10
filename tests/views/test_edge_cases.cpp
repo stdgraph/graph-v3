@@ -120,9 +120,9 @@ TEST_CASE("Single vertex - self-loop", "[views][edge_cases][single_vertex][self_
         auto view = g | edgelist();
         REQUIRE(std::ranges::distance(view) == 1);
         
-        for (auto [e] : view) {
-            REQUIRE(source_id(g, e) == 0);
-            REQUIRE(target_id(g, e) == 0);
+        for (auto [sid, tid, e] : view) {
+            REQUIRE(sid == 0);
+            REQUIRE(tid == 0);
         }
     }
 }
@@ -249,9 +249,7 @@ TEST_CASE("Self-loops - multiple vertices with self-loops", "[views][edge_cases]
         auto view = g | edgelist();
         REQUIRE(std::ranges::distance(view) == 3);
         
-        for (auto [e] : view) {
-            auto sid = source_id(g, e);
-            auto tid = target_id(g, e);
+        for (auto [sid, tid, e] : view) {
             REQUIRE(sid == tid);  // All are self-loops
         }
     }
@@ -408,9 +406,7 @@ TEST_CASE("Sparse vertex IDs - non-contiguous", "[views][edge_cases][sparse]") {
     auto view = g | edgelist();
     REQUIRE(std::ranges::distance(view) == 2);
     
-    for (auto [e] : view) {
-        auto sid = source_id(g, e);
-        auto tid = target_id(g, e);
+    for (auto [sid, tid, e] : view) {
         REQUIRE((sid == 0 || sid == 5));
         REQUIRE((tid == 5 || tid == 10));
     }

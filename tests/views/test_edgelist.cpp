@@ -106,9 +106,9 @@ TEST_CASE("edgelist - single edge", "[edgelist][single]") {
         auto elist = edgelist(g);
         
         std::size_t count = 0;
-        for (auto [e] : elist) {
-            REQUIRE(source_id(g, e) == 0);
-            REQUIRE(target_id(g, e) == 1);
+        for (auto [sid, tid, e] : elist) {
+            REQUIRE(sid == 0);
+            REQUIRE(tid == 1);
             ++count;
         }
         REQUIRE(count == 1);
@@ -119,8 +119,8 @@ TEST_CASE("edgelist - single edge", "[edgelist][single]") {
             return target_id(g, e) * 10;
         });
         
-        for (auto [e, val] : elist) {
-            REQUIRE(target_id(g, e) == 1);
+        for (auto [sid, tid, e, val] : elist) {
+            REQUIRE(tid == 1);
             REQUIRE(val == 10);
         }
     }
@@ -143,8 +143,8 @@ TEST_CASE("edgelist - multiple edges from single vertex", "[edgelist][multiple]"
         auto elist = edgelist(g);
         
         std::vector<std::pair<int, int>> edges;
-        for (auto [e] : elist) {
-            edges.emplace_back(source_id(g, e), target_id(g, e));
+        for (auto [sid, tid, e] : elist) {
+            edges.emplace_back(sid, tid);
         }
         
         REQUIRE(edges.size() == 3);
@@ -159,7 +159,7 @@ TEST_CASE("edgelist - multiple edges from single vertex", "[edgelist][multiple]"
         });
         
         std::vector<int> values;
-        for (auto [e, val] : elist) {
+        for (auto [sid, tid, e, val] : elist) {
             values.push_back(val);
         }
         
@@ -184,8 +184,8 @@ TEST_CASE("edgelist - flattening multiple vertex edge lists", "[edgelist][flatte
         auto elist = edgelist(g);
         
         std::vector<std::pair<int, int>> edges;
-        for (auto [e] : elist) {
-            edges.emplace_back(source_id(g, e), target_id(g, e));
+        for (auto [sid, tid, e] : elist) {
+            edges.emplace_back(sid, tid);
         }
         
         // Edges should come in vertex order, then edge order within vertex
@@ -204,7 +204,7 @@ TEST_CASE("edgelist - flattening multiple vertex edge lists", "[edgelist][flatte
         });
         
         std::vector<int> weights;
-        for (auto [e, w] : elist) {
+        for (auto [sid, tid, e, w] : elist) {
             weights.push_back(w);
         }
         
@@ -231,8 +231,8 @@ TEST_CASE("edgelist - skipping empty vertices", "[edgelist][skip]") {
         auto elist = edgelist(g);
         
         std::vector<std::pair<int, int>> edges;
-        for (auto [e] : elist) {
-            edges.emplace_back(source_id(g, e), target_id(g, e));
+        for (auto [sid, tid, e] : elist) {
+            edges.emplace_back(sid, tid);
         }
         
         REQUIRE(edges.size() == 2);
@@ -260,7 +260,7 @@ TEST_CASE("edgelist - value function types", "[edgelist][evf]") {
         });
         
         std::vector<std::string> labels;
-        for (auto [e, label] : elist) {
+        for (auto [sid, tid, e, label] : elist) {
             labels.push_back(label);
         }
         
@@ -273,7 +273,7 @@ TEST_CASE("edgelist - value function types", "[edgelist][evf]") {
         });
         
         std::vector<double> values;
-        for (auto [e, val] : elist) {
+        for (auto [sid, tid, e, val] : elist) {
             values.push_back(val);
         }
         
@@ -288,7 +288,7 @@ TEST_CASE("edgelist - value function types", "[edgelist][evf]") {
         });
         
         std::vector<int> values;
-        for (auto [e, val] : elist) {
+        for (auto [sid, tid, e, val] : elist) {
             values.push_back(val);
         }
         
@@ -359,8 +359,8 @@ TEST_CASE("edgelist - vector of deques", "[edgelist][container]") {
         auto elist = edgelist(g);
         
         std::vector<std::pair<int, int>> edges;
-        for (auto [e] : elist) {
-            edges.emplace_back(source_id(g, e), target_id(g, e));
+        for (auto [sid, tid, e] : elist) {
+            edges.emplace_back(sid, tid);
         }
         
         REQUIRE(edges.size() == 3);
@@ -375,7 +375,7 @@ TEST_CASE("edgelist - vector of deques", "[edgelist][container]") {
         });
         
         std::vector<int> values;
-        for (auto [e, val] : elist) {
+        for (auto [sid, tid, e, val] : elist) {
             values.push_back(val);
         }
         
@@ -399,8 +399,8 @@ TEST_CASE("edgelist - deque of vectors", "[edgelist][container]") {
         auto elist = edgelist(g);
         
         std::vector<std::pair<std::size_t, int>> edges;
-        for (auto [e] : elist) {
-            edges.emplace_back(source_id(g, e), target_id(g, e));
+        for (auto [sid, tid, e] : elist) {
+            edges.emplace_back(sid, tid);
         }
         
         REQUIRE(edges.size() == 3);
@@ -490,8 +490,8 @@ TEST_CASE("edgelist - map-based vertex container", "[edgelist][map]") {
         auto elist = edgelist(g);
         
         std::vector<std::pair<int, int>> edges;
-        for (auto [e] : elist) {
-            edges.emplace_back(source_id(g, e), target_id(g, e));
+        for (auto [sid, tid, e] : elist) {
+            edges.emplace_back(sid, tid);
         }
         
         REQUIRE(edges.size() == 3);
@@ -506,7 +506,7 @@ TEST_CASE("edgelist - map-based vertex container", "[edgelist][map]") {
         });
         
         std::vector<int> diffs;
-        for (auto [e, diff] : elist) {
+        for (auto [sid, tid, e, diff] : elist) {
             diffs.push_back(diff);
         }
         
@@ -542,8 +542,8 @@ TEST_CASE("edgelist - vector vertices map edges", "[edgelist][edge_map]") {
         auto elist = edgelist(g);
         
         std::vector<std::pair<int, int>> edges;
-        for (auto [e] : elist) {
-            edges.emplace_back(source_id(g, e), target_id(g, e));
+        for (auto [sid, tid, e] : elist) {
+            edges.emplace_back(sid, tid);
         }
         
         REQUIRE(edges.size() == 3);
@@ -558,7 +558,7 @@ TEST_CASE("edgelist - vector vertices map edges", "[edgelist][edge_map]") {
         });
         
         std::vector<double> weights;
-        for (auto [e, w] : elist) {
+        for (auto [sid, tid, e, w] : elist) {
             weights.push_back(w);
         }
         
@@ -583,8 +583,8 @@ TEST_CASE("edgelist - map vertices map edges", "[edgelist][map][edge_map]") {
         auto elist = edgelist(g);
         
         std::vector<std::pair<int, int>> edges;
-        for (auto [e] : elist) {
-            edges.emplace_back(source_id(g, e), target_id(g, e));
+        for (auto [sid, tid, e] : elist) {
+            edges.emplace_back(sid, tid);
         }
         
         REQUIRE(edges.size() == 3);
@@ -599,7 +599,7 @@ TEST_CASE("edgelist - map vertices map edges", "[edgelist][map][edge_map]") {
         });
         
         std::vector<double> weights;
-        for (auto [e, w] : elist) {
+        for (auto [sid, tid, e, w] : elist) {
             weights.push_back(w);
         }
         
@@ -612,8 +612,8 @@ TEST_CASE("edgelist - map vertices map edges", "[edgelist][map][edge_map]") {
         });
         
         std::vector<std::tuple<int, int, double>> all_edges;
-        for (auto [e, w] : elist) {
-            all_edges.emplace_back(source_id(g, e), target_id(g, e), w);
+        for (auto [sid, tid, e, w] : elist) {
+            all_edges.emplace_back(sid, tid, w);
         }
         
         REQUIRE(all_edges.size() == 3);
@@ -647,8 +647,8 @@ TEST_CASE("edgelist - edge_list with pairs", "[edgelist][edge_list]") {
         REQUIRE(elist.size() == 4);
         
         std::vector<std::pair<int, int>> edges;
-        for (auto [e] : elist) {
-            edges.emplace_back(source_id(el, e), target_id(el, e));
+        for (auto [sid, tid, e] : elist) {
+            edges.emplace_back(sid, tid);
         }
         
         REQUIRE(edges.size() == 4);
@@ -664,7 +664,7 @@ TEST_CASE("edgelist - edge_list with pairs", "[edgelist][edge_list]") {
         });
         
         std::vector<int> sums;
-        for (auto [e, sum] : elist) {
+        for (auto [sid, tid, e, sum] : elist) {
             sums.push_back(sum);
         }
         
@@ -686,8 +686,8 @@ TEST_CASE("edgelist - edge_list with 2-tuples", "[edgelist][edge_list]") {
         REQUIRE(elist.size() == 3);
         
         std::vector<std::pair<int, int>> edges;
-        for (auto [e] : elist) {
-            edges.emplace_back(source_id(el, e), target_id(el, e));
+        for (auto [sid, tid, e] : elist) {
+            edges.emplace_back(sid, tid);
         }
         
         REQUIRE(edges[0] == std::pair<int, int>{0, 1});
@@ -708,8 +708,8 @@ TEST_CASE("edgelist - edge_list with 3-tuples (weighted)", "[edgelist][edge_list
         auto elist = edgelist(el);
         
         std::vector<std::pair<int, int>> edges;
-        for (auto [e] : elist) {
-            edges.emplace_back(source_id(el, e), target_id(el, e));
+        for (auto [sid, tid, e] : elist) {
+            edges.emplace_back(sid, tid);
         }
         
         REQUIRE(edges.size() == 3);
@@ -723,7 +723,7 @@ TEST_CASE("edgelist - edge_list with 3-tuples (weighted)", "[edgelist][edge_list
         });
         
         std::vector<double> weights;
-        for (auto [e, w] : elist) {
+        for (auto [sid, tid, e, w] : elist) {
             weights.push_back(w);
         }
         
@@ -736,7 +736,7 @@ TEST_CASE("edgelist - edge_list with 3-tuples (weighted)", "[edgelist][edge_list
         });
         
         std::vector<double> doubled;
-        for (auto [e, val] : elist) {
+        for (auto [sid, tid, e, val] : elist) {
             doubled.push_back(val);
         }
         
@@ -764,8 +764,8 @@ TEST_CASE("edgelist - edge_list with edge_info", "[edgelist][edge_list]") {
         REQUIRE(elist.size() == 3);
         
         std::vector<std::pair<int, int>> edges;
-        for (auto [e] : elist) {
-            edges.emplace_back(source_id(el, e), target_id(el, e));
+        for (auto [sid, tid, e] : elist) {
+            edges.emplace_back(sid, tid);
         }
         
         REQUIRE(edges[0] == std::pair<int, int>{10, 20});
@@ -779,7 +779,7 @@ TEST_CASE("edgelist - edge_list with edge_info", "[edgelist][edge_list]") {
         });
         
         std::vector<int> diffs;
-        for (auto [e, diff] : elist) {
+        for (auto [sid, tid, e, diff] : elist) {
             diffs.push_back(diff);
         }
         
@@ -807,7 +807,7 @@ TEST_CASE("edgelist - edge_list with edge_info with value", "[edgelist][edge_lis
         });
         
         std::vector<double> weights;
-        for (auto [e, w] : elist) {
+        for (auto [sid, tid, e, w] : elist) {
             weights.push_back(w);
         }
         
@@ -914,8 +914,8 @@ TEST_CASE("edgelist - edge_list with string vertex IDs", "[edgelist][edge_list][
         REQUIRE(elist.size() == 3);
         
         std::vector<std::pair<std::string, std::string>> edges;
-        for (auto [e] : elist) {
-            edges.emplace_back(source_id(el, e), target_id(el, e));
+        for (auto [sid, tid, e] : elist) {
+            edges.emplace_back(sid, tid);
         }
         
         REQUIRE(edges[0] == std::pair<std::string, std::string>{"A", "B"});
@@ -929,7 +929,7 @@ TEST_CASE("edgelist - edge_list with string vertex IDs", "[edgelist][edge_list][
         });
         
         std::vector<std::string> labels;
-        for (auto [e, label] : elist) {
+        for (auto [sid, tid, e, label] : elist) {
             labels.push_back(label);
         }
         
@@ -980,8 +980,8 @@ TEST_CASE("edgelist - deque-based edge_list", "[edgelist][edge_list][container]"
         auto elist = edgelist(el);
         
         std::vector<std::pair<int, int>> edges;
-        for (auto [e] : elist) {
-            edges.emplace_back(source_id(el, e), target_id(el, e));
+        for (auto [sid, tid, e] : elist) {
+            edges.emplace_back(sid, tid);
         }
         
         REQUIRE(edges.size() == 3);

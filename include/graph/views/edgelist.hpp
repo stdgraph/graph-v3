@@ -3,9 +3,9 @@
  * @brief Edgelist view for iterating over all edges in a graph
  * 
  * Provides a view that flattens the two-level adjacency list structure into
- * a single range of edges, yielding edge_info<void, false, edge_t<G>, EV>
- * for each edge. Each edge descriptor provides access to both source and
- * target vertices. Supports optional value functions to compute per-edge values.
+ * a single range of edges, yielding edge_info<vertex_id_type, true, edge_t<G>, EV>
+ * for each edge. Includes both source and target vertex IDs directly.
+ * Supports optional value functions to compute per-edge values.
  */
 
 #pragma once
@@ -29,7 +29,7 @@ class edgelist_view;
 /**
  * @brief Edgelist view without value function
  * 
- * Iterates over all edges in the graph yielding edge_info<void, false, edge_t<G>, void>
+ * Iterates over all edges in the graph yielding edge_info<vertex_id_type, true, edge_t<G>, void>
  * 
  * @tparam G Graph type satisfying adjacency_list concept
  */
@@ -41,7 +41,7 @@ public:
     using vertex_id_type = adj_list::vertex_id_t<G>;
     using edge_range_type = adj_list::vertex_edge_range_t<G>;
     using edge_type = adj_list::edge_t<G>;
-    using info_type = edge_info<void, false, edge_type, void>;
+    using info_type = edge_info<vertex_id_type, true, edge_type, void>;
 
     /**
      * @brief Forward iterator that flattens vertex-edge structure
@@ -56,22 +56,24 @@ public:
         using difference_type = std::ptrdiff_t;
         using value_type = info_type;
         using pointer = const value_type*;
-        using reference = const value_type&;
+        using reference = value_type;
 
         constexpr iterator() noexcept = default;
 
         constexpr iterator(G* g, vertex_type v, vertex_type v_end, 
                           edge_type current_edge, edge_type edge_end) noexcept
-            : g_(g), v_(v), v_end_(v_end), current_{current_edge}, edge_end_(edge_end) {}
+            : g_(g), v_(v), v_end_(v_end), current_edge_(current_edge), edge_end_(edge_end) {}
 
-        [[nodiscard]] constexpr reference operator*() const noexcept {
-            return current_;
+        [[nodiscard]] constexpr value_type operator*() const noexcept {
+            auto source_id = adj_list::vertex_id(*g_, v_);
+            auto target_id = adj_list::target_id(*g_, current_edge_);
+            return value_type{source_id, target_id, current_edge_};
         }
 
         constexpr iterator& operator++() noexcept {
-            ++current_.edge;
+            ++current_edge_;
             // If we've exhausted edges for current vertex, move to next vertex
-            if (current_.edge == edge_end_) {
+            if (current_edge_ == edge_end_) {
                 ++v_;
                 advance_to_valid_edge();
             }
@@ -94,7 +96,7 @@ public:
             if (v_ == v_end_ || other.v_ == other.v_end_) {
                 return false;
             }
-            return v_ == other.v_ && current_.edge == other.current_.edge;
+            return v_ == other.v_ && current_edge_ == other.current_edge_;
         }
 
         /**
@@ -108,7 +110,7 @@ public:
                 auto begin_it = std::ranges::begin(edge_range);
                 auto end_it = std::ranges::end(edge_range);
                 if (begin_it != end_it) {
-                    current_ = info_type{*begin_it};
+                    current_edge_ = *begin_it;
                     edge_end_ = *end_it;
                     return;  // Found a vertex with edges
                 }
@@ -121,7 +123,7 @@ public:
         G* g_ = nullptr;
         vertex_type v_{};           // Current vertex descriptor
         vertex_type v_end_{};       // End sentinel for vertices
-        value_type current_{};      // Stores edge_info with edge descriptor
+        edge_type current_edge_{};  // Current edge descriptor
         edge_type edge_end_{};      // End sentinel for current vertex's edges
     };
 
@@ -156,7 +158,7 @@ private:
 /**
  * @brief Edgelist view with value function
  * 
- * Iterates over all edges yielding edge_info<void, false, edge_t<G>, EV>
+ * Iterates over all edges yielding edge_info<vertex_id_type, true, edge_t<G>, EV>
  * where EV is the result of invoking the value function on the edge descriptor.
  * 
  * @tparam G Graph type satisfying adjacency_list concept
@@ -171,7 +173,7 @@ public:
     using edge_range_type = adj_list::vertex_edge_range_t<G>;
     using edge_type = adj_list::edge_t<G>;
     using value_type_result = std::invoke_result_t<EVF, edge_type>;
-    using info_type = edge_info<void, false, edge_type, value_type_result>;
+    using info_type = edge_info<vertex_id_type, true, edge_type, value_type_result>;
 
     /**
      * @brief Forward iterator that flattens vertex-edge structure with value computation
@@ -194,7 +196,9 @@ public:
               edge_end_(edge_end), evf_(evf) {}
 
         [[nodiscard]] constexpr value_type operator*() const {
-            return value_type{current_edge_, std::invoke(*evf_, current_edge_)};
+            auto source_id = adj_list::vertex_id(*g_, v_);
+            auto target_id = adj_list::target_id(*g_, current_edge_);
+            return value_type{source_id, target_id, current_edge_, std::invoke(*evf_, current_edge_)};
         }
 
         constexpr iterator& operator++() noexcept {
@@ -285,7 +289,7 @@ private:
  * 
  * @tparam G Graph type satisfying adjacency_list concept
  * @param g The graph to iterate over
- * @return edgelist_view<G, void> yielding edge_info<void, false, edge_t<G>, void>
+ * @return edgelist_view<G, void> yielding edge_info<vertex_id_type, true, edge_t<G>, void>
  */
 template <adj_list::adjacency_list G>
 [[nodiscard]] constexpr auto edgelist(G& g) noexcept {
@@ -299,7 +303,7 @@ template <adj_list::adjacency_list G>
  * @tparam EVF Edge value function type
  * @param g The graph to iterate over
  * @param evf Function to compute values from edge descriptors
- * @return edgelist_view<G, EVF> yielding edge_info<void, false, edge_t<G>, EV>
+ * @return edgelist_view<G, EVF> yielding edge_info<vertex_id_type, true, edge_t<G>, EV>
  */
 template <adj_list::adjacency_list G, class EVF>
     requires edge_value_function<EVF, adj_list::edge_t<G>>
@@ -320,7 +324,7 @@ class edge_list_edgelist_view;
 /**
  * @brief Edgelist view for edge_list without value function
  * 
- * Wraps an edge_list range directly, yielding edge_info<void, false, edge_t<EL>, void>
+ * Wraps an edge_list range directly, yielding edge_info<vertex_id_type, true, edge_t<EL>, void>
  * 
  * @tparam EL Edge list type satisfying basic_sourced_edgelist concept
  */
@@ -329,7 +333,8 @@ class edge_list_edgelist_view<EL, void> : public std::ranges::view_interface<edg
 public:
     using edge_list_type = EL;
     using edge_type = edge_list::edge_t<EL>;
-    using info_type = edge_info<void, false, edge_type, void>;
+    using vertex_id_type = edge_list::vertex_id_t<EL>;
+    using info_type = edge_info<vertex_id_type, true, edge_type, void>;
 
     /**
      * @brief Forward iterator wrapping edge_list iteration
@@ -345,11 +350,12 @@ public:
 
         constexpr iterator() noexcept = default;
 
-        constexpr iterator(base_iterator it) noexcept
-            : current_(it) {}
+        constexpr iterator(EL* el, base_iterator it) noexcept
+            : el_(el), current_(it) {}
 
         [[nodiscard]] constexpr value_type operator*() const {
-            return value_type{*current_};
+            auto& edge = *current_;
+            return value_type{graph::source_id(*el_, edge), graph::target_id(*el_, edge), edge};
         }
 
         constexpr iterator& operator++() noexcept {
@@ -368,6 +374,7 @@ public:
         }
 
     private:
+        EL* el_ = nullptr;
         base_iterator current_{};
     };
 
@@ -379,11 +386,11 @@ public:
         : el_(&el) {}
 
     [[nodiscard]] constexpr iterator begin() const noexcept {
-        return iterator(std::ranges::begin(*el_));
+        return iterator(el_, std::ranges::begin(*el_));
     }
 
     [[nodiscard]] constexpr iterator end() const noexcept {
-        return iterator(std::ranges::end(*el_));
+        return iterator(el_, std::ranges::end(*el_));
     }
 
     [[nodiscard]] constexpr auto size() const noexcept
@@ -399,7 +406,7 @@ private:
 /**
  * @brief Edgelist view for edge_list with value function
  * 
- * Wraps an edge_list range, yielding edge_info<void, false, edge_t<EL>, EV>
+ * Wraps an edge_list range, yielding edge_info<vertex_id_type, true, edge_t<EL>, EV>
  * where EV is the result of invoking the value function on the edge.
  * 
  * @tparam EL Edge list type satisfying basic_sourced_edgelist concept
@@ -410,8 +417,9 @@ class edge_list_edgelist_view : public std::ranges::view_interface<edge_list_edg
 public:
     using edge_list_type = EL;
     using edge_type = edge_list::edge_t<EL>;
+    using vertex_id_type = edge_list::vertex_id_t<EL>;
     using value_type_result = std::invoke_result_t<EVF, EL&, edge_type>;
-    using info_type = edge_info<void, false, edge_type, value_type_result>;
+    using info_type = edge_info<vertex_id_type, true, edge_type, value_type_result>;
 
     /**
      * @brief Forward iterator wrapping edge_list iteration with value computation
@@ -432,7 +440,7 @@ public:
 
         [[nodiscard]] constexpr value_type operator*() const {
             auto& edge = *current_;
-            return value_type{edge, std::invoke(*evf_, *el_, edge)};
+            return value_type{graph::source_id(*el_, edge), graph::target_id(*el_, edge), edge, std::invoke(*evf_, *el_, edge)};
         }
 
         constexpr iterator& operator++() noexcept {
@@ -491,7 +499,7 @@ private:
  * 
  * @tparam EL Edge list type satisfying basic_sourced_edgelist concept
  * @param el The edge list to iterate over
- * @return edge_list_edgelist_view<EL, void> yielding edge_info<void, false, edge_t<EL>, void>
+ * @return edge_list_edgelist_view<EL, void> yielding edge_info<vertex_id_type, true, edge_t<EL>, void>
  */
 template <edge_list::basic_sourced_edgelist EL>
     requires (!adj_list::adjacency_list<EL>)  // Disambiguation: prefer adjacency_list overload
@@ -506,7 +514,7 @@ template <edge_list::basic_sourced_edgelist EL>
  * @tparam EVF Edge value function type (receives edge_list& and edge)
  * @param el The edge list to iterate over
  * @param evf Function to compute values from edges
- * @return edge_list_edgelist_view<EL, EVF> yielding edge_info<void, false, edge_t<EL>, EV>
+ * @return edge_list_edgelist_view<EL, EVF> yielding edge_info<vertex_id_type, true, edge_t<EL>, EV>
  */
 template <edge_list::basic_sourced_edgelist EL, class EVF>
     requires (!adj_list::adjacency_list<EL>) &&  // Disambiguation: prefer adjacency_list overload
