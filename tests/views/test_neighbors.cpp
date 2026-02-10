@@ -65,8 +65,8 @@ TEST_CASE("neighbors - vertex with single neighbor", "[neighbors][single]") {
         REQUIRE(it != nlist.end());
         
         auto ni = *it;
-        // neighbor_info<void, false, vertex_t<G>, void> has 'vertex' member
-        REQUIRE(ni.vertex.vertex_id() == 1);
+        // neighbor_info<vertex_id_type, false, vertex_t<G>, void> has 'target_id' and 'target' members
+        REQUIRE(ni.target_id == 1);
         
         ++it;
         REQUIRE(it == nlist.end());
@@ -81,7 +81,7 @@ TEST_CASE("neighbors - vertex with single neighbor", "[neighbors][single]") {
         REQUIRE(nlist.size() == 1);
         
         auto ni = *nlist.begin();
-        REQUIRE(ni.vertex.vertex_id() == 1);
+        REQUIRE(ni.target_id == 1);
         REQUIRE(ni.value == 10);  // vertex_id(1) * 10
     }
 }
@@ -107,7 +107,7 @@ TEST_CASE("neighbors - vertex with multiple neighbors", "[neighbors][multiple]")
         
         std::vector<std::size_t> neighbor_ids;
         for (auto ni : nlist) {
-            neighbor_ids.push_back(ni.vertex.vertex_id());
+            neighbor_ids.push_back(ni.target_id);
         }
         
         REQUIRE(neighbor_ids == std::vector<std::size_t>{1, 2, 3});
@@ -132,8 +132,8 @@ TEST_CASE("neighbors - vertex with multiple neighbors", "[neighbors][multiple]")
         auto nlist = neighbors(g, v0);
         
         std::vector<std::size_t> neighbor_ids;
-        for (auto [v] : nlist) {
-            neighbor_ids.push_back(v.vertex_id());
+        for (auto [tid, v] : nlist) {
+            neighbor_ids.push_back(tid);
         }
         REQUIRE(neighbor_ids == std::vector<std::size_t>{1, 2, 3});
     }
@@ -146,8 +146,8 @@ TEST_CASE("neighbors - vertex with multiple neighbors", "[neighbors][multiple]")
         
         std::vector<std::size_t> neighbor_ids;
         std::vector<std::size_t> values;
-        for (auto [v, val] : nlist) {
-            neighbor_ids.push_back(v.vertex_id());
+        for (auto [tid, v, val] : nlist) {
+            neighbor_ids.push_back(tid);
             values.push_back(val);
         }
         
@@ -175,7 +175,7 @@ TEST_CASE("neighbors - value function types", "[neighbors][vvf]") {
         });
         
         std::vector<std::string> names;
-        for (auto [v, name] : nlist) {
+        for (auto [tid, v, name] : nlist) {
             names.push_back(name);
         }
         
@@ -188,7 +188,7 @@ TEST_CASE("neighbors - value function types", "[neighbors][vvf]") {
         });
         
         std::vector<double> values;
-        for (auto [v, val] : nlist) {
+        for (auto [tid, v, val] : nlist) {
             values.push_back(val);
         }
         
@@ -203,7 +203,7 @@ TEST_CASE("neighbors - value function types", "[neighbors][vvf]") {
         });
         
         std::vector<int> values;
-        for (auto [v, val] : nlist) {
+        for (auto [tid, v, val] : nlist) {
             values.push_back(val);
         }
         
@@ -229,8 +229,8 @@ TEST_CASE("neighbors - vertex descriptor access", "[neighbors][descriptor]") {
         auto nlist = neighbors(g, v0);
         
         std::vector<std::size_t> ids;
-        for (auto [v] : nlist) {
-            ids.push_back(v.vertex_id());
+        for (auto [tid, v] : nlist) {
+            ids.push_back(tid);
         }
         
         REQUIRE(ids == std::vector<std::size_t>{1, 2, 3});
@@ -239,7 +239,7 @@ TEST_CASE("neighbors - vertex descriptor access", "[neighbors][descriptor]") {
     SECTION("vertex descriptor type") {
         auto nlist = neighbors(g, v0);
         
-        for (auto [v] : nlist) {
+        for (auto [tid, v] : nlist) {
             // v should be a vertex descriptor
             STATIC_REQUIRE(std::is_same_v<decltype(v), vertex_t<Graph>>);
             (void)v;  // Suppress unused warning
@@ -267,8 +267,8 @@ TEST_CASE("neighbors - weighted graph", "[neighbors][weighted]") {
         REQUIRE(nlist.size() == 2);
         
         std::vector<std::size_t> neighbor_ids;
-        for (auto [v] : nlist) {
-            neighbor_ids.push_back(v.vertex_id());
+        for (auto [tid, v] : nlist) {
+            neighbor_ids.push_back(tid);
         }
         
         REQUIRE(neighbor_ids == std::vector<std::size_t>{1, 2});
@@ -282,7 +282,7 @@ TEST_CASE("neighbors - weighted graph", "[neighbors][weighted]") {
         });
         
         std::vector<std::size_t> values;
-        for (auto [v, val] : nlist) {
+        for (auto [tid, v, val] : nlist) {
             values.push_back(val);
         }
         
@@ -358,30 +358,31 @@ TEST_CASE("neighbors - iterator properties", "[neighbors][iterator]") {
 TEST_CASE("neighbors - neighbor_info type verification", "[neighbors][types]") {
     using Graph = std::vector<std::vector<int>>;
     using VertexType = vertex_t<Graph>;
+    using VertexIdType = vertex_id_t<Graph>;
 
-    SECTION("no value function - neighbor_info<void, false, vertex_t, void>") {
+    SECTION("no value function - neighbor_info<vertex_id_t, false, vertex_t, void>") {
         using ViewType = neighbors_view<Graph, void>;
         using InfoType = typename ViewType::info_type;
         
-        STATIC_REQUIRE(std::is_same_v<InfoType, neighbor_info<void, false, VertexType, void>>);
+        STATIC_REQUIRE(std::is_same_v<InfoType, neighbor_info<VertexIdType, false, VertexType, void>>);
         
         // Verify neighbor_info members
         STATIC_REQUIRE(std::is_same_v<typename InfoType::source_id_type, void>);
-        STATIC_REQUIRE(std::is_same_v<typename InfoType::target_id_type, void>);
+        STATIC_REQUIRE(std::is_same_v<typename InfoType::target_id_type, VertexIdType>);
         STATIC_REQUIRE(std::is_same_v<typename InfoType::vertex_type, VertexType>);
         STATIC_REQUIRE(std::is_same_v<typename InfoType::value_type, void>);
     }
 
-    SECTION("with value function - neighbor_info<void, false, vertex_t, int>") {
+    SECTION("with value function - neighbor_info<vertex_id_t, false, vertex_t, int>") {
         using VVF = int(*)(VertexType);
         using ViewType = neighbors_view<Graph, VVF>;
         using InfoType = typename ViewType::info_type;
         
-        STATIC_REQUIRE(std::is_same_v<InfoType, neighbor_info<void, false, VertexType, int>>);
+        STATIC_REQUIRE(std::is_same_v<InfoType, neighbor_info<VertexIdType, false, VertexType, int>>);
         
         // Verify neighbor_info members
         STATIC_REQUIRE(std::is_same_v<typename InfoType::source_id_type, void>);
-        STATIC_REQUIRE(std::is_same_v<typename InfoType::target_id_type, void>);
+        STATIC_REQUIRE(std::is_same_v<typename InfoType::target_id_type, VertexIdType>);
         STATIC_REQUIRE(std::is_same_v<typename InfoType::vertex_type, VertexType>);
         STATIC_REQUIRE(std::is_same_v<typename InfoType::value_type, int>);
     }
@@ -411,7 +412,7 @@ TEST_CASE("neighbors - std::ranges algorithms", "[neighbors][algorithms]") {
     SECTION("std::ranges::count_if") {
         auto nlist = neighbors(g, v0);
         auto count = std::ranges::count_if(nlist, [](auto ni) {
-            return ni.vertex.vertex_id() > 2;
+            return ni.target_id > 2;
         });
         REQUIRE(count == 3);  // neighbors 3, 4, 5
     }
@@ -433,8 +434,8 @@ TEST_CASE("neighbors - deque-based graph", "[neighbors][deque]") {
     auto nlist = neighbors(g, v0);
     
     std::vector<std::size_t> neighbor_ids;
-    for (auto [v] : nlist) {
-        neighbor_ids.push_back(v.vertex_id());
+    for (auto [tid, v] : nlist) {
+        neighbor_ids.push_back(tid);
     }
     
     REQUIRE(neighbor_ids == std::vector<std::size_t>{1, 2});
@@ -457,8 +458,8 @@ TEST_CASE("neighbors - iterating all vertices", "[neighbors][all]") {
     
     for (auto [id, v] : vertexlist(g)) {
         auto source_id = id;
-        for (auto [neighbor] : neighbors(g, v)) {
-            all_neighbors.emplace_back(source_id, neighbor.vertex_id());
+        for (auto [tid, neighbor] : neighbors(g, v)) {
+            all_neighbors.emplace_back(source_id, tid);
         }
     }
     
@@ -492,8 +493,8 @@ TEST_CASE("neighbors - map vertices vector edges", "[neighbors][map]") {
         REQUIRE(nlist.size() == 2);
         
         std::vector<int> neighbor_ids;
-        for (auto [v] : nlist) {
-            neighbor_ids.push_back(v.vertex_id());
+        for (auto [tid, v] : nlist) {
+            neighbor_ids.push_back(tid);
         }
         
         REQUIRE(neighbor_ids == std::vector<int>{200, 300});
@@ -520,7 +521,7 @@ TEST_CASE("neighbors - map vertices vector edges", "[neighbors][map]") {
         });
         
         std::vector<int> offsets;
-        for (auto [v, offset] : nlist) {
+        for (auto [tid, v, offset] : nlist) {
             offsets.push_back(offset);
         }
         
@@ -532,8 +533,8 @@ TEST_CASE("neighbors - map vertices vector edges", "[neighbors][map]") {
         
         for (auto [id, v] : vertexlist(g)) {
             auto source_id = id;
-            for (auto [neighbor] : neighbors(g, v)) {
-                all_neighbors.emplace_back(source_id, neighbor.vertex_id());
+            for (auto [tid, neighbor] : neighbors(g, v)) {
+                all_neighbors.emplace_back(source_id, tid);
             }
         }
         
@@ -564,8 +565,8 @@ TEST_CASE("neighbors - vector vertices map edges", "[neighbors][edge_map]") {
         REQUIRE(nlist.size() == 2);
         
         std::vector<std::size_t> neighbor_ids;
-        for (auto [v] : nlist) {
-            neighbor_ids.push_back(v.vertex_id());
+        for (auto [tid, v] : nlist) {
+            neighbor_ids.push_back(tid);
         }
         
         // Map edges are sorted by target_id (key)
@@ -579,7 +580,7 @@ TEST_CASE("neighbors - vector vertices map edges", "[neighbors][edge_map]") {
         });
         
         std::vector<std::size_t> values;
-        for (auto [v, val] : nlist) {
+        for (auto [tid, v, val] : nlist) {
             values.push_back(val);
         }
         
@@ -592,8 +593,8 @@ TEST_CASE("neighbors - vector vertices map edges", "[neighbors][edge_map]") {
         
         REQUIRE(nlist.size() == 1);
         
-        auto [v] = *nlist.begin();
-        REQUIRE(v.vertex_id() == 2);
+        auto [tid, v] = *nlist.begin();
+        REQUIRE(tid == 2);
     }
 }
 
@@ -620,8 +621,8 @@ TEST_CASE("neighbors - map vertices map edges", "[neighbors][map][edge_map]") {
         REQUIRE(nlist.size() == 2);
         
         std::vector<int> neighbor_ids;
-        for (auto [v] : nlist) {
-            neighbor_ids.push_back(v.vertex_id());
+        for (auto [tid, v] : nlist) {
+            neighbor_ids.push_back(tid);
         }
         
         REQUIRE(neighbor_ids == std::vector<int>{20, 30});
@@ -636,7 +637,7 @@ TEST_CASE("neighbors - map vertices map edges", "[neighbors][map][edge_map]") {
         });
         
         std::vector<int> values;
-        for (auto [v, val] : nlist) {
+        for (auto [tid, v, val] : nlist) {
             values.push_back(val);
         }
         
@@ -648,8 +649,8 @@ TEST_CASE("neighbors - map vertices map edges", "[neighbors][map][edge_map]") {
         
         for (auto [id, v] : vertexlist(g)) {
             auto source_id = id;
-            for (auto [neighbor] : neighbors(g, v)) {
-                all_neighbors.emplace_back(source_id, neighbor.vertex_id());
+            for (auto [tid, neighbor] : neighbors(g, v)) {
+                all_neighbors.emplace_back(source_id, tid);
             }
         }
         
@@ -663,9 +664,10 @@ TEST_CASE("neighbors - map vertices map edges", "[neighbors][map][edge_map]") {
         auto verts = vertices(g);
         auto v10 = *verts.begin();
         
-        for (auto [v] : neighbors(g, v10)) {
+        for (auto [tid, v] : neighbors(g, v10)) {
             // v should be a vertex_t<Graph>
             STATIC_REQUIRE(std::is_same_v<decltype(v), vertex_t<Graph>>);
+            REQUIRE((tid == 20 || tid == 30));
             (void)v;  // Suppress unused warning
         }
     }

@@ -111,8 +111,8 @@ TEST_CASE("Single vertex - self-loop", "[views][edge_cases][single_vertex][self_
         auto view = g | neighbors(0);
         REQUIRE(std::ranges::distance(view) == 1);
         
-        for (auto [v] : view) {
-            REQUIRE(vertex_id(g, v) == 0);  // Points to itself
+        for (auto [tid, v] : view) {
+            REQUIRE(tid == 0);  // Points to itself
         }
     }
     
@@ -299,8 +299,8 @@ TEST_CASE("Parallel edges - multiple edges between same vertices", "[views][edge
         auto view = g | neighbors(0);
         REQUIRE(std::ranges::distance(view) == 3);  // Three parallel edges
         
-        for (auto [v] : view) {
-            REQUIRE(vertex_id(g, v) == 1);
+        for (auto [tid, v] : view) {
+            REQUIRE(tid == 1);
         }
     }
     
@@ -344,9 +344,8 @@ TEST_CASE("Const graph - neighbors", "[views][edge_cases][const]") {
     auto view = g | neighbors(0);
     REQUIRE(std::ranges::distance(view) == 2);
     
-    for (auto [v] : view) {
-        auto id = vertex_id(g, v);
-        REQUIRE((id == 1 || id == 2));
+    for (auto [tid, v] : view) {
+        REQUIRE((tid == 1 || tid == 2));
     }
 }
 

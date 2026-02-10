@@ -212,8 +212,8 @@ TEST_CASE("neighbors adaptor - basic pipe syntax", "[adaptors][neighbors]") {
     REQUIRE(size(view) == 2);  // vertex 0 has 2 neighbors
     
     std::vector<int> neighbor_ids;
-    for (auto [v] : view) {
-        neighbor_ids.push_back(vertex_id(g, v));
+    for (auto [tid, v] : view) {
+        neighbor_ids.push_back(tid);
     }
     
     REQUIRE(neighbor_ids == std::vector{1, 2});
@@ -229,7 +229,7 @@ TEST_CASE("neighbors adaptor - with value function", "[adaptors][neighbors]") {
     REQUIRE(size(view) == 2);
     
     std::vector<int> values;
-    for (auto [v, val] : view) {
+    for (auto [tid, v, val] : view) {
         values.push_back(val);
     }
     
@@ -241,13 +241,13 @@ TEST_CASE("neighbors adaptor - chaining with std::views::filter", "[adaptors][ne
     
     // Test chaining: g | neighbors(uid) | std::views::filter
     auto view = g | neighbors(0) | std::views::filter([&g](auto&& tuple) {
-        auto [v] = tuple;
-        return vertex_id(g, v) > 1;
+        auto [tid, v] = tuple;
+        return tid > 1;
     });
     
     std::vector<int> neighbor_ids;
-    for (auto [v] : view) {
-        neighbor_ids.push_back(vertex_id(g, v));
+    for (auto [tid, v] : view) {
+        neighbor_ids.push_back(tid);
     }
     
     REQUIRE(neighbor_ids == std::vector{2});
@@ -859,8 +859,8 @@ TEST_CASE("chaining neighbors with filter", "[adaptors][chaining]") {
     std::vector<int> results;
     for (auto id : g | neighbors(0)
                      | std::views::transform([&g](auto info) {
-                         auto [v] = info;
-                         return vertex_id(g, v);
+                         auto [tid, v] = info;
+                         return tid;
                        })
                      | std::views::filter([](int id) { return id % 2 == 0; })) {
         results.push_back(id);
@@ -912,8 +912,8 @@ TEST_CASE("mixing different view types in chains", "[adaptors][chaining]") {
                           return id; 
                         })) {
         // For each vertex, get its neighbors
-        for (auto [n] : g | neighbors(vid)) {
-            all_neighbors.push_back(vertex_id(g, n));
+        for (auto [tid, n] : g | neighbors(vid)) {
+            all_neighbors.push_back(tid);
         }
     }
     

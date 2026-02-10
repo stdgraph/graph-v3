@@ -40,7 +40,7 @@ public:
     using edge_range_type = adj_list::vertex_edge_range_t<G>;
     using edge_iterator_type = adj_list::vertex_edge_iterator_t<G>;
     using edge_type = adj_list::edge_t<G>;
-    using info_type = neighbor_info<void, false, vertex_type, void>;
+    using info_type = neighbor_info<vertex_id_type, false, vertex_type, void>;
 
     /**
      * @brief Forward iterator yielding neighbor_info values
@@ -61,7 +61,8 @@ public:
         [[nodiscard]] constexpr value_type operator*() const noexcept {
             // Get target vertex descriptor from the edge
             auto target = adj_list::target(*g_, current_edge_);
-            return value_type{target};
+            auto target_id = adj_list::vertex_id(*g_, target);
+            return value_type{target_id, target};
         }
 
         constexpr iterator& operator++() noexcept {
@@ -131,7 +132,7 @@ public:
     using edge_iterator_type = adj_list::vertex_edge_iterator_t<G>;
     using edge_type = adj_list::edge_t<G>;
     using value_type_result = std::invoke_result_t<VVF, vertex_type>;
-    using info_type = neighbor_info<void, false, vertex_type, value_type_result>;
+    using info_type = neighbor_info<vertex_id_type, false, vertex_type, value_type_result>;
 
     /**
      * @brief Forward iterator yielding neighbor_info values with computed value
@@ -151,7 +152,8 @@ public:
 
         [[nodiscard]] constexpr value_type operator*() const {
             auto target = adj_list::target(*g_, current_edge_);
-            return value_type{target, std::invoke(*vvf_, target)};
+            auto target_id = adj_list::vertex_id(*g_, target);
+            return value_type{target_id, target, std::invoke(*vvf_, target)};
         }
 
         constexpr iterator& operator++() noexcept {

@@ -50,7 +50,7 @@ TEST_CASE("graph.hpp - basic views accessible", "[graph_hpp][basic_views]") {
     REQUIRE(edge_count == 2);
     
     int neighbor_count = 0;
-    for (auto [n] : g | neighbors(0)) {
+    for (auto [tid, n] : g | neighbors(0)) {
         ++neighbor_count;
     }
     REQUIRE(neighbor_count == 2);

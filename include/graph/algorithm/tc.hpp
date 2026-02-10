@@ -239,7 +239,7 @@ size_t triangle_count(G&& g) {
     auto u_it = std::ranges::begin(u_edges);
     auto u_end = std::ranges::end(u_edges);
     
-    // ==========================================================================
+    // ========================================================================== 
     // For each neighbor v of u, find triangles containing edge (u,v)
     // ==========================================================================
     while (u_it != u_end) {
