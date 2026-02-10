@@ -121,8 +121,7 @@ void dijkstra_clrs(
     auto uid = Q.top().vertex_id;
     Q.pop();
 
-    for (auto&& [uv, w] : views::incidence(g, uid, weight)) {
-      auto vid = target_id(g, uv); // Note: vid isn't returned by incidence view as it was in graph-v2
+    for (auto&& [vid, uv, w] : views::incidence(g, uid, weight)) {
       if (distance[uid] + w < distance[vid]) {
         distance[vid] = distance[uid] + w;
         if constexpr (!is_same_v<Predecessor, _null_range_type>)
