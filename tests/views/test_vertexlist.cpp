@@ -121,7 +121,8 @@ TEST_CASE("vertexlist - multiple vertices", "[vertexlist][multiple]") {
         auto vlist = vertexlist(g);
         
         std::size_t idx = 0;
-        for (auto [v] : vlist) {
+        for (auto [id, v] : vlist) {
+            REQUIRE(id == idx);
             REQUIRE(v.vertex_id() == idx);
             ++idx;
         }
@@ -134,7 +135,8 @@ TEST_CASE("vertexlist - multiple vertices", "[vertexlist][multiple]") {
         });
         
         std::vector<std::size_t> edge_counts;
-        for (auto [v, count] : vlist) {
+        for (auto [id, v, count] : vlist) {
+            REQUIRE(id == v.vertex_id());
             edge_counts.push_back(count);
         }
         
@@ -156,7 +158,8 @@ TEST_CASE("vertexlist - value function types", "[vertexlist][vvf]") {
         });
         
         std::vector<std::string> names;
-        for (auto [v, name] : vlist) {
+        for (auto [id, v, name] : vlist) {
+            REQUIRE(id == v.vertex_id());
             names.push_back(name);
         }
         
@@ -169,7 +172,8 @@ TEST_CASE("vertexlist - value function types", "[vertexlist][vvf]") {
         });
         
         std::vector<double> values;
-        for (auto [v, val] : vlist) {
+        for (auto [id, v, val] : vlist) {
+            REQUIRE(id == v.vertex_id());
             values.push_back(val);
         }
         
@@ -186,7 +190,8 @@ TEST_CASE("vertexlist - value function types", "[vertexlist][vvf]") {
         });
         
         std::vector<std::string> result;
-        for (auto [v, label] : vlist) {
+        for (auto [id, v, label] : vlist) {
+            REQUIRE(id == v.vertex_id());
             result.push_back(label);
         }
         
@@ -200,11 +205,12 @@ TEST_CASE("vertexlist - value function types", "[vertexlist][vvf]") {
         });
         
         std::vector<int> values;
-        for (auto [v, val] : vlist) {
+        for (auto [id, v, val] : vlist) {
+            REQUIRE(id == v.vertex_id());
             values.push_back(val);
         }
         
-        REQUIRE(values == std::vector<int>{0, 1, 2});
+        REQUIRE(values == std::vector<int>{0, 1, 2}); 
     }
 }
 
@@ -226,7 +232,8 @@ TEST_CASE("vertexlist - deque-based graph", "[vertexlist][deque]") {
         REQUIRE(vlist.size() == 3);
         
         std::vector<std::size_t> ids;
-        for (auto [v] : vlist) {
+        for (auto [id, v] : vlist) {
+            REQUIRE(id == v.vertex_id());
             ids.push_back(v.vertex_id());
         }
         
@@ -239,7 +246,8 @@ TEST_CASE("vertexlist - deque-based graph", "[vertexlist][deque]") {
         });
         
         std::vector<int> targets;
-        for (auto [v, target] : vlist) {
+        for (auto [id, v, target] : vlist) {
+            REQUIRE(id == v.vertex_id());
             targets.push_back(target);
         }
         
@@ -336,12 +344,13 @@ TEST_CASE("vertexlist - iterator properties", "[vertexlist][iterator]") {
 TEST_CASE("vertexlist - vertex_info types", "[vertexlist][info]") {
     using Graph = std::vector<std::vector<int>>;
     using VertexType = vertex_t<Graph>;
+    using VertexIdType = vertex_id_t<Graph>;
 
     SECTION("no value function - info type") {
         using ViewType = vertexlist_view<Graph, void>;
         using InfoType = typename ViewType::info_type;
         
-        STATIC_REQUIRE(std::is_void_v<typename InfoType::id_type>);
+        STATIC_REQUIRE(std::is_same_v<typename InfoType::id_type, VertexIdType>);
         STATIC_REQUIRE(std::is_same_v<typename InfoType::vertex_type, VertexType>);
         STATIC_REQUIRE(std::is_void_v<typename InfoType::value_type>);
     }
@@ -352,7 +361,7 @@ TEST_CASE("vertexlist - vertex_info types", "[vertexlist][info]") {
         using ViewType = vertexlist_view<Graph, VVFType>;
         using InfoType = typename ViewType::info_type;
         
-        STATIC_REQUIRE(std::is_void_v<typename InfoType::id_type>);
+        STATIC_REQUIRE(std::is_same_v<typename InfoType::id_type, VertexIdType>);
         STATIC_REQUIRE(std::is_same_v<typename InfoType::vertex_type, VertexType>);
         STATIC_REQUIRE(std::is_same_v<typename InfoType::value_type, int>);
     }
@@ -372,7 +381,8 @@ TEST_CASE("vertexlist - const graph", "[vertexlist][const]") {
         REQUIRE(vlist.size() == 3);
         
         std::size_t count = 0;
-        for (auto [v] : vlist) {
+        for (auto [id, v] : vlist) {
+            REQUIRE(id == count);
             REQUIRE(v.vertex_id() == count);
             ++count;
         }
@@ -383,8 +393,10 @@ TEST_CASE("vertexlist - const graph", "[vertexlist][const]") {
         auto vlist = vertexlist(g, [](auto v) { return v.vertex_id(); });
         
         std::vector<std::size_t> ids;
-        for (auto [v, id] : vlist) {
-            ids.push_back(id);
+        for (auto [id, v, val_id] : vlist) {
+            REQUIRE(id == v.vertex_id());
+            REQUIRE(id == val_id);
+            ids.push_back(val_id);
         }
         
         REQUIRE(ids == std::vector<std::size_t>{0, 1, 2});
@@ -409,7 +421,8 @@ TEST_CASE("vertexlist - weighted graph", "[vertexlist][weighted]") {
         REQUIRE(vlist.size() == 3);
         
         std::vector<std::size_t> ids;
-        for (auto [v] : vlist) {
+        for (auto [id, v] : vlist) {
+            REQUIRE(id == v.vertex_id());
             ids.push_back(v.vertex_id());
         }
         
@@ -427,7 +440,8 @@ TEST_CASE("vertexlist - weighted graph", "[vertexlist][weighted]") {
         });
         
         std::vector<double> sums;
-        for (auto [v, sum] : vlist) {
+        for (auto [id, v, sum] : vlist) {
+            REQUIRE(id == v.vertex_id());
             sums.push_back(sum);
         }
         
@@ -481,7 +495,8 @@ TEST_CASE("vertexlist - map vertices vector edges", "[vertexlist][map]") {
         REQUIRE(vlist.size() == 3);
         
         std::vector<int> ids;
-        for (auto [v] : vlist) {
+        for (auto [id, v] : vlist) {
+            REQUIRE(id == v.vertex_id());
             ids.push_back(v.vertex_id());
         }
         
@@ -496,7 +511,8 @@ TEST_CASE("vertexlist - map vertices vector edges", "[vertexlist][map]") {
         });
         
         std::vector<std::size_t> edge_counts;
-        for (auto [v, count] : vlist) {
+        for (auto [id, v, count] : vlist) {
+            REQUIRE(id == v.vertex_id());
             edge_counts.push_back(count);
         }
         
@@ -517,7 +533,8 @@ TEST_CASE("vertexlist - map vertices vector edges", "[vertexlist][map]") {
         
         REQUIRE(vlist.size() == 1);
         
-        auto [v] = *vlist.begin();
+        auto [id, v] = *vlist.begin();
+        REQUIRE(id == 42);
         REQUIRE(v.vertex_id() == 42);
     }
 }
@@ -541,7 +558,8 @@ TEST_CASE("vertexlist - vector vertices map edges", "[vertexlist][edge_map]") {
         REQUIRE(vlist.size() == 3);
         
         std::vector<std::size_t> ids;
-        for (auto [v] : vlist) {
+        for (auto [id, v] : vlist) {
+            REQUIRE(id == v.vertex_id());
             ids.push_back(v.vertex_id());
         }
         
@@ -559,7 +577,8 @@ TEST_CASE("vertexlist - vector vertices map edges", "[vertexlist][edge_map]") {
         });
         
         std::vector<double> sums;
-        for (auto [v, sum] : vlist) {
+        for (auto [id, v, sum] : vlist) {
+            REQUIRE(id == v.vertex_id());
             sums.push_back(sum);
         }
         
@@ -588,7 +607,8 @@ TEST_CASE("vertexlist - map vertices map edges", "[vertexlist][map][edge_map]") 
         REQUIRE(vlist.size() == 3);
         
         std::vector<int> ids;
-        for (auto [v] : vlist) {
+        for (auto [id, v] : vlist) {
+            REQUIRE(id == v.vertex_id());
             ids.push_back(v.vertex_id());
         }
         
@@ -601,7 +621,8 @@ TEST_CASE("vertexlist - map vertices map edges", "[vertexlist][map][edge_map]") 
         });
         
         std::vector<std::size_t> counts;
-        for (auto [v, count] : vlist) {
+        for (auto [id, v, count] : vlist) {
+            REQUIRE(id == v.vertex_id());
             counts.push_back(count);
         }
         
@@ -612,7 +633,8 @@ TEST_CASE("vertexlist - map vertices map edges", "[vertexlist][map][edge_map]") 
         auto vlist = vertexlist(g, [](auto v) { return v.vertex_id() * 10; });
         
         std::vector<int> scaled_ids;
-        for (auto [v, scaled] : vlist) {
+        for (auto [id, v, scaled] : vlist) {
+            REQUIRE(id == v.vertex_id());
             scaled_ids.push_back(scaled);
         }
         

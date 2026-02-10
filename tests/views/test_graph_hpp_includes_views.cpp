@@ -38,7 +38,7 @@ TEST_CASE("graph.hpp - basic views accessible", "[graph_hpp][basic_views]") {
     
     // Test that basic views work through graph.hpp
     int vertex_count = 0;
-    for (auto [v] : g | vertexlist()) {
+    for (auto [id, v] : g | vertexlist()) {
         ++vertex_count;
     }
     REQUIRE(vertex_count == 3);
@@ -112,7 +112,7 @@ TEST_CASE("graph.hpp - value functions work", "[graph_hpp][value_functions]") {
     auto vvf = [&g](auto v) { return vertex_id(g, v); };
     
     std::vector<int> values;
-    for (auto [v, val] : g | vertexlist(vvf)) {
+    for (auto [id, v, val] : g | vertexlist(vvf)) {
         values.push_back(val);
     }
     
@@ -131,7 +131,7 @@ TEST_CASE("graph.hpp - chaining with std::views", "[graph_hpp][chaining]") {
         | std::views::take(2);
     
     int count = 0;
-    for (auto [v] : vertex_view) {
+    for (auto [id, v] : vertex_view) {
         ++count;
     }
     REQUIRE(count == 2);

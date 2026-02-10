@@ -36,7 +36,7 @@ TEST_CASE("Empty graph - vertexlist view", "[views][edge_cases][empty]") {
     
     // Should not iterate at all
     size_t count = 0;
-    for (auto [v] : view) {
+    for (auto [id, v] : view) {
         (void)v;
         ++count;
     }
@@ -71,7 +71,8 @@ TEST_CASE("Single vertex - no edges", "[views][edge_cases][single_vertex]") {
         auto view = g | vertexlist();
         REQUIRE(std::ranges::distance(view) == 1);
         
-        for (auto [v] : view) {
+        for (auto [id, v] : view) {
+            REQUIRE(id == 0);
             REQUIRE(vertex_id(g, v) == 0);
         }
     }
@@ -319,9 +320,9 @@ TEST_CASE("Const graph - vertexlist", "[views][edge_cases][const]") {
     auto view = g | vertexlist();
     REQUIRE(std::ranges::distance(view) == 3);
     
-    for (auto [v] : view) {
+    for (auto [id, v] : view) {
         // Should compile and work with const graph
-        auto id = vertex_id(g, v);
+        REQUIRE(id == vertex_id(g, v));
         REQUIRE(id < 3);
     }
 }
@@ -430,8 +431,8 @@ TEST_CASE("Value function - capturing lambda", "[views][edge_cases][value_functi
     
     auto view = g | vertexlist(vvf);
     
-    for (auto [v, name] : view) {
-        auto id = vertex_id(g, v);
+    for (auto [id, v, name] : view) {
+        REQUIRE(id == vertex_id(g, v));
         REQUIRE(name == names[id]);
     }
 }
@@ -447,7 +448,8 @@ TEST_CASE("Value function - mutable lambda", "[views][edge_cases][value_function
     auto view = g | vertexlist(vvf);
     
     std::vector<size_t> values;
-    for (auto [v, val] : view) {
+    for (auto [id, v, val] : view) {
+        REQUIRE(id == vertex_id(g, v));
         values.push_back(val);
     }
     
@@ -464,8 +466,9 @@ TEST_CASE("Value function - with structured binding", "[views][edge_cases][value
     
     auto view = g | vertexlist(vvf);
     
-    for (auto [v, val] : view) {
-        REQUIRE(val == vertex_id(g, v) * 10);
+    for (auto [id, v, val] : view) {
+        REQUIRE(id == vertex_id(g, v));
+        REQUIRE(val == id * 10);
     }
 }
 

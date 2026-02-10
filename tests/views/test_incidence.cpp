@@ -456,7 +456,7 @@ TEST_CASE("incidence - iterating all vertices", "[incidence][all]") {
     // Collect all edges from all vertices
     std::vector<std::pair<int, int>> all_edges;
     
-    for (auto [v] : vertexlist(g)) {
+    for (auto [id, v] : vertexlist(g)) {
         for (auto [e] : incidence(g, v)) {
             all_edges.emplace_back(source_id(g, e), target_id(g, e));
         }
@@ -539,7 +539,7 @@ TEST_CASE("incidence - map vertices vector edges", "[incidence][map]") {
     SECTION("iterate all vertices and edges") {
         std::vector<std::pair<int, int>> all_edges;
         
-        for (auto [v] : vertexlist(g)) {
+        for (auto [id, v] : vertexlist(g)) {
             for (auto [e] : incidence(g, v)) {
                 all_edges.emplace_back(source_id(g, e), target_id(g, e));
             }
@@ -667,7 +667,7 @@ TEST_CASE("incidence - map vertices map edges", "[incidence][map][edge_map]") {
     SECTION("all edges traversal") {
         std::vector<std::tuple<int, int, double>> all_edges;
         
-        for (auto [v] : vertexlist(g)) {
+        for (auto [id, v] : vertexlist(g)) {
             for (auto [e, w] : incidence(g, v, [&g](auto e) { return edge_value(g, e); })) {
                 all_edges.emplace_back(source_id(g, e), target_id(g, e), w);
             }
@@ -808,7 +808,7 @@ TEST_CASE("incidence - undirected_adjacency_list iteration order", "[incidence][
     g.create_edge(2, 0, 3);
     
     SECTION("each vertex has exactly 2 incident edges") {
-        for (auto [v] : vertexlist(g)) {
+        for (auto [id, v] : vertexlist(g)) {
             auto inc = incidence(g, v);
             REQUIRE(inc.size() == 2);
         }
@@ -817,7 +817,7 @@ TEST_CASE("incidence - undirected_adjacency_list iteration order", "[incidence][
     SECTION("full graph traversal - each edge visited twice (once per direction)") {
         std::vector<std::pair<unsigned int, unsigned int>> all_edges;
         
-        for (auto [v] : vertexlist(g)) {
+        for (auto [id, v] : vertexlist(g)) {
             for (auto [e] : incidence(g, v)) {
                 all_edges.emplace_back(source_id(g, e), target_id(g, e));
             }

@@ -38,8 +38,9 @@ TEST_CASE("vertexlist adaptor - basic pipe syntax", "[adaptors][vertexlist]") {
     REQUIRE(size(view) == 3);
     
     std::vector<int> vertex_ids;
-    for (auto [v] : view) {
-        vertex_ids.push_back(vertex_id(g, v));
+    for (auto [id, v] : view) {
+        vertex_ids.push_back(id);
+        REQUIRE(id == vertex_id(g, v));  // Verify id matches
     }
     
     REQUIRE(vertex_ids == std::vector{0, 1, 2});
@@ -55,8 +56,9 @@ TEST_CASE("vertexlist adaptor - with value function", "[adaptors][vertexlist]") 
     REQUIRE(size(view) == 3);
     
     std::vector<int> values;
-    for (auto [v, val] : view) {
+    for (auto [id, v, val] : view) {
         values.push_back(val);
+        REQUIRE(id == vertex_id(g, v));  // Verify id matches
     }
     
     REQUIRE(values == std::vector{0, 10, 20});
@@ -69,8 +71,9 @@ TEST_CASE("vertexlist adaptor - chaining with std::views::take", "[adaptors][ver
     auto view = g | vertexlist() | std::views::take(2);
     
     std::vector<int> vertex_ids;
-    for (auto [v] : view) {
-        vertex_ids.push_back(vertex_id(g, v));
+    for (auto [id, v] : view) {
+        vertex_ids.push_back(id);
+        REQUIRE(id == vertex_id(g, v));  // Verify id matches
     }
     
     REQUIRE(vertex_ids.size() == 2);
@@ -84,16 +87,16 @@ TEST_CASE("vertexlist adaptor - chaining with transform", "[adaptors][vertexlist
     // This pattern works because vertexlist() (without VVF) creates a semiregular view
     auto view = g | vertexlist()
                   | std::views::transform([&g](auto&& tuple) {
-                      auto [v] = tuple;
-                      return std::make_tuple(v, vertex_id(g, v) * 10);
+                      auto [id, v] = tuple;
+                      return std::make_tuple(id, v, id * 10);
                   })
                   | std::views::filter([](auto&& tuple) {
-                      auto [v, val] = tuple;
+                      auto [id, v, val] = tuple;
                       return val > 0;
                   });
     
     std::vector<int> values;
-    for (auto [v, val] : view) {
+    for (auto [id, v, val] : view) {
         values.push_back(val);
     }
     
@@ -380,16 +383,16 @@ TEST_CASE("adaptors work with std::views algorithms", "[adaptors][composition]")
     // Pattern: use vertexlist() then std::views::transform for value computation
     auto view = g | vertexlist()
                   | std::views::transform([&g](auto&& tuple) {
-                      auto [v] = tuple;
-                      return std::make_tuple(v, vertex_id(g, v) * 10);
+                      auto [id, v] = tuple;
+                      return std::make_tuple(id, v, id * 10);
                   })
                   | std::views::filter([](auto&& tuple) {
-                      auto [v, val] = tuple;
-                      return val >= 10;
+                      auto [id, v, val] = tuple;
+                      return val > 0;
                   });
     
     std::vector<int> values;
-    for (auto [v, val] : view) {
+    for (auto [id, v, val] : view) {
         values.push_back(val);
     }
     
@@ -403,8 +406,8 @@ TEST_CASE("complex chaining scenario", "[adaptors][composition]") {
     // Pattern: use vertexlist() then std::views::transform for value computation
     auto view = g | vertexlist()
                   | std::views::transform([&g](auto&& tuple) {
-                      auto [v] = tuple;
-                      return vertex_id(g, v) * 10;
+                      auto [id, v] = tuple;
+                      return id * 10;
                   })
                   | std::views::take(2) 
                   | std::views::transform([](auto val) {
@@ -737,8 +740,8 @@ TEST_CASE("complex chaining - multiple transforms", "[adaptors][chaining]") {
     std::vector<int> results;
     for (auto id : g | vertexlist()
                      | std::views::transform([&g](auto info) { 
-                         auto [v] = info;
-                         return vertex_id(g, v); 
+                         auto [id, v] = info;
+                         return id; 
                        })
                      | std::views::transform([](int id) { return id * 10; })
                      | std::views::transform([](int val) { return val + 5; })) {
@@ -759,8 +762,8 @@ TEST_CASE("complex chaining - filter and transform", "[adaptors][chaining]") {
     std::vector<int> results;
     for (auto val : g | vertexlist()
                       | std::views::transform([&g](auto info) { 
-                          auto [v] = info;
-                          return vertex_id(g, v); 
+                          auto [id, v] = info;
+                          return id; 
                         })
                       | std::views::filter([](int id) { return id > 0; })
                       | std::views::transform([](int id) { return id * 100; })) {
@@ -800,8 +803,8 @@ TEST_CASE("chaining with std::views::take", "[adaptors][chaining]") {
     std::vector<int> results;
     for (auto val : g | vertexlist()
                       | std::views::transform([&g](auto info) { 
-                          auto [v] = info;
-                          return vertex_id(g, v); 
+                          auto [id, v] = info;
+                          return id; 
                         })
                       | std::views::take(2)) {
         results.push_back(val);
@@ -817,8 +820,8 @@ TEST_CASE("chaining with std::views::drop", "[adaptors][chaining]") {
     std::vector<int> results;
     for (auto val : g | vertexlist()
                       | std::views::transform([&g](auto info) { 
-                          auto [v] = info;
-                          return vertex_id(g, v); 
+                          auto [id, v] = info;
+                          return id; 
                         })
                       | std::views::drop(1)) {
         results.push_back(val);
@@ -873,8 +876,9 @@ TEST_CASE("const correctness - const graph with pipe", "[adaptors][const]") {
     
     // Test that views work with const graphs
     std::vector<int> results;
-    for (auto [v] : g | vertexlist()) {
-        results.push_back(vertex_id(g, v));
+    for (auto [id, v] : g | vertexlist()) {
+        REQUIRE(id == vertex_id(g, v));
+        results.push_back(id);
     }
     
     REQUIRE(results.size() == 3);
@@ -887,8 +891,8 @@ TEST_CASE("const correctness - const graph with chaining", "[adaptors][const]") 
     std::vector<int> results;
     for (auto id : g | vertexlist()
                      | std::views::transform([&g](auto info) { 
-                         auto [v] = info;
-                         return vertex_id(g, v); 
+                         auto [id, v] = info;
+                         return id; 
                        })
                      | std::views::filter([](int id) { return id < 3; })) {
         results.push_back(id);
@@ -904,8 +908,8 @@ TEST_CASE("mixing different view types in chains", "[adaptors][chaining]") {
     std::vector<int> all_neighbors;
     for (auto vid : g | vertexlist()
                       | std::views::transform([&g](auto info) { 
-                          auto [v] = info;
-                          return vertex_id(g, v); 
+                          auto [id, v] = info;
+                          return id; 
                         })) {
         // For each vertex, get its neighbors
         for (auto [n] : g | neighbors(vid)) {

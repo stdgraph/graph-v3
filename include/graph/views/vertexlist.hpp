@@ -3,7 +3,7 @@
  * @brief Vertexlist view for iterating over graph vertices
  * 
  * Provides a view that iterates over all vertices in a graph, yielding
- * vertex_info<void, vertex_descriptor, VV> for each vertex. Supports
+ * vertex_info<vertex_id_type, vertex_descriptor, VV> for each vertex. Supports
  * optional value functions to compute per-vertex values.
  * 
  * @section chaining_with_std_views Chaining with std::views
@@ -11,8 +11,8 @@
  * Views created WITHOUT value functions chain perfectly with std::views:
  * @code
  *   auto view = g | vertexlist()
- *                 | std::views::transform([&g](auto vi) { return vertex_id(g, vi.vertex); })
- *                 | std::views::filter([](auto id) { return id > 0; });
+ *                 | std::views::transform([](auto vi) { return vi.id * 2; })
+ *                 | std::views::filter([](auto doubled_id) { return doubled_id > 0; });
  * @endcode
  * 
  * @warning LIMITATION: Views with capturing lambda value functions cannot chain with std::views
@@ -32,8 +32,8 @@
  * 1. RECOMMENDED: Use views without value functions, then transform:
  * @code
  *   auto view = g | vertexlist()
- *                 | std::views::transform([&g](auto vi) { 
- *                     return std::make_tuple(vi.vertex, vertex_id(g, vi.vertex) * 10);
+ *                 | std::views::transform([](auto vi) { 
+ *                     return std::make_tuple(vi.id, vi.vertex, vi.id * 10);
  *                   });
  * @endcode
  * 
@@ -78,7 +78,7 @@ class vertexlist_view;
 /**
  * @brief Vertexlist view without value function
  * 
- * Iterates over vertices yielding vertex_info<void, vertex_t<G>, void>
+ * Iterates over vertices yielding vertex_info<vertex_id_type, vertex_t<G>, void>
  * 
  * @tparam G Graph type satisfying adjacency_list concept
  */
@@ -88,7 +88,7 @@ public:
     using graph_type = G;
     using vertex_type = adj_list::vertex_t<G>;
     using vertex_id_type = adj_list::vertex_id_t<G>;
-    using info_type = vertex_info<void, vertex_type, void>;
+    using info_type = vertex_info<vertex_id_type, vertex_type, void>;
 
     /**
      * @brief Forward iterator yielding vertex_info values
@@ -99,35 +99,35 @@ public:
         using difference_type = std::ptrdiff_t;
         using value_type = info_type;
         using pointer = const value_type*;
-        using reference = const value_type&;
+        using reference = value_type;
 
         constexpr iterator() noexcept = default;
 
         constexpr iterator(G* g, vertex_type v) noexcept
-            : g_(g), current_{v} {}
+            : g_(g), current_(v) {}
 
-        [[nodiscard]] constexpr reference operator*() const noexcept {
-            return current_;
+        [[nodiscard]] constexpr value_type operator*() const noexcept {
+            return value_type{adj_list::vertex_id(*g_, current_), current_};
         }
 
         constexpr iterator& operator++() noexcept {
-            ++current_.vertex;
+            ++current_;
             return *this;
         }
 
         constexpr iterator operator++(int) noexcept {
             auto tmp = *this;
-            ++current_.vertex;
+            ++current_;
             return tmp;
         }
 
         [[nodiscard]] constexpr bool operator==(const iterator& other) const noexcept {
-            return current_.vertex == other.current_.vertex;
+            return current_ == other.current_;
         }
 
     private:
         G* g_ = nullptr;
-        value_type current_{};
+        vertex_type current_{};
     };
 
     using const_iterator = iterator;
@@ -158,7 +158,7 @@ private:
 /**
  * @brief Vertexlist view with value function
  * 
- * Iterates over vertices yielding vertex_info<void, vertex_t<G>, VV>
+ * Iterates over vertices yielding vertex_info<vertex_id_type, vertex_t<G>, VV>
  * where VV is the result of invoking the value function on the vertex descriptor.
  * 
  * @tparam G Graph type satisfying adjacency_list concept
@@ -171,7 +171,7 @@ public:
     using vertex_type = adj_list::vertex_t<G>;
     using vertex_id_type = adj_list::vertex_id_t<G>;
     using value_type_result = std::invoke_result_t<VVF, vertex_type>;
-    using info_type = vertex_info<void, vertex_type, value_type_result>;
+    using info_type = vertex_info<vertex_id_type, vertex_type, value_type_result>;
 
     /**
      * @brief Forward iterator yielding vertex_info values with computed value
@@ -190,7 +190,7 @@ public:
             : g_(g), current_(v), vvf_(vvf) {}
 
         [[nodiscard]] constexpr value_type operator*() const {
-            return value_type{current_, std::invoke(*vvf_, current_)};
+            return value_type{adj_list::vertex_id(*g_, current_), current_, std::invoke(*vvf_, current_)};
         }
 
         constexpr iterator& operator++() noexcept {
@@ -257,7 +257,7 @@ vertexlist_view(G&, VVF) -> vertexlist_view<G, VVF>;
  * @brief Create a vertexlist view without value function
  * 
  * @param g The graph to iterate over
- * @return vertexlist_view yielding vertex_info<void, vertex_descriptor, void>
+ * @return vertexlist_view yielding vertex_info<vertex_id_type, vertex_descriptor, void>
  */
 template <adj_list::adjacency_list G>
 [[nodiscard]] constexpr auto vertexlist(G& g) noexcept {
@@ -269,7 +269,7 @@ template <adj_list::adjacency_list G>
  * 
  * @param g The graph to iterate over
  * @param vvf Value function invoked for each vertex
- * @return vertexlist_view yielding vertex_info<void, vertex_descriptor, VV>
+ * @return vertexlist_view yielding vertex_info<vertex_id_type, vertex_descriptor, VV>
  */
 template <adj_list::adjacency_list G, class VVF>
     requires vertex_value_function<VVF, adj_list::vertex_t<G>>

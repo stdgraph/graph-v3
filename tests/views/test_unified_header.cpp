@@ -30,7 +30,7 @@ TEST_CASE("unified header - all basic views accessible", "[unified][basic_views]
     
     // Test that all basic views are accessible
     int vertex_count = 0;
-    for (auto [v] : g | vertexlist()) {
+    for (auto [id, v] : g | vertexlist()) {
         ++vertex_count;
     }
     REQUIRE(vertex_count == 3);
@@ -103,7 +103,7 @@ TEST_CASE("unified header - value functions work", "[unified][value_functions]")
     auto vvf = [&g](auto v) { return vertex_id(g, v) * 10; };
     
     std::vector<int> values;
-    for (auto [v, val] : g | vertexlist(vvf)) {
+    for (auto [id, v, val] : g | vertexlist(vvf)) {
         values.push_back(val);
     }
     
@@ -120,8 +120,8 @@ TEST_CASE("unified header - chaining with std::views works", "[unified][chaining
     std::vector<int> results;
     for (auto id : g | vertexlist()
                      | std::views::transform([&g](auto info) {
-                         auto [v] = info;
-                         return vertex_id(g, v);
+                         auto [id, v] = info;
+                         return id;
                        })
                      | std::views::filter([](int id) { return id > 0; })
                      | std::views::transform([](int id) { return id * 2; })) {
@@ -139,7 +139,7 @@ TEST_CASE("unified header - direct calls work", "[unified][direct_calls]") {
     // Test that direct calls (without pipes) also work
     auto vertex_view = graph::views::vertexlist(g);
     int count = 0;
-    for (auto [v] : vertex_view) {
+    for (auto [id, v] : vertex_view) {
         ++count;
     }
     REQUIRE(count == 3);
