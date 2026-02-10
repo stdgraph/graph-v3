@@ -214,7 +214,7 @@ void breadth_first_search(G&&            g, // graph
 
   // Initialize BFS data structures
   std::queue<id_type> Q;                                              // FIFO queue for level-order traversal
-  std::vector<bool>   visited(std::ranges::size(vertices(g)), false); // Track visited vertices to prevent cycles
+  std::vector<bool>   visited(num_vertices(g), false); // Track visited vertices to prevent cycles
 
   // Initialize all source vertices
   for (auto uid : sources) {

@@ -139,7 +139,7 @@ void kosaraju(G&&        g,        // graph
               Component& component // out: strongly connected component assignment
 
 ) {
-  size_t            N(size(vertices(g)));
+  size_t            N(num_vertices(g));
   std::vector<bool> visited(N, false);
   using CT = typename std::decay<decltype(*component.begin())>::type;
   std::fill(component.begin(), component.end(), std::numeric_limits<CT>::max());
@@ -320,7 +320,7 @@ template <index_adjacency_list G,
 size_t connected_components(G&&        g,        // graph
                             Component& component // out: connected component assignment
 ) {
-  size_t N(size(vertices(g)));
+  size_t N(num_vertices(g));
   using CT = typename std::decay<decltype(*component.begin())>::type;
   // Initialize all components as unvisited
   std::fill(component.begin(), component.end(), std::numeric_limits<CT>::max());
@@ -333,7 +333,7 @@ size_t connected_components(G&&        g,        // graph
     }
 
     // Handle isolated vertices (no edges)
-    if (!size(edges(g, uid))) {
+    if (!num_edges(g, uid)) {
       component[uid] = cid++;
       continue;
     }
@@ -593,7 +593,7 @@ requires std::convertible_to<range_value_t<Component>, vertex_id_t<G>> &&
 void afforest(G&&          g,         // graph
               Component&   component, // out: connected component assignment
               const size_t neighbor_rounds = 2) {
-  size_t N(size(vertices(g)));
+  size_t N(num_vertices(g));
   // Initialize: each vertex is its own component
   std::iota(component.begin(), component.end(), 0);
 
@@ -700,7 +700,7 @@ void afforest(G&&          g,         // graph
               GT&&         g_t,       // graph transpose
               Component&   component, // out: connected component assignment
               const size_t neighbor_rounds = 2) {
-  size_t N(size(vertices(g)));
+  size_t N(num_vertices(g));
   // Initialize: each vertex is its own component
   std::iota(component.begin(), component.end(), 0);
 

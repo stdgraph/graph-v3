@@ -251,7 +251,7 @@ void depth_first_search(G&&                   g,      // graph
     Black  // Finished
   };
 
-  std::vector<Color> color(std::ranges::size(vertices(g)), Color::White);
+  std::vector<Color> color(num_vertices(g), Color::White);
 
   // Initialize source vertex
   if constexpr (has_on_initialize_vertex<G, Visitor>) {

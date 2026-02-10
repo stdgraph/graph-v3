@@ -193,17 +193,17 @@ requires convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&      //
     return false;
   };
 
-  if (size(distances) < size(vertices(g))) {
+  if (size(distances) < num_vertices(g)) {
     throw std::out_of_range(
           std::format("bellman_ford_shortest_paths: size of distances of {} is less than the number of vertices {}",
-                      size(distances), size(vertices(g))));
+                      size(distances), num_vertices(g)));
   }
 
   if constexpr (!is_same_v<Predecessors, _null_range_type>) {
-    if (size(predecessor) < size(vertices(g))) {
+    if (size(predecessor) < num_vertices(g)) {
       throw std::out_of_range(
             std::format("bellman_ford_shortest_paths: size of predecessor of {} is less than the number of vertices {}",
-                        size(predecessor), size(vertices(g))));
+                        size(predecessor), num_vertices(g)));
     }
   }
 

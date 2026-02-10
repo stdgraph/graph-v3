@@ -345,9 +345,9 @@ bool topological_sort(const G& g, const Sources& sources, OutputIterator result)
     Black  // Finished
   };
   
-  std::vector<Color> color(std::ranges::size(vertices(g)), Color::White);
+  std::vector<Color> color(num_vertices(g), Color::White);
   std::vector<id_type> finish_order;
-  finish_order.reserve(std::ranges::size(vertices(g)));
+  finish_order.reserve(num_vertices(g));
   
   bool has_cycle = false;
   
@@ -555,9 +555,9 @@ bool topological_sort(const G& g, OutputIterator result) {
     Black  // Finished
   };
   
-  std::vector<Color> color(std::ranges::size(vertices(g)), Color::White);
+  std::vector<Color> color(num_vertices(g), Color::White);
   std::vector<id_type> finish_order;
-  finish_order.reserve(std::ranges::size(vertices(g)));
+  finish_order.reserve(num_vertices(g));
   
   bool has_cycle = false;
   

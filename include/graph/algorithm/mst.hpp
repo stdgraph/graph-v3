@@ -918,7 +918,7 @@ auto prim(G&&                   g,           // graph
           vertex_id_t<G>        seed = 0     // seed vtx
 ) {
   typedef range_value_t<Weight> EV;
-  size_t                        N(size(vertices(g)));
+  size_t                        N(num_vertices(g));
 
   // Validate preconditions
   if (static_cast<size_t>(seed) >= N) {

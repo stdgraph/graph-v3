@@ -228,7 +228,7 @@ using adj_list::vertex_id_t;
 template <index_adjacency_list G>
 requires ordered_vertex_edges<G>
 size_t triangle_count(G&& g) {
-  const size_t vertex_count = size(vertices(g));
+  const size_t vertex_count = num_vertices(g);
   size_t triangles = 0;
 
   // ============================================================================
