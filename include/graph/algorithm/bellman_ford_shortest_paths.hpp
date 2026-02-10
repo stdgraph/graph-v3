@@ -228,9 +228,7 @@ requires convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&      //
   bool at_least_one_edge_relaxed = false;
   for (id_type k = 0; k < N; ++k) {
     at_least_one_edge_relaxed = false;
-    for (auto&& [uv, w] : views::edgelist(g, weight)) {
-      id_type uid = source_id(g, uv);
-      id_type vid = target_id(g, uv);
+    for (auto&& [uid, vid, uv, w] : views::edgelist(g, weight)) {
       if constexpr (has_on_examine_edge<G, Visitor>) {
         visitor.on_examine_edge(g, uv);
       }
@@ -249,9 +247,7 @@ requires convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&      //
 
   // Check for negative weight cycles
   if (at_least_one_edge_relaxed) {
-    for (auto&& [uv, w] : views::edgelist(g, weight)) {
-      id_type uid = source_id(g, uv);
-      id_type vid = target_id(g, uv);
+    for (auto&& [uid, vid, uv, w] : views::edgelist(g, weight)) {
       if (compare(combine(distances[uid], w), distances[vid])) {
         if constexpr (!is_same_v<Predecessors, _null_range_type>) {
           predecessor[vid] = uid; // close the cycle
