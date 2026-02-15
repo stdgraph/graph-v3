@@ -1,9 +1,11 @@
 # Change the function signature of VVF and EVF
 
+**Status**: ✅ **IMPLEMENTED** — Phases 1–4 complete, post-phase enhancements done. See [implementation plan](value_function_implementation_plan.md) for details.
+
 ## The Problem: Capturing Lambdas Break View Chaining
 
-### Current Signatures
-Currently, VVF (Vertex Value Function) and EVF (Edge Value Function) have simple signatures:
+### Previous Signatures
+Previously, VVF (Vertex Value Function) and EVF (Edge Value Function) had simple signatures:
 - VVF: `vvf(u)` - takes only the vertex descriptor
 - EVF: `evf(uv)` - takes only the edge descriptor
 

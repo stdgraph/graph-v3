@@ -12,7 +12,7 @@
 namespace graph::detail {
 
 namespace _cpo_impls {
-    /**
+  /**
      * @brief Shared choice struct for all graph CPOs
      * 
      * Used to cache both the strategy (which customization path) and
@@ -44,11 +44,11 @@ namespace _cpo_impls {
      * }
      * @endcode
      */
-    template<typename _Ty>
-    struct _Choice_t {
-        _Ty _Strategy = _Ty{};   ///< The selected strategy enum value
-        bool _No_throw = false;  ///< Whether the selected path is noexcept
-    };
+  template <typename _Ty>
+  struct _Choice_t {
+    _Ty  _Strategy = _Ty{}; ///< The selected strategy enum value
+    bool _No_throw = false; ///< Whether the selected path is noexcept
+  };
 
 } // namespace _cpo_impls
 

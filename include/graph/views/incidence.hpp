@@ -34,82 +34,78 @@ class incidence_view;
 template <adj_list::adjacency_list G>
 class incidence_view<G, void> : public std::ranges::view_interface<incidence_view<G, void>> {
 public:
-    using graph_type = G;
-    using vertex_type = adj_list::vertex_t<G>;
-    using vertex_id_type = adj_list::vertex_id_t<G>;
-    using edge_range_type = adj_list::vertex_edge_range_t<G>;
-    using edge_iterator_type = adj_list::vertex_edge_iterator_t<G>;
-    using edge_type = adj_list::edge_t<G>;
-    using info_type = edge_info<vertex_id_type, false, edge_type, void>;
+  using graph_type         = G;
+  using vertex_type        = adj_list::vertex_t<G>;
+  using vertex_id_type     = adj_list::vertex_id_t<G>;
+  using edge_range_type    = adj_list::vertex_edge_range_t<G>;
+  using edge_iterator_type = adj_list::vertex_edge_iterator_t<G>;
+  using edge_type          = adj_list::edge_t<G>;
+  using info_type          = edge_info<vertex_id_type, false, edge_type, void>;
 
-    /**
+  /**
      * @brief Forward iterator yielding edge_info values
      */
-    class iterator {
-    public:
-        using iterator_category = std::forward_iterator_tag;
-        using difference_type = std::ptrdiff_t;
-        using value_type = info_type;
-        using pointer = const value_type*;
-        using reference = value_type;
+  class iterator {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using difference_type   = std::ptrdiff_t;
+    using value_type        = info_type;
+    using pointer           = const value_type*;
+    using reference         = value_type;
 
-        constexpr iterator() noexcept = default;
+    constexpr iterator() noexcept = default;
 
-        constexpr iterator(G* g, edge_type e) noexcept
-            : g_(g), current_(e) {}
+    constexpr iterator(G* g, edge_type e) noexcept : g_(g), current_(e) {}
 
-        [[nodiscard]] constexpr value_type operator*() const noexcept {
-            return info_type{adj_list::target_id(*g_, current_), current_};
-        }
-
-        constexpr iterator& operator++() noexcept {
-            ++current_;
-            return *this;
-        }
-
-        constexpr iterator operator++(int) noexcept {
-            auto tmp = *this;
-            ++current_;
-            return tmp;
-        }
-
-        [[nodiscard]] constexpr bool operator==(const iterator& other) const noexcept {
-            return current_ == other.current_;
-        }
-
-    private:
-        G* g_ = nullptr;
-        edge_type current_{};
-    };
-
-    using const_iterator = iterator;
-
-    constexpr incidence_view() noexcept = default;
-
-    constexpr incidence_view(G& g, vertex_type u) noexcept
-        : g_(&g), source_(u) {}
-
-    [[nodiscard]] constexpr iterator begin() const noexcept {
-        auto edge_range = adj_list::edges(*g_, source_);
-        return iterator(g_, *std::ranges::begin(edge_range));
+    [[nodiscard]] constexpr value_type operator*() const noexcept {
+      return info_type{adj_list::target_id(*g_, current_), current_};
     }
 
-    [[nodiscard]] constexpr iterator end() const noexcept {
-        auto edge_range = adj_list::edges(*g_, source_);
-        // edge_descriptor_view's end iterator can be dereferenced to get
-        // an edge_descriptor with the end storage position
-        return iterator(g_, *std::ranges::end(edge_range));
+    constexpr iterator& operator++() noexcept {
+      ++current_;
+      return *this;
     }
 
-    [[nodiscard]] constexpr auto size() const noexcept 
-        requires std::ranges::sized_range<edge_range_type>
-    {
-        return std::ranges::size(adj_list::edges(*g_, source_));
+    constexpr iterator operator++(int) noexcept {
+      auto tmp = *this;
+      ++current_;
+      return tmp;
     }
+
+    [[nodiscard]] constexpr bool operator==(const iterator& other) const noexcept { return current_ == other.current_; }
+
+  private:
+    G*        g_ = nullptr;
+    edge_type current_{};
+  };
+
+  using const_iterator = iterator;
+
+  constexpr incidence_view() noexcept = default;
+
+  constexpr incidence_view(G& g, vertex_type u) noexcept : g_(&g), source_(u) {}
+
+  [[nodiscard]] constexpr iterator begin() const noexcept {
+    auto edge_range = adj_list::edges(*g_, source_);
+    return iterator(g_, *std::ranges::begin(edge_range));
+  }
+
+  [[nodiscard]] constexpr iterator end() const noexcept {
+    auto edge_range = adj_list::edges(*g_, source_);
+    // edge_descriptor_view's end iterator can be dereferenced to get
+    // an edge_descriptor with the end storage position
+    return iterator(g_, *std::ranges::end(edge_range));
+  }
+
+  [[nodiscard]] constexpr auto size() const noexcept
+  requires std::ranges::sized_range<edge_range_type>
+  {
+    return std::ranges::size(adj_list::edges(*g_, source_));
+  }
 
 private:
-    G* g_ = nullptr;
-    vertex_type source_{};
+  G*          g_ = nullptr;
+  vertex_type source_{};
 };
 
 /**
@@ -124,83 +120,80 @@ private:
 template <adj_list::adjacency_list G, class EVF>
 class incidence_view : public std::ranges::view_interface<incidence_view<G, EVF>> {
 public:
-    using graph_type = G;
-    using vertex_type = adj_list::vertex_t<G>;
-    using vertex_id_type = adj_list::vertex_id_t<G>;
-    using edge_range_type = adj_list::vertex_edge_range_t<G>;
-    using edge_iterator_type = adj_list::vertex_edge_iterator_t<G>;
-    using edge_type = adj_list::edge_t<G>;
-    using value_type_result = std::invoke_result_t<EVF, edge_type>;
-    using info_type = edge_info<vertex_id_type, false, edge_type, value_type_result>;
+  using graph_type         = G;
+  using vertex_type        = adj_list::vertex_t<G>;
+  using vertex_id_type     = adj_list::vertex_id_t<G>;
+  using edge_range_type    = adj_list::vertex_edge_range_t<G>;
+  using edge_iterator_type = adj_list::vertex_edge_iterator_t<G>;
+  using edge_type          = adj_list::edge_t<G>;
+  using value_type_result  = std::invoke_result_t<EVF, const G&, edge_type>;
+  using info_type          = edge_info<vertex_id_type, false, edge_type, value_type_result>;
 
-    /**
+  /**
      * @brief Forward iterator yielding edge_info values with computed value
      */
-    class iterator {
-    public:
-        using iterator_category = std::forward_iterator_tag;
-        using difference_type = std::ptrdiff_t;
-        using value_type = info_type;
-        using pointer = const value_type*;
-        using reference = value_type;
+  class iterator {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using difference_type   = std::ptrdiff_t;
+    using value_type        = info_type;
+    using pointer           = const value_type*;
+    using reference         = value_type;
 
-        constexpr iterator() noexcept = default;
+    constexpr iterator() noexcept = default;
 
-        constexpr iterator(G* g, edge_type e, EVF* evf) noexcept
-            : g_(g), current_(e), evf_(evf) {}
+    constexpr iterator(G* g, edge_type e, EVF* evf) noexcept : g_(g), current_(e), evf_(evf) {}
 
-        [[nodiscard]] constexpr value_type operator*() const {
-            return value_type{adj_list::target_id(*g_, current_), current_, std::invoke(*evf_, current_)};
-        }
+    [[nodiscard]] constexpr value_type operator*() const {
+      return value_type{adj_list::target_id(*g_, current_), current_, std::invoke(*evf_, std::as_const(*g_), current_)};
+    }
 
-        constexpr iterator& operator++() noexcept {
-            ++current_;
-            return *this;
-        }
+    constexpr iterator& operator++() noexcept {
+      ++current_;
+      return *this;
+    }
 
-        constexpr iterator operator++(int) noexcept {
-            auto tmp = *this;
-            ++current_;
-            return tmp;
-        }
+    constexpr iterator operator++(int) noexcept {
+      auto tmp = *this;
+      ++current_;
+      return tmp;
+    }
 
-        [[nodiscard]] constexpr bool operator==(const iterator& other) const noexcept {
-            return current_ == other.current_;
-        }
+    [[nodiscard]] constexpr bool operator==(const iterator& other) const noexcept { return current_ == other.current_; }
 
-    private:
-        G* g_ = nullptr;
-        edge_type current_{};
-        EVF* evf_ = nullptr;
-    };
+  private:
+    G*        g_ = nullptr;
+    edge_type current_{};
+    EVF*      evf_ = nullptr;
+  };
 
-    using const_iterator = iterator;
+  using const_iterator = iterator;
 
-    constexpr incidence_view() noexcept = default;
+  constexpr incidence_view() noexcept = default;
 
-    constexpr incidence_view(G& g, vertex_type u, EVF evf) noexcept(std::is_nothrow_move_constructible_v<EVF>)
+  constexpr incidence_view(G& g, vertex_type u, EVF evf) noexcept(std::is_nothrow_move_constructible_v<EVF>)
         : g_(&g), source_(u), evf_(std::move(evf)) {}
 
-    [[nodiscard]] constexpr iterator begin() noexcept {
-        auto edge_range = adj_list::edges(*g_, source_);
-        return iterator(g_, *std::ranges::begin(edge_range), &evf_);
-    }
+  [[nodiscard]] constexpr iterator begin() noexcept {
+    auto edge_range = adj_list::edges(*g_, source_);
+    return iterator(g_, *std::ranges::begin(edge_range), &evf_);
+  }
 
-    [[nodiscard]] constexpr iterator end() noexcept {
-        auto edge_range = adj_list::edges(*g_, source_);
-        return iterator(g_, *std::ranges::end(edge_range), &evf_);
-    }
+  [[nodiscard]] constexpr iterator end() noexcept {
+    auto edge_range = adj_list::edges(*g_, source_);
+    return iterator(g_, *std::ranges::end(edge_range), &evf_);
+  }
 
-    [[nodiscard]] constexpr auto size() const noexcept 
-        requires std::ranges::sized_range<edge_range_type>
-    {
-        return std::ranges::size(adj_list::edges(*g_, source_));
-    }
+  [[nodiscard]] constexpr auto size() const noexcept
+  requires std::ranges::sized_range<edge_range_type>
+  {
+    return std::ranges::size(adj_list::edges(*g_, source_));
+  }
 
 private:
-    G* g_ = nullptr;
-    vertex_type source_{};
-    [[no_unique_address]] EVF evf_{};
+  G*                        g_ = nullptr;
+  vertex_type               source_{};
+  [[no_unique_address]] EVF evf_{};
 };
 
 // Deduction guides
@@ -219,7 +212,7 @@ incidence_view(G&, adj_list::vertex_t<G>, EVF) -> incidence_view<G, EVF>;
  */
 template <adj_list::adjacency_list G>
 [[nodiscard]] constexpr auto incidence(G& g, adj_list::vertex_t<G> u) noexcept {
-    return incidence_view<G, void>(g, u);
+  return incidence_view<G, void>(g, u);
 }
 
 /**
@@ -231,9 +224,9 @@ template <adj_list::adjacency_list G>
  * @return incidence_view yielding edge_info<void, false, edge_descriptor, EV>
  */
 template <adj_list::adjacency_list G, class EVF>
-    requires edge_value_function<EVF, adj_list::edge_t<G>>
+requires edge_value_function<EVF, G, adj_list::edge_t<G>>
 [[nodiscard]] constexpr auto incidence(G& g, adj_list::vertex_t<G> u, EVF&& evf) {
-    return incidence_view<G, std::decay_t<EVF>>(g, u, std::forward<EVF>(evf));
+  return incidence_view<G, std::decay_t<EVF>>(g, u, std::forward<EVF>(evf));
 }
 
 /**
@@ -245,8 +238,8 @@ template <adj_list::adjacency_list G, class EVF>
  */
 template <adj_list::adjacency_list G>
 [[nodiscard]] constexpr auto incidence(G& g, adj_list::vertex_id_t<G> uid) noexcept {
-    auto u = *adj_list::find_vertex(g, uid);
-    return incidence_view<G, void>(g, u);
+  auto u = *adj_list::find_vertex(g, uid);
+  return incidence_view<G, void>(g, u);
 }
 
 /**
@@ -258,10 +251,10 @@ template <adj_list::adjacency_list G>
  * @return incidence_view yielding edge_info<void, false, edge_descriptor, EV>
  */
 template <adj_list::adjacency_list G, class EVF>
-    requires edge_value_function<EVF, adj_list::edge_t<G>>
+requires edge_value_function<EVF, G, adj_list::edge_t<G>>
 [[nodiscard]] constexpr auto incidence(G& g, adj_list::vertex_id_t<G> uid, EVF&& evf) {
-    auto u = *adj_list::find_vertex(g, uid);
-    return incidence_view<G, std::decay_t<EVF>>(g, u, std::forward<EVF>(evf));
+  auto u = *adj_list::find_vertex(g, uid);
+  return incidence_view<G, std::decay_t<EVF>>(g, u, std::forward<EVF>(evf));
 }
 
 } // namespace graph::views

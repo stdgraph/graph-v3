@@ -86,75 +86,75 @@
 
 // Import adj_list types and CPOs into graph namespace for backward compatibility
 namespace graph {
-    // Descriptor types
-    using adj_list::vertex_descriptor;
-    using adj_list::edge_descriptor;
-    using adj_list::vertex_descriptor_view;
-    using adj_list::edge_descriptor_view;
-    
-    // Descriptor concepts and traits
-    using adj_list::descriptor_type;
-    using adj_list::vertex_descriptor_type;
-    using adj_list::edge_descriptor_type;
-    using adj_list::vertex_iterator;
-    using adj_list::edge_iterator;
-    using adj_list::is_descriptor_v;
-    using adj_list::is_vertex_descriptor_v;
-    using adj_list::is_edge_descriptor_v;
-    using adj_list::is_vertex_descriptor_view_v;
-    using adj_list::is_edge_descriptor_view_v;
-    
-    // Adjacency list concepts
-    using adj_list::edge;
-    using adj_list::vertex;
-    using adj_list::vertex_edge_range;
-    using adj_list::vertex_range;
-    using adj_list::index_vertex_range;
-    using adj_list::adjacency_list;
-    using adj_list::index_adjacency_list;
-    using adj_list::ordered_vertex_edges;
-    
-    // Adjacency list traits
-    using adj_list::has_degree;
-    using adj_list::has_degree_v;
-    using adj_list::has_find_vertex;
-    using adj_list::has_find_vertex_v;
-    using adj_list::has_find_vertex_edge;
-    using adj_list::has_find_vertex_edge_v;
-    using adj_list::has_contains_edge;
-    using adj_list::has_contains_edge_v;
-    using adj_list::has_basic_queries;
-    using adj_list::has_basic_queries_v;
-    using adj_list::has_full_queries;
-    using adj_list::has_full_queries_v;
-    
-    // CPOs (Customization Point Objects)
-    using adj_list::vertices;
-    using adj_list::vertex_id;
-    using adj_list::find_vertex;
-    using adj_list::edges;
-    using adj_list::target_id;
-    using adj_list::target;
-    using adj_list::num_vertices;
-    using adj_list::num_edges;
-    using adj_list::degree;
-    using adj_list::find_vertex_edge;
-    using adj_list::contains_edge;
-    using adj_list::has_edge;
-    using adj_list::vertex_value;
-    using adj_list::edge_value;
-    using adj_list::graph_value;
-    using adj_list::source_id;
-    using adj_list::source;
-    using adj_list::partition_id;
-    using adj_list::num_partitions;
-    
-    // Type aliases
-    using adj_list::vertex_range_t;
-    using adj_list::vertex_iterator_t;
-    using adj_list::vertex_t;
-    using adj_list::vertex_id_t;
-    using adj_list::vertex_edge_range_t;
-    using adj_list::vertex_edge_iterator_t;
-    using adj_list::edge_t;
-}
+// Descriptor types
+using adj_list::vertex_descriptor;
+using adj_list::edge_descriptor;
+using adj_list::vertex_descriptor_view;
+using adj_list::edge_descriptor_view;
+
+// Descriptor concepts and traits
+using adj_list::descriptor_type;
+using adj_list::vertex_descriptor_type;
+using adj_list::edge_descriptor_type;
+using adj_list::vertex_iterator;
+using adj_list::edge_iterator;
+using adj_list::is_descriptor_v;
+using adj_list::is_vertex_descriptor_v;
+using adj_list::is_edge_descriptor_v;
+using adj_list::is_vertex_descriptor_view_v;
+using adj_list::is_edge_descriptor_view_v;
+
+// Adjacency list concepts
+using adj_list::edge;
+using adj_list::vertex;
+using adj_list::vertex_edge_range;
+using adj_list::vertex_range;
+using adj_list::index_vertex_range;
+using adj_list::adjacency_list;
+using adj_list::index_adjacency_list;
+using adj_list::ordered_vertex_edges;
+
+// Adjacency list traits
+using adj_list::has_degree;
+using adj_list::has_degree_v;
+using adj_list::has_find_vertex;
+using adj_list::has_find_vertex_v;
+using adj_list::has_find_vertex_edge;
+using adj_list::has_find_vertex_edge_v;
+using adj_list::has_contains_edge;
+using adj_list::has_contains_edge_v;
+using adj_list::has_basic_queries;
+using adj_list::has_basic_queries_v;
+using adj_list::has_full_queries;
+using adj_list::has_full_queries_v;
+
+// CPOs (Customization Point Objects)
+using adj_list::vertices;
+using adj_list::vertex_id;
+using adj_list::find_vertex;
+using adj_list::edges;
+using adj_list::target_id;
+using adj_list::target;
+using adj_list::num_vertices;
+using adj_list::num_edges;
+using adj_list::degree;
+using adj_list::find_vertex_edge;
+using adj_list::contains_edge;
+using adj_list::has_edge;
+using adj_list::vertex_value;
+using adj_list::edge_value;
+using adj_list::graph_value;
+using adj_list::source_id;
+using adj_list::source;
+using adj_list::partition_id;
+using adj_list::num_partitions;
+
+// Type aliases
+using adj_list::vertex_range_t;
+using adj_list::vertex_iterator_t;
+using adj_list::vertex_t;
+using adj_list::vertex_id_t;
+using adj_list::vertex_edge_range_t;
+using adj_list::vertex_edge_iterator_t;
+using adj_list::edge_t;
+} // namespace graph

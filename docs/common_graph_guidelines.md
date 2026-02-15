@@ -38,7 +38,7 @@ These requirements apply to every graph-related instruction set, including imple
 | `VR` | `vertex_range_t<G>` | `ur`, `vr` | Vertex Range |
 | `VI` | `vertex_iterator_t<G>` | `ui`, `vi` | Vertex Iterator. `ui` is the source (or only) vertex iterator. `vi` is the target vertex iterator. |
 | | | `first`, `last` | `first` and `last` are the begin and end iterators of a vertex range. |
-| `VVF` | | `vvf` | Vertex Value Function: `vvf(u)` → vertex value, or `vvf(uid)` → vertex value, depending on requirements of the consuming algorithm or view. |
+| `VVF` | | `vvf` | Vertex Value Function: `vvf(g, u)` → vertex value. Graph passed as first parameter for stateless lambdas enabling `std::views` chaining. |
 | `VProj` | | `vproj` | Vertex info projection function: `vproj(u)` → `vertex_info<VId,VV>`. |
 
 ### Partition Types
@@ -57,7 +57,7 @@ These requirements apply to every graph-related instruction set, including imple
 | `EV` | `edge_value_t<G>` | `val` | Edge Value, value or reference. This can be either the user-defined value on an edge, or a value returned by a function object (e.g. `EVF`) that is related to the edge. |
 | `ER` | `vertex_edge_range_t<G>` | | Edge Range for edges of a vertex |
 | `EI` | `vertex_edge_iterator_t<G>` | `uvi`, `vwi` | Edge Iterator for an edge of a vertex. `uvi` is an iterator for an edge from vertices `u` to `v`. `vwi` is an iterator for an edge from vertices `v` to `w`. |
-| `EVF` | | `evf` | Edge Value Function: `evf(uv)` → edge value. |
+| `EVF` | | `evf` | Edge Value Function: `evf(g, uv)` → edge value. Graph passed as first parameter for stateless lambdas enabling `std::views` chaining. |
 | `EProj` | | `eproj` | Edge info projection function: `eproj(uv)` → `edge_info<VId,Sourced,EV>`. |
 
 ## Parameterized Type Aliases

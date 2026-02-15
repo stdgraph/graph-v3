@@ -380,14 +380,14 @@ static void link(vertex_id_t u, vertex_id_t v, Component& component) {
 
   // Follow parent pointers with path compression until roots converge
   while (p1 != p2) {
-    vertex_id_t high   = std::max(p1, p2);  // Higher ID
-    vertex_id_t low    = p1 + (p2 - high);  // Lower ID (clever: avoids branch)
-    vertex_id_t p_high = component[high];   // Parent of higher ID
-    
+    vertex_id_t high   = std::max(p1, p2); // Higher ID
+    vertex_id_t low    = p1 + (p2 - high); // Lower ID (clever: avoids branch)
+    vertex_id_t p_high = component[high];  // Parent of higher ID
+
     // Already linked: high points to low
     if (p_high == low)
       break;
-    
+
     if (p_high == high) {
       // high is a root (points to itself)
       if (component[high] == high) {
@@ -398,7 +398,7 @@ static void link(vertex_id_t u, vertex_id_t v, Component& component) {
         high = low;
       }
     }
-    
+
     // Path compression: follow parent links and try again
     p1 = component[p_high];
     p2 = component[low];

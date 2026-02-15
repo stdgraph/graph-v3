@@ -41,15 +41,13 @@ namespace graph::adj_list {
  * @tparam G Graph type
  * @tparam E Edge type (must be edge_descriptor)
  */
-template<class G, class E>
-concept edge = 
-    is_edge_descriptor_v<std::remove_cvref_t<E>> &&
-    requires(G& g, const E& e) {
-        source_id(g, e);
-        source(g, e);
-        target_id(g, e);
-        target(g, e);
-    };
+template <class G, class E>
+concept edge = is_edge_descriptor_v<std::remove_cvref_t<E>> && requires(G& g, const E& e) {
+  source_id(g, e);
+  source(g, e);
+  target_id(g, e);
+  target(g, e);
+};
 
 // =============================================================================
 // Edge Range Concepts
@@ -74,10 +72,8 @@ concept edge =
  * @tparam R Range type
  * @tparam G Graph type
  */
-template<class R, class G>
-concept vertex_edge_range = 
-    std::ranges::forward_range<R> &&
-    edge<G, std::ranges::range_value_t<R>>;
+template <class R, class G>
+concept vertex_edge_range = std::ranges::forward_range<R> && edge<G, std::ranges::range_value_t<R>>;
 
 // =============================================================================
 // Vertex Concepts
@@ -103,13 +99,11 @@ concept vertex_edge_range =
  * @tparam G Graph type
  * @tparam V Vertex type (must be vertex_descriptor)
  */
-template<class G, class V>
-concept vertex = 
-    is_vertex_descriptor_v<std::remove_cvref_t<V>> &&
-    requires(G& g, const V& u, vertex_id_t<G> uid) { 
-        vertex_id(g, u);
-        find_vertex(g, uid);
-    };
+template <class G, class V>
+concept vertex = is_vertex_descriptor_v<std::remove_cvref_t<V>> && requires(G& g, const V& u, vertex_id_t<G> uid) {
+  vertex_id(g, u);
+  find_vertex(g, uid);
+};
 
 // =============================================================================
 // Vertex Range Concepts
@@ -140,11 +134,9 @@ concept vertex =
  * @tparam R Range type
  * @tparam G Graph type
  */
-template<class R, class G>
-concept vertex_range = 
-    std::ranges::forward_range<R> &&
-    std::ranges::sized_range<R> &&
-    vertex<G, std::remove_cvref_t<std::ranges::range_value_t<R>>>;
+template <class R, class G>
+concept vertex_range = std::ranges::forward_range<R> && std::ranges::sized_range<R> &&
+                       vertex<G, std::remove_cvref_t<std::ranges::range_value_t<R>>>;
 
 /**
  * @brief Concept for a graph with random access range of vertices
@@ -170,13 +162,12 @@ concept vertex_range =
  * 
  * @tparam G Graph type
  */
-template<class G>
-concept index_vertex_range = 
-    requires(G& g) {
+template <class G>
+concept index_vertex_range =
+      requires(G& g) {
         { vertices(g) } -> vertex_range<G>;
-    } &&
-    std::integral<vertex_id_t<G>> &&
-    std::random_access_iterator<typename vertex_range_t<G>::vertex_desc::iterator_type>;
+      } && std::integral<vertex_id_t<G>> &&
+      std::random_access_iterator<typename vertex_range_t<G>::vertex_desc::iterator_type>;
 
 // =============================================================================
 // Adjacency List Concepts
@@ -202,12 +193,11 @@ concept index_vertex_range =
  * 
  * @tparam G Graph type
  */
-template<class G>
-concept adjacency_list = 
-    requires(G& g, vertex_t<G> u) {
-        { vertices(g) } -> vertex_range<G>;
-        { edges(g, u) } -> vertex_edge_range<G>;
-    };
+template <class G>
+concept adjacency_list = requires(G& g, vertex_t<G> u) {
+  { vertices(g) } -> vertex_range<G>;
+  { edges(g, u) } -> vertex_edge_range<G>;
+};
 
 /**
  * @brief Concept for graphs with index-based adjacency list structure
@@ -227,10 +217,8 @@ concept adjacency_list =
  * 
  * @tparam G Graph type
  */
-template<class G>
-concept index_adjacency_list = 
-    adjacency_list<G> &&
-    index_vertex_range<G>;
+template <class G>
+concept index_adjacency_list = adjacency_list<G> && index_vertex_range<G>;
 
 /**
  * @brief Concept for graphs with sorted adjacency lists.
@@ -261,12 +249,10 @@ concept index_adjacency_list =
  * - Graphs using std::vector without sorted order (vov)
  * - Graphs using std::unordered_set for edges (vous, mous)
  */
-template<class G>
-concept ordered_vertex_edges = 
-    adjacency_list<G> &&
-    requires(G& g, vertex_t<G> u) {
-        requires std::forward_iterator<decltype(std::ranges::begin(edges(g, u)))>;
-    };
+template <class G>
+concept ordered_vertex_edges = adjacency_list<G> && requires(G& g, vertex_t<G> u) {
+  requires std::forward_iterator<decltype(std::ranges::begin(edges(g, u)))>;
+};
 
 
 } // namespace graph::adj_list

@@ -705,17 +705,17 @@ private: // CPO properties
   requires vertex_descriptor_type<U>
   [[nodiscard]] friend constexpr auto edges(graph_type& g, const U& u) noexcept {
     using vertex_iter_t = typename U::iterator_type;
-    auto& edges_ref = u.inner_value(g).edges_;
-    using edge_iter_t = decltype(edges_ref.begin());
+    auto& edges_ref     = u.inner_value(g).edges_;
+    using edge_iter_t   = decltype(edges_ref.begin());
     return edge_descriptor_view<edge_iter_t, vertex_iter_t>(edges_ref, u);
   }
 
   template <typename U>
   requires vertex_descriptor_type<U>
   [[nodiscard]] friend constexpr auto edges(const graph_type& g, const U& u) noexcept {
-    using vertex_iter_t = typename U::iterator_type;
+    using vertex_iter_t   = typename U::iterator_type;
     const auto& edges_ref = u.inner_value(g).edges_;
-    using edge_iter_t = decltype(edges_ref.begin());
+    using edge_iter_t     = decltype(edges_ref.begin());
     return edge_descriptor_view<edge_iter_t, vertex_iter_t>(edges_ref, u);
   }
 
@@ -787,10 +787,9 @@ public:
 private:
   value_type value_ = value_type();
 
-private
-      : // CPO properties
-        // friend constexpr value_type&       vertex_value(graph_type& g, vertex_type& u) { return u.value_; }
-        // friend constexpr const value_type& vertex_value(const graph_type& g, const vertex_type& u) { return u.value_; }
+private: // CPO properties
+         // friend constexpr value_type&       vertex_value(graph_type& g, vertex_type& u) { return u.value_; }
+  // friend constexpr const value_type& vertex_value(const graph_type& g, const vertex_type& u) { return u.value_; }
 };
 
 
@@ -1084,7 +1083,7 @@ public: // Load operations
           // copyable_vertex_t<VId, void> has only 1 element: {id}
           auto&& projected = vproj(v);
           VId    id        = projected.id;
-          (void)vertices_[id];              // ensure vertex exists
+          (void)vertices_[id]; // ensure vertex exists
         } else {
           auto&& [id, value]    = vproj(v); //copyable_vertex_t<VId, VV>
           vertices_[id].value() = value;
@@ -1105,7 +1104,7 @@ public: // Load operations
             if (k >= vertices_.size()) [[unlikely]]
               throw std::out_of_range("vertex id in load_vertices exceeds current vertex container size");
           }
-          (void)vertices_[k];            // ensure vertex exists
+          (void)vertices_[k]; // ensure vertex exists
         } else {
           auto&& [id, value] = vproj(v); //copyable_vertex_t<VId, VV>
           size_t k           = static_cast<size_t>(id);
@@ -1154,7 +1153,7 @@ public: // Load operations
           // copyable_vertex_t<VId, void> has only 1 element: {id}
           auto&& projected = vproj(v);
           VId    id        = projected.id;
-          (void)vertices_[id];              // ensure vertex exists
+          (void)vertices_[id]; // ensure vertex exists
         } else {
           auto&& [id, value]    = vproj(v); //copyable_vertex_t<VId, VV>
           vertices_[id].value() = move(value);
@@ -1176,7 +1175,7 @@ public: // Load operations
             if (k >= vertices_.size()) [[unlikely]]
               throw std::out_of_range("vertex id in load_vertices exceeds current vertex container size");
           }
-          (void)vertices_[k];            // ensure vertex exists
+          (void)vertices_[k]; // ensure vertex exists
         } else {
           auto&& [id, value] = vproj(v); //copyable_vertex_t<VId, VV>
           size_t k           = static_cast<size_t>(id);
@@ -1438,7 +1437,7 @@ public: // Properties
   constexpr vertex_type&       operator[](size_type i) { return vertices_.at(i); }
   constexpr const vertex_type& operator[](size_type i) const { return vertices_.at(i); }
 
-public:                                      // Operations
+public: // Operations
   void reserve_vertices(size_type count) {
     if constexpr (reservable<vertices_type>) // reserve if we can; otherwise ignored
       vertices_.reserve(count);
@@ -1566,13 +1565,13 @@ public:                                      // Operations
     }
   }
 
-private:                       // Member Variables
+private: // Member Variables
   vertices_type    vertices_;
   partition_vector partition_; // partition_[n] holds the first vertex id for each partition n
                                // holds +1 extra terminating partition
   size_t edge_count_ = 0;      // total number of edges in the graph
 
-private:                       // CPO properties
+private: // CPO properties
   friend constexpr vertices_type&       vertices(dynamic_graph_base& g) { return g.vertices_; }
   friend constexpr const vertices_type& vertices(const dynamic_graph_base& g) { return g.vertices_; }
 
@@ -1681,18 +1680,18 @@ private:                       // CPO properties
   [[nodiscard]] friend constexpr decltype(auto) edge_value(G&& g, E&& uv) noexcept {
     // Get the edge object by chaining calls to avoid dangling reference warnings
     // For map-based containers, edge_obj is pair<const VId, edge_type>, so access .second
-    if constexpr (requires { 
-      std::forward<E>(uv).inner_value(
-        std::forward<E>(uv).source().inner_value(std::forward<G>(g).vertices_).edges()
-      ).second.value(); 
-    }) {
-      return std::forward<E>(uv).inner_value(
-        std::forward<E>(uv).source().inner_value(std::forward<G>(g).vertices_).edges()
-      ).second.value();
+    if constexpr (requires {
+                    std::forward<E>(uv)
+                          .inner_value(std::forward<E>(uv).source().inner_value(std::forward<G>(g).vertices_).edges())
+                          .second.value();
+                  }) {
+      return std::forward<E>(uv)
+            .inner_value(std::forward<E>(uv).source().inner_value(std::forward<G>(g).vertices_).edges())
+            .second.value();
     } else {
-      return std::forward<E>(uv).inner_value(
-        std::forward<E>(uv).source().inner_value(std::forward<G>(g).vertices_).edges()
-      ).value();
+      return std::forward<E>(uv)
+            .inner_value(std::forward<E>(uv).source().inner_value(std::forward<G>(g).vertices_).edges())
+            .value();
     }
   }
 
@@ -1801,8 +1800,7 @@ public: // Construction/Destruction/Assignment
    * @param gv Graph value.
    * @param alloc Used to allocate vertices and edges.
   */
-  dynamic_graph(const GV& gv, allocator_type alloc = allocator_type()) 
-        : base_type(alloc), graph_value_(gv) {}
+  dynamic_graph(const GV& gv, allocator_type alloc = allocator_type()) : base_type(alloc), graph_value_(gv) {}
 
   /**
    * @brief Construct a dynamic_graph with a graph value (move version).
@@ -1810,8 +1808,7 @@ public: // Construction/Destruction/Assignment
    * @param gv Graph value.
    * @param alloc Used to allocate vertices and edges.
   */
-  dynamic_graph(GV&& gv, allocator_type alloc = allocator_type()) 
-        : base_type(alloc), graph_value_(std::move(gv)) {}
+  dynamic_graph(GV&& gv, allocator_type alloc = allocator_type()) : base_type(alloc), graph_value_(std::move(gv)) {}
 
   /**
    * @brief Construct a dynamic_graph with an empty collection of vertices.
@@ -1827,7 +1824,7 @@ public: // Graph value accessors
    * @return The graph value.
   */
   constexpr GV& graph_value() noexcept { return graph_value_; }
-  
+
   /**
    * @brief Returns the user-defined value for the graph.
    * 
@@ -1942,7 +1939,7 @@ public: // Graph value accessors
  * @tparam Traits  Defines the types for vertex and edge containers.
 */
 template <class EV, class VV, class VId, bool Sourced, class Traits>
-class dynamic_graph<EV, VV, void, VId, Sourced, Traits> 
+class dynamic_graph<EV, VV, void, VId, Sourced, Traits>
       : public dynamic_graph_base<EV, VV, void, VId, Sourced, Traits> {
 
 public: // Types & Constants
@@ -2056,8 +2053,8 @@ namespace std {
  */
 template <class EV, class VV, class GV, class VId, class Traits>
 struct hash<graph::container::dynamic_edge<EV, VV, GV, VId, true, Traits>> {
-  [[nodiscard]] size_t operator()(
-      const graph::container::dynamic_edge<EV, VV, GV, VId, true, Traits>& edge) const noexcept {
+  [[nodiscard]] size_t
+  operator()(const graph::container::dynamic_edge<EV, VV, GV, VId, true, Traits>& edge) const noexcept {
     size_t h1 = std::hash<VId>{}(edge.source_id());
     size_t h2 = std::hash<VId>{}(edge.target_id());
     return h1 ^ (h2 << 1);
@@ -2071,8 +2068,8 @@ struct hash<graph::container::dynamic_edge<EV, VV, GV, VId, true, Traits>> {
  */
 template <class EV, class VV, class GV, class VId, class Traits>
 struct hash<graph::container::dynamic_edge<EV, VV, GV, VId, false, Traits>> {
-  [[nodiscard]] size_t operator()(
-      const graph::container::dynamic_edge<EV, VV, GV, VId, false, Traits>& edge) const noexcept {
+  [[nodiscard]] size_t
+  operator()(const graph::container::dynamic_edge<EV, VV, GV, VId, false, Traits>& edge) const noexcept {
     return std::hash<VId>{}(edge.target_id());
   }
 };

@@ -43,7 +43,7 @@ namespace graph::test::fixtures {
 // Helper Types
 // =============================================================================
 
-template<typename T>
+template <typename T>
 constexpr T infinity = std::numeric_limits<T>::max();
 
 // =============================================================================
@@ -51,13 +51,13 @@ constexpr T infinity = std::numeric_limits<T>::max();
 // =============================================================================
 
 struct empty_graph_results {
-    static constexpr size_t num_vertices = 0;
-    static constexpr size_t num_edges = 0;
+  static constexpr size_t num_vertices = 0;
+  static constexpr size_t num_edges    = 0;
 };
 
 template <typename Graph>
 Graph empty_graph() {
-    return Graph();
+  return Graph();
 }
 
 // =============================================================================
@@ -65,15 +65,15 @@ Graph empty_graph() {
 // =============================================================================
 
 struct single_vertex_results {
-    static constexpr size_t num_vertices = 1;
-    static constexpr size_t num_edges = 0;
+  static constexpr size_t num_vertices = 1;
+  static constexpr size_t num_edges    = 0;
 };
 
 template <typename Graph>
 Graph single_vertex() {
-    Graph g;
-    g.resize_vertices(1);
-    return g;
+  Graph g;
+  g.resize_vertices(1);
+  return g;
 }
 
 // =============================================================================
@@ -81,18 +81,18 @@ Graph single_vertex() {
 // =============================================================================
 
 struct single_edge_results {
-    static constexpr size_t num_vertices = 2;
-    static constexpr size_t num_edges = 1;
+  static constexpr size_t num_vertices = 2;
+  static constexpr size_t num_edges    = 1;
 };
 
 template <typename Graph>
 Graph single_edge() {
-    return Graph({{0, 1}});
+  return Graph({{0, 1}});
 }
 
 template <typename Graph>
 Graph single_edge_weighted() {
-    return Graph({{0, 1, 10}});
+  return Graph({{0, 1, 10}});
 }
 
 // =============================================================================
@@ -100,13 +100,13 @@ Graph single_edge_weighted() {
 // =============================================================================
 
 struct self_loop_results {
-    static constexpr size_t num_vertices = 1;
-    static constexpr size_t num_edges = 1;
+  static constexpr size_t num_vertices = 1;
+  static constexpr size_t num_edges    = 1;
 };
 
 template <typename Graph>
 Graph self_loop() {
-    return Graph({{0, 0}});
+  return Graph({{0, 0}});
 }
 
 // =============================================================================
@@ -115,24 +115,24 @@ Graph self_loop() {
 // =============================================================================
 
 struct path_graph_4_results {
-    static constexpr size_t num_vertices = 4;
-    static constexpr size_t num_edges = 3;
-    static constexpr std::array<uint32_t, 4> vertices = {0, 1, 2, 3};
-    static constexpr std::array<size_t, 4> out_degrees = {1, 1, 1, 0};
-    
-    // For shortest path algorithms from vertex 0
-    static constexpr std::array<int, 4> distances = {0, 1, 2, 3};
-    static constexpr std::array<int, 4> predecessors = {0, 0, 1, 2}; // -1 would be better but constexpr issues
+  static constexpr size_t                  num_vertices = 4;
+  static constexpr size_t                  num_edges    = 3;
+  static constexpr std::array<uint32_t, 4> vertices     = {0, 1, 2, 3};
+  static constexpr std::array<size_t, 4>   out_degrees  = {1, 1, 1, 0};
+
+  // For shortest path algorithms from vertex 0
+  static constexpr std::array<int, 4> distances    = {0, 1, 2, 3};
+  static constexpr std::array<int, 4> predecessors = {0, 0, 1, 2}; // -1 would be better but constexpr issues
 };
 
 template <typename Graph>
 Graph path_graph_4() {
-    return Graph({{0, 1}, {1, 2}, {2, 3}});
+  return Graph({{0, 1}, {1, 2}, {2, 3}});
 }
 
 template <typename Graph>
 Graph path_graph_4_weighted() {
-    return Graph({{0, 1, 1}, {1, 2, 1}, {2, 3, 1}});
+  return Graph({{0, 1, 1}, {1, 2, 1}, {2, 3, 1}});
 }
 
 // =============================================================================
@@ -141,20 +141,20 @@ Graph path_graph_4_weighted() {
 // =============================================================================
 
 struct cycle_graph_5_results {
-    static constexpr size_t num_vertices = 5;
-    static constexpr size_t num_edges = 5;
-    static constexpr std::array<uint32_t, 5> vertices = {0, 1, 2, 3, 4};
-    static constexpr std::array<size_t, 5> out_degrees = {1, 1, 1, 1, 1};
+  static constexpr size_t                  num_vertices = 5;
+  static constexpr size_t                  num_edges    = 5;
+  static constexpr std::array<uint32_t, 5> vertices     = {0, 1, 2, 3, 4};
+  static constexpr std::array<size_t, 5>   out_degrees  = {1, 1, 1, 1, 1};
 };
 
 template <typename Graph>
 Graph cycle_graph_5() {
-    return Graph({{0, 1}, {1, 2}, {2, 3}, {3, 4}, {4, 0}});
+  return Graph({{0, 1}, {1, 2}, {2, 3}, {3, 4}, {4, 0}});
 }
 
 template <typename Graph>
 Graph cycle_graph_5_weighted() {
-    return Graph({{0, 1, 1}, {1, 2, 1}, {2, 3, 1}, {3, 4, 1}, {4, 0, 1}});
+  return Graph({{0, 1, 1}, {1, 2, 1}, {2, 3, 1}, {3, 4, 1}, {4, 0, 1}});
 }
 
 // =============================================================================
@@ -162,20 +162,15 @@ Graph cycle_graph_5_weighted() {
 // =============================================================================
 
 struct complete_graph_4_results {
-    static constexpr size_t num_vertices = 4;
-    static constexpr size_t num_edges = 12; // directed: n*(n-1) = 4*3
-    static constexpr std::array<uint32_t, 4> vertices = {0, 1, 2, 3};
-    static constexpr std::array<size_t, 4> out_degrees = {3, 3, 3, 3};
+  static constexpr size_t                  num_vertices = 4;
+  static constexpr size_t                  num_edges    = 12; // directed: n*(n-1) = 4*3
+  static constexpr std::array<uint32_t, 4> vertices     = {0, 1, 2, 3};
+  static constexpr std::array<size_t, 4>   out_degrees  = {3, 3, 3, 3};
 };
 
 template <typename Graph>
 Graph complete_graph_4() {
-    return Graph({
-        {0, 1}, {0, 2}, {0, 3},
-        {1, 0}, {1, 2}, {1, 3},
-        {2, 0}, {2, 1}, {2, 3},
-        {3, 0}, {3, 1}, {3, 2}
-    });
+  return Graph({{0, 1}, {0, 2}, {0, 3}, {1, 0}, {1, 2}, {1, 3}, {2, 0}, {2, 1}, {2, 3}, {3, 0}, {3, 1}, {3, 2}});
 }
 
 // =============================================================================
@@ -184,16 +179,16 @@ Graph complete_graph_4() {
 // =============================================================================
 
 struct star_graph_5_results {
-    static constexpr size_t num_vertices = 5;
-    static constexpr size_t num_edges = 4; // undirected edges from center
-    static constexpr std::array<uint32_t, 5> vertices = {0, 1, 2, 3, 4};
-    static constexpr size_t center_vertex = 0;
-    static constexpr std::array<size_t, 5> out_degrees = {4, 0, 0, 0, 0}; // directed version
+  static constexpr size_t                  num_vertices  = 5;
+  static constexpr size_t                  num_edges     = 4; // undirected edges from center
+  static constexpr std::array<uint32_t, 5> vertices      = {0, 1, 2, 3, 4};
+  static constexpr size_t                  center_vertex = 0;
+  static constexpr std::array<size_t, 5>   out_degrees   = {4, 0, 0, 0, 0}; // directed version
 };
 
 template <typename Graph>
 Graph star_graph_5() {
-    return Graph({{0, 1}, {0, 2}, {0, 3}, {0, 4}});
+  return Graph({{0, 1}, {0, 2}, {0, 3}, {0, 4}});
 }
 
 // =============================================================================
@@ -206,20 +201,23 @@ Graph star_graph_5() {
 // =============================================================================
 
 struct binary_tree_7_results {
-    static constexpr size_t num_vertices = 7;
-    static constexpr size_t num_edges = 6;
-    static constexpr std::array<uint32_t, 7> vertices = {0, 1, 2, 3, 4, 5, 6};
-    static constexpr size_t root = 0;
-    static constexpr size_t height = 2; // levels: 0, 1, 2
+  static constexpr size_t                  num_vertices = 7;
+  static constexpr size_t                  num_edges    = 6;
+  static constexpr std::array<uint32_t, 7> vertices     = {0, 1, 2, 3, 4, 5, 6};
+  static constexpr size_t                  root         = 0;
+  static constexpr size_t                  height       = 2; // levels: 0, 1, 2
 };
 
 template <typename Graph>
 Graph binary_tree_7() {
-    return Graph({
-        {0, 1}, {0, 2},      // root to level 1
-        {1, 3}, {1, 4},      // left subtree
-        {2, 5}, {2, 6}       // right subtree
-    });
+  return Graph({
+        {0, 1},
+        {0, 2}, // root to level 1
+        {1, 3},
+        {1, 4}, // left subtree
+        {2, 5},
+        {2, 6} // right subtree
+  });
 }
 
 // =============================================================================
@@ -233,20 +231,20 @@ Graph binary_tree_7() {
 // =============================================================================
 
 struct diamond_dag_results {
-    static constexpr size_t num_vertices = 4;
-    static constexpr size_t num_edges = 4;
-    static constexpr std::array<uint32_t, 4> vertices = {0, 1, 2, 3};
-    // Valid topological orders: [0,1,2,3], [0,2,1,3]
+  static constexpr size_t                  num_vertices = 4;
+  static constexpr size_t                  num_edges    = 4;
+  static constexpr std::array<uint32_t, 4> vertices     = {0, 1, 2, 3};
+  // Valid topological orders: [0,1,2,3], [0,2,1,3]
 };
 
 template <typename Graph>
 Graph diamond_dag() {
-    return Graph({{0, 1}, {0, 2}, {1, 3}, {2, 3}});
+  return Graph({{0, 1}, {0, 2}, {1, 3}, {2, 3}});
 }
 
 template <typename Graph>
 Graph diamond_dag_weighted() {
-    return Graph({{0, 1, 5}, {0, 2, 3}, {1, 3, 2}, {2, 3, 7}});
+  return Graph({{0, 1, 5}, {0, 2, 3}, {1, 3, 2}, {2, 3, 7}});
 }
 
 // =============================================================================
@@ -256,31 +254,31 @@ Graph diamond_dag_weighted() {
 // =============================================================================
 
 struct disconnected_graph_results {
-    static constexpr size_t num_vertices = 5;
-    static constexpr size_t num_edges = 3;
-    static constexpr size_t num_components = 2;
+  static constexpr size_t num_vertices   = 5;
+  static constexpr size_t num_edges      = 3;
+  static constexpr size_t num_components = 2;
 };
 
 template <typename Graph>
 Graph disconnected_graph() {
-    return Graph({{0, 1}, {2, 3}, {3, 4}});
+  return Graph({{0, 1}, {2, 3}, {3, 4}});
 }
 
 // =============================================================================
 // Multi-Edge Graph: Multiple edges between same vertex pairs
 // 0 -> 1 (weight 10)
-// 0 -> 1 (weight 5)  
+// 0 -> 1 (weight 5)
 // 1 -> 2 (weight 3)
 // =============================================================================
 
 struct multi_edge_graph_results {
-    static constexpr size_t num_vertices = 3;
-    static constexpr size_t num_edges = 3; // including parallel edges
+  static constexpr size_t num_vertices = 3;
+  static constexpr size_t num_edges    = 3; // including parallel edges
 };
 
 template <typename Graph>
 Graph multi_edge_graph() {
-    return Graph({{0, 1, 10}, {0, 1, 5}, {1, 2, 3}});
+  return Graph({{0, 1, 10}, {0, 1, 5}, {1, 2, 3}});
 }
 
 // =============================================================================
@@ -290,30 +288,35 @@ Graph multi_edge_graph() {
 // =============================================================================
 
 struct clrs_dijkstra_results {
-    static constexpr size_t num_vertices = 5;
-    static constexpr size_t num_edges = 10;
-    static constexpr std::array<uint32_t, 5> vertices = {0, 1, 2, 3, 4}; // s,t,x,y,z
-    
-    // Shortest distances from s (vertex 0)
-    static constexpr std::array<int, 5> distances_from_0 = {0, 8, 9, 5, 7};
-    
-    // Named vertex mapping (for documentation)
-    static constexpr uint32_t s = 0;
-    static constexpr uint32_t t = 1;
-    static constexpr uint32_t x = 2;
-    static constexpr uint32_t y = 3;
-    static constexpr uint32_t z = 4;
+  static constexpr size_t                  num_vertices = 5;
+  static constexpr size_t                  num_edges    = 10;
+  static constexpr std::array<uint32_t, 5> vertices     = {0, 1, 2, 3, 4}; // s,t,x,y,z
+
+  // Shortest distances from s (vertex 0)
+  static constexpr std::array<int, 5> distances_from_0 = {0, 8, 9, 5, 7};
+
+  // Named vertex mapping (for documentation)
+  static constexpr uint32_t s = 0;
+  static constexpr uint32_t t = 1;
+  static constexpr uint32_t x = 2;
+  static constexpr uint32_t y = 3;
+  static constexpr uint32_t z = 4;
 };
 
 template <typename Graph>
 Graph clrs_dijkstra_graph() {
-    return Graph({
-        {0, 1, 10}, {0, 3, 5},      // s -> t, s -> y
-        {1, 2, 1}, {1, 3, 2},       // t -> x, t -> y
-        {2, 4, 4},                  // x -> z
-        {3, 1, 3}, {3, 2, 9}, {3, 4, 2},  // y -> t, y -> x, y -> z
-        {4, 0, 7}, {4, 2, 6}        // z -> s, z -> x
-    });
+  return Graph({
+        {0, 1, 10},
+        {0, 3, 5}, // s -> t, s -> y
+        {1, 2, 1},
+        {1, 3, 2}, // t -> x, t -> y
+        {2, 4, 4}, // x -> z
+        {3, 1, 3},
+        {3, 2, 9},
+        {3, 4, 2}, // y -> t, y -> x, y -> z
+        {4, 0, 7},
+        {4, 2, 6} // z -> s, z -> x
+  });
 }
 
 // =============================================================================
@@ -324,15 +327,15 @@ Graph clrs_dijkstra_graph() {
 // =============================================================================
 
 struct bipartite_graph_results {
-    static constexpr size_t num_vertices = 6;
-    static constexpr size_t num_edges = 6;
-    static constexpr std::array<uint32_t, 3> set_a = {0, 1, 2};
-    static constexpr std::array<uint32_t, 3> set_b = {3, 4, 5};
+  static constexpr size_t                  num_vertices = 6;
+  static constexpr size_t                  num_edges    = 6;
+  static constexpr std::array<uint32_t, 3> set_a        = {0, 1, 2};
+  static constexpr std::array<uint32_t, 3> set_b        = {3, 4, 5};
 };
 
 template <typename Graph>
 Graph bipartite_graph() {
-    return Graph({{0, 3}, {0, 4}, {1, 4}, {1, 5}, {2, 3}, {2, 5}});
+  return Graph({{0, 3}, {0, 4}, {1, 4}, {1, 5}, {2, 3}, {2, 5}});
 }
 
 // =============================================================================
@@ -342,31 +345,37 @@ Graph bipartite_graph() {
 // =============================================================================
 
 struct road_network_results {
-    static constexpr size_t num_vertices = 5;
-    static constexpr size_t num_edges = 7;
-    
-    // Named cities (for documentation)
-    static constexpr uint32_t seattle = 0;
-    static constexpr uint32_t portland = 1;
-    static constexpr uint32_t san_francisco = 2;
-    static constexpr uint32_t los_angeles = 3;
-    static constexpr uint32_t san_diego = 4;
-    
-    // Approximate distances in miles (for weighted version)
-    // Seattle-Portland: 173, Portland-SF: 635, Seattle-SF: 808
-    // SF-LA: 383, LA-SD: 120, Portland-LA: 965
+  static constexpr size_t num_vertices = 5;
+  static constexpr size_t num_edges    = 7;
+
+  // Named cities (for documentation)
+  static constexpr uint32_t seattle       = 0;
+  static constexpr uint32_t portland      = 1;
+  static constexpr uint32_t san_francisco = 2;
+  static constexpr uint32_t los_angeles   = 3;
+  static constexpr uint32_t san_diego     = 4;
+
+  // Approximate distances in miles (for weighted version)
+  // Seattle-Portland: 173, Portland-SF: 635, Seattle-SF: 808
+  // SF-LA: 383, LA-SD: 120, Portland-LA: 965
 };
 
 template <typename Graph>
 Graph road_network() {
-    return Graph({
-        {0, 1, 173}, {1, 0, 173},  // Seattle <-> Portland (bidirectional)
-        {1, 2, 635}, {2, 1, 635},  // Portland <-> SF
-        {0, 2, 808}, {2, 0, 808},  // Seattle <-> SF
-        {2, 3, 383}, {3, 2, 383},  // SF <-> LA
-        {3, 4, 120}, {4, 3, 120},  // LA <-> SD
-        {1, 3, 965}, {3, 1, 965}   // Portland <-> LA
-    });
+  return Graph({
+        {0, 1, 173},
+        {1, 0, 173}, // Seattle <-> Portland (bidirectional)
+        {1, 2, 635},
+        {2, 1, 635}, // Portland <-> SF
+        {0, 2, 808},
+        {2, 0, 808}, // Seattle <-> SF
+        {2, 3, 383},
+        {3, 2, 383}, // SF <-> LA
+        {3, 4, 120},
+        {4, 3, 120}, // LA <-> SD
+        {1, 3, 965},
+        {3, 1, 965} // Portland <-> LA
+  });
 }
 
 // =============================================================================
@@ -376,24 +385,30 @@ Graph road_network() {
 // =============================================================================
 
 struct actor_network_results {
-    static constexpr size_t num_vertices = 6;
-    static constexpr size_t num_edges = 7;
-    
-    // Named actors (for documentation, using numbers in code)
-    // 0=Kevin Bacon, 1=Tom Hanks, 2=Gary Sinise, 3=Bill Paxton, 4=Ed Harris, 5=Meg Ryan
+  static constexpr size_t num_vertices = 6;
+  static constexpr size_t num_edges    = 7;
+
+  // Named actors (for documentation, using numbers in code)
+  // 0=Kevin Bacon, 1=Tom Hanks, 2=Gary Sinise, 3=Bill Paxton, 4=Ed Harris, 5=Meg Ryan
 };
 
 template <typename Graph>
 Graph actor_network() {
-    return Graph({
-        {0, 1}, {1, 0},  // Bacon <-> Hanks (Apollo 13)
-        {0, 2}, {2, 0},  // Bacon <-> Sinise (Apollo 13)
-        {1, 2}, {2, 1},  // Hanks <-> Sinise (Forrest Gump, Apollo 13)
-        {1, 5}, {5, 1},  // Hanks <-> Ryan (multiple movies)
-        {3, 4}, {4, 3},  // Paxton <-> Harris (Apollo 13)
-        {0, 3}, {3, 0},  // Bacon <-> Paxton (Apollo 13)
-        {0, 4}           // Bacon <-> Harris (Apollo 13)
-    });
+  return Graph({
+        {0, 1},
+        {1, 0}, // Bacon <-> Hanks (Apollo 13)
+        {0, 2},
+        {2, 0}, // Bacon <-> Sinise (Apollo 13)
+        {1, 2},
+        {2, 1}, // Hanks <-> Sinise (Forrest Gump, Apollo 13)
+        {1, 5},
+        {5, 1}, // Hanks <-> Ryan (multiple movies)
+        {3, 4},
+        {4, 3}, // Paxton <-> Harris (Apollo 13)
+        {0, 3},
+        {3, 0}, // Bacon <-> Paxton (Apollo 13)
+        {0, 4}  // Bacon <-> Harris (Apollo 13)
+  });
 }
 
 // =============================================================================
@@ -401,30 +416,30 @@ Graph actor_network() {
 // =============================================================================
 
 struct medium_graph_results {
-    static constexpr size_t num_vertices = 50;
-    // num_edges will vary based on construction
+  static constexpr size_t num_vertices = 50;
+  // num_edges will vary based on construction
 };
 
 template <typename Graph>
 Graph medium_graph_sparse() {
-    // Create a graph with ~100 edges (average degree ~2)
-    std::vector<std::pair<uint32_t, uint32_t>> edges;
-    
-    // Create a connected backbone (path)
-    for (uint32_t i = 0; i < 49; ++i) {
-        edges.push_back({i, i + 1});
-    }
-    
-    // Add some random additional edges for complexity
-    edges.push_back({0, 10});
-    edges.push_back({5, 15});
-    edges.push_back({10, 25});
-    edges.push_back({15, 35});
-    edges.push_back({20, 40});
-    edges.push_back({25, 45});
-    edges.push_back({30, 48});
-    
-    return Graph(edges);
+  // Create a graph with ~100 edges (average degree ~2)
+  std::vector<std::pair<uint32_t, uint32_t>> edges;
+
+  // Create a connected backbone (path)
+  for (uint32_t i = 0; i < 49; ++i) {
+    edges.push_back({i, i + 1});
+  }
+
+  // Add some random additional edges for complexity
+  edges.push_back({0, 10});
+  edges.push_back({5, 15});
+  edges.push_back({10, 25});
+  edges.push_back({15, 35});
+  edges.push_back({20, 40});
+  edges.push_back({25, 45});
+  edges.push_back({30, 48});
+
+  return Graph(edges);
 }
 
 // =============================================================================
@@ -433,18 +448,18 @@ Graph medium_graph_sparse() {
 
 template <typename Graph, typename EdgeList>
 Graph create_graph_from_edges(const EdgeList& edges, size_t num_vertices) {
-    Graph g;
-    if constexpr (requires { resize_vertices(g, num_vertices); }) {
-        resize_vertices(g, num_vertices);
+  Graph g;
+  if constexpr (requires { resize_vertices(g, num_vertices); }) {
+    resize_vertices(g, num_vertices);
+  }
+  for (const auto& e : edges) {
+    if constexpr (std::tuple_size_v<std::decay_t<decltype(e)>> == 2) {
+      create_edge(g, std::get<0>(e), std::get<1>(e));
+    } else {
+      create_edge(g, std::get<0>(e), std::get<1>(e), std::get<2>(e));
     }
-    for (const auto& e : edges) {
-        if constexpr (std::tuple_size_v<std::decay_t<decltype(e)>> == 2) {
-            create_edge(g, std::get<0>(e), std::get<1>(e));
-        } else {
-            create_edge(g, std::get<0>(e), std::get<1>(e), std::get<2>(e));
-        }
-    }
-    return g;
+  }
+  return g;
 }
 
 } // namespace graph::test::fixtures

@@ -148,11 +148,18 @@ void find_negative_cycle(G&                              g,
  * @see find_negative_cycle() to extract vertices in detected negative cycle
  * @see dijkstra_shortest_paths() for faster algorithm with non-negative weights
  */
+// Note on std::remove_reference_t<G>:
+// These templates declare G&& (forwarding reference), so for lvalue arguments G deduces as a
+// reference type (e.g. vector<…>&). Writing "const G&" when G is already a reference triggers
+// reference collapsing: const (vector<…>&) & → vector<…>& — the const is silently discarded.
+// We use std::remove_reference_t<G> in WF default types, invoke_result_t, and concept
+// constraints so that "const std::remove_reference_t<G>&" always means a true const ref.
+// Default lambdas use "const auto&" instead of "const G&" to sidestep the issue entirely.
 template <index_adjacency_list G,
           input_range          Sources,
           random_access_range  Distances,
           random_access_range  Predecessors,
-          class WF      = function<range_value_t<Distances>(const edge_t<G>&)>,
+          class WF      = function<range_value_t<Distances>(const std::remove_reference_t<G>&, const edge_t<G>&)>,
           class Visitor = empty_visitor,
           class Compare = less<range_value_t<Distances>>,
           class Combine = plus<range_value_t<Distances>>>
@@ -167,13 +174,14 @@ requires convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&      //
       const Sources& sources,
       Distances&     distances,
       Predecessors&  predecessor,
-      WF&&      weight  = [](const edge_t<G>& uv) { return range_value_t<Distances>(1); }, // default weight(uv) -> 1
-      Visitor&& visitor = empty_visitor(),
-      Compare&& compare = less<range_value_t<Distances>>(),
-      Combine&& combine = plus<range_value_t<Distances>>()) {
+      WF&&           weight  = [](const auto&,
+                       const edge_t<G>& uv) { return range_value_t<Distances>(1); }, // default weight(g, uv) -> 1
+      Visitor&&      visitor = empty_visitor(),
+      Compare&&      compare = less<range_value_t<Distances>>(),
+      Combine&&      combine = plus<range_value_t<Distances>>()) {
   using id_type       = vertex_id_t<G>;
   using DistanceValue = range_value_t<Distances>;
-  using weight_type   = invoke_result_t<WF, edge_t<G>>;
+  using weight_type   = invoke_result_t<WF, const std::remove_reference_t<G>&, edge_t<G>>;
   using return_type   = optional<vertex_id_t<G>>;
 
   // relaxing the target is the function of reducing the distance from the source to the target
@@ -281,7 +289,7 @@ requires convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&      //
 template <index_adjacency_list G,
           random_access_range  Distances,
           random_access_range  Predecessors,
-          class WF      = function<range_value_t<Distances>(const edge_t<G>&)>,
+          class WF      = function<range_value_t<Distances>(const std::remove_reference_t<G>&, const edge_t<G>&)>,
           class Visitor = empty_visitor,
           class Compare = less<range_value_t<Distances>>,
           class Combine = plus<range_value_t<Distances>>>
@@ -295,10 +303,11 @@ requires is_arithmetic_v<range_value_t<Distances>> &&                   //
       vertex_id_t<G> source,
       Distances&     distances,
       Predecessors&  predecessor,
-      WF&&      weight  = [](const edge_t<G>& uv) { return range_value_t<Distances>(1); }, // default weight(uv) -> 1
-      Visitor&& visitor = empty_visitor(),
-      Compare&& compare = less<range_value_t<Distances>>(),
-      Combine&& combine = plus<range_value_t<Distances>>()) {
+      WF&&           weight  = [](const auto&,
+                       const edge_t<G>& uv) { return range_value_t<Distances>(1); }, // default weight(g, uv) -> 1
+      Visitor&&      visitor = empty_visitor(),
+      Compare&&      compare = less<range_value_t<Distances>>(),
+      Combine&&      combine = plus<range_value_t<Distances>>()) {
   return bellman_ford_shortest_paths(g, subrange(&source, (&source + 1)), distances, predecessor, weight,
                                      forward<Visitor>(visitor), forward<Compare>(compare), forward<Combine>(combine));
 }
@@ -339,7 +348,7 @@ requires is_arithmetic_v<range_value_t<Distances>> &&                   //
 template <index_adjacency_list G,
           input_range          Sources,
           random_access_range  Distances,
-          class WF      = function<range_value_t<Distances>(const edge_t<G>&)>,
+          class WF      = function<range_value_t<Distances>(const std::remove_reference_t<G>&, const edge_t<G>&)>,
           class Visitor = empty_visitor,
           class Compare = less<range_value_t<Distances>>,
           class Combine = plus<range_value_t<Distances>>>
@@ -351,10 +360,11 @@ requires convertible_to<range_value_t<Sources>, vertex_id_t<G>> && //
       G&&            g,
       const Sources& sources,
       Distances&     distances,
-      WF&&      weight  = [](const edge_t<G>& uv) { return range_value_t<Distances>(1); }, // default weight(uv) -> 1
-      Visitor&& visitor = empty_visitor(),
-      Compare&& compare = less<range_value_t<Distances>>(),
-      Combine&& combine = plus<range_value_t<Distances>>()) {
+      WF&&           weight  = [](const auto&,
+                       const edge_t<G>& uv) { return range_value_t<Distances>(1); }, // default weight(g, uv) -> 1
+      Visitor&&      visitor = empty_visitor(),
+      Compare&&      compare = less<range_value_t<Distances>>(),
+      Combine&&      combine = plus<range_value_t<Distances>>()) {
   return bellman_ford_shortest_paths(g, sources, distances, _null_predecessors, forward<WF>(weight),
                                      forward<Visitor>(visitor), forward<Compare>(compare), forward<Combine>(combine));
 }
@@ -372,7 +382,7 @@ requires convertible_to<range_value_t<Sources>, vertex_id_t<G>> && //
  */
 template <index_adjacency_list G,
           random_access_range  Distances,
-          class WF      = function<range_value_t<Distances>(const edge_t<G>&)>,
+          class WF      = function<range_value_t<Distances>(const std::remove_reference_t<G>&, const edge_t<G>&)>,
           class Visitor = empty_visitor,
           class Compare = less<range_value_t<Distances>>,
           class Combine = plus<range_value_t<Distances>>>
@@ -383,10 +393,11 @@ requires is_arithmetic_v<range_value_t<Distances>> && //
       G&&            g,
       vertex_id_t<G> source,
       Distances&     distances,
-      WF&&      weight  = [](const edge_t<G>& uv) { return range_value_t<Distances>(1); }, // default weight(uv) -> 1
-      Visitor&& visitor = empty_visitor(),
-      Compare&& compare = less<range_value_t<Distances>>(),
-      Combine&& combine = plus<range_value_t<Distances>>()) {
+      WF&&           weight  = [](const auto&,
+                       const edge_t<G>& uv) { return range_value_t<Distances>(1); }, // default weight(g, uv) -> 1
+      Visitor&&      visitor = empty_visitor(),
+      Compare&&      compare = less<range_value_t<Distances>>(),
+      Combine&&      combine = plus<range_value_t<Distances>>()) {
   return bellman_ford_shortest_paths(g, subrange(&source, (&source + 1)), distances, _null_predecessors,
                                      forward<WF>(weight), forward<Visitor>(visitor), forward<Compare>(compare),
                                      forward<Combine>(combine));

@@ -291,7 +291,7 @@ void depth_first_search(G&&                   g,      // graph
 
   while (!S.empty()) {
     auto& frame = S.top();
-    
+
     if (frame.it == frame.end) {
       // All edges exhausted: mark vertex finished (Black) and pop
       color[frame.vertex_id] = Color::Black;
@@ -301,15 +301,15 @@ void depth_first_search(G&&                   g,      // graph
       S.pop();
       continue;
     }
-    
+
     // Process next edge from this vertex
-    auto&& [vid, uv] = *frame.it;  // structured binding extracts target_id and edge
-    ++frame.it;  // advance iterator before potential push (simulates recursion past this edge)
-    
+    auto&& [vid, uv] = *frame.it; // structured binding extracts target_id and edge
+    ++frame.it;                   // advance iterator before potential push (simulates recursion past this edge)
+
     if constexpr (has_on_examine_edge<G, Visitor>) {
       visitor.on_examine_edge(g, uv);
     }
-    
+
     if (color[vid] == Color::White) {
       // Tree edge: target is undiscovered
       if constexpr (has_on_tree_edge<G, Visitor>) {
@@ -344,7 +344,7 @@ void depth_first_search(G&&                   g,      // graph
       }
     }
   }
-} 
+}
 
 
 } // namespace graph

@@ -14,6 +14,7 @@ add_executable(graph3_views_tests
     test_bfs.cpp
     test_topological_sort.cpp
     test_adaptors.cpp
+    test_view_chaining.cpp
     test_unified_header.cpp
     test_graph_hpp_includes_views.cpp
     test_edge_cases.cpp

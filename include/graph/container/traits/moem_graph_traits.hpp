@@ -37,18 +37,18 @@ class dynamic_graph;
 //  Parameter semantics mirror voem_graph_traits.
 template <class EV = void, class VV = void, class GV = void, class VId = uint32_t, bool Sourced = false>
 struct moem_graph_traits {
-  using edge_value_type                      = EV;
-  using vertex_value_type                    = VV;
-  using graph_value_type                     = GV;
-  using vertex_id_type                       = VId;
-  static constexpr bool sourced              = Sourced;
+  using edge_value_type         = EV;
+  using vertex_value_type       = VV;
+  using graph_value_type        = GV;
+  using vertex_id_type          = VId;
+  static constexpr bool sourced = Sourced;
 
   using edge_type   = dynamic_edge<EV, VV, GV, VId, Sourced, moem_graph_traits>;
   using vertex_type = dynamic_vertex<EV, VV, GV, VId, Sourced, moem_graph_traits>;
   using graph_type  = dynamic_graph<EV, VV, GV, VId, Sourced, moem_graph_traits>;
 
-  using vertices_type = std::map<VId, vertex_type>;      // Map keyed by vertex ID
-  using edges_type    = std::map<VId, edge_type>;        // Map keyed by target vertex ID
+  using vertices_type = std::map<VId, vertex_type>; // Map keyed by vertex ID
+  using edges_type    = std::map<VId, edge_type>;   // Map keyed by target vertex ID
 };
 
 } // namespace graph::container

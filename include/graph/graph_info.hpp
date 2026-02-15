@@ -17,8 +17,8 @@ namespace graph {
  */
 class graph_error : public std::runtime_error {
 public:
-    explicit graph_error(const std::string& msg) : std::runtime_error(msg) {}
-    explicit graph_error(const char* msg) : std::runtime_error(msg) {}
+  explicit graph_error(const std::string& msg) : std::runtime_error(msg) {}
+  explicit graph_error(const char* msg) : std::runtime_error(msg) {}
 };
 
 //

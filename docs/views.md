@@ -73,8 +73,8 @@ for (auto [v] : g | vertexlist()) {
     std::cout << "Vertex " << id << "\n";
 }
 
-// With value function
-auto vvf = [&](auto v) { return vertex_id(g, v) * 2; };
+// With value function (graph passed as parameter, not captured)
+auto vvf = [](const auto& g, auto v) { return vertex_id(g, v) * 2; };
 for (auto [v, val] : g | vertexlist(vvf)) {
     std::cout << "Vertex value: " << val << "\n";
 }
@@ -118,8 +118,8 @@ for (auto [e] : g | incidence(0)) {
     std::cout << "Edge to " << target << "\n";
 }
 
-// With value function
-auto evf = [&](auto e) { return target_id(g, e); };
+// With value function (graph passed as parameter, not captured)
+auto evf = [](const auto& g, auto e) { return target_id(g, e); };
 for (auto [e, target] : g | incidence(0, evf)) {
     std::cout << "Target: " << target << "\n";
 }
@@ -163,8 +163,8 @@ for (auto [n] : g | neighbors(0)) {
     std::cout << "Neighbor: " << id << "\n";
 }
 
-// With value function
-auto vvf = [&](auto v) { return vertex_id(g, v) * 10; };
+// With value function (graph passed as parameter, not captured)
+auto vvf = [](const auto& g, auto v) { return vertex_id(g, v) * 10; };
 for (auto [n, val] : g | neighbors(0, vvf)) {
     std::cout << "Neighbor value: " << val << "\n";
 }
@@ -205,8 +205,8 @@ for (auto [e] : g | edgelist()) {
     std::cout << "Edge: " << src << " -> " << tgt << "\n";
 }
 
-// With value function
-auto evf = [&](auto e) { 
+// With value function (graph passed as parameter, not captured)
+auto evf = [](const auto& g, auto e) { 
     return std::pair{source_id(g, e), target_id(g, e)}; 
 };
 for (auto [e, endpoints] : g | edgelist(evf)) {
@@ -326,8 +326,8 @@ for (auto [e] : g | edges_bfs(0)) {
 ```cpp
 auto bfs = vertices_bfs(g, 0);
 // Query search state
-auto depth = bfs.depth();  // current depth level
-auto count = bfs.size();   // vertices visited so far
+auto depth = bfs.depth();         // current depth level
+auto count = bfs.num_visited();   // vertices visited so far
 ```
 
 ---
@@ -396,11 +396,12 @@ auto view = vertices_dfs(g, 0);
 
 ## Value Functions
 
-Value functions receive descriptors and compute additional values:
+Value functions receive the **graph and descriptor as parameters**, enabling stateless lambdas
+that support full `std::views` chaining:
 
 **Vertex Value Function**:
 ```cpp
-auto vvf = [&g](auto v) {
+auto vvf = [](const auto& g, auto v) {
     return vertex_id(g, v) * 2;
 };
 for (auto [v, val] : g | vertexlist(vvf)) {
@@ -410,7 +411,7 @@ for (auto [v, val] : g | vertexlist(vvf)) {
 
 **Edge Value Function**:
 ```cpp
-auto evf = [&g](auto e) {
+auto evf = [](const auto& g, auto e) {
     return target_id(g, e);
 };
 for (auto [e, target] : g | incidence(0, evf)) {
@@ -426,7 +427,7 @@ struct VertexData {
     size_t degree;
 };
 
-auto vvf = [&g](auto v) -> VertexData {
+auto vvf = [](const auto& g, auto v) -> VertexData {
     return {vertex_id(g, v), degree(g, v)};
 };
 
@@ -438,7 +439,11 @@ for (auto [v, data] : g | vertexlist(vvf)) {
 
 ## Chaining with std::views
 
-Graph views integrate with C++20 standard ranges:
+Graph views integrate with C++20 standard ranges. Because value functions receive the graph
+as a parameter (not via capture), lambdas remain stateless and views satisfy `std::ranges::view`,
+enabling full chaining with `std::views` adaptors.
+
+### Without Value Functions
 
 ```cpp
 #include <ranges>
@@ -451,33 +456,48 @@ auto even_vertices = g
         return vertex_id(g, v) % 2 == 0;
     });
 
-// Transform values
-auto doubled = g
-    | vertexlist()
-    | std::views::transform([&g](auto info) {
-        auto [v] = info;
-        return vertex_id(g, v) * 2;
-    });
-
 // Take first N vertices
 auto first_five = g 
     | vertexlist() 
     | std::views::take(5);
+```
 
-// Complex chains
+### With Value Functions (Full Chaining Support)
+
+```cpp
+// Value functions with graph parameter enable chaining!
+auto vvf = [](const auto& g, auto v) { return vertex_id(g, v) * 10; };
+auto view = g | vertexlist(vvf) 
+              | std::views::take(2);        // ✅ Works!
+
+auto evf = [](const auto& g, auto e) { return target_id(g, e); };
+auto edges = g | incidence(0, evf)
+               | std::views::take(3);       // ✅ Works!
+
+// Complex chains with value functions
 auto result = g
-    | vertices_dfs(0)
+    | vertices_dfs(0, vvf)
     | std::views::drop(1)  // skip first
-    | std::views::take(10) // take next 10
-    | std::views::transform([&g](auto info) {
-        auto [v] = info;
-        return vertex_id(g, v);
-    });
+    | std::views::take(10); // take next 10
 
-for (auto id : result) {
-    std::cout << id << "\n";
+for (auto [v, val] : result) {
+    std::cout << val << "\n";
 }
 ```
+
+### Why This Works
+
+Stateless lambdas (empty capture list `[]`) are default constructible and semiregular,
+which satisfies `std::ranges::view`. Since value functions receive the graph as a parameter
+rather than capturing it, they remain stateless:
+
+```cpp
+auto vvf = [](const auto& g, auto v) { return vertex_id(g, v); };
+static_assert(std::default_initializable<decltype(vvf)>);  // ✅
+static_assert(std::semiregular<decltype(vvf)>);            // ✅
+```
+
+See [View Chaining Limitations](view_chaining_limitations.md) for historical context.
 
 ## Performance Considerations
 
@@ -526,8 +546,8 @@ auto dfs = g | vertices_dfs(0);  // Allocates visited tracker
 
 **1. Reuse Value Functions**:
 ```cpp
-// Good: define once, reuse
-auto vvf = [&g](auto v) { return vertex_id(g, v); };
+// Good: define once, reuse (graph passed as parameter)
+auto vvf = [](const auto& g, auto v) { return vertex_id(g, v); };
 auto view1 = g | vertexlist(vvf);
 auto view2 = g | vertices_dfs(0, vvf);
 
@@ -616,14 +636,16 @@ void process(const Graph& g) {
 
 ### 5. Value Function Patterns
 
+Value functions receive the graph as first parameter, keeping lambdas stateless:
+
 **Pattern 1: Simple Transformation**
 ```cpp
-auto vvf = [&g](auto v) { return vertex_id(g, v); };
+auto vvf = [](const auto& g, auto v) { return vertex_id(g, v); };
 ```
 
 **Pattern 2: Multiple Values**
 ```cpp
-auto vvf = [&g](auto v) {
+auto vvf = [](const auto& g, auto v) {
     return std::tuple{vertex_id(g, v), degree(g, v)};
 };
 for (auto [v, id, deg] : g | vertexlist(vvf)) { }
@@ -631,11 +653,22 @@ for (auto [v, id, deg] : g | vertexlist(vvf)) { }
 
 **Pattern 3: Computed Properties**
 ```cpp
-auto vvf = [&g](auto v) {
+auto vvf = [](const auto& g, auto v) {
     size_t id = vertex_id(g, v);
     size_t deg = degree(g, v);
     return id * 100 + deg;  // composite value
 };
+```
+
+**Pattern 4: Chaining with std::views**
+```cpp
+auto vvf = [](const auto& g, auto v) { return vertex_id(g, v) * 10; };
+auto view = g | vertexlist(vvf) 
+              | std::views::take(5)   // ✅ Full chaining support!
+              | std::views::filter([](auto vi) {
+                  auto [vid, v, val] = vi;
+                  return val > 0;
+                });
 ```
 
 ### 6. Error Handling

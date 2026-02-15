@@ -10,31 +10,56 @@
 namespace graph::container {
 
 // Type trait aliases for undirected_adjacency_list API
-template<typename G> using graph_value_t = typename G::graph_value_type;
-template<typename G> using vertex_type_t = typename G::vertex_type;
-template<typename G> using vertex_value_t = typename G::vertex_value_type;
-template<typename G> using vertex_id_t = typename G::vertex_id_type;
-template<typename G> using vertex_size_t = typename G::vertex_size_type;
-template<typename G> using vertex_iterator_t = typename G::vertex_iterator;
-template<typename G> using const_vertex_iterator_t = typename G::const_vertex_iterator;
-template<typename G> using vertex_range_t = typename G::vertex_range;
-template<typename G> using const_vertex_range_t = typename G::const_vertex_range;
-template<typename G> using edge_t = typename G::edge_type;
-template<typename G> using edge_value_t = typename G::edge_value_type;
-template<typename G> using edge_id_t = typename G::edge_id_type;
-template<typename G> using edge_size_t = typename G::edge_size_type;
-template<typename G> using edge_iterator_t = typename G::edge_iterator;
-template<typename G> using const_edge_iterator_t = typename G::const_edge_iterator;
-template<typename G> using edge_range_t = typename G::edge_range;
-template<typename G> using const_edge_range_t = typename G::const_edge_range;
-template<typename G> using vertex_edge_iterator_t = typename G::vertex_edge_iterator;
-template<typename G> using const_vertex_edge_iterator_t = typename G::const_vertex_edge_iterator;
-template<typename G> using vertex_edge_range_t = typename G::vertex_edge_range;
-template<typename G> using const_vertex_edge_range_t = typename G::const_vertex_edge_range;
-template<typename G> using neighbor_iterator_t = typename G::neighbor_iterator;
-template<typename G> using const_neighbor_iterator_t = typename G::const_neighbor_iterator;
-template<typename G> using neighbor_range_t = typename G::neighbor_range;
-template<typename G> using const_neighbor_range_t = typename G::const_neighbor_range;
+template <typename G>
+using graph_value_t = typename G::graph_value_type;
+template <typename G>
+using vertex_type_t = typename G::vertex_type;
+template <typename G>
+using vertex_value_t = typename G::vertex_value_type;
+template <typename G>
+using vertex_id_t = typename G::vertex_id_type;
+template <typename G>
+using vertex_size_t = typename G::vertex_size_type;
+template <typename G>
+using vertex_iterator_t = typename G::vertex_iterator;
+template <typename G>
+using const_vertex_iterator_t = typename G::const_vertex_iterator;
+template <typename G>
+using vertex_range_t = typename G::vertex_range;
+template <typename G>
+using const_vertex_range_t = typename G::const_vertex_range;
+template <typename G>
+using edge_t = typename G::edge_type;
+template <typename G>
+using edge_value_t = typename G::edge_value_type;
+template <typename G>
+using edge_id_t = typename G::edge_id_type;
+template <typename G>
+using edge_size_t = typename G::edge_size_type;
+template <typename G>
+using edge_iterator_t = typename G::edge_iterator;
+template <typename G>
+using const_edge_iterator_t = typename G::const_edge_iterator;
+template <typename G>
+using edge_range_t = typename G::edge_range;
+template <typename G>
+using const_edge_range_t = typename G::const_edge_range;
+template <typename G>
+using vertex_edge_iterator_t = typename G::vertex_edge_iterator;
+template <typename G>
+using const_vertex_edge_iterator_t = typename G::const_vertex_edge_iterator;
+template <typename G>
+using vertex_edge_range_t = typename G::vertex_edge_range;
+template <typename G>
+using const_vertex_edge_range_t = typename G::const_vertex_edge_range;
+template <typename G>
+using neighbor_iterator_t = typename G::neighbor_iterator;
+template <typename G>
+using const_neighbor_iterator_t = typename G::const_neighbor_iterator;
+template <typename G>
+using neighbor_range_t = typename G::neighbor_range;
+template <typename G>
+using const_neighbor_range_t = typename G::const_neighbor_range;
 
 #ifdef CPO
 ///-------------------------------------------------------------------------------------
@@ -50,8 +75,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto graph_value(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>& g)
       -> const graph_value_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>>& {
@@ -65,22 +89,20 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto vertex_id(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                   g,
-                          const_vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> u)
+                         const_vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> u)
       -> vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
-  return static_cast<vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>>>(
-        u - g.vertices().begin());
+  return static_cast<vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>>>(u -
+                                                                                                 g.vertices().begin());
 }
 
 template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto vertex_value(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                   g,
                             vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> u)
@@ -92,8 +114,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto vertex_value(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                   g,
                             const_vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> u)
@@ -111,11 +132,10 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
-constexpr auto edge_id(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&         g,
-                      const_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv)
+constexpr auto edge_id(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                 g,
+                       const_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv)
       -> edge_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
   return uv.edge_id(g);
 }
@@ -123,12 +143,11 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto edge_id(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                   g,
-                      const_vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> u,
-                      const_vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> v)
+                       const_vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> u,
+                       const_vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> v)
       -> edge_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
   return edge_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>>(vertex_id(g, u), vertex_id(g, v));
 }
@@ -137,8 +156,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto edge_value(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                 g,
                           edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv)
@@ -150,8 +168,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto edge_value(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                 g,
                           const_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv)
@@ -163,8 +180,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto vertex(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                         g,
                       edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>>         uv,
@@ -177,8 +193,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto vertex(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                   g,
                       const_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>>   uv,
@@ -191,12 +206,11 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto vertex(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                 g,
                       edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv,
-                      vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>>    source_id)
+                      vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>>     source_id)
       -> vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
   return uv->other_vertex(g, source_id);
 }
@@ -205,12 +219,11 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto vertex(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                 g,
                       const_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv,
-                      vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>>          source_id)
+                      vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>>           source_id)
       -> const_vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
   return uv->other_vertex(g, source_id);
 }
@@ -219,13 +232,11 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
-constexpr auto
-vertex_id(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                   g,
-           const_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>>   uv,
-           const_vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> source)
+constexpr auto vertex_id(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                   g,
+                         const_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>>   uv,
+                         const_vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> source)
       -> vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
   return uv->other_vertex_id(g, source);
 }
@@ -233,12 +244,11 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto vertex_id(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                 g,
-                          const_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv,
-                          vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> source_id)
+                         const_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv,
+                         vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>>           source_id)
       -> vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
   return uv->other_vertex_id(g, source_id);
 }
@@ -253,8 +263,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto vertices(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>& g)
       -> vertex_range_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
@@ -265,8 +274,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto vertices(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>& g)
       -> const_vertex_range_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
@@ -277,11 +285,10 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
-constexpr auto try_find_vertex(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&              g,
-                           vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> id)
+constexpr auto try_find_vertex(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&             g,
+                               vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> id)
       -> vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
   return g.try_find_vertex(id);
 }
@@ -290,11 +297,10 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
-constexpr auto try_find_vertex(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&        g,
-                           vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> id)
+constexpr auto try_find_vertex(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&       g,
+                               vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> id)
       -> const_vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
   return g.try_find_vertex(id);
 }
@@ -304,8 +310,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 void reserve_vertices(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&               g,
                       vertex_size_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> n) {
@@ -316,8 +321,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 void resize_vertices(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&               g,
                      vertex_size_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> n) {
@@ -327,8 +331,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 void resize_vertices(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                       g,
                      vertex_size_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>>         n,
@@ -345,8 +348,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto edges(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>& g)
       -> edge_range_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
@@ -357,8 +359,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto edges(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>& g)
       -> const_edge_range_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
@@ -369,8 +370,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto find_edge(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                   g,
                          vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> u,
@@ -387,8 +387,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto find_edge(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                   g,
                          const_vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> u,
@@ -405,10 +404,9 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
-constexpr auto find_edge(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&              g,
+constexpr auto find_edge(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&             g,
                          vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uid,
                          vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> vid)
       -> edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
@@ -419,10 +417,9 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
-constexpr auto find_edge(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&        g,
+constexpr auto find_edge(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&       g,
                          vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uid,
                          vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> vid)
       -> const_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
@@ -438,8 +435,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto vertex(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                         g,
                       vertex_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>>  uv,
@@ -451,8 +447,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto vertex(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                        g,
                       const_vertex_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv,
@@ -465,12 +460,11 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto vertex(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                        g,
                       vertex_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv,
-                      vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>>           source_id)
+                      vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>>            source_id)
       -> vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
   return uv->other_vertex(g, source_id);
 }
@@ -478,8 +472,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto vertex(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                        g,
                       const_vertex_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv,
@@ -492,13 +485,11 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
-constexpr auto
-vertex_id(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                        g,
-           const_vertex_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv,
-           const_vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>>      source)
+constexpr auto vertex_id(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                        g,
+                         const_vertex_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv,
+                         const_vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> source)
       -> vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
   return uv->other_vertex_id(g, source);
 }
@@ -506,13 +497,11 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
-constexpr auto
-vertex_id(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                        g,
-           const_vertex_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv,
-           vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>>                 source_id)
+constexpr auto vertex_id(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                        g,
+                         const_vertex_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv,
+                         vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> source_id)
       -> vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
   return uv->other_vertex_id(g, source_id);
 }
@@ -521,8 +510,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto edge_value(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                        g,
                           vertex_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv)
@@ -534,8 +522,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto
 edge_value(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                        g,
@@ -548,8 +535,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto edges(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                   g,
                      vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> u)
@@ -561,8 +547,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto edges(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                   g,
                      const_vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> u)
@@ -575,8 +560,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto try_find_vertex_edge(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                   g,
                                     vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> u,
@@ -593,8 +577,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto
 try_find_vertex_edge(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                    g,
@@ -612,10 +595,9 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
-constexpr auto try_find_vertex_edge(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&              g,
+constexpr auto try_find_vertex_edge(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&             g,
                                     vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uid,
                                     vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> vid)
       -> vertex_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
@@ -626,10 +608,9 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
-constexpr auto try_find_vertex_edge(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&        g,
+constexpr auto try_find_vertex_edge(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&       g,
                                     vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uid,
                                     vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> vid)
       -> const_vertex_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
@@ -640,8 +621,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto erase_edge(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                        g,
                           vertex_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv)
@@ -656,8 +636,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto erase_edges(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                     g,
                            vertex_edge_range_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv_rng)
@@ -674,8 +653,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr void clear_edges(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                   g,
                            vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> u) {
@@ -690,12 +668,10 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
-constexpr auto
-vertex_id(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                          g,
-           const_neighbor_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> u)
+constexpr auto vertex_id(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                     g,
+                         const_neighbor_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> u)
       -> vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
   return u.other_vertex_id();
 }
@@ -704,8 +680,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto vertices(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                   g,
                         vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> u)
@@ -717,8 +692,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto vertices(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                   g,
                         const_vertex_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> u)
@@ -739,8 +713,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto target_vertex(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                 g,
                              edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv)
@@ -752,8 +725,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto target_vertex(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                 g,
                              const_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv)
@@ -765,8 +737,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto target_vertex(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                        g,
                              vertex_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv)
@@ -778,8 +749,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto
 target_vertex(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                        g,
@@ -792,12 +762,10 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
-constexpr auto
-target_vertex_id(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                 g,
-                  const_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv)
+constexpr auto target_vertex_id(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                 g,
+                                const_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv)
       -> vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
   return uv->target_vertex_id(g);
 }
@@ -806,12 +774,11 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto
 target_vertex_id(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                        g,
-                  const_vertex_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv)
+                 const_vertex_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv)
       -> vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
   return uv->target_vertex_id(g);
 }
@@ -821,8 +788,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto source_vertex(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                 g,
                              edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv)
@@ -834,8 +800,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto source_vertex(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                 g,
                              const_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv)
@@ -847,8 +812,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto source_vertex(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                        g,
                              vertex_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv)
@@ -860,8 +824,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto
 source_vertex(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                        g,
@@ -874,12 +837,10 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
-constexpr auto
-source_vertex_id(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                 g,
-                  const_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv)
+constexpr auto source_vertex_id(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                 g,
+                                const_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv)
       -> vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
   return uv->list_owner_id();
 }
@@ -888,12 +849,11 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 constexpr auto
 source_vertex_id(const undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&                        g,
-                  const_vertex_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv)
+                 const_vertex_edge_iterator_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uv)
       -> vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> {
   return uv->list_owner_id();
 }
@@ -937,10 +897,9 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
-bool contains_vertex(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&              g,
+bool contains_vertex(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>&             g,
                      vertex_id_t<undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>> uid) {
   return uid >= 0 && uid < g.vertices().size();
 }
@@ -949,8 +908,7 @@ template <typename VV,
           typename EV,
           typename GV,
           integral VId,
-          template <typename V, typename A>
-          class VContainer,
+          template <typename V, typename A> class VContainer,
           typename Alloc>
 void clear(undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>& g) {
   g.clear();

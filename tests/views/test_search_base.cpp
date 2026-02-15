@@ -159,7 +159,7 @@ TEST_CASE("visited_tracker edge cases", "[views][search_base]") {
 
 TEST_CASE("visited_tracker with custom allocator", "[views][search_base]") {
   // Using default allocator explicitly
-  std::allocator<bool> alloc;
+  std::allocator<bool>                               alloc;
   visited_tracker<std::size_t, std::allocator<bool>> tracker(5, alloc);
 
   REQUIRE(tracker.size() == 5);

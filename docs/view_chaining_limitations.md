@@ -1,223 +1,158 @@
-# View Chaining Limitations with std::views
+# View Chaining with Value Functions
 
 ## Overview
 
-Graph views in this library support C++20 range operations and can chain with `std::views` adaptors. However, there is an important limitation when using views with **capturing lambda value functions**.
+Graph views in this library support **full C++20 range chaining with `std::views`**, including
+when using value functions. This was achieved by changing value function signatures to receive the
+graph as a parameter rather than requiring lambda capture.
 
-## The Problem
+## The Solution: Parameter-Based Value Functions
 
-When a view is created with a capturing lambda as a value function, it **cannot be chained** with `std::views` adaptors like `filter`, `transform`, `take`, etc.
-
-### Example That FAILS
+Value functions now receive the graph as a parameter instead of requiring capture:
 
 ```cpp
-std::vector<std::vector<int>> g = {{1, 2}, {0, 2}, {0, 1}};
+// Graph is passed as a parameter — lambda is stateless
+auto vvf = [](const auto& g, auto v) { return vertex_id(g, v) * 10; };
 
-// Capturing lambda as value function
-auto vvf = [&g](auto v) { return vertex_id(g, v) * 10; };
-
-// This FAILS to compile:
+// Full chaining support!
 auto view = g | vertexlist(vvf) 
-              | std::views::take(2);  // ❌ Compilation error
+              | std::views::take(2);        // ✅ Works perfectly!
+              | std::views::filter(...);    // ✅ Chains freely!
 ```
 
-### Compilation Error
+### Why This Works
 
+Stateless lambdas (empty capture list `[]`) are:
+1. **Default constructible**: No captured state to initialize
+2. **Copyable**: No captured references to worry about
+3. **Semiregular**: Satisfies `std::semiregular` concept
+
+These properties allow views storing stateless lambdas to satisfy `std::ranges::view`,
+which is what `std::views` adaptors require.
+
+### Concept Checks
+
+```cpp
+auto vvf = [](const auto& g, auto v) { return vertex_id(g, v); };
+using ViewType = vertexlist_view<G, decltype(vvf)>;
+
+std::ranges::view<ViewType>            // ✅ true
+std::ranges::range<ViewType>           // ✅ true
+std::ranges::input_range<ViewType>     // ✅ true
+std::semiregular<ViewType>             // ✅ true
+std::default_initializable<ViewType>   // ✅ true
 ```
-error: no match for 'operator|' 
-  (operand types are 'vertexlist_view<..., lambda>' and 
-   'std::ranges::views::__adaptor::_Partial<...>')
-note: constraints not satisfied
-note: the required expression '...__is_range_adaptor_closure_fn(...)' is invalid
+
+## Usage Patterns
+
+### ✅ Pattern 1: Value Functions with Full Chaining (Recommended)
+
+```cpp
+auto vvf = [](const auto& g, auto v) { return vertex_id(g, v) * 10; };
+auto view = g | vertexlist(vvf) 
+              | std::views::take(2);  // ✅ Works!
 ```
 
-## Why This Happens
+### ✅ Pattern 2: No Value Function + std::views::transform
 
-The `std::ranges::view` concept requires types to be **semiregular**, which means:
-1. **Default constructible**: Can create without arguments
-2. **Copyable**: Can be copied
-3. **Movable**: Can be moved
+```cpp
+auto view = g | vertexlist()  // No value function
+              | std::views::transform([&g](auto vi) {
+                  auto [v] = vi;
+                  return vertex_id(g, v) * 10;
+                })
+              | std::views::take(2);  // ✅ Works
+```
 
-### The Lambda Problem
+Note: Capturing lambdas are fine **inside** `std::views::transform` and other standard
+adaptors — only the graph view itself needs to be semiregular.
+
+### ✅ Pattern 3: Search Views with Value Functions and Chaining
+
+```cpp
+auto vvf = [](const auto& g, auto v) { return vertex_id(g, v); };
+auto view = g | vertices_dfs(0, vvf)
+              | std::views::take(5);   // ✅ Works!
+
+auto evf = [](const auto& g, auto e) { return target_id(g, e); };
+auto edges = g | edges_bfs(0, evf)
+               | std::views::take(3);  // ✅ Works!
+```
+
+## Historical Context: The Capture Problem
+
+### Previous Signatures (Before This Change)
+
+Previously, value functions took only a descriptor:
+- VVF: `vvf(v)` — vertex descriptor only
+- EVF: `evf(e)` — edge descriptor only
+
+This required users to **capture** the graph reference:
+
+```cpp
+// OLD pattern — capturing lambda breaks chaining
+auto vvf = [&g](auto v) { return vertex_id(g, v) * 10; };
+//          ^^^^ Capture makes lambda stateful
+```
+
+### Why Capturing Lambdas Failed
 
 Lambdas with captures are **NOT default constructible**:
 
 ```cpp
 int data = 42;
-auto lambda = [data](int x) { return data + x; };  // Captures 'data'
+auto lambda = [data](int x) { return data + x; };
 
-// Attempting to default construct this type fails:
+// This fails:
 decltype(lambda) default_lambda;  // ❌ Error: no default constructor
 ```
 
-**Why?** The compiler doesn't know what value to give the captured variable `data` when default-constructing.
+**Why?** The compiler doesn't know what value to give the captured variable `data` when
+default-constructing.
 
-### Impact on Views
-
-When `vertexlist_view<G, VVF>` stores a capturing lambda as `VVF`:
-- The view inherits the lambda's properties
-- The view becomes **not default_initializable**
-- Therefore, the view **doesn't satisfy `std::ranges::view`**
-- `std::views` adaptors **refuse to work** with non-view types
-
-## Concept Check Results
+When a view stored a capturing lambda as its VVF:
+- The view inherited the lambda's properties
+- The view became **not default_initializable**
+- Therefore, the view **didn't satisfy `std::ranges::view`**
+- `std::views` adaptors **refused to work** with it
 
 ```cpp
-// Lambda with capture
-auto lambda = [&g](auto v) { return vertex_id(g, v); };
-using ViewType = vertexlist_view<G, decltype(lambda)>;
-
-std::ranges::view<ViewType>            // ❌ false
-std::ranges::range<ViewType>           // ✅ true
-std::ranges::input_range<ViewType>     // ✅ true
-std::semiregular<ViewType>             // ❌ false - this is the problem!
-std::default_initializable<ViewType>   // ❌ false - root cause
-```
-
-## Working Patterns
-
-### ✅ Pattern 1: No Value Function + std::views::transform (RECOMMENDED)
-
-Instead of passing a value function to the view, use `std::views::transform`:
-
-```cpp
-auto view = g | vertexlist()  // No value function
-              | std::views::transform([&g](auto vi) {
-                  return vertex_id(g, vi.vertex) * 10;
-                })
-              | std::views::take(2);  // ✅ Works perfectly!
-```
-
-**Why this works**: `vertexlist()` without VVF is fully semiregular, and capturing lambdas work fine **inside** `std::views::transform`.
-
-### ✅ Pattern 2: Value Functions Without Chaining
-
-Use value functions when you don't need to chain with `std::views`:
-
-```cpp
+// OLD: This FAILED to compile
 auto vvf = [&g](auto v) { return vertex_id(g, v) * 10; };
-auto view = g | vertexlist(vvf);  // ✅ Works fine
-
-for (auto [vertex, value] : view) {
-    // Use vertex and value
-}
-// Just don't try to chain std::views after this
-```
-
-### ✅ Pattern 3: Extract to Container First
-
-Extract view results to a container, then chain `std::views`:
-
-```cpp
-std::vector<vertex_info<void, vertex_t<G>, void>> vertices;
-for (auto vi : g | vertexlist()) {
-    vertices.push_back(vi);
-}
-
-// Now chain std::views on the vector (capturing allowed)
-auto view = vertices 
-    | std::views::transform([&g](auto vi) { return vertex_id(g, vi.vertex); })
-    | std::views::filter([](auto id) { return id > 0; });
-```
-
-### ✅ Pattern 4: Stateless Lambdas Work
-
-Lambdas **without** captures are default constructible and work for chaining:
-
-```cpp
-// No captures - this is default constructible
-auto vvf = [](auto v) { return 42; };  // Stateless
-
 auto view = g | vertexlist(vvf) 
-              | std::views::take(2);  // ✅ Works!
+              | std::views::take(2);  // ❌ Compilation error
 ```
 
-## C++26 Solution
+### Current Signatures (After This Change)
 
-### The Fix: std::copyable_function (P2548)
+Value functions now receive the graph as a first parameter:
+- VVF: `vvf(g, v)` — graph and vertex descriptor
+- EVF: `evf(g, e)` — graph and edge descriptor
 
-C++26 will introduce `std::copyable_function`, a type-erased function wrapper that is **always semiregular**, even when wrapping capturing lambdas.
+The view passes `std::as_const(*g_)` as the graph argument, ensuring const-correctness.
+Since the graph is a **parameter** rather than a **capture**, the lambda remains stateless
+and the view satisfies `std::ranges::view`.
 
-```cpp
-// C++26 (future)
-std::copyable_function<int(vertex_t)> vvf = [&g](auto v) { 
-    return vertex_id(g, v) * 10; 
-};
+## C++26 Alternatives
 
-// This wrapper IS default_initializable
-std::default_initializable<decltype(vvf)>  // ✅ true!
-```
-
-### Future Implementation Strategy
-
-Once C++26 is available, views could internally wrap VVF in `std::copyable_function`:
-
-```cpp
-template <adj_list::adjacency_list G, class VVF>
-class vertexlist_view {
-private:
-    G* g_ = nullptr;
-    
-    // Wrap VVF in copyable_function for C++26+
-    #if __cplusplus >= 202600L
-        std::copyable_function<std::invoke_result_t<VVF, vertex_t<G>>(vertex_t<G>)> vvf_;
-    #else
-        VVF vvf_;  // C++20 - has limitations
-    #endif
-};
-```
-
-This would enable full chaining with capturing lambdas while maintaining backward compatibility.
-
-## Related C++ Proposals
-
-- **P2548R6**: `std::copyable_function` - Type-erased copyable function wrapper
-- **P0792R14**: `function_ref` - Non-owning function reference (C++26)
-- **P3312R0**: Relaxed `std::function` requirements for views
+C++26 will introduce `std::copyable_function` (P2548) which could also solve this problem
+by wrapping capturing lambdas in a semiregular type-erased wrapper. However, the parameter-based
+approach adopted here:
+1. Works in C++20 today (no C++26 dependency)
+2. Is more explicit about graph access
+3. Avoids type-erasure overhead
+4. Enables more flexible value functions
 
 ## Summary Table
 
-| Pattern | Chaining | Captures | Default Init | Works? |
-|---------|----------|----------|--------------|--------|
-| `vertexlist()` | Yes | In `std::views` | ✅ Yes | ✅ Yes |
-| `vertexlist(stateless_lambda)` | Yes | No | ✅ Yes | ✅ Yes |
-| `vertexlist(capturing_lambda)` | **No** | Yes | ❌ No | ❌ No |
-| `vertexlist(capturing_lambda)` | No | Yes | ❌ No | ✅ Yes |
+| Pattern | Chaining | Captures | Semiregular | Works? |
+|---------|----------|----------|-------------|--------|
+| `vertexlist()` (no VVF) | Yes | N/A | ✅ Yes | ✅ Yes |
+| `vertexlist(stateless_vvf)` | Yes | No | ✅ Yes | ✅ Yes |
+| `vertexlist(capturing_vvf)` | **No** | Yes | ❌ No | ❌ No |
 
-## Testing Guidelines
-
-When writing tests for views:
-
-1. **Test basic iteration** - All patterns work
-2. **Test chaining without value functions** - Always works
-3. **Test value functions standalone** - Always works
-4. **Don't test chaining with capturing value functions** - Won't compile (this is expected)
-
-### Example Test Structure
-
-```cpp
-TEST_CASE("vertexlist - basic iteration") {
-    auto g = make_test_graph();
-    auto view = g | vertexlist();
-    // Test basic iteration
-}
-
-TEST_CASE("vertexlist - with value function (no chaining)") {
-    auto g = make_test_graph();
-    auto vvf = [&g](auto v) { return vertex_id(g, v) * 10; };
-    auto view = g | vertexlist(vvf);  // Don't chain after this
-    // Test iteration with values
-}
-
-TEST_CASE("vertexlist - chaining with std::views") {
-    auto g = make_test_graph();
-    auto view = g | vertexlist()  // No value function
-                  | std::views::transform([&g](auto vi) {
-                      return vertex_id(g, vi.vertex);
-                    });
-    // Test chained view
-}
-```
+**Note**: With parameter-based value functions, the typical usage is always the "stateless" row.
+Capturing lambdas would only occur if a user intentionally captured additional non-graph state.
 
 ## References
 
@@ -225,3 +160,4 @@ TEST_CASE("vertexlist - chaining with std::views") {
 - [std::ranges::view concept](https://en.cppreference.com/w/cpp/ranges/view)
 - [std::semiregular concept](https://en.cppreference.com/w/cpp/concepts/semiregular)
 - [P2548R6 - copyable_function](https://wg21.link/p2548r6)
+- [Value Function Goal](../agents/value_function_goal.md) - Design rationale

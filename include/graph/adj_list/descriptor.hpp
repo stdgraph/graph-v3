@@ -17,27 +17,27 @@ namespace graph::adj_list {
  * 
  * This is used to constrain bidirectional iterator value_types for vertex storage.
  */
-template<typename T>
+template <typename T>
 concept pair_like = requires {
-    typename std::tuple_size<T>::type;
-    requires std::tuple_size<T>::value >= 2;
-    { std::get<0>(std::declval<T>()) };
-    { std::get<1>(std::declval<T>()) };
+  typename std::tuple_size<T>::type;
+  requires std::tuple_size<T>::value >= 2;
+  { std::get<0>(std::declval<T>()) };
+  { std::get<1>(std::declval<T>()) };
 };
 
 /**
  * @brief Alternative pair-like concept checking for .first and .second members
  */
-template<typename T>
+template <typename T>
 concept has_first_second = requires(T t) {
-    { t.first };
-    { t.second };
+  { t.first };
+  { t.second };
 };
 
 /**
  * @brief Combined pair-like concept accepting either tuple protocol or pair members
  */
-template<typename T>
+template <typename T>
 concept pair_like_value = pair_like<T> || has_first_second<T>;
 
 // =============================================================================
@@ -49,7 +49,7 @@ concept pair_like_value = pair_like<T> || has_first_second<T>;
  * 
  * Edge iterators must be at least forward iterators
  */
-template<typename Iter>
+template <typename Iter>
 concept edge_iterator = std::forward_iterator<Iter>;
 
 // =============================================================================
@@ -64,7 +64,7 @@ concept edge_iterator = std::forward_iterator<Iter>;
  * The entire container element represents the vertex data.
  * Example: std::vector<VertexData> where index is the vertex ID.
  */
-template<typename Iter>
+template <typename Iter>
 concept direct_vertex_type = std::random_access_iterator<Iter>;
 
 /**
@@ -75,11 +75,9 @@ concept direct_vertex_type = std::random_access_iterator<Iter>;
  * The value (second element) contains the vertex data/properties.
  * Example: std::map<VertexId, VertexData> where VertexId is the vertex ID.
  */
-template<typename Iter>
-concept keyed_vertex_type = 
-    std::forward_iterator<Iter> &&
-    !std::random_access_iterator<Iter> &&
-    pair_like_value<typename std::iterator_traits<Iter>::value_type>;
+template <typename Iter>
+concept keyed_vertex_type = std::forward_iterator<Iter> && !std::random_access_iterator<Iter> &&
+                            pair_like_value<typename std::iterator_traits<Iter>::value_type>;
 
 /**
  * @brief Comprehensive concept for any valid vertex iterator type
@@ -88,7 +86,7 @@ concept keyed_vertex_type =
  * - Random access (direct/indexed storage)
  * - Bidirectional with pair-like value_type (keyed storage)
  */
-template<typename Iter>
+template <typename Iter>
 concept vertex_iterator = direct_vertex_type<Iter> || keyed_vertex_type<Iter>;
 
 // =============================================================================
@@ -102,7 +100,7 @@ concept vertex_iterator = direct_vertex_type<Iter> || keyed_vertex_type<Iter>;
  * Pattern: container[index] -> returns whole value
  * Example: std::vector<VertexData> where inner_value returns VertexData&
  */
-template<typename Iter>
+template <typename Iter>
 concept random_access_vertex_pattern = std::random_access_iterator<Iter>;
 
 /**
@@ -113,11 +111,9 @@ concept random_access_vertex_pattern = std::random_access_iterator<Iter>;
  * Pattern: *iterator -> pair{key, data}, inner_value returns data&
  * Example: std::map<int, VertexData> where inner_value returns VertexData& (.second)
  */
-template<typename Iter>
-concept pair_value_vertex_pattern = 
-    std::bidirectional_iterator<Iter> &&
-    !std::random_access_iterator<Iter> &&
-    pair_like_value<typename std::iterator_traits<Iter>::value_type>;
+template <typename Iter>
+concept pair_value_vertex_pattern = std::bidirectional_iterator<Iter> && !std::random_access_iterator<Iter> &&
+                                    pair_like_value<typename std::iterator_traits<Iter>::value_type>;
 
 /**
  * @brief Concept for whole-value vertex pattern (custom bidirectional)
@@ -127,11 +123,9 @@ concept pair_value_vertex_pattern =
  * Pattern: *iterator -> value, inner_value returns value&
  * Example: Custom bidirectional container with non-pair value_type
  */
-template<typename Iter>
-concept whole_value_vertex_pattern = 
-    std::bidirectional_iterator<Iter> &&
-    !std::random_access_iterator<Iter> &&
-    !pair_like_value<typename std::iterator_traits<Iter>::value_type>;
+template <typename Iter>
+concept whole_value_vertex_pattern = std::bidirectional_iterator<Iter> && !std::random_access_iterator<Iter> &&
+                                     !pair_like_value<typename std::iterator_traits<Iter>::value_type>;
 
 /**
  * @brief Comprehensive concept for any valid vertex inner_value pattern
@@ -141,11 +135,9 @@ concept whole_value_vertex_pattern =
  * - Pair value: Returns .second of pair-like value
  * - Whole value: Returns entire dereferenced iterator value
  */
-template<typename Iter>
-concept has_inner_value_pattern = 
-    random_access_vertex_pattern<Iter> || 
-    pair_value_vertex_pattern<Iter> || 
-    whole_value_vertex_pattern<Iter>;
+template <typename Iter>
+concept has_inner_value_pattern =
+      random_access_vertex_pattern<Iter> || pair_value_vertex_pattern<Iter> || whole_value_vertex_pattern<Iter>;
 
 // =============================================================================
 // Vertex Storage Pattern Detection
@@ -154,40 +146,38 @@ concept has_inner_value_pattern =
 /**
  * @brief Type trait to determine which vertex storage pattern an iterator uses
  */
-template<typename Iter>
+template <typename Iter>
 struct vertex_storage_pattern {
-    static constexpr bool is_direct = direct_vertex_type<Iter>;
-    static constexpr bool is_keyed = keyed_vertex_type<Iter>;
+  static constexpr bool is_direct = direct_vertex_type<Iter>;
+  static constexpr bool is_keyed  = keyed_vertex_type<Iter>;
 };
 
 /**
  * @brief Helper variable template for vertex storage pattern detection
  */
-template<typename Iter>
+template <typename Iter>
 inline constexpr auto vertex_storage_pattern_v = vertex_storage_pattern<Iter>{};
 
 /**
  * @brief Enumeration of vertex storage patterns
  */
 enum class vertex_pattern {
-    direct,   ///< Random-access/direct storage (index-based ID)
-    keyed     ///< Key-value storage (key-based ID)
+  direct, ///< Random-access/direct storage (index-based ID)
+  keyed   ///< Key-value storage (key-based ID)
 };
 
 /**
  * @brief Type trait to get the vertex pattern as an enum value
  */
-template<typename Iter>
+template <typename Iter>
 struct vertex_pattern_type {
-    static constexpr vertex_pattern value = 
-        direct_vertex_type<Iter> ? vertex_pattern::direct :
-        vertex_pattern::keyed;
+  static constexpr vertex_pattern value = direct_vertex_type<Iter> ? vertex_pattern::direct : vertex_pattern::keyed;
 };
 
 /**
  * @brief Helper variable template for vertex pattern type
  */
-template<typename Iter>
+template <typename Iter>
 inline constexpr vertex_pattern vertex_pattern_type_v = vertex_pattern_type<Iter>::value;
 
 // =============================================================================
@@ -197,43 +187,42 @@ inline constexpr vertex_pattern vertex_pattern_type_v = vertex_pattern_type<Iter
 /**
  * @brief Type trait to determine which inner_value pattern an iterator uses
  */
-template<typename Iter>
+template <typename Iter>
 struct vertex_inner_value_pattern {
-    static constexpr bool is_random_access = random_access_vertex_pattern<Iter>;
-    static constexpr bool is_pair_value = pair_value_vertex_pattern<Iter>;
-    static constexpr bool is_whole_value = whole_value_vertex_pattern<Iter>;
+  static constexpr bool is_random_access = random_access_vertex_pattern<Iter>;
+  static constexpr bool is_pair_value    = pair_value_vertex_pattern<Iter>;
+  static constexpr bool is_whole_value   = whole_value_vertex_pattern<Iter>;
 };
 
 /**
  * @brief Helper variable template for vertex inner_value pattern detection
  */
-template<typename Iter>
+template <typename Iter>
 inline constexpr auto vertex_inner_value_pattern_v = vertex_inner_value_pattern<Iter>{};
 
 /**
  * @brief Enumeration of vertex inner_value patterns
  */
 enum class vertex_inner_pattern {
-    random_access,  ///< Random-access container, returns container[index]
-    pair_value,     ///< Pair-like value, returns .second (data without key)
-    whole_value     ///< Non-pair value, returns entire dereferenced iterator
+  random_access, ///< Random-access container, returns container[index]
+  pair_value,    ///< Pair-like value, returns .second (data without key)
+  whole_value    ///< Non-pair value, returns entire dereferenced iterator
 };
 
 /**
  * @brief Type trait to get the vertex inner_value pattern as an enum value
  */
-template<typename Iter>
+template <typename Iter>
 struct vertex_inner_pattern_type {
-    static constexpr vertex_inner_pattern value = 
-        random_access_vertex_pattern<Iter> ? vertex_inner_pattern::random_access :
-        pair_value_vertex_pattern<Iter> ? vertex_inner_pattern::pair_value :
-        vertex_inner_pattern::whole_value;
+  static constexpr vertex_inner_pattern value = random_access_vertex_pattern<Iter> ? vertex_inner_pattern::random_access
+                                                : pair_value_vertex_pattern<Iter>  ? vertex_inner_pattern::pair_value
+                                                                                   : vertex_inner_pattern::whole_value;
 };
 
 /**
  * @brief Helper variable template for vertex inner_value pattern type
  */
-template<typename Iter>
+template <typename Iter>
 inline constexpr vertex_inner_pattern vertex_inner_pattern_type_v = vertex_inner_pattern_type<Iter>::value;
 
 // =============================================================================
@@ -246,38 +235,38 @@ inline constexpr vertex_inner_pattern vertex_inner_pattern_type_v = vertex_inner
  * For direct storage: ID type is size_t (the index)
  * For keyed storage: ID type is the key type (first element of pair)
  */
-template<typename Iter>
-    requires vertex_iterator<Iter>
+template <typename Iter>
+requires vertex_iterator<Iter>
 struct vertex_id_type;
 
 // Specialization for direct (random-access) storage
-template<typename Iter>
-    requires direct_vertex_type<Iter>
+template <typename Iter>
+requires direct_vertex_type<Iter>
 struct vertex_id_type<Iter> {
-    using type = std::size_t;
+  using type = std::size_t;
 };
 
 // Specialization for keyed (map-based) storage with .first/.second
-template<typename Iter>
-    requires keyed_vertex_type<Iter> && 
-             requires { std::declval<typename std::iterator_traits<Iter>::value_type>().first; }
+template <typename Iter>
+requires keyed_vertex_type<Iter> && requires { std::declval<typename std::iterator_traits<Iter>::value_type>().first; }
 struct vertex_id_type<Iter> {
-    using type = std::remove_cvref_t<decltype(std::declval<typename std::iterator_traits<Iter>::value_type>().first)>;
+  using type = std::remove_cvref_t<decltype(std::declval<typename std::iterator_traits<Iter>::value_type>().first)>;
 };
 
 // Specialization for keyed (map-based) storage using tuple protocol
-template<typename Iter>
-    requires keyed_vertex_type<Iter> &&
-             (!requires { std::declval<typename std::iterator_traits<Iter>::value_type>().first; })
+template <typename Iter>
+requires keyed_vertex_type<Iter> &&
+         (!requires { std::declval<typename std::iterator_traits<Iter>::value_type>().first; })
 struct vertex_id_type<Iter> {
-    using type = std::remove_cvref_t<decltype(std::get<0>(std::declval<typename std::iterator_traits<Iter>::value_type>()))>;
+  using type =
+        std::remove_cvref_t<decltype(std::get<0>(std::declval<typename std::iterator_traits<Iter>::value_type>()))>;
 };
 
 /**
  * @brief Helper alias for vertex ID type extraction
  */
-template<typename Iter>
-    requires vertex_iterator<Iter>
+template <typename Iter>
+requires vertex_iterator<Iter>
 using vertex_id_type_t = typename vertex_id_type<Iter>::type;
 
 // =============================================================================
@@ -290,7 +279,7 @@ using vertex_id_type_t = typename vertex_id_type<Iter>::type;
  * Edge is represented as a simple integral value (the target vertex ID).
  * Example: std::vector<int> where each int is a target vertex ID.
  */
-template<typename T>
+template <typename T>
 concept simple_edge_type = std::integral<T>;
 
 /**
@@ -300,10 +289,10 @@ concept simple_edge_type = std::integral<T>;
  * and .second contains edge properties.
  * Example: std::pair<int, double> where int is target, double is weight.
  */
-template<typename T>
+template <typename T>
 concept pair_edge_type = requires(T t) {
-    { t.first };
-    { t.second };
+  { t.first };
+  { t.second };
 } && !std::integral<T>;
 
 /**
@@ -313,11 +302,11 @@ concept pair_edge_type = requires(T t) {
  * and remaining elements contain edge properties.
  * Example: std::tuple<int, double, std::string> where int is target.
  */
-template<typename T>
+template <typename T>
 concept tuple_edge_type = requires {
-    typename std::tuple_size<T>::type;
-    requires std::tuple_size<T>::value >= 1;
-    { std::get<0>(std::declval<T>()) };
+  typename std::tuple_size<T>::type;
+  requires std::tuple_size<T>::value >= 1;
+  { std::get<0>(std::declval<T>()) };
 } && !simple_edge_type<T> && !pair_edge_type<T>;
 
 /**
@@ -327,11 +316,8 @@ concept tuple_edge_type = requires {
  * The user is responsible for managing which fields represent the target ID.
  * This is the fallback for types that don't match other patterns.
  */
-template<typename T>
-concept custom_edge_type = 
-    !simple_edge_type<T> && 
-    !pair_edge_type<T> && 
-    !tuple_edge_type<T>;
+template <typename T>
+concept custom_edge_type = !simple_edge_type<T> && !pair_edge_type<T> && !tuple_edge_type<T>;
 
 /**
  * @brief Comprehensive concept for any valid edge value type
@@ -342,12 +328,8 @@ concept custom_edge_type =
  * - Tuple-like type (target ID at index 0, properties in remaining elements)
  * - Custom struct/class (entire value represents edge data)
  */
-template<typename T>
-concept edge_value_type = 
-    simple_edge_type<T> || 
-    pair_edge_type<T> || 
-    tuple_edge_type<T> || 
-    custom_edge_type<T>;
+template <typename T>
+concept edge_value_type = simple_edge_type<T> || pair_edge_type<T> || tuple_edge_type<T> || custom_edge_type<T>;
 
 // =============================================================================
 // Type Traits for Edge Value Pattern Detection
@@ -356,46 +338,45 @@ concept edge_value_type =
 /**
  * @brief Type trait to determine which edge value pattern a type matches
  */
-template<typename T>
+template <typename T>
 struct edge_value_pattern {
-    static constexpr bool is_simple = simple_edge_type<T>;
-    static constexpr bool is_pair = pair_edge_type<T>;
-    static constexpr bool is_tuple = tuple_edge_type<T>;
-    static constexpr bool is_custom = custom_edge_type<T>;
+  static constexpr bool is_simple = simple_edge_type<T>;
+  static constexpr bool is_pair   = pair_edge_type<T>;
+  static constexpr bool is_tuple  = tuple_edge_type<T>;
+  static constexpr bool is_custom = custom_edge_type<T>;
 };
 
 /**
  * @brief Helper variable template for edge value pattern detection
  */
-template<typename T>
+template <typename T>
 inline constexpr auto edge_value_pattern_v = edge_value_pattern<T>{};
 
 /**
  * @brief Enumeration of edge value patterns
  */
 enum class edge_pattern {
-    simple,   ///< Simple integral type
-    pair,     ///< Pair-like with .first/.second
-    tuple,    ///< Tuple-like with std::get<N>
-    custom    ///< Custom struct/class
+  simple, ///< Simple integral type
+  pair,   ///< Pair-like with .first/.second
+  tuple,  ///< Tuple-like with std::get<N>
+  custom  ///< Custom struct/class
 };
 
 /**
  * @brief Type trait to get the edge pattern as an enum value
  */
-template<typename T>
+template <typename T>
 struct edge_pattern_type {
-    static constexpr edge_pattern value = 
-        simple_edge_type<T> ? edge_pattern::simple :
-        pair_edge_type<T> ? edge_pattern::pair :
-        tuple_edge_type<T> ? edge_pattern::tuple :
-        edge_pattern::custom;
+  static constexpr edge_pattern value = simple_edge_type<T>  ? edge_pattern::simple
+                                        : pair_edge_type<T>  ? edge_pattern::pair
+                                        : tuple_edge_type<T> ? edge_pattern::tuple
+                                                             : edge_pattern::custom;
 };
 
 /**
  * @brief Helper variable template for edge pattern type
  */
-template<typename T>
+template <typename T>
 inline constexpr edge_pattern edge_pattern_type_v = edge_pattern_type<T>::value;
 
 } // namespace graph::adj_list

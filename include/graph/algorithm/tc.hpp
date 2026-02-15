@@ -229,42 +229,42 @@ template <index_adjacency_list G>
 requires ordered_vertex_edges<G>
 size_t triangle_count(G&& g) {
   const size_t vertex_count = num_vertices(g);
-  size_t triangles = 0;
+  size_t       triangles    = 0;
 
   // ============================================================================
   // Main loop: Process each vertex as the "first" vertex in potential triangles
   // ============================================================================
   for (vertex_id_t<G> uid = 0; uid < vertex_count; ++uid) {
     auto u_edges = edges(g, uid);
-    auto u_it = std::ranges::begin(u_edges);
-    auto u_end = std::ranges::end(u_edges);
-    
-    // ========================================================================== 
+    auto u_it    = std::ranges::begin(u_edges);
+    auto u_end   = std::ranges::end(u_edges);
+
+    // ==========================================================================
     // For each neighbor v of u, find triangles containing edge (u,v)
     // ==========================================================================
     while (u_it != u_end) {
       auto vid = target_id(g, *u_it);
-      
+
       // Only process edges where uid < vid to avoid counting the same edge twice
       // (since undirected graphs store both (u,v) and (v,u))
       if (uid < vid) {
         // Get adjacency list for vertex v
         auto v_edges = edges(g, vid);
-        auto v_it = std::ranges::begin(v_edges);
-        auto v_end = std::ranges::end(v_edges);
-        
+        auto v_it    = std::ranges::begin(v_edges);
+        auto v_end   = std::ranges::end(v_edges);
+
         // Skip past neighbors we've already processed (uid through vid)
         // Start checking for common neighbors after vid
         auto u_remaining = std::next(u_it);
-        
+
         // ======================================================================
         // Merge-based intersection: Find vertices adjacent to BOTH u and v
         // This forms triangles {u, v, w} where w is a common neighbor
         // ======================================================================
         while (u_remaining != u_end && v_it != v_end) {
-          auto wid_from_u = target_id(g, *u_remaining);  // Candidate from u's adjacency list
-          auto wid_from_v = target_id(g, *v_it);         // Candidate from v's adjacency list
-          
+          auto wid_from_u = target_id(g, *u_remaining); // Candidate from u's adjacency list
+          auto wid_from_v = target_id(g, *v_it);        // Candidate from v's adjacency list
+
           if (wid_from_u < wid_from_v) {
             // u's neighbor is smaller - advance u's iterator
             ++u_remaining;
@@ -274,23 +274,23 @@ size_t triangle_count(G&& g) {
           } else {
             // Found common neighbor w: both u and v are adjacent to w
             // This forms a triangle {uid, vid, wid}
-            
+
             // Only count if wid > vid (ensures ordering: uid < vid < wid)
             // This guarantees each triangle is counted exactly once
             if (wid_from_u > vid) {
               ++triangles;
             }
-            
+
             // Advance both iterators past this common neighbor
             ++u_remaining;
             ++v_it;
           }
         }
       }
-      ++u_it;  // Move to next neighbor of u
+      ++u_it; // Move to next neighbor of u
     }
   }
-  
+
   return triangles;
 }
 } // namespace graph

@@ -43,7 +43,7 @@ This library provides the foundation for a complete graph library following the 
 - **CPO implementation guide**: Detailed patterns for creating customization point objects
 - **Common guidelines**: Architectural commitments and project structure requirements
 
-### Enhancements and Differences From graph-v2
+### Enhancements and Differences from graph-v2
 
 A significant shift occurred with the use of descriptors to the underlying containers for vertices
 and edges. This changed the implementation from a reference-based to a value-based implementation and had
@@ -61,19 +61,24 @@ Here's a summary of the major changes
   - Edges can be stored in `map`, `set`, `unordered_map` and `unordered_set` in `dynamic_graph`.
   - Non-integral vertex_ids Support can be used in `dynamic_graph`.
 - Graph Container Interface changes
-  - Vertices can be stored in bidirectional (e.g. `map`) and forward (e.g. )`unordered_map`) ranges.
-  - Edges can be stored in `map`, `set`, `unordered_map` and `unordered_set`.
   - Add support for non-integral vertex_ids.
+  - Extend range types for vertices and edges
+    - Vertices: bidirectional (e.g. `map`) and forward (e.g. )`unordered_map`) ranges.
+    - Edges: bidirectional (map, set), forward (unordered_map, unordered_set).
+    - Impact: Graph Container Interface (P3130), Views (P3129), dynamic_graph. **Not** supported by algorithms (P3128).
 - View changes
-  - The `topological_sort_view` was implemented. It was in the graph proposal documents but never implemented.
-    A "_safe" version of the view was added to detect cycles. (The implementation works on the whole graph.)
+  - The `topological_sort_view` was implemented, including a "_safe" version of the view was added to 
+    detect cycles. (The implementation works on the whole graph.)
   - Cancellation and depth() was added to the `vertices_bfs` and `edges_bfs` views.
+  - Added view chaining (e.g. pipe syntax)
+  - Vertex and edge value functions (`VVF`, `EVF`) functions now require a graph parameter (`g`) because 
+    it's always required in the functions. It also enables valueless lambdas, enabling full flexibility.
 - Improved organization and use of namespaces
-  - The `graph::adj_list` namespace was added
-  - Edge lists are now a peer of adjacency lists in `graph::edge_list`
-  - Directories have been created that roughtly resemble the namespace organization
-- Extensive documentation was added
-- Extensive unit tests have been added
+  - Definitions specific to adjacency lists have been moved into the `graph::adj_list` namespace to reflect
+    that `graph::edge_list` definitions are a peer abstract data structure instead of a subset.
+  - Directories have been created that roughtly resemble the namespace organization.
+- Extensive documentation have been added.
+- Extensive unit tests have been added.
 
 We're trying to stay with C++20. However, `std::expected` from C++23 has been introduced and is being used
 for `topological_sort_view`. An open-source library is being used for it until C++23 is enabled. There is

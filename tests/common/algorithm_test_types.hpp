@@ -74,63 +74,54 @@ using mofl_weighted = graph_test_types<mofl_tag>::int_ev;
  * @brief Basic directed types - minimal set for quick smoke tests
  * Use for rapid development and debugging
  */
-#define BASIC_DIRECTED_TYPES \
-    vov_void, dov_void
+#define BASIC_DIRECTED_TYPES vov_void, dov_void
 
 /**
  * @brief Basic weighted types - minimal set for weighted algorithm tests
  */
-#define BASIC_WEIGHTED_TYPES \
-    vov_weighted, dov_weighted
+#define BASIC_WEIGHTED_TYPES vov_weighted, dov_weighted
 
 /**
  * @brief All directed random-access types (void edges)
  * Comprehensive testing for unweighted directed graph algorithms
  */
-#define ALL_DIRECTED_TYPES \
-    vov_void, vod_void, dov_void, dod_void
+#define ALL_DIRECTED_TYPES vov_void, vod_void, dov_void, dod_void
 
 /**
  * @brief All directed weighted types
  * Comprehensive testing for weighted directed graph algorithms
  */
-#define ALL_DIRECTED_WEIGHTED_TYPES \
-    vov_weighted, vod_weighted, dov_weighted, dod_weighted, vol_weighted, dol_weighted
+#define ALL_DIRECTED_WEIGHTED_TYPES vov_weighted, vod_weighted, dov_weighted, dod_weighted, vol_weighted, dol_weighted
 
 /**
  * @brief Sparse vertex container types (map/unordered_map based)
  * For testing algorithms with non-contiguous vertex IDs
  */
-#define SPARSE_VERTEX_TYPES \
-    mov_weighted, mod_weighted, mol_weighted, uov_weighted, uod_weighted, uol_weighted
+#define SPARSE_VERTEX_TYPES mov_weighted, mod_weighted, mol_weighted, uov_weighted, uod_weighted, uol_weighted
 
 /**
  * @brief Ordered edge container types (set-based)
  * For algorithms that benefit from or require ordered edges
  */
-#define ORDERED_EDGE_TYPES \
-    vos_weighted, dos_weighted, mos_weighted
+#define ORDERED_EDGE_TYPES vos_weighted, dos_weighted, mos_weighted
 
 /**
  * @brief Forward list edge container types
  * For testing algorithms with minimal container requirements
  */
-#define FORWARD_EDGE_TYPES \
-    vofl_weighted, dofl_weighted, mofl_weighted
+#define FORWARD_EDGE_TYPES vofl_weighted, dofl_weighted, mofl_weighted
 
 /**
  * @brief Extended test suite - includes more exotic container combinations
  * For comprehensive compatibility testing
  */
-#define EXTENDED_TYPES \
-    ALL_DIRECTED_WEIGHTED_TYPES, SPARSE_VERTEX_TYPES, ORDERED_EDGE_TYPES
+#define EXTENDED_TYPES ALL_DIRECTED_WEIGHTED_TYPES, SPARSE_VERTEX_TYPES, ORDERED_EDGE_TYPES
 
 /**
  * @brief Full test suite - all supported container types
  * Warning: May significantly increase compilation time
  */
-#define ALL_ALGORITHM_TYPES \
-    ALL_DIRECTED_WEIGHTED_TYPES, SPARSE_VERTEX_TYPES, ORDERED_EDGE_TYPES, FORWARD_EDGE_TYPES
+#define ALL_ALGORITHM_TYPES ALL_DIRECTED_WEIGHTED_TYPES, SPARSE_VERTEX_TYPES, ORDERED_EDGE_TYPES, FORWARD_EDGE_TYPES
 
 // =============================================================================
 // Undirected Graph Types (when undirected_adjacency_list support is added)
@@ -157,7 +148,7 @@ concept random_access_edges = std::ranges::random_access_range<vertex_edge_range
  */
 template <typename G>
 concept ordered_vertex_edges = requires(G& g, vertex_id_t<G> u) {
-    { std::ranges::is_sorted(edges(g, u)) };
+  { std::ranges::is_sorted(edges(g, u)) };
 };
 
 /**
@@ -169,14 +160,12 @@ struct is_sparse_vertex_container : std::false_type {};
 
 template <typename EV, typename VV, typename GV, typename VId, bool Sourced, typename Traits>
 struct is_sparse_vertex_container<container::dynamic_graph<EV, VV, GV, VId, Sourced, Traits>>
-    : std::bool_constant<
-        std::same_as<Traits, container::mov_graph_traits<EV, VV, GV, VId, Sourced>> ||
-        std::same_as<Traits, container::mod_graph_traits<EV, VV, GV, VId, Sourced>> ||
-        std::same_as<Traits, container::mol_graph_traits<EV, VV, GV, VId, Sourced>> ||
-        std::same_as<Traits, container::uov_graph_traits<EV, VV, GV, VId, Sourced>> ||
-        std::same_as<Traits, container::uod_graph_traits<EV, VV, GV, VId, Sourced>> ||
-        std::same_as<Traits, container::uol_graph_traits<EV, VV, GV, VId, Sourced>>
-    > {};
+      : std::bool_constant<std::same_as<Traits, container::mov_graph_traits<EV, VV, GV, VId, Sourced>> ||
+                           std::same_as<Traits, container::mod_graph_traits<EV, VV, GV, VId, Sourced>> ||
+                           std::same_as<Traits, container::mol_graph_traits<EV, VV, GV, VId, Sourced>> ||
+                           std::same_as<Traits, container::uov_graph_traits<EV, VV, GV, VId, Sourced>> ||
+                           std::same_as<Traits, container::uod_graph_traits<EV, VV, GV, VId, Sourced>> ||
+                           std::same_as<Traits, container::uol_graph_traits<EV, VV, GV, VId, Sourced>>> {};
 
 template <typename G>
 inline constexpr bool is_sparse_vertex_container_v = is_sparse_vertex_container<G>::value;
@@ -206,8 +195,8 @@ struct connected_only_tag {};
  */
 template <typename Graph>
 struct fixture_selector {
-    // Use sparse fixtures for sparse vertex containers
-    static constexpr bool use_sparse = is_sparse_vertex_container_v<Graph>;
+  // Use sparse fixtures for sparse vertex containers
+  static constexpr bool use_sparse = is_sparse_vertex_container_v<Graph>;
 };
 
 } // namespace graph::test::algorithm

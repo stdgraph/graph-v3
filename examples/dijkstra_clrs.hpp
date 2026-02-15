@@ -8,18 +8,19 @@
 namespace graph {
 
 template <class G, class F>
-concept edge_weight_function = // e.g. weight(uv)
-      std::copy_constructible<F> && is_arithmetic_v<invoke_result_t<F, edge_t<G>>>;
+concept edge_weight_function = // e.g. weight(g, uv)
+      std::copy_constructible<F> && is_arithmetic_v<invoke_result_t<F, const std::remove_reference_t<G>&, edge_t<G>>>;
 
 template <class G, class WF, class Distance, class Compare, class Combine>
-concept basic_edge_weight_function2 = // e.g. weight(uv)
+concept basic_edge_weight_function2 = // e.g. weight(g, uv)
       is_arithmetic_v<range_value_t<Distance>> &&
       std::strict_weak_order<Compare, range_value_t<Distance>, range_value_t<Distance>> &&
-      std::assignable_from<range_reference_t<Distance>, invoke_result_t<Combine, invoke_result_t<WF, edge_t<G>>>>;
+      std::assignable_from<range_reference_t<Distance>,
+                           invoke_result_t<Combine, invoke_result_t<WF, const std::remove_reference_t<G>&, edge_t<G>>>>;
 
 template <class G, class WF, class Distance>
-concept edge_weight_function2 = // e.g. weight(uv)
-      is_arithmetic_v<invoke_result_t<WF, edge_t<G>>> &&
+concept edge_weight_function2 = // e.g. weight(g, uv)
+      is_arithmetic_v<invoke_result_t<WF, const std::remove_reference_t<G>&, edge_t<G>>> &&
       basic_edge_weight_function2<G, WF, Distance, less<range_value_t<Distance>>, plus<range_value_t<Distance>>>;
 
 
@@ -79,8 +80,8 @@ constexpr auto print_types(Ts...) {
 template <adjacency_list      G,
           random_access_range Distance,
           random_access_range Predecessor,
-          class WF = function<range_value_t<Distance>(edge_t<G>)>>
-requires forward_range<vertex_range_t<G>> &&                     //
+          class WF = function<range_value_t<Distance>(const std::remove_reference_t<G>&, edge_t<G>)>>
+requires forward_range<vertex_range_t<G>> &&                           //
          integral<vertex_id_t<G>> &&                                   //
          is_arithmetic_v<range_value_t<Distance>> &&                   //
          convertible_to<vertex_id_t<G>, range_value_t<Predecessor>> && //
@@ -90,10 +91,11 @@ void dijkstra_clrs(
       vertex_id_t<G> seed,        // starting vertex_id
       Distance&      distance,    // out: distance[uid] of uid from seed
       Predecessor&   predecessor, // out: predecessor[uid] of uid in path
-      WF&& weight = [](const edge_t<G>& uv) { return range_value_t<Distance>(1); }) // default weight(uv) -> 1
+      WF&&           weight = [](const auto&,
+                       const edge_t<G>& uv) { return range_value_t<Distance>(1); }) // default weight(g, uv) -> 1
 {
   using id_type     = vertex_id_t<G>;
-  using weight_type = invoke_result_t<WF, edge_t<G>>;
+  using weight_type = invoke_result_t<WF, const std::remove_reference_t<G>&, edge_t<G>>;
 
   // Remark(Andrew): Do we want to allow null distance?  What about if both are null?  Still run algorithm at all?
 

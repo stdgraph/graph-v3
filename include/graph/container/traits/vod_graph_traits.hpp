@@ -21,11 +21,11 @@ class dynamic_graph;
 //  Parameter semantics mirror vofl_graph_traits.
 template <class EV = void, class VV = void, class GV = void, class VId = uint32_t, bool Sourced = false>
 struct vod_graph_traits {
-  using edge_value_type                      = EV;
-  using vertex_value_type                    = VV;
-  using graph_value_type                     = GV;
-  using vertex_id_type                       = VId;
-  static constexpr bool sourced              = Sourced;
+  using edge_value_type         = EV;
+  using vertex_value_type       = VV;
+  using graph_value_type        = GV;
+  using vertex_id_type          = VId;
+  static constexpr bool sourced = Sourced;
 
   using edge_type   = dynamic_edge<EV, VV, GV, VId, Sourced, vod_graph_traits>;
   using vertex_type = dynamic_vertex<EV, VV, GV, VId, Sourced, vod_graph_traits>;

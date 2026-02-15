@@ -149,7 +149,7 @@ using adj_list::target_id;
 
 namespace detail {
 
-/**
+  /**
  * @brief Helper function for DFS visit during topological sort.
  * 
  * Performs iterative DFS from a source vertex, collecting finish order and detecting cycles.
@@ -162,63 +162,62 @@ namespace detail {
  * @param finish_order Vector to collect vertices in finish order
  * @param has_cycle Flag set to true if cycle detected
  */
-template <index_adjacency_list G, typename Color>
-void topological_sort_dfs_visit(
-    const G& g,
-    vertex_id_t<G> source,
-    std::vector<Color>& color,
-    std::vector<vertex_id_t<G>>& finish_order,
-    bool& has_cycle) {
-  
-  using id_type = vertex_id_t<G>;
-  using namespace graph::views;
-  using inc_range_t    = decltype(incidence(g, source));
-  using inc_iterator_t = std::ranges::iterator_t<inc_range_t>;
-  using inc_sentinel_t = std::ranges::sentinel_t<inc_range_t>;
-  
-  struct StackFrame {
-    id_type        vertex_id;
-    inc_iterator_t it;
-    inc_sentinel_t end;
-  };
-  
-  // Discover source and push its stack frame
-  color[source] = Color::Gray;
-  
-  std::stack<StackFrame> S;
-  {
-    auto inc = incidence(g, source);
-    S.push({source, std::ranges::begin(inc), std::ranges::end(inc)});
-  }
-  
-  while (!S.empty() && !has_cycle) {
-    auto& frame = S.top();
-    
-    if (frame.it == frame.end) {
-      // All edges exhausted: mark vertex finished and record finish time
-      color[frame.vertex_id] = Color::Black;
-      finish_order.push_back(frame.vertex_id);
-      S.pop();
-      continue;
+  template <index_adjacency_list G, typename Color>
+  void topological_sort_dfs_visit(const G&                     g,
+                                  vertex_id_t<G>               source,
+                                  std::vector<Color>&          color,
+                                  std::vector<vertex_id_t<G>>& finish_order,
+                                  bool&                        has_cycle) {
+
+    using id_type = vertex_id_t<G>;
+    using namespace graph::views;
+    using inc_range_t    = decltype(incidence(g, source));
+    using inc_iterator_t = std::ranges::iterator_t<inc_range_t>;
+    using inc_sentinel_t = std::ranges::sentinel_t<inc_range_t>;
+
+    struct StackFrame {
+      id_type        vertex_id;
+      inc_iterator_t it;
+      inc_sentinel_t end;
+    };
+
+    // Discover source and push its stack frame
+    color[source] = Color::Gray;
+
+    std::stack<StackFrame> S;
+    {
+      auto inc = incidence(g, source);
+      S.push({source, std::ranges::begin(inc), std::ranges::end(inc)});
     }
-    
-    // Process next edge from this vertex
-    auto&& [vid, uv] = *frame.it;
-    ++frame.it;
-    
-    if (color[vid] == Color::White) {
-      // Tree edge: discover target and push its frame
-      color[vid] = Color::Gray;
-      auto inc = incidence(g, vid);
-      S.push({vid, std::ranges::begin(inc), std::ranges::end(inc)});
-    } else if (color[vid] == Color::Gray) {
-      // Back edge: cycle detected
-      has_cycle = true;
-      return;
+
+    while (!S.empty() && !has_cycle) {
+      auto& frame = S.top();
+
+      if (frame.it == frame.end) {
+        // All edges exhausted: mark vertex finished and record finish time
+        color[frame.vertex_id] = Color::Black;
+        finish_order.push_back(frame.vertex_id);
+        S.pop();
+        continue;
+      }
+
+      // Process next edge from this vertex
+      auto&& [vid, uv] = *frame.it;
+      ++frame.it;
+
+      if (color[vid] == Color::White) {
+        // Tree edge: discover target and push its frame
+        color[vid] = Color::Gray;
+        auto inc   = incidence(g, vid);
+        S.push({vid, std::ranges::begin(inc), std::ranges::end(inc)});
+      } else if (color[vid] == Color::Gray) {
+        // Back edge: cycle detected
+        has_cycle = true;
+        return;
+      }
+      // Black vertices (forward/cross edges) are ignored - already processed
     }
-    // Black vertices (forward/cross edges) are ignored - already processed
   }
-}
 
 } // namespace detail
 
@@ -336,33 +335,33 @@ requires std::convertible_to<std::ranges::range_value_t<Sources>, vertex_id_t<G>
          std::output_iterator<OutputIterator, vertex_id_t<G>>
 bool topological_sort(const G& g, const Sources& sources, OutputIterator result) {
   using id_type = vertex_id_t<G>;
-  
+
   // Vertex color states for DFS
   enum class Color : uint8_t {
     White, // Undiscovered
     Gray,  // Discovered but not finished (on stack)
     Black  // Finished
   };
-  
-  std::vector<Color> color(num_vertices(g), Color::White);
+
+  std::vector<Color>   color(num_vertices(g), Color::White);
   std::vector<id_type> finish_order;
   finish_order.reserve(num_vertices(g));
-  
+
   bool has_cycle = false;
-  
+
   // Run DFS from each source (skipping already-visited vertices)
   for (auto source : sources) {
     if (color[source] == Color::White) {
       detail::topological_sort_dfs_visit(g, source, color, finish_order, has_cycle);
       if (has_cycle) {
-        return false;  // Cycle detected
+        return false; // Cycle detected
       }
     }
   }
-  
+
   // Output vertices in reverse finish order (topological order)
   std::ranges::copy(finish_order | std::views::reverse, result);
-  
+
   return true;
 }
 
@@ -546,37 +545,37 @@ template <index_adjacency_list G, class OutputIterator>
 requires std::output_iterator<OutputIterator, vertex_id_t<G>>
 bool topological_sort(const G& g, OutputIterator result) {
   using id_type = vertex_id_t<G>;
-  
+
   // Vertex color states for DFS
   enum class Color : uint8_t {
     White, // Undiscovered
     Gray,  // Discovered but not finished (on stack)
     Black  // Finished
   };
-  
-  std::vector<Color> color(num_vertices(g), Color::White);
+
+  std::vector<Color>   color(num_vertices(g), Color::White);
   std::vector<id_type> finish_order;
   finish_order.reserve(num_vertices(g));
-  
+
   bool has_cycle = false;
-  
+
   // Run DFS from each unvisited vertex
   for (auto v : vertices(g)) {
     id_type vid = vertex_id(g, v);
     if (color[vid] == Color::White) {
       detail::topological_sort_dfs_visit(g, vid, color, finish_order, has_cycle);
       if (has_cycle) {
-        return false;  // Cycle detected
+        return false; // Cycle detected
       }
     }
   }
-  
+
   // Output vertices in reverse finish order (topological order)
   std::ranges::copy(finish_order | std::views::reverse, result);
-  
+
   return true;
 }
 
-}
+} // namespace graph
 
 #endif // GRAPH_TOPOSORT_ALGORITHM_HPP

@@ -36,11 +36,11 @@ using graph::copyable_edge_t;
 // =============================================================================
 
 struct basic_expected {
-    static constexpr size_t vertex_count = 4;
-    static constexpr size_t edge_count = 4;
-    static constexpr std::array<uint32_t, 4> vertex_ids = {0, 1, 2, 3};
-    static constexpr std::array<size_t, 4> out_degrees = {2, 1, 1, 0};  // degree of vertex 0, 1, 2, 3
-    static constexpr int edge_value_sum = 100;  // 10 + 20 + 30 + 40
+  static constexpr size_t                  vertex_count   = 4;
+  static constexpr size_t                  edge_count     = 4;
+  static constexpr std::array<uint32_t, 4> vertex_ids     = {0, 1, 2, 3};
+  static constexpr std::array<size_t, 4>   out_degrees    = {2, 1, 1, 0}; // degree of vertex 0, 1, 2, 3
+  static constexpr int                     edge_value_sum = 100;          // 10 + 20 + 30 + 40
 };
 
 /**
@@ -48,7 +48,7 @@ struct basic_expected {
  */
 template <typename Graph>
 Graph make_basic_graph_void() {
-    return Graph({{0, 1}, {0, 2}, {1, 2}, {2, 3}});
+  return Graph({{0, 1}, {0, 2}, {1, 2}, {2, 3}});
 }
 
 /**
@@ -56,7 +56,7 @@ Graph make_basic_graph_void() {
  */
 template <typename Graph>
 Graph make_basic_graph_int() {
-    return Graph({{0, 1, 10}, {0, 2, 20}, {1, 2, 30}, {2, 3, 40}});
+  return Graph({{0, 1, 10}, {0, 2, 20}, {1, 2, 30}, {2, 3, 40}});
 }
 
 // =============================================================================
@@ -67,15 +67,15 @@ Graph make_basic_graph_int() {
 // =============================================================================
 
 struct sparse_expected {
-    static constexpr size_t vertex_count = 4;
-    static constexpr size_t edge_count = 4;
-    static constexpr std::array<uint32_t, 4> vertex_ids_sorted = {100, 500, 1000, 5000};
-    static constexpr std::array<size_t, 4> out_degrees = {2, 1, 1, 0};  // degree by sorted order
-    static constexpr int edge_value_sum = 120;  // 15 + 25 + 35 + 45
-    
-    // For unordered containers (check contains rather than order)
-    static constexpr uint32_t min_id = 100;
-    static constexpr uint32_t max_id = 5000;
+  static constexpr size_t                  vertex_count      = 4;
+  static constexpr size_t                  edge_count        = 4;
+  static constexpr std::array<uint32_t, 4> vertex_ids_sorted = {100, 500, 1000, 5000};
+  static constexpr std::array<size_t, 4>   out_degrees       = {2, 1, 1, 0}; // degree by sorted order
+  static constexpr int                     edge_value_sum    = 120;          // 15 + 25 + 35 + 45
+
+  // For unordered containers (check contains rather than order)
+  static constexpr uint32_t min_id = 100;
+  static constexpr uint32_t max_id = 5000;
 };
 
 /**
@@ -83,7 +83,7 @@ struct sparse_expected {
  */
 template <typename Graph>
 Graph make_sparse_graph_void() {
-    return Graph({{100, 500}, {100, 1000}, {500, 1000}, {1000, 5000}});
+  return Graph({{100, 500}, {100, 1000}, {500, 1000}, {1000, 5000}});
 }
 
 /**
@@ -91,7 +91,7 @@ Graph make_sparse_graph_void() {
  */
 template <typename Graph>
 Graph make_sparse_graph_int() {
-    return Graph({{100, 500, 15}, {100, 1000, 25}, {500, 1000, 35}, {1000, 5000, 45}});
+  return Graph({{100, 500, 15}, {100, 1000, 25}, {500, 1000, 35}, {1000, 5000, 45}});
 }
 
 // =============================================================================
@@ -99,9 +99,9 @@ Graph make_sparse_graph_int() {
 // =============================================================================
 
 struct very_sparse_expected {
-    static constexpr size_t vertex_count = 5;  // 1, 2, 500000, 1000000, 2000000
-    static constexpr size_t edge_count = 3;
-    static constexpr std::array<uint32_t, 5> vertex_ids_sorted = {1, 2, 500000, 1000000, 2000000};
+  static constexpr size_t                  vertex_count      = 5; // 1, 2, 500000, 1000000, 2000000
+  static constexpr size_t                  edge_count        = 3;
+  static constexpr std::array<uint32_t, 5> vertex_ids_sorted = {1, 2, 500000, 1000000, 2000000};
 };
 
 /**
@@ -109,7 +109,7 @@ struct very_sparse_expected {
  */
 template <typename Graph>
 Graph make_very_sparse_graph() {
-    return Graph({{1, 1000000}, {1000000, 2000000}, {2, 500000}});
+  return Graph({{1, 1000000}, {1000000, 2000000}, {2, 500000}});
 }
 
 // =============================================================================
@@ -117,8 +117,8 @@ Graph make_very_sparse_graph() {
 // =============================================================================
 
 struct self_loop_expected {
-    static constexpr size_t vertex_count = 2;  // 100, 200
-    static constexpr size_t edge_count = 3;
+  static constexpr size_t vertex_count = 2; // 100, 200
+  static constexpr size_t edge_count   = 3;
 };
 
 /**
@@ -126,7 +126,7 @@ struct self_loop_expected {
  */
 template <typename Graph>
 Graph make_self_loop_graph() {
-    return Graph({{100, 100}, {100, 200}, {200, 200}});
+  return Graph({{100, 100}, {100, 200}, {200, 200}});
 }
 
 // =============================================================================
@@ -134,11 +134,11 @@ Graph make_self_loop_graph() {
 // =============================================================================
 
 struct string_expected {
-    static constexpr size_t vertex_count = 4;  // alice, bob, charlie, dave
-    static constexpr size_t edge_count = 4;
-    // Sorted order: alice, bob, charlie, dave
-    static inline const std::vector<std::string> vertex_ids_sorted = {"alice", "bob", "charlie", "dave"};
-    static constexpr int edge_value_sum = 750;
+  static constexpr size_t vertex_count = 4; // alice, bob, charlie, dave
+  static constexpr size_t edge_count   = 4;
+  // Sorted order: alice, bob, charlie, dave
+  static inline const std::vector<std::string> vertex_ids_sorted = {"alice", "bob", "charlie", "dave"};
+  static constexpr int                         edge_value_sum    = 750;
 };
 
 // Note: String graph builders would need separate Graph types with string VId
@@ -153,13 +153,13 @@ struct string_expected {
  */
 template <typename Container, typename Expected>
 bool matches_sorted(const Container& actual, const Expected& expected) {
-    std::vector<typename Container::value_type> sorted_actual(actual.begin(), actual.end());
-    std::ranges::sort(sorted_actual);
-    
-    std::vector<typename Expected::value_type> sorted_expected(expected.begin(), expected.end());
-    std::ranges::sort(sorted_expected);
-    
-    return sorted_actual == sorted_expected;
+  std::vector<typename Container::value_type> sorted_actual(actual.begin(), actual.end());
+  std::ranges::sort(sorted_actual);
+
+  std::vector<typename Expected::value_type> sorted_expected(expected.begin(), expected.end());
+  std::ranges::sort(sorted_expected);
+
+  return sorted_actual == sorted_expected;
 }
 
 /**
@@ -167,7 +167,7 @@ bool matches_sorted(const Container& actual, const Expected& expected) {
  */
 template <typename Container, typename T>
 bool contains(const Container& c, const T& value) {
-    return std::find(c.begin(), c.end(), value) != c.end();
+  return std::find(c.begin(), c.end(), value) != c.end();
 }
 
 } // namespace graph::test::map_data

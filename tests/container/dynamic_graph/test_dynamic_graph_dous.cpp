@@ -31,32 +31,45 @@
 using namespace graph::container;
 
 // Type aliases for common test configurations
-using dous_void_void_void = dynamic_graph<void, void, void, uint32_t, false, dous_graph_traits<void, void, void, uint32_t, false>>;
-using dous_int_void_void = dynamic_graph<int, void, void, uint32_t, false, dous_graph_traits<int, void, void, uint32_t, false>>;
-using dous_void_int_void = dynamic_graph<void, int, void, uint32_t, false, dous_graph_traits<void, int, void, uint32_t, false>>;
-using dous_int_int_void = dynamic_graph<int, int, void, uint32_t, false, dous_graph_traits<int, int, void, uint32_t, false>>;
-using dous_void_void_int = dynamic_graph<void, void, int, uint32_t, false, dous_graph_traits<void, void, int, uint32_t, false>>;
-using dous_int_int_int = dynamic_graph<int, int, int, uint32_t, false, dous_graph_traits<int, int, int, uint32_t, false>>;
+using dous_void_void_void =
+      dynamic_graph<void, void, void, uint32_t, false, dous_graph_traits<void, void, void, uint32_t, false>>;
+using dous_int_void_void =
+      dynamic_graph<int, void, void, uint32_t, false, dous_graph_traits<int, void, void, uint32_t, false>>;
+using dous_void_int_void =
+      dynamic_graph<void, int, void, uint32_t, false, dous_graph_traits<void, int, void, uint32_t, false>>;
+using dous_int_int_void =
+      dynamic_graph<int, int, void, uint32_t, false, dous_graph_traits<int, int, void, uint32_t, false>>;
+using dous_void_void_int =
+      dynamic_graph<void, void, int, uint32_t, false, dous_graph_traits<void, void, int, uint32_t, false>>;
+using dous_int_int_int =
+      dynamic_graph<int, int, int, uint32_t, false, dous_graph_traits<int, int, int, uint32_t, false>>;
 
-using dous_string_string_string = dynamic_graph<std::string, std::string, std::string, uint32_t, false, 
-                                                  dous_graph_traits<std::string, std::string, std::string, uint32_t, false>>;
+using dous_string_string_string =
+      dynamic_graph<std::string,
+                    std::string,
+                    std::string,
+                    uint32_t,
+                    false,
+                    dous_graph_traits<std::string, std::string, std::string, uint32_t, false>>;
 
-using dous_sourced = dynamic_graph<void, void, void, uint32_t, true, dous_graph_traits<void, void, void, uint32_t, true>>;
-using dous_int_sourced = dynamic_graph<int, void, void, uint32_t, true, dous_graph_traits<int, void, void, uint32_t, true>>;
+using dous_sourced =
+      dynamic_graph<void, void, void, uint32_t, true, dous_graph_traits<void, void, void, uint32_t, true>>;
+using dous_int_sourced =
+      dynamic_graph<int, void, void, uint32_t, true, dous_graph_traits<int, void, void, uint32_t, true>>;
 
 // Edge and vertex data types for loading
-using edge_void = copyable_edge_t<uint32_t, void>;
-using edge_int = copyable_edge_t<uint32_t, int>;
+using edge_void  = copyable_edge_t<uint32_t, void>;
+using edge_int   = copyable_edge_t<uint32_t, int>;
 using vertex_int = copyable_vertex_t<uint32_t, int>;
 
 // Helper function to count total edges in graph
-template<typename G>
+template <typename G>
 size_t count_all_edges(G& g) {
-    size_t count = 0;
-    for (auto& v : g) {
-        count += static_cast<size_t>(std::ranges::distance(v.edges()));
-    }
-    return count;
+  size_t count = 0;
+  for (auto& v : g) {
+    count += static_cast<size_t>(std::ranges::distance(v.edges()));
+  }
+  return count;
 }
 
 //==================================================================================================
@@ -64,53 +77,53 @@ size_t count_all_edges(G& g) {
 //==================================================================================================
 
 TEST_CASE("dous default construction", "[dous][construction]") {
-    SECTION("creates empty graph") {
-        dous_void_void_void g;
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("creates empty graph") {
+    dous_void_void_void g;
+    REQUIRE(g.size() == 0);
+  }
 
-    SECTION("with void types") {
-        dous_void_void_void g;
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("with void types") {
+    dous_void_void_void g;
+    REQUIRE(g.size() == 0);
+  }
 
-    SECTION("with int edge values") {
-        dous_int_void_void g;
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("with int edge values") {
+    dous_int_void_void g;
+    REQUIRE(g.size() == 0);
+  }
 
-    SECTION("with int vertex values") {
-        dous_void_int_void g;
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("with int vertex values") {
+    dous_void_int_void g;
+    REQUIRE(g.size() == 0);
+  }
 
-    SECTION("with int graph value") {
-        dous_void_void_int g;
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("with int graph value") {
+    dous_void_void_int g;
+    REQUIRE(g.size() == 0);
+  }
 
-    SECTION("with all int values") {
-        dous_int_int_int g;
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("with all int values") {
+    dous_int_int_int g;
+    REQUIRE(g.size() == 0);
+  }
 
-    SECTION("with string values") {
-        dous_string_string_string g;
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("with string values") {
+    dous_string_string_string g;
+    REQUIRE(g.size() == 0);
+  }
 }
 
 TEST_CASE("dous constructor with graph value", "[dous][construction]") {
-    SECTION("void GV - no graph value can be passed") {
-        dous_void_void_void g;
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("void GV - no graph value can be passed") {
+    dous_void_void_void g;
+    REQUIRE(g.size() == 0);
+  }
 
-    SECTION("int GV") {
-        dous_void_void_int g(42);
-        REQUIRE(g.size() == 0);
-        REQUIRE(g.graph_value() == 42);
-    }
+  SECTION("int GV") {
+    dous_void_void_int g(42);
+    REQUIRE(g.size() == 0);
+    REQUIRE(g.graph_value() == 42);
+  }
 }
 
 //==================================================================================================
@@ -118,58 +131,58 @@ TEST_CASE("dous constructor with graph value", "[dous][construction]") {
 //==================================================================================================
 
 TEST_CASE("dous load_edges", "[dous][load]") {
-    SECTION("simple edges") {
-        dous_void_void_void g;
-        std::deque<edge_void> ee = {{0, 1}, {0, 2}, {1, 2}};
-        g.load_edges(ee, std::identity{});
-        
-        REQUIRE(g.size() == 3);
-        REQUIRE(count_all_edges(g) == 3);
-    }
+  SECTION("simple edges") {
+    dous_void_void_void   g;
+    std::deque<edge_void> ee = {{0, 1}, {0, 2}, {1, 2}};
+    g.load_edges(ee, std::identity{});
 
-    SECTION("edges with vertex count") {
-        dous_void_void_void g;
-        std::deque<edge_void> ee = {{0, 1}, {1, 2}};
-        g.load_edges(ee, std::identity{}, 6);  // Request 6 vertices
-        
-        REQUIRE(g.size() == 6);  // 0 through 5
-        REQUIRE(count_all_edges(g) == 2);
+    REQUIRE(g.size() == 3);
+    REQUIRE(count_all_edges(g) == 3);
+  }
+
+  SECTION("edges with vertex count") {
+    dous_void_void_void   g;
+    std::deque<edge_void> ee = {{0, 1}, {1, 2}};
+    g.load_edges(ee, std::identity{}, 6); // Request 6 vertices
+
+    REQUIRE(g.size() == 6); // 0 through 5
+    REQUIRE(count_all_edges(g) == 2);
+  }
+
+  SECTION("edges with values") {
+    dous_int_void_void   g;
+    std::deque<edge_int> ee = {{0, 1, 100}, {0, 2, 200}};
+    g.load_edges(ee, std::identity{});
+
+    REQUIRE(g.size() == 3);
+    REQUIRE(count_all_edges(g) == 2);
+
+    auto& v0 = g[0];
+    // Note: unordered_set does NOT guarantee any particular order
+    // So we collect all edges and verify they're present
+    std::deque<std::pair<uint32_t, int>> edge_list;
+    for (auto& e : v0.edges()) {
+      edge_list.emplace_back(e.target_id(), e.value());
     }
-    
-    SECTION("edges with values") {
-        dous_int_void_void g;
-        std::deque<edge_int> ee = {{0, 1, 100}, {0, 2, 200}};
-        g.load_edges(ee, std::identity{});
-        
-        REQUIRE(g.size() == 3);
-        REQUIRE(count_all_edges(g) == 2);
-        
-        auto& v0 = g[0];
-        // Note: unordered_set does NOT guarantee any particular order
-        // So we collect all edges and verify they're present
-        std::deque<std::pair<uint32_t, int>> edge_list;
-        for (auto& e : v0.edges()) {
-            edge_list.emplace_back(e.target_id(), e.value());
-        }
-        REQUIRE(edge_list.size() == 2);
-        
-        // Sort to make assertions order-independent
-        std::ranges::sort(edge_list);
-        REQUIRE(edge_list[0].first == 1);
-        REQUIRE(edge_list[0].second == 100);
-        REQUIRE(edge_list[1].first == 2);
-        REQUIRE(edge_list[1].second == 200);
-    }
-    
-    SECTION("duplicate edges are deduplicated by unordered_set") {
-        dous_void_void_void g;
-        std::deque<edge_void> ee = {{0, 1}, {0, 1}, {0, 1}, {0, 2}};
-        g.load_edges(ee, std::identity{});
-        
-        REQUIRE(g.size() == 3);
-        // unordered_set automatically deduplicates
-        REQUIRE(count_all_edges(g) == 2);  // Only two unique edges
-    }
+    REQUIRE(edge_list.size() == 2);
+
+    // Sort to make assertions order-independent
+    std::ranges::sort(edge_list);
+    REQUIRE(edge_list[0].first == 1);
+    REQUIRE(edge_list[0].second == 100);
+    REQUIRE(edge_list[1].first == 2);
+    REQUIRE(edge_list[1].second == 200);
+  }
+
+  SECTION("duplicate edges are deduplicated by unordered_set") {
+    dous_void_void_void   g;
+    std::deque<edge_void> ee = {{0, 1}, {0, 1}, {0, 1}, {0, 2}};
+    g.load_edges(ee, std::identity{});
+
+    REQUIRE(g.size() == 3);
+    // unordered_set automatically deduplicates
+    REQUIRE(count_all_edges(g) == 2); // Only two unique edges
+  }
 }
 
 //==================================================================================================
@@ -177,27 +190,27 @@ TEST_CASE("dous load_edges", "[dous][load]") {
 //==================================================================================================
 
 TEST_CASE("dous vertex access", "[dous][vertices]") {
-    SECTION("operator[] access") {
-        dous_void_void_void g;
-        g.resize_vertices(5);
-        
-        // For deque vertices, the index is the ID
-        for (uint32_t i = 0; i < 5; ++i) {
-            // Just verify we can access
-            [[maybe_unused]] auto& v = g[i];
-        }
-    }
+  SECTION("operator[] access") {
+    dous_void_void_void g;
+    g.resize_vertices(5);
 
-    SECTION("iteration") {
-        dous_void_void_void g;
-        g.resize_vertices(3);
-        
-        size_t count = 0;
-        for ([[maybe_unused]] auto& v : g) {
-            ++count;
-        }
-        REQUIRE(count == 3);
+    // For deque vertices, the index is the ID
+    for (uint32_t i = 0; i < 5; ++i) {
+      // Just verify we can access
+      [[maybe_unused]] auto& v = g[i];
     }
+  }
+
+  SECTION("iteration") {
+    dous_void_void_void g;
+    g.resize_vertices(3);
+
+    size_t count = 0;
+    for ([[maybe_unused]] auto& v : g) {
+      ++count;
+    }
+    REQUIRE(count == 3);
+  }
 }
 
 //==================================================================================================
@@ -205,44 +218,44 @@ TEST_CASE("dous vertex access", "[dous][vertices]") {
 //==================================================================================================
 
 TEST_CASE("dous edge access", "[dous][edges]") {
-    SECTION("iterate edges from vertex") {
-        dous_void_void_void g;
-        std::deque<edge_void> ee = {{0, 1}, {0, 2}, {0, 3}};
-        g.load_edges(ee, std::identity{});
-        
-        auto& v0 = g[0];
-        std::deque<uint32_t> targets;
-        for (auto& e : v0.edges()) {
-            targets.push_back(e.target_id());
-        }
-        
-        // unordered_set - order not guaranteed
-        std::ranges::sort(targets);
-        REQUIRE(targets == std::deque<uint32_t>{1, 2, 3});
+  SECTION("iterate edges from vertex") {
+    dous_void_void_void   g;
+    std::deque<edge_void> ee = {{0, 1}, {0, 2}, {0, 3}};
+    g.load_edges(ee, std::identity{});
+
+    auto&                v0 = g[0];
+    std::deque<uint32_t> targets;
+    for (auto& e : v0.edges()) {
+      targets.push_back(e.target_id());
     }
 
-    SECTION("empty edge list") {
-        dous_void_void_void g;
-        g.resize_vertices(3);
-        
-        auto& v1 = g[1];
-        REQUIRE(std::ranges::distance(v1.edges()) == 0);
+    // unordered_set - order not guaranteed
+    std::ranges::sort(targets);
+    REQUIRE(targets == std::deque<uint32_t>{1, 2, 3});
+  }
+
+  SECTION("empty edge list") {
+    dous_void_void_void g;
+    g.resize_vertices(3);
+
+    auto& v1 = g[1];
+    REQUIRE(std::ranges::distance(v1.edges()) == 0);
+  }
+
+  SECTION("self-loops") {
+    dous_void_void_void   g;
+    std::deque<edge_void> ee = {{0, 0}, {0, 1}};
+    g.load_edges(ee, std::identity{});
+
+    auto&                v0 = g[0];
+    std::deque<uint32_t> targets;
+    for (auto& e : v0.edges()) {
+      targets.push_back(e.target_id());
     }
 
-    SECTION("self-loops") {
-        dous_void_void_void g;
-        std::deque<edge_void> ee = {{0, 0}, {0, 1}};
-        g.load_edges(ee, std::identity{});
-        
-        auto& v0 = g[0];
-        std::deque<uint32_t> targets;
-        for (auto& e : v0.edges()) {
-            targets.push_back(e.target_id());
-        }
-        
-        std::ranges::sort(targets);
-        REQUIRE(targets == std::deque<uint32_t>{0, 1});
-    }
+    std::ranges::sort(targets);
+    REQUIRE(targets == std::deque<uint32_t>{0, 1});
+  }
 }
 
 //==================================================================================================
@@ -250,33 +263,33 @@ TEST_CASE("dous edge access", "[dous][edges]") {
 //==================================================================================================
 
 TEST_CASE("dous value access", "[dous][values]") {
-    SECTION("edge values") {
-        dous_int_void_void g;
-        std::deque<edge_int> ee = {{0, 1, 100}, {1, 2, 200}};
-        g.load_edges(ee, std::identity{});
-        
-        auto& v0 = g[0];
-        for (auto& e : v0.edges()) {
-            if (e.target_id() == 1) {
-                REQUIRE(e.value() == 100);
-            }
-        }
-    }
+  SECTION("edge values") {
+    dous_int_void_void   g;
+    std::deque<edge_int> ee = {{0, 1, 100}, {1, 2, 200}};
+    g.load_edges(ee, std::identity{});
 
-    SECTION("vertex values") {
-        dous_void_int_void g;
-        std::deque<vertex_int> vv = {{0, 10}, {1, 20}, {2, 30}};
-        g.load_vertices(vv, std::identity{});
-        
-        REQUIRE(g[0].value() == 10);
-        REQUIRE(g[1].value() == 20);
-        REQUIRE(g[2].value() == 30);
+    auto& v0 = g[0];
+    for (auto& e : v0.edges()) {
+      if (e.target_id() == 1) {
+        REQUIRE(e.value() == 100);
+      }
     }
+  }
 
-    SECTION("graph value") {
-        dous_void_void_int g(42);
-        REQUIRE(g.graph_value() == 42);
-    }
+  SECTION("vertex values") {
+    dous_void_int_void     g;
+    std::deque<vertex_int> vv = {{0, 10}, {1, 20}, {2, 30}};
+    g.load_vertices(vv, std::identity{});
+
+    REQUIRE(g[0].value() == 10);
+    REQUIRE(g[1].value() == 20);
+    REQUIRE(g[2].value() == 30);
+  }
+
+  SECTION("graph value") {
+    dous_void_void_int g(42);
+    REQUIRE(g.graph_value() == 42);
+  }
 }
 
 //==================================================================================================
@@ -284,32 +297,32 @@ TEST_CASE("dous value access", "[dous][values]") {
 //==================================================================================================
 
 TEST_CASE("dous sourced edges", "[dous][sourced]") {
-    SECTION("source_id access") {
-        dous_sourced g;
-        std::deque<edge_void> ee = {{0, 1}, {1, 2}, {0, 2}};
-        g.load_edges(ee, std::identity{});
-        
-        auto& v0 = g[0];
-        for (auto& e : v0.edges()) {
-            REQUIRE(e.source_id() == 0);
-        }
-        
-        auto& v1 = g[1];
-        for (auto& e : v1.edges()) {
-            REQUIRE(e.source_id() == 1);
-        }
+  SECTION("source_id access") {
+    dous_sourced          g;
+    std::deque<edge_void> ee = {{0, 1}, {1, 2}, {0, 2}};
+    g.load_edges(ee, std::identity{});
+
+    auto& v0 = g[0];
+    for (auto& e : v0.edges()) {
+      REQUIRE(e.source_id() == 0);
     }
 
-    SECTION("sourced edge deduplication") {
-        dous_int_sourced g;
-        // Multiple edges from 0 to 1 with different values
-        std::deque<edge_int> ee = {{0, 1, 100}, {0, 1, 200}, {0, 1, 300}};
-        g.load_edges(ee, std::identity{});
-        
-        auto& v0 = g[0];
-        // unordered_set deduplicates by (source_id, target_id) pair
-        REQUIRE(std::ranges::distance(v0.edges()) == 1);
+    auto& v1 = g[1];
+    for (auto& e : v1.edges()) {
+      REQUIRE(e.source_id() == 1);
     }
+  }
+
+  SECTION("sourced edge deduplication") {
+    dous_int_sourced g;
+    // Multiple edges from 0 to 1 with different values
+    std::deque<edge_int> ee = {{0, 1, 100}, {0, 1, 200}, {0, 1, 300}};
+    g.load_edges(ee, std::identity{});
+
+    auto& v0 = g[0];
+    // unordered_set deduplicates by (source_id, target_id) pair
+    REQUIRE(std::ranges::distance(v0.edges()) == 1);
+  }
 }
 
 //==================================================================================================
@@ -317,65 +330,65 @@ TEST_CASE("dous sourced edges", "[dous][sourced]") {
 //==================================================================================================
 
 TEST_CASE("dous unordered_set specific behavior", "[dous][unordered_set]") {
-    SECTION("automatic deduplication") {
-        dous_void_void_void g;
-        std::deque<edge_void> ee = {{0, 1}, {0, 2}, {0, 1}, {0, 3}, {0, 2}};
-        g.load_edges(ee, std::identity{});
-        
-        auto& v0 = g[0];
-        // Should have only 3 unique edges: 0->1, 0->2, 0->3
-        REQUIRE(std::ranges::distance(v0.edges()) == 3);
+  SECTION("automatic deduplication") {
+    dous_void_void_void   g;
+    std::deque<edge_void> ee = {{0, 1}, {0, 2}, {0, 1}, {0, 3}, {0, 2}};
+    g.load_edges(ee, std::identity{});
+
+    auto& v0 = g[0];
+    // Should have only 3 unique edges: 0->1, 0->2, 0->3
+    REQUIRE(std::ranges::distance(v0.edges()) == 3);
+  }
+
+  SECTION("no guaranteed order") {
+    dous_int_void_void   g;
+    std::deque<edge_int> ee = {{0, 1, 10}, {0, 2, 20}, {0, 3, 30}, {0, 4, 40}};
+    g.load_edges(ee, std::identity{});
+
+    auto&                v0 = g[0];
+    std::deque<uint32_t> targets;
+    for (auto& e : v0.edges()) {
+      targets.push_back(e.target_id());
     }
 
-    SECTION("no guaranteed order") {
-        dous_int_void_void g;
-        std::deque<edge_int> ee = {{0, 1, 10}, {0, 2, 20}, {0, 3, 30}, {0, 4, 40}};
-        g.load_edges(ee, std::identity{});
-        
-        auto& v0 = g[0];
-        std::deque<uint32_t> targets;
-        for (auto& e : v0.edges()) {
-            targets.push_back(e.target_id());
-        }
-        
-        // Verify all targets present (order may vary)
-        std::ranges::sort(targets);
-        REQUIRE(targets == std::deque<uint32_t>{1, 2, 3, 4});
-    }
+    // Verify all targets present (order may vary)
+    std::ranges::sort(targets);
+    REQUIRE(targets == std::deque<uint32_t>{1, 2, 3, 4});
+  }
 
-    SECTION("forward iteration only") {
-        dous_void_void_void g;
-        std::deque<edge_void> ee = {{0, 1}, {0, 2}, {0, 3}};
-        g.load_edges(ee, std::identity{});
-        
-        auto& v0 = g[0];
-        auto it = v0.edges().begin();
-        auto end_iter = v0.edges().end();
-        
-        // Can iterate forward
-        size_t count = 0;
-        while (it != end_iter) {
-            ++it;
-            ++count;
-        }
-        REQUIRE(count == 3);
-        
-        // Note: std::unordered_set iterators are forward only
-        // Cannot use --it or std::prev(it)
-    }
+  SECTION("forward iteration only") {
+    dous_void_void_void   g;
+    std::deque<edge_void> ee = {{0, 1}, {0, 2}, {0, 3}};
+    g.load_edges(ee, std::identity{});
 
-    SECTION("edge count via size()") {
-        dous_void_void_void g;
-        std::deque<edge_void> ee = {{0, 1}, {0, 2}, {0, 3}, {1, 2}};
-        g.load_edges(ee, std::identity{});
-        
-        auto& v0 = g[0];
-        // unordered_set has O(1) size()
-        REQUIRE(v0.edges().size() == 3);
-        
-        auto& v1 = g[1];
-        REQUIRE(v1.edges().size() == 1);
+    auto& v0       = g[0];
+    auto  it       = v0.edges().begin();
+    auto  end_iter = v0.edges().end();
+
+    // Can iterate forward
+    size_t count = 0;
+    while (it != end_iter) {
+      ++it;
+      ++count;
     }
+    REQUIRE(count == 3);
+
+    // Note: std::unordered_set iterators are forward only
+    // Cannot use --it or std::prev(it)
+  }
+
+  SECTION("edge count via size()") {
+    dous_void_void_void   g;
+    std::deque<edge_void> ee = {{0, 1}, {0, 2}, {0, 3}, {1, 2}};
+    g.load_edges(ee, std::identity{});
+
+    auto& v0 = g[0];
+    // unordered_set has O(1) size()
+    REQUIRE(v0.edges().size() == 3);
+
+    auto& v1 = g[1];
+    REQUIRE(v1.edges().size() == 1);
+  }
 }
 
 //==================================================================================================
@@ -383,46 +396,46 @@ TEST_CASE("dous unordered_set specific behavior", "[dous][unordered_set]") {
 //==================================================================================================
 
 TEST_CASE("dous edge cases", "[dous][edge_cases]") {
-    SECTION("empty graph") {
-        dous_void_void_void g;
-        REQUIRE(g.size() == 0);
-        REQUIRE(count_all_edges(g) == 0);
-    }
+  SECTION("empty graph") {
+    dous_void_void_void g;
+    REQUIRE(g.size() == 0);
+    REQUIRE(count_all_edges(g) == 0);
+  }
 
-    SECTION("graph with only vertices") {
-        dous_void_void_void g;
-        g.resize_vertices(5);
-        REQUIRE(g.size() == 5);
-        REQUIRE(count_all_edges(g) == 0);
-    }
+  SECTION("graph with only vertices") {
+    dous_void_void_void g;
+    g.resize_vertices(5);
+    REQUIRE(g.size() == 5);
+    REQUIRE(count_all_edges(g) == 0);
+  }
 
-    SECTION("isolated vertices") {
-        dous_void_void_void g;
-        std::deque<edge_void> ee = {{0, 1}};
-        g.load_edges(ee, std::identity{}, 5);
-        
-        REQUIRE(g.size() == 5);
-        REQUIRE(count_all_edges(g) == 1);
-        
-        // Vertices 2, 3, 4 have no edges
-        REQUIRE(std::ranges::distance(g[2].edges()) == 0);
-        REQUIRE(std::ranges::distance(g[3].edges()) == 0);
-        REQUIRE(std::ranges::distance(g[4].edges()) == 0);
-    }
+  SECTION("isolated vertices") {
+    dous_void_void_void   g;
+    std::deque<edge_void> ee = {{0, 1}};
+    g.load_edges(ee, std::identity{}, 5);
 
-    SECTION("large number of parallel edges (all deduplicated)") {
-        dous_void_void_void g;
-        std::deque<edge_void> ee;
-        // Add same edge 100 times
-        for (int i = 0; i < 100; ++i) {
-            ee.push_back({0, 1});
-        }
-        g.load_edges(ee, std::identity{});
-        
-        auto& v0 = g[0];
-        // unordered_set reduces to single edge
-        REQUIRE(std::ranges::distance(v0.edges()) == 1);
+    REQUIRE(g.size() == 5);
+    REQUIRE(count_all_edges(g) == 1);
+
+    // Vertices 2, 3, 4 have no edges
+    REQUIRE(std::ranges::distance(g[2].edges()) == 0);
+    REQUIRE(std::ranges::distance(g[3].edges()) == 0);
+    REQUIRE(std::ranges::distance(g[4].edges()) == 0);
+  }
+
+  SECTION("large number of parallel edges (all deduplicated)") {
+    dous_void_void_void   g;
+    std::deque<edge_void> ee;
+    // Add same edge 100 times
+    for (int i = 0; i < 100; ++i) {
+      ee.push_back({0, 1});
     }
+    g.load_edges(ee, std::identity{});
+
+    auto& v0 = g[0];
+    // unordered_set reduces to single edge
+    REQUIRE(std::ranges::distance(v0.edges()) == 1);
+  }
 }
 
 //==================================================================================================
@@ -430,43 +443,41 @@ TEST_CASE("dous edge cases", "[dous][edge_cases]") {
 //==================================================================================================
 
 TEST_CASE("dous integration: triangle graph", "[dous][integration]") {
-    dous_void_void_void g;
-    std::deque<edge_void> ee = {
-        {0, 1}, {1, 2}, {2, 0}
-    };
-    g.load_edges(ee, std::identity{});
-    
-    REQUIRE(g.size() == 3);
-    REQUIRE(count_all_edges(g) == 3);
-    
-    // Each vertex has out-degree 1
-    REQUIRE(std::ranges::distance(g[0].edges()) == 1);
-    REQUIRE(std::ranges::distance(g[1].edges()) == 1);
-    REQUIRE(std::ranges::distance(g[2].edges()) == 1);
+  dous_void_void_void   g;
+  std::deque<edge_void> ee = {{0, 1}, {1, 2}, {2, 0}};
+  g.load_edges(ee, std::identity{});
+
+  REQUIRE(g.size() == 3);
+  REQUIRE(count_all_edges(g) == 3);
+
+  // Each vertex has out-degree 1
+  REQUIRE(std::ranges::distance(g[0].edges()) == 1);
+  REQUIRE(std::ranges::distance(g[1].edges()) == 1);
+  REQUIRE(std::ranges::distance(g[2].edges()) == 1);
 }
 
 TEST_CASE("dous integration: star graph", "[dous][integration]") {
-    dous_int_void_void g;
-    std::deque<edge_int> ee;
-    // Central vertex 0 connects to 1-5
-    for (uint32_t i = 1; i <= 5; ++i) {
-        ee.push_back({0, i, static_cast<int>(i * 10)});
-    }
-    g.load_edges(ee, std::identity{});
-    
-    REQUIRE(g.size() == 6);
-    REQUIRE(count_all_edges(g) == 5);
-    
-    auto& center = g[0];
-    REQUIRE(std::ranges::distance(center.edges()) == 5);
-    
-    // Verify all edges present (order may vary)
-    std::deque<uint32_t> targets;
-    for (auto& e : center.edges()) {
-        targets.push_back(e.target_id());
-    }
-    std::ranges::sort(targets);
-    REQUIRE(targets == std::deque<uint32_t>{1, 2, 3, 4, 5});
+  dous_int_void_void   g;
+  std::deque<edge_int> ee;
+  // Central vertex 0 connects to 1-5
+  for (uint32_t i = 1; i <= 5; ++i) {
+    ee.push_back({0, i, static_cast<int>(i * 10)});
+  }
+  g.load_edges(ee, std::identity{});
+
+  REQUIRE(g.size() == 6);
+  REQUIRE(count_all_edges(g) == 5);
+
+  auto& center = g[0];
+  REQUIRE(std::ranges::distance(center.edges()) == 5);
+
+  // Verify all edges present (order may vary)
+  std::deque<uint32_t> targets;
+  for (auto& e : center.edges()) {
+    targets.push_back(e.target_id());
+  }
+  std::ranges::sort(targets);
+  REQUIRE(targets == std::deque<uint32_t>{1, 2, 3, 4, 5});
 }
 
 //==================================================================================================

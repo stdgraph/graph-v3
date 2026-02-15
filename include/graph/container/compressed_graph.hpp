@@ -22,7 +22,7 @@
 //  allow separation of construction and load
 //  allow multiple calls to load edges as long as subsequent edges have uid >= last vertex (append)
 //  VId must be large enough for the total edges and the total vertices.
-//  
+//
 // API Design:
 //  - vertex_ids() returns iota view of all vertex IDs [0, size())
 //  - edge_ids() returns iota view of all edge IDs [0, total_edges)
@@ -183,12 +183,12 @@ public: // Operations
     // Handle empty range gracefully
     if (std::ranges::empty(vrng))
       return;
-    
+
     if constexpr (sized_range<VRng>)
       vertex_count = max(vertex_count, std::ranges::size(vrng));
     else if (vertex_count == 0) // assume 0 means not provided and need to evaluate
       vertex_count = max(vertex_count, std::ranges::distance(vrng));
-    
+
     // Don't shrink if already allocated - only grow if needed
     if (size() > 0)
       vertex_count = max(vertex_count, size());
@@ -199,9 +199,7 @@ public: // Operations
 
       // Validate vertex id is within bounds
       if (static_cast<size_t>(id) >= size()) {
-        throw graph_error(std::format(
-            "Invalid vertex id {} in vertex data: exceeds allocated size {}",
-            id, size()));
+        throw graph_error(std::format("Invalid vertex id {} in vertex data: exceeds allocated size {}", id, size()));
       }
 
       (*this)[static_cast<size_t>(id)] = value;
@@ -214,12 +212,12 @@ public: // Operations
     // Handle empty range gracefully
     if (std::ranges::empty(vrng))
       return;
-    
+
     if constexpr (sized_range<VRng>)
       vertex_count = max(vertex_count, std::ranges::size(vrng));
     else if (vertex_count == 0) // assume 0 means not provided and need to evaluate
       vertex_count = max(vertex_count, std::ranges::distance(vrng));
-    
+
     // Don't shrink if already allocated - only grow if needed
     if (size() > 0)
       vertex_count = max(vertex_count, size());
@@ -230,9 +228,7 @@ public: // Operations
 
       // Validate vertex id is within bounds
       if (static_cast<size_t>(id) >= size()) {
-        throw graph_error(std::format(
-            "Invalid vertex id {} in vertex data: exceeds allocated size {}",
-            id, size()));
+        throw graph_error(std::format("Invalid vertex id {} in vertex data: exceeds allocated size {}", id, size()));
       }
 
       (*this)[id] = std::move(value);
@@ -270,15 +266,15 @@ public: // Operations
 
   // Load vertex values - no-op for void vertex values (ISSUE #4 fix)
   template <forward_range VRng, class VProj = identity>
-  constexpr void load_row_values([[maybe_unused]] const VRng& vrng, 
-                                 [[maybe_unused]] VProj projection, 
-                                 [[maybe_unused]] size_type vertex_count) {
+  constexpr void load_row_values([[maybe_unused]] const VRng& vrng,
+                                 [[maybe_unused]] VProj       projection,
+                                 [[maybe_unused]] size_type   vertex_count) {
     // No-op for void vertex values - nothing to load
   }
 
   template <forward_range VRng, class VProj = identity>
-  constexpr void load_row_values([[maybe_unused]] VRng&& vrng, 
-                                 [[maybe_unused]] VProj projection, 
+  constexpr void load_row_values([[maybe_unused]] VRng&&    vrng,
+                                 [[maybe_unused]] VProj     projection,
                                  [[maybe_unused]] size_type vertex_count) {
     // No-op for void vertex values - nothing to load
   }
@@ -476,10 +472,10 @@ public: // Properties - resolve ambiguity from multiple inheritance
    * 
    * @return The number of vertices in the graph
   */
-  [[nodiscard]] constexpr size_type size() const noexcept { 
+  [[nodiscard]] constexpr size_type size() const noexcept {
     return row_index_.empty() ? 0 : row_index_.size() - 1; // -1 for terminating row
   }
-  
+
   /**
    * @brief Get the number of vertices in the graph (alias for size()).
    * 
@@ -488,10 +484,8 @@ public: // Properties - resolve ambiguity from multiple inheritance
    * 
    * @return The number of vertices in the graph
   */
-  [[nodiscard]] constexpr size_type num_vertices() const noexcept { 
-    return size();
-  }
-  
+  [[nodiscard]] constexpr size_type num_vertices() const noexcept { return size(); }
+
   /**
    * @brief Check if the graph has no vertices.
    * 
@@ -500,17 +494,17 @@ public: // Properties - resolve ambiguity from multiple inheritance
    * 
    * @return true if the graph is empty, false otherwise
   */
-  [[nodiscard]] constexpr bool empty() const noexcept { 
+  [[nodiscard]] constexpr bool empty() const noexcept {
     return row_index_.empty() || row_index_.size() <= 1; // Account for terminating row
   }
-  
+
   /**
    * @brief Clear all graph data.
    * 
    * Removes all vertices, edges, vertex values, edge values, and partitions from the graph.
    * After calling clear(), the graph will be empty with size() == 0.
   */
-  constexpr void clear() noexcept { 
+  constexpr void clear() noexcept {
     row_index_.clear();
     col_index_.clear();
     row_values_base::clear();
@@ -645,12 +639,12 @@ public: // Operations
     vertex_id_type max_id = 0;
     for (auto&& vtx_data : vrng) {
       auto&& vtx = vprojection(vtx_data);
-      max_id = max(max_id, static_cast<vertex_id_type>(vtx.id));
+      max_id     = max(max_id, static_cast<vertex_id_type>(vtx.id));
     }
-    
+
     // Determine required vertex count: max(provided hint, max_id + 1, existing size)
     vertex_count = max({vertex_count, static_cast<size_type>(max_id + 1), size()});
-    
+
     // If graph structure doesn't exist yet, create it based on vertex count
     if (row_index_.empty() && vertex_count > 0) {
       row_index_.resize(vertex_count + 1, vertex_type{0}); // All vertices have 0 edges initially
@@ -658,7 +652,7 @@ public: // Operations
       // Expand existing structure if needed
       row_index_.resize(vertex_count + 1, vertex_type{0});
     }
-    
+
     row_values_base::load_row_values(vrng, vprojection, vertex_count);
   }
 
@@ -719,7 +713,7 @@ public: // Operations
     // care of at the end of this function.
     vertex_count =
           max(vertex_count, static_cast<size_type>(last_erng_id(erng, eprojection) + 1)); // +1 for zero-based index
-    
+
     // Reserve space for vertices
     row_index_.reserve(vertex_count + 1); // +1 for terminating row
     row_values_base::reserve(vertex_count);
@@ -727,7 +721,7 @@ public: // Operations
     // Eval number of input rows and reserve space for the edges, if possible
     if constexpr (sized_range<ERng>)
       edge_count = max(edge_count, std::ranges::size(erng));
-    
+
     // Reserve space for edges
     col_index_.reserve(edge_count);
     static_cast<col_values_base&>(*this).reserve(edge_count);
@@ -735,20 +729,20 @@ public: // Operations
     // Add edges
     vertex_id_type last_uid = 0, max_vid = 0;
     for (auto&& edge_data : erng) {
-      auto&& edge = eprojection(edge_data); // compressed_graph requires EV!=void
-      assert(static_cast<vertex_id_type>(edge.source_id) >= last_uid);   // ordered by uid? (requirement)
-      
+      auto&& edge = eprojection(edge_data);                            // compressed_graph requires EV!=void
+      assert(static_cast<vertex_id_type>(edge.source_id) >= last_uid); // ordered by uid? (requirement)
+
       // Only resize when we encounter a new source vertex (optimization)
       if (static_cast<vertex_id_type>(edge.source_id) != last_uid || row_index_.empty()) {
         row_index_.resize(static_cast<size_t>(edge.source_id) + 1,
                           vertex_type{static_cast<edge_index_type>(col_index_.size())});
         last_uid = static_cast<vertex_id_type>(edge.source_id);
       }
-      
+
       col_index_.push_back(edge_type{static_cast<vertex_id_type>(edge.target_id)});
       if constexpr (!is_void_v<EV>)
         static_cast<col_values_base&>(*this).emplace_back(move(edge.value));
-      max_vid  = max(max_vid, static_cast<vertex_id_type>(edge.target_id));
+      max_vid = max(max_vid, static_cast<vertex_id_type>(edge.target_id));
     }
 
     // uid and vid may refer to rows that exceed the value evaluated for vertex_count (if any)
@@ -783,7 +777,7 @@ public: // Operations
     // care of at the end of this function.
     vertex_count =
           max(vertex_count, static_cast<size_type>(last_erng_id(erng, eprojection) + 1)); // +1 for zero-based index
-    
+
     // Reserve space for vertices
     row_index_.reserve(vertex_count + 1); // +1 for terminating row
     row_values_base::reserve(vertex_count);
@@ -791,14 +785,14 @@ public: // Operations
     // Eval number of input rows and reserve space for the edges, if possible
     if constexpr (sized_range<ERng>)
       edge_count = max(edge_count, std::ranges::size(erng));
-    
+
     // Reserve space for edges
     col_index_.reserve(edge_count);
     static_cast<col_values_base&>(*this).reserve(edge_count);
 
     // Add edges
 #ifndef NDEBUG
-    size_t         debug_count = 0;
+    size_t debug_count = 0;
 #endif
     vertex_id_type last_uid = 0, max_vid = 0;
     for (auto&& edge_data : erng) {
@@ -811,24 +805,23 @@ public: // Operations
         std::cout << std::format("\n{}\n", msg);
         throw graph_error(std::move(msg));
 #else
-        std::string msg = std::format(
-              "source id of {} is not ordered after source id of {} in the data input",
-              edge.source_id, last_uid);
+        std::string msg = std::format("source id of {} is not ordered after source id of {} in the data input",
+                                      edge.source_id, last_uid);
         throw graph_error(std::move(msg));
 #endif
       }
-      
+
       // Only resize when we encounter a new source vertex (optimization)
       if (edge.source_id != last_uid || row_index_.empty()) {
         row_index_.resize(static_cast<size_t>(edge.source_id) + 1,
                           vertex_type{static_cast<edge_index_type>(col_index_.size())});
         last_uid = edge.source_id;
       }
-      
+
       col_index_.push_back(edge_type{edge.target_id});
       if constexpr (!is_void_v<EV>)
         static_cast<col_values_base&>(*this).push_back(edge.value);
-      max_vid  = max(max_vid, static_cast<vertex_id_type>(edge.target_id));
+      max_vid = max(max_vid, static_cast<vertex_id_type>(edge.target_id));
 #ifndef NDEBUG
       ++debug_count;
 #endif
@@ -878,10 +871,7 @@ public: // Operations
   }
 
   // Overload without PartRng for simpler usage
-  template <forward_range ERng,
-            forward_range VRng,
-            class EProj = identity,
-            class VProj = identity>
+  template <forward_range ERng, forward_range VRng, class EProj = identity, class VProj = identity>
   constexpr void load(const ERng& erng, const VRng& vrng, EProj eprojection = {}, VProj vprojection = {}) {
     load_edges(erng, eprojection);
     load_vertices(vrng, vprojection);
@@ -910,28 +900,27 @@ protected:
       if (partition_[0] != 0) {
         throw graph_error("Partition array must start with vertex_id 0");
       }
-      
+
       // Check that partitions are in strictly increasing order
       for (size_t i = 1; i < partition_.size(); ++i) {
         if (partition_[i] <= partition_[i - 1]) {
-          throw graph_error(std::format(
-              "Partition ids must be in strictly increasing order: partition[{}]={} is not greater than partition[{}]={}",
-              i, partition_[i], i - 1, partition_[i - 1]));
+          throw graph_error(std::format("Partition ids must be in strictly increasing order: partition[{}]={} is not "
+                                        "greater than partition[{}]={}",
+                                        i, partition_[i], i - 1, partition_[i - 1]));
         }
       }
-      
+
       // Additional check: all partition start ids must be valid vertex ids
       if (!partition_.empty() && partition_.back() > static_cast<partition_id_type>(row_index_.size())) {
-        throw graph_error(std::format(
-            "Invalid partition start id: {} exceeds number of vertices {}",
-            partition_.back(), row_index_.size()));
+        throw graph_error(std::format("Invalid partition start id: {} exceeds number of vertices {}", partition_.back(),
+                                      row_index_.size()));
       }
     }
 
     partition_.push_back(static_cast<partition_id_type>(row_index_.size()));
   }
 
-public: // Vertex range accessors  
+public: // Vertex range accessors
   /**
    * @brief Get a range of all vertex IDs in the graph.
    * 
@@ -974,9 +963,9 @@ public: // Vertex range accessors
   [[nodiscard]] constexpr auto edge_ids(vertex_id_type id) const noexcept {
     if (id >= size())
       return std::views::iota(edge_index_type{0}, edge_index_type{0});
-    
+
     auto start_idx = row_index_[id].index;
-    auto end_idx = row_index_[id + 1].index;
+    auto end_idx   = row_index_[id + 1].index;
     return std::views::iota(start_idx, end_idx);
   }
 
@@ -992,13 +981,12 @@ public: // Vertex range accessors
    * @note Only available when VV is not void
    * @note No bounds checking is performed. The caller must ensure id < size()
   */
-  template<typename VV_ = VV>
-  [[nodiscard]] constexpr auto vertex_value(vertex_id_type id) const noexcept 
-    -> std::enable_if_t<!std::is_void_v<VV_>, const VV_&>
-  { 
-    return row_values_base::operator[](static_cast<typename row_values_base::size_type>(id)); 
+  template <typename VV_ = VV>
+  [[nodiscard]] constexpr auto vertex_value(vertex_id_type id) const noexcept
+        -> std::enable_if_t<!std::is_void_v<VV_>, const VV_&> {
+    return row_values_base::operator[](static_cast<typename row_values_base::size_type>(id));
   }
-  
+
   /**
    * @brief Get a mutable reference to the vertex value for a given vertex ID.
    * 
@@ -1011,11 +999,10 @@ public: // Vertex range accessors
    * @note Only available when VV is not void
    * @note No bounds checking is performed. The caller must ensure id < size()
   */
-  template<typename VV_ = VV>
-  [[nodiscard]] constexpr auto vertex_value(vertex_id_type id) noexcept 
-    -> std::enable_if_t<!std::is_void_v<VV_>, VV_&>
-  { 
-    return row_values_base::operator[](static_cast<typename row_values_base::size_type>(id)); 
+  template <typename VV_ = VV>
+  [[nodiscard]] constexpr auto vertex_value(vertex_id_type id) noexcept
+        -> std::enable_if_t<!std::is_void_v<VV_>, VV_&> {
+    return row_values_base::operator[](static_cast<typename row_values_base::size_type>(id));
   }
 
   /**
@@ -1045,10 +1032,9 @@ public: // Vertex range accessors
    * @note Only available when EV is not void
    * @note No bounds checking is performed. The caller must ensure edge_id is valid.
   */
-  template<typename EV_ = EV>
+  template <typename EV_ = EV>
   [[nodiscard]] constexpr auto edge_value(edge_id_type edge_id) const noexcept
-    -> std::enable_if_t<!std::is_void_v<EV_>, const EV_&>
-  {
+        -> std::enable_if_t<!std::is_void_v<EV_>, const EV_&> {
     return col_values_base::operator[](static_cast<typename col_values_base::size_type>(edge_id));
   }
 
@@ -1063,10 +1049,9 @@ public: // Vertex range accessors
    * @note Only available when EV is not void
    * @note No bounds checking is performed. The caller must ensure edge_id is valid.
   */
-  template<typename EV_ = EV>
+  template <typename EV_ = EV>
   [[nodiscard]] constexpr auto edge_value(edge_id_type edge_id) noexcept
-    -> std::enable_if_t<!std::is_void_v<EV_>, EV_&>
-  {
+        -> std::enable_if_t<!std::is_void_v<EV_>, EV_&> {
     return col_values_base::operator[](static_cast<typename col_values_base::size_type>(edge_id));
   }
 
@@ -1095,18 +1080,16 @@ public: // Friend functions
    * @return vertex_descriptor_view over all vertices with appropriate const qualification
    * @note This is a lightweight view with minimal overhead
   */
-  template<typename G>
-    requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
+  template <typename G>
+  requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
   [[nodiscard]] friend constexpr auto vertices(G&& g) noexcept {
-    // Since row_index_ is a vector of csr_row structs (random access), 
+    // Since row_index_ is a vector of csr_row structs (random access),
     // we use the index-based constructor with storage_type (size_t) for vertex IDs
-    using vertex_iter_type = std::conditional_t<
-        std::is_const_v<std::remove_reference_t<G>>,
-        typename row_index_vector::const_iterator,
-        typename row_index_vector::iterator
-    >;
-    
-    if(g.empty()) {
+    using vertex_iter_type =
+          std::conditional_t<std::is_const_v<std::remove_reference_t<G>>, typename row_index_vector::const_iterator,
+                             typename row_index_vector::iterator>;
+
+    if (g.empty()) {
       return vertex_descriptor_view<vertex_iter_type>(static_cast<std::size_t>(0), static_cast<std::size_t>(0));
     }
 
@@ -1129,44 +1112,43 @@ public: // Friend functions
    * @note Returns empty view if pid is out of range
    * @note This is the ADL customization point for the vertices(g, pid) CPO
   */
-  template<typename G, std::integral PId>
-    requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
+  template <typename G, std::integral PId>
+  requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
   [[nodiscard]] friend constexpr auto vertices(G&& g, const PId& pid) noexcept {
-    using vertex_iter_type = std::conditional_t<
-        std::is_const_v<std::remove_reference_t<G>>,
-        typename row_index_vector::const_iterator,
-        typename row_index_vector::iterator
-    >;
-    
+    using vertex_iter_type =
+          std::conditional_t<std::is_const_v<std::remove_reference_t<G>>, typename row_index_vector::const_iterator,
+                             typename row_index_vector::iterator>;
+
     // Handle empty graph
-    if(g.empty()) {
+    if (g.empty()) {
       return vertex_descriptor_view<vertex_iter_type>(static_cast<std::size_t>(0), static_cast<std::size_t>(0));
     }
-    
+
     // Handle single partition case (partition_ is empty or size <= 2)
     if (g.partition_.empty() || g.partition_.size() <= 2) {
       if (pid == 0) {
         // Single partition contains all vertices
-        return vertex_descriptor_view<vertex_iter_type>(static_cast<std::size_t>(0), static_cast<std::size_t>(g.size()));
+        return vertex_descriptor_view<vertex_iter_type>(static_cast<std::size_t>(0),
+                                                        static_cast<std::size_t>(g.size()));
       } else {
         // No such partition
         return vertex_descriptor_view<vertex_iter_type>(static_cast<std::size_t>(0), static_cast<std::size_t>(0));
       }
     }
-    
+
     // Multi-partition case
     // partition_.size() - 1 is the number of actual partitions (last element is terminator)
     const auto num_parts = g.partition_.size() - 1;
-    
+
     if (pid < 0 || static_cast<std::size_t>(pid) >= num_parts) {
       // Partition ID out of range
       return vertex_descriptor_view<vertex_iter_type>(static_cast<std::size_t>(0), static_cast<std::size_t>(0));
     }
-    
+
     // Return range [partition_[pid], partition_[pid+1])
     const auto begin_vid = static_cast<std::size_t>(g.partition_[static_cast<std::size_t>(pid)]);
-    const auto end_vid = static_cast<std::size_t>(g.partition_[static_cast<std::size_t>(pid + 1)]);
-    
+    const auto end_vid   = static_cast<std::size_t>(g.partition_[static_cast<std::size_t>(pid + 1)]);
+
     return vertex_descriptor_view<vertex_iter_type>(begin_vid, end_vid);
   }
 
@@ -1195,17 +1177,15 @@ public: // Friend functions
    * @note No bounds checking is performed; uid must be valid
    * @note The iterator stores only the vertex index and is independent of view lifetime
   */
-  template<typename G, typename VId2>
-    requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
+  template <typename G, typename VId2>
+  requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
   [[nodiscard]] friend constexpr auto find_vertex([[maybe_unused]] G&& g, const VId2& uid) noexcept {
-    using vertex_iter_type = std::conditional_t<
-        std::is_const_v<std::remove_reference_t<G>>,
-        typename row_index_vector::const_iterator,
-        typename row_index_vector::iterator
-    >;
-    using vertex_desc_view = vertex_descriptor_view<vertex_iter_type>;
+    using vertex_iter_type =
+          std::conditional_t<std::is_const_v<std::remove_reference_t<G>>, typename row_index_vector::const_iterator,
+                             typename row_index_vector::iterator>;
+    using vertex_desc_view     = vertex_descriptor_view<vertex_iter_type>;
     using vertex_desc_iterator = typename vertex_desc_view::iterator;
-    
+
     // Construct iterator directly from the vertex ID (which is the storage_type)
     // Cast to vertex_id_type to avoid warnings when uid is a larger integral type (e.g., size_t)
     return vertex_desc_iterator{static_cast<vertex_id_type>(uid)};
@@ -1222,10 +1202,9 @@ public: // Friend functions
    * @return The vertex ID
    * @note Complexity: O(1) - direct access to stored ID
   */
-  template<typename G, vertex_descriptor_type VertexDesc>
-    requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
-  [[nodiscard]] friend constexpr auto vertex_id([[maybe_unused]] const G& g, const VertexDesc& u) noexcept
-  {
+  template <typename G, vertex_descriptor_type VertexDesc>
+  requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
+  [[nodiscard]] friend constexpr auto vertex_id([[maybe_unused]] const G& g, const VertexDesc& u) noexcept {
     return static_cast<vertex_id_type>(u.vertex_id());
   }
 
@@ -1243,38 +1222,34 @@ public: // Friend functions
    * @note This is a lightweight view with minimal overhead
    * @note Returns empty view if vertex descriptor is out of bounds
   */
-  template<typename G, typename VertexDesc>
-    requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
+  template <typename G, typename VertexDesc>
+  requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
   [[nodiscard]] friend constexpr auto edges(G&& g, VertexDesc u) noexcept {
-    using edge_iter_type = std::conditional_t<
-        std::is_const_v<std::remove_reference_t<G>>,
-        typename col_index_vector::const_iterator,
-        typename col_index_vector::iterator
-    >;
-    using vertex_iter_type = std::conditional_t<
-        std::is_const_v<std::remove_reference_t<G>>,
-        typename row_index_vector::const_iterator,
-        typename row_index_vector::iterator
-    >;
+    using edge_iter_type =
+          std::conditional_t<std::is_const_v<std::remove_reference_t<G>>, typename col_index_vector::const_iterator,
+                             typename col_index_vector::iterator>;
+    using vertex_iter_type =
+          std::conditional_t<std::is_const_v<std::remove_reference_t<G>>, typename row_index_vector::const_iterator,
+                             typename row_index_vector::iterator>;
     using edge_desc_view = edge_descriptor_view<edge_iter_type, vertex_iter_type>;
-    using vertex_desc = vertex_descriptor<vertex_iter_type>;
-    
+    using vertex_desc    = vertex_descriptor<vertex_iter_type>;
+
     // Get the vertex ID from the descriptor
     auto vid = static_cast<std::size_t>(u.vertex_id());
-    
+
     // Create a vertex descriptor with the correct iterator type for this graph
     vertex_desc source_vd(vid);
-    
+
     // Check bounds
     if (vid >= g.size()) {
       // Return empty view
       return edge_desc_view(static_cast<std::size_t>(0), static_cast<std::size_t>(0), source_vd);
     }
-    
+
     // Get the edge range for this vertex from row_index_
     auto start_idx = static_cast<std::size_t>(g.row_index_[vid].index);
-    auto end_idx = static_cast<std::size_t>(g.row_index_[vid + 1].index);
-    
+    auto end_idx   = static_cast<std::size_t>(g.row_index_[vid + 1].index);
+
     // Return view over the edge range
     return edge_desc_view(start_idx, end_idx, source_vd);
   }
@@ -1292,8 +1267,8 @@ public: // Friend functions
    * @note Complexity: O(1) - direct indexed access
    * @note No bounds checking is performed; edge descriptor must be valid
   */
-  template<typename G, typename EdgeDesc>
-    requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
+  template <typename G, typename EdgeDesc>
+  requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
   [[nodiscard]] friend constexpr auto target_id(G&& g, const EdgeDesc& uv) noexcept {
     // Edge descriptor's value() returns the edge index into col_index_
     auto edge_idx = uv.value();
@@ -1312,8 +1287,8 @@ public: // Friend functions
    * @note Complexity: O(1) - direct size access
    * @note This is the ADL customization point for the num_edges(g) CPO
   */
-  template<typename G>
-    requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
+  template <typename G>
+  requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
   [[nodiscard]] friend constexpr auto num_edges(G&& g) noexcept {
     return static_cast<size_type>(g.col_index_.size());
   }
@@ -1331,8 +1306,8 @@ public: // Friend functions
    * @note Complexity: O(1) - direct indexed access
    * @note This is the ADL customization point for the num_edges(g, u) CPO
   */
-  template<typename G, typename U>
-    requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
+  template <typename G, typename U>
+  requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
   [[nodiscard]] friend constexpr auto num_edges(const G& g, const U& u) noexcept {
     auto vid = static_cast<vertex_id_type>(u.vertex_id());
     if (vid >= g.size()) {
@@ -1353,8 +1328,8 @@ public: // Friend functions
    * @note Complexity: O(1) - direct size check
    * @note This is the ADL customization point for the has_edge(g) CPO
   */
-  template<typename G>
-    requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
+  template <typename G>
+  requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
   [[nodiscard]] friend constexpr bool has_edge(const G& g) noexcept {
     return !g.col_index_.empty();
   }
@@ -1373,9 +1348,8 @@ public: // Friend functions
    * @note This is the ADL customization point for the vertex_value(g, u) CPO
    * @note Only available when VV is not void
   */
-  template<typename G, typename U>
-    requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base> && 
-             (!std::is_void_v<VV>)
+  template <typename G, typename U>
+  requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base> && (!std::is_void_v<VV>)
   [[nodiscard]] friend constexpr decltype(auto) vertex_value(G&& g, const U& u) noexcept {
     if constexpr (std::is_const_v<std::remove_reference_t<G>>) {
       return g.vertex_value(static_cast<vertex_id_type>(u.vertex_id()));
@@ -1398,9 +1372,8 @@ public: // Friend functions
    * @note This is the ADL customization point for the edge_value(g, uv) CPO
    * @note Only available when EV is not void
   */
-  template<typename G, typename E>
-    requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base> && 
-             (!std::is_void_v<EV>)
+  template <typename G, typename E>
+  requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base> && (!std::is_void_v<EV>)
   [[nodiscard]] friend constexpr decltype(auto) edge_value(G&& g, const E& uv) noexcept {
     if constexpr (std::is_const_v<std::remove_reference_t<G>>) {
       return g.edge_value(static_cast<vertex_id_type>(uv.value()));
@@ -1423,22 +1396,21 @@ public: // Friend functions
    * @note For single-partition graphs, returns 0
    * @note This is the ADL customization point for the partition_id(g, u) CPO
   */
-  template<typename G, typename VertexDesc>
-    requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
-  [[nodiscard]] friend constexpr auto partition_id(G&& g, const VertexDesc& u) noexcept
-    -> partition_id_type {
+  template <typename G, typename VertexDesc>
+  requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
+  [[nodiscard]] friend constexpr auto partition_id(G&& g, const VertexDesc& u) noexcept -> partition_id_type {
     const auto vid = u.vertex_id();
-    
+
     // Handle empty or single partition case
     if (g.partition_.size() <= 2) {
       return 0;
     }
-    
+
     // Binary search: find the largest partition index i where partition_[i] <= vid
     // Note: partition_.back() is the terminating element (total vertex count), not a real partition
     auto it = std::upper_bound(g.partition_.begin(), g.partition_.end() - 1, vid);
-    --it;  // Move back to the last partition where partition_[i] <= vid
-    
+    --it; // Move back to the last partition where partition_[i] <= vid
+
     return static_cast<partition_id_type>(std::distance(g.partition_.begin(), it));
   }
 
@@ -1454,10 +1426,9 @@ public: // Friend functions
    * @note partition_ vector stores N+1 elements for N partitions (includes terminator)
    * @note This is the ADL customization point for the num_partitions(g) CPO
   */
-  template<typename G>
-    requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
-  [[nodiscard]] friend constexpr auto num_partitions(const G& g) noexcept
-    -> partition_id_type {
+  template <typename G>
+  requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
+  [[nodiscard]] friend constexpr auto num_partitions(const G& g) noexcept -> partition_id_type {
     // partition_ holds partition start IDs plus one terminating element
     // So num_partitions = partition_.size() - 1
     // For empty or single-partition: size is 0, 1, or 2, all map to 1 partition
@@ -1509,7 +1480,7 @@ public: // Graph value accessors
    * @note Only available when GV is not void
   */
   [[nodiscard]] constexpr const graph_value_type& graph_value() const noexcept { return value_; }
-  
+
   /**
    * @brief Get a mutable reference to the graph value.
    * 
@@ -1662,8 +1633,8 @@ public: // Types
   using value_type       = void;
 
 public: // Construction/Destruction
-  constexpr compressed_graph()                        = default;
-  constexpr compressed_graph(const Alloc& alloc)      : base_type(alloc) {}
+  constexpr compressed_graph() = default;
+  constexpr compressed_graph(const Alloc& alloc) : base_type(alloc) {}
   constexpr compressed_graph(const compressed_graph&) = default;
   constexpr compressed_graph(compressed_graph&&)      = default;
   constexpr ~compressed_graph()                       = default;

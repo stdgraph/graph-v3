@@ -285,8 +285,8 @@ using adj_list::edge_value;
  */
 template <class VId>
 struct disjoint_element {
-  VId    id    = VId();  ///< Parent in union-find tree (id == itself for root)
-  size_t count = 0;      ///< Rank for union-by-rank (approximate tree depth)
+  VId    id    = VId(); ///< Parent in union-find tree (id == itself for root)
+  size_t count = 0;     ///< Rank for union-by-rank (approximate tree depth)
 };
 
 template <class VId>
@@ -311,17 +311,17 @@ VId disjoint_find(disjoint_vector<VId>& subsets, VId vtx) {
   // Phase 1: Find the root by following parent pointers
   VId parent = subsets[vtx].id;
   while (parent != subsets[parent].id) {
-    parent = subsets[parent].id;  // Keep climbing until we reach root (parent == self)
-  }
-  
-  // Phase 2: Path compression - make all nodes on path point directly to root
-  while (vtx != parent) {
-    VId next        = subsets[vtx].id;  // Save next node before overwriting
-    subsets[vtx].id = parent;           // Point current node directly to root
-    vtx             = next;              // Move to next node in original path
+    parent = subsets[parent].id; // Keep climbing until we reach root (parent == self)
   }
 
-  return parent;  // Return the root representative of this set
+  // Phase 2: Path compression - make all nodes on path point directly to root
+  while (vtx != parent) {
+    VId next        = subsets[vtx].id; // Save next node before overwriting
+    subsets[vtx].id = parent;          // Point current node directly to root
+    vtx             = next;            // Move to next node in original path
+  }
+
+  return parent; // Return the root representative of this set
 }
 
 /**
@@ -346,10 +346,10 @@ void disjoint_union(disjoint_vector<VId>& subsets, VId u, VId v) {
 
   // Union by rank: attach smaller tree under root of larger tree
   if (subsets[u_root].count < subsets[v_root].count)
-    subsets[u_root].id = v_root;  // Attach u's tree to v's root
+    subsets[u_root].id = v_root; // Attach u's tree to v's root
 
   else if (subsets[u_root].count > subsets[v_root].count)
-    subsets[v_root].id = u_root;  // Attach v's tree to u's root
+    subsets[v_root].id = u_root; // Attach v's tree to u's root
 
   else {
     // Equal rank: attach v to u and increment u's rank
@@ -384,10 +384,10 @@ bool disjoint_union_find(disjoint_vector<VId>& subsets, VId u, VId v) {
   if (u_root != v_root) {
     // Union by rank: attach smaller tree under larger tree
     if (subsets[u_root].count < subsets[v_root].count)
-      subsets[u_root].id = v_root;  // Attach u's tree to v's root
+      subsets[u_root].id = v_root; // Attach u's tree to v's root
 
     else if (subsets[u_root].count > subsets[v_root].count)
-      subsets[v_root].id = u_root;  // Attach v's tree to u's root
+      subsets[v_root].id = u_root; // Attach v's tree to u's root
 
     else {
       // Equal rank: attach v to u and increment u's rank
@@ -395,10 +395,10 @@ bool disjoint_union_find(disjoint_vector<VId>& subsets, VId u, VId v) {
       subsets[u_root].count++;
     }
 
-    return true;  // Edge added to MST (connects different components)
+    return true; // Edge added to MST (connects different components)
   }
 
-  return false;  // Edge rejected (would create cycle)
+  return false; // Edge rejected (would create cycle)
 }
 
 // Note: The following concepts are not currently used because the x_index_edgelist_range
@@ -412,7 +412,7 @@ bool disjoint_union_find(disjoint_vector<VId>& subsets, VId u, VId v) {
 // template <typename ED>
 // concept has_same_vertex_type = requires(ED ed) { requires same_as<decltype(ed.source_id), decltype(ed.target_id)>; };
 //
-// template <typename ED>  
+// template <typename ED>
 // concept has_edge_value = requires(ED ed) { requires !same_as<decltype(ed.value), void>; };
 
 
@@ -564,35 +564,35 @@ auto kruskal(IELR&&    e,      // graph
   std::vector<tuple<VId, VId, EV>> e_copy;
   std::ranges::transform(e, back_inserter(e_copy),
                          [](auto&& ed) { return std::make_tuple(ed.source_id, ed.target_id, ed.value); });
-  
+
   // Find maximum vertex ID while sorting edges by weight
-  VId  N             = 0;  // Will hold the maximum vertex ID in the graph
+  VId  N             = 0; // Will hold the maximum vertex ID in the graph
   auto outer_compare = [&](auto&& i, auto&& j) {
     // Track maximum vertex ID (needed to size disjoint-set structure)
     if (get<0>(i) > N) {
-      N = get<0>(i);  // Check source vertex
+      N = get<0>(i); // Check source vertex
     }
     if (get<1>(i) > N) {
-      N = get<1>(i);  // Check target vertex
+      N = get<1>(i); // Check target vertex
     }
-    return compare(get<2>(i), get<2>(j));  // Compare edge weights
+    return compare(get<2>(i), get<2>(j)); // Compare edge weights
   };
   std::ranges::sort(e_copy, outer_compare);
 
   // Initialize disjoint-set: each vertex starts in its own set
-  disjoint_vector<VId> subsets(N + 1);  // Size N+1 to accommodate vertices 0 through N
+  disjoint_vector<VId> subsets(N + 1); // Size N+1 to accommodate vertices 0 through N
   for (VId uid = 0; uid <= N; ++uid) {
-    subsets[uid].id    = uid;  // Each vertex is its own parent (root)
-    subsets[uid].count = 0;    // Initial rank is 0
+    subsets[uid].id    = uid; // Each vertex is its own parent (root)
+    subsets[uid].count = 0;   // Initial rank is 0
   }
 
   // MST has exactly N-1 edges for a connected graph (or fewer for disconnected)
-  t.reserve(N);  // Pre-allocate space for efficiency
-  
+  t.reserve(N); // Pre-allocate space for efficiency
+
   // Track MST statistics
-  EV total_weight = EV{};        // Sum of edge weights in MST
+  EV     total_weight   = EV{};  // Sum of edge weights in MST
   size_t num_components = N + 1; // Initially each vertex is its own component
-  
+
   // Process edges in sorted order (by weight)
   for (auto&& [uid, vid, val] : e_copy) {
     // Try to add edge: succeeds if endpoints are in different components
@@ -602,13 +602,13 @@ auto kruskal(IELR&&    e,      // graph
       t.back().source_id = uid;
       t.back().target_id = vid;
       t.back().value     = val;
-      
-      total_weight += val;  // Accumulate MST weight
-      --num_components;      // Merge reduces component count
+
+      total_weight += val; // Accumulate MST weight
+      --num_components;    // Merge reduces component count
     }
     // else: edge would create cycle - skip it
   }
-  
+
   return std::pair<EV, size_t>{total_weight, num_components};
 }
 
@@ -709,18 +709,18 @@ auto inplace_kruskal(IELR&&    e,      // graph
   }
 
   // Find maximum vertex ID while sorting edges by weight (modifies input!)
-  VId  N             = 0;  // Will hold the maximum vertex ID in the graph
+  VId  N             = 0; // Will hold the maximum vertex ID in the graph
   auto outer_compare = [&](auto&& i, auto&& j) {
     // Track maximum vertex ID (needed to size disjoint-set structure)
     if (i.source_id > N) {
-      N = i.source_id;  // Check source vertex
+      N = i.source_id; // Check source vertex
     }
     if (i.target_id > N) {
-      N = i.target_id;  // Check target vertex  
+      N = i.target_id; // Check target vertex
     }
-    return compare(i.value, j.value);  // Compare edge weights
+    return compare(i.value, j.value); // Compare edge weights
   };
-  std::ranges::sort(e, outer_compare);  // ⚠️ Modifies input edge list!
+  std::ranges::sort(e, outer_compare); // ⚠️ Modifies input edge list!
 
   // Empty graph edge case
   if (N == 0) {
@@ -729,19 +729,19 @@ auto inplace_kruskal(IELR&&    e,      // graph
   }
 
   // Initialize disjoint-set: each vertex starts in its own set
-  disjoint_vector<VId> subsets(N + 1);  // Size N+1 to accommodate vertices 0 through N
+  disjoint_vector<VId> subsets(N + 1); // Size N+1 to accommodate vertices 0 through N
   for (VId uid = 0; uid <= N; ++uid) {
-    subsets[uid].id    = uid;  // Each vertex is its own parent (root)
-    subsets[uid].count = 0;    // Initial rank is 0
+    subsets[uid].id    = uid; // Each vertex is its own parent (root)
+    subsets[uid].count = 0;   // Initial rank is 0
   }
 
   // MST has exactly N-1 edges for a connected graph (or fewer for disconnected)
-  t.reserve(N);  // Pre-allocate space for efficiency
-  
+  t.reserve(N); // Pre-allocate space for efficiency
+
   // Track MST statistics
-  EV total_weight = EV{};        // Sum of edge weights in MST
+  EV     total_weight   = EV{};  // Sum of edge weights in MST
   size_t num_components = N + 1; // Initially each vertex is its own component
-  
+
   // Process edges in sorted order (by weight)
   for (auto&& [uid, vid, val] : e) {
     // Try to add edge: succeeds if endpoints are in different components
@@ -751,13 +751,13 @@ auto inplace_kruskal(IELR&&    e,      // graph
       t.back().source_id = uid;
       t.back().target_id = vid;
       t.back().value     = val;
-      
-      total_weight += val;  // Accumulate MST weight
-      --num_components;      // Merge reduces component count
+
+      total_weight += val; // Accumulate MST weight
+      --num_components;    // Merge reduces component count
     }
     // else: edge would create cycle - skip it
   }
-  
+
   return std::pair<EV, size_t>{total_weight, num_components};
 }
 
@@ -782,7 +782,7 @@ auto inplace_kruskal(IELR&&    e,      // graph
  * @param weight [out] weight[v] = edge weight from predecessor[v] to v.
  *                     Caller should ensure size >= num_vertices(g).
  * @param seed [in] Starting vertex (default = 0)
- * @param weight_fn [in] Edge weight function: (const edge_t<G>&) -> Weight. Defaults to returning 1.
+ * @param weight_fn [in] Edge weight function: (const G&, const edge_t<G>&) -> Weight. Defaults to returning 1.
  * 
  * **Complexity:** O(E log V) time, O(V) space
  * 
@@ -829,24 +829,20 @@ auto inplace_kruskal(IELR&&    e,      // graph
  * auto count = prim(unweighted_g, pred, wt, 0, [](const auto&) { return 1; });
  * @endcode
  */
-template <index_adjacency_list      G,
-          random_access_range Predecessor,
-          random_access_range Weight>
+template <index_adjacency_list G,
+          random_access_range  Predecessor,
+          random_access_range  Weight>
 auto prim(G&&            g,           // graph
           Predecessor&   predecessor, // out: predecessor[uid] of uid in tree
           Weight&        weight,      // out: edge value weight[uid] from tree edge uid to predecessor[uid]
           vertex_id_t<G> seed = 0     // seed vtx
 ) {
   // Default weight function: use edge_value CPO
-  auto weight_fn = [&g](const edge_t<G>& uv) -> range_value_t<Weight> { 
-    return edge_value(g, uv); 
-  };
-  
+  auto weight_fn = [](const auto& g, const edge_t<G>& uv) -> range_value_t<Weight> { return edge_value(g, uv); };
+
   return prim(
-        g, predecessor, weight,
-        [](auto&& i, auto&& j) { return i < j; },
-        std::numeric_limits<range_value_t<Weight>>::max(),
-        weight_fn, seed);
+        g, predecessor, weight, [](auto&& i, auto&& j) { return i < j; },
+        std::numeric_limits<range_value_t<Weight>>::max(), weight_fn, seed);
 }
 
 /**
@@ -869,7 +865,7 @@ auto prim(G&&            g,           // graph
  *                     Caller should ensure size >= num_vertices(g).
  * @param compare [in] Comparison for edge weights: compare(w1, w2) returns true if w1 is "better" than w2
  * @param init_dist [in] Initial distance value (typically infinity: numeric_limits<Weight>::max())
- * @param weight_fn [in] Edge weight function: (const edge_t<G>&) -> Weight
+ * @param weight_fn [in] Edge weight function: (const G&, const edge_t<G>&) -> Weight
  * @param seed [in] Starting vertex (default = 0)
  * 
  * **Complexity:** O(E log V) time, O(V) space
@@ -903,9 +899,9 @@ auto prim(G&&            g,           // graph
  * auto total = prim(g, pred, wt, std::greater<int>{}, std::numeric_limits<int>::lowest(), 0);
  * @endcode
  */
-template <index_adjacency_list      G,
-          random_access_range Predecessor,
-          random_access_range Weight,
+template <index_adjacency_list G,
+          random_access_range  Predecessor,
+          random_access_range  Weight,
           class CompareOp,
           class WF>
 requires basic_edge_weight_function<G, WF, range_value_t<Weight>, CompareOp, plus<range_value_t<Weight>>>
@@ -922,18 +918,14 @@ auto prim(G&&                   g,           // graph
 
   // Validate preconditions
   if (static_cast<size_t>(seed) >= N) {
-    throw std::out_of_range(
-        std::format("prim: seed vertex {} is out of range [0, {})", seed, N));
+    throw std::out_of_range(std::format("prim: seed vertex {} is out of range [0, {})", seed, N));
   }
   if (size(predecessor) < N) {
     throw std::out_of_range(
-        std::format("prim: predecessor size {} is less than num_vertices {}", 
-                    size(predecessor), N));
+          std::format("prim: predecessor size {} is less than num_vertices {}", size(predecessor), N));
   }
   if (size(weight) < N) {
-    throw std::out_of_range(
-        std::format("prim: weight size {} is less than num_vertices {}", 
-                    size(weight), N));
+    throw std::out_of_range(std::format("prim: weight size {} is less than num_vertices {}", size(weight), N));
   }
 
   // Handle empty graph
@@ -942,22 +934,22 @@ auto prim(G&&                   g,           // graph
   }
 
   // Initialize distances: infinity for all vertices except seed
-  std::vector<EV>               distance(N, init_dist);
-  distance[seed]    = 0;     // Seed vertex has distance 0
-  predecessor[seed] = seed;  // Seed is its own predecessor (root of MST)
+  std::vector<EV> distance(N, init_dist);
+  distance[seed]    = 0;    // Seed vertex has distance 0
+  predecessor[seed] = seed; // Seed is its own predecessor (root of MST)
 
-  using weighted_vertex = tuple<vertex_id_t<G>, EV>;  // (vertex_id, edge_weight)
+  using weighted_vertex = tuple<vertex_id_t<G>, EV>; // (vertex_id, edge_weight)
 
   // Priority queue comparator: compare by edge weight (second element of tuple)
   auto outer_compare = [&](auto&& i, auto&& j) { return compare(get<1>(i), get<1>(j)); };
 
   // Min-heap (or max-heap depending on compare) of (vertex, weight) pairs
   std::priority_queue<weighted_vertex, std::vector<weighted_vertex>, decltype(outer_compare)> Q(outer_compare);
-  Q.push({seed, distance[seed]});  // Start from seed vertex
-  
+  Q.push({seed, distance[seed]}); // Start from seed vertex
+
   // Main loop: grow MST by adding minimum-weight edges
   while (!Q.empty()) {
-    auto uid = get<0>(Q.top());  // Extract vertex with minimum edge weight
+    auto uid = get<0>(Q.top()); // Extract vertex with minimum edge weight
     Q.pop();
 
     // Examine all edges incident to current vertex
@@ -971,7 +963,7 @@ auto prim(G&&                   g,           // graph
       }
     }
   }
-  
+
   // Calculate total MST weight by summing edge weights
   // weight[v] contains the edge weight from predecessor[v] to v
   // Exclude seed vertex (which has no incoming edge in MST)
@@ -982,7 +974,7 @@ auto prim(G&&                   g,           // graph
       total_weight += weight[v];
     }
   }
-  
+
   return total_weight;
 }
 } // namespace graph

@@ -36,75 +36,94 @@
 using namespace graph::container;
 
 // Type aliases for common test configurations with uint32_t vertex IDs
-using uod_void_void_void = dynamic_graph<void, void, void, uint32_t, false, uod_graph_traits<void, void, void, uint32_t, false>>;
-using uod_int_void_void = dynamic_graph<int, void, void, uint32_t, false, uod_graph_traits<int, void, void, uint32_t, false>>;
-using uod_void_int_void = dynamic_graph<void, int, void, uint32_t, false, uod_graph_traits<void, int, void, uint32_t, false>>;
-using uod_int_int_void = dynamic_graph<int, int, void, uint32_t, false, uod_graph_traits<int, int, void, uint32_t, false>>;
-using uod_void_void_int = dynamic_graph<void, void, int, uint32_t, false, uod_graph_traits<void, void, int, uint32_t, false>>;
+using uod_void_void_void =
+      dynamic_graph<void, void, void, uint32_t, false, uod_graph_traits<void, void, void, uint32_t, false>>;
+using uod_int_void_void =
+      dynamic_graph<int, void, void, uint32_t, false, uod_graph_traits<int, void, void, uint32_t, false>>;
+using uod_void_int_void =
+      dynamic_graph<void, int, void, uint32_t, false, uod_graph_traits<void, int, void, uint32_t, false>>;
+using uod_int_int_void =
+      dynamic_graph<int, int, void, uint32_t, false, uod_graph_traits<int, int, void, uint32_t, false>>;
+using uod_void_void_int =
+      dynamic_graph<void, void, int, uint32_t, false, uod_graph_traits<void, void, int, uint32_t, false>>;
 using uod_int_int_int = dynamic_graph<int, int, int, uint32_t, false, uod_graph_traits<int, int, int, uint32_t, false>>;
 
 // Type aliases with string vertex IDs (a common use case for unordered_map containers)
-using uod_str_void_void_void = dynamic_graph<void, void, void, std::string, false, uod_graph_traits<void, void, void, std::string, false>>;
-using uod_str_int_void_void = dynamic_graph<int, void, void, std::string, false, uod_graph_traits<int, void, void, std::string, false>>;
-using uod_str_void_int_void = dynamic_graph<void, int, void, std::string, false, uod_graph_traits<void, int, void, std::string, false>>;
-using uod_str_int_int_int = dynamic_graph<int, int, int, std::string, false, uod_graph_traits<int, int, int, std::string, false>>;
+using uod_str_void_void_void =
+      dynamic_graph<void, void, void, std::string, false, uod_graph_traits<void, void, void, std::string, false>>;
+using uod_str_int_void_void =
+      dynamic_graph<int, void, void, std::string, false, uod_graph_traits<int, void, void, std::string, false>>;
+using uod_str_void_int_void =
+      dynamic_graph<void, int, void, std::string, false, uod_graph_traits<void, int, void, std::string, false>>;
+using uod_str_int_int_int =
+      dynamic_graph<int, int, int, std::string, false, uod_graph_traits<int, int, int, std::string, false>>;
 
 using uod_sourced = dynamic_graph<void, void, void, uint32_t, true, uod_graph_traits<void, void, void, uint32_t, true>>;
-using uod_int_sourced = dynamic_graph<int, void, void, uint32_t, true, uod_graph_traits<int, void, void, uint32_t, true>>;
+using uod_int_sourced =
+      dynamic_graph<int, void, void, uint32_t, true, uod_graph_traits<int, void, void, uint32_t, true>>;
 
-using uod_str_sourced = dynamic_graph<void, void, void, std::string, true, uod_graph_traits<void, void, void, std::string, true>>;
+using uod_str_sourced =
+      dynamic_graph<void, void, void, std::string, true, uod_graph_traits<void, void, void, std::string, true>>;
 
 //==================================================================================================
 // 1. Traits Verification Tests
 //==================================================================================================
 
 TEST_CASE("uod traits verification", "[dynamic_graph][uod][traits]") {
-    SECTION("vertices_type is std::unordered_map") {
-        using traits = uod_graph_traits<void, void, void, uint32_t, false>;
-        using vertices_t = typename traits::vertices_type;
-        // Verify it's an unordered_map by checking for hash-specific members
-        static_assert(requires { typename vertices_t::key_type; });
-        static_assert(requires { typename vertices_t::mapped_type; });
-        static_assert(requires { typename vertices_t::hasher; });
-        static_assert(requires(vertices_t m) { m.bucket_count(); });
-        REQUIRE(true); // Compilation success means the test passes
-    }
+  SECTION("vertices_type is std::unordered_map") {
+    using traits     = uod_graph_traits<void, void, void, uint32_t, false>;
+    using vertices_t = typename traits::vertices_type;
+    // Verify it's an unordered_map by checking for hash-specific members
+    static_assert(requires { typename vertices_t::key_type; });
+    static_assert(requires { typename vertices_t::mapped_type; });
+    static_assert(requires { typename vertices_t::hasher; });
+    static_assert(requires(vertices_t m) { m.bucket_count(); });
+    REQUIRE(true); // Compilation success means the test passes
+  }
 
-    SECTION("edges_type is std::deque") {
-        using traits = uod_graph_traits<void, void, void, uint32_t, false>;
-        using edges_t = typename traits::edges_type;
-        // deque has random access iterators
-        static_assert(requires(edges_t e) { e.rbegin(); e.rend(); e[0]; });
-        // deque has both push_back and push_front
-        static_assert(requires(edges_t e, typename edges_t::value_type v) { e.push_back(v); e.push_front(v); e.size(); });
-        REQUIRE(true);
-    }
+  SECTION("edges_type is std::deque") {
+    using traits  = uod_graph_traits<void, void, void, uint32_t, false>;
+    using edges_t = typename traits::edges_type;
+    // deque has random access iterators
+    static_assert(requires(edges_t e) {
+      e.rbegin();
+      e.rend();
+      e[0];
+    });
+    // deque has both push_back and push_front
+    static_assert(requires(edges_t e, typename edges_t::value_type v) {
+      e.push_back(v);
+      e.push_front(v);
+      e.size();
+    });
+    REQUIRE(true);
+  }
 
-    SECTION("vertex_id_type can be string") {
-        using traits = uod_graph_traits<void, void, void, std::string, false>;
-        static_assert(std::same_as<typename traits::vertex_id_type, std::string>);
-        REQUIRE(true);
-    }
+  SECTION("vertex_id_type can be string") {
+    using traits = uod_graph_traits<void, void, void, std::string, false>;
+    static_assert(std::same_as<typename traits::vertex_id_type, std::string>);
+    REQUIRE(true);
+  }
 
-    SECTION("sourced flag is preserved") {
-        using traits_unsourced = uod_graph_traits<void, void, void, uint32_t, false>;
-        using traits_sourced = uod_graph_traits<void, void, void, uint32_t, true>;
-        static_assert(traits_unsourced::sourced == false);
-        static_assert(traits_sourced::sourced == true);
-        REQUIRE(true);
-    }
+  SECTION("sourced flag is preserved") {
+    using traits_unsourced = uod_graph_traits<void, void, void, uint32_t, false>;
+    using traits_sourced   = uod_graph_traits<void, void, void, uint32_t, true>;
+    static_assert(traits_unsourced::sourced == false);
+    static_assert(traits_sourced::sourced == true);
+    REQUIRE(true);
+  }
 
-    SECTION("vertex_id_type for uint32_t") {
-        using traits = uod_graph_traits<void, void, void, uint32_t, false>;
-        static_assert(std::same_as<typename traits::vertex_id_type, uint32_t>);
-        REQUIRE(true);
-    }
+  SECTION("vertex_id_type for uint32_t") {
+    using traits = uod_graph_traits<void, void, void, uint32_t, false>;
+    static_assert(std::same_as<typename traits::vertex_id_type, uint32_t>);
+    REQUIRE(true);
+  }
 
-    SECTION("custom vertex_id_type") {
-        using traits = uod_graph_traits<void, void, void, int64_t, false>;
-        static_assert(std::same_as<typename traits::vertex_id_type, int64_t>);
-        REQUIRE(true);
-    }
+  SECTION("custom vertex_id_type") {
+    using traits = uod_graph_traits<void, void, void, int64_t, false>;
+    static_assert(std::same_as<typename traits::vertex_id_type, int64_t>);
+    REQUIRE(true);
+  }
 }
 
 //==================================================================================================
@@ -112,30 +131,30 @@ TEST_CASE("uod traits verification", "[dynamic_graph][uod][traits]") {
 //==================================================================================================
 
 TEST_CASE("uod iterator categories", "[dynamic_graph][uod][iterators]") {
-    SECTION("underlying unordered_map iterators are forward") {
-        // Note: unordered_map iterators are at least forward iterators (bidirectional in MSVC, forward-only in GCC)
-        using G = uod_void_void_void;
-        using iter_t = typename G::vertices_type::iterator;
-        static_assert(std::forward_iterator<iter_t>);
-        REQUIRE(true);
-    }
+  SECTION("underlying unordered_map iterators are forward") {
+    // Note: unordered_map iterators are at least forward iterators (bidirectional in MSVC, forward-only in GCC)
+    using G      = uod_void_void_void;
+    using iter_t = typename G::vertices_type::iterator;
+    static_assert(std::forward_iterator<iter_t>);
+    REQUIRE(true);
+  }
 
-    SECTION("edge descriptor iterators are forward only") {
-        using traits = uod_graph_traits<void, void, void, uint32_t, false>;
-        using edges_t = typename traits::edges_type;
-        // Underlying vector has random access iterators
-        using edge_iter_t = typename edges_t::iterator;
-        static_assert(std::random_access_iterator<edge_iter_t>);
-        // But descriptor iterators are always forward-only
-        REQUIRE(true);
-    }
+  SECTION("edge descriptor iterators are forward only") {
+    using traits  = uod_graph_traits<void, void, void, uint32_t, false>;
+    using edges_t = typename traits::edges_type;
+    // Underlying vector has random access iterators
+    using edge_iter_t = typename edges_t::iterator;
+    static_assert(std::random_access_iterator<edge_iter_t>);
+    // But descriptor iterators are always forward-only
+    REQUIRE(true);
+  }
 
-    SECTION("graph is a range") {
-        static_assert(std::ranges::range<uod_void_void_void>);
-        static_assert(std::ranges::range<uod_int_int_int>);
-        static_assert(std::ranges::range<uod_str_void_void_void>);
-        REQUIRE(true);
-    }
+  SECTION("graph is a range") {
+    static_assert(std::ranges::range<uod_void_void_void>);
+    static_assert(std::ranges::range<uod_int_int_int>);
+    static_assert(std::ranges::range<uod_str_void_void_void>);
+    REQUIRE(true);
+  }
 }
 
 //==================================================================================================
@@ -143,104 +162,104 @@ TEST_CASE("uod iterator categories", "[dynamic_graph][uod][iterators]") {
 //==================================================================================================
 
 TEST_CASE("uod construction", "[dynamic_graph][uod][construction]") {
-    SECTION("default constructor creates empty graph") {
-        uod_void_void_void g;
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("default constructor creates empty graph") {
+    uod_void_void_void g;
+    REQUIRE(g.size() == 0);
+  }
 
-    SECTION("default constructor with void types") {
-        uod_void_void_void g;
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("default constructor with void types") {
+    uod_void_void_void g;
+    REQUIRE(g.size() == 0);
+  }
 
-    SECTION("default constructor with int edge values") {
-        uod_int_void_void g;
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("default constructor with int edge values") {
+    uod_int_void_void g;
+    REQUIRE(g.size() == 0);
+  }
 
-    SECTION("default constructor with int vertex values") {
-        uod_void_int_void g;
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("default constructor with int vertex values") {
+    uod_void_int_void g;
+    REQUIRE(g.size() == 0);
+  }
 
-    SECTION("default constructor with int graph value") {
-        uod_void_void_int g;
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("default constructor with int graph value") {
+    uod_void_void_int g;
+    REQUIRE(g.size() == 0);
+  }
 
-    SECTION("default constructor with all int values") {
-        uod_int_int_int g;
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("default constructor with all int values") {
+    uod_int_int_int g;
+    REQUIRE(g.size() == 0);
+  }
 
-    SECTION("constructor with graph value - int GV") {
-        uod_void_void_int g(42);
-        REQUIRE(g.size() == 0);
-        REQUIRE(g.graph_value() == 42);
-    }
+  SECTION("constructor with graph value - int GV") {
+    uod_void_void_int g(42);
+    REQUIRE(g.size() == 0);
+    REQUIRE(g.graph_value() == 42);
+  }
 
-    SECTION("copy constructor") {
-        uod_int_int_int g1;
-        uod_int_int_int g2(g1);
-        REQUIRE(g2.size() == g1.size());
-    }
+  SECTION("copy constructor") {
+    uod_int_int_int g1;
+    uod_int_int_int g2(g1);
+    REQUIRE(g2.size() == g1.size());
+  }
 
-    SECTION("move constructor") {
-        uod_int_int_int g1;
-        uod_int_int_int g2(std::move(g1));
-        REQUIRE(g2.size() == 0);
-    }
+  SECTION("move constructor") {
+    uod_int_int_int g1;
+    uod_int_int_int g2(std::move(g1));
+    REQUIRE(g2.size() == 0);
+  }
 
-    SECTION("copy assignment") {
-        uod_int_int_int g1, g2;
-        g2 = g1;
-        REQUIRE(g2.size() == g1.size());
-    }
+  SECTION("copy assignment") {
+    uod_int_int_int g1, g2;
+    g2 = g1;
+    REQUIRE(g2.size() == g1.size());
+  }
 
-    SECTION("move assignment") {
-        uod_int_int_int g1, g2;
-        g2 = std::move(g1);
-        REQUIRE(g2.size() == 0);
-    }
+  SECTION("move assignment") {
+    uod_int_int_int g1, g2;
+    g2 = std::move(g1);
+    REQUIRE(g2.size() == 0);
+  }
 }
 
 TEST_CASE("uod construction with string vertex IDs", "[dynamic_graph][uod][construction][string]") {
-    SECTION("default constructor creates empty graph") {
-        uod_str_void_void_void g;
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("default constructor creates empty graph") {
+    uod_str_void_void_void g;
+    REQUIRE(g.size() == 0);
+  }
 
-    SECTION("default constructor with int edge values") {
-        uod_str_int_void_void g;
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("default constructor with int edge values") {
+    uod_str_int_void_void g;
+    REQUIRE(g.size() == 0);
+  }
 
-    SECTION("default constructor with int vertex values") {
-        uod_str_void_int_void g;
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("default constructor with int vertex values") {
+    uod_str_void_int_void g;
+    REQUIRE(g.size() == 0);
+  }
 
-    SECTION("default constructor with all int values") {
-        uod_str_int_int_int g;
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("default constructor with all int values") {
+    uod_str_int_int_int g;
+    REQUIRE(g.size() == 0);
+  }
 }
 
 TEST_CASE("uod construction sourced", "[dynamic_graph][uod][construction][sourced]") {
-    SECTION("sourced edge construction with uint32_t IDs") {
-        uod_sourced g;
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("sourced edge construction with uint32_t IDs") {
+    uod_sourced g;
+    REQUIRE(g.size() == 0);
+  }
 
-    SECTION("sourced with edge value construction") {
-        uod_int_sourced g;
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("sourced with edge value construction") {
+    uod_int_sourced g;
+    REQUIRE(g.size() == 0);
+  }
 
-    SECTION("sourced edge construction with string IDs") {
-        uod_str_sourced g;
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("sourced edge construction with string IDs") {
+    uod_str_sourced g;
+    REQUIRE(g.size() == 0);
+  }
 }
 
 //==================================================================================================
@@ -248,42 +267,42 @@ TEST_CASE("uod construction sourced", "[dynamic_graph][uod][construction][source
 //==================================================================================================
 
 TEST_CASE("uod properties", "[dynamic_graph][uod][properties]") {
-    SECTION("size() on empty graph") {
-        uod_void_void_void g;
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("size() on empty graph") {
+    uod_void_void_void g;
+    REQUIRE(g.size() == 0);
+  }
 
-    SECTION("const graph methods") {
-        const uod_void_void_void g;
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("const graph methods") {
+    const uod_void_void_void g;
+    REQUIRE(g.size() == 0);
+  }
 
-    SECTION("begin() == end() for empty graph") {
-        uod_void_void_void g;
-        REQUIRE(g.begin() == g.end());
-    }
+  SECTION("begin() == end() for empty graph") {
+    uod_void_void_void g;
+    REQUIRE(g.begin() == g.end());
+  }
 
-    SECTION("const begin() == const end() for empty graph") {
-        const uod_void_void_void g;
-        REQUIRE(g.begin() == g.end());
-    }
+  SECTION("const begin() == const end() for empty graph") {
+    const uod_void_void_void g;
+    REQUIRE(g.begin() == g.end());
+  }
 
-    SECTION("cbegin() == cend() for empty graph") {
-        uod_void_void_void g;
-        REQUIRE(g.cbegin() == g.cend());
-    }
+  SECTION("cbegin() == cend() for empty graph") {
+    uod_void_void_void g;
+    REQUIRE(g.cbegin() == g.cend());
+  }
 }
 
 TEST_CASE("uod properties with string IDs", "[dynamic_graph][uod][properties][string]") {
-    SECTION("size() on empty graph") {
-        uod_str_void_void_void g;
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("size() on empty graph") {
+    uod_str_void_void_void g;
+    REQUIRE(g.size() == 0);
+  }
 
-    SECTION("begin() == end() for empty graph") {
-        uod_str_void_void_void g;
-        REQUIRE(g.begin() == g.end());
-    }
+  SECTION("begin() == end() for empty graph") {
+    uod_str_void_void_void g;
+    REQUIRE(g.begin() == g.end());
+  }
 }
 
 //==================================================================================================
@@ -291,25 +310,25 @@ TEST_CASE("uod properties with string IDs", "[dynamic_graph][uod][properties][st
 //==================================================================================================
 
 TEST_CASE("uod type aliases", "[dynamic_graph][uod][types]") {
-    SECTION("graph type aliases are correct") {
-        using G = uod_int_int_int;
-        static_assert(std::same_as<typename G::value_type, int>); // GV
-        static_assert(G::sourced == false);
-        REQUIRE(true);
-    }
+  SECTION("graph type aliases are correct") {
+    using G = uod_int_int_int;
+    static_assert(std::same_as<typename G::value_type, int>); // GV
+    static_assert(G::sourced == false);
+    REQUIRE(true);
+  }
 
-    SECTION("sourced graph type aliases are correct") {
-        using G = uod_sourced;
-        static_assert(G::sourced == true);
-        REQUIRE(true);
-    }
+  SECTION("sourced graph type aliases are correct") {
+    using G = uod_sourced;
+    static_assert(G::sourced == true);
+    REQUIRE(true);
+  }
 
-    SECTION("string key graph type aliases are correct") {
-        using G = uod_str_int_int_int;
-        using traits = typename G::graph_traits;
-        static_assert(std::same_as<typename traits::vertex_id_type, std::string>);
-        REQUIRE(true);
-    }
+  SECTION("string key graph type aliases are correct") {
+    using G      = uod_str_int_int_int;
+    using traits = typename G::graph_traits;
+    static_assert(std::same_as<typename traits::vertex_id_type, std::string>);
+    REQUIRE(true);
+  }
 }
 
 //==================================================================================================
@@ -317,79 +336,85 @@ TEST_CASE("uod type aliases", "[dynamic_graph][uod][types]") {
 //==================================================================================================
 
 TEST_CASE("uod initializer_list construction", "[dynamic_graph][uod][initializer_list]") {
-    SECTION("empty initializer list") {
-        using G = uod_void_void_void;
-        G g({});
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("empty initializer list") {
+    using G = uod_void_void_void;
+    G g({});
+    REQUIRE(g.size() == 0);
+  }
 
-    SECTION("single edge without value") {
-        using G = uod_void_void_void;
-        G g({{0, 1}});
-        REQUIRE(g.size() == 2);
-    }
+  SECTION("single edge without value") {
+    using G = uod_void_void_void;
+    G g({{0, 1}});
+    REQUIRE(g.size() == 2);
+  }
 
-    SECTION("single edge with value") {
-        using G = uod_int_void_void;
-        G g({{0, 1, 42}});
-        REQUIRE(g.size() == 2);
-    }
+  SECTION("single edge with value") {
+    using G = uod_int_void_void;
+    G g({{0, 1, 42}});
+    REQUIRE(g.size() == 2);
+  }
 
-    SECTION("multiple edges from same source") {
-        using G = uod_int_void_void;
-        G g({{0, 1, 10}, {0, 2, 20}, {0, 3, 30}});
-        REQUIRE(g.size() == 4);
-    }
+  SECTION("multiple edges from same source") {
+    using G = uod_int_void_void;
+    G g({{0, 1, 10}, {0, 2, 20}, {0, 3, 30}});
+    REQUIRE(g.size() == 4);
+  }
 
-    SECTION("triangle graph") {
-        using G = uod_void_void_void;
-        G g({{0, 1}, {1, 2}, {2, 0}});
-        REQUIRE(g.size() == 3);
-    }
+  SECTION("triangle graph") {
+    using G = uod_void_void_void;
+    G g({{0, 1}, {1, 2}, {2, 0}});
+    REQUIRE(g.size() == 3);
+  }
 
-    SECTION("self-loop") {
-        using G = uod_void_void_void;
-        G g({{0, 0}});
-        REQUIRE(g.size() == 1);
-    }
+  SECTION("self-loop") {
+    using G = uod_void_void_void;
+    G g({{0, 0}});
+    REQUIRE(g.size() == 1);
+  }
 
-    SECTION("parallel edges") {
-        using G = uod_int_void_void;
-        G g({{0, 1, 1}, {0, 1, 2}, {0, 1, 3}});
-        REQUIRE(g.size() == 2);
-    }
+  SECTION("parallel edges") {
+    using G = uod_int_void_void;
+    G g({{0, 1, 1}, {0, 1, 2}, {0, 1, 3}});
+    REQUIRE(g.size() == 2);
+  }
 
-    SECTION("sparse vertex IDs - only referenced vertices created") {
-        using G = uod_void_void_void;
-        G g({{100, 200}});
-        REQUIRE(g.size() == 2);
-        // With uod, only vertices 100 and 200 are created
-        // (unlike vector-based which would create 0..200)
-    }
+  SECTION("sparse vertex IDs - only referenced vertices created") {
+    using G = uod_void_void_void;
+    G g({{100, 200}});
+    REQUIRE(g.size() == 2);
+    // With uod, only vertices 100 and 200 are created
+    // (unlike vector-based which would create 0..200)
+  }
 
-    SECTION("star graph (center with many spokes)") {
-        using G = uod_int_void_void;
-        G g({{0, 1, 1}, {0, 2, 2}, {0, 3, 3}, {0, 4, 4}, {0, 5, 5}});
-        REQUIRE(g.size() == 6);
-    }
+  SECTION("star graph (center with many spokes)") {
+    using G = uod_int_void_void;
+    G g({{0, 1, 1}, {0, 2, 2}, {0, 3, 3}, {0, 4, 4}, {0, 5, 5}});
+    REQUIRE(g.size() == 6);
+  }
 
-    SECTION("complete graph K4") {
-        using G = uod_int_void_void;
-        G g({
-            {0, 1, 1}, {0, 2, 2}, {0, 3, 3},
-            {1, 0, 4}, {1, 2, 5}, {1, 3, 6},
-            {2, 0, 7}, {2, 1, 8}, {2, 3, 9},
-            {3, 0, 10}, {3, 1, 11}, {3, 2, 12}
-        });
-        REQUIRE(g.size() == 4);
-    }
+  SECTION("complete graph K4") {
+    using G = uod_int_void_void;
+    G g({{0, 1, 1},
+         {0, 2, 2},
+         {0, 3, 3},
+         {1, 0, 4},
+         {1, 2, 5},
+         {1, 3, 6},
+         {2, 0, 7},
+         {2, 1, 8},
+         {2, 3, 9},
+         {3, 0, 10},
+         {3, 1, 11},
+         {3, 2, 12}});
+    REQUIRE(g.size() == 4);
+  }
 
-    SECTION("construction with graph value") {
-        using G = uod_void_void_int;
-        G g(42, {{0, 1}, {1, 2}});
-        REQUIRE(g.graph_value() == 42);
-        REQUIRE(g.size() == 3);
-    }
+  SECTION("construction with graph value") {
+    using G = uod_void_void_int;
+    G g(42, {{0, 1}, {1, 2}});
+    REQUIRE(g.graph_value() == 42);
+    REQUIRE(g.size() == 3);
+  }
 }
 
 //==================================================================================================
@@ -397,35 +422,33 @@ TEST_CASE("uod initializer_list construction", "[dynamic_graph][uod][initializer
 //==================================================================================================
 
 TEST_CASE("uod initializer_list construction string IDs", "[dynamic_graph][uod][initializer_list][string]") {
-    SECTION("single edge with string IDs") {
-        using G = uod_str_void_void_void;
-        G g({{"alice", "bob"}});
-        REQUIRE(g.size() == 2);
-    }
+  SECTION("single edge with string IDs") {
+    using G = uod_str_void_void_void;
+    G g({{"alice", "bob"}});
+    REQUIRE(g.size() == 2);
+  }
 
-    SECTION("string IDs with edge values") {
-        using G = uod_str_int_void_void;
-        G g({{"alice", "bob", 10}, {"bob", "charlie", 20}});
-        REQUIRE(g.size() == 3);
-    }
+  SECTION("string IDs with edge values") {
+    using G = uod_str_int_void_void;
+    G g({{"alice", "bob", 10}, {"bob", "charlie", 20}});
+    REQUIRE(g.size() == 3);
+  }
 
-    SECTION("social network graph") {
-        using G = uod_str_int_void_void;
-        G g({
-            {"alice", "bob", 5},
-            {"alice", "charlie", 3},
-            {"bob", "charlie", 4},
-            {"bob", "dave", 2},
-            {"charlie", "eve", 5}
-        });
-        REQUIRE(g.size() == 5);
-    }
+  SECTION("social network graph") {
+    using G = uod_str_int_void_void;
+    G g({{"alice", "bob", 5},
+         {"alice", "charlie", 3},
+         {"bob", "charlie", 4},
+         {"bob", "dave", 2},
+         {"charlie", "eve", 5}});
+    REQUIRE(g.size() == 5);
+  }
 
-    SECTION("sourced edges with string IDs") {
-        using G = uod_str_sourced;
-        G g({{"alice", "bob"}, {"bob", "charlie"}});
-        REQUIRE(g.size() == 3);
-    }
+  SECTION("sourced edges with string IDs") {
+    using G = uod_str_sourced;
+    G g({{"alice", "bob"}, {"bob", "charlie"}});
+    REQUIRE(g.size() == 3);
+  }
 }
 
 //==================================================================================================
@@ -433,31 +456,31 @@ TEST_CASE("uod initializer_list construction string IDs", "[dynamic_graph][uod][
 //==================================================================================================
 
 TEST_CASE("uod graph value access", "[dynamic_graph][uod][graph_value]") {
-    SECTION("graph_value() returns reference") {
-        uod_void_void_int g(100);
-        REQUIRE(g.graph_value() == 100);
-        g.graph_value() = 200;
-        REQUIRE(g.graph_value() == 200);
-    }
+  SECTION("graph_value() returns reference") {
+    uod_void_void_int g(100);
+    REQUIRE(g.graph_value() == 100);
+    g.graph_value() = 200;
+    REQUIRE(g.graph_value() == 200);
+  }
 
-    SECTION("const graph_value()") {
-        const uod_void_void_int g(42);
-        REQUIRE(g.graph_value() == 42);
-    }
+  SECTION("const graph_value()") {
+    const uod_void_void_int g(42);
+    REQUIRE(g.graph_value() == 42);
+  }
 
-    SECTION("graph value preserved through copy") {
-        uod_void_void_int g1(100);
-        uod_void_void_int g2 = g1;
-        REQUIRE(g2.graph_value() == 100);
-        g2.graph_value() = 200;
-        REQUIRE(g1.graph_value() == 100); // g1 unchanged
-    }
+  SECTION("graph value preserved through copy") {
+    uod_void_void_int g1(100);
+    uod_void_void_int g2 = g1;
+    REQUIRE(g2.graph_value() == 100);
+    g2.graph_value() = 200;
+    REQUIRE(g1.graph_value() == 100); // g1 unchanged
+  }
 
-    SECTION("graph value preserved through move") {
-        uod_void_void_int g1(100);
-        uod_void_void_int g2 = std::move(g1);
-        REQUIRE(g2.graph_value() == 100);
-    }
+  SECTION("graph value preserved through move") {
+    uod_void_void_int g1(100);
+    uod_void_void_int g2 = std::move(g1);
+    REQUIRE(g2.graph_value() == 100);
+  }
 }
 
 //==================================================================================================
@@ -465,67 +488,67 @@ TEST_CASE("uod graph value access", "[dynamic_graph][uod][graph_value]") {
 //==================================================================================================
 
 TEST_CASE("uod graph iteration", "[dynamic_graph][uod][iteration]") {
-    SECTION("iterate over empty graph") {
-        uod_void_void_void g;
-        size_t count = 0;
-        for ([[maybe_unused]] auto& v : g) {
-            ++count;
-        }
-        REQUIRE(count == 0);
+  SECTION("iterate over empty graph") {
+    uod_void_void_void g;
+    size_t             count = 0;
+    for ([[maybe_unused]] auto& v : g) {
+      ++count;
+    }
+    REQUIRE(count == 0);
+  }
+
+  SECTION("iterate over graph with vertices") {
+    using G = uod_void_void_void;
+    G g({{0, 1}, {1, 2}});
+
+    size_t count = 0;
+    for ([[maybe_unused]] auto& v : g) {
+      ++count;
+    }
+    REQUIRE(count == 3);
+  }
+
+  SECTION("const iteration") {
+    using G = uod_void_void_void;
+    const G g({{0, 1}, {1, 2}});
+
+    size_t count = 0;
+    for ([[maybe_unused]] const auto& v : g) {
+      ++count;
+    }
+    REQUIRE(count == 3);
+  }
+
+  SECTION("iterate string key graph") {
+    using G = uod_str_void_void_void;
+    G g({{"alice", "bob"}, {"bob", "charlie"}});
+
+    size_t count = 0;
+    for ([[maybe_unused]] auto& v : g) {
+      ++count;
+    }
+    REQUIRE(count == 3);
+  }
+
+  SECTION("iteration order is unspecified (hash-based)") {
+    // Unlike mofl (map), uod does NOT iterate in key order
+    using G = uod_void_void_void;
+    G g({{5, 10}, {1, 2}, {3, 4}});
+
+    std::set<uint32_t> found_keys;
+    for (auto& v : g) {
+      found_keys.insert(v.first); // unordered_map iterator gives pair
     }
 
-    SECTION("iterate over graph with vertices") {
-        using G = uod_void_void_void;
-        G g({{0, 1}, {1, 2}});
-        
-        size_t count = 0;
-        for ([[maybe_unused]] auto& v : g) {
-            ++count;
-        }
-        REQUIRE(count == 3);
-    }
-
-    SECTION("const iteration") {
-        using G = uod_void_void_void;
-        const G g({{0, 1}, {1, 2}});
-        
-        size_t count = 0;
-        for ([[maybe_unused]] const auto& v : g) {
-            ++count;
-        }
-        REQUIRE(count == 3);
-    }
-
-    SECTION("iterate string key graph") {
-        using G = uod_str_void_void_void;
-        G g({{"alice", "bob"}, {"bob", "charlie"}});
-        
-        size_t count = 0;
-        for ([[maybe_unused]] auto& v : g) {
-            ++count;
-        }
-        REQUIRE(count == 3);
-    }
-
-    SECTION("iteration order is unspecified (hash-based)") {
-        // Unlike mofl (map), uod does NOT iterate in key order
-        using G = uod_void_void_void;
-        G g({{5, 10}, {1, 2}, {3, 4}});
-        
-        std::set<uint32_t> found_keys;
-        for (auto& v : g) {
-            found_keys.insert(v.first);  // unordered_map iterator gives pair
-        }
-        
-        // All keys should be found, but order is unspecified
-        REQUIRE(found_keys.size() == 6);
-        REQUIRE(found_keys.count(1) == 1);
-        REQUIRE(found_keys.count(2) == 1);
-        REQUIRE(found_keys.count(3) == 1);
-        REQUIRE(found_keys.count(4) == 1);
-        REQUIRE(found_keys.count(5) == 1);
-        REQUIRE(found_keys.count(10) == 1);
-    }
+    // All keys should be found, but order is unspecified
+    REQUIRE(found_keys.size() == 6);
+    REQUIRE(found_keys.count(1) == 1);
+    REQUIRE(found_keys.count(2) == 1);
+    REQUIRE(found_keys.count(3) == 1);
+    REQUIRE(found_keys.count(4) == 1);
+    REQUIRE(found_keys.count(5) == 1);
+    REQUIRE(found_keys.count(10) == 1);
+  }
 }
 
 //==================================================================================================
@@ -533,52 +556,52 @@ TEST_CASE("uod graph iteration", "[dynamic_graph][uod][iteration]") {
 //==================================================================================================
 
 TEST_CASE("uod edge cases", "[dynamic_graph][uod][edge_cases]") {
-    SECTION("graph with single vertex (self-loop)") {
-        using G = uod_void_void_void;
-        G g({{0, 0}});
-        REQUIRE(g.size() == 1);
-    }
+  SECTION("graph with single vertex (self-loop)") {
+    using G = uod_void_void_void;
+    G g({{0, 0}});
+    REQUIRE(g.size() == 1);
+  }
 
-    SECTION("clear() empties the graph") {
-        using G = uod_int_void_void;
-        G g({{0, 1, 10}, {1, 2, 20}});
-        REQUIRE(g.size() == 3);
-        g.clear();
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("clear() empties the graph") {
+    using G = uod_int_void_void;
+    G g({{0, 1, 10}, {1, 2, 20}});
+    REQUIRE(g.size() == 3);
+    g.clear();
+    REQUIRE(g.size() == 0);
+  }
 
-    SECTION("multiple clears are safe") {
-        using G = uod_void_void_void;
-        G g({{0, 1}});
-        g.clear();
-        g.clear();
-        g.clear();
-        REQUIRE(g.size() == 0);
-    }
+  SECTION("multiple clears are safe") {
+    using G = uod_void_void_void;
+    G g({{0, 1}});
+    g.clear();
+    g.clear();
+    g.clear();
+    REQUIRE(g.size() == 0);
+  }
 
-    SECTION("swap two graphs") {
-        using G = uod_void_void_int;
-        G g1(100, {{0, 1}});
-        G g2(200, {{1, 2}, {2, 3}});
-        
-        REQUIRE(g1.graph_value() == 100);
-        REQUIRE(g1.size() == 2);
-        REQUIRE(g2.graph_value() == 200);
-        REQUIRE(g2.size() == 3);
-        
-        std::swap(g1, g2);
-        
-        REQUIRE(g1.graph_value() == 200);
-        REQUIRE(g1.size() == 3);
-        REQUIRE(g2.graph_value() == 100);
-        REQUIRE(g2.size() == 2);
-    }
+  SECTION("swap two graphs") {
+    using G = uod_void_void_int;
+    G g1(100, {{0, 1}});
+    G g2(200, {{1, 2}, {2, 3}});
 
-    SECTION("large sparse vertex IDs") {
-        using G = uod_void_void_void;
-        G g({{1000000, 2000000}});
-        REQUIRE(g.size() == 2); // Only 2 vertices, not 2000001
-    }
+    REQUIRE(g1.graph_value() == 100);
+    REQUIRE(g1.size() == 2);
+    REQUIRE(g2.graph_value() == 200);
+    REQUIRE(g2.size() == 3);
+
+    std::swap(g1, g2);
+
+    REQUIRE(g1.graph_value() == 200);
+    REQUIRE(g1.size() == 3);
+    REQUIRE(g2.graph_value() == 100);
+    REQUIRE(g2.size() == 2);
+  }
+
+  SECTION("large sparse vertex IDs") {
+    using G = uod_void_void_void;
+    G g({{1000000, 2000000}});
+    REQUIRE(g.size() == 2); // Only 2 vertices, not 2000001
+  }
 }
 
 //==================================================================================================
@@ -586,24 +609,24 @@ TEST_CASE("uod edge cases", "[dynamic_graph][uod][edge_cases]") {
 //==================================================================================================
 
 TEST_CASE("uod const correctness", "[dynamic_graph][uod][const]") {
-    SECTION("const graph properties") {
-        using G = uod_int_void_void;
-        const G g({{0, 1, 10}, {1, 2, 20}});
-        
-        REQUIRE(g.size() == 3);
-        REQUIRE(g.begin() != g.end());
-    }
+  SECTION("const graph properties") {
+    using G = uod_int_void_void;
+    const G g({{0, 1, 10}, {1, 2, 20}});
 
-    SECTION("const graph iteration") {
-        using G = uod_int_void_void;
-        const G g({{0, 1, 10}, {1, 2, 20}});
-        
-        size_t count = 0;
-        for (auto it = g.cbegin(); it != g.cend(); ++it) {
-            ++count;
-        }
-        REQUIRE(count == 3);
+    REQUIRE(g.size() == 3);
+    REQUIRE(g.begin() != g.end());
+  }
+
+  SECTION("const graph iteration") {
+    using G = uod_int_void_void;
+    const G g({{0, 1, 10}, {1, 2, 20}});
+
+    size_t count = 0;
+    for (auto it = g.cbegin(); it != g.cend(); ++it) {
+      ++count;
     }
+    REQUIRE(count == 3);
+  }
 }
 
 //==================================================================================================
@@ -611,35 +634,35 @@ TEST_CASE("uod const correctness", "[dynamic_graph][uod][const]") {
 //==================================================================================================
 
 TEST_CASE("uod memory management", "[dynamic_graph][uod][memory]") {
-    SECTION("multiple independent graphs") {
-        using G = uod_void_void_int;
-        G g1(100, {{0, 1}});
-        G g2(200, {{1, 2}});
-        G g3(300, {{2, 3}});
-        
-        REQUIRE(g1.graph_value() == 100);
-        REQUIRE(g2.graph_value() == 200);
-        REQUIRE(g3.graph_value() == 300);
-    }
+  SECTION("multiple independent graphs") {
+    using G = uod_void_void_int;
+    G g1(100, {{0, 1}});
+    G g2(200, {{1, 2}});
+    G g3(300, {{2, 3}});
 
-    SECTION("copy does not alias") {
-        using G = uod_void_void_int;
-        G g1(100, {{0, 1}});
-        G g2 = g1;
-        
-        g2.graph_value() = 200;
-        REQUIRE(g1.graph_value() == 100);
-        REQUIRE(g2.graph_value() == 200);
-    }
+    REQUIRE(g1.graph_value() == 100);
+    REQUIRE(g2.graph_value() == 200);
+    REQUIRE(g3.graph_value() == 300);
+  }
 
-    SECTION("clear allows reuse") {
-        using G = uod_int_void_void;
-        G g({{0, 1, 10}, {1, 2, 20}, {2, 3, 30}});
-        REQUIRE(g.size() == 4);
-        g.clear();
-        REQUIRE(g.size() == 0);
-        REQUIRE(g.begin() == g.end());
-    }
+  SECTION("copy does not alias") {
+    using G = uod_void_void_int;
+    G g1(100, {{0, 1}});
+    G g2 = g1;
+
+    g2.graph_value() = 200;
+    REQUIRE(g1.graph_value() == 100);
+    REQUIRE(g2.graph_value() == 200);
+  }
+
+  SECTION("clear allows reuse") {
+    using G = uod_int_void_void;
+    G g({{0, 1, 10}, {1, 2, 20}, {2, 3, 30}});
+    REQUIRE(g.size() == 4);
+    g.clear();
+    REQUIRE(g.size() == 0);
+    REQUIRE(g.begin() == g.end());
+  }
 }
 
 //==================================================================================================
@@ -647,20 +670,20 @@ TEST_CASE("uod memory management", "[dynamic_graph][uod][memory]") {
 //==================================================================================================
 
 TEST_CASE("uod template instantiation", "[dynamic_graph][uod][compilation]") {
-    [[maybe_unused]] uod_void_void_void g1;
-    [[maybe_unused]] uod_int_void_void g2;
-    [[maybe_unused]] uod_void_int_void g3;
-    [[maybe_unused]] uod_int_int_void g4;
-    [[maybe_unused]] uod_void_void_int g5;
-    [[maybe_unused]] uod_int_int_int g6;
-    [[maybe_unused]] uod_sourced g7;
-    [[maybe_unused]] uod_int_sourced g8;
-    [[maybe_unused]] uod_str_void_void_void g9;
-    [[maybe_unused]] uod_str_int_void_void g10;
-    [[maybe_unused]] uod_str_int_int_int g11;
-    [[maybe_unused]] uod_str_sourced g12;
-    
-    REQUIRE(true);
+  [[maybe_unused]] uod_void_void_void     g1;
+  [[maybe_unused]] uod_int_void_void      g2;
+  [[maybe_unused]] uod_void_int_void      g3;
+  [[maybe_unused]] uod_int_int_void       g4;
+  [[maybe_unused]] uod_void_void_int      g5;
+  [[maybe_unused]] uod_int_int_int        g6;
+  [[maybe_unused]] uod_sourced            g7;
+  [[maybe_unused]] uod_int_sourced        g8;
+  [[maybe_unused]] uod_str_void_void_void g9;
+  [[maybe_unused]] uod_str_int_void_void  g10;
+  [[maybe_unused]] uod_str_int_int_int    g11;
+  [[maybe_unused]] uod_str_sourced        g12;
+
+  REQUIRE(true);
 }
 
 //==================================================================================================
@@ -668,28 +691,28 @@ TEST_CASE("uod template instantiation", "[dynamic_graph][uod][compilation]") {
 //==================================================================================================
 
 TEST_CASE("uod sparse vertex behavior", "[dynamic_graph][uod][sparse]") {
-    SECTION("only referenced vertices are created") {
-        using G = uod_void_void_void;
-        
-        // Edge from 10 to 20 - should only create 2 vertices
-        G g({{10, 20}});
-        REQUIRE(g.size() == 2);
-        
-        // Unlike vector-based graphs, no vertices 0-9 or 11-19 exist
-    }
+  SECTION("only referenced vertices are created") {
+    using G = uod_void_void_void;
 
-    SECTION("multiple sparse edges") {
-        using G = uod_void_void_void;
-        G g({{100, 200}, {300, 400}, {500, 600}});
-        REQUIRE(g.size() == 6);
-    }
+    // Edge from 10 to 20 - should only create 2 vertices
+    G g({{10, 20}});
+    REQUIRE(g.size() == 2);
 
-    SECTION("reverse order vertex creation") {
-        using G = uod_void_void_void;
-        // Higher ID to lower ID
-        G g({{100, 50}, {200, 25}});
-        REQUIRE(g.size() == 4);
-    }
+    // Unlike vector-based graphs, no vertices 0-9 or 11-19 exist
+  }
+
+  SECTION("multiple sparse edges") {
+    using G = uod_void_void_void;
+    G g({{100, 200}, {300, 400}, {500, 600}});
+    REQUIRE(g.size() == 6);
+  }
+
+  SECTION("reverse order vertex creation") {
+    using G = uod_void_void_void;
+    // Higher ID to lower ID
+    G g({{100, 50}, {200, 25}});
+    REQUIRE(g.size() == 4);
+  }
 }
 
 //==================================================================================================
@@ -697,176 +720,176 @@ TEST_CASE("uod sparse vertex behavior", "[dynamic_graph][uod][sparse]") {
 //==================================================================================================
 
 TEST_CASE("uod contains_vertex", "[dynamic_graph][uod][accessor][contains_vertex]") {
-    SECTION("uint32_t vertex IDs") {
-        using G = uod_void_void_void;
-        G g({{0, 1}, {1, 2}, {5, 10}});
-        
-        // Vertices that exist
-        REQUIRE(g.contains_vertex(0));
-        REQUIRE(g.contains_vertex(1));
-        REQUIRE(g.contains_vertex(2));
-        REQUIRE(g.contains_vertex(5));
-        REQUIRE(g.contains_vertex(10));
-        
-        // Vertices that don't exist (sparse - not like vector)
-        REQUIRE_FALSE(g.contains_vertex(3));
-        REQUIRE_FALSE(g.contains_vertex(4));
-        REQUIRE_FALSE(g.contains_vertex(6));
-        REQUIRE_FALSE(g.contains_vertex(100));
-    }
-    
-    SECTION("string vertex IDs") {
-        using G = uod_str_void_void_void;
-        G g({{"alice", "bob"}, {"bob", "charlie"}});
-        
-        REQUIRE(g.contains_vertex("alice"));
-        REQUIRE(g.contains_vertex("bob"));
-        REQUIRE(g.contains_vertex("charlie"));
-        
-        REQUIRE_FALSE(g.contains_vertex("david"));
-        REQUIRE_FALSE(g.contains_vertex(""));
-        REQUIRE_FALSE(g.contains_vertex("Alice")); // case sensitive
-    }
-    
-    SECTION("empty graph") {
-        using G = uod_void_void_void;
-        G g;
-        
-        REQUIRE_FALSE(g.contains_vertex(0));
-        REQUIRE_FALSE(g.contains_vertex(1));
-    }
-    
-    SECTION("const graph") {
-        using G = uod_void_void_void;
-        const G g({{0, 1}, {2, 3}});
-        
-        REQUIRE(g.contains_vertex(0));
-        REQUIRE(g.contains_vertex(1));
-        REQUIRE_FALSE(g.contains_vertex(5));
-    }
+  SECTION("uint32_t vertex IDs") {
+    using G = uod_void_void_void;
+    G g({{0, 1}, {1, 2}, {5, 10}});
+
+    // Vertices that exist
+    REQUIRE(g.contains_vertex(0));
+    REQUIRE(g.contains_vertex(1));
+    REQUIRE(g.contains_vertex(2));
+    REQUIRE(g.contains_vertex(5));
+    REQUIRE(g.contains_vertex(10));
+
+    // Vertices that don't exist (sparse - not like vector)
+    REQUIRE_FALSE(g.contains_vertex(3));
+    REQUIRE_FALSE(g.contains_vertex(4));
+    REQUIRE_FALSE(g.contains_vertex(6));
+    REQUIRE_FALSE(g.contains_vertex(100));
+  }
+
+  SECTION("string vertex IDs") {
+    using G = uod_str_void_void_void;
+    G g({{"alice", "bob"}, {"bob", "charlie"}});
+
+    REQUIRE(g.contains_vertex("alice"));
+    REQUIRE(g.contains_vertex("bob"));
+    REQUIRE(g.contains_vertex("charlie"));
+
+    REQUIRE_FALSE(g.contains_vertex("david"));
+    REQUIRE_FALSE(g.contains_vertex(""));
+    REQUIRE_FALSE(g.contains_vertex("Alice")); // case sensitive
+  }
+
+  SECTION("empty graph") {
+    using G = uod_void_void_void;
+    G g;
+
+    REQUIRE_FALSE(g.contains_vertex(0));
+    REQUIRE_FALSE(g.contains_vertex(1));
+  }
+
+  SECTION("const graph") {
+    using G = uod_void_void_void;
+    const G g({{0, 1}, {2, 3}});
+
+    REQUIRE(g.contains_vertex(0));
+    REQUIRE(g.contains_vertex(1));
+    REQUIRE_FALSE(g.contains_vertex(5));
+  }
 }
 
 TEST_CASE("uod try_find_vertex", "[dynamic_graph][uod][accessor][try_find_vertex]") {
-    SECTION("uint32_t vertex IDs - found") {
-        using G = uod_void_void_void;
-        G g({{0, 1}, {1, 2}, {5, 10}});
-        
-        auto it0 = g.try_find_vertex(0);
-        REQUIRE(it0 != g.end());
-        REQUIRE(it0->first == 0);  // unordered_map iterator gives key
-        
-        auto it5 = g.try_find_vertex(5);
-        REQUIRE(it5 != g.end());
-        REQUIRE(it5->first == 5);
-        
-        auto it10 = g.try_find_vertex(10);
-        REQUIRE(it10 != g.end());
-        REQUIRE(it10->first == 10);
-    }
-    
-    SECTION("uint32_t vertex IDs - not found") {
-        using G = uod_void_void_void;
-        G g({{0, 1}, {5, 10}});
-        
-        auto it3 = g.try_find_vertex(3);
-        REQUIRE(it3 == g.end());
-        
-        auto it100 = g.try_find_vertex(100);
-        REQUIRE(it100 == g.end());
-    }
-    
-    SECTION("string vertex IDs") {
-        using G = uod_str_void_void_void;
-        G g({{"alice", "bob"}, {"bob", "charlie"}});
-        
-        auto it_alice = g.try_find_vertex("alice");
-        REQUIRE(it_alice != g.end());
-        REQUIRE(it_alice->first == "alice");
-        
-        auto it_david = g.try_find_vertex("david");
-        REQUIRE(it_david == g.end());
-    }
-    
-    SECTION("does not modify container") {
-        using G = uod_void_void_void;
-        G g({{0, 1}});
-        REQUIRE(g.size() == 2);
-        
-        // Looking for non-existent vertex should NOT add it
-        auto it = g.try_find_vertex(999);
-        REQUIRE(it == g.end());
-        REQUIRE(g.size() == 2);  // Size unchanged - critical for safety
-    }
-    
-    SECTION("const graph") {
-        using G = uod_void_void_void;
-        const G g({{0, 1}, {2, 3}});
-        
-        auto it = g.try_find_vertex(0);
-        REQUIRE(it != g.end());
-        REQUIRE(it->first == 0);
-        
-        auto it_missing = g.try_find_vertex(99);
-        REQUIRE(it_missing == g.end());
-    }
+  SECTION("uint32_t vertex IDs - found") {
+    using G = uod_void_void_void;
+    G g({{0, 1}, {1, 2}, {5, 10}});
+
+    auto it0 = g.try_find_vertex(0);
+    REQUIRE(it0 != g.end());
+    REQUIRE(it0->first == 0); // unordered_map iterator gives key
+
+    auto it5 = g.try_find_vertex(5);
+    REQUIRE(it5 != g.end());
+    REQUIRE(it5->first == 5);
+
+    auto it10 = g.try_find_vertex(10);
+    REQUIRE(it10 != g.end());
+    REQUIRE(it10->first == 10);
+  }
+
+  SECTION("uint32_t vertex IDs - not found") {
+    using G = uod_void_void_void;
+    G g({{0, 1}, {5, 10}});
+
+    auto it3 = g.try_find_vertex(3);
+    REQUIRE(it3 == g.end());
+
+    auto it100 = g.try_find_vertex(100);
+    REQUIRE(it100 == g.end());
+  }
+
+  SECTION("string vertex IDs") {
+    using G = uod_str_void_void_void;
+    G g({{"alice", "bob"}, {"bob", "charlie"}});
+
+    auto it_alice = g.try_find_vertex("alice");
+    REQUIRE(it_alice != g.end());
+    REQUIRE(it_alice->first == "alice");
+
+    auto it_david = g.try_find_vertex("david");
+    REQUIRE(it_david == g.end());
+  }
+
+  SECTION("does not modify container") {
+    using G = uod_void_void_void;
+    G g({{0, 1}});
+    REQUIRE(g.size() == 2);
+
+    // Looking for non-existent vertex should NOT add it
+    auto it = g.try_find_vertex(999);
+    REQUIRE(it == g.end());
+    REQUIRE(g.size() == 2); // Size unchanged - critical for safety
+  }
+
+  SECTION("const graph") {
+    using G = uod_void_void_void;
+    const G g({{0, 1}, {2, 3}});
+
+    auto it = g.try_find_vertex(0);
+    REQUIRE(it != g.end());
+    REQUIRE(it->first == 0);
+
+    auto it_missing = g.try_find_vertex(99);
+    REQUIRE(it_missing == g.end());
+  }
 }
 
 TEST_CASE("uod vertex_at", "[dynamic_graph][uod][accessor][vertex_at]") {
-    SECTION("uint32_t vertex IDs - found") {
-        using G = uod_void_void_void;
-        G g({{0, 1}, {1, 2}});
-        
-        // Should not throw
-        REQUIRE_NOTHROW(g.vertex_at(0));
-        REQUIRE_NOTHROW(g.vertex_at(1));
-        REQUIRE_NOTHROW(g.vertex_at(2));
-    }
-    
-    SECTION("uint32_t vertex IDs - throws on not found") {
-        using G = uod_void_void_void;
-        G g({{0, 1}});
-        
-        REQUIRE_THROWS_AS(g.vertex_at(5), std::out_of_range);
-        REQUIRE_THROWS_AS(g.vertex_at(100), std::out_of_range);
-    }
-    
-    SECTION("string vertex IDs") {
-        using G = uod_str_void_void_void;
-        G g({{"alice", "bob"}});
-        
-        REQUIRE_NOTHROW(g.vertex_at("alice"));
-        REQUIRE_NOTHROW(g.vertex_at("bob"));
-        REQUIRE_THROWS_AS(g.vertex_at("charlie"), std::out_of_range);
-    }
-    
-    SECTION("modify vertex through vertex_at") {
-        using G = uod_void_int_void;  // has vertex value
-        G g({{0, 1}});
-        
-        g.vertex_at(0).value() = 42;
-        g.vertex_at(1).value() = 100;
-        
-        REQUIRE(g.vertex_at(0).value() == 42);
-        REQUIRE(g.vertex_at(1).value() == 100);
-    }
-    
-    SECTION("const graph") {
-        using G = uod_void_void_void;
-        const G g({{0, 1}, {2, 3}});
-        
-        REQUIRE_NOTHROW(g.vertex_at(0));
-        REQUIRE_THROWS_AS(g.vertex_at(99), std::out_of_range);
-    }
-    
-    SECTION("does not modify container") {
-        using G = uod_void_void_void;
-        G g({{0, 1}});
-        REQUIRE(g.size() == 2);
-        
-        // Accessing non-existent vertex throws but doesn't add
-        REQUIRE_THROWS(g.vertex_at(999));
-        REQUIRE(g.size() == 2);  // Size unchanged
-    }
+  SECTION("uint32_t vertex IDs - found") {
+    using G = uod_void_void_void;
+    G g({{0, 1}, {1, 2}});
+
+    // Should not throw
+    REQUIRE_NOTHROW(g.vertex_at(0));
+    REQUIRE_NOTHROW(g.vertex_at(1));
+    REQUIRE_NOTHROW(g.vertex_at(2));
+  }
+
+  SECTION("uint32_t vertex IDs - throws on not found") {
+    using G = uod_void_void_void;
+    G g({{0, 1}});
+
+    REQUIRE_THROWS_AS(g.vertex_at(5), std::out_of_range);
+    REQUIRE_THROWS_AS(g.vertex_at(100), std::out_of_range);
+  }
+
+  SECTION("string vertex IDs") {
+    using G = uod_str_void_void_void;
+    G g({{"alice", "bob"}});
+
+    REQUIRE_NOTHROW(g.vertex_at("alice"));
+    REQUIRE_NOTHROW(g.vertex_at("bob"));
+    REQUIRE_THROWS_AS(g.vertex_at("charlie"), std::out_of_range);
+  }
+
+  SECTION("modify vertex through vertex_at") {
+    using G = uod_void_int_void; // has vertex value
+    G g({{0, 1}});
+
+    g.vertex_at(0).value() = 42;
+    g.vertex_at(1).value() = 100;
+
+    REQUIRE(g.vertex_at(0).value() == 42);
+    REQUIRE(g.vertex_at(1).value() == 100);
+  }
+
+  SECTION("const graph") {
+    using G = uod_void_void_void;
+    const G g({{0, 1}, {2, 3}});
+
+    REQUIRE_NOTHROW(g.vertex_at(0));
+    REQUIRE_THROWS_AS(g.vertex_at(99), std::out_of_range);
+  }
+
+  SECTION("does not modify container") {
+    using G = uod_void_void_void;
+    G g({{0, 1}});
+    REQUIRE(g.size() == 2);
+
+    // Accessing non-existent vertex throws but doesn't add
+    REQUIRE_THROWS(g.vertex_at(999));
+    REQUIRE(g.size() == 2); // Size unchanged
+  }
 }
 
 //==================================================================================================
@@ -874,110 +897,108 @@ TEST_CASE("uod vertex_at", "[dynamic_graph][uod][accessor][vertex_at]") {
 //==================================================================================================
 
 TEST_CASE("uod load_vertices", "[dynamic_graph][uod][load_vertices]") {
-    SECTION("uint32_t IDs - basic load") {
-        using G = uod_void_int_void;  // vertex value = int
-        using vertex_data = copyable_vertex_t<uint32_t, int>;
-        
-        G g({{0, 1}, {1, 2}});  // Create graph with edges
-        REQUIRE(g.size() == 3);
-        
-        // Load vertex values
-        std::deque<vertex_data> vv = {{0, 100}, {1, 200}, {2, 300}};
-        g.load_vertices(vv, std::identity{});
-        
-        REQUIRE(g.vertex_at(0).value() == 100);
-        REQUIRE(g.vertex_at(1).value() == 200);
-        REQUIRE(g.vertex_at(2).value() == 300);
-    }
-    
-    SECTION("uint32_t IDs - load creates new vertices") {
-        using G = uod_void_int_void;
-        using vertex_data = copyable_vertex_t<uint32_t, int>;
-        
-        G g;  // Empty graph
-        REQUIRE(g.size() == 0);
-        
-        // Load should auto-insert vertices for associative containers
-        std::deque<vertex_data> vv = {{10, 100}, {20, 200}, {30, 300}};
-        g.load_vertices(vv, std::identity{});
-        
-        REQUIRE(g.size() == 3);
-        REQUIRE(g.vertex_at(10).value() == 100);
-        REQUIRE(g.vertex_at(20).value() == 200);
-        REQUIRE(g.vertex_at(30).value() == 300);
-    }
-    
-    SECTION("string IDs - basic load") {
-        using G = uod_str_void_int_void;  // string keys, vertex value = int
-        using vertex_data = copyable_vertex_t<std::string, int>;
-        
-        G g({{"alice", "bob"}});
-        REQUIRE(g.size() == 2);
-        
-        std::deque<vertex_data> vv = {{"alice", 100}, {"bob", 200}};
-        g.load_vertices(vv, std::identity{});
-        
-        REQUIRE(g.vertex_at("alice").value() == 100);
-        REQUIRE(g.vertex_at("bob").value() == 200);
-    }
-    
-    SECTION("string IDs - load creates new vertices") {
-        using G = uod_str_void_int_void;
-        using vertex_data = copyable_vertex_t<std::string, int>;
-        
-        G g;  // Empty graph
-        REQUIRE(g.size() == 0);
-        
-        std::deque<vertex_data> vv = {{"alice", 100}, {"bob", 200}, {"charlie", 300}};
-        g.load_vertices(vv, std::identity{});
-        
-        REQUIRE(g.size() == 3);
-        REQUIRE(g.vertex_at("alice").value() == 100);
-        REQUIRE(g.vertex_at("bob").value() == 200);
-        REQUIRE(g.vertex_at("charlie").value() == 300);
-    }
-    
-    SECTION("overwrite existing vertex values") {
-        using G = uod_void_int_void;
-        using vertex_data = copyable_vertex_t<uint32_t, int>;
-        
-        G g({{0, 1}});
-        
-        // First load
-        std::deque<vertex_data> vv1 = {{0, 100}, {1, 200}};
-        g.load_vertices(vv1, std::identity{});
-        REQUIRE(g.vertex_at(0).value() == 100);
-        REQUIRE(g.vertex_at(1).value() == 200);
-        
-        // Second load overwrites
-        std::deque<vertex_data> vv2 = {{0, 999}, {1, 888}};
-        g.load_vertices(vv2, std::identity{});
-        REQUIRE(g.vertex_at(0).value() == 999);
-        REQUIRE(g.vertex_at(1).value() == 888);
-    }
-    
-    SECTION("with projection function") {
-        using G = uod_void_int_void;
-        using vertex_data = copyable_vertex_t<uint32_t, int>;
-        
-        struct Person {
-            uint32_t id;
-            std::string name;
-            int age;
-        };
-        
-        G g;
-        std::deque<Person> people = {{1, "Alice", 30}, {2, "Bob", 25}, {3, "Charlie", 35}};
-        
-        g.load_vertices(people, [](const Person& p) -> vertex_data {
-            return {p.id, p.age};
-        });
-        
-        REQUIRE(g.size() == 3);
-        REQUIRE(g.vertex_at(1).value() == 30);
-        REQUIRE(g.vertex_at(2).value() == 25);
-        REQUIRE(g.vertex_at(3).value() == 35);
-    }
+  SECTION("uint32_t IDs - basic load") {
+    using G           = uod_void_int_void; // vertex value = int
+    using vertex_data = copyable_vertex_t<uint32_t, int>;
+
+    G g({{0, 1}, {1, 2}}); // Create graph with edges
+    REQUIRE(g.size() == 3);
+
+    // Load vertex values
+    std::deque<vertex_data> vv = {{0, 100}, {1, 200}, {2, 300}};
+    g.load_vertices(vv, std::identity{});
+
+    REQUIRE(g.vertex_at(0).value() == 100);
+    REQUIRE(g.vertex_at(1).value() == 200);
+    REQUIRE(g.vertex_at(2).value() == 300);
+  }
+
+  SECTION("uint32_t IDs - load creates new vertices") {
+    using G           = uod_void_int_void;
+    using vertex_data = copyable_vertex_t<uint32_t, int>;
+
+    G g; // Empty graph
+    REQUIRE(g.size() == 0);
+
+    // Load should auto-insert vertices for associative containers
+    std::deque<vertex_data> vv = {{10, 100}, {20, 200}, {30, 300}};
+    g.load_vertices(vv, std::identity{});
+
+    REQUIRE(g.size() == 3);
+    REQUIRE(g.vertex_at(10).value() == 100);
+    REQUIRE(g.vertex_at(20).value() == 200);
+    REQUIRE(g.vertex_at(30).value() == 300);
+  }
+
+  SECTION("string IDs - basic load") {
+    using G           = uod_str_void_int_void; // string keys, vertex value = int
+    using vertex_data = copyable_vertex_t<std::string, int>;
+
+    G g({{"alice", "bob"}});
+    REQUIRE(g.size() == 2);
+
+    std::deque<vertex_data> vv = {{"alice", 100}, {"bob", 200}};
+    g.load_vertices(vv, std::identity{});
+
+    REQUIRE(g.vertex_at("alice").value() == 100);
+    REQUIRE(g.vertex_at("bob").value() == 200);
+  }
+
+  SECTION("string IDs - load creates new vertices") {
+    using G           = uod_str_void_int_void;
+    using vertex_data = copyable_vertex_t<std::string, int>;
+
+    G g; // Empty graph
+    REQUIRE(g.size() == 0);
+
+    std::deque<vertex_data> vv = {{"alice", 100}, {"bob", 200}, {"charlie", 300}};
+    g.load_vertices(vv, std::identity{});
+
+    REQUIRE(g.size() == 3);
+    REQUIRE(g.vertex_at("alice").value() == 100);
+    REQUIRE(g.vertex_at("bob").value() == 200);
+    REQUIRE(g.vertex_at("charlie").value() == 300);
+  }
+
+  SECTION("overwrite existing vertex values") {
+    using G           = uod_void_int_void;
+    using vertex_data = copyable_vertex_t<uint32_t, int>;
+
+    G g({{0, 1}});
+
+    // First load
+    std::deque<vertex_data> vv1 = {{0, 100}, {1, 200}};
+    g.load_vertices(vv1, std::identity{});
+    REQUIRE(g.vertex_at(0).value() == 100);
+    REQUIRE(g.vertex_at(1).value() == 200);
+
+    // Second load overwrites
+    std::deque<vertex_data> vv2 = {{0, 999}, {1, 888}};
+    g.load_vertices(vv2, std::identity{});
+    REQUIRE(g.vertex_at(0).value() == 999);
+    REQUIRE(g.vertex_at(1).value() == 888);
+  }
+
+  SECTION("with projection function") {
+    using G           = uod_void_int_void;
+    using vertex_data = copyable_vertex_t<uint32_t, int>;
+
+    struct Person {
+      uint32_t    id;
+      std::string name;
+      int         age;
+    };
+
+    G                  g;
+    std::deque<Person> people = {{1, "Alice", 30}, {2, "Bob", 25}, {3, "Charlie", 35}};
+
+    g.load_vertices(people, [](const Person& p) -> vertex_data { return {p.id, p.age}; });
+
+    REQUIRE(g.size() == 3);
+    REQUIRE(g.vertex_at(1).value() == 30);
+    REQUIRE(g.vertex_at(2).value() == 25);
+    REQUIRE(g.vertex_at(3).value() == 35);
+  }
 }
 
 //==================================================================================================
@@ -985,91 +1006,85 @@ TEST_CASE("uod load_vertices", "[dynamic_graph][uod][load_vertices]") {
 //==================================================================================================
 
 TEST_CASE("uod load_edges explicit", "[dynamic_graph][uod][load_edges]") {
-    SECTION("uint32_t IDs - basic load") {
-        using G = uod_int_void_void;  // edge value = int
-        using edge_data = copyable_edge_t<uint32_t, int>;
-        
-        G g;
-        REQUIRE(g.size() == 0);
-        
-        std::deque<edge_data> ee = {{0, 1, 10}, {1, 2, 20}, {2, 3, 30}};
-        g.load_edges(ee, std::identity{});
-        
-        REQUIRE(g.size() == 4);  // Vertices 0, 1, 2, 3 auto-created
-    }
-    
-    SECTION("uint32_t IDs - sparse vertex creation") {
-        using G = uod_void_void_void;
-        using edge_data = copyable_edge_t<uint32_t, void>;
-        
-        G g;
-        
-        // Edges with sparse IDs
-        std::deque<edge_data> ee = {{100, 200}, {300, 400}};
-        g.load_edges(ee, std::identity{});
-        
-        REQUIRE(g.size() == 4);  // Only 4 vertices, not 401
-        REQUIRE(g.contains_vertex(100));
-        REQUIRE(g.contains_vertex(200));
-        REQUIRE(g.contains_vertex(300));
-        REQUIRE(g.contains_vertex(400));
-        REQUIRE_FALSE(g.contains_vertex(0));
-        REQUIRE_FALSE(g.contains_vertex(150));
-    }
-    
-    SECTION("string IDs - basic load") {
-        using G = uod_str_int_void_void;  // string keys, edge value = int
-        using edge_data = copyable_edge_t<std::string, int>;
-        
-        G g;
-        
-        std::deque<edge_data> ee = {{"alice", "bob", 10}, {"bob", "charlie", 20}};
-        g.load_edges(ee, std::identity{});
-        
-        REQUIRE(g.size() == 3);
-        REQUIRE(g.contains_vertex("alice"));
-        REQUIRE(g.contains_vertex("bob"));
-        REQUIRE(g.contains_vertex("charlie"));
-    }
-    
-    SECTION("append edges to existing graph") {
-        using G = uod_int_void_void;
-        using edge_data = copyable_edge_t<uint32_t, int>;
-        
-        G g({{0, 1, 10}});
-        REQUIRE(g.size() == 2);
-        
-        // Add more edges
-        std::deque<edge_data> ee = {{1, 2, 20}, {2, 3, 30}};
-        g.load_edges(ee, std::identity{});
-        
-        REQUIRE(g.size() == 4);  // New vertices created
-    }
-    
-    SECTION("with projection function") {
-        using G = uod_int_void_void;
-        using edge_data = copyable_edge_t<uint32_t, int>;
-        
-        struct Connection {
-            uint32_t from;
-            uint32_t to;
-            std::string label;
-            int weight;
-        };
-        
-        G g;
-        std::deque<Connection> connections = {
-            {1, 2, "friend", 5},
-            {2, 3, "colleague", 3},
-            {3, 1, "family", 10}
-        };
-        
-        g.load_edges(connections, [](const Connection& c) -> edge_data {
-            return {c.from, c.to, c.weight};
-        });
-        
-        REQUIRE(g.size() == 3);
-    }
+  SECTION("uint32_t IDs - basic load") {
+    using G         = uod_int_void_void; // edge value = int
+    using edge_data = copyable_edge_t<uint32_t, int>;
+
+    G g;
+    REQUIRE(g.size() == 0);
+
+    std::deque<edge_data> ee = {{0, 1, 10}, {1, 2, 20}, {2, 3, 30}};
+    g.load_edges(ee, std::identity{});
+
+    REQUIRE(g.size() == 4); // Vertices 0, 1, 2, 3 auto-created
+  }
+
+  SECTION("uint32_t IDs - sparse vertex creation") {
+    using G         = uod_void_void_void;
+    using edge_data = copyable_edge_t<uint32_t, void>;
+
+    G g;
+
+    // Edges with sparse IDs
+    std::deque<edge_data> ee = {{100, 200}, {300, 400}};
+    g.load_edges(ee, std::identity{});
+
+    REQUIRE(g.size() == 4); // Only 4 vertices, not 401
+    REQUIRE(g.contains_vertex(100));
+    REQUIRE(g.contains_vertex(200));
+    REQUIRE(g.contains_vertex(300));
+    REQUIRE(g.contains_vertex(400));
+    REQUIRE_FALSE(g.contains_vertex(0));
+    REQUIRE_FALSE(g.contains_vertex(150));
+  }
+
+  SECTION("string IDs - basic load") {
+    using G         = uod_str_int_void_void; // string keys, edge value = int
+    using edge_data = copyable_edge_t<std::string, int>;
+
+    G g;
+
+    std::deque<edge_data> ee = {{"alice", "bob", 10}, {"bob", "charlie", 20}};
+    g.load_edges(ee, std::identity{});
+
+    REQUIRE(g.size() == 3);
+    REQUIRE(g.contains_vertex("alice"));
+    REQUIRE(g.contains_vertex("bob"));
+    REQUIRE(g.contains_vertex("charlie"));
+  }
+
+  SECTION("append edges to existing graph") {
+    using G         = uod_int_void_void;
+    using edge_data = copyable_edge_t<uint32_t, int>;
+
+    G g({{0, 1, 10}});
+    REQUIRE(g.size() == 2);
+
+    // Add more edges
+    std::deque<edge_data> ee = {{1, 2, 20}, {2, 3, 30}};
+    g.load_edges(ee, std::identity{});
+
+    REQUIRE(g.size() == 4); // New vertices created
+  }
+
+  SECTION("with projection function") {
+    using G         = uod_int_void_void;
+    using edge_data = copyable_edge_t<uint32_t, int>;
+
+    struct Connection {
+      uint32_t    from;
+      uint32_t    to;
+      std::string label;
+      int         weight;
+    };
+
+    G                      g;
+    std::deque<Connection> connections = {{1, 2, "friend", 5}, {2, 3, "colleague", 3}, {3, 1, "family", 10}};
+
+    g.load_edges(connections, [](const Connection& c) -> edge_data { return {c.from, c.to, c.weight}; });
+
+    REQUIRE(g.size() == 3);
+  }
 }
 
 //==================================================================================================
@@ -1077,66 +1092,66 @@ TEST_CASE("uod load_edges explicit", "[dynamic_graph][uod][load_edges]") {
 //==================================================================================================
 
 TEST_CASE("uod load_vertices and load_edges combined", "[dynamic_graph][uod][load]") {
-    SECTION("load edges then vertices") {
-        using G = uod_int_int_void;  // edge value = int, vertex value = int
-        using vertex_data = copyable_vertex_t<uint32_t, int>;
-        using edge_data = copyable_edge_t<uint32_t, int>;
-        
-        G g;
-        
-        // First load edges (creates vertices with default values)
-        std::deque<edge_data> ee = {{0, 1, 10}, {1, 2, 20}};
-        g.load_edges(ee, std::identity{});
-        REQUIRE(g.size() == 3);
-        
-        // Then load vertex values
-        std::deque<vertex_data> vv = {{0, 100}, {1, 200}, {2, 300}};
-        g.load_vertices(vv, std::identity{});
-        
-        REQUIRE(g.vertex_at(0).value() == 100);
-        REQUIRE(g.vertex_at(1).value() == 200);
-        REQUIRE(g.vertex_at(2).value() == 300);
-    }
-    
-    SECTION("load vertices then edges") {
-        using G = uod_int_int_void;
-        using vertex_data = copyable_vertex_t<uint32_t, int>;
-        using edge_data = copyable_edge_t<uint32_t, int>;
-        
-        G g;
-        
-        // First load vertices
-        std::deque<vertex_data> vv = {{0, 100}, {1, 200}, {2, 300}};
-        g.load_vertices(vv, std::identity{});
-        REQUIRE(g.size() == 3);
-        
-        // Then load edges
-        std::deque<edge_data> ee = {{0, 1, 10}, {1, 2, 20}};
-        g.load_edges(ee, std::identity{});
-        
-        REQUIRE(g.size() == 3);  // No new vertices added
-        REQUIRE(g.vertex_at(0).value() == 100);  // Values preserved
-    }
-    
-    SECTION("string IDs - combined loading") {
-        using G = uod_str_int_int_int;  // all values are int
-        using vertex_data = copyable_vertex_t<std::string, int>;
-        using edge_data = copyable_edge_t<std::string, int>;
-        
-        G g(42);  // graph value = 42
-        
-        std::deque<edge_data> ee = {{"alice", "bob", 5}, {"bob", "charlie", 3}};
-        g.load_edges(ee, std::identity{});
-        
-        std::deque<vertex_data> vv = {{"alice", 30}, {"bob", 25}, {"charlie", 35}};
-        g.load_vertices(vv, std::identity{});
-        
-        REQUIRE(g.graph_value() == 42);
-        REQUIRE(g.size() == 3);
-        REQUIRE(g.vertex_at("alice").value() == 30);
-        REQUIRE(g.vertex_at("bob").value() == 25);
-        REQUIRE(g.vertex_at("charlie").value() == 35);
-    }
+  SECTION("load edges then vertices") {
+    using G           = uod_int_int_void; // edge value = int, vertex value = int
+    using vertex_data = copyable_vertex_t<uint32_t, int>;
+    using edge_data   = copyable_edge_t<uint32_t, int>;
+
+    G g;
+
+    // First load edges (creates vertices with default values)
+    std::deque<edge_data> ee = {{0, 1, 10}, {1, 2, 20}};
+    g.load_edges(ee, std::identity{});
+    REQUIRE(g.size() == 3);
+
+    // Then load vertex values
+    std::deque<vertex_data> vv = {{0, 100}, {1, 200}, {2, 300}};
+    g.load_vertices(vv, std::identity{});
+
+    REQUIRE(g.vertex_at(0).value() == 100);
+    REQUIRE(g.vertex_at(1).value() == 200);
+    REQUIRE(g.vertex_at(2).value() == 300);
+  }
+
+  SECTION("load vertices then edges") {
+    using G           = uod_int_int_void;
+    using vertex_data = copyable_vertex_t<uint32_t, int>;
+    using edge_data   = copyable_edge_t<uint32_t, int>;
+
+    G g;
+
+    // First load vertices
+    std::deque<vertex_data> vv = {{0, 100}, {1, 200}, {2, 300}};
+    g.load_vertices(vv, std::identity{});
+    REQUIRE(g.size() == 3);
+
+    // Then load edges
+    std::deque<edge_data> ee = {{0, 1, 10}, {1, 2, 20}};
+    g.load_edges(ee, std::identity{});
+
+    REQUIRE(g.size() == 3);                 // No new vertices added
+    REQUIRE(g.vertex_at(0).value() == 100); // Values preserved
+  }
+
+  SECTION("string IDs - combined loading") {
+    using G           = uod_str_int_int_int; // all values are int
+    using vertex_data = copyable_vertex_t<std::string, int>;
+    using edge_data   = copyable_edge_t<std::string, int>;
+
+    G g(42); // graph value = 42
+
+    std::deque<edge_data> ee = {{"alice", "bob", 5}, {"bob", "charlie", 3}};
+    g.load_edges(ee, std::identity{});
+
+    std::deque<vertex_data> vv = {{"alice", 30}, {"bob", 25}, {"charlie", 35}};
+    g.load_vertices(vv, std::identity{});
+
+    REQUIRE(g.graph_value() == 42);
+    REQUIRE(g.size() == 3);
+    REQUIRE(g.vertex_at("alice").value() == 30);
+    REQUIRE(g.vertex_at("bob").value() == 25);
+    REQUIRE(g.vertex_at("charlie").value() == 35);
+  }
 }
 
 //==================================================================================================
@@ -1144,46 +1159,46 @@ TEST_CASE("uod load_vertices and load_edges combined", "[dynamic_graph][uod][loa
 //==================================================================================================
 
 TEST_CASE("uod hash-specific behavior", "[dynamic_graph][uod][hash]") {
-    SECTION("O(1) average lookup") {
-        // This is a property test - unordered_map should have O(1) average lookup
-        using G = uod_void_void_void;
-        G g({{0, 1}, {100, 200}, {1000, 2000}});
-        
-        // All lookups should work regardless of key value
-        REQUIRE(g.contains_vertex(0));
-        REQUIRE(g.contains_vertex(100));
-        REQUIRE(g.contains_vertex(1000));
-        REQUIRE(g.contains_vertex(2000));
-    }
-    
-    SECTION("unordered_map underlying storage") {
-        using G = uod_void_void_void;
-        G g({{0, 1}, {1, 2}});
-        
-        // With unordered_map, vertex access is O(1) average case
-        // We verify the hash-based behavior through the contains_vertex function
-        REQUIRE(g.contains_vertex(0));
-        REQUIRE(g.contains_vertex(1));
-        REQUIRE(g.contains_vertex(2));
-        REQUIRE_FALSE(g.contains_vertex(999));
-    }
-    
-    SECTION("large sparse IDs work efficiently") {
-        using G = uod_void_void_void;
-        // With hash-based storage, large sparse IDs don't cause memory bloat
-        G g({{1000000, 2000000}, {3000000, 4000000}});
-        
-        REQUIRE(g.size() == 4);
-        REQUIRE(g.contains_vertex(1000000));
-        REQUIRE(g.contains_vertex(4000000));
-    }
+  SECTION("O(1) average lookup") {
+    // This is a property test - unordered_map should have O(1) average lookup
+    using G = uod_void_void_void;
+    G g({{0, 1}, {100, 200}, {1000, 2000}});
+
+    // All lookups should work regardless of key value
+    REQUIRE(g.contains_vertex(0));
+    REQUIRE(g.contains_vertex(100));
+    REQUIRE(g.contains_vertex(1000));
+    REQUIRE(g.contains_vertex(2000));
+  }
+
+  SECTION("unordered_map underlying storage") {
+    using G = uod_void_void_void;
+    G g({{0, 1}, {1, 2}});
+
+    // With unordered_map, vertex access is O(1) average case
+    // We verify the hash-based behavior through the contains_vertex function
+    REQUIRE(g.contains_vertex(0));
+    REQUIRE(g.contains_vertex(1));
+    REQUIRE(g.contains_vertex(2));
+    REQUIRE_FALSE(g.contains_vertex(999));
+  }
+
+  SECTION("large sparse IDs work efficiently") {
+    using G = uod_void_void_void;
+    // With hash-based storage, large sparse IDs don't cause memory bloat
+    G g({{1000000, 2000000}, {3000000, 4000000}});
+
+    REQUIRE(g.size() == 4);
+    REQUIRE(g.contains_vertex(1000000));
+    REQUIRE(g.contains_vertex(4000000));
+  }
 }
 
 //==================================================================================================
 // Summary: Phase 3.1h uod_graph_traits Tests
 //
 // This file tests uod_graph_traits (unordered_map vertices + list edges).
-// 
+//
 // Key behaviors being tested:
 // - Unordered_map provides hash-based storage (O(1) average lookup)
 // - Unordered iteration - vertices do NOT iterate in key order

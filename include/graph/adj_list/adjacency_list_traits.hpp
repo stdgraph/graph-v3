@@ -21,18 +21,18 @@ namespace graph::adj_list {
 // =============================================================================
 
 namespace detail {
-    // Helper to detect if degree(g, u) is valid
-    template<typename G>
-    concept has_degree_impl = requires(G& g, vertex_t<G> u) {
-        { degree(g, u) } -> std::integral;
-    };
-    
-    // Helper to detect if degree(g, uid) is valid
-    template<typename G>
-    concept has_degree_uid_impl = requires(G& g, vertex_id_t<G> uid) {
-        { degree(g, uid) } -> std::integral;
-    };
-}
+  // Helper to detect if degree(g, u) is valid
+  template <typename G>
+  concept has_degree_impl = requires(G& g, vertex_t<G> u) {
+    { degree(g, u) } -> std::integral;
+  };
+
+  // Helper to detect if degree(g, uid) is valid
+  template <typename G>
+  concept has_degree_uid_impl = requires(G& g, vertex_id_t<G> uid) {
+    { degree(g, uid) } -> std::integral;
+  };
+} // namespace detail
 
 /**
  * @brief Trait to check if a graph supports degree operations
@@ -45,11 +45,11 @@ namespace detail {
  * 
  * @tparam G Graph type
  */
-template<typename G>
+template <typename G>
 concept has_degree = detail::has_degree_impl<G> && detail::has_degree_uid_impl<G>;
 
 // Convenience variable template
-template<typename G>
+template <typename G>
 inline constexpr bool has_degree_v = has_degree<G>;
 
 // =============================================================================
@@ -57,12 +57,12 @@ inline constexpr bool has_degree_v = has_degree<G>;
 // =============================================================================
 
 namespace detail {
-    // Helper to detect if find_vertex(g, uid) is valid and returns correct type
-    template<typename G>
-    concept has_find_vertex_impl = requires(G& g, vertex_id_t<G> uid) {
-        { find_vertex(g, uid) } -> std::same_as<vertex_t<G>>;
-    };
-}
+  // Helper to detect if find_vertex(g, uid) is valid and returns correct type
+  template <typename G>
+  concept has_find_vertex_impl = requires(G& g, vertex_id_t<G> uid) {
+    { find_vertex(g, uid) } -> std::same_as<vertex_t<G>>;
+  };
+} // namespace detail
 
 /**
  * @brief Trait to check if a graph supports find_vertex operation
@@ -74,11 +74,11 @@ namespace detail {
  * 
  * @tparam G Graph type
  */
-template<typename G>
+template <typename G>
 concept has_find_vertex = detail::has_find_vertex_impl<G>;
 
 // Convenience variable template
-template<typename G>
+template <typename G>
 inline constexpr bool has_find_vertex_v = has_find_vertex<G>;
 
 // =============================================================================
@@ -86,24 +86,24 @@ inline constexpr bool has_find_vertex_v = has_find_vertex<G>;
 // =============================================================================
 
 namespace detail {
-    // Helper to detect if find_vertex_edge(g, u, v) is valid
-    template<typename G>
-    concept has_find_vertex_edge_uv_impl = requires(G& g, vertex_t<G> u, vertex_t<G> v) {
-        { find_vertex_edge(g, u, v) } -> std::same_as<edge_t<G>>;
-    };
-    
-    // Helper to detect if find_vertex_edge(g, u, vid) is valid
-    template<typename G>
-    concept has_find_vertex_edge_uvid_impl = requires(G& g, vertex_t<G> u, vertex_id_t<G> vid) {
-        { find_vertex_edge(g, u, vid) } -> std::same_as<edge_t<G>>;
-    };
-    
-    // Helper to detect if find_vertex_edge(g, uid, vid) is valid
-    template<typename G>
-    concept has_find_vertex_edge_uidvid_impl = requires(G& g, vertex_id_t<G> uid, vertex_id_t<G> vid) {
-        { find_vertex_edge(g, uid, vid) } -> std::same_as<edge_t<G>>;
-    };
-}
+  // Helper to detect if find_vertex_edge(g, u, v) is valid
+  template <typename G>
+  concept has_find_vertex_edge_uv_impl = requires(G& g, vertex_t<G> u, vertex_t<G> v) {
+    { find_vertex_edge(g, u, v) } -> std::same_as<edge_t<G>>;
+  };
+
+  // Helper to detect if find_vertex_edge(g, u, vid) is valid
+  template <typename G>
+  concept has_find_vertex_edge_uvid_impl = requires(G& g, vertex_t<G> u, vertex_id_t<G> vid) {
+    { find_vertex_edge(g, u, vid) } -> std::same_as<edge_t<G>>;
+  };
+
+  // Helper to detect if find_vertex_edge(g, uid, vid) is valid
+  template <typename G>
+  concept has_find_vertex_edge_uidvid_impl = requires(G& g, vertex_id_t<G> uid, vertex_id_t<G> vid) {
+    { find_vertex_edge(g, uid, vid) } -> std::same_as<edge_t<G>>;
+  };
+} // namespace detail
 
 /**
  * @brief Trait to check if a graph supports find_vertex_edge operations
@@ -118,14 +118,12 @@ namespace detail {
  * 
  * @tparam G Graph type
  */
-template<typename G>
-concept has_find_vertex_edge = 
-    detail::has_find_vertex_edge_uv_impl<G> && 
-    detail::has_find_vertex_edge_uvid_impl<G> && 
-    detail::has_find_vertex_edge_uidvid_impl<G>;
+template <typename G>
+concept has_find_vertex_edge = detail::has_find_vertex_edge_uv_impl<G> && detail::has_find_vertex_edge_uvid_impl<G> &&
+                               detail::has_find_vertex_edge_uidvid_impl<G>;
 
 // Convenience variable template
-template<typename G>
+template <typename G>
 inline constexpr bool has_find_vertex_edge_v = has_find_vertex_edge<G>;
 
 // =============================================================================
@@ -133,20 +131,19 @@ inline constexpr bool has_find_vertex_edge_v = has_find_vertex_edge<G>;
 // =============================================================================
 
 namespace detail {
-    // Helper to detect if contains_edge(g, u, v) is valid
-    template<typename G, typename V>
-    concept has_contains_edge_uv_impl = requires(G& g, V u, V v) {
-        { contains_edge(g, u, v) } -> std::same_as<bool>;
-    };
-    
-    // Helper to detect if contains_edge(g, uid, vid) is valid with vertex IDs
-    template<typename G, typename V>
-    concept has_contains_edge_uidvid_impl = 
-        std::same_as<std::remove_cvref_t<V>, vertex_id_t<G>> &&
-        requires(G& g, V uid, V vid) {
-            { contains_edge(g, uid, vid) } -> std::same_as<bool>;
+  // Helper to detect if contains_edge(g, u, v) is valid
+  template <typename G, typename V>
+  concept has_contains_edge_uv_impl = requires(G& g, V u, V v) {
+    { contains_edge(g, u, v) } -> std::same_as<bool>;
+  };
+
+  // Helper to detect if contains_edge(g, uid, vid) is valid with vertex IDs
+  template <typename G, typename V>
+  concept has_contains_edge_uidvid_impl =
+        std::same_as<std::remove_cvref_t<V>, vertex_id_t<G>> && requires(G& g, V uid, V vid) {
+          { contains_edge(g, uid, vid) } -> std::same_as<bool>;
         };
-}
+} // namespace detail
 
 /**
  * @brief Trait to check if a graph supports contains_edge operations
@@ -161,14 +158,13 @@ namespace detail {
  * @tparam G Graph type
  * @tparam V Vertex or vertex ID type
  */
-template<typename G, typename V>
-concept has_contains_edge = 
-    detail::has_contains_edge_uv_impl<G, V> && 
-    (std::same_as<std::remove_cvref_t<V>, vertex_t<G>> || 
-     detail::has_contains_edge_uidvid_impl<G, V>);
+template <typename G, typename V>
+concept has_contains_edge =
+      detail::has_contains_edge_uv_impl<G, V> &&
+      (std::same_as<std::remove_cvref_t<V>, vertex_t<G>> || detail::has_contains_edge_uidvid_impl<G, V>);
 
 // Convenience variable template
-template<typename G, typename V>
+template <typename G, typename V>
 inline constexpr bool has_contains_edge_v = has_contains_edge<G, V>;
 
 // =============================================================================
@@ -185,14 +181,11 @@ inline constexpr bool has_contains_edge_v = has_contains_edge<G, V>;
  * 
  * @tparam G Graph type
  */
-template<typename G>
-concept has_basic_queries = 
-    has_degree<G> && 
-    has_find_vertex<G> && 
-    has_find_vertex_edge<G>;
+template <typename G>
+concept has_basic_queries = has_degree<G> && has_find_vertex<G> && has_find_vertex_edge<G>;
 
 // Convenience variable template
-template<typename G>
+template <typename G>
 inline constexpr bool has_basic_queries_v = has_basic_queries<G>;
 
 /**
@@ -204,13 +197,11 @@ inline constexpr bool has_basic_queries_v = has_basic_queries<G>;
  * 
  * @tparam G Graph type
  */
-template<typename G>
-concept has_full_queries = 
-    has_basic_queries<G> && 
-    has_contains_edge<G, vertex_t<G>>;
+template <typename G>
+concept has_full_queries = has_basic_queries<G> && has_contains_edge<G, vertex_t<G>>;
 
 // Convenience variable template
-template<typename G>
+template <typename G>
 inline constexpr bool has_full_queries_v = has_full_queries<G>;
 
 } // namespace graph::adj_list

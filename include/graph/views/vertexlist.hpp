@@ -16,16 +16,22 @@
  * @endcode
  * 
  * @warning LIMITATION: Views with capturing lambda value functions cannot chain with std::views
- * 
+ *
  * This FAILS to compile in C++20:
  * @code
+ *   // OLD approach (capturing) - broken for chaining:
  *   auto vvf = [&g](auto v) { return vertex_id(g, v) * 10; };
  *   auto view = g | vertexlist(vvf) | std::views::take(2);  // ❌ Won't compile
+ *
+ *   // NEW approach (parameter-based) - works for chaining:
+ *   auto vvf = [](const auto& g, auto v) { return vertex_id(g, v) * 10; };
+ *   auto view = g | vertexlist(vvf) | std::views::take(2);  // ✅ Compiles
  * @endcode
- * 
- * The reason: When a view stores a capturing lambda as VVF, the lambda is not
- * default_initializable or semiregular, which prevents the view from satisfying
- * std::ranges::view. This is a fundamental C++20 limitation.
+ *
+ * The new parameter-based approach passes the graph as first argument to the
+ * value function, eliminating the need for lambda captures. Stateless lambdas
+ * (empty capture list) are default_initializable and semiregular, which allows
+ * the view to satisfy std::ranges::view and chain with std::views.
  * 
  * @section workarounds Workarounds
  * 
@@ -85,74 +91,68 @@ class vertexlist_view;
 template <adj_list::adjacency_list G>
 class vertexlist_view<G, void> : public std::ranges::view_interface<vertexlist_view<G, void>> {
 public:
-    using graph_type = G;
-    using vertex_type = adj_list::vertex_t<G>;
-    using vertex_id_type = adj_list::vertex_id_t<G>;
-    using info_type = vertex_info<vertex_id_type, vertex_type, void>;
+  using graph_type     = G;
+  using vertex_type    = adj_list::vertex_t<G>;
+  using vertex_id_type = adj_list::vertex_id_t<G>;
+  using info_type      = vertex_info<vertex_id_type, vertex_type, void>;
 
-    /**
+  /**
      * @brief Forward iterator yielding vertex_info values
      */
-    class iterator {
-    public:
-        using iterator_category = std::forward_iterator_tag;
-        using difference_type = std::ptrdiff_t;
-        using value_type = info_type;
-        using pointer = const value_type*;
-        using reference = value_type;
+  class iterator {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using difference_type   = std::ptrdiff_t;
+    using value_type        = info_type;
+    using pointer           = const value_type*;
+    using reference         = value_type;
 
-        constexpr iterator() noexcept = default;
+    constexpr iterator() noexcept = default;
 
-        constexpr iterator(G* g, vertex_type v) noexcept
-            : g_(g), current_(v) {}
+    constexpr iterator(G* g, vertex_type v) noexcept : g_(g), current_(v) {}
 
-        [[nodiscard]] constexpr value_type operator*() const noexcept {
-            return value_type{adj_list::vertex_id(*g_, current_), current_};
-        }
-
-        constexpr iterator& operator++() noexcept {
-            ++current_;
-            return *this;
-        }
-
-        constexpr iterator operator++(int) noexcept {
-            auto tmp = *this;
-            ++current_;
-            return tmp;
-        }
-
-        [[nodiscard]] constexpr bool operator==(const iterator& other) const noexcept {
-            return current_ == other.current_;
-        }
-
-    private:
-        G* g_ = nullptr;
-        vertex_type current_{};
-    };
-
-    using const_iterator = iterator;
-
-    constexpr vertexlist_view() noexcept = default;
-
-    constexpr explicit vertexlist_view(G& g) noexcept
-        : g_(&g) {}
-
-    [[nodiscard]] constexpr iterator begin() const noexcept {
-        auto vert_range = adj_list::vertices(*g_);
-        return iterator(g_, *std::ranges::begin(vert_range));
+    [[nodiscard]] constexpr value_type operator*() const noexcept {
+      return value_type{adj_list::vertex_id(*g_, current_), current_};
     }
 
-    [[nodiscard]] constexpr iterator end() const noexcept {
-        auto vert_range = adj_list::vertices(*g_);
-        return iterator(g_, *std::ranges::end(vert_range));
+    constexpr iterator& operator++() noexcept {
+      ++current_;
+      return *this;
     }
 
-    [[nodiscard]] constexpr std::size_t size() const noexcept {
-        return adj_list::num_vertices(*g_);
+    constexpr iterator operator++(int) noexcept {
+      auto tmp = *this;
+      ++current_;
+      return tmp;
     }
+
+    [[nodiscard]] constexpr bool operator==(const iterator& other) const noexcept { return current_ == other.current_; }
+
+  private:
+    G*          g_ = nullptr;
+    vertex_type current_{};
+  };
+
+  using const_iterator = iterator;
+
+  constexpr vertexlist_view() noexcept = default;
+
+  constexpr explicit vertexlist_view(G& g) noexcept : g_(&g) {}
+
+  [[nodiscard]] constexpr iterator begin() const noexcept {
+    auto vert_range = adj_list::vertices(*g_);
+    return iterator(g_, *std::ranges::begin(vert_range));
+  }
+
+  [[nodiscard]] constexpr iterator end() const noexcept {
+    auto vert_range = adj_list::vertices(*g_);
+    return iterator(g_, *std::ranges::end(vert_range));
+  }
+
+  [[nodiscard]] constexpr std::size_t size() const noexcept { return adj_list::num_vertices(*g_); }
 
 private:
-    G* g_ = nullptr;
+  G* g_ = nullptr;
 };
 
 /**
@@ -167,83 +167,78 @@ private:
 template <adj_list::adjacency_list G, class VVF>
 class vertexlist_view : public std::ranges::view_interface<vertexlist_view<G, VVF>> {
 public:
-    using graph_type = G;
-    using vertex_type = adj_list::vertex_t<G>;
-    using vertex_id_type = adj_list::vertex_id_t<G>;
-    using value_type_result = std::invoke_result_t<VVF, vertex_type>;
-    using info_type = vertex_info<vertex_id_type, vertex_type, value_type_result>;
+  using graph_type        = G;
+  using vertex_type       = adj_list::vertex_t<G>;
+  using vertex_id_type    = adj_list::vertex_id_t<G>;
+  using value_type_result = std::invoke_result_t<VVF, const G&, vertex_type>;
+  using info_type         = vertex_info<vertex_id_type, vertex_type, value_type_result>;
 
-    /**
+  /**
      * @brief Forward iterator yielding vertex_info values with computed value
      */
-    class iterator {
-    public:
-        using iterator_category = std::forward_iterator_tag;
-        using difference_type = std::ptrdiff_t;
-        using value_type = info_type;
-        using pointer = const value_type*;
-        using reference = value_type;
+  class iterator {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using difference_type   = std::ptrdiff_t;
+    using value_type        = info_type;
+    using pointer           = const value_type*;
+    using reference         = value_type;
 
-        constexpr iterator() noexcept = default;
+    constexpr iterator() noexcept = default;
 
-        constexpr iterator(G* g, vertex_type v, VVF* vvf) noexcept
-            : g_(g), current_(v), vvf_(vvf) {}
+    constexpr iterator(G* g, vertex_type v, VVF* vvf) noexcept : g_(g), current_(v), vvf_(vvf) {}
 
-        [[nodiscard]] constexpr value_type operator*() const {
-            return value_type{adj_list::vertex_id(*g_, current_), current_, std::invoke(*vvf_, current_)};
-        }
+    [[nodiscard]] constexpr value_type operator*() const {
+      return value_type{adj_list::vertex_id(*g_, current_), current_, std::invoke(*vvf_, std::as_const(*g_), current_)};
+    }
 
-        constexpr iterator& operator++() noexcept {
-            ++current_;
-            return *this;
-        }
+    constexpr iterator& operator++() noexcept {
+      ++current_;
+      return *this;
+    }
 
-        constexpr iterator operator++(int) noexcept {
-            auto tmp = *this;
-            ++current_;
-            return tmp;
-        }
+    constexpr iterator operator++(int) noexcept {
+      auto tmp = *this;
+      ++current_;
+      return tmp;
+    }
 
-        [[nodiscard]] constexpr bool operator==(const iterator& other) const noexcept {
-            return current_ == other.current_;
-        }
+    [[nodiscard]] constexpr bool operator==(const iterator& other) const noexcept { return current_ == other.current_; }
 
-    private:
-        G* g_ = nullptr;
-        vertex_type current_{};
-        VVF* vvf_ = nullptr;
-    };
+  private:
+    G*          g_ = nullptr;
+    vertex_type current_{};
+    VVF*        vvf_ = nullptr;
+  };
 
-    using const_iterator = iterator;
+  using const_iterator = iterator;
 
-    constexpr vertexlist_view() noexcept = default;
-    
-    constexpr vertexlist_view(vertexlist_view&&) = default;
-    constexpr vertexlist_view& operator=(vertexlist_view&&) = default;
-    
-    constexpr vertexlist_view(const vertexlist_view&) = default;
-    constexpr vertexlist_view& operator=(const vertexlist_view&) = default;
+  constexpr vertexlist_view() noexcept = default;
 
-    constexpr vertexlist_view(G& g, VVF vvf) noexcept(std::is_nothrow_move_constructible_v<VVF>)
+  constexpr vertexlist_view(vertexlist_view&&)            = default;
+  constexpr vertexlist_view& operator=(vertexlist_view&&) = default;
+
+  constexpr vertexlist_view(const vertexlist_view&)            = default;
+  constexpr vertexlist_view& operator=(const vertexlist_view&) = default;
+
+  constexpr vertexlist_view(G& g, VVF vvf) noexcept(std::is_nothrow_move_constructible_v<VVF>)
         : g_(&g), vvf_(std::move(vvf)) {}
 
-    [[nodiscard]] constexpr iterator begin() noexcept {
-        auto vert_range = adj_list::vertices(*g_);
-        return iterator(g_, *std::ranges::begin(vert_range), &vvf_);
-    }
+  [[nodiscard]] constexpr iterator begin() noexcept {
+    auto vert_range = adj_list::vertices(*g_);
+    return iterator(g_, *std::ranges::begin(vert_range), &vvf_);
+  }
 
-    [[nodiscard]] constexpr iterator end() noexcept {
-        auto vert_range = adj_list::vertices(*g_);
-        return iterator(g_, *std::ranges::end(vert_range), &vvf_);
-    }
+  [[nodiscard]] constexpr iterator end() noexcept {
+    auto vert_range = adj_list::vertices(*g_);
+    return iterator(g_, *std::ranges::end(vert_range), &vvf_);
+  }
 
-    [[nodiscard]] constexpr std::size_t size() const noexcept {
-        return adj_list::num_vertices(*g_);
-    }
+  [[nodiscard]] constexpr std::size_t size() const noexcept { return adj_list::num_vertices(*g_); }
 
 private:
-    G* g_ = nullptr;
-    [[no_unique_address]] VVF vvf_{};
+  G*                        g_ = nullptr;
+  [[no_unique_address]] VVF vvf_{};
 };
 
 // Deduction guides
@@ -261,7 +256,7 @@ vertexlist_view(G&, VVF) -> vertexlist_view<G, VVF>;
  */
 template <adj_list::adjacency_list G>
 [[nodiscard]] constexpr auto vertexlist(G& g) noexcept {
-    return vertexlist_view<G, void>(g);
+  return vertexlist_view<G, void>(g);
 }
 
 /**
@@ -272,9 +267,9 @@ template <adj_list::adjacency_list G>
  * @return vertexlist_view yielding vertex_info<vertex_id_type, vertex_descriptor, VV>
  */
 template <adj_list::adjacency_list G, class VVF>
-    requires vertex_value_function<VVF, adj_list::vertex_t<G>>
+requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
 [[nodiscard]] constexpr auto vertexlist(G& g, VVF&& vvf) {
-    return vertexlist_view<G, std::decay_t<VVF>>(g, std::forward<VVF>(vvf));
+  return vertexlist_view<G, std::decay_t<VVF>>(g, std::forward<VVF>(vvf));
 }
 
 } // namespace graph::views

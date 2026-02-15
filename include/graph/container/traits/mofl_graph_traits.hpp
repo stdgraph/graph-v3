@@ -27,11 +27,11 @@ class dynamic_graph;
 //  VId (vertex id - any ordered type with operator<), Sourced (store source id on edge when true).
 template <class EV = void, class VV = void, class GV = void, class VId = uint32_t, bool Sourced = false>
 struct mofl_graph_traits {
-  using edge_value_type                      = EV;
-  using vertex_value_type                    = VV;
-  using graph_value_type                     = GV;
-  using vertex_id_type                       = VId;
-  static constexpr bool sourced              = Sourced;
+  using edge_value_type         = EV;
+  using vertex_value_type       = VV;
+  using graph_value_type        = GV;
+  using vertex_id_type          = VId;
+  static constexpr bool sourced = Sourced;
 
   using edge_type   = dynamic_edge<EV, VV, GV, VId, Sourced, mofl_graph_traits>;
   using vertex_type = dynamic_vertex<EV, VV, GV, VId, Sourced, mofl_graph_traits>;

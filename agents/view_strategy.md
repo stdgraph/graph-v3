@@ -96,17 +96,17 @@ struct search_neighbor_info : neighbor_info<VId, Sourced, V, VV> {
 ```cpp
 template<index_adjacency_list G, class VVF = void>
 auto vertexlist(G&& g, VVF&& vvf = {})
-    -> /* range of vertex_info<void, vertex_descriptor_t<G>, invoke_result_t<VVF, vertex_descriptor_t<G>>> */
+    -> /* range of vertex_info<void, vertex_descriptor_t<G>, invoke_result_t<VVF, const G&, vertex_descriptor_t<G>>> */
 ```
 
 **Parameters**:
 - `g`: The graph (lvalue or rvalue reference)
-- `vvf`: Optional vertex value function `VV vvf(vertex_descriptor_t<G>)`
+- `vvf`: Optional vertex value function `VV vvf(const G&, vertex_descriptor_t<G>)` — graph passed as first parameter
 
 **Returns**: Range yielding `vertex_info<void, V, VV>` where:
 - `VId = void` (descriptor contains ID)
 - `V = vertex_descriptor_t<G>`
-- `VV = invoke_result_t<VVF, vertex_descriptor_t<G>>` (or `void` if no vvf)
+- `VV = invoke_result_t<VVF, const G&, vertex_descriptor_t<G>>` (or `void` if no vvf)
 
 **Implementation Strategy**:
 ```cpp
@@ -125,7 +125,7 @@ class vertexlist_view : public std::ranges::view_interface<vertexlist_view<G, VV
             if constexpr (std::is_void_v<VVF>) {
                 return {vdesc};  // No value
             } else {
-                return {vdesc, (*vvf_)(vdesc)};  // With value
+                return {vdesc, (*vvf_)(std::as_const(*g_), vdesc)};  // With value (graph passed as parameter)
             }
         }
     };
@@ -150,13 +150,13 @@ auto incidence(G&& g, vertex_id_t<G> uid, EVF&& evf = {})
 **Parameters**:
 - `g`: The graph
 - `uid`: Source vertex ID
-- `evf`: Optional edge value function `EV evf(edge_descriptor_t<G>)`
+- `evf`: Optional edge value function `EV evf(const G&, edge_descriptor_t<G>)` — graph passed as first parameter
 
 **Returns**: Range yielding `edge_info<void, false, E, EV>` where:
 - `VId = void` (descriptor contains source/target IDs)
 - `Sourced = true` (edge descriptor contains source vertex descriptor)
 - `E = edge_descriptor_t<G>`
-- `EV = invoke_result_t<EVF, edge_descriptor_t<G>>` (or `void` if no evf)
+- `EV = invoke_result_t<EVF, const G&, edge_descriptor_t<G>>` (or `void` if no evf)
 
 **Implementation Notes**:
 - Wraps `edges(g, u)` CPO
@@ -182,13 +182,13 @@ auto neighbors(G&& g, vertex_id_t<G> uid, VVF&& vvf = {})
 **Parameters**:
 - `g`: The graph
 - `uid`: Source vertex ID  
-- `vvf`: Optional vertex value function applied to target vertex descriptors `VV vvf(vertex_descriptor_t<G>)`
+- `vvf`: Optional vertex value function applied to target vertex descriptors `VV vvf(const G&, vertex_descriptor_t<G>)` — graph passed as first parameter
 
 **Returns**: Range yielding `neighbor_info<void, false, V, VV>` where:
 - `VId = void` (descriptor contains target ID)
 - `Sourced = false` (focus on target vertex, not edge source)
 - `V = vertex_descriptor_t<G>` (target vertex descriptor)
-- `VV = invoke_result_t<VVF, vertex_descriptor_t<G>>` (or `void` if no vvf)
+- `VV = invoke_result_t<VVF, const G&, vertex_descriptor_t<G>>` (or `void` if no vvf)
 
 **Implementation Notes**:
 - Iterates over `edges(g, u)` internally to navigate adjacency
@@ -1117,7 +1117,7 @@ source ID tracking—it's built into the descriptor itself.
 
 ### 9.3 Value Function Design
 
-**Problem**: Should value functions receive descriptors or underlying values?
+**Problem**: Should value functions receive descriptors or underlying values? How should the graph be accessed?
 
 **In graph-v2 (reference-based)**:
 ```cpp
@@ -1126,48 +1126,53 @@ vvf(vertex_reference)  // Direct access to vertex data
 
 **In graph-v3 (descriptor-based)**:
 ```cpp
-// Option A: Pass descriptor
-vvf(vertex_descriptor)  // User can access ID, underlying value, etc.
+// Option A: Pass descriptor only (requires capture)
+vvf(vertex_descriptor)  // User must capture graph: [&g](auto v) { ... }
 
-// Option B: Pass descriptor + graph
-vvf(g, vertex_descriptor)  // View passes both (redundant - descriptor works with graph already)
+// Option B: Pass graph + descriptor (no capture needed)
+vvf(g, vertex_descriptor)  // View passes both: [](const auto& g, auto v) { ... }
 
 // Option C: Pass underlying value (view extracts it)
 vvf(underlying_vertex_value)  // View does: vvf(vertex_value(g, v))
 ```
 
-**Decision**: **Option A** - Value functions receive descriptors.
+**Decision**: **Option B** — Value functions receive graph and descriptor as parameters.
 
-Descriptors provide complete access while maintaining the value-based semantics:
+**Signatures**:
+- VVF: `vvf(g, v)` — graph and vertex descriptor
+- EVF: `evf(g, e)` — graph and edge descriptor
+
 ```cpp
-// Vertex value function receives vertex_descriptor
-for (auto&& [v, val] : vertexlist(g, [&g](auto vdesc) { 
-    return vertex_value(g, vdesc).name;  // Access underlying value via descriptor
+// Vertex value function receives graph + vertex_descriptor
+for (auto&& [v, val] : vertexlist(g, [](const auto& g, auto vdesc) { 
+    return vertex_value(g, vdesc).name;
 })) {
     // val is the extracted name
 }
 
-// Edge value function receives edge_descriptor
-for (auto&& [e, val] : incidence(g, u, [&g](auto edesc) {
-    return edge_value(g, edesc).weight;  // Access underlying edge value
+// Edge value function receives graph + edge_descriptor
+for (auto&& [e, val] : incidence(g, u, [](const auto& g, auto edesc) {
+    return edge_value(g, edesc).weight;
 })) {
     // val is the extracted weight
 }
 
-// Neighbor value function receives target vertex_descriptor
-for (auto&& [v, val] : neighbors(g, u, [&g](auto vdesc) {
-    return vertex_value(g, vdesc).name;  // Access target vertex value
-})) {
-    // v is target vertex descriptor, val is extracted name
-}
+// Enables full std::views chaining
+auto vvf = [](const auto& g, auto v) { return vertex_id(g, v); };
+auto view = g | vertexlist(vvf) | std::views::take(10);  // ✅ Works!
 ```
 
 **Rationale**:
-- Descriptors are lightweight values that can be copied efficiently
-- Value functions can access IDs, underlying values, or both as needed
-- Consistent with descriptor-based architecture throughout graph-v3
-- Allows value functions to perform lookups or computations using the descriptor
-- User captures graph reference once in the lambda, not passed separately
+1. **Enables view chaining**: Lambdas don't need to capture, making them stateless and semiregular
+2. **Satisfies `std::ranges::view`**: Views storing stateless lambdas are default constructible
+3. **More explicit**: Clear that the function needs graph access
+4. **More flexible**: Function can use any graph operation without pre-capturing
+5. **Works in C++20**: No need to wait for C++26's `std::copyable_function`
+6. **Consistent**: Similar to how many algorithm helper functions work
+
+**Alternative Considered**: Option A — Descriptors only, user captures graph
+- **Rejected**: Makes lambdas non-semiregular, breaking `std::views` chaining
+- See [view_chaining_limitations.md](../docs/view_chaining_limitations.md) for details
 
 ### 9.4 Search State Storage
 
@@ -1510,7 +1515,7 @@ auto& v = desc.underlying_value(const_container);  // const reference
    
    // Search views
    for (auto&& [v] : g | vertices_bfs(seed)) { ... }
-   for (auto&& [v, val] : g | vertices_dfs(seed, [&g](auto vdesc) { return vertex_value(g, vdesc).name; })) { ... }
+   for (auto&& [v, val] : g | vertices_dfs(seed, [](const auto& g, auto vdesc) { return vertex_value(g, vdesc).name; })) { ... }
    for (auto&& [v] : g | vertices_topological_sort()) { ... }
    
    // Chaining with standard views

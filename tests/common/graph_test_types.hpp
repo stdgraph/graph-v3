@@ -53,7 +53,7 @@
 #include <graph/container/traits/voem_graph_traits.hpp>
 #include <graph/container/traits/moem_graph_traits.hpp>
 #include <string>
- namespace graph::test {
+namespace graph::test {
 
 // =============================================================================
 // Tag types for each random-access container type
@@ -61,61 +61,62 @@
 
 /**
  * @brief Tag for vector<vertex> + vector<edge> container type
- */ struct vov_tag {
-    static constexpr const char* name = "vov";
-    
-    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::vov_graph_traits<EV, VV, GV, VId, Sourced>;
+ */
+struct vov_tag {
+  static constexpr const char* name = "vov";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::vov_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 /**
  * @brief Tag for vector<vertex> + deque<edge> container type
  */
 struct vod_tag {
-    static constexpr const char* name = "vod";
-    
-    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::vod_graph_traits<EV, VV, GV, VId, Sourced>;
+  static constexpr const char* name = "vod";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::vod_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 /**
  * @brief Tag for deque<vertex> + vector<edge> container type
  */
 struct dov_tag {
-    static constexpr const char* name = "dov";
-    
-    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::dov_graph_traits<EV, VV, GV, VId, Sourced>;
+  static constexpr const char* name = "dov";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::dov_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 /**
  * @brief Tag for deque<vertex> + deque<edge> container type
  */
 struct dod_tag {
-    static constexpr const char* name = "dod";
-    
-    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::dod_graph_traits<EV, VV, GV, VId, Sourced>;
+  static constexpr const char* name = "dod";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::dod_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 /**
  * @brief Tag for vector<vertex> + list<edge> container type
  */
 struct vol_tag {
-    static constexpr const char* name = "vol";
-    
-    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::vol_graph_traits<EV, VV, GV, VId, Sourced>; 
+  static constexpr const char* name = "vol";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::vol_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 /**
  * @brief Tag for deque<vertex> + list<edge> container type
  */
 struct dol_tag {
-    static constexpr const char* name = "dol";
-    
-    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::dol_graph_traits<EV, VV, GV, VId, Sourced>;
+  static constexpr const char* name = "dol";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::dol_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 // =============================================================================
@@ -127,10 +128,10 @@ struct dol_tag {
  * @note Edges appear in reverse insertion order (push_front semantics)
  */
 struct vofl_tag {
-    static constexpr const char* name = "vofl";
-    
-    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::vofl_graph_traits<EV, VV, GV, VId, Sourced>;
+  static constexpr const char* name = "vofl";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::vofl_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 /**
@@ -138,10 +139,10 @@ struct vofl_tag {
  * @note Edges appear in reverse insertion order (push_front semantics)
  */
 struct dofl_tag {
-    static constexpr const char* name = "dofl";
-    
-    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::dofl_graph_traits<EV, VV, GV, VId, Sourced>;
+  static constexpr const char* name = "dofl";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::dofl_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 /**
@@ -149,10 +150,10 @@ struct dofl_tag {
  * @note Edges appear in reverse insertion order (push_front semantics)
  */
 struct mofl_tag {
-    static constexpr const char* name = "mofl";
-    
-    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::mofl_graph_traits<EV, VV, GV, VId, Sourced>;
+  static constexpr const char* name = "mofl";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::mofl_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 // =============================================================================
@@ -164,10 +165,10 @@ struct mofl_tag {
  * @note Edges are ordered by target_id (sorted set semantics)
  */
 struct vos_tag {
-    static constexpr const char* name = "vos";
-    
-    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::vos_graph_traits<EV, VV, GV, VId, Sourced>;
+  static constexpr const char* name = "vos";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::vos_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 /**
@@ -175,10 +176,10 @@ struct vos_tag {
  * @note Edges are ordered by target_id (sorted set semantics)
  */
 struct dos_tag {
-    static constexpr const char* name = "dos";
-    
-    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::dos_graph_traits<EV, VV, GV, VId, Sourced>;
+  static constexpr const char* name = "dos";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::dos_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 /**
@@ -186,10 +187,10 @@ struct dos_tag {
  * @note Edges are ordered by target_id (sorted set semantics)
  */
 struct mos_tag {
-    static constexpr const char* name = "mos";
-    
-    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::mos_graph_traits<EV, VV, GV, VId, Sourced>;
+  static constexpr const char* name = "mos";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::mos_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 /**
@@ -197,10 +198,10 @@ struct mos_tag {
  * @note Edges are ordered by target_id (sorted set semantics)
  */
 struct uos_tag {
-    static constexpr const char* name = "uos";
-    
-    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::uos_graph_traits<EV, VV, GV, VId, Sourced>;
+  static constexpr const char* name = "uos";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::uos_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 // =============================================================================
@@ -212,10 +213,10 @@ struct uos_tag {
  * @note Edge order is unspecified (hash-based container)
  */
 struct vous_tag {
-    static constexpr const char* name = "vous";
-    
-    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::vous_graph_traits<EV, VV, GV, VId, Sourced>;
+  static constexpr const char* name = "vous";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::vous_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 /**
@@ -223,10 +224,10 @@ struct vous_tag {
  * @note Edge order is unspecified (hash-based container)
  */
 struct dous_tag {
-    static constexpr const char* name = "dous";
-    
-    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::dous_graph_traits<EV, VV, GV, VId, Sourced>;
+  static constexpr const char* name = "dous";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::dous_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 /**
@@ -234,10 +235,10 @@ struct dous_tag {
  * @note Edge order is unspecified (hash-based container)
  */
 struct mous_tag {
-    static constexpr const char* name = "mous";
-    
-    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::mous_graph_traits<EV, VV, GV, VId, Sourced>;
+  static constexpr const char* name = "mous";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::mous_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 /**
@@ -245,10 +246,10 @@ struct mous_tag {
  * @note Edge order is unspecified (hash-based container)
  */
 struct uous_tag {
-    static constexpr const char* name = "uous";
-    
-    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::uous_graph_traits<EV, VV, GV, VId, Sourced>;
+  static constexpr const char* name = "uous";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::uous_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 // =============================================================================
@@ -261,10 +262,10 @@ struct uous_tag {
  * @note Vertices are sparse (on-demand creation), iterated in sorted order
  */
 struct mol_tag {
-    static constexpr const char* name = "mol";
-    
-    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::mol_graph_traits<EV, VV, GV, VId, Sourced>;
+  static constexpr const char* name = "mol";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::mol_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 /**
@@ -272,10 +273,10 @@ struct mol_tag {
  * @note Vertices are sparse (on-demand creation), iterated in sorted order
  */
 struct mov_tag {
-    static constexpr const char* name = "mov";
-    
-    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::mov_graph_traits<EV, VV, GV, VId, Sourced>;
+  static constexpr const char* name = "mov";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::mov_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 /**
@@ -283,10 +284,10 @@ struct mov_tag {
  * @note Vertices are sparse (on-demand creation), iterated in sorted order
  */
 struct mod_tag {
-    static constexpr const char* name = "mod";
-    
-    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::mod_graph_traits<EV, VV, GV, VId, Sourced>;
+  static constexpr const char* name = "mod";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::mod_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 // =============================================================================
@@ -299,10 +300,10 @@ struct mod_tag {
  * @note Vertices are sparse (on-demand creation), iteration order unspecified
  */
 struct uol_tag {
-    static constexpr const char* name = "uol";
-    
-    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::uol_graph_traits<EV, VV, GV, VId, Sourced>;
+  static constexpr const char* name = "uol";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::uol_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 /**
@@ -310,10 +311,10 @@ struct uol_tag {
  * @note Vertices are sparse (on-demand creation), iteration order unspecified
  */
 struct uov_tag {
-    static constexpr const char* name = "uov";
-    
-    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::uov_graph_traits<EV, VV, GV, VId, Sourced>;
+  static constexpr const char* name = "uov";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::uov_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 /**
@@ -321,10 +322,10 @@ struct uov_tag {
  * @note Vertices are sparse (on-demand creation), iteration order unspecified
  */
 struct uod_tag {
-    static constexpr const char* name = "uod";
-    
-    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::uod_graph_traits<EV, VV, GV, VId, Sourced>;
+  static constexpr const char* name = "uod";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::uod_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 /**
@@ -333,10 +334,10 @@ struct uod_tag {
  * @note Edges appear in reverse insertion order (push_front semantics)
  */
 struct uofl_tag {
-    static constexpr const char* name = "uofl";
-    
-    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::uofl_graph_traits<EV, VV, GV, VId, Sourced>;
+  static constexpr const char* name = "uofl";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::uofl_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 // =============================================================================
@@ -349,10 +350,10 @@ struct uofl_tag {
  * @note Edges are sorted by target_id (map key), deduplicated (only one edge per target)
  */
 struct voem_tag {
-    static constexpr const char* name = "voem";
-    
-    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::voem_graph_traits<EV, VV, GV, VId, Sourced>;
+  static constexpr const char* name = "voem";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::voem_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 /**
@@ -360,10 +361,10 @@ struct voem_tag {
  * @note Vertices are sparse, edges are sorted by target_id (map key), deduplicated
  */
 struct moem_tag {
-    static constexpr const char* name = "moem";
-    
-    template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-    using traits = graph::container::moem_graph_traits<EV, VV, GV, VId, Sourced>;
+  static constexpr const char* name = "moem";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::moem_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 // =============================================================================
@@ -387,44 +388,41 @@ struct moem_tag {
  */
 template <typename Tag>
 struct graph_test_types {
-    using VId = uint32_t;
-    
-    // Non-sourced configurations
-    using void_type = graph::container::dynamic_graph<
-        void, void, void, VId, false,
-        typename Tag::template traits<void, void, void, VId, false>>;
-    
-    using int_ev = graph::container::dynamic_graph<
-        int, void, void, VId, false,
-        typename Tag::template traits<int, void, void, VId, false>>;
-    
-    using int_vv = graph::container::dynamic_graph<
-        void, int, void, VId, false,
-        typename Tag::template traits<void, int, void, VId, false>>;
-    
-    using all_int = graph::container::dynamic_graph<
-        int, int, int, VId, false,
-        typename Tag::template traits<int, int, int, VId, false>>;
-    
-    using string_type = graph::container::dynamic_graph<
-        std::string, std::string, std::string, VId, false,
+  using VId = uint32_t;
+
+  // Non-sourced configurations
+  using void_type = graph::container::
+        dynamic_graph<void, void, void, VId, false, typename Tag::template traits<void, void, void, VId, false>>;
+
+  using int_ev = graph::container::
+        dynamic_graph<int, void, void, VId, false, typename Tag::template traits<int, void, void, VId, false>>;
+
+  using int_vv = graph::container::
+        dynamic_graph<void, int, void, VId, false, typename Tag::template traits<void, int, void, VId, false>>;
+
+  using all_int = graph::container::
+        dynamic_graph<int, int, int, VId, false, typename Tag::template traits<int, int, int, VId, false>>;
+
+  using string_type = graph::container::dynamic_graph<
+        std::string,
+        std::string,
+        std::string,
+        VId,
+        false,
         typename Tag::template traits<std::string, std::string, std::string, VId, false>>;
-    
-    // Sourced configurations (for source_id/source CPO tests)
-    using sourced_void = graph::container::dynamic_graph<
-        void, void, void, VId, true,
-        typename Tag::template traits<void, void, void, VId, true>>;
-    
-    using sourced_int = graph::container::dynamic_graph<
-        int, void, void, VId, true,
-        typename Tag::template traits<int, void, void, VId, true>>;
-    
-    using sourced_all = graph::container::dynamic_graph<
-        int, int, int, VId, true,
-        typename Tag::template traits<int, int, int, VId, true>>;
-    
-    // Container name for test output
-    static constexpr const char* name = Tag::name;
+
+  // Sourced configurations (for source_id/source CPO tests)
+  using sourced_void = graph::container::
+        dynamic_graph<void, void, void, VId, true, typename Tag::template traits<void, void, void, VId, true>>;
+
+  using sourced_int = graph::container::
+        dynamic_graph<int, void, void, VId, true, typename Tag::template traits<int, void, void, VId, true>>;
+
+  using sourced_all = graph::container::
+        dynamic_graph<int, int, int, VId, true, typename Tag::template traits<int, int, int, VId, true>>;
+
+  // Container name for test output
+  static constexpr const char* name = Tag::name;
 };
 
 // =============================================================================
@@ -433,7 +431,7 @@ struct graph_test_types {
 
 template <typename Tag>
 constexpr const char* container_name() {
-    return Tag::name;
+  return Tag::name;
 }
 
 // =============================================================================
