@@ -77,9 +77,12 @@
 
 namespace graph::views {
 
-// Forward declaration
+// Forward declarations
 template <adj_list::adjacency_list G, class VVF = void>
 class vertexlist_view;
+
+template <adj_list::adjacency_list G, class VVF = void>
+class basic_vertexlist_view;
 
 /**
  * @brief Vertexlist view without value function
@@ -137,22 +140,26 @@ public:
 
   constexpr vertexlist_view() noexcept = default;
 
-  constexpr explicit vertexlist_view(G& g) noexcept : g_(&g) {}
-
-  [[nodiscard]] constexpr iterator begin() const noexcept {
-    auto vert_range = adj_list::vertices(*g_);
-    return iterator(g_, *std::ranges::begin(vert_range));
+  constexpr explicit vertexlist_view(G& g) noexcept : g_(&g), size_(adj_list::num_vertices(g)) {
+    auto vert_range = adj_list::vertices(g);
+    first_          = *std::ranges::begin(vert_range);
+    last_           = *std::ranges::end(vert_range);
   }
 
-  [[nodiscard]] constexpr iterator end() const noexcept {
-    auto vert_range = adj_list::vertices(*g_);
-    return iterator(g_, *std::ranges::end(vert_range));
-  }
+  constexpr vertexlist_view(G& g, vertex_type first, vertex_type last, std::size_t size) noexcept
+        : g_(&g), first_(first), last_(last), size_(size) {}
 
-  [[nodiscard]] constexpr std::size_t size() const noexcept { return adj_list::num_vertices(*g_); }
+  [[nodiscard]] constexpr iterator begin() const noexcept { return iterator(g_, first_); }
+
+  [[nodiscard]] constexpr iterator end() const noexcept { return iterator(g_, last_); }
+
+  [[nodiscard]] constexpr std::size_t size() const noexcept { return size_; }
 
 private:
-  G* g_ = nullptr;
+  G*          g_ = nullptr;
+  vertex_type first_{};
+  vertex_type last_{};
+  std::size_t size_ = 0;
 };
 
 /**
@@ -222,31 +229,221 @@ public:
   constexpr vertexlist_view& operator=(const vertexlist_view&) = default;
 
   constexpr vertexlist_view(G& g, VVF vvf) noexcept(std::is_nothrow_move_constructible_v<VVF>)
-        : g_(&g), vvf_(std::move(vvf)) {}
-
-  [[nodiscard]] constexpr iterator begin() noexcept {
-    auto vert_range = adj_list::vertices(*g_);
-    return iterator(g_, *std::ranges::begin(vert_range), &vvf_);
+        : g_(&g), vvf_(std::move(vvf)), size_(adj_list::num_vertices(g)) {
+    auto vert_range = adj_list::vertices(g);
+    first_          = *std::ranges::begin(vert_range);
+    last_           = *std::ranges::end(vert_range);
   }
 
-  [[nodiscard]] constexpr iterator end() noexcept {
-    auto vert_range = adj_list::vertices(*g_);
-    return iterator(g_, *std::ranges::end(vert_range), &vvf_);
-  }
+  constexpr vertexlist_view(G& g, VVF vvf, vertex_type first, vertex_type last, std::size_t size)
+        noexcept(std::is_nothrow_move_constructible_v<VVF>)
+        : g_(&g), vvf_(std::move(vvf)), first_(first), last_(last), size_(size) {}
 
-  [[nodiscard]] constexpr std::size_t size() const noexcept { return adj_list::num_vertices(*g_); }
+  [[nodiscard]] constexpr iterator begin() noexcept { return iterator(g_, first_, &vvf_); }
+
+  [[nodiscard]] constexpr iterator end() noexcept { return iterator(g_, last_, &vvf_); }
+
+  [[nodiscard]] constexpr std::size_t size() const noexcept { return size_; }
 
 private:
   G*                        g_ = nullptr;
   [[no_unique_address]] VVF vvf_{};
+  vertex_type               first_{};
+  vertex_type               last_{};
+  std::size_t               size_ = 0;
 };
 
-// Deduction guides
+// Deduction guides for vertexlist_view
 template <adj_list::adjacency_list G>
 vertexlist_view(G&) -> vertexlist_view<G, void>;
 
 template <adj_list::adjacency_list G, class VVF>
 vertexlist_view(G&, VVF) -> vertexlist_view<G, VVF>;
+
+// =============================================================================
+// basic_vertexlist_view — id only (no vertex descriptor in return type)
+// =============================================================================
+
+/**
+ * @brief Basic vertexlist view without value function (id only)
+ * 
+ * Iterates over vertices yielding vertex_info<vertex_id_type, void, void>.
+ * Use this when only vertex IDs are needed (e.g., in algorithms using index_adjacency_list).
+ * 
+ * @tparam G Graph type satisfying adjacency_list concept
+ */
+template <adj_list::adjacency_list G>
+class basic_vertexlist_view<G, void> : public std::ranges::view_interface<basic_vertexlist_view<G, void>> {
+public:
+  using graph_type     = G;
+  using vertex_type    = adj_list::vertex_t<G>;
+  using vertex_id_type = adj_list::vertex_id_t<G>;
+  using info_type      = vertex_info<vertex_id_type, void, void>;
+
+  /**
+     * @brief Forward iterator yielding vertex_info values (id only)
+     */
+  class iterator {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using difference_type   = std::ptrdiff_t;
+    using value_type        = info_type;
+    using pointer           = const value_type*;
+    using reference         = value_type;
+
+    constexpr iterator() noexcept = default;
+
+    constexpr iterator(G* g, vertex_type v) noexcept : g_(g), current_(v) {}
+
+    [[nodiscard]] constexpr value_type operator*() const noexcept {
+      return value_type{adj_list::vertex_id(*g_, current_)};
+    }
+
+    constexpr iterator& operator++() noexcept {
+      ++current_;
+      return *this;
+    }
+
+    constexpr iterator operator++(int) noexcept {
+      auto tmp = *this;
+      ++current_;
+      return tmp;
+    }
+
+    [[nodiscard]] constexpr bool operator==(const iterator& other) const noexcept { return current_ == other.current_; }
+
+  private:
+    G*          g_ = nullptr;
+    vertex_type current_{};
+  };
+
+  using const_iterator = iterator;
+
+  constexpr basic_vertexlist_view() noexcept = default;
+
+  constexpr explicit basic_vertexlist_view(G& g) noexcept : g_(&g), size_(adj_list::num_vertices(g)) {
+    auto vert_range = adj_list::vertices(g);
+    first_          = *std::ranges::begin(vert_range);
+    last_           = *std::ranges::end(vert_range);
+  }
+
+  constexpr basic_vertexlist_view(G& g, vertex_type first, vertex_type last, std::size_t size) noexcept
+        : g_(&g), first_(first), last_(last), size_(size) {}
+
+  [[nodiscard]] constexpr iterator begin() const noexcept { return iterator(g_, first_); }
+
+  [[nodiscard]] constexpr iterator end() const noexcept { return iterator(g_, last_); }
+
+  [[nodiscard]] constexpr std::size_t size() const noexcept { return size_; }
+
+private:
+  G*          g_ = nullptr;
+  vertex_type first_{};
+  vertex_type last_{};
+  std::size_t size_ = 0;
+};
+
+/**
+ * @brief Basic vertexlist view with value function (id + value, no vertex descriptor)
+ * 
+ * Iterates over vertices yielding vertex_info<vertex_id_type, void, VV>
+ * where VV is the result of invoking the value function on the vertex.
+ * 
+ * @tparam G Graph type satisfying adjacency_list concept
+ * @tparam VVF Value function type
+ */
+template <adj_list::adjacency_list G, class VVF>
+class basic_vertexlist_view : public std::ranges::view_interface<basic_vertexlist_view<G, VVF>> {
+public:
+  using graph_type        = G;
+  using vertex_type       = adj_list::vertex_t<G>;
+  using vertex_id_type    = adj_list::vertex_id_t<G>;
+  using value_type_result = std::invoke_result_t<VVF, const G&, vertex_type>;
+  using info_type         = vertex_info<vertex_id_type, void, value_type_result>;
+
+  /**
+     * @brief Forward iterator yielding vertex_info values (id + computed value)
+     */
+  class iterator {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using difference_type   = std::ptrdiff_t;
+    using value_type        = info_type;
+    using pointer           = const value_type*;
+    using reference         = value_type;
+
+    constexpr iterator() noexcept = default;
+
+    constexpr iterator(G* g, vertex_type v, VVF* vvf) noexcept : g_(g), current_(v), vvf_(vvf) {}
+
+    [[nodiscard]] constexpr value_type operator*() const {
+      return value_type{adj_list::vertex_id(*g_, current_), std::invoke(*vvf_, std::as_const(*g_), current_)};
+    }
+
+    constexpr iterator& operator++() noexcept {
+      ++current_;
+      return *this;
+    }
+
+    constexpr iterator operator++(int) noexcept {
+      auto tmp = *this;
+      ++current_;
+      return tmp;
+    }
+
+    [[nodiscard]] constexpr bool operator==(const iterator& other) const noexcept { return current_ == other.current_; }
+
+  private:
+    G*          g_ = nullptr;
+    vertex_type current_{};
+    VVF*        vvf_ = nullptr;
+  };
+
+  using const_iterator = iterator;
+
+  constexpr basic_vertexlist_view() noexcept = default;
+
+  constexpr basic_vertexlist_view(basic_vertexlist_view&&)            = default;
+  constexpr basic_vertexlist_view& operator=(basic_vertexlist_view&&) = default;
+
+  constexpr basic_vertexlist_view(const basic_vertexlist_view&)            = default;
+  constexpr basic_vertexlist_view& operator=(const basic_vertexlist_view&) = default;
+
+  constexpr basic_vertexlist_view(G& g, VVF vvf) noexcept(std::is_nothrow_move_constructible_v<VVF>)
+        : g_(&g), vvf_(std::move(vvf)), size_(adj_list::num_vertices(g)) {
+    auto vert_range = adj_list::vertices(g);
+    first_          = *std::ranges::begin(vert_range);
+    last_           = *std::ranges::end(vert_range);
+  }
+
+  constexpr basic_vertexlist_view(G& g, VVF vvf, vertex_type first, vertex_type last, std::size_t size)
+        noexcept(std::is_nothrow_move_constructible_v<VVF>)
+        : g_(&g), vvf_(std::move(vvf)), first_(first), last_(last), size_(size) {}
+
+  [[nodiscard]] constexpr iterator begin() noexcept { return iterator(g_, first_, &vvf_); }
+
+  [[nodiscard]] constexpr iterator end() noexcept { return iterator(g_, last_, &vvf_); }
+
+  [[nodiscard]] constexpr std::size_t size() const noexcept { return size_; }
+
+private:
+  G*                        g_ = nullptr;
+  [[no_unique_address]] VVF vvf_{};
+  vertex_type               first_{};
+  vertex_type               last_{};
+  std::size_t               size_ = 0;
+};
+
+// Deduction guides for basic_vertexlist_view
+template <adj_list::adjacency_list G>
+basic_vertexlist_view(G&) -> basic_vertexlist_view<G, void>;
+
+template <adj_list::adjacency_list G, class VVF>
+basic_vertexlist_view(G&, VVF) -> basic_vertexlist_view<G, VVF>;
+
+// =============================================================================
+// Factory functions: vertexlist
+// =============================================================================
 
 /**
  * @brief Create a vertexlist view without value function
@@ -270,6 +467,135 @@ template <adj_list::adjacency_list G, class VVF>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
 [[nodiscard]] constexpr auto vertexlist(G& g, VVF&& vvf) {
   return vertexlist_view<G, std::decay_t<VVF>>(g, std::forward<VVF>(vvf));
+}
+
+/**
+ * @brief Create a vertexlist view over a descriptor-based subrange [first_u, last_u)
+ * 
+ * @param g The graph to iterate over
+ * @param first_u First vertex descriptor (inclusive)
+ * @param last_u Past-the-end vertex descriptor (exclusive)
+ * @return vertexlist_view yielding vertex_info<vertex_id_type, vertex_descriptor, void>
+ */
+template <adj_list::index_adjacency_list G>
+[[nodiscard]] constexpr auto vertexlist(G& g, adj_list::vertex_t<G> first_u, adj_list::vertex_t<G> last_u) noexcept {
+  auto sz = static_cast<std::size_t>(adj_list::vertex_id(g, last_u) - adj_list::vertex_id(g, first_u));
+  return vertexlist_view<G, void>(g, first_u, last_u, sz);
+}
+
+/**
+ * @brief Create a vertexlist view over a descriptor-based subrange with value function
+ */
+template <adj_list::index_adjacency_list G, class VVF>
+requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
+[[nodiscard]] constexpr auto
+vertexlist(G& g, adj_list::vertex_t<G> first_u, adj_list::vertex_t<G> last_u, VVF&& vvf) {
+  auto sz = static_cast<std::size_t>(adj_list::vertex_id(g, last_u) - adj_list::vertex_id(g, first_u));
+  return vertexlist_view<G, std::decay_t<VVF>>(g, std::forward<VVF>(vvf), first_u, last_u, sz);
+}
+
+/**
+ * @brief Create a vertexlist view over a vertex range
+ * 
+ * @param g The graph
+ * @param vr A vertex range (e.g., from vertices(g))
+ * @return vertexlist_view yielding vertex_info<vertex_id_type, vertex_descriptor, void>
+ */
+template <adj_list::adjacency_list G, class VR>
+requires adj_list::vertex_range<VR, G>
+[[nodiscard]] constexpr auto vertexlist(G& g, VR&& vr) {
+  return vertexlist_view<G, void>(g, *std::ranges::begin(vr), *std::ranges::end(vr), std::ranges::size(vr));
+}
+
+/**
+ * @brief Create a vertexlist view over a vertex range with value function
+ */
+template <adj_list::adjacency_list G, class VR, class VVF>
+requires adj_list::vertex_range<VR, G> && vertex_value_function<VVF, G, adj_list::vertex_t<G>>
+[[nodiscard]] constexpr auto vertexlist(G& g, VR&& vr, VVF&& vvf) {
+  return vertexlist_view<G, std::decay_t<VVF>>(
+        g, std::forward<VVF>(vvf), *std::ranges::begin(vr), *std::ranges::end(vr), std::ranges::size(vr));
+}
+
+// =============================================================================
+// Factory functions: basic_vertexlist
+// =============================================================================
+
+/**
+ * @brief Create a basic vertexlist view without value function (id only)
+ * 
+ * @param g The graph to iterate over
+ * @return basic_vertexlist_view yielding vertex_info<vertex_id_type, void, void>
+ */
+template <adj_list::adjacency_list G>
+[[nodiscard]] constexpr auto basic_vertexlist(G& g) noexcept {
+  return basic_vertexlist_view<G, void>(g);
+}
+
+/**
+ * @brief Create a basic vertexlist view with value function (id + value, no descriptor)
+ * 
+ * @param g The graph to iterate over
+ * @param vvf Value function invoked for each vertex
+ * @return basic_vertexlist_view yielding vertex_info<vertex_id_type, void, VV>
+ */
+template <adj_list::adjacency_list G, class VVF>
+requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
+[[nodiscard]] constexpr auto basic_vertexlist(G& g, VVF&& vvf) {
+  return basic_vertexlist_view<G, std::decay_t<VVF>>(g, std::forward<VVF>(vvf));
+}
+
+/**
+ * @brief Create a basic vertexlist view over an id-based subrange [first_uid, last_uid)
+ * 
+ * @param g The graph to iterate over
+ * @param first_uid First vertex ID (inclusive)
+ * @param last_uid Past-the-end vertex ID (exclusive)
+ * @return basic_vertexlist_view yielding vertex_info<vertex_id_type, void, void>
+ */
+template <adj_list::index_adjacency_list G>
+[[nodiscard]] constexpr auto
+basic_vertexlist(G& g, adj_list::vertex_id_t<G> first_uid, adj_list::vertex_id_t<G> last_uid) {
+  auto first = *adj_list::find_vertex(g, first_uid);
+  auto last  = *adj_list::find_vertex(g, last_uid);
+  auto sz    = static_cast<std::size_t>(last_uid - first_uid);
+  return basic_vertexlist_view<G, void>(g, first, last, sz);
+}
+
+/**
+ * @brief Create a basic vertexlist view over an id-based subrange with value function
+ */
+template <adj_list::index_adjacency_list G, class VVF>
+requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
+[[nodiscard]] constexpr auto
+basic_vertexlist(G& g, adj_list::vertex_id_t<G> first_uid, adj_list::vertex_id_t<G> last_uid, VVF&& vvf) {
+  auto first = *adj_list::find_vertex(g, first_uid);
+  auto last  = *adj_list::find_vertex(g, last_uid);
+  auto sz    = static_cast<std::size_t>(last_uid - first_uid);
+  return basic_vertexlist_view<G, std::decay_t<VVF>>(g, std::forward<VVF>(vvf), first, last, sz);
+}
+
+/**
+ * @brief Create a basic vertexlist view over a vertex range (id only)
+ * 
+ * @param g The graph
+ * @param vr A vertex range (e.g., from vertices(g))
+ * @return basic_vertexlist_view yielding vertex_info<vertex_id_type, void, void>
+ */
+template <adj_list::adjacency_list G, class VR>
+requires adj_list::vertex_range<VR, G>
+[[nodiscard]] constexpr auto basic_vertexlist(G& g, VR&& vr) {
+  return basic_vertexlist_view<G, void>(g, *std::ranges::begin(vr), *std::ranges::end(vr), std::ranges::size(vr));
+}
+
+/**
+ * @brief Create a basic vertexlist view over a vertex range with value function
+ */
+template <adj_list::adjacency_list G, class VR, class VVF>
+requires adj_list::vertex_range<VR, G> && vertex_value_function<VVF, G, adj_list::vertex_t<G>>
+[[nodiscard]] constexpr auto basic_vertexlist(G& g, VR&& vr, VVF&& vvf) {
+  return basic_vertexlist_view<G, std::decay_t<VVF>>(
+        g, std::forward<VVF>(vvf), *std::ranges::begin(vr), *std::ranges::end(vr), std::ranges::size(vr));
 }
 
 } // namespace graph::views
