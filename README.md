@@ -45,39 +45,45 @@ This library provides the foundation for a complete graph library following the 
 
 ### Enhancements and Differences from graph-v2
 
-A significant shift occurred with the use of descriptors to the underlying containers for vertices
+A significant shift occurred with the use of descriptors for accessing the underlying containers for vertices
 and edges. This changed the implementation from a reference-based to a value-based implementation and had
 subtle changes that rippled through the library.
 
-Here's a summary of the major changes
-- Benefits from descriptors
+Here's a summary of the major changes.
+- Benefits from descriptors to simplify the overall design that benefit all users
   - "sourced" functions no longer needed because source vertex is always available with the edge descriptor
   - Function overloads for separate vertex_id-only and vertex references are no longer needed
-  - Fewer concepts needed
-  - No need to tag an adjacency list as "undirected"
+  - Concepts were reduced from 18 to 9.
+  - No need to tag an adjacency list as "undirected" because the current implementation doesn't require it,
+    as verified by tests using `undirected_adjacency_list`.
 - Graph Container changes
   - The `undirected_adjacency_list` graph data structure was added to test important use cases.
   - Vertices can be stored in `map` and `unordered_map` containers in `dynamic_graph` for sparse vertex_ids.
   - Edges can be stored in `map`, `set`, `unordered_map` and `unordered_set` in `dynamic_graph`.
-  - Non-integral vertex_ids Support can be used in `dynamic_graph`.
+  - Non-integral vertex_ids support can be used in `dynamic_graph`.
 - Graph Container Interface changes
   - Add support for non-integral vertex_ids.
   - Extend range types for vertices and edges
-    - Vertices: bidirectional (e.g. `map`) and forward (e.g. )`unordered_map`) ranges.
+    - Vertices: bidirectional (e.g. `map`) and forward (e.g. `unordered_map`) ranges.
     - Edges: bidirectional (map, set), forward (unordered_map, unordered_set).
     - Impact: Graph Container Interface (P3130), Views (P3129), dynamic_graph. **Not** supported by algorithms (P3128).
 - View changes
-  - The `topological_sort_view` was implemented, including a "_safe" version of the view was added to 
+  - The `topological_sort_view` was implemented, including a "_safe" version to 
     detect cycles. (The implementation works on the whole graph.)
   - Cancellation and depth() was added to the `vertices_bfs` and `edges_bfs` views.
+  - `vertices_dfs` and `edges_dfs` have been implemented with visitor support.
   - Added view chaining (e.g. pipe syntax)
   - Vertex and edge value functions (`VVF`, `EVF`) functions now require a graph parameter (`g`) because 
     it's always required in the functions. It also enables valueless lambdas, enabling full flexibility.
+- Algorithm changes
+  - The Topological Sort algorithm was implemented for vertices and edges, including "safe" versions with
+    cycle detection.
+  - Full algorithm descriptions were added with similar content that you'll find in the C++ standard.
 - Improved organization and use of namespaces
   - Definitions specific to adjacency lists have been moved into the `graph::adj_list` namespace to reflect
     that `graph::edge_list` definitions are a peer abstract data structure instead of a subset.
-  - Directories have been created that roughtly resemble the namespace organization.
-- Extensive documentation have been added.
+  - Directories have been created that roughly resemble the namespace organization.
+- Extensive documentation has been added.
 - Extensive unit tests have been added.
 
 We're trying to stay with C++20. However, `std::expected` from C++23 has been introduced and is being used
