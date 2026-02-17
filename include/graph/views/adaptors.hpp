@@ -4,11 +4,17 @@
  * 
  * Implements C++20 range adaptor pattern for graph views:
  * 
- * Basic views:
+ * Full views (include descriptors):
  * - g | vertexlist() - view of all vertices
  * - g | incidence(uid) - view of edges from a vertex
  * - g | neighbors(uid) - view of neighbor vertices
  * - g | edgelist() - view of all edges
+ * 
+ * Basic views (IDs only, no descriptors):
+ * - g | basic_vertexlist() - view of vertex IDs only
+ * - g | basic_incidence(uid) - view of target IDs only
+ * - g | basic_neighbors(uid) - view of neighbor target IDs only
+ * - g | basic_edgelist() - view of source/target ID pairs only
  * 
  * Search views:
  * - g | vertices_dfs(seed) - depth-first vertex traversal
@@ -243,6 +249,168 @@ struct edgelist_adaptor_fn {
   template <adj_list::adjacency_list G, class EVF>
   auto operator()(G&& g, EVF&& evf) const {
     return graph::views::edgelist(std::forward<G>(g), std::forward<EVF>(evf));
+  }
+};
+
+//=============================================================================
+// basic_vertexlist adaptor
+//=============================================================================
+
+template <class VVF = void>
+struct basic_vertexlist_adaptor_closure {
+  [[no_unique_address]] std::conditional_t<std::is_void_v<VVF>, monostate, VVF> vvf;
+
+  template <adj_list::index_adjacency_list G>
+  friend auto operator|(G&& g, basic_vertexlist_adaptor_closure adaptor) {
+    if constexpr (std::is_void_v<VVF>) {
+      return basic_vertexlist(std::forward<G>(g));
+    } else {
+      return basic_vertexlist(std::forward<G>(g), std::move(adaptor.vvf));
+    }
+  }
+};
+
+struct basic_vertexlist_adaptor_fn {
+  auto operator()() const { return basic_vertexlist_adaptor_closure<void>{monostate{}}; }
+
+  template <class VVF>
+  auto operator()(VVF&& vvf) const {
+    return basic_vertexlist_adaptor_closure<std::decay_t<VVF>>{std::forward<VVF>(vvf)};
+  }
+
+  template <adj_list::adjacency_list G>
+  auto operator()(G&& g) const {
+    return graph::views::basic_vertexlist(std::forward<G>(g));
+  }
+
+  template <adj_list::adjacency_list G, class VVF>
+  auto operator()(G&& g, VVF&& vvf) const {
+    return graph::views::basic_vertexlist(std::forward<G>(g), std::forward<VVF>(vvf));
+  }
+};
+
+//=============================================================================
+// basic_incidence adaptor
+//=============================================================================
+
+template <class UID, class EVF = void>
+struct basic_incidence_adaptor_closure {
+  UID                                                                           uid;
+  [[no_unique_address]] std::conditional_t<std::is_void_v<EVF>, monostate, EVF> evf;
+
+  template <adj_list::index_adjacency_list G>
+  friend auto operator|(G&& g, basic_incidence_adaptor_closure adaptor) {
+    if constexpr (std::is_void_v<EVF>) {
+      return basic_incidence(std::forward<G>(g), std::move(adaptor.uid));
+    } else {
+      return basic_incidence(std::forward<G>(g), std::move(adaptor.uid), std::move(adaptor.evf));
+    }
+  }
+};
+
+struct basic_incidence_adaptor_fn {
+  template <class UID>
+  auto operator()(UID&& uid) const {
+    return basic_incidence_adaptor_closure<std::decay_t<UID>, void>{std::forward<UID>(uid), monostate{}};
+  }
+
+  template <class UID, class EVF>
+  auto operator()(UID&& uid, EVF&& evf) const {
+    return basic_incidence_adaptor_closure<std::decay_t<UID>, std::decay_t<EVF>>{std::forward<UID>(uid),
+                                                                                  std::forward<EVF>(evf)};
+  }
+
+  template <class G, class UID>
+  requires adj_list::index_adjacency_list<std::remove_cvref_t<G>>
+  auto operator()(G&& g, UID&& uid) const {
+    return graph::views::basic_incidence(std::forward<G>(g), adj_list::vertex_id_t<std::remove_cvref_t<G>>(std::forward<UID>(uid)));
+  }
+
+  template <class G, class UID, class EVF>
+  requires adj_list::index_adjacency_list<std::remove_cvref_t<G>>
+  auto operator()(G&& g, UID&& uid, EVF&& evf) const {
+    return graph::views::basic_incidence(std::forward<G>(g), adj_list::vertex_id_t<std::remove_cvref_t<G>>(std::forward<UID>(uid)), std::forward<EVF>(evf));
+  }
+};
+
+//=============================================================================
+// basic_neighbors adaptor
+//=============================================================================
+
+template <class UID, class VVF = void>
+struct basic_neighbors_adaptor_closure {
+  UID                                                                           uid;
+  [[no_unique_address]] std::conditional_t<std::is_void_v<VVF>, monostate, VVF> vvf;
+
+  template <adj_list::index_adjacency_list G>
+  friend auto operator|(G&& g, basic_neighbors_adaptor_closure adaptor) {
+    if constexpr (std::is_void_v<VVF>) {
+      return basic_neighbors(std::forward<G>(g), std::move(adaptor.uid));
+    } else {
+      return basic_neighbors(std::forward<G>(g), std::move(adaptor.uid), std::move(adaptor.vvf));
+    }
+  }
+};
+
+struct basic_neighbors_adaptor_fn {
+  template <class UID>
+  auto operator()(UID&& uid) const {
+    return basic_neighbors_adaptor_closure<std::decay_t<UID>, void>{std::forward<UID>(uid), monostate{}};
+  }
+
+  template <class UID, class VVF>
+  auto operator()(UID&& uid, VVF&& vvf) const {
+    return basic_neighbors_adaptor_closure<std::decay_t<UID>, std::decay_t<VVF>>{std::forward<UID>(uid),
+                                                                                  std::forward<VVF>(vvf)};
+  }
+
+  template <class G, class UID>
+  requires adj_list::index_adjacency_list<std::remove_cvref_t<G>>
+  auto operator()(G&& g, UID&& uid) const {
+    return graph::views::basic_neighbors(std::forward<G>(g), adj_list::vertex_id_t<std::remove_cvref_t<G>>(std::forward<UID>(uid)));
+  }
+
+  template <class G, class UID, class VVF>
+  requires adj_list::index_adjacency_list<std::remove_cvref_t<G>>
+  auto operator()(G&& g, UID&& uid, VVF&& vvf) const {
+    return graph::views::basic_neighbors(std::forward<G>(g), adj_list::vertex_id_t<std::remove_cvref_t<G>>(std::forward<UID>(uid)), std::forward<VVF>(vvf));
+  }
+};
+
+//=============================================================================
+// basic_edgelist adaptor
+//=============================================================================
+
+template <class EVF = void>
+struct basic_edgelist_adaptor_closure {
+  [[no_unique_address]] std::conditional_t<std::is_void_v<EVF>, monostate, EVF> evf;
+
+  template <adj_list::index_adjacency_list G>
+  friend auto operator|(G&& g, basic_edgelist_adaptor_closure adaptor) {
+    if constexpr (std::is_void_v<EVF>) {
+      return basic_edgelist(std::forward<G>(g));
+    } else {
+      return basic_edgelist(std::forward<G>(g), std::move(adaptor.evf));
+    }
+  }
+};
+
+struct basic_edgelist_adaptor_fn {
+  auto operator()() const { return basic_edgelist_adaptor_closure<void>{monostate{}}; }
+
+  template <class EVF>
+  auto operator()(EVF&& evf) const {
+    return basic_edgelist_adaptor_closure<std::decay_t<EVF>>{std::forward<EVF>(evf)};
+  }
+
+  template <adj_list::adjacency_list G>
+  auto operator()(G&& g) const {
+    return graph::views::basic_edgelist(std::forward<G>(g));
+  }
+
+  template <adj_list::adjacency_list G, class EVF>
+  auto operator()(G&& g, EVF&& evf) const {
+    return graph::views::basic_edgelist(std::forward<G>(g), std::forward<EVF>(evf));
   }
 };
 
@@ -625,6 +793,12 @@ inline constexpr vertexlist_adaptor_fn vertexlist{};
 inline constexpr incidence_adaptor_fn  incidence{};
 inline constexpr neighbors_adaptor_fn  neighbors{};
 inline constexpr edgelist_adaptor_fn   edgelist{};
+
+// Basic views (simplified bindings)
+inline constexpr basic_vertexlist_adaptor_fn basic_vertexlist{};
+inline constexpr basic_incidence_adaptor_fn  basic_incidence{};
+inline constexpr basic_neighbors_adaptor_fn  basic_neighbors{};
+inline constexpr basic_edgelist_adaptor_fn   basic_edgelist{};
 
 // Search views
 inline constexpr vertices_dfs_adaptor_fn vertices_dfs{};

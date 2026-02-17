@@ -934,3 +934,242 @@ TEST_CASE("edgelist chaining with reverse", "[adaptors][chaining]") {
 
   REQUIRE(edges.size() == 3);
 }
+
+//=============================================================================
+// basic_vertexlist adaptor tests
+//=============================================================================
+
+TEST_CASE("basic_vertexlist adaptor - basic pipe syntax", "[adaptors][basic_vertexlist]") {
+  auto g = make_test_graph();
+
+  auto view = g | basic_vertexlist();
+
+  REQUIRE(size(view) == 3);
+
+  std::vector<int> vertex_ids;
+  for (auto [uid] : view) {
+    vertex_ids.push_back(static_cast<int>(uid));
+  }
+
+  REQUIRE(vertex_ids == std::vector{0, 1, 2});
+}
+
+TEST_CASE("basic_vertexlist adaptor - with value function", "[adaptors][basic_vertexlist]") {
+  auto g = make_test_graph();
+
+  auto vvf  = [](const auto& g, auto&& v) { return static_cast<int>(vertex_id(g, v)) * 10; };
+  auto view = g | basic_vertexlist(vvf);
+
+  REQUIRE(size(view) == 3);
+
+  std::vector<int> values;
+  for (auto [uid, val] : view) {
+    values.push_back(val);
+  }
+
+  REQUIRE(values == std::vector{0, 10, 20});
+}
+
+TEST_CASE("basic_vertexlist adaptor - chaining with std::views::take", "[adaptors][basic_vertexlist]") {
+  auto g = make_test_graph();
+
+  auto view = g | basic_vertexlist() | std::views::take(2);
+
+  std::vector<int> vertex_ids;
+  for (auto [uid] : view) {
+    vertex_ids.push_back(static_cast<int>(uid));
+  }
+
+  REQUIRE(vertex_ids.size() == 2);
+  REQUIRE(vertex_ids == std::vector{0, 1});
+}
+
+TEST_CASE("basic_vertexlist adaptor - direct call compatibility", "[adaptors][basic_vertexlist]") {
+  auto g = make_test_graph();
+
+  auto view1 = graph::views::basic_vertexlist(g);
+  auto view2 = g | basic_vertexlist();
+
+  REQUIRE(size(view1) == size(view2));
+  REQUIRE(size(view1) == 3);
+}
+
+//=============================================================================
+// basic_incidence adaptor tests
+//=============================================================================
+
+TEST_CASE("basic_incidence adaptor - basic pipe syntax", "[adaptors][basic_incidence]") {
+  auto g = make_test_graph();
+
+  auto view = g | basic_incidence(0);
+
+  REQUIRE(size(view) == 2);
+
+  std::vector<int> target_ids;
+  for (auto [tid] : view) {
+    target_ids.push_back(static_cast<int>(tid));
+  }
+
+  REQUIRE(target_ids == std::vector{1, 2});
+}
+
+TEST_CASE("basic_incidence adaptor - with value function", "[adaptors][basic_incidence]") {
+  auto g = make_test_graph();
+
+  auto evf  = [](const auto& g, auto&& e) { return static_cast<int>(target_id(g, e)) * 10; };
+  auto view = g | basic_incidence(0, evf);
+
+  REQUIRE(size(view) == 2);
+
+  std::vector<int> values;
+  for (auto [tid, val] : view) {
+    values.push_back(val);
+  }
+
+  REQUIRE(values == std::vector{10, 20});
+}
+
+TEST_CASE("basic_incidence adaptor - chaining with std::views::take", "[adaptors][basic_incidence]") {
+  auto g = make_test_graph();
+
+  auto view = g | basic_incidence(0) | std::views::take(1);
+
+  std::vector<int> target_ids;
+  for (auto [tid] : view) {
+    target_ids.push_back(static_cast<int>(tid));
+  }
+
+  REQUIRE(target_ids.size() == 1);
+  REQUIRE(target_ids == std::vector{1});
+}
+
+TEST_CASE("basic_incidence adaptor - direct call compatibility", "[adaptors][basic_incidence]") {
+  auto g = make_test_graph();
+
+  auto view1 = graph::views::basic_incidence(g, std::size_t(0));
+  auto view2 = g | basic_incidence(0);
+
+  REQUIRE(size(view1) == size(view2));
+  REQUIRE(size(view1) == 2);
+}
+
+//=============================================================================
+// basic_neighbors adaptor tests
+//=============================================================================
+
+TEST_CASE("basic_neighbors adaptor - basic pipe syntax", "[adaptors][basic_neighbors]") {
+  auto g = make_test_graph();
+
+  auto view = g | basic_neighbors(0);
+
+  REQUIRE(size(view) == 2);
+
+  std::vector<int> neighbor_ids;
+  for (auto [tid] : view) {
+    neighbor_ids.push_back(static_cast<int>(tid));
+  }
+
+  REQUIRE(neighbor_ids == std::vector{1, 2});
+}
+
+TEST_CASE("basic_neighbors adaptor - with value function", "[adaptors][basic_neighbors]") {
+  auto g = make_test_graph();
+
+  auto vvf  = [](const auto& g, auto&& v) { return static_cast<int>(vertex_id(g, v)) * 10; };
+  auto view = g | basic_neighbors(0, vvf);
+
+  REQUIRE(size(view) == 2);
+
+  std::vector<int> values;
+  for (auto [tid, val] : view) {
+    values.push_back(val);
+  }
+
+  REQUIRE(values == std::vector{10, 20});
+}
+
+TEST_CASE("basic_neighbors adaptor - chaining with std::views::take", "[adaptors][basic_neighbors]") {
+  auto g = make_test_graph();
+
+  auto view = g | basic_neighbors(0) | std::views::take(1);
+
+  std::vector<int> neighbor_ids;
+  for (auto [tid] : view) {
+    neighbor_ids.push_back(static_cast<int>(tid));
+  }
+
+  REQUIRE(neighbor_ids.size() == 1);
+  REQUIRE(neighbor_ids == std::vector{1});
+}
+
+TEST_CASE("basic_neighbors adaptor - direct call compatibility", "[adaptors][basic_neighbors]") {
+  auto g = make_test_graph();
+
+  auto view1 = graph::views::basic_neighbors(g, std::size_t(0));
+  auto view2 = g | basic_neighbors(0);
+
+  REQUIRE(size(view1) == size(view2));
+  REQUIRE(size(view1) == 2);
+}
+
+//=============================================================================
+// basic_edgelist adaptor tests
+//=============================================================================
+
+TEST_CASE("basic_edgelist adaptor - basic pipe syntax", "[adaptors][basic_edgelist]") {
+  auto g = make_test_graph();
+
+  auto view = g | basic_edgelist();
+
+  std::vector<std::pair<int, int>> edges;
+  for (auto [sid, tid] : view) {
+    edges.push_back({static_cast<int>(sid), static_cast<int>(tid)});
+  }
+
+  // edges: 0->1, 0->2, 1->2
+  REQUIRE(edges.size() == 3);
+  REQUIRE(edges[0] == std::pair{0, 1});
+  REQUIRE(edges[1] == std::pair{0, 2});
+  REQUIRE(edges[2] == std::pair{1, 2});
+}
+
+TEST_CASE("basic_edgelist adaptor - with value function", "[adaptors][basic_edgelist]") {
+  auto g = make_test_graph();
+
+  auto evf  = [](const auto& g, auto&& e) { return static_cast<int>(source_id(g, e) + target_id(g, e)); };
+  auto view = g | basic_edgelist(evf);
+
+  std::vector<int> values;
+  for (auto [sid, tid, val] : view) {
+    values.push_back(val);
+  }
+
+  REQUIRE(values == std::vector{1, 2, 3}); // 0+1, 0+2, 1+2
+}
+
+TEST_CASE("basic_edgelist adaptor - chaining with std::views::take", "[adaptors][basic_edgelist]") {
+  auto g = make_test_graph();
+
+  auto view = g | basic_edgelist() | std::views::take(2);
+
+  std::vector<std::pair<int, int>> edges;
+  for (auto [sid, tid] : view) {
+    edges.push_back({static_cast<int>(sid), static_cast<int>(tid)});
+  }
+
+  REQUIRE(edges.size() == 2);
+  REQUIRE(edges[0] == std::pair{0, 1});
+  REQUIRE(edges[1] == std::pair{0, 2});
+}
+
+TEST_CASE("basic_edgelist adaptor - direct call compatibility", "[adaptors][basic_edgelist]") {
+  auto g = make_test_graph();
+
+  auto view1 = graph::views::basic_edgelist(g);
+  auto view2 = g | basic_edgelist();
+
+  auto count1 = std::ranges::distance(view1);
+  auto count2 = std::ranges::distance(view2);
+  REQUIRE(count1 == count2);
+  REQUIRE(count1 == 3);
+}

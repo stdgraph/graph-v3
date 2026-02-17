@@ -221,6 +221,40 @@ for (auto [e, endpoints] : g | edgelist(evf)) {
 - Build edge list
 - Graph transformations
 
+## Simplified Views (basic\_)
+
+Each basic view has a `basic_` variant that returns **ids only** (no vertex/edge descriptors).
+These are lighter-weight when you only need identifiers and don't need to access the
+vertex or edge objects themselves.
+
+| Standard | Simplified | Binding |
+|----------|-----------|---------|
+| `vertexlist` → `[id, v]` | `basic_vertexlist` → `[uid]` | vertex id only |
+| `incidence` → `[tid, e]` | `basic_incidence` → `[tid]` | target id only |
+| `neighbors` → `[tid, n]` | `basic_neighbors` → `[tid]` | target id only |
+| `edgelist` → `[sid, tid, e]` | `basic_edgelist` → `[sid, tid]` | source + target id |
+
+All `basic_` views support value functions, adding one extra binding element:
+- `basic_vertexlist(vvf)` → `[uid, val]`
+- `basic_incidence(uid, evf)` → `[tid, val]`
+- `basic_neighbors(uid, vvf)` → `[tid, val]`
+- `basic_edgelist(evf)` → `[sid, tid, val]`
+
+**Pipe syntax** via adaptor objects in `graph::views::adaptors`:
+
+```cpp
+using namespace graph::views::adaptors;
+
+// Pipe syntax
+for (auto [uid] : g | basic_vertexlist()) { ... }
+for (auto [tid] : g | basic_incidence(0)) { ... }
+for (auto [tid] : g | basic_neighbors(0)) { ... }
+for (auto [sid, tid] : g | basic_edgelist()) { ... }
+
+// Can chain with std::views
+for (auto [uid] : g | basic_vertexlist() | std::views::take(5)) { ... }
+```
+
 ## Search Views
 
 Search views perform graph traversal and yield vertices/edges in traversal order.

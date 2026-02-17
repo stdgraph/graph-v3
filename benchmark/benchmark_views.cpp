@@ -169,6 +169,83 @@ static void BM_Edgelist_Iteration(benchmark::State& state) {
 BENCHMARK(BM_Edgelist_Iteration)->RangeMultiplier(2)->Range(100, 10000)->Complexity();
 
 //=============================================================================
+// Basic_ Views Benchmarks (simplified bindings — ids only, no descriptors)
+//=============================================================================
+
+// Benchmark: basic_vertexlist iteration (id only)
+static void BM_BasicVertexlist_Iteration(benchmark::State& state) {
+  auto g = create_random_graph(state.range(0), 5);
+
+  for (auto _ : state) {
+    size_t count = 0;
+    for (auto [uid] : g | basic_vertexlist()) {
+      benchmark::DoNotOptimize(uid);
+      ++count;
+    }
+    benchmark::DoNotOptimize(count);
+  }
+
+  state.SetComplexityN(state.range(0));
+}
+BENCHMARK(BM_BasicVertexlist_Iteration)->RangeMultiplier(2)->Range(100, 10000)->Complexity();
+
+// Benchmark: basic_incidence iteration (target id only)
+static void BM_BasicIncidence_AllVertices(benchmark::State& state) {
+  auto g = create_random_graph(state.range(0), 5);
+
+  for (auto _ : state) {
+    size_t count = 0;
+    for (size_t u = 0; u < g.size(); ++u) {
+      for (auto [tid] : g | basic_incidence(u)) {
+        benchmark::DoNotOptimize(tid);
+        ++count;
+      }
+    }
+    benchmark::DoNotOptimize(count);
+  }
+
+  state.SetComplexityN(state.range(0));
+}
+BENCHMARK(BM_BasicIncidence_AllVertices)->RangeMultiplier(2)->Range(100, 10000)->Complexity();
+
+// Benchmark: basic_neighbors iteration (target id only)
+static void BM_BasicNeighbors_AllVertices(benchmark::State& state) {
+  auto g = create_random_graph(state.range(0), 5);
+
+  for (auto _ : state) {
+    size_t count = 0;
+    for (size_t u = 0; u < g.size(); ++u) {
+      for (auto [tid] : g | basic_neighbors(u)) {
+        benchmark::DoNotOptimize(tid);
+        ++count;
+      }
+    }
+    benchmark::DoNotOptimize(count);
+  }
+
+  state.SetComplexityN(state.range(0));
+}
+BENCHMARK(BM_BasicNeighbors_AllVertices)->RangeMultiplier(2)->Range(100, 10000)->Complexity();
+
+// Benchmark: basic_edgelist iteration (source_id + target_id only)
+static void BM_BasicEdgelist_Iteration(benchmark::State& state) {
+  auto g = create_random_graph(state.range(0), 5);
+
+  for (auto _ : state) {
+    size_t count = 0;
+    for (auto [sid, tid] : g | basic_edgelist()) {
+      benchmark::DoNotOptimize(sid);
+      benchmark::DoNotOptimize(tid);
+      ++count;
+    }
+    benchmark::DoNotOptimize(count);
+  }
+
+  state.SetComplexityN(state.range(0));
+}
+BENCHMARK(BM_BasicEdgelist_Iteration)->RangeMultiplier(2)->Range(100, 10000)->Complexity();
+
+//=============================================================================
 // Search Views Benchmarks
 //=============================================================================
 
