@@ -645,3 +645,79 @@ TEST_CASE("depth_first_search - finish order in DAG for topological sort", "[alg
   REQUIRE(finish_pos_3 < finish_pos_1);
   REQUIRE(finish_pos_3 < finish_pos_2);
 }
+
+// =============================================================================
+// Vertex-ID Visitor Tests
+// =============================================================================
+
+// Visitor that accepts vertex ids instead of vertex descriptors
+struct DFSIdVisitor {
+  std::vector<size_t> initialized;
+  std::vector<size_t> started;
+  std::vector<size_t> discovered;
+  std::vector<size_t> finished;
+  int                 edges_examined = 0;
+
+  template <typename G>
+  void on_initialize_vertex(const G&, const vertex_id_t<G>& uid) {
+    initialized.push_back(static_cast<size_t>(uid));
+  }
+  template <typename G>
+  void on_start_vertex(const G&, const vertex_id_t<G>& uid) {
+    started.push_back(static_cast<size_t>(uid));
+  }
+  template <typename G>
+  void on_discover_vertex(const G&, const vertex_id_t<G>& uid) {
+    discovered.push_back(static_cast<size_t>(uid));
+  }
+  template <typename G>
+  void on_finish_vertex(const G&, const vertex_id_t<G>& uid) {
+    finished.push_back(static_cast<size_t>(uid));
+  }
+  template <typename G, typename Edge>
+  void on_examine_edge(const G&, const Edge&) {
+    ++edges_examined;
+  }
+};
+
+TEST_CASE("depth_first_search - vertex id visitor", "[algorithm][dfs][visitor_id]") {
+  using Graph = vov_void;
+
+  // Path: 0 -> 1 -> 2 -> 3
+  auto          g = path_graph_4<Graph>();
+  DFSIdVisitor visitor;
+
+  depth_first_search(g, 0u, visitor);
+
+  // All 4 vertices should be discovered and finished via id-based callbacks
+  REQUIRE(visitor.initialized.size() == 1); // Only source initialized
+  REQUIRE(visitor.started.size() == 1);     // Only source started
+  REQUIRE(visitor.discovered.size() == 4);
+  REQUIRE(visitor.finished.size() == 4);
+
+  // Source vertex should be initialized and started
+  REQUIRE(visitor.initialized[0] == 0);
+  REQUIRE(visitor.started[0] == 0);
+}
+
+TEST_CASE("depth_first_search - vertex id visitor matches descriptor visitor", "[algorithm][dfs][visitor_id]") {
+  using Graph = vov_void;
+
+  auto g = path_graph_4<Graph>();
+
+  DFSTrackingVisitor desc_visitor;
+  DFSIdVisitor       id_visitor;
+
+  depth_first_search(g, 0u, desc_visitor);
+  depth_first_search(g, 0u, id_visitor);
+
+  // ID-based visitor should produce the same vertex ids as descriptor-based visitor
+  REQUIRE(desc_visitor.discovered.size() == id_visitor.discovered.size());
+  for (size_t i = 0; i < desc_visitor.discovered.size(); ++i) {
+    REQUIRE(desc_visitor.discovered[i] == static_cast<int>(id_visitor.discovered[i]));
+  }
+  REQUIRE(desc_visitor.finished.size() == id_visitor.finished.size());
+  for (size_t i = 0; i < desc_visitor.finished.size(); ++i) {
+    REQUIRE(desc_visitor.finished[i] == static_cast<int>(id_visitor.finished[i]));
+  }
+}

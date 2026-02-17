@@ -197,6 +197,10 @@ constexpr void dijkstra_shortest_paths(
     for (id_type uid = 0; uid < N; ++uid) {
       visitor.on_initialize_vertex(g, *find_vertex(g, uid));
     }
+  } else if constexpr (has_on_initialize_vertex_id<G, Visitor>) {
+    for (id_type uid = 0; uid < N; ++uid) {
+      visitor.on_initialize_vertex(g, uid);
+    }
   }
 
   // Seed the queue with the initial vertice(s)
@@ -208,6 +212,8 @@ constexpr void dijkstra_shortest_paths(
     distances[static_cast<size_t>(source)] = zero; // mark source as discovered
     if constexpr (has_on_discover_vertex<G, Visitor>) {
       visitor.on_discover_vertex(g, *find_vertex(g, source));
+    } else if constexpr (has_on_discover_vertex_id<G, Visitor>) {
+      visitor.on_discover_vertex(g, source);
     }
   }
 
@@ -217,6 +223,8 @@ constexpr void dijkstra_shortest_paths(
     queue.pop();
     if constexpr (has_on_examine_vertex<G, Visitor>) {
       visitor.on_examine_vertex(g, *find_vertex(g, uid));
+    } else if constexpr (has_on_examine_vertex_id<G, Visitor>) {
+      visitor.on_examine_vertex(g, uid);
     }
 
     // Process all outgoing edges from the current vertex
@@ -244,6 +252,8 @@ constexpr void dijkstra_shortest_paths(
           }
           if constexpr (has_on_discover_vertex<G, Visitor>) {
             visitor.on_discover_vertex(g, *find_vertex(g, vid));
+          } else if constexpr (has_on_discover_vertex_id<G, Visitor>) {
+            visitor.on_discover_vertex(g, vid);
           }
           queue.push(vid);
         } else {
@@ -271,6 +281,8 @@ constexpr void dijkstra_shortest_paths(
     // A consequence is that examine_vertex could be called twice (or more) on the same vertex.
     if constexpr (has_on_finish_vertex<G, Visitor>) {
       visitor.on_finish_vertex(g, *find_vertex(g, uid));
+    } else if constexpr (has_on_finish_vertex_id<G, Visitor>) {
+      visitor.on_finish_vertex(g, uid);
     }
   } // while(!queue.empty())
 }

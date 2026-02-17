@@ -221,9 +221,13 @@ void breadth_first_search(G&&            g, // graph
     // Notify visitor of initialization
     if constexpr (has_on_initialize_vertex<G, Visitor>) {
       visitor.on_initialize_vertex(g, *find_vertex(g, uid));
+    } else if constexpr (has_on_initialize_vertex_id<G, Visitor>) {
+      visitor.on_initialize_vertex(g, uid);
     }
     if constexpr (has_on_discover_vertex<G, Visitor>) {
       visitor.on_discover_vertex(g, *find_vertex(g, uid));
+    } else if constexpr (has_on_discover_vertex_id<G, Visitor>) {
+      visitor.on_discover_vertex(g, uid);
     }
     // Mark source as visited and add to queue
     visited[uid] = true;
@@ -239,6 +243,8 @@ void breadth_first_search(G&&            g, // graph
     // Notify visitor that we're examining this vertex
     if constexpr (has_on_examine_vertex<G, Visitor>) {
       visitor.on_examine_vertex(g, *find_vertex(g, uid));
+    } else if constexpr (has_on_examine_vertex_id<G, Visitor>) {
+      visitor.on_examine_vertex(g, uid);
     }
 
     // Explore all edges from current vertex
@@ -253,6 +259,8 @@ void breadth_first_search(G&&            g, // graph
         visited[vid] = true; // Mark as visited before queueing
         if constexpr (has_on_discover_vertex<G, Visitor>) {
           visitor.on_discover_vertex(g, *find_vertex(g, vid));
+        } else if constexpr (has_on_discover_vertex_id<G, Visitor>) {
+          visitor.on_discover_vertex(g, vid);
         }
         Q.push(vid); // Add to queue for later examination
       }
@@ -261,6 +269,8 @@ void breadth_first_search(G&&            g, // graph
     // Notify visitor that we've finished examining all edges from this vertex
     if constexpr (has_on_finish_vertex<G, Visitor>) {
       visitor.on_finish_vertex(g, *find_vertex(g, uid));
+    } else if constexpr (has_on_finish_vertex_id<G, Visitor>) {
+      visitor.on_finish_vertex(g, uid);
     }
   }
 }

@@ -159,28 +159,52 @@ constexpr void init_shortest_paths(Distances& distances, Predecessors& predecess
 
 // Vertex visitor concepts
 
-/// Concept for visitors that handle vertex initialization events
+/// Concept for visitors that handle vertex initialization events (descriptor overload)
 template <class G, class Visitor>
 concept has_on_initialize_vertex = requires(Visitor& v, const G& g, const vertex_t<G>& vdesc) {
   { v.on_initialize_vertex(g, vdesc) };
 };
 
-/// Concept for visitors that handle vertex discovery events (first encounter during traversal)
+/// Concept for visitors that handle vertex initialization events (vertex id overload)
+template <class G, class Visitor>
+concept has_on_initialize_vertex_id = requires(Visitor& v, const G& g, const vertex_id_t<G>& uid) {
+  { v.on_initialize_vertex(g, uid) };
+};
+
+/// Concept for visitors that handle vertex discovery events (descriptor overload)
 template <class G, class Visitor>
 concept has_on_discover_vertex = requires(Visitor& v, const G& g, const vertex_t<G>& vdesc) {
   { v.on_discover_vertex(g, vdesc) };
 };
 
-/// Concept for visitors that handle vertex examination events (when vertex is popped from queue/stack)
+/// Concept for visitors that handle vertex discovery events (vertex id overload)
+template <class G, class Visitor>
+concept has_on_discover_vertex_id = requires(Visitor& v, const G& g, const vertex_id_t<G>& uid) {
+  { v.on_discover_vertex(g, uid) };
+};
+
+/// Concept for visitors that handle vertex examination events (descriptor overload)
 template <class G, class Visitor>
 concept has_on_examine_vertex = requires(Visitor& v, const G& g, const vertex_t<G>& vdesc) {
   { v.on_examine_vertex(g, vdesc) };
 };
 
-/// Concept for visitors that handle vertex finish events (after all outgoing edges examined)
+/// Concept for visitors that handle vertex examination events (vertex id overload)
+template <class G, class Visitor>
+concept has_on_examine_vertex_id = requires(Visitor& v, const G& g, const vertex_id_t<G>& uid) {
+  { v.on_examine_vertex(g, uid) };
+};
+
+/// Concept for visitors that handle vertex finish events (descriptor overload)
 template <class G, class Visitor>
 concept has_on_finish_vertex = requires(Visitor& v, const G& g, const vertex_t<G>& vdesc) {
   { v.on_finish_vertex(g, vdesc) };
+};
+
+/// Concept for visitors that handle vertex finish events (vertex id overload)
+template <class G, class Visitor>
+concept has_on_finish_vertex_id = requires(Visitor& v, const G& g, const vertex_id_t<G>& uid) {
+  { v.on_finish_vertex(g, uid) };
 };
 
 // Edge visitor concepts
@@ -217,10 +241,16 @@ concept has_on_edge_not_minimized = requires(Visitor& v, const G& g, const edge_
 
 // DFS-specific visitor concepts
 
-/// Concept for visitors that handle DFS start events (when DFS begins from a new source)
+/// Concept for visitors that handle DFS start events (descriptor overload)
 template <class G, class Visitor>
 concept has_on_start_vertex = requires(Visitor& v, const G& g, const vertex_t<G>& vdesc) {
   { v.on_start_vertex(g, vdesc) };
+};
+
+/// Concept for visitors that handle DFS start events (vertex id overload)
+template <class G, class Visitor>
+concept has_on_start_vertex_id = requires(Visitor& v, const G& g, const vertex_id_t<G>& uid) {
+  { v.on_start_vertex(g, uid) };
 };
 
 /// Concept for visitors that handle tree edge events (edge to undiscovered vertex)

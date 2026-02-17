@@ -238,3 +238,47 @@ TEST_CASE("dijkstra_shortest_paths - unreachable vertices", "[algorithm][dijkstr
   REQUIRE(distance[2] == std::numeric_limits<int>::max());
   REQUIRE(distance[3] == std::numeric_limits<int>::max());
 }
+
+// =============================================================================
+// Vertex-ID Visitor Tests
+// =============================================================================
+
+// Visitor that accepts vertex ids instead of vertex descriptors
+struct IdCountingVisitor {
+  int vertices_discovered = 0;
+  int vertices_examined   = 0;
+
+  template <typename G>
+  void on_discover_vertex(const G&, const vertex_id_t<G>&) {
+    ++vertices_discovered;
+  }
+  template <typename G>
+  void on_examine_vertex(const G&, const vertex_id_t<G>&) {
+    ++vertices_examined;
+  }
+  template <typename G, typename T>
+  void on_edge_relaxed(const G&, const T&) {}
+};
+
+TEST_CASE("dijkstra_shortest_paths - vertex id visitor", "[algorithm][dijkstra_shortest_paths][visitor_id]") {
+  using Graph = vov_weighted;
+
+  auto                            g = clrs_dijkstra_graph<Graph>();
+  std::vector<int>                distance(num_vertices(g));
+  std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
+
+  init_shortest_paths(distance, predecessor);
+
+  IdCountingVisitor visitor;
+  dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor,
+                          [](const auto& g, const auto& uv) { return edge_value(g, uv); }, visitor);
+
+  // All 5 vertices should be discovered via id-based callbacks
+  // (examine may be called more than once per vertex due to re-enqueue)
+  REQUIRE(visitor.vertices_discovered == 5);
+  REQUIRE(visitor.vertices_examined >= 5);
+
+  // Results should still be correct
+  REQUIRE(distance[0] == 0);
+  REQUIRE(distance[1] == clrs_dijkstra_results::distances_from_0[1]);
+}

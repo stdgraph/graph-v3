@@ -574,3 +574,68 @@ TEST_CASE("breadth_first_search - single vs multi-source equivalence", "[algorit
   REQUIRE(v1.vertices_examined == v2.vertices_examined);
   REQUIRE(v1.vertices_finished == v2.vertices_finished);
 }
+
+// =============================================================================
+// Vertex-ID Visitor Tests
+// =============================================================================
+
+// Visitor that accepts vertex ids instead of vertex descriptors
+struct BFSIdVisitor {
+  std::vector<size_t> initialized;
+  std::vector<size_t> discovered;
+  std::vector<size_t> examined;
+  std::vector<size_t> finished;
+
+  template <typename G>
+  void on_initialize_vertex(const G&, const vertex_id_t<G>& uid) {
+    initialized.push_back(static_cast<size_t>(uid));
+  }
+  template <typename G>
+  void on_discover_vertex(const G&, const vertex_id_t<G>& uid) {
+    discovered.push_back(static_cast<size_t>(uid));
+  }
+  template <typename G>
+  void on_examine_vertex(const G&, const vertex_id_t<G>& uid) {
+    examined.push_back(static_cast<size_t>(uid));
+  }
+  template <typename G>
+  void on_finish_vertex(const G&, const vertex_id_t<G>& uid) {
+    finished.push_back(static_cast<size_t>(uid));
+  }
+};
+
+TEST_CASE("breadth_first_search - vertex id visitor", "[algorithm][bfs][visitor_id]") {
+  using Graph = vov_void;
+
+  // Path: 0 -> 1 -> 2 -> 3
+  auto          g = path_graph_4<Graph>();
+  BFSIdVisitor visitor;
+
+  breadth_first_search(g, 0u, visitor);
+
+  // All 4 vertices should be discovered, examined, and finished via id-based callbacks
+  REQUIRE(visitor.discovered.size() == 4);
+  REQUIRE(visitor.examined.size() == 4);
+  REQUIRE(visitor.finished.size() == 4);
+
+  // BFS from 0: discover order should be 0, 1, 2, 3
+  REQUIRE(visitor.discovered == std::vector<size_t>{0, 1, 2, 3});
+}
+
+TEST_CASE("breadth_first_search - vertex id visitor matches descriptor visitor", "[algorithm][bfs][visitor_id]") {
+  using Graph = vov_void;
+
+  auto g = path_graph_4<Graph>();
+
+  BFSTrackingVisitor desc_visitor;
+  BFSIdVisitor       id_visitor;
+
+  breadth_first_search(g, 0u, desc_visitor);
+  breadth_first_search(g, 0u, id_visitor);
+
+  // ID-based visitor should produce the same vertex ids as descriptor-based visitor
+  REQUIRE(desc_visitor.discovered.size() == id_visitor.discovered.size());
+  for (size_t i = 0; i < desc_visitor.discovered.size(); ++i) {
+    REQUIRE(desc_visitor.discovered[i] == static_cast<int>(id_visitor.discovered[i]));
+  }
+}

@@ -229,6 +229,8 @@ requires convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&      //
     distances[static_cast<size_t>(source)] = zero; // mark source as discovered
     if constexpr (has_on_discover_vertex<G, Visitor>) {
       visitor.on_discover_vertex(g, *find_vertex(g, source));
+    } else if constexpr (has_on_discover_vertex_id<G, Visitor>) {
+      visitor.on_discover_vertex(g, source);
     }
   }
 
