@@ -255,16 +255,16 @@ A final phase updates adaptors (pipe syntax), benchmarks, examples, and document
 | 1 | 1.5 | Add tests for `basic_vertexlist` and subranges | DONE |
 | 1 | 1.6 | Verify `vertexlist` return types match goal | DONE |
 | 1 | 1.7 | Update algorithm callers of `vertexlist` | DONE (no changes needed — all use descriptor) |
-| 1 | 1.8 | Commit Phase 1 | NOT STARTED |
-| 2 | 2.1 | Add `basic_incidence_view` class | NOT STARTED |
-| 2 | 2.2 | Add `basic_incidence()` factory functions | NOT STARTED |
-| 2 | 2.3 | Remove `incidence(g, uid)` overloads | NOT STARTED |
-| 2 | 2.4 | Update algorithm callers of `incidence(g, uid)` | NOT STARTED |
-| 2 | 2.5 | Update test callers of `incidence(g, uid)` | NOT STARTED |
-| 2 | 2.6 | Add tests for `basic_incidence` | NOT STARTED |
-| 2 | 2.7 | Update example and benchmark callers | NOT STARTED |
-| 2 | 2.8 | Verify `incidence(g, u)` return types match goal | NOT STARTED |
-| 2 | 2.9 | Commit Phase 2 | NOT STARTED |
+| 1 | 1.8 | Commit Phase 1 | DONE |
+| 2 | 2.1 | Add `basic_incidence_view` class | DONE |
+| 2 | 2.2 | Add `basic_incidence()` factory functions | DONE |
+| 2 | 2.3 | Refactor `incidence(g, uid)` overloads | DONE (kept as convenience wrappers resolving uid→descriptor) |
+| 2 | 2.4 | Update algorithm callers of `incidence(g, uid)` | DONE |
+| 2 | 2.5 | Update test callers of `incidence(g, uid)` | DONE |
+| 2 | 2.6 | Add tests for `basic_incidence` | DONE |
+| 2 | 2.7 | Update example and benchmark callers | DONE |
+| 2 | 2.8 | Verify `incidence(g, u)` return types match goal | DONE |
+| 2 | 2.9 | Commit Phase 2 | DONE |
 | 3 | 3.1 | Add `basic_neighbors_view` class | NOT STARTED |
 | 3 | 3.2 | Add `basic_neighbors()` factory functions | NOT STARTED |
 | 3 | 3.3 | Remove `neighbors(g, uid)` overloads | NOT STARTED |
@@ -287,4 +287,4 @@ A final phase updates adaptors (pipe syntax), benchmarks, examples, and document
 | 5 | 5.6 | Apply formatting | NOT STARTED |
 | 5 | 5.7 | Commit Phase 5 | NOT STARTED |
 
-**Overall: 7 / 35 steps complete**
+**Overall: 8 / 35 steps complete**

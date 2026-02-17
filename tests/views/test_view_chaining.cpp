@@ -64,7 +64,7 @@ TEST_CASE("chaining concepts - incidence with EVF is semiregular", "[chaining][c
   auto g   = make_simple_graph();
   auto evf = [](const auto& gr, auto e) { return static_cast<int>(target_id(gr, e)); };
 
-  using ViewType = decltype(incidence(g, vertex_id_t<decltype(g)>{0}, evf));
+  using ViewType = decltype(incidence(g, *find_vertex(g, vertex_id_t<decltype(g)>{0}), evf));
 
   STATIC_REQUIRE(std::ranges::range<ViewType>);
   STATIC_REQUIRE(std::ranges::view<ViewType>);
@@ -246,7 +246,7 @@ TEST_CASE("chaining - incidence EVF with std::views::take", "[chaining][incidenc
   auto g   = make_chain_graph(); // vertex 0 has edges to 1, 2
   auto evf = [](const auto& gr, auto e) { return static_cast<int>(target_id(gr, e)); };
 
-  auto view = incidence(g, vertex_id_t<decltype(g)>{0}, evf) | std::views::take(1);
+  auto view = incidence(g, *find_vertex(g, vertex_id_t<decltype(g)>{0}), evf) | std::views::take(1);
 
   std::vector<int> values;
   for (auto [tid, e, val] : view) {
@@ -261,7 +261,7 @@ TEST_CASE("chaining - incidence EVF with std::views::transform", "[chaining][inc
   auto g   = make_chain_graph(); // vertex 0 has edges to 1, 2
   auto evf = [](const auto& gr, auto e) { return static_cast<int>(target_id(gr, e)); };
 
-  auto view = incidence(g, vertex_id_t<decltype(g)>{0}, evf) | std::views::transform([](auto info) {
+  auto view = incidence(g, *find_vertex(g, vertex_id_t<decltype(g)>{0}), evf) | std::views::transform([](auto info) {
                 auto [tid, e, val] = info;
                 return val * 100;
               });

@@ -953,7 +953,7 @@ auto prim(G&&                   g,           // graph
     Q.pop();
 
     // Examine all edges incident to current vertex
-    for (auto&& [vid, uv, w] : views::incidence(g, uid, weight_fn)) {
+    for (auto&& [vid, w] : views::basic_incidence(g, uid, weight_fn)) {
       // Relaxation: if edge weight is better than current distance to neighbor
       if (compare(w, distance[vid])) {
         distance[vid] = w;            // Update minimum edge weight to reach vid

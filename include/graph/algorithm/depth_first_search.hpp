@@ -267,7 +267,7 @@ void depth_first_search(G&&                   g,      // graph
   // Each stack frame stores a vertex and iterators into its incidence range,
   // simulating the call stack of recursive DFS for correct edge classification.
 
-  using inc_range_t    = decltype(views::incidence(g, source));
+  using inc_range_t    = decltype(views::incidence(g, *find_vertex(g, source)));
   using inc_iterator_t = std::ranges::iterator_t<inc_range_t>;
   using inc_sentinel_t = std::ranges::sentinel_t<inc_range_t>;
 
@@ -285,7 +285,7 @@ void depth_first_search(G&&                   g,      // graph
 
   std::stack<StackFrame> S;
   {
-    auto inc = views::incidence(g, source);
+    auto inc = views::incidence(g, *find_vertex(g, source));
     S.push({source, std::ranges::begin(inc), std::ranges::end(inc)});
   }
 
@@ -324,7 +324,7 @@ void depth_first_search(G&&                   g,      // graph
       if constexpr (has_on_discover_vertex<G, Visitor>) {
         visitor.on_discover_vertex(g, *find_vertex(g, vid));
       }
-      auto inc = views::incidence(g, vid);
+      auto inc = views::incidence(g, *find_vertex(g, vid));
       S.push({vid, std::ranges::begin(inc), std::ranges::end(inc)});
     } else if (color[vid] == Color::Gray) {
       // Back edge: target is an ancestor still being processed (cycle)

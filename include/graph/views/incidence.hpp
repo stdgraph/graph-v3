@@ -20,9 +20,12 @@
 
 namespace graph::views {
 
-// Forward declaration
+// Forward declarations
 template <adj_list::adjacency_list G, class EVF = void>
 class incidence_view;
+
+template <adj_list::adjacency_list G, class EVF = void>
+class basic_incidence_view;
 
 /**
  * @brief Incidence view without value function
@@ -230,31 +233,250 @@ requires edge_value_function<EVF, G, adj_list::edge_t<G>>
 }
 
 /**
- * @brief Create an incidence view using vertex id (convenience overload)
- * 
+ * @brief Create an incidence view from a vertex id (convenience overload)
+ *
+ * Resolves the vertex id to a descriptor and delegates to the descriptor-based overload.
+ *
  * @param g The graph to iterate over
  * @param uid The source vertex id
- * @return incidence_view yielding edge_info<void, false, edge_descriptor, void>
+ * @return incidence_view yielding edge_info<VId, false, E, void>
  */
-template <adj_list::adjacency_list G>
-[[nodiscard]] constexpr auto incidence(G& g, adj_list::vertex_id_t<G> uid) noexcept {
+template <adj_list::index_adjacency_list G>
+[[nodiscard]] constexpr auto incidence(G& g, adj_list::vertex_id_t<G> uid) {
   auto u = *adj_list::find_vertex(g, uid);
-  return incidence_view<G, void>(g, u);
+  return incidence(g, u);
 }
 
 /**
- * @brief Create an incidence view with value function using vertex id (convenience overload)
- * 
+ * @brief Create an incidence view with value function from a vertex id (convenience overload)
+ *
+ * Resolves the vertex id to a descriptor and delegates to the descriptor-based overload.
+ *
  * @param g The graph to iterate over
  * @param uid The source vertex id
  * @param evf Value function invoked for each edge
- * @return incidence_view yielding edge_info<void, false, edge_descriptor, EV>
+ * @return incidence_view yielding edge_info<VId, false, E, EV>
  */
-template <adj_list::adjacency_list G, class EVF>
+template <adj_list::index_adjacency_list G, class EVF>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>
 [[nodiscard]] constexpr auto incidence(G& g, adj_list::vertex_id_t<G> uid, EVF&& evf) {
   auto u = *adj_list::find_vertex(g, uid);
-  return incidence_view<G, std::decay_t<EVF>>(g, u, std::forward<EVF>(evf));
+  return incidence(g, u, std::forward<EVF>(evf));
+}
+
+// =============================================================================
+// basic_incidence_view — id only (no edge descriptor in return type)
+// =============================================================================
+
+/**
+ * @brief Basic incidence view without value function (target_id only)
+ *
+ * Iterates over edges from a vertex yielding edge_info<vertex_id_type, false, void, void>.
+ * Use this when only target vertex IDs are needed (e.g., in algorithms that
+ * only traverse connectivity and don't need edge descriptors).
+ *
+ * @tparam G Graph type satisfying adjacency_list concept
+ */
+template <adj_list::adjacency_list G>
+class basic_incidence_view<G, void> : public std::ranges::view_interface<basic_incidence_view<G, void>> {
+public:
+  using graph_type         = G;
+  using vertex_type        = adj_list::vertex_t<G>;
+  using vertex_id_type     = adj_list::vertex_id_t<G>;
+  using edge_range_type    = adj_list::vertex_edge_range_t<G>;
+  using edge_iterator_type = adj_list::vertex_edge_iterator_t<G>;
+  using edge_type          = adj_list::edge_t<G>;
+  using info_type          = edge_info<vertex_id_type, false, void, void>;
+
+  class iterator {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using difference_type   = std::ptrdiff_t;
+    using value_type        = info_type;
+    using pointer           = const value_type*;
+    using reference         = value_type;
+
+    constexpr iterator() noexcept = default;
+
+    constexpr iterator(G* g, edge_type e) noexcept : g_(g), current_(e) {}
+
+    [[nodiscard]] constexpr value_type operator*() const noexcept {
+      return value_type{static_cast<vertex_id_type>(adj_list::target_id(*g_, current_))};
+    }
+
+    constexpr iterator& operator++() noexcept {
+      ++current_;
+      return *this;
+    }
+
+    constexpr iterator operator++(int) noexcept {
+      auto tmp = *this;
+      ++current_;
+      return tmp;
+    }
+
+    [[nodiscard]] constexpr bool operator==(const iterator& other) const noexcept { return current_ == other.current_; }
+
+  private:
+    G*        g_ = nullptr;
+    edge_type current_{};
+  };
+
+  using const_iterator = iterator;
+
+  constexpr basic_incidence_view() noexcept = default;
+
+  constexpr basic_incidence_view(G& g, vertex_type u) noexcept : g_(&g), source_(u) {}
+
+  [[nodiscard]] constexpr iterator begin() const noexcept {
+    auto edge_range = adj_list::edges(*g_, source_);
+    return iterator(g_, *std::ranges::begin(edge_range));
+  }
+
+  [[nodiscard]] constexpr iterator end() const noexcept {
+    auto edge_range = adj_list::edges(*g_, source_);
+    return iterator(g_, *std::ranges::end(edge_range));
+  }
+
+  [[nodiscard]] constexpr auto size() const noexcept
+  requires std::ranges::sized_range<edge_range_type>
+  {
+    return std::ranges::size(adj_list::edges(*g_, source_));
+  }
+
+private:
+  G*          g_ = nullptr;
+  vertex_type source_{};
+};
+
+/**
+ * @brief Basic incidence view with value function (target_id + value, no edge descriptor)
+ *
+ * Iterates over edges from a vertex yielding edge_info<vertex_id_type, false, void, EV>
+ * where EV is the result of invoking the value function on the edge.
+ *
+ * @tparam G Graph type satisfying adjacency_list concept
+ * @tparam EVF Edge value function type
+ */
+template <adj_list::adjacency_list G, class EVF>
+class basic_incidence_view : public std::ranges::view_interface<basic_incidence_view<G, EVF>> {
+public:
+  using graph_type         = G;
+  using vertex_type        = adj_list::vertex_t<G>;
+  using vertex_id_type     = adj_list::vertex_id_t<G>;
+  using edge_range_type    = adj_list::vertex_edge_range_t<G>;
+  using edge_iterator_type = adj_list::vertex_edge_iterator_t<G>;
+  using edge_type          = adj_list::edge_t<G>;
+  using value_type_result  = std::invoke_result_t<EVF, const G&, edge_type>;
+  using info_type          = edge_info<vertex_id_type, false, void, value_type_result>;
+
+  class iterator {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using difference_type   = std::ptrdiff_t;
+    using value_type        = info_type;
+    using pointer           = const value_type*;
+    using reference         = value_type;
+
+    constexpr iterator() noexcept = default;
+
+    constexpr iterator(G* g, edge_type e, EVF* evf) noexcept : g_(g), current_(e), evf_(evf) {}
+
+    [[nodiscard]] constexpr value_type operator*() const {
+      return value_type{static_cast<vertex_id_type>(adj_list::target_id(*g_, current_)), std::invoke(*evf_, std::as_const(*g_), current_)};
+    }
+
+    constexpr iterator& operator++() noexcept {
+      ++current_;
+      return *this;
+    }
+
+    constexpr iterator operator++(int) noexcept {
+      auto tmp = *this;
+      ++current_;
+      return tmp;
+    }
+
+    [[nodiscard]] constexpr bool operator==(const iterator& other) const noexcept { return current_ == other.current_; }
+
+  private:
+    G*        g_ = nullptr;
+    edge_type current_{};
+    EVF*      evf_ = nullptr;
+  };
+
+  using const_iterator = iterator;
+
+  constexpr basic_incidence_view() noexcept = default;
+
+  constexpr basic_incidence_view(basic_incidence_view&&)            = default;
+  constexpr basic_incidence_view& operator=(basic_incidence_view&&) = default;
+
+  constexpr basic_incidence_view(const basic_incidence_view&)            = default;
+  constexpr basic_incidence_view& operator=(const basic_incidence_view&) = default;
+
+  constexpr basic_incidence_view(G& g, vertex_type u, EVF evf) noexcept(std::is_nothrow_move_constructible_v<EVF>)
+        : g_(&g), source_(u), evf_(std::move(evf)) {}
+
+  [[nodiscard]] constexpr iterator begin() noexcept {
+    auto edge_range = adj_list::edges(*g_, source_);
+    return iterator(g_, *std::ranges::begin(edge_range), &evf_);
+  }
+
+  [[nodiscard]] constexpr iterator end() noexcept {
+    auto edge_range = adj_list::edges(*g_, source_);
+    return iterator(g_, *std::ranges::end(edge_range), &evf_);
+  }
+
+  [[nodiscard]] constexpr auto size() const noexcept
+  requires std::ranges::sized_range<edge_range_type>
+  {
+    return std::ranges::size(adj_list::edges(*g_, source_));
+  }
+
+private:
+  G*                        g_ = nullptr;
+  vertex_type               source_{};
+  [[no_unique_address]] EVF evf_{};
+};
+
+// Deduction guides for basic_incidence_view
+template <adj_list::adjacency_list G>
+basic_incidence_view(G&, adj_list::vertex_t<G>) -> basic_incidence_view<G, void>;
+
+template <adj_list::adjacency_list G, class EVF>
+basic_incidence_view(G&, adj_list::vertex_t<G>, EVF) -> basic_incidence_view<G, EVF>;
+
+// =============================================================================
+// Factory functions: basic_incidence
+// =============================================================================
+
+/**
+ * @brief Create a basic incidence view without value function (target_id only)
+ *
+ * @param g The graph to iterate over
+ * @param uid The source vertex id
+ * @return basic_incidence_view yielding edge_info<vertex_id_type, false, void, void>
+ */
+template <adj_list::adjacency_list G>
+[[nodiscard]] constexpr auto basic_incidence(G& g, adj_list::vertex_id_t<G> uid) {
+  auto u = *adj_list::find_vertex(g, uid);
+  return basic_incidence_view<G, void>(g, u);
+}
+
+/**
+ * @brief Create a basic incidence view with value function (target_id + value)
+ *
+ * @param g The graph to iterate over
+ * @param uid The source vertex id
+ * @param evf Value function invoked for each edge
+ * @return basic_incidence_view yielding edge_info<vertex_id_type, false, void, EV>
+ */
+template <adj_list::adjacency_list G, class EVF>
+requires edge_value_function<EVF, G, adj_list::edge_t<G>>
+[[nodiscard]] constexpr auto basic_incidence(G& g, adj_list::vertex_id_t<G> uid, EVF&& evf) {
+  auto u = *adj_list::find_vertex(g, uid);
+  return basic_incidence_view<G, std::decay_t<EVF>>(g, u, std::forward<EVF>(evf));
 }
 
 } // namespace graph::views

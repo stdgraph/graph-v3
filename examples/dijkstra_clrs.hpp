@@ -123,7 +123,7 @@ void dijkstra_clrs(
     auto uid = Q.top().vertex_id;
     Q.pop();
 
-    for (auto&& [vid, uv, w] : views::incidence(g, uid, weight)) {
+    for (auto&& [vid, w] : views::basic_incidence(g, uid, weight)) {
       if (distance[uid] + w < distance[vid]) {
         distance[vid] = distance[uid] + w;
         if constexpr (!is_same_v<Predecessor, _null_range_type>)

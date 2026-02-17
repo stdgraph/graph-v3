@@ -116,10 +116,11 @@ struct incidence_adaptor_closure {
 
   template <adj_list::index_adjacency_list G>
   friend auto operator|(G&& g, incidence_adaptor_closure adaptor) {
+    auto u = *adj_list::find_vertex(g, std::move(adaptor.uid));
     if constexpr (std::is_void_v<EVF>) {
-      return incidence(std::forward<G>(g), std::move(adaptor.uid));
+      return incidence(std::forward<G>(g), u);
     } else {
-      return incidence(std::forward<G>(g), std::move(adaptor.uid), std::move(adaptor.evf));
+      return incidence(std::forward<G>(g), u, std::move(adaptor.evf));
     }
   }
 };
@@ -140,15 +141,17 @@ struct incidence_adaptor_fn {
   }
 
   // Direct call: incidence(g, uid)
-  template <adj_list::adjacency_list G, class UID>
+  template <class G, class UID>
+  requires adj_list::index_adjacency_list<std::remove_cvref_t<G>>
   auto operator()(G&& g, UID&& uid) const {
-    return graph::views::incidence(std::forward<G>(g), std::forward<UID>(uid));
+    return graph::views::incidence(std::forward<G>(g), adj_list::vertex_id_t<std::remove_cvref_t<G>>(std::forward<UID>(uid)));
   }
 
   // Direct call with value function: incidence(g, uid, evf)
-  template <adj_list::adjacency_list G, class UID, class EVF>
+  template <class G, class UID, class EVF>
+  requires adj_list::index_adjacency_list<std::remove_cvref_t<G>>
   auto operator()(G&& g, UID&& uid, EVF&& evf) const {
-    return graph::views::incidence(std::forward<G>(g), std::forward<UID>(uid), std::forward<EVF>(evf));
+    return graph::views::incidence(std::forward<G>(g), adj_list::vertex_id_t<std::remove_cvref_t<G>>(std::forward<UID>(uid)), std::forward<EVF>(evf));
   }
 };
 

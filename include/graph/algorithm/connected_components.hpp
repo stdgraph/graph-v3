@@ -344,8 +344,8 @@ size_t connected_components(G&&        g,        // graph
       auto vid = S.top();
       S.pop();
       // Visit all unvisited neighbors and add to same component
-      for (auto&& einfo : views::incidence(g, vid)) {
-        auto wid = target_id(g, einfo.edge);
+      for (auto&& einfo : views::basic_incidence(g, vid)) {
+        auto wid = einfo.target_id;
         if (component[wid] == std::numeric_limits<CT>::max()) {
           component[wid] = cid; // Same component as parent
           S.push(wid);

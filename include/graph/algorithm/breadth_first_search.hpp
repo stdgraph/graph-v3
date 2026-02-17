@@ -242,7 +242,7 @@ void breadth_first_search(G&&            g, // graph
     }
 
     // Explore all edges from current vertex
-    for (auto&& [vid, uv] : views::incidence(g, uid)) {
+    for (auto&& [vid, uv] : views::incidence(g, *find_vertex(g, uid))) {
       // Notify visitor about this edge
       if constexpr (has_on_examine_edge<G, Visitor>) {
         visitor.on_examine_edge(g, uv);

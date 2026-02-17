@@ -171,7 +171,7 @@ namespace detail {
 
     using id_type = vertex_id_t<G>;
     using namespace graph::views;
-    using inc_range_t    = decltype(incidence(g, source));
+    using inc_range_t    = decltype(basic_incidence(g, source));
     using inc_iterator_t = std::ranges::iterator_t<inc_range_t>;
     using inc_sentinel_t = std::ranges::sentinel_t<inc_range_t>;
 
@@ -186,7 +186,7 @@ namespace detail {
 
     std::stack<StackFrame> S;
     {
-      auto inc = incidence(g, source);
+      auto inc = basic_incidence(g, source);
       S.push({source, std::ranges::begin(inc), std::ranges::end(inc)});
     }
 
@@ -202,13 +202,13 @@ namespace detail {
       }
 
       // Process next edge from this vertex
-      auto&& [vid, uv] = *frame.it;
+      auto&& [vid] = *frame.it;
       ++frame.it;
 
       if (color[vid] == Color::White) {
         // Tree edge: discover target and push its frame
         color[vid] = Color::Gray;
-        auto inc   = incidence(g, vid);
+        auto inc   = basic_incidence(g, vid);
         S.push({vid, std::ranges::begin(inc), std::ranges::end(inc)});
       } else if (color[vid] == Color::Gray) {
         // Back edge: cycle detected
