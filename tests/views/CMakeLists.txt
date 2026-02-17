@@ -10,6 +10,7 @@ add_executable(graph3_views_tests
     test_incidence.cpp
     test_basic_incidence.cpp
     test_neighbors.cpp
+    test_basic_neighbors.cpp
     test_edgelist.cpp
     test_basic_views.cpp
     test_dfs.cpp

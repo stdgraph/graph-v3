@@ -20,9 +20,12 @@
 
 namespace graph::views {
 
-// Forward declaration
+// Forward declarations
 template <adj_list::adjacency_list G, class VVF = void>
 class neighbors_view;
+
+template <adj_list::adjacency_list G, class VVF = void>
+class basic_neighbors_view;
 
 /**
  * @brief Neighbors view without value function
@@ -225,14 +228,16 @@ template <adj_list::adjacency_list G>
 /**
  * @brief Create a neighbors view without value function (vertex_id overload)
  * 
+ * Resolves the vertex id to a descriptor and delegates to the descriptor-based overload.
+ *
  * @param g The graph to iterate over
  * @param uid The source vertex id
- * @return neighbors_view yielding neighbor_info<void, false, vertex_descriptor, void>
+ * @return neighbors_view yielding neighbor_info<VId, false, V, void>
  */
-template <adj_list::adjacency_list G>
+template <adj_list::index_adjacency_list G>
 [[nodiscard]] constexpr auto neighbors(G& g, adj_list::vertex_id_t<G> uid) noexcept {
-  auto u = adj_list::find_vertex(g, uid);
-  return neighbors_view<G, void>(g, *u);
+  auto u = *adj_list::find_vertex(g, uid);
+  return neighbors(g, u);
 }
 
 /**
@@ -252,16 +257,239 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
 /**
  * @brief Create a neighbors view with value function (vertex_id overload)
  * 
+ * Resolves the vertex id to a descriptor and delegates to the descriptor-based overload.
+ *
  * @param g The graph to iterate over
  * @param uid The source vertex id
  * @param vvf Value function invoked for each target vertex
- * @return neighbors_view yielding neighbor_info<void, false, vertex_descriptor, VV>
+ * @return neighbors_view yielding neighbor_info<VId, false, V, VV>
+ */
+template <adj_list::index_adjacency_list G, class VVF>
+requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
+[[nodiscard]] constexpr auto neighbors(G& g, adj_list::vertex_id_t<G> uid, VVF&& vvf) {
+  auto u = *adj_list::find_vertex(g, uid);
+  return neighbors(g, u, std::forward<VVF>(vvf));
+}
+
+// =============================================================================
+// basic_neighbors_view — id only (no vertex descriptor in return type)
+// =============================================================================
+
+/**
+ * @brief Basic neighbors view without value function (target_id only)
+ *
+ * Iterates over neighbors yielding neighbor_info<vertex_id_type, false, void, void>.
+ * Use this when only target vertex IDs are needed (e.g., in algorithms that
+ * only traverse connectivity and don't need vertex descriptors).
+ *
+ * @tparam G Graph type satisfying adjacency_list concept
+ */
+template <adj_list::adjacency_list G>
+class basic_neighbors_view<G, void> : public std::ranges::view_interface<basic_neighbors_view<G, void>> {
+public:
+  using graph_type         = G;
+  using vertex_type        = adj_list::vertex_t<G>;
+  using vertex_id_type     = adj_list::vertex_id_t<G>;
+  using edge_range_type    = adj_list::vertex_edge_range_t<G>;
+  using edge_iterator_type = adj_list::vertex_edge_iterator_t<G>;
+  using edge_type          = adj_list::edge_t<G>;
+  using info_type          = neighbor_info<vertex_id_type, false, void, void>;
+
+  class iterator {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using difference_type   = std::ptrdiff_t;
+    using value_type        = info_type;
+    using pointer           = const value_type*;
+    using reference         = value_type;
+
+    constexpr iterator() noexcept = default;
+
+    constexpr iterator(G* g, edge_type e) noexcept : g_(g), current_edge_(e) {}
+
+    [[nodiscard]] constexpr value_type operator*() const noexcept {
+      return value_type{static_cast<vertex_id_type>(adj_list::target_id(*g_, current_edge_))};
+    }
+
+    constexpr iterator& operator++() noexcept {
+      ++current_edge_;
+      return *this;
+    }
+
+    constexpr iterator operator++(int) noexcept {
+      auto tmp = *this;
+      ++current_edge_;
+      return tmp;
+    }
+
+    [[nodiscard]] constexpr bool operator==(const iterator& other) const noexcept {
+      return current_edge_ == other.current_edge_;
+    }
+
+  private:
+    G*        g_ = nullptr;
+    edge_type current_edge_{};
+  };
+
+  using const_iterator = iterator;
+
+  constexpr basic_neighbors_view() noexcept = default;
+
+  constexpr basic_neighbors_view(G& g, vertex_type u) noexcept : g_(&g), source_(u) {}
+
+  [[nodiscard]] constexpr iterator begin() const noexcept {
+    auto edge_range = adj_list::edges(*g_, source_);
+    return iterator(g_, *std::ranges::begin(edge_range));
+  }
+
+  [[nodiscard]] constexpr iterator end() const noexcept {
+    auto edge_range = adj_list::edges(*g_, source_);
+    return iterator(g_, *std::ranges::end(edge_range));
+  }
+
+  [[nodiscard]] constexpr auto size() const noexcept
+  requires std::ranges::sized_range<edge_range_type>
+  {
+    return std::ranges::size(adj_list::edges(*g_, source_));
+  }
+
+private:
+  G*          g_ = nullptr;
+  vertex_type source_{};
+};
+
+/**
+ * @brief Basic neighbors view with value function (target_id + value, no vertex descriptor)
+ *
+ * Iterates over neighbors yielding neighbor_info<vertex_id_type, false, void, VV>
+ * where VV is the result of invoking the value function on the target vertex.
+ *
+ * @tparam G Graph type satisfying adjacency_list concept
+ * @tparam VVF Vertex value function type
+ */
+template <adj_list::adjacency_list G, class VVF>
+class basic_neighbors_view : public std::ranges::view_interface<basic_neighbors_view<G, VVF>> {
+public:
+  using graph_type         = G;
+  using vertex_type        = adj_list::vertex_t<G>;
+  using vertex_id_type     = adj_list::vertex_id_t<G>;
+  using edge_range_type    = adj_list::vertex_edge_range_t<G>;
+  using edge_iterator_type = adj_list::vertex_edge_iterator_t<G>;
+  using edge_type          = adj_list::edge_t<G>;
+  using value_type_result  = std::invoke_result_t<VVF, const G&, vertex_type>;
+  using info_type          = neighbor_info<vertex_id_type, false, void, value_type_result>;
+
+  class iterator {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using difference_type   = std::ptrdiff_t;
+    using value_type        = info_type;
+    using pointer           = const value_type*;
+    using reference         = value_type;
+
+    constexpr iterator() noexcept = default;
+
+    constexpr iterator(G* g, edge_type e, VVF* vvf) noexcept : g_(g), current_edge_(e), vvf_(vvf) {}
+
+    [[nodiscard]] constexpr value_type operator*() const {
+      auto target    = adj_list::target(*g_, current_edge_);
+      auto target_id = static_cast<vertex_id_type>(adj_list::vertex_id(*g_, target));
+      return value_type{target_id, std::invoke(*vvf_, std::as_const(*g_), target)};
+    }
+
+    constexpr iterator& operator++() noexcept {
+      ++current_edge_;
+      return *this;
+    }
+
+    constexpr iterator operator++(int) noexcept {
+      auto tmp = *this;
+      ++current_edge_;
+      return tmp;
+    }
+
+    [[nodiscard]] constexpr bool operator==(const iterator& other) const noexcept {
+      return current_edge_ == other.current_edge_;
+    }
+
+  private:
+    G*        g_ = nullptr;
+    edge_type current_edge_{};
+    VVF*      vvf_ = nullptr;
+  };
+
+  using const_iterator = iterator;
+
+  constexpr basic_neighbors_view() noexcept = default;
+
+  constexpr basic_neighbors_view(basic_neighbors_view&&)            = default;
+  constexpr basic_neighbors_view& operator=(basic_neighbors_view&&) = default;
+
+  constexpr basic_neighbors_view(const basic_neighbors_view&)            = default;
+  constexpr basic_neighbors_view& operator=(const basic_neighbors_view&) = default;
+
+  constexpr basic_neighbors_view(G& g, vertex_type u, VVF vvf) noexcept(std::is_nothrow_move_constructible_v<VVF>)
+        : g_(&g), source_(u), vvf_(std::move(vvf)) {}
+
+  [[nodiscard]] constexpr iterator begin() noexcept {
+    auto edge_range = adj_list::edges(*g_, source_);
+    return iterator(g_, *std::ranges::begin(edge_range), &vvf_);
+  }
+
+  [[nodiscard]] constexpr iterator end() noexcept {
+    auto edge_range = adj_list::edges(*g_, source_);
+    return iterator(g_, *std::ranges::end(edge_range), &vvf_);
+  }
+
+  [[nodiscard]] constexpr auto size() const noexcept
+  requires std::ranges::sized_range<edge_range_type>
+  {
+    return std::ranges::size(adj_list::edges(*g_, source_));
+  }
+
+private:
+  G*                        g_ = nullptr;
+  vertex_type               source_{};
+  [[no_unique_address]] VVF vvf_{};
+};
+
+// Deduction guides for basic_neighbors_view
+template <adj_list::adjacency_list G>
+basic_neighbors_view(G&, adj_list::vertex_t<G>) -> basic_neighbors_view<G, void>;
+
+template <adj_list::adjacency_list G, class VVF>
+basic_neighbors_view(G&, adj_list::vertex_t<G>, VVF) -> basic_neighbors_view<G, VVF>;
+
+// =============================================================================
+// Factory functions: basic_neighbors
+// =============================================================================
+
+/**
+ * @brief Create a basic neighbors view without value function (target_id only)
+ *
+ * @param g The graph to iterate over
+ * @param uid The source vertex id
+ * @return basic_neighbors_view yielding neighbor_info<vertex_id_type, false, void, void>
+ */
+template <adj_list::adjacency_list G>
+[[nodiscard]] constexpr auto basic_neighbors(G& g, adj_list::vertex_id_t<G> uid) {
+  auto u = *adj_list::find_vertex(g, uid);
+  return basic_neighbors_view<G, void>(g, u);
+}
+
+/**
+ * @brief Create a basic neighbors view with value function (target_id + value)
+ *
+ * @param g The graph to iterate over
+ * @param uid The source vertex id
+ * @param vvf Value function invoked for each target vertex
+ * @return basic_neighbors_view yielding neighbor_info<vertex_id_type, false, void, VV>
  */
 template <adj_list::adjacency_list G, class VVF>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
-[[nodiscard]] constexpr auto neighbors(G& g, adj_list::vertex_id_t<G> uid, VVF&& vvf) {
-  auto u = adj_list::find_vertex(g, uid);
-  return neighbors_view<G, std::decay_t<VVF>>(g, *u, std::forward<VVF>(vvf));
+[[nodiscard]] constexpr auto basic_neighbors(G& g, adj_list::vertex_id_t<G> uid, VVF&& vvf) {
+  auto u = *adj_list::find_vertex(g, uid);
+  return basic_neighbors_view<G, std::decay_t<VVF>>(g, u, std::forward<VVF>(vvf));
 }
 
 } // namespace graph::views
