@@ -43,9 +43,12 @@ namespace edgelist_detail {
   concept has_const_time_num_edges = _has_num_edges_member<G> || _has_num_edges_adl<G>;
 } // namespace edgelist_detail
 
-// Forward declaration
+// Forward declarations
 template <adj_list::adjacency_list G, class EVF = void>
 class edgelist_view;
+
+template <adj_list::adjacency_list G, class EVF = void>
+class basic_edgelist_view;
 
 /**
  * @brief Edgelist view without value function
@@ -344,6 +347,288 @@ requires edge_value_function<EVF, G, adj_list::edge_t<G>>
 [[nodiscard]] constexpr auto edgelist(G&    g,
                                       EVF&& evf) noexcept(std::is_nothrow_constructible_v<std::decay_t<EVF>, EVF>) {
   return edgelist_view<G, std::decay_t<EVF>>(g, std::forward<EVF>(evf));
+}
+
+// =============================================================================
+// basic_edgelist_view — ids only (no edge descriptor in return type)
+// =============================================================================
+
+/**
+ * @brief Basic edgelist view without value function (source_id + target_id only)
+ *
+ * Iterates over all edges yielding edge_info<vertex_id_type, true, void, void>.
+ * Use this when only vertex IDs are needed and edge descriptors are not required.
+ *
+ * @tparam G Graph type satisfying adjacency_list concept
+ */
+template <adj_list::adjacency_list G>
+class basic_edgelist_view<G, void> : public std::ranges::view_interface<basic_edgelist_view<G, void>> {
+public:
+  using graph_type      = G;
+  using vertex_type     = adj_list::vertex_t<G>;
+  using vertex_id_type  = adj_list::vertex_id_t<G>;
+  using edge_range_type = adj_list::vertex_edge_range_t<G>;
+  using edge_type       = adj_list::edge_t<G>;
+  using info_type       = edge_info<vertex_id_type, true, void, void>;
+
+  class iterator {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using difference_type   = std::ptrdiff_t;
+    using value_type        = info_type;
+    using pointer           = const value_type*;
+    using reference         = value_type;
+
+    constexpr iterator() noexcept = default;
+
+    constexpr iterator(G* g, vertex_type v, vertex_type v_end, edge_type current_edge, edge_type edge_end) noexcept
+          : g_(g), v_(v), v_end_(v_end), current_edge_(current_edge), edge_end_(edge_end) {}
+
+    [[nodiscard]] constexpr value_type operator*() const noexcept {
+      return value_type{static_cast<vertex_id_type>(adj_list::vertex_id(*g_, v_)),
+                        static_cast<vertex_id_type>(adj_list::target_id(*g_, current_edge_))};
+    }
+
+    constexpr iterator& operator++() noexcept {
+      ++current_edge_;
+      if (current_edge_ == edge_end_) {
+        ++v_;
+        advance_to_valid_edge();
+      }
+      return *this;
+    }
+
+    constexpr iterator operator++(int) noexcept {
+      auto tmp = *this;
+      ++*this;
+      return tmp;
+    }
+
+    [[nodiscard]] constexpr bool operator==(const iterator& other) const noexcept {
+      if (v_ == v_end_ && other.v_ == other.v_end_) {
+        return true;
+      }
+      if (v_ == v_end_ || other.v_ == other.v_end_) {
+        return false;
+      }
+      return v_ == other.v_ && current_edge_ == other.current_edge_;
+    }
+
+    constexpr void advance_to_valid_edge() noexcept {
+      while (v_ != v_end_) {
+        auto edge_range = adj_list::edges(*g_, v_);
+        auto begin_it   = std::ranges::begin(edge_range);
+        auto end_it     = std::ranges::end(edge_range);
+        if (begin_it != end_it) {
+          current_edge_ = *begin_it;
+          edge_end_     = *end_it;
+          return;
+        }
+        ++v_;
+      }
+    }
+
+  private:
+    G*          g_ = nullptr;
+    vertex_type v_{};
+    vertex_type v_end_{};
+    edge_type   current_edge_{};
+    edge_type   edge_end_{};
+  };
+
+  using const_iterator = iterator;
+
+  constexpr basic_edgelist_view() noexcept = default;
+
+  constexpr basic_edgelist_view(G& g) noexcept : g_(&g) {}
+
+  [[nodiscard]] constexpr iterator begin() const noexcept {
+    auto v_range = adj_list::vertices(*g_);
+    auto v_begin = *std::ranges::begin(v_range);
+    auto v_end   = *std::ranges::end(v_range);
+
+    iterator it(g_, v_begin, v_end, edge_type{}, edge_type{});
+    it.advance_to_valid_edge();
+    return it;
+  }
+
+  [[nodiscard]] constexpr iterator end() const noexcept {
+    auto v_range = adj_list::vertices(*g_);
+    auto v_end   = *std::ranges::end(v_range);
+    return iterator(g_, v_end, v_end, edge_type{}, edge_type{});
+  }
+
+  [[nodiscard]] constexpr auto size() const noexcept
+  requires edgelist_detail::has_const_time_num_edges<G>
+  {
+    return adj_list::num_edges(*g_);
+  }
+
+private:
+  G* g_ = nullptr;
+};
+
+/**
+ * @brief Basic edgelist view with value function (source_id + target_id + value, no edge descriptor)
+ *
+ * Iterates over all edges yielding edge_info<vertex_id_type, true, void, EV>
+ * where EV is the result of invoking the value function on the edge.
+ *
+ * @tparam G Graph type satisfying adjacency_list concept
+ * @tparam EVF Edge value function type
+ */
+template <adj_list::adjacency_list G, class EVF>
+class basic_edgelist_view : public std::ranges::view_interface<basic_edgelist_view<G, EVF>> {
+public:
+  using graph_type        = G;
+  using vertex_type       = adj_list::vertex_t<G>;
+  using vertex_id_type    = adj_list::vertex_id_t<G>;
+  using edge_range_type   = adj_list::vertex_edge_range_t<G>;
+  using edge_type         = adj_list::edge_t<G>;
+  using value_type_result = std::invoke_result_t<EVF, const G&, edge_type>;
+  using info_type         = edge_info<vertex_id_type, true, void, value_type_result>;
+
+  class iterator {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using difference_type   = std::ptrdiff_t;
+    using value_type        = info_type;
+    using pointer           = const value_type*;
+    using reference         = value_type;
+
+    constexpr iterator() noexcept = default;
+
+    constexpr iterator(
+          G* g, vertex_type v, vertex_type v_end, edge_type current_edge, edge_type edge_end, EVF* evf) noexcept
+          : g_(g), v_(v), v_end_(v_end), current_edge_(current_edge), edge_end_(edge_end), evf_(evf) {}
+
+    [[nodiscard]] constexpr value_type operator*() const {
+      return value_type{static_cast<vertex_id_type>(adj_list::vertex_id(*g_, v_)),
+                        static_cast<vertex_id_type>(adj_list::target_id(*g_, current_edge_)),
+                        std::invoke(*evf_, std::as_const(*g_), current_edge_)};
+    }
+
+    constexpr iterator& operator++() noexcept {
+      ++current_edge_;
+      if (current_edge_ == edge_end_) {
+        ++v_;
+        advance_to_valid_edge();
+      }
+      return *this;
+    }
+
+    constexpr iterator operator++(int) noexcept {
+      auto tmp = *this;
+      ++*this;
+      return tmp;
+    }
+
+    [[nodiscard]] constexpr bool operator==(const iterator& other) const noexcept {
+      if (v_ == v_end_ && other.v_ == other.v_end_) {
+        return true;
+      }
+      if (v_ == v_end_ || other.v_ == other.v_end_) {
+        return false;
+      }
+      return v_ == other.v_ && current_edge_ == other.current_edge_;
+    }
+
+    constexpr void advance_to_valid_edge() noexcept {
+      while (v_ != v_end_) {
+        auto edge_range = adj_list::edges(*g_, v_);
+        auto begin_it   = std::ranges::begin(edge_range);
+        auto end_it     = std::ranges::end(edge_range);
+        if (begin_it != end_it) {
+          current_edge_ = *begin_it;
+          edge_end_     = *end_it;
+          return;
+        }
+        ++v_;
+      }
+    }
+
+  private:
+    G*          g_ = nullptr;
+    vertex_type v_{};
+    vertex_type v_end_{};
+    edge_type   current_edge_{};
+    edge_type   edge_end_{};
+    EVF*        evf_ = nullptr;
+  };
+
+  using const_iterator = iterator;
+
+  constexpr basic_edgelist_view() noexcept = default;
+
+  constexpr basic_edgelist_view(basic_edgelist_view&&)            = default;
+  constexpr basic_edgelist_view& operator=(basic_edgelist_view&&) = default;
+
+  constexpr basic_edgelist_view(const basic_edgelist_view&)            = default;
+  constexpr basic_edgelist_view& operator=(const basic_edgelist_view&) = default;
+
+  constexpr basic_edgelist_view(G& g, EVF evf) noexcept(std::is_nothrow_move_constructible_v<EVF>)
+        : g_(&g), evf_(std::move(evf)) {}
+
+  [[nodiscard]] constexpr iterator begin() noexcept {
+    auto v_range = adj_list::vertices(*g_);
+    auto v_begin = *std::ranges::begin(v_range);
+    auto v_end   = *std::ranges::end(v_range);
+
+    iterator it(g_, v_begin, v_end, edge_type{}, edge_type{}, &evf_);
+    it.advance_to_valid_edge();
+    return it;
+  }
+
+  [[nodiscard]] constexpr iterator end() noexcept {
+    auto v_range = adj_list::vertices(*g_);
+    auto v_end   = *std::ranges::end(v_range);
+    return iterator(g_, v_end, v_end, edge_type{}, edge_type{}, &evf_);
+  }
+
+  [[nodiscard]] constexpr auto size() const noexcept
+  requires edgelist_detail::has_const_time_num_edges<G>
+  {
+    return adj_list::num_edges(*g_);
+  }
+
+private:
+  G*                        g_ = nullptr;
+  [[no_unique_address]] EVF evf_{};
+};
+
+// Deduction guides for basic_edgelist_view
+template <adj_list::adjacency_list G>
+basic_edgelist_view(G&) -> basic_edgelist_view<G, void>;
+
+template <adj_list::adjacency_list G, class EVF>
+basic_edgelist_view(G&, EVF) -> basic_edgelist_view<G, EVF>;
+
+// =============================================================================
+// Factory functions: basic_edgelist
+// =============================================================================
+
+/**
+ * @brief Create a basic edgelist view without value function (source_id + target_id only)
+ *
+ * @param g The graph to iterate over
+ * @return basic_edgelist_view yielding edge_info<vertex_id_type, true, void, void>
+ */
+template <adj_list::adjacency_list G>
+[[nodiscard]] constexpr auto basic_edgelist(G& g) noexcept {
+  return basic_edgelist_view<G, void>(g);
+}
+
+/**
+ * @brief Create a basic edgelist view with value function (source_id + target_id + value)
+ *
+ * @param g The graph to iterate over
+ * @param evf Value function invoked for each edge
+ * @return basic_edgelist_view yielding edge_info<vertex_id_type, true, void, EV>
+ */
+template <adj_list::adjacency_list G, class EVF>
+requires edge_value_function<EVF, G, adj_list::edge_t<G>>
+[[nodiscard]] constexpr auto basic_edgelist(G& g, EVF&& evf) {
+  return basic_edgelist_view<G, std::decay_t<EVF>>(g, std::forward<EVF>(evf));
 }
 
 // =============================================================================

@@ -144,15 +144,13 @@ A final phase updates adaptors (pipe syntax), benchmarks, examples, and document
 - **Build & run existing tests**
 
 ### Step 3.3: Refactor existing `neighbors(g, uid)` overloads
-- **Remove** `neighbors(g, uid)` and `neighbors(g, uid, vvf)` factory functions
-- Callers must switch to `neighbors(g, u)` or `basic_neighbors(g, uid)`
-- **Do NOT build yet** — callers will break; fix in next steps
+- Keep `neighbors(g, uid)` and `neighbors(g, uid, vvf)` as convenience wrappers resolving uid→descriptor
+- Update to use `index_adjacency_list` constraint and `*find_vertex` pattern (matching Phase 2)
+- Update `neighbors_adaptor_fn` direct-call operators to use `index_adjacency_list<remove_cvref_t<G>>`
+- **Build & run existing tests**
 
 ### Step 3.4: Update test callers of `neighbors(g, uid)`
-- `tests/views/test_neighbors.cpp` (~38 sites) — update uid-based calls to `basic_neighbors`
-- `tests/views/test_adaptors.cpp` (~11 sites) — update as needed
-- `tests/views/test_edge_cases.cpp` (~6 sites) — update uid-based calls
-- `tests/views/test_view_chaining.cpp` (~3 sites) — update uid-based calls
+- No changes needed — uid-based overloads kept as convenience wrappers
 - **Build & run all tests**
 
 ### Step 3.5: Add tests for `basic_neighbors`
@@ -161,7 +159,7 @@ A final phase updates adaptors (pipe syntax), benchmarks, examples, and document
 - **Build & run all view tests**
 
 ### Step 3.6: Update benchmark callers
-- `benchmark/benchmark_views.cpp` (1 site) — update if uid-based
+- No changes needed — benchmark uses pipe adaptor which routes through uid-based overloads
 - **Build & run benchmarks**
 
 ### Step 3.7: Verify `neighbors(g, u)` return types match goal
@@ -170,7 +168,7 @@ A final phase updates adaptors (pipe syntax), benchmarks, examples, and document
 - **Build & run all tests**
 
 ### Step 3.8: Commit Phase 3
-- Commit message: "Phase 3: Add basic_neighbors; remove neighbors uid overloads"
+- Commit message: "Phase 3: Add basic_neighbors; refactor neighbors uid overloads"
 
 ---
 
@@ -265,14 +263,14 @@ A final phase updates adaptors (pipe syntax), benchmarks, examples, and document
 | 2 | 2.7 | Update example and benchmark callers | DONE |
 | 2 | 2.8 | Verify `incidence(g, u)` return types match goal | DONE |
 | 2 | 2.9 | Commit Phase 2 | DONE |
-| 3 | 3.1 | Add `basic_neighbors_view` class | NOT STARTED |
-| 3 | 3.2 | Add `basic_neighbors()` factory functions | NOT STARTED |
-| 3 | 3.3 | Remove `neighbors(g, uid)` overloads | NOT STARTED |
-| 3 | 3.4 | Update test callers of `neighbors(g, uid)` | NOT STARTED |
-| 3 | 3.5 | Add tests for `basic_neighbors` | NOT STARTED |
-| 3 | 3.6 | Update benchmark callers | NOT STARTED |
-| 3 | 3.7 | Verify `neighbors(g, u)` return types match goal | NOT STARTED |
-| 3 | 3.8 | Commit Phase 3 | NOT STARTED |
+| 3 | 3.1 | Add `basic_neighbors_view` class | DONE |
+| 3 | 3.2 | Add `basic_neighbors()` factory functions | DONE |
+| 3 | 3.3 | Refactor `neighbors(g, uid)` overloads | DONE (kept as convenience wrappers resolving uid→descriptor) |
+| 3 | 3.4 | Update test callers of `neighbors(g, uid)` | DONE (no changes needed — uid overloads kept) |
+| 3 | 3.5 | Add tests for `basic_neighbors` | DONE |
+| 3 | 3.6 | Update benchmark callers | DONE (no changes needed) |
+| 3 | 3.7 | Verify `neighbors(g, u)` return types match goal | DONE |
+| 3 | 3.8 | Commit Phase 3 | DONE |
 | 4 | 4.1 | Add `basic_edgelist_view` class | NOT STARTED |
 | 4 | 4.2 | Add `basic_edgelist()` factory functions | NOT STARTED |
 | 4 | 4.3 | Add tests for `basic_edgelist` | NOT STARTED |
@@ -287,4 +285,4 @@ A final phase updates adaptors (pipe syntax), benchmarks, examples, and document
 | 5 | 5.6 | Apply formatting | NOT STARTED |
 | 5 | 5.7 | Commit Phase 5 | NOT STARTED |
 
-**Overall: 8 / 35 steps complete**
+**Overall: 25 / 35 steps complete**
