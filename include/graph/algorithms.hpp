@@ -28,6 +28,9 @@
 // #include "algorithm/bellman_ford.hpp"
 // #include "algorithm/bfs.hpp"
 
+// Community Detection
+#include "algorithm/label_propagation.hpp"
+
 // Search Algorithms
 // #include "algorithm/dfs.hpp"
 

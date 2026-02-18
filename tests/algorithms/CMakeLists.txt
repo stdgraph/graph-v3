@@ -12,6 +12,7 @@ add_executable(test_algorithms
     test_triangle_count.cpp
     test_mis.cpp
     test_mst.cpp
+    test_label_propagation.cpp
 )
 
 target_link_libraries(test_algorithms
