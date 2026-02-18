@@ -1,11 +1,112 @@
 /**
  * @file edgelist.hpp
- * @brief Edgelist view for iterating over all edges in a graph
- * 
- * Provides a view that flattens the two-level adjacency list structure into
- * a single range of edges, yielding edge_info<vertex_id_type, true, edge_t<G>, EV>
- * for each edge. Includes both source and target vertex IDs directly.
- * Supports optional value functions to compute per-edge values.
+ * @brief Edgelist views for iterating over all edges in a graph.
+ *
+ * @section overview Overview
+ *
+ * Provides lazy, range-based views that flatten the two-level adjacency-list
+ * structure into a single range of edges.  Each iteration step yields an
+ * @c edge_info whose fields are exposed via structured bindings, including
+ * both source and target vertex IDs.  An optional edge value function (EVF)
+ * computes a per-edge value that is included in the binding.
+ *
+ * For per-vertex edge iteration use @ref incidence.hpp instead; for
+ * edge-list data structures (not adjacency lists) see
+ * @c edge_list_edgelist_view at the bottom of this file.
+ *
+ * @section variants View Variants
+ *
+ * | Variant                          | Structured Binding  | Description                         |
+ * |----------------------------------|---------------------|-------------------------------------|
+ * | @c edgelist(g)                   | `[sid, tid, uv]`    | Standard view (ids + edge)          |
+ * | @c edgelist(g,evf)               | `[sid, tid, uv, val]` | Standard view with value function |
+ * | @c basic_edgelist(g)             | `[sid, tid]`        | Simplified view (ids only)          |
+ * | @c basic_edgelist(g,evf)         | `[sid, tid, val]`   | Simplified view with value fn       |
+ *
+ * @section bindings Structured Bindings
+ *
+ * Standard view:
+ * @code
+ *   for (auto [sid, tid, uv]      : edgelist(g))         // sid, tid = vertex_id_t<G>, uv = edge_t<G>
+ *   for (auto [sid, tid, uv, val] : edgelist(g, evf))    // val = invoke_result_t<EVF, G&, edge_t<G>>
+ * @endcode
+ *
+ * basic_ variant:
+ * @code
+ *   for (auto [sid, tid]      : basic_edgelist(g))        // sid, tid = vertex_id_t<G>
+ *   for (auto [sid, tid, val] : basic_edgelist(g, evf))   // val = invoke_result_t<EVF, G&, edge_t<G>>
+ * @endcode
+ *
+ * @section iterator_properties Iterator Properties
+ *
+ * | Property        | Value                                                    |
+ * |-----------------|----------------------------------------------------------|
+ * | Concept         | @c std::forward_iterator                                 |
+ * | Range concept   | @c std::ranges::forward_range                            |
+ * | Sized           | Yes when graph provides O(1) @c num_edges (member/ADL)   |
+ * | Borrowed        | No (view holds reference)                                |
+ * | Common          | Yes (begin/end same type)                                |
+ *
+ * @section perf Performance Characteristics
+ *
+ * Construction is O(1).  @c begin() is O(V) in the worst case because it
+ * must skip leading vertices that have no edges.  Each @c operator++ is
+ * amortised O(1): within a vertex's edge range it is a simple increment,
+ * and between vertices it advances to the next non-empty edge range.  Full
+ * iteration visits every edge exactly once in O(V + E) time.  The view
+ * holds only a pointer to the graph — no allocation.  The @c basic_ variant
+ * is lighter still: it never materialises an edge descriptor.
+ *
+ * @section chaining Chaining with std::views
+ *
+ * Views chain with std::views when the value function is a stateless lambda
+ * (empty capture list @c []):
+ *
+ * @code
+ *   auto evf = [](const auto& g, auto uv) { return target_id(g, uv); };
+ *   auto view = edgelist(g, evf)
+ *               | std::views::take(10);  // ✅ compiles
+ * @endcode
+ *
+ * See @ref view_chaining_limitations.md for the design rationale.
+ *
+ * @section pipe Pipe Adaptor Syntax
+ *
+ * Pipe-style usage is available via @c graph::views::adaptors:
+ * @code
+ *   using namespace graph::views::adaptors;
+ *
+ *   for (auto [sid, tid, uv] : g | edgelist())             { ... }
+ *   for (auto [sid, tid]     : g | basic_edgelist())       { ... }
+ *   for (auto [sid, tid, val]: g | basic_edgelist(evf))    { ... }
+ * @endcode
+ *
+ * @section supported_graphs Supported Graph Properties
+ *
+ * - Requires: @c adjacency_list concept
+ * - Works with all @c dynamic_graph container combinations
+ * - Works with directed and undirected graphs
+ * - @c edge_list_edgelist_view wraps @c basic_sourced_edgelist data structures
+ *
+ * @section exception_safety Exception Safety
+ *
+ * Construction is @c noexcept when EVF is nothrow move-constructible (or
+ * absent).  Iteration may propagate exceptions from the value function; all
+ * other iterator operations are @c noexcept.
+ *
+ * @section preconditions Preconditions
+ *
+ * - The graph @c g must outlive the view.
+ * - The graph must not be mutated during iteration.
+ *
+ * @section see_also See Also
+ *
+ * - @ref views.md — all views overview
+ * - @ref graph_cpo_implementation.md — CPO documentation
+ * - @ref view_chaining_limitations.md — chaining design rationale
+ * - @ref vertexlist.hpp — whole-graph vertex iteration
+ * - @ref incidence.hpp — per-vertex edge iteration
+ * - @ref neighbors.hpp — per-vertex adjacent-vertex iteration
  */
 
 #pragma once
@@ -51,11 +152,19 @@ template <adj_list::adjacency_list G, class EVF = void>
 class basic_edgelist_view;
 
 /**
- * @brief Edgelist view without value function
- * 
- * Iterates over all edges in the graph yielding edge_info<vertex_id_type, true, edge_t<G>, void>
- * 
- * @tparam G Graph type satisfying adjacency_list concept
+ * @brief Edgelist view without value function.
+ *
+ * Flattens the adjacency-list structure into a single range of edges,
+ * yielding @c edge_info{sid,tid,uv} per edge via structured bindings.
+ *
+ * @code
+ *   for (auto [sid, tid, uv] : edgelist(g)) { ... }
+ * @endcode
+ *
+ * @tparam G  Graph type satisfying @c adjacency_list
+ *
+ * @see edgelist_view<G,EVF> — with value function
+ * @see basic_edgelist_view  — simplified (ids only)
  */
 template <adj_list::adjacency_list G>
 class edgelist_view<G, void> : public std::ranges::view_interface<edgelist_view<G, void>> {
@@ -68,11 +177,11 @@ public:
   using info_type       = edge_info<vertex_id_type, true, edge_type, void>;
 
   /**
-     * @brief Forward iterator that flattens vertex-edge structure
-     * 
-     * Iterates through all vertices, and for each vertex, iterates through
-     * all of its edges, presenting a single flat sequence of edges.
-     * Uses vertex and edge descriptors directly, similar to vertexlist_view and incidence_view.
+     * @brief Forward iterator yielding @c edge_info{sid, tid, uv}.
+     *
+     * Walks every vertex in order; for each vertex, walks its outgoing edges.
+     * @c operator*() returns an @c edge_info with @c source_id, @c target_id
+     * and the edge descriptor.
      */
   class iterator {
   public:
@@ -186,13 +295,21 @@ private:
 };
 
 /**
- * @brief Edgelist view with value function
- * 
- * Iterates over all edges yielding edge_info<vertex_id_type, true, edge_t<G>, EV>
- * where EV is the result of invoking the value function on the edge descriptor.
- * 
- * @tparam G Graph type satisfying adjacency_list concept
- * @tparam EVF Edge value function type
+ * @brief Edgelist view with an edge value function.
+ *
+ * Flattens the adjacency-list structure into a single range of edges,
+ * yielding @c edge_info{sid,tid,uv,val} per edge via structured bindings.
+ *
+ * @code
+ *   auto evf = [](const auto& g, auto uv) { return target_id(g, uv); };
+ *   for (auto [sid, tid, uv, val] : edgelist(g, evf)) { ... }
+ * @endcode
+ *
+ * @tparam G   Graph type satisfying @c adjacency_list
+ * @tparam EVF Edge value function — @c invocable<const G&, edge_t<G>>
+ *
+ * @see edgelist_view<G,void> — without value function
+ * @see basic_edgelist_view   — simplified (ids only)
  */
 template <adj_list::adjacency_list G, class EVF>
 class edgelist_view : public std::ranges::view_interface<edgelist_view<G, EVF>> {
@@ -206,9 +323,12 @@ public:
   using info_type         = edge_info<vertex_id_type, true, edge_type, value_type_result>;
 
   /**
-     * @brief Forward iterator that flattens vertex-edge structure with value computation
-     * 
-     * Uses vertex and edge descriptors directly, similar to vertexlist_view and incidence_view.
+     * @brief Forward iterator yielding @c edge_info{sid, tid, uv, val}.
+     *
+     * Walks every vertex in order; for each vertex, walks its outgoing edges.
+     * @c operator*() invokes the edge value function and returns an
+     * @c edge_info with @c source_id, @c target_id, the edge descriptor
+     * and the computed value.
      */
   class iterator {
   public:
@@ -322,11 +442,17 @@ private:
 // =============================================================================
 
 /**
- * @brief Create an edgelist view over all edges in an adjacency list
- * 
- * @tparam G Graph type satisfying adjacency_list concept
- * @param g The graph to iterate over
- * @return edgelist_view<G, void> yielding edge_info<vertex_id_type, true, edge_t<G>, void>
+ * @brief Create an edgelist view over all edges in an adjacency list (no value function).
+ *
+ * @code
+ *   for (auto [sid, tid, uv] : edgelist(g)) { ... }
+ * @endcode
+ *
+ * @tparam G  Graph type satisfying @c adjacency_list
+ * @param  g  The graph to iterate over.  Must outlive the returned view.
+ * @return @c edgelist_view yielding @c edge_info{sid, tid, uv} per edge.
+ *
+ * @post The graph is not modified.
  */
 template <adj_list::adjacency_list G>
 [[nodiscard]] constexpr auto edgelist(G& g) noexcept {
@@ -334,13 +460,21 @@ template <adj_list::adjacency_list G>
 }
 
 /**
- * @brief Create an edgelist view with value function over all edges
- * 
- * @tparam G Graph type satisfying adjacency_list concept
- * @tparam EVF Edge value function type
- * @param g The graph to iterate over
- * @param evf Function to compute values from edge descriptors
- * @return edgelist_view<G, EVF> yielding edge_info<vertex_id_type, true, edge_t<G>, EV>
+ * @brief Create an edgelist view with an edge value function.
+ *
+ * @code
+ *   auto evf = [](const auto& g, auto uv) { return target_id(g, uv); };
+ *   for (auto [sid, tid, uv, val] : edgelist(g, evf)) { ... }
+ * @endcode
+ *
+ * @tparam G   Graph type satisfying @c adjacency_list
+ * @tparam EVF Edge value function — @c invocable<const G&, edge_t<G>>
+ * @param  g   The graph to iterate over.  Must outlive the returned view.
+ * @param  evf Value function invoked once per edge.
+ *             Use a stateless lambda for @c std::views chaining support.
+ * @return @c edgelist_view yielding @c edge_info{sid, tid, uv, val} per edge.
+ *
+ * @post The graph is not modified.
  */
 template <adj_list::adjacency_list G, class EVF>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>
@@ -354,12 +488,19 @@ requires edge_value_function<EVF, G, adj_list::edge_t<G>>
 // =============================================================================
 
 /**
- * @brief Basic edgelist view without value function (source_id + target_id only)
+ * @brief Basic edgelist view without value function (ids only).
  *
- * Iterates over all edges yielding edge_info<vertex_id_type, true, void, void>.
- * Use this when only vertex IDs are needed and edge descriptors are not required.
+ * Simplified variant that yields only source and target vertex ids,
+ * omitting the edge descriptor.  Use when only ids are needed.
  *
- * @tparam G Graph type satisfying adjacency_list concept
+ * @code
+ *   for (auto [sid, tid] : basic_edgelist(g)) { ... }
+ * @endcode
+ *
+ * @tparam G  Graph type satisfying @c adjacency_list
+ *
+ * @see basic_edgelist_view<G,EVF> — with value function
+ * @see edgelist_view              — standard view (with edge descriptor)
  */
 template <adj_list::adjacency_list G>
 class basic_edgelist_view<G, void> : public std::ranges::view_interface<basic_edgelist_view<G, void>> {
@@ -371,6 +512,7 @@ public:
   using edge_type       = adj_list::edge_t<G>;
   using info_type       = edge_info<vertex_id_type, true, void, void>;
 
+  /// @brief Forward iterator yielding @c edge_info{sid, tid} — source/target ids only.
   class iterator {
   public:
     using iterator_category = std::forward_iterator_tag;
@@ -469,13 +611,21 @@ private:
 };
 
 /**
- * @brief Basic edgelist view with value function (source_id + target_id + value, no edge descriptor)
+ * @brief Basic edgelist view with an edge value function (ids + value, no descriptor).
  *
- * Iterates over all edges yielding edge_info<vertex_id_type, true, void, EV>
- * where EV is the result of invoking the value function on the edge.
+ * Simplified variant that yields source id, target id and the computed
+ * edge value, omitting the edge descriptor.
  *
- * @tparam G Graph type satisfying adjacency_list concept
- * @tparam EVF Edge value function type
+ * @code
+ *   auto evf = [](const auto& g, auto uv) { return target_id(g, uv); };
+ *   for (auto [sid, tid, val] : basic_edgelist(g, evf)) { ... }
+ * @endcode
+ *
+ * @tparam G   Graph type satisfying @c adjacency_list
+ * @tparam EVF Edge value function — @c invocable<const G&, edge_t<G>>
+ *
+ * @see basic_edgelist_view<G,void> — without value function
+ * @see edgelist_view               — standard view (with edge descriptor)
  */
 template <adj_list::adjacency_list G, class EVF>
 class basic_edgelist_view : public std::ranges::view_interface<basic_edgelist_view<G, EVF>> {
@@ -488,6 +638,7 @@ public:
   using value_type_result = std::invoke_result_t<EVF, const G&, edge_type>;
   using info_type         = edge_info<vertex_id_type, true, void, value_type_result>;
 
+  /// @brief Forward iterator yielding @c edge_info{sid, tid, val} — ids + computed value.
   class iterator {
   public:
     using iterator_category = std::forward_iterator_tag;
@@ -608,10 +759,17 @@ basic_edgelist_view(G&, EVF) -> basic_edgelist_view<G, EVF>;
 // =============================================================================
 
 /**
- * @brief Create a basic edgelist view without value function (source_id + target_id only)
+ * @brief Create a basic edgelist view (source + target ids only, no descriptor).
  *
- * @param g The graph to iterate over
- * @return basic_edgelist_view yielding edge_info<vertex_id_type, true, void, void>
+ * @code
+ *   for (auto [sid, tid] : basic_edgelist(g)) { ... }
+ * @endcode
+ *
+ * @tparam G  Graph type satisfying @c adjacency_list
+ * @param  g  The graph to iterate over.  Must outlive the returned view.
+ * @return @c basic_edgelist_view yielding @c edge_info{sid, tid} per edge.
+ *
+ * @post The graph is not modified.
  */
 template <adj_list::adjacency_list G>
 [[nodiscard]] constexpr auto basic_edgelist(G& g) noexcept {
@@ -619,11 +777,22 @@ template <adj_list::adjacency_list G>
 }
 
 /**
- * @brief Create a basic edgelist view with value function (source_id + target_id + value)
+ * @brief Create a basic edgelist view with an edge value function
+ *        (source + target ids + value, no descriptor).
  *
- * @param g The graph to iterate over
- * @param evf Value function invoked for each edge
- * @return basic_edgelist_view yielding edge_info<vertex_id_type, true, void, EV>
+ * @code
+ *   auto evf = [](const auto& g, auto uv) { return target_id(g, uv); };
+ *   for (auto [sid, tid, val] : basic_edgelist(g, evf)) { ... }
+ * @endcode
+ *
+ * @tparam G   Graph type satisfying @c adjacency_list
+ * @tparam EVF Edge value function — @c invocable<const G&, edge_t<G>>
+ * @param  g   The graph to iterate over.  Must outlive the returned view.
+ * @param  evf Value function invoked once per edge.
+ *             Use a stateless lambda for @c std::views chaining support.
+ * @return @c basic_edgelist_view yielding @c edge_info{sid, tid, val} per edge.
+ *
+ * @post The graph is not modified.
  */
 template <adj_list::adjacency_list G, class EVF>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>
@@ -640,11 +809,19 @@ template <edge_list::basic_sourced_edgelist EL, class EVF = void>
 class edge_list_edgelist_view;
 
 /**
- * @brief Edgelist view for edge_list without value function
- * 
- * Wraps an edge_list range directly, yielding edge_info<vertex_id_type, true, edge_t<EL>, void>
- * 
- * @tparam EL Edge list type satisfying basic_sourced_edgelist concept
+ * @brief Edgelist view wrapping a native @c edge_list data structure (no value function).
+ *
+ * Unlike the adjacency-list overloads above, this view iterates directly over
+ * an @c edge_list range, yielding @c edge_info{sid,tid,uv} per edge.
+ *
+ * @code
+ *   for (auto [sid, tid, uv] : edgelist(el)) { ... }
+ * @endcode
+ *
+ * @tparam EL Edge list type satisfying @c basic_sourced_edgelist
+ *
+ * @see edge_list_edgelist_view<EL,EVF> — with value function
+ * @see edgelist_view                   — adjacency-list counterpart
  */
 template <edge_list::basic_sourced_edgelist EL>
 class edge_list_edgelist_view<EL, void> : public std::ranges::view_interface<edge_list_edgelist_view<EL, void>> {
@@ -655,7 +832,7 @@ public:
   using info_type      = edge_info<vertex_id_type, true, edge_type, void>;
 
   /**
-     * @brief Forward iterator wrapping edge_list iteration
+     * @brief Forward iterator yielding @c edge_info{sid, tid, uv} from the edge list.
      */
   class iterator {
   public:
@@ -714,13 +891,21 @@ private:
 };
 
 /**
- * @brief Edgelist view for edge_list with value function
- * 
- * Wraps an edge_list range, yielding edge_info<vertex_id_type, true, edge_t<EL>, EV>
- * where EV is the result of invoking the value function on the edge.
- * 
- * @tparam EL Edge list type satisfying basic_sourced_edgelist concept
- * @tparam EVF Edge value function type
+ * @brief Edgelist view wrapping a native @c edge_list with a value function.
+ *
+ * Iterates directly over an @c edge_list range, yielding
+ * @c edge_info{sid,tid,uv,val} per edge.
+ *
+ * @code
+ *   auto evf = [](auto& el, auto& e) { return graph::edge_value(el, e); };
+ *   for (auto [sid, tid, uv, val] : edgelist(el, evf)) { ... }
+ * @endcode
+ *
+ * @tparam EL  Edge list type satisfying @c basic_sourced_edgelist
+ * @tparam EVF Edge value function — @c invocable<EL&, edge_t<EL>>
+ *
+ * @see edge_list_edgelist_view<EL,void> — without value function
+ * @see edgelist_view                    — adjacency-list counterpart
  */
 template <edge_list::basic_sourced_edgelist EL, class EVF>
 class edge_list_edgelist_view : public std::ranges::view_interface<edge_list_edgelist_view<EL, EVF>> {
@@ -732,7 +917,7 @@ public:
   using info_type         = edge_info<vertex_id_type, true, edge_type, value_type_result>;
 
   /**
-     * @brief Forward iterator wrapping edge_list iteration with value computation
+     * @brief Forward iterator yielding @c edge_info{sid, tid, uv, val} from the edge list.
      */
   class iterator {
   public:
@@ -799,11 +984,17 @@ private:
 // =============================================================================
 
 /**
- * @brief Create an edgelist view over an edge_list
- * 
- * @tparam EL Edge list type satisfying basic_sourced_edgelist concept
- * @param el The edge list to iterate over
- * @return edge_list_edgelist_view<EL, void> yielding edge_info<vertex_id_type, true, edge_t<EL>, void>
+ * @brief Create an edgelist view over a native @c edge_list (no value function).
+ *
+ * @code
+ *   for (auto [sid, tid, uv] : edgelist(el)) { ... }
+ * @endcode
+ *
+ * @tparam EL Edge list type satisfying @c basic_sourced_edgelist
+ * @param  el The edge list to iterate over.  Must outlive the returned view.
+ * @return @c edge_list_edgelist_view yielding @c edge_info{sid, tid, uv} per edge.
+ *
+ * @post The edge list is not modified.
  */
 template <edge_list::basic_sourced_edgelist EL>
 requires(!adj_list::adjacency_list<EL>) // Disambiguation: prefer adjacency_list overload
@@ -812,13 +1003,20 @@ requires(!adj_list::adjacency_list<EL>) // Disambiguation: prefer adjacency_list
 }
 
 /**
- * @brief Create an edgelist view with value function over an edge_list
- * 
- * @tparam EL Edge list type satisfying basic_sourced_edgelist concept
- * @tparam EVF Edge value function type (receives edge_list& and edge)
- * @param el The edge list to iterate over
- * @param evf Function to compute values from edges
- * @return edge_list_edgelist_view<EL, EVF> yielding edge_info<vertex_id_type, true, edge_t<EL>, EV>
+ * @brief Create an edgelist view over a native @c edge_list with a value function.
+ *
+ * @code
+ *   auto evf = [](auto& el, auto& e) { return graph::edge_value(el, e); };
+ *   for (auto [sid, tid, uv, val] : edgelist(el, evf)) { ... }
+ * @endcode
+ *
+ * @tparam EL  Edge list type satisfying @c basic_sourced_edgelist
+ * @tparam EVF Edge value function — @c invocable<EL&, edge_t<EL>>
+ * @param  el  The edge list to iterate over.  Must outlive the returned view.
+ * @param  evf Value function invoked once per edge.
+ * @return @c edge_list_edgelist_view yielding @c edge_info{sid, tid, uv, val} per edge.
+ *
+ * @post The edge list is not modified.
  */
 template <edge_list::basic_sourced_edgelist EL, class EVF>
 requires(!adj_list::adjacency_list<EL>) && // Disambiguation: prefer adjacency_list overload

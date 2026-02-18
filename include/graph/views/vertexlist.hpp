@@ -1,67 +1,114 @@
 /**
  * @file vertexlist.hpp
- * @brief Vertexlist view for iterating over graph vertices
- * 
- * Provides a view that iterates over all vertices in a graph, yielding
- * vertex_info<vertex_id_type, vertex_descriptor, VV> for each vertex. Supports
- * optional value functions to compute per-vertex values.
- * 
- * @section chaining_with_std_views Chaining with std::views
- * 
- * Views created WITHOUT value functions chain perfectly with std::views:
+ * @brief Vertexlist views for iterating over all vertices in a graph.
+ *
+ * @section overview Overview
+ *
+ * Provides lazy, range-based views that iterate over every vertex in a graph.
+ * Each iteration step yields a @c vertex_info whose fields are exposed via
+ * structured bindings.  An optional vertex value function (VVF) computes a
+ * per-vertex value that is included in the binding.
+ *
+ * @section variants View Variants
+ *
+ * | Variant                        | Structured Binding | Description                        |
+ * |--------------------------------|--------------------|------------------------------------|
+ * | @c vertexlist(g)               | `[uid, u]`         | Standard view (id + descriptor)    |
+ * | @c vertexlist(g,vvf)           | `[uid, u, val]`    | Standard view with value function  |
+ * | @c basic_vertexlist(g)         | `[uid]`            | Simplified view (id only)          |
+ * | @c basic_vertexlist(g,vvf)     | `[uid, val]`       | Simplified view with value fn      |
+ *
+ * All variants also accept a subrange (iterator pair or vertex range) to
+ * restrict which vertices are visited.
+ *
+ * @section bindings Structured Bindings
+ *
+ * Standard view:
  * @code
- *   auto view = g | vertexlist()
- *                 | std::views::transform([](auto vi) { return vi.id * 2; })
- *                 | std::views::filter([](auto doubled_id) { return doubled_id > 0; });
+ *   for (auto [uid, u]      : vertexlist(g))          // uid = vertex_id_t<G>, u = vertex_t<G>
+ *   for (auto [uid, u, val] : vertexlist(g, vvf))     // val = invoke_result_t<VVF, G&, vertex_t<G>>
  * @endcode
- * 
- * @warning LIMITATION: Views with capturing lambda value functions cannot chain with std::views
  *
- * This FAILS to compile in C++20:
+ * basic_ variant:
  * @code
- *   // OLD approach (capturing) - broken for chaining:
- *   auto vvf = [&g](auto v) { return vertex_id(g, v) * 10; };
- *   auto view = g | vertexlist(vvf) | std::views::take(2);  // ❌ Won't compile
+ *   for (auto [uid]      : basic_vertexlist(g))       // uid = vertex_id_t<G>
+ *   for (auto [uid, val] : basic_vertexlist(g, vvf))  // val = invoke_result_t<VVF, G&, vertex_t<G>>
+ * @endcode
  *
- *   // NEW approach (parameter-based) - works for chaining:
+ * @section iterator_properties Iterator Properties
+ *
+ * | Property        | Value                           |
+ * |-----------------|---------------------------------|
+ * | Concept         | @c std::forward_iterator        |
+ * | Range concept   | @c std::ranges::forward_range   |
+ * | Sized           | Yes (`size()` in O(1))          |
+ * | Borrowed        | No (view holds reference)       |
+ * | Common          | Yes (begin/end same type)       |
+ *
+ * @section perf Performance Characteristics
+ *
+ * Construction is O(1).  Iteration is O(V), one vertex per step.  The view
+ * holds only a pointer to the graph and an iterator pair — no allocation.
+ * The @c basic_ variant is lighter still: it never materialises a vertex
+ * descriptor and returns only the vertex id.
+ *
+ * @section chaining Chaining with std::views
+ *
+ * Views chain with std::views when the value function is a stateless lambda
+ * (empty capture list @c []):
+ *
+ * @code
+ *   // Stateless lambda — default_initializable & semiregular → satisfies view
  *   auto vvf = [](const auto& g, auto v) { return vertex_id(g, v) * 10; };
- *   auto view = g | vertexlist(vvf) | std::views::take(2);  // ✅ Compiles
+ *   auto view = g | vertexlist(vvf)
+ *                 | std::views::take(5)        // ✅ compiles
+ *                 | std::views::filter(...);   // ✅ compiles
+ *
+ *   // Views without a value function also chain:
+ *   auto view = g | vertexlist()
+ *                 | std::views::transform([](auto vi) { return vi.id * 2; });
  * @endcode
  *
- * The new parameter-based approach passes the graph as first argument to the
- * value function, eliminating the need for lambda captures. Stateless lambdas
- * (empty capture list) are default_initializable and semiregular, which allows
- * the view to satisfy std::ranges::view and chain with std::views.
- * 
- * @section workarounds Workarounds
- * 
- * 1. RECOMMENDED: Use views without value functions, then transform:
+ * See @ref view_chaining_limitations.md for the design rationale.
+ *
+ * @section pipe Pipe Adaptor Syntax
+ *
+ * Pipe-style usage is available via @c graph::views::adaptors:
  * @code
- *   auto view = g | vertexlist()
- *                 | std::views::transform([](auto vi) { 
- *                     return std::make_tuple(vi.id, vi.vertex, vi.id * 10);
- *                   });
+ *   using namespace graph::views::adaptors;
+ *
+ *   for (auto [uid, u]  : g | vertexlist())              { ... }
+ *   for (auto [uid]     : g | basic_vertexlist())        { ... }
+ *   for (auto [uid, val]: g | basic_vertexlist(vvf))     { ... }
  * @endcode
- * 
- * 2. Don't chain - use value functions standalone:
- * @code
- *   auto vvf = [&g](auto v) { return vertex_id(g, v) * 10; };
- *   auto view = g | vertexlist(vvf);  // ✅ Works fine, just don't chain further
- * @endcode
- * 
- * 3. Extract to container first, then chain:
- * @code
- *   std::vector<vertex_info<...>> vertices;
- *   for (auto vi : g | vertexlist()) vertices.push_back(vi);
- *   auto view = vertices | std::views::transform(...);
- * @endcode
- * 
- * @section cpp26_fix C++26 Fix
- * 
- * C++26 will introduce std::copyable_function (P2548) or similar type-erased
- * function wrappers that are always semiregular, which will solve this issue.
- * Future implementation could wrap VVF in such a type to enable chaining
- * with capturing lambdas.
+ *
+ * @section supported_graphs Supported Graph Properties
+ *
+ * - Requires: @c adjacency_list concept
+ *   (subrange overloads require @c index_adjacency_list)
+ * - Works with all @c dynamic_graph container combinations
+ * - Works with directed and undirected graphs
+ *
+ * @section exception_safety Exception Safety
+ *
+ * Construction is @c noexcept when VVF is nothrow move-constructible (or
+ * absent).  Iteration may propagate exceptions from the value function; all
+ * other iterator operations are @c noexcept.
+ *
+ * @section preconditions Preconditions
+ *
+ * - The graph @c g must outlive the view.
+ * - The graph must not be mutated during iteration.
+ * - For subrange overloads, the range must be a valid sub-sequence of
+ *   @c vertices(g).
+ *
+ * @section see_also See Also
+ *
+ * - @ref views.md — all views overview
+ * - @ref graph_cpo_implementation.md — CPO documentation
+ * - @ref view_chaining_limitations.md — chaining design rationale
+ * - @ref incidence.hpp — per-vertex edge iteration
+ * - @ref neighbors.hpp — per-vertex neighbor iteration
  */
 
 #pragma once
@@ -85,11 +132,25 @@ template <adj_list::adjacency_list G, class VVF = void>
 class basic_vertexlist_view;
 
 /**
- * @brief Vertexlist view without value function
- * 
- * Iterates over vertices yielding vertex_info<vertex_id_type, vertex_t<G>, void>
- * 
- * @tparam G Graph type satisfying adjacency_list concept
+ * @brief Vertexlist view — standard variant without value function.
+ *
+ * Iterates over every vertex in the graph, yielding
+ * @c vertex_info<vertex_id_type,vertex_t<G>,void> per step.
+ *
+ * Structured binding: @c auto [uid, u] where
+ * - @c uid — @c vertex_id_t<G> (vertex identifier)
+ * - @c u   — @c vertex_t<G>    (vertex descriptor)
+ *
+ * @par Iterator category
+ * @c std::forward_iterator — sized, common range.
+ *
+ * @par Performance
+ * Construction O(1).  Full iteration O(V).  Zero allocation.
+ *
+ * @tparam G Graph type satisfying @c adjacency_list
+ *
+ * @see vertexlist(G&) — factory function
+ * @see basic_vertexlist_view — simplified id-only variant
  */
 template <adj_list::adjacency_list G>
 class vertexlist_view<G, void> : public std::ranges::view_interface<vertexlist_view<G, void>> {
@@ -100,8 +161,10 @@ public:
   using info_type      = vertex_info<vertex_id_type, vertex_type, void>;
 
   /**
-     * @brief Forward iterator yielding vertex_info values
-     */
+   * @brief Forward iterator yielding @c vertex_info{uid, u} per vertex.
+   *
+   * Satisfies @c std::forward_iterator.  All operations are @c noexcept.
+   */
   class iterator {
   public:
     using iterator_category = std::forward_iterator_tag;
@@ -163,13 +226,34 @@ private:
 };
 
 /**
- * @brief Vertexlist view with value function
- * 
- * Iterates over vertices yielding vertex_info<vertex_id_type, vertex_t<G>, VV>
- * where VV is the result of invoking the value function on the vertex descriptor.
- * 
- * @tparam G Graph type satisfying adjacency_list concept
- * @tparam VVF Value function type
+ * @brief Vertexlist view — standard variant with value function.
+ *
+ * Iterates over every vertex, yielding
+ * @c vertex_info<vertex_id_type,vertex_t<G>,VV> where @c VV =
+ * @c invoke_result_t<VVF,const G&,vertex_t<G>> .
+ *
+ * Structured binding: @c auto [uid, u, val] where
+ * - @c uid — @c vertex_id_t<G> (vertex identifier)
+ * - @c u   — @c vertex_t<G>    (vertex descriptor)
+ * - @c val — computed value returned by VVF
+ *
+ * @par Chaining with std::views
+ * Use a stateless lambda (empty capture @c []) for the value function so
+ * the view satisfies @c std::ranges::view and chains with @c std::views
+ * adaptors.
+ *
+ * @par Iterator category
+ * @c std::forward_iterator — sized, common range.
+ *
+ * @par Performance
+ * Construction O(1).  Full iteration O(V), invoking VVF once per vertex.
+ * Zero allocation.
+ *
+ * @tparam G   Graph type satisfying @c adjacency_list
+ * @tparam VVF Vertex value function — @c invocable<const G&, vertex_t<G>>
+ *
+ * @see vertexlist(G&, VVF&&) — factory function
+ * @see basic_vertexlist_view — simplified id-only variant
  */
 template <adj_list::adjacency_list G, class VVF>
 class vertexlist_view : public std::ranges::view_interface<vertexlist_view<G, VVF>> {
@@ -181,8 +265,10 @@ public:
   using info_type         = vertex_info<vertex_id_type, vertex_type, value_type_result>;
 
   /**
-     * @brief Forward iterator yielding vertex_info values with computed value
-     */
+   * @brief Forward iterator yielding @c vertex_info{uid, u, val} per vertex.
+   *
+   * Satisfies @c std::forward_iterator.  @c operator*() may throw if VVF throws.
+   */
   class iterator {
   public:
     using iterator_category = std::forward_iterator_tag;
@@ -265,12 +351,32 @@ vertexlist_view(G&, VVF) -> vertexlist_view<G, VVF>;
 // =============================================================================
 
 /**
- * @brief Basic vertexlist view without value function (id only)
- * 
- * Iterates over vertices yielding vertex_info<vertex_id_type, void, void>.
- * Use this when only vertex IDs are needed (e.g., in algorithms using index_adjacency_list).
- * 
- * @tparam G Graph type satisfying adjacency_list concept
+ * @brief Basic vertexlist view — simplified variant without value function.
+ *
+ * Iterates over every vertex, yielding @c vertex_info<vertex_id_type,void,void>.
+ * No vertex descriptor is materialised — only the vertex id is returned,
+ * making this the lightest-weight vertex iteration available.
+ *
+ * Structured binding: @c auto [uid] where
+ * - @c uid — @c vertex_id_t<G> (vertex identifier)
+ *
+ * @par When to use
+ * Prefer @c basic_vertexlist when you only need vertex IDs (e.g. to index
+ * into external containers such as distance / predecessor arrays).  For
+ * access to the vertex descriptor or stored vertex value, use
+ * @c vertexlist_view instead.
+ *
+ * @par Iterator category
+ * @c std::forward_iterator — sized, common range.
+ *
+ * @par Performance
+ * Construction O(1).  Full iteration O(V).  Zero allocation.  Avoids
+ * the descriptor lookup that the standard variant performs.
+ *
+ * @tparam G Graph type satisfying @c adjacency_list
+ *
+ * @see basic_vertexlist(G&) — factory function
+ * @see vertexlist_view — standard variant with descriptor
  */
 template <adj_list::adjacency_list G>
 class basic_vertexlist_view<G, void> : public std::ranges::view_interface<basic_vertexlist_view<G, void>> {
@@ -281,8 +387,10 @@ public:
   using info_type      = vertex_info<vertex_id_type, void, void>;
 
   /**
-     * @brief Forward iterator yielding vertex_info values (id only)
-     */
+   * @brief Forward iterator yielding @c vertex_info{uid} per vertex.
+   *
+   * Satisfies @c std::forward_iterator.  All operations are @c noexcept.
+   */
   class iterator {
   public:
     using iterator_category = std::forward_iterator_tag;
@@ -344,13 +452,35 @@ private:
 };
 
 /**
- * @brief Basic vertexlist view with value function (id + value, no vertex descriptor)
- * 
- * Iterates over vertices yielding vertex_info<vertex_id_type, void, VV>
- * where VV is the result of invoking the value function on the vertex.
- * 
- * @tparam G Graph type satisfying adjacency_list concept
- * @tparam VVF Value function type
+ * @brief Basic vertexlist view — simplified variant with value function.
+ *
+ * Iterates over every vertex, yielding
+ * @c vertex_info<vertex_id_type,void,VV> where @c VV =
+ * @c invoke_result_t<VVF,const G&,vertex_t<G>> .  No vertex descriptor is
+ * materialised.
+ *
+ * Structured binding: @c auto [uid, val] where
+ * - @c uid — @c vertex_id_t<G> (vertex identifier)
+ * - @c val — computed value returned by VVF
+ *
+ * @par Chaining with std::views
+ * Use a stateless lambda (empty capture @c []) for the value function so
+ * the view satisfies @c std::ranges::view and chains with @c std::views
+ * adaptors.
+ *
+ * @par Iterator category
+ * @c std::forward_iterator — sized, common range.
+ *
+ * @par Performance
+ * Construction O(1).  Full iteration O(V), invoking VVF once per vertex.
+ * Zero allocation.  Avoids the descriptor lookup that the standard
+ * variant performs.
+ *
+ * @tparam G   Graph type satisfying @c adjacency_list
+ * @tparam VVF Vertex value function — @c invocable<const G&, vertex_t<G>>
+ *
+ * @see basic_vertexlist(G&, VVF&&) — factory function
+ * @see vertexlist_view — standard variant with descriptor
  */
 template <adj_list::adjacency_list G, class VVF>
 class basic_vertexlist_view : public std::ranges::view_interface<basic_vertexlist_view<G, VVF>> {
@@ -362,8 +492,10 @@ public:
   using info_type         = vertex_info<vertex_id_type, void, value_type_result>;
 
   /**
-     * @brief Forward iterator yielding vertex_info values (id + computed value)
-     */
+   * @brief Forward iterator yielding @c vertex_info{uid, val} per vertex.
+   *
+   * Satisfies @c std::forward_iterator.  @c operator*() may throw if VVF throws.
+   */
   class iterator {
   public:
     using iterator_category = std::forward_iterator_tag;
@@ -446,10 +578,18 @@ basic_vertexlist_view(G&, VVF) -> basic_vertexlist_view<G, VVF>;
 // =============================================================================
 
 /**
- * @brief Create a vertexlist view without value function
- * 
- * @param g The graph to iterate over
- * @return vertexlist_view yielding vertex_info<vertex_id_type, vertex_descriptor, void>
+ * @brief Create a vertexlist view over all vertices (no value function).
+ *
+ * @code
+ *   for (auto [uid, u] : vertexlist(g)) { ... }
+ * @endcode
+ *
+ * @tparam G  Graph type satisfying @c adjacency_list
+ * @param  g  The graph to iterate over.  Must outlive the returned view.
+ * @return @c vertexlist_view yielding @c vertex_info{uid, u} per vertex.
+ *
+ * @pre  None.
+ * @post The graph is not modified.
  */
 template <adj_list::adjacency_list G>
 [[nodiscard]] constexpr auto vertexlist(G& g) noexcept {
@@ -457,11 +597,22 @@ template <adj_list::adjacency_list G>
 }
 
 /**
- * @brief Create a vertexlist view with value function
- * 
- * @param g The graph to iterate over
- * @param vvf Value function invoked for each vertex
- * @return vertexlist_view yielding vertex_info<vertex_id_type, vertex_descriptor, VV>
+ * @brief Create a vertexlist view with a vertex value function.
+ *
+ * @code
+ *   auto vvf = [](const auto& g, auto v) { return vertex_id(g, v) * 2; };
+ *   for (auto [uid, u, val] : vertexlist(g, vvf)) { ... }
+ * @endcode
+ *
+ * @tparam G   Graph type satisfying @c adjacency_list
+ * @tparam VVF Vertex value function — @c invocable<const G&, vertex_t<G>>
+ * @param  g   The graph to iterate over.  Must outlive the returned view.
+ * @param  vvf Value function invoked once per vertex.
+ *             Use a stateless lambda for @c std::views chaining support.
+ * @return @c vertexlist_view yielding @c vertex_info{uid, u, val} per vertex.
+ *
+ * @pre  None.
+ * @post The graph is not modified.
  */
 template <adj_list::adjacency_list G, class VVF>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
@@ -470,12 +621,16 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
 }
 
 /**
- * @brief Create a vertexlist view over a descriptor-based subrange [first_u, last_u)
- * 
- * @param g The graph to iterate over
- * @param first_u First vertex descriptor (inclusive)
- * @param last_u Past-the-end vertex descriptor (exclusive)
- * @return vertexlist_view yielding vertex_info<vertex_id_type, vertex_descriptor, void>
+ * @brief Create a vertexlist view over a descriptor-based subrange @c [first_u,last_u).
+ *
+ * @tparam G       Graph type satisfying @c index_adjacency_list
+ * @param  g       The graph to iterate over.  Must outlive the returned view.
+ * @param  first_u First vertex descriptor (inclusive).
+ * @param  last_u  Past-the-end vertex descriptor (exclusive).
+ * @return @c vertexlist_view over the requested subrange.
+ *
+ * @pre  @c [first_u,last_u) is a valid subrange of @c vertices(g).
+ * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G>
 [[nodiscard]] constexpr auto vertexlist(G& g, adj_list::vertex_t<G> first_u, adj_list::vertex_t<G> last_u) noexcept {
@@ -484,7 +639,18 @@ template <adj_list::index_adjacency_list G>
 }
 
 /**
- * @brief Create a vertexlist view over a descriptor-based subrange with value function
+ * @brief Create a vertexlist view over a descriptor-based subrange with value function.
+ *
+ * @tparam G   Graph type satisfying @c index_adjacency_list
+ * @tparam VVF Vertex value function
+ * @param  g       The graph to iterate over.
+ * @param  first_u First vertex descriptor (inclusive).
+ * @param  last_u  Past-the-end vertex descriptor (exclusive).
+ * @param  vvf     Value function invoked once per vertex.
+ * @return @c vertexlist_view over the requested subrange.
+ *
+ * @pre  @c [first_u,last_u) is a valid subrange of @c vertices(g).
+ * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G, class VVF>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
@@ -495,11 +661,16 @@ vertexlist(G& g, adj_list::vertex_t<G> first_u, adj_list::vertex_t<G> last_u, VV
 }
 
 /**
- * @brief Create a vertexlist view over a vertex range
- * 
- * @param g The graph
- * @param vr A vertex range (e.g., from vertices(g))
- * @return vertexlist_view yielding vertex_info<vertex_id_type, vertex_descriptor, void>
+ * @brief Create a vertexlist view over a vertex range.
+ *
+ * @tparam G  Graph type satisfying @c adjacency_list
+ * @tparam VR Vertex range type satisfying @c vertex_range<VR,G>
+ * @param  g  The graph.
+ * @param  vr A vertex range (e.g. from @c vertices(g)).
+ * @return @c vertexlist_view over the supplied range.
+ *
+ * @pre  @c vr is a valid subrange of @c vertices(g).
+ * @post The graph is not modified.
  */
 template <adj_list::adjacency_list G, class VR>
 requires adj_list::vertex_range<VR, G>
@@ -508,7 +679,18 @@ requires adj_list::vertex_range<VR, G>
 }
 
 /**
- * @brief Create a vertexlist view over a vertex range with value function
+ * @brief Create a vertexlist view over a vertex range with value function.
+ *
+ * @tparam G   Graph type satisfying @c adjacency_list
+ * @tparam VR  Vertex range type satisfying @c vertex_range<VR,G>
+ * @tparam VVF Vertex value function
+ * @param  g   The graph.
+ * @param  vr  A vertex range.
+ * @param  vvf Value function invoked once per vertex.
+ * @return @c vertexlist_view over the supplied range.
+ *
+ * @pre  @c vr is a valid subrange of @c vertices(g).
+ * @post The graph is not modified.
  */
 template <adj_list::adjacency_list G, class VR, class VVF>
 requires adj_list::vertex_range<VR, G> && vertex_value_function<VVF, G, adj_list::vertex_t<G>>
@@ -522,10 +704,18 @@ requires adj_list::vertex_range<VR, G> && vertex_value_function<VVF, G, adj_list
 // =============================================================================
 
 /**
- * @brief Create a basic vertexlist view without value function (id only)
- * 
- * @param g The graph to iterate over
- * @return basic_vertexlist_view yielding vertex_info<vertex_id_type, void, void>
+ * @brief Create a basic vertexlist view (id only, no descriptor).
+ *
+ * @code
+ *   for (auto [uid] : basic_vertexlist(g)) { ... }
+ * @endcode
+ *
+ * @tparam G  Graph type satisfying @c adjacency_list
+ * @param  g  The graph to iterate over.  Must outlive the returned view.
+ * @return @c basic_vertexlist_view yielding @c vertex_info{uid} per vertex.
+ *
+ * @pre  None.
+ * @post The graph is not modified.
  */
 template <adj_list::adjacency_list G>
 [[nodiscard]] constexpr auto basic_vertexlist(G& g) noexcept {
@@ -533,11 +723,22 @@ template <adj_list::adjacency_list G>
 }
 
 /**
- * @brief Create a basic vertexlist view with value function (id + value, no descriptor)
- * 
- * @param g The graph to iterate over
- * @param vvf Value function invoked for each vertex
- * @return basic_vertexlist_view yielding vertex_info<vertex_id_type, void, VV>
+ * @brief Create a basic vertexlist view with value function (id + value, no descriptor).
+ *
+ * @code
+ *   auto vvf = [](const auto& g, auto v) { return vertex_id(g, v) * 2; };
+ *   for (auto [uid, val] : basic_vertexlist(g, vvf)) { ... }
+ * @endcode
+ *
+ * @tparam G   Graph type satisfying @c adjacency_list
+ * @tparam VVF Vertex value function — @c invocable<const G&, vertex_t<G>>
+ * @param  g   The graph to iterate over.  Must outlive the returned view.
+ * @param  vvf Value function invoked once per vertex.
+ *             Use a stateless lambda for @c std::views chaining support.
+ * @return @c basic_vertexlist_view yielding @c vertex_info{uid, val} per vertex.
+ *
+ * @pre  None.
+ * @post The graph is not modified.
  */
 template <adj_list::adjacency_list G, class VVF>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
@@ -546,12 +747,16 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
 }
 
 /**
- * @brief Create a basic vertexlist view over an id-based subrange [first_uid, last_uid)
- * 
- * @param g The graph to iterate over
- * @param first_uid First vertex ID (inclusive)
- * @param last_uid Past-the-end vertex ID (exclusive)
- * @return basic_vertexlist_view yielding vertex_info<vertex_id_type, void, void>
+ * @brief Create a basic vertexlist view over an id-based subrange @c [first_uid,last_uid).
+ *
+ * @tparam G  Graph type satisfying @c index_adjacency_list
+ * @param  g         The graph to iterate over.
+ * @param  first_uid First vertex ID (inclusive).
+ * @param  last_uid  Past-the-end vertex ID (exclusive).
+ * @return @c basic_vertexlist_view over the requested id subrange.
+ *
+ * @pre  @c first_uid and @c last_uid are valid vertex IDs (or past-the-end).
+ * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G>
 [[nodiscard]] constexpr auto
@@ -563,7 +768,18 @@ basic_vertexlist(G& g, adj_list::vertex_id_t<G> first_uid, adj_list::vertex_id_t
 }
 
 /**
- * @brief Create a basic vertexlist view over an id-based subrange with value function
+ * @brief Create a basic vertexlist view over an id-based subrange with value function.
+ *
+ * @tparam G   Graph type satisfying @c index_adjacency_list
+ * @tparam VVF Vertex value function
+ * @param  g         The graph to iterate over.
+ * @param  first_uid First vertex ID (inclusive).
+ * @param  last_uid  Past-the-end vertex ID (exclusive).
+ * @param  vvf       Value function invoked once per vertex.
+ * @return @c basic_vertexlist_view over the requested id subrange.
+ *
+ * @pre  @c first_uid and @c last_uid are valid vertex IDs (or past-the-end).
+ * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G, class VVF>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
@@ -576,11 +792,16 @@ basic_vertexlist(G& g, adj_list::vertex_id_t<G> first_uid, adj_list::vertex_id_t
 }
 
 /**
- * @brief Create a basic vertexlist view over a vertex range (id only)
- * 
- * @param g The graph
- * @param vr A vertex range (e.g., from vertices(g))
- * @return basic_vertexlist_view yielding vertex_info<vertex_id_type, void, void>
+ * @brief Create a basic vertexlist view over a vertex range (id only).
+ *
+ * @tparam G  Graph type satisfying @c adjacency_list
+ * @tparam VR Vertex range type satisfying @c vertex_range<VR,G>
+ * @param  g  The graph.
+ * @param  vr A vertex range (e.g. from @c vertices(g)).
+ * @return @c basic_vertexlist_view over the supplied range.
+ *
+ * @pre  @c vr is a valid subrange of @c vertices(g).
+ * @post The graph is not modified.
  */
 template <adj_list::adjacency_list G, class VR>
 requires adj_list::vertex_range<VR, G>
@@ -589,7 +810,18 @@ requires adj_list::vertex_range<VR, G>
 }
 
 /**
- * @brief Create a basic vertexlist view over a vertex range with value function
+ * @brief Create a basic vertexlist view over a vertex range with value function.
+ *
+ * @tparam G   Graph type satisfying @c adjacency_list
+ * @tparam VR  Vertex range type satisfying @c vertex_range<VR,G>
+ * @tparam VVF Vertex value function
+ * @param  g   The graph.
+ * @param  vr  A vertex range.
+ * @param  vvf Value function invoked once per vertex.
+ * @return @c basic_vertexlist_view over the supplied range.
+ *
+ * @pre  @c vr is a valid subrange of @c vertices(g).
+ * @post The graph is not modified.
  */
 template <adj_list::adjacency_list G, class VR, class VVF>
 requires adj_list::vertex_range<VR, G> && vertex_value_function<VVF, G, adj_list::vertex_t<G>>

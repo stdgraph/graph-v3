@@ -1,40 +1,116 @@
 /**
  * @file dfs.hpp
- * @brief Depth-first search views for vertices and edges
- * 
- * Provides views that traverse a graph in depth-first order from a seed vertex,
- * yielding vertex_info or edge_info for each visited element.
- * 
- * @complexity Time: O(V + E) where V is reachable vertices and E is reachable edges
- *             DFS visits each reachable vertex once and traverses each reachable edge once
- * @complexity Space: O(V) for the stack and visited tracker
- * 
- * @par Examples:
+ * @brief Depth-first search views for vertices and edges.
+ *
+ * @section overview Overview
+ *
+ * Provides lazy, single-pass views that traverse a graph in depth-first
+ * order starting from a seed vertex.  @c vertices_dfs yields per-vertex
+ * @c vertex_info and @c edges_dfs yields per-edge @c edge_info.  An
+ * optional value function computes a per-element value included in the
+ * structured binding.
+ *
+ * Both view families expose additional accessors on the view object:
+ * - @c depth()       — current depth in the DFS tree
+ * - @c num_visited() — total vertices/edges visited so far
+ * - @c cancel(c)     — stop traversal (@c cancel_branch or @c cancel_all)
+ *
+ * Only vertices/edges reachable from the seed are visited.
+ *
+ * @section variants View Variants
+ *
+ * | Variant                             | Structured Binding | Description                        |
+ * |-------------------------------------|--------------------|------------------------------------|
+ * | @c vertices_dfs(g,seed)             | `[v]`              | Vertex DFS (descriptor only)       |
+ * | @c vertices_dfs(g,seed,vvf)         | `[v, val]`         | Vertex DFS with value function     |
+ * | @c edges_dfs(g,seed)                | `[uv]`             | Edge DFS (edge descriptor only)    |
+ * | @c edges_dfs(g,seed,evf)            | `[uv, val]`        | Edge DFS with value function       |
+ *
+ * Each factory also accepts a vertex descriptor in place of a vertex id,
+ * and an optional custom allocator for the internal stack and visited
+ * tracker.
+ *
+ * @section bindings Structured Bindings
+ *
+ * Vertex DFS:
  * @code
- * // Vertex traversal
- * for (auto [v] : vertices_dfs(g, seed))
- *     process_vertex(v);
- * 
- * // Vertex traversal with value function
- * for (auto [v, val] : vertices_dfs(g, seed, value_fn))
- *     process_vertex_with_value(v, val);
- * 
- * // Edge traversal
- * for (auto [e] : edges_dfs(g, seed))
- *     process_edge(e);
- * 
- * // Access depth during traversal
- * auto dfs = vertices_dfs(g, seed);
- * for (auto [v] : dfs)
- *     std::cout << "Vertex " << vertex_id(g, v) << " at depth " << dfs.depth() << "\n";
- * 
- * // Cancel search
- * auto dfs = vertices_dfs(g, seed);
- * for (auto [v] : dfs) {
- *     if (should_stop(v))
- *         dfs.cancel(cancel_search::cancel_all);
- * }
+ *   for (auto [v]      : vertices_dfs(g, seed))          // v = vertex_t<G>
+ *   for (auto [v, val] : vertices_dfs(g, seed, vvf))     // val = invoke_result_t<VVF, G&, vertex_t<G>>
  * @endcode
+ *
+ * Edge DFS:
+ * @code
+ *   for (auto [uv]      : edges_dfs(g, seed))            // uv = edge_t<G>
+ *   for (auto [uv, val] : edges_dfs(g, seed, evf))       // val = invoke_result_t<EVF, G&, edge_t<G>>
+ * @endcode
+ *
+ * @section iterator_properties Iterator Properties
+ *
+ * | Property        | Value                                             |
+ * |-----------------|---------------------------------------------------|
+ * | Concept         | @c std::input_iterator                            |
+ * | Range concept   | @c std::ranges::input_range                       |
+ * | Sized           | No                                                |
+ * | Borrowed        | No (view owns internal state)                     |
+ * | Common          | No (uses sentinel)                                |
+ *
+ * @section perf Performance Characteristics
+ *
+ * Construction allocates an O(V) visited tracker and pushes the seed vertex
+ * onto an internal stack.  Each @c operator++ is amortised O(1) — it pops
+ * or pushes at most one stack entry per edge traversed.  Full traversal is
+ * O(V + E) time and O(V) space (stack depth ≤ V, visited tracker = V bits).
+ *
+ * @section chaining Chaining with std::views
+ *
+ * DFS views are @c input_range (single-pass), so they chain only with
+ * adaptors that do not require forward ranges:
+ *
+ * @code
+ *   auto view = vertices_dfs(g, seed)
+ *               | std::views::take(5);  // ✅ compiles (take is input-compatible)
+ * @endcode
+ *
+ * Adaptors that buffer or require multiple passes (e.g. @c std::views::reverse)
+ * are not supported.
+ *
+ * @section search_control Search Control
+ *
+ * @code
+ *   auto dfs = vertices_dfs(g, seed);
+ *   for (auto [v] : dfs) {
+ *       if (found(v))
+ *           dfs.cancel(cancel_search::cancel_all);    // stop immediately
+ *       if (prune(v))
+ *           dfs.cancel(cancel_search::cancel_branch); // skip subtree
+ *       std::cout << "depth=" << dfs.depth() << "\n";
+ *   }
+ * @endcode
+ *
+ * @section supported_graphs Supported Graph Properties
+ *
+ * - Requires: @c index_adjacency_list concept
+ * - Works with all @c dynamic_graph container combinations
+ * - Works with directed and undirected graphs
+ *
+ * @section exception_safety Exception Safety
+ *
+ * Construction may throw @c std::bad_alloc (allocates visited tracker +
+ * stack).  Iteration may propagate exceptions from the value function; all
+ * other iterator operations are @c noexcept.
+ *
+ * @section preconditions Preconditions
+ *
+ * - The graph @c g must outlive the view.
+ * - The graph must not be mutated during iteration.
+ * - The seed vertex must be a valid vertex in the graph.
+ *
+ * @section see_also See Also
+ *
+ * - @ref bfs.hpp — breadth-first search views
+ * - @ref views.md — all views overview
+ * - @ref graph_cpo_implementation.md — CPO documentation
+ * - @ref view_chaining_limitations.md — chaining design rationale
  */
 
 #pragma once
@@ -83,11 +159,17 @@ namespace dfs_detail {
   /// 4. Input iterator semantics: DFS is single-pass; shared state correctly models this.
   /// An alternative (state by value + raw pointers) would break if the view is moved.
   /**
- * @brief Shared DFS state for vertex traversal
- * 
- * @complexity Time: O(V + E) - visits each reachable vertex once, traverses each reachable edge once
- * @complexity Space: O(V) - stack stores up to V vertices, visited tracker uses O(V) space
- */
+   * @brief Shared DFS traversal state.
+   *
+   * Holds the explicit stack, visited tracker, cancellation flag, depth
+   * counter and visit counter.  Shared via @c std::shared_ptr so that
+   * iterator copies and the owning view all observe the same state.
+   *
+   * @par Complexity
+   * Time: O(V + E) — visits each reachable vertex once, traverses each
+   * reachable edge once.  Space: O(V) — stack ≤ V entries, visited
+   * tracker = V bits.
+   */
   template <class G, class Alloc>
   struct dfs_state {
     using graph_type         = G;
@@ -117,13 +199,20 @@ namespace dfs_detail {
 } // namespace dfs_detail
 
 /**
- * @brief DFS vertex view without value function
- * 
- * Iterates over vertices in depth-first order yielding 
- * vertex_info<void, vertex_t<G>, void>
- * 
- * @tparam G Graph type satisfying index_adjacency_list concept
- * @tparam Alloc Allocator type for internal containers
+ * @brief DFS vertex view without value function.
+ *
+ * Traverses vertices reachable from a seed in depth-first order,
+ * yielding @c vertex_info{v} per vertex via structured bindings.
+ *
+ * @code
+ *   for (auto [v] : vertices_dfs(g, seed)) { ... }
+ * @endcode
+ *
+ * @tparam G     Graph type satisfying @c index_adjacency_list
+ * @tparam Alloc Allocator for the internal stack and visited tracker
+ *
+ * @see vertices_dfs_view<G,VVF,Alloc> — with value function
+ * @see edges_dfs_view                 — edge-oriented DFS
  */
 template <adj_list::index_adjacency_list G, class Alloc>
 class vertices_dfs_view<G, void, Alloc> : public std::ranges::view_interface<vertices_dfs_view<G, void, Alloc>> {
@@ -140,10 +229,10 @@ private:
 
 public:
   /**
-     * @brief Input iterator for DFS vertex traversal
-     * 
-     * Note: This is an input iterator because DFS state is shared and 
-     * advancing one iterator affects all copies.
+     * @brief Input iterator yielding @c vertex_info{v}.
+     *
+     * Single-pass: all copies share state via @c shared_ptr, so advancing
+     * one iterator advances them all.
      */
   class iterator {
   public:
@@ -280,14 +369,22 @@ private:
 };
 
 /**
- * @brief DFS vertex view with value function
- * 
- * Iterates over vertices in depth-first order yielding 
- * vertex_info<void, vertex_t<G>, VV> where VV is the invoke result of VVF.
- * 
- * @tparam G Graph type satisfying index_adjacency_list concept
- * @tparam VVF Vertex value function type
- * @tparam Alloc Allocator type for internal containers
+ * @brief DFS vertex view with a vertex value function.
+ *
+ * Traverses vertices reachable from a seed in depth-first order,
+ * yielding @c vertex_info{v, val} per vertex via structured bindings.
+ *
+ * @code
+ *   auto vvf = [](const auto& g, auto v) { return vertex_id(g, v); };
+ *   for (auto [v, val] : vertices_dfs(g, seed, vvf)) { ... }
+ * @endcode
+ *
+ * @tparam G     Graph type satisfying @c index_adjacency_list
+ * @tparam VVF   Vertex value function — @c invocable<const G&, vertex_t<G>>
+ * @tparam Alloc Allocator for the internal stack and visited tracker
+ *
+ * @see vertices_dfs_view<G,void,Alloc> — without value function
+ * @see edges_dfs_view                  — edge-oriented DFS
  */
 template <adj_list::index_adjacency_list G, class VVF, class Alloc>
 class vertices_dfs_view : public std::ranges::view_interface<vertices_dfs_view<G, VVF, Alloc>> {
@@ -305,7 +402,9 @@ private:
 
 public:
   /**
-     * @brief Input iterator for DFS vertex traversal with value function
+     * @brief Input iterator yielding @c vertex_info{v, val}.
+     *
+     * Single-pass: all copies share state via @c shared_ptr.
      */
   class iterator {
   public:
@@ -463,11 +562,19 @@ template <adj_list::index_adjacency_list G, class VVF, class Alloc = std::alloca
 vertices_dfs_view(G&, adj_list::vertex_t<G>, VVF, Alloc) -> vertices_dfs_view<G, VVF, Alloc>;
 
 /**
- * @brief Create a DFS vertex view without value function (from vertex ID)
- * 
- * @param g The graph to traverse
- * @param seed Starting vertex ID for DFS
- * @return vertices_dfs_view yielding vertex_info<void, vertex_descriptor, void>
+ * @brief Create a DFS vertex view from a vertex id (no value function).
+ *
+ * @code
+ *   for (auto [v] : vertices_dfs(g, seed)) { ... }
+ * @endcode
+ *
+ * @tparam G  Graph type satisfying @c index_adjacency_list
+ * @param  g    The graph to traverse.  Must outlive the returned view.
+ * @param  seed Starting vertex id.
+ * @return @c vertices_dfs_view yielding @c vertex_info{v} per reachable vertex.
+ *
+ * @pre  @c seed is a valid vertex id in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G>
 [[nodiscard]] auto vertices_dfs(G& g, adj_list::vertex_id_t<G> seed) {
@@ -475,11 +582,19 @@ template <adj_list::index_adjacency_list G>
 }
 
 /**
- * @brief Create a DFS vertex view without value function (from vertex descriptor)
- * 
- * @param g The graph to traverse
- * @param seed_vertex Starting vertex descriptor for DFS
- * @return vertices_dfs_view yielding vertex_info<void, vertex_descriptor, void>
+ * @brief Create a DFS vertex view from a vertex descriptor (no value function).
+ *
+ * @code
+ *   for (auto [v] : vertices_dfs(g, u)) { ... }
+ * @endcode
+ *
+ * @tparam G  Graph type satisfying @c index_adjacency_list
+ * @param  g           The graph to traverse.
+ * @param  seed_vertex Starting vertex descriptor.
+ * @return @c vertices_dfs_view yielding @c vertex_info{v} per reachable vertex.
+ *
+ * @pre  @c seed_vertex is a valid vertex descriptor in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G>
 [[nodiscard]] auto vertices_dfs(G& g, adj_list::vertex_t<G> seed_vertex) {
@@ -487,12 +602,22 @@ template <adj_list::index_adjacency_list G>
 }
 
 /**
- * @brief Create a DFS vertex view with value function (from vertex ID)
- * 
- * @param g The graph to traverse
- * @param seed Starting vertex ID for DFS
- * @param vvf Value function invoked for each vertex
- * @return vertices_dfs_view yielding vertex_info<void, vertex_descriptor, VV>
+ * @brief Create a DFS vertex view with a value function (from vertex id).
+ *
+ * @code
+ *   auto vvf = [](const auto& g, auto v) { return vertex_id(g, v); };
+ *   for (auto [v, val] : vertices_dfs(g, seed, vvf)) { ... }
+ * @endcode
+ *
+ * @tparam G   Graph type satisfying @c index_adjacency_list
+ * @tparam VVF Vertex value function — @c invocable<const G&, vertex_t<G>>
+ * @param  g    The graph to traverse.
+ * @param  seed Starting vertex id.
+ * @param  vvf  Value function invoked once per vertex.
+ * @return @c vertices_dfs_view yielding @c vertex_info{v, val} per reachable vertex.
+ *
+ * @pre  @c seed is a valid vertex id in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G, class VVF>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
@@ -502,12 +627,17 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
 }
 
 /**
- * @brief Create a DFS vertex view with value function (from vertex descriptor)
- * 
- * @param g The graph to traverse
- * @param seed_vertex Starting vertex descriptor for DFS
- * @param vvf Value function invoked for each vertex
- * @return vertices_dfs_view yielding vertex_info<void, vertex_descriptor, VV>
+ * @brief Create a DFS vertex view with a value function (from vertex descriptor).
+ *
+ * @tparam G   Graph type satisfying @c index_adjacency_list
+ * @tparam VVF Vertex value function — @c invocable<const G&, vertex_t<G>>
+ * @param  g           The graph to traverse.
+ * @param  seed_vertex Starting vertex descriptor.
+ * @param  vvf         Value function invoked once per vertex.
+ * @return @c vertices_dfs_view yielding @c vertex_info{v, val} per reachable vertex.
+ *
+ * @pre  @c seed_vertex is a valid vertex descriptor in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G, class VVF>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
@@ -517,12 +647,17 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
 }
 
 /**
- * @brief Create a DFS vertex view with custom allocator (from vertex ID)
- * 
- * @param g The graph to traverse
- * @param seed Starting vertex ID for DFS
- * @param alloc Allocator for internal containers
- * @return vertices_dfs_view yielding vertex_info<void, vertex_descriptor, void>
+ * @brief Create a DFS vertex view with a custom allocator (from vertex id).
+ *
+ * @tparam G     Graph type satisfying @c index_adjacency_list
+ * @tparam Alloc Allocator for the internal stack and visited tracker
+ * @param  g     The graph to traverse.
+ * @param  seed  Starting vertex id.
+ * @param  alloc Allocator instance.
+ * @return @c vertices_dfs_view yielding @c vertex_info{v} per reachable vertex.
+ *
+ * @pre  @c seed is a valid vertex id in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G, class Alloc>
 requires(!vertex_value_function<Alloc, G, adj_list::vertex_t<G>>)
@@ -531,12 +666,17 @@ requires(!vertex_value_function<Alloc, G, adj_list::vertex_t<G>>)
 }
 
 /**
- * @brief Create a DFS vertex view with custom allocator (from vertex descriptor)
- * 
- * @param g The graph to traverse
- * @param seed_vertex Starting vertex descriptor for DFS
- * @param alloc Allocator for internal containers
- * @return vertices_dfs_view yielding vertex_info<void, vertex_descriptor, void>
+ * @brief Create a DFS vertex view with a custom allocator (from vertex descriptor).
+ *
+ * @tparam G     Graph type satisfying @c index_adjacency_list
+ * @tparam Alloc Allocator for the internal stack and visited tracker
+ * @param  g           The graph to traverse.
+ * @param  seed_vertex Starting vertex descriptor.
+ * @param  alloc       Allocator instance.
+ * @return @c vertices_dfs_view yielding @c vertex_info{v} per reachable vertex.
+ *
+ * @pre  @c seed_vertex is a valid vertex descriptor in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G, class Alloc>
 requires(!vertex_value_function<Alloc, G, adj_list::vertex_t<G>>)
@@ -545,13 +685,20 @@ requires(!vertex_value_function<Alloc, G, adj_list::vertex_t<G>>)
 }
 
 /**
- * @brief Create a DFS vertex view with value function and custom allocator (from vertex ID)
- * 
- * @param g The graph to traverse
- * @param seed Starting vertex ID for DFS
- * @param vvf Value function invoked for each vertex
- * @param alloc Allocator for internal containers
- * @return vertices_dfs_view yielding vertex_info<void, vertex_descriptor, VV>
+ * @brief Create a DFS vertex view with value function and custom allocator
+ *        (from vertex id).
+ *
+ * @tparam G     Graph type satisfying @c index_adjacency_list
+ * @tparam VVF   Vertex value function — @c invocable<const G&, vertex_t<G>>
+ * @tparam Alloc Allocator for the internal stack and visited tracker
+ * @param  g     The graph to traverse.
+ * @param  seed  Starting vertex id.
+ * @param  vvf   Value function invoked once per vertex.
+ * @param  alloc Allocator instance.
+ * @return @c vertices_dfs_view yielding @c vertex_info{v, val} per reachable vertex.
+ *
+ * @pre  @c seed is a valid vertex id in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G, class VVF, class Alloc>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
@@ -560,13 +707,20 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
 }
 
 /**
- * @brief Create a DFS vertex view with value function and custom allocator (from vertex descriptor)
- * 
- * @param g The graph to traverse
- * @param seed_vertex Starting vertex descriptor for DFS
- * @param vvf Value function invoked for each vertex
- * @param alloc Allocator for internal containers
- * @return vertices_dfs_view yielding vertex_info<void, vertex_descriptor, VV>
+ * @brief Create a DFS vertex view with value function and custom allocator
+ *        (from vertex descriptor).
+ *
+ * @tparam G     Graph type satisfying @c index_adjacency_list
+ * @tparam VVF   Vertex value function — @c invocable<const G&, vertex_t<G>>
+ * @tparam Alloc Allocator for the internal stack and visited tracker
+ * @param  g           The graph to traverse.
+ * @param  seed_vertex Starting vertex descriptor.
+ * @param  vvf         Value function invoked once per vertex.
+ * @param  alloc       Allocator instance.
+ * @return @c vertices_dfs_view yielding @c vertex_info{v, val} per reachable vertex.
+ *
+ * @pre  @c seed_vertex is a valid vertex descriptor in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G, class VVF, class Alloc>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
@@ -579,13 +733,21 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
 // =============================================================================
 
 /**
- * @brief DFS edge view without value function
- * 
- * Iterates over edges in depth-first order yielding 
- * edge_info<void, false, edge_t<G>, void>
- * 
- * @tparam G Graph type satisfying index_adjacency_list concept
- * @tparam Alloc Allocator type for internal containers
+ * @brief DFS edge view without value function.
+ *
+ * Traverses tree edges reachable from a seed in depth-first order,
+ * yielding @c edge_info{uv} per edge via structured bindings.  The
+ * seed vertex itself has no incoming tree edge, so it is skipped.
+ *
+ * @code
+ *   for (auto [uv] : edges_dfs(g, seed)) { ... }
+ * @endcode
+ *
+ * @tparam G     Graph type satisfying @c index_adjacency_list
+ * @tparam Alloc Allocator for the internal stack and visited tracker
+ *
+ * @see edges_dfs_view<G,EVF,Alloc> — with value function
+ * @see vertices_dfs_view           — vertex-oriented DFS
  */
 template <adj_list::index_adjacency_list G, class Alloc>
 class edges_dfs_view<G, void, Alloc> : public std::ranges::view_interface<edges_dfs_view<G, void, Alloc>> {
@@ -602,7 +764,10 @@ private:
 
 public:
   /**
-     * @brief Input iterator for DFS edge traversal
+     * @brief Input iterator yielding @c edge_info{uv}.
+     *
+     * Advances to the first tree edge on construction (the seed vertex
+     * has no incoming tree edge).  Single-pass: all copies share state.
      */
   class iterator {
   public:
@@ -742,14 +907,22 @@ private:
 };
 
 /**
- * @brief DFS edge view with value function
- * 
- * Iterates over edges in depth-first order yielding 
- * edge_info<void, false, edge_t<G>, EV> where EV is the invoke result of EVF.
- * 
- * @tparam G Graph type satisfying index_adjacency_list concept
- * @tparam EVF Edge value function type
- * @tparam Alloc Allocator type for internal containers
+ * @brief DFS edge view with an edge value function.
+ *
+ * Traverses tree edges reachable from a seed in depth-first order,
+ * yielding @c edge_info{uv, val} per edge via structured bindings.
+ *
+ * @code
+ *   auto evf = [](const auto& g, auto uv) { return target_id(g, uv); };
+ *   for (auto [uv, val] : edges_dfs(g, seed, evf)) { ... }
+ * @endcode
+ *
+ * @tparam G     Graph type satisfying @c index_adjacency_list
+ * @tparam EVF   Edge value function — @c invocable<const G&, edge_t<G>>
+ * @tparam Alloc Allocator for the internal stack and visited tracker
+ *
+ * @see edges_dfs_view<G,void,Alloc> — without value function
+ * @see vertices_dfs_view            — vertex-oriented DFS
  */
 template <adj_list::index_adjacency_list G, class EVF, class Alloc>
 class edges_dfs_view : public std::ranges::view_interface<edges_dfs_view<G, EVF, Alloc>> {
@@ -767,7 +940,9 @@ private:
 
 public:
   /**
-     * @brief Input iterator for DFS edge traversal with value function
+     * @brief Input iterator yielding @c edge_info{uv, val}.
+     *
+     * Single-pass: all copies share state via @c shared_ptr.
      */
   class iterator {
   public:
@@ -925,11 +1100,19 @@ edges_dfs_view(G&, adj_list::vertex_t<G>, EVF, Alloc) -> edges_dfs_view<G, EVF, 
 // =============================================================================
 
 /**
- * @brief Create a DFS edge view without value function (from vertex ID)
- * 
- * @param g The graph to traverse
- * @param seed Starting vertex ID for DFS
- * @return edges_dfs_view yielding edge_info<void, false, edge_descriptor, void>
+ * @brief Create a DFS edge view from a vertex id (no value function).
+ *
+ * @code
+ *   for (auto [uv] : edges_dfs(g, seed)) { ... }
+ * @endcode
+ *
+ * @tparam G  Graph type satisfying @c index_adjacency_list
+ * @param  g    The graph to traverse.  Must outlive the returned view.
+ * @param  seed Starting vertex id.
+ * @return @c edges_dfs_view yielding @c edge_info{uv} per reachable tree edge.
+ *
+ * @pre  @c seed is a valid vertex id in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G>
 [[nodiscard]] auto edges_dfs(G& g, adj_list::vertex_id_t<G> seed) {
@@ -937,11 +1120,15 @@ template <adj_list::index_adjacency_list G>
 }
 
 /**
- * @brief Create a DFS edge view without value function (from vertex descriptor)
- * 
- * @param g The graph to traverse
- * @param seed_vertex Starting vertex descriptor for DFS
- * @return edges_dfs_view yielding edge_info<void, false, edge_descriptor, void>
+ * @brief Create a DFS edge view from a vertex descriptor (no value function).
+ *
+ * @tparam G  Graph type satisfying @c index_adjacency_list
+ * @param  g           The graph to traverse.
+ * @param  seed_vertex Starting vertex descriptor.
+ * @return @c edges_dfs_view yielding @c edge_info{uv} per reachable tree edge.
+ *
+ * @pre  @c seed_vertex is a valid vertex descriptor in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G>
 [[nodiscard]] auto edges_dfs(G& g, adj_list::vertex_t<G> seed_vertex) {
@@ -949,12 +1136,22 @@ template <adj_list::index_adjacency_list G>
 }
 
 /**
- * @brief Create a DFS edge view with value function (from vertex ID)
- * 
- * @param g The graph to traverse
- * @param seed Starting vertex ID for DFS
- * @param evf Value function invoked for each edge
- * @return edges_dfs_view yielding edge_info<void, false, edge_descriptor, EV>
+ * @brief Create a DFS edge view with a value function (from vertex id).
+ *
+ * @code
+ *   auto evf = [](const auto& g, auto uv) { return target_id(g, uv); };
+ *   for (auto [uv, val] : edges_dfs(g, seed, evf)) { ... }
+ * @endcode
+ *
+ * @tparam G   Graph type satisfying @c index_adjacency_list
+ * @tparam EVF Edge value function — @c invocable<const G&, edge_t<G>>
+ * @param  g    The graph to traverse.
+ * @param  seed Starting vertex id.
+ * @param  evf  Value function invoked once per tree edge.
+ * @return @c edges_dfs_view yielding @c edge_info{uv, val} per reachable tree edge.
+ *
+ * @pre  @c seed is a valid vertex id in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G, class EVF>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>
@@ -964,12 +1161,17 @@ requires edge_value_function<EVF, G, adj_list::edge_t<G>>
 }
 
 /**
- * @brief Create a DFS edge view with value function (from vertex descriptor)
- * 
- * @param g The graph to traverse
- * @param seed_vertex Starting vertex descriptor for DFS
- * @param evf Value function invoked for each edge
- * @return edges_dfs_view yielding edge_info<void, false, edge_descriptor, EV>
+ * @brief Create a DFS edge view with a value function (from vertex descriptor).
+ *
+ * @tparam G   Graph type satisfying @c index_adjacency_list
+ * @tparam EVF Edge value function — @c invocable<const G&, edge_t<G>>
+ * @param  g           The graph to traverse.
+ * @param  seed_vertex Starting vertex descriptor.
+ * @param  evf         Value function invoked once per tree edge.
+ * @return @c edges_dfs_view yielding @c edge_info{uv, val} per reachable tree edge.
+ *
+ * @pre  @c seed_vertex is a valid vertex descriptor in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G, class EVF>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>
@@ -979,12 +1181,17 @@ requires edge_value_function<EVF, G, adj_list::edge_t<G>>
 }
 
 /**
- * @brief Create a DFS edge view with custom allocator (from vertex ID)
- * 
- * @param g The graph to traverse
- * @param seed Starting vertex ID for DFS
- * @param alloc Allocator for internal containers
- * @return edges_dfs_view yielding edge_info<void, false, edge_descriptor, void>
+ * @brief Create a DFS edge view with a custom allocator (from vertex id).
+ *
+ * @tparam G     Graph type satisfying @c index_adjacency_list
+ * @tparam Alloc Allocator for the internal stack and visited tracker
+ * @param  g     The graph to traverse.
+ * @param  seed  Starting vertex id.
+ * @param  alloc Allocator instance.
+ * @return @c edges_dfs_view yielding @c edge_info{uv} per reachable tree edge.
+ *
+ * @pre  @c seed is a valid vertex id in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G, class Alloc>
 requires(!edge_value_function<Alloc, G, adj_list::edge_t<G>>)
@@ -993,12 +1200,17 @@ requires(!edge_value_function<Alloc, G, adj_list::edge_t<G>>)
 }
 
 /**
- * @brief Create a DFS edge view with custom allocator (from vertex descriptor)
- * 
- * @param g The graph to traverse
- * @param seed_vertex Starting vertex descriptor for DFS
- * @param alloc Allocator for internal containers
- * @return edges_dfs_view yielding edge_info<void, false, edge_descriptor, void>
+ * @brief Create a DFS edge view with a custom allocator (from vertex descriptor).
+ *
+ * @tparam G     Graph type satisfying @c index_adjacency_list
+ * @tparam Alloc Allocator for the internal stack and visited tracker
+ * @param  g           The graph to traverse.
+ * @param  seed_vertex Starting vertex descriptor.
+ * @param  alloc       Allocator instance.
+ * @return @c edges_dfs_view yielding @c edge_info{uv} per reachable tree edge.
+ *
+ * @pre  @c seed_vertex is a valid vertex descriptor in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G, class Alloc>
 requires(!edge_value_function<Alloc, G, adj_list::edge_t<G>>)
@@ -1007,13 +1219,20 @@ requires(!edge_value_function<Alloc, G, adj_list::edge_t<G>>)
 }
 
 /**
- * @brief Create a DFS edge view with value function and custom allocator (from vertex ID)
- * 
- * @param g The graph to traverse
- * @param seed Starting vertex ID for DFS
- * @param evf Value function invoked for each edge
- * @param alloc Allocator for internal containers
- * @return edges_dfs_view yielding edge_info<void, false, edge_descriptor, EV>
+ * @brief Create a DFS edge view with value function and custom allocator
+ *        (from vertex id).
+ *
+ * @tparam G     Graph type satisfying @c index_adjacency_list
+ * @tparam EVF   Edge value function — @c invocable<const G&, edge_t<G>>
+ * @tparam Alloc Allocator for the internal stack and visited tracker
+ * @param  g     The graph to traverse.
+ * @param  seed  Starting vertex id.
+ * @param  evf   Value function invoked once per tree edge.
+ * @param  alloc Allocator instance.
+ * @return @c edges_dfs_view yielding @c edge_info{uv, val} per reachable tree edge.
+ *
+ * @pre  @c seed is a valid vertex id in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G, class EVF, class Alloc>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>
@@ -1022,13 +1241,20 @@ requires edge_value_function<EVF, G, adj_list::edge_t<G>>
 }
 
 /**
- * @brief Create a DFS edge view with value function and custom allocator (from vertex descriptor)
- * 
- * @param g The graph to traverse
- * @param seed_vertex Starting vertex descriptor for DFS
- * @param evf Value function invoked for each edge
- * @param alloc Allocator for internal containers
- * @return edges_dfs_view yielding edge_info<void, false, edge_descriptor, EV>
+ * @brief Create a DFS edge view with value function and custom allocator
+ *        (from vertex descriptor).
+ *
+ * @tparam G     Graph type satisfying @c index_adjacency_list
+ * @tparam EVF   Edge value function — @c invocable<const G&, edge_t<G>>
+ * @tparam Alloc Allocator for the internal stack and visited tracker
+ * @param  g           The graph to traverse.
+ * @param  seed_vertex Starting vertex descriptor.
+ * @param  evf         Value function invoked once per tree edge.
+ * @param  alloc       Allocator instance.
+ * @return @c edges_dfs_view yielding @c edge_info{uv, val} per reachable tree edge.
+ *
+ * @pre  @c seed_vertex is a valid vertex descriptor in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G, class EVF, class Alloc>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>

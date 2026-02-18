@@ -1,10 +1,112 @@
 /**
  * @file neighbors.hpp
- * @brief Neighbors view for iterating over adjacent vertices
- * 
- * Provides a view that iterates over all neighbor vertices reachable from
- * a given vertex, yielding neighbor_info<void, false, vertex_t<G>, VV> for
- * each neighbor. Supports optional value functions to compute per-neighbor values.
+ * @brief Neighbors views for iterating over vertices adjacent to a source vertex.
+ *
+ * @section overview Overview
+ *
+ * Provides lazy, range-based views that iterate over every neighbor (target
+ * vertex) reachable from a given source vertex via outgoing edges.  Each
+ * iteration step yields a @c neighbor_info whose fields are exposed via
+ * structured bindings.  An optional vertex value function (VVF) computes a
+ * per-neighbor value that is included in the binding.
+ *
+ * Unlike @ref incidence.hpp, which yields edge descriptors, neighbors views
+ * yield the target *vertex* descriptor, giving direct access to vertex
+ * properties without an extra @c target(g,uv) call.
+ *
+ * @section variants View Variants
+ *
+ * | Variant                          | Structured Binding | Description                         |
+ * |----------------------------------|--------------------|-------------------------------------|
+ * | @c neighbors(g,u)                | `[tid, n]`         | Standard view (id + descriptor)     |
+ * | @c neighbors(g,u,vvf)            | `[tid, n, val]`    | Standard view with value function   |
+ * | @c basic_neighbors(g,uid)        | `[tid]`            | Simplified view (target id only)    |
+ * | @c basic_neighbors(g,uid,vvf)    | `[tid, val]`       | Simplified view with value fn       |
+ *
+ * The standard overloads also accept a vertex id @c uid in place of a
+ * descriptor @c u (requires @c index_adjacency_list).
+ *
+ * @section bindings Structured Bindings
+ *
+ * Standard view:
+ * @code
+ *   for (auto [tid, n]      : neighbors(g, u))          // tid = vertex_id_t<G>, n = vertex_t<G>
+ *   for (auto [tid, n, val] : neighbors(g, u, vvf))     // val = invoke_result_t<VVF, G&, vertex_t<G>>
+ * @endcode
+ *
+ * basic_ variant:
+ * @code
+ *   for (auto [tid]      : basic_neighbors(g, uid))      // tid = vertex_id_t<G>
+ *   for (auto [tid, val] : basic_neighbors(g, uid, vvf)) // val = invoke_result_t<VVF, G&, vertex_t<G>>
+ * @endcode
+ *
+ * @section iterator_properties Iterator Properties
+ *
+ * | Property        | Value                                                  |
+ * |-----------------|--------------------------------------------------------|
+ * | Concept         | @c std::forward_iterator                               |
+ * | Range concept   | @c std::ranges::forward_range                          |
+ * | Sized           | Yes when @c vertex_edge_range_t<G> is @c sized_range   |
+ * | Borrowed        | No (view holds reference)                              |
+ * | Common          | Yes (begin/end same type)                              |
+ *
+ * @section perf Performance Characteristics
+ *
+ * Construction is O(1).  Iteration is O(deg(u)), one neighbor per step.  The
+ * view holds only a pointer to the graph and the source vertex — no
+ * allocation.  The @c basic_ variant is lighter still: it never materialises
+ * a target vertex descriptor and returns only the target id.
+ *
+ * @section chaining Chaining with std::views
+ *
+ * Views chain with std::views when the value function is a stateless lambda
+ * (empty capture list @c []):
+ *
+ * @code
+ *   auto vvf = [](const auto& g, auto v) { return vertex_id(g, v) * 10; };
+ *   auto view = g | neighbors(0, vvf)
+ *                 | std::views::take(3);   // ✅ compiles
+ * @endcode
+ *
+ * See @ref view_chaining_limitations.md for the design rationale.
+ *
+ * @section pipe Pipe Adaptor Syntax
+ *
+ * Pipe-style usage is available via @c graph::views::adaptors:
+ * @code
+ *   using namespace graph::views::adaptors;
+ *
+ *   for (auto [tid, n]  : g | neighbors(0))              { ... }
+ *   for (auto [tid]     : g | basic_neighbors(0))        { ... }
+ *   for (auto [tid, val]: g | basic_neighbors(0, vvf))   { ... }
+ * @endcode
+ *
+ * @section supported_graphs Supported Graph Properties
+ *
+ * - Requires: @c adjacency_list concept
+ *   (vertex-id overloads require @c index_adjacency_list)
+ * - Works with all @c dynamic_graph container combinations
+ * - Works with directed and undirected graphs
+ *
+ * @section exception_safety Exception Safety
+ *
+ * Construction is @c noexcept when VVF is nothrow move-constructible (or
+ * absent).  Iteration may propagate exceptions from the value function; all
+ * other iterator operations are @c noexcept.
+ *
+ * @section preconditions Preconditions
+ *
+ * - The graph @c g must outlive the view.
+ * - The graph must not be mutated during iteration.
+ * - The source vertex @c u / @c uid must be a valid vertex in the graph.
+ *
+ * @section see_also See Also
+ *
+ * - @ref views.md — all views overview
+ * - @ref graph_cpo_implementation.md — CPO documentation
+ * - @ref view_chaining_limitations.md — chaining design rationale
+ * - @ref incidence.hpp — per-vertex edge iteration (yields edge descriptors)
+ * - @ref vertexlist.hpp — whole-graph vertex iteration
  */
 
 #pragma once
@@ -28,11 +130,27 @@ template <adj_list::adjacency_list G, class VVF = void>
 class basic_neighbors_view;
 
 /**
- * @brief Neighbors view without value function
- * 
- * Iterates over neighbors yielding neighbor_info<void, false, vertex_t<G>, void>
- * 
- * @tparam G Graph type satisfying adjacency_list concept
+ * @brief Neighbors view — standard variant without value function.
+ *
+ * Iterates over every neighbor of a source vertex, yielding
+ * @c neighbor_info<vertex_id_type,false,vertex_t<G>,void> per step.
+ *
+ * Structured binding: @c auto [tid, n] where
+ * - @c tid — @c vertex_id_t<G> (target / neighbor vertex identifier)
+ * - @c n   — @c vertex_t<G>    (target vertex descriptor)
+ *
+ * @par Iterator category
+ * @c std::forward_iterator — sized when @c vertex_edge_range_t<G> is
+ * @c sized_range, common range.
+ *
+ * @par Performance
+ * Construction O(1).  Full iteration O(deg(u)).  Zero allocation.
+ *
+ * @tparam G Graph type satisfying @c adjacency_list
+ *
+ * @see neighbors(G&, vertex_t<G>) — factory function
+ * @see basic_neighbors_view — simplified target-id-only variant
+ * @see incidence_view — edge-descriptor variant
  */
 template <adj_list::adjacency_list G>
 class neighbors_view<G, void> : public std::ranges::view_interface<neighbors_view<G, void>> {
@@ -46,8 +164,10 @@ public:
   using info_type          = neighbor_info<vertex_id_type, false, vertex_type, void>;
 
   /**
-     * @brief Forward iterator yielding neighbor_info values
-     */
+   * @brief Forward iterator yielding @c neighbor_info{tid, n} per neighbor.
+   *
+   * Satisfies @c std::forward_iterator.  All operations are @c noexcept.
+   */
   class iterator {
   public:
     using iterator_category = std::forward_iterator_tag;
@@ -115,13 +235,35 @@ private:
 };
 
 /**
- * @brief Neighbors view with value function
- * 
- * Iterates over neighbors yielding neighbor_info<void, false, vertex_t<G>, VV>
- * where VV is the result of invoking the value function on the target vertex descriptor.
- * 
- * @tparam G Graph type satisfying adjacency_list concept
- * @tparam VVF Vertex value function type
+ * @brief Neighbors view — standard variant with value function.
+ *
+ * Iterates over every neighbor of a source vertex, yielding
+ * @c neighbor_info<vertex_id_type,false,vertex_t<G>,VV> where @c VV =
+ * @c invoke_result_t<VVF,const G&,vertex_t<G>> .
+ *
+ * Structured binding: @c auto [tid, n, val] where
+ * - @c tid — @c vertex_id_t<G> (target / neighbor vertex identifier)
+ * - @c n   — @c vertex_t<G>    (target vertex descriptor)
+ * - @c val — computed value returned by VVF
+ *
+ * @par Chaining with std::views
+ * Use a stateless lambda (empty capture @c []) for the value function so
+ * the view satisfies @c std::ranges::view and chains with @c std::views
+ * adaptors.
+ *
+ * @par Iterator category
+ * @c std::forward_iterator — sized when @c vertex_edge_range_t<G> is
+ * @c sized_range, common range.
+ *
+ * @par Performance
+ * Construction O(1).  Full iteration O(deg(u)), invoking VVF once per
+ * neighbor.  Zero allocation.
+ *
+ * @tparam G   Graph type satisfying @c adjacency_list
+ * @tparam VVF Vertex value function — @c invocable<const G&, vertex_t<G>>
+ *
+ * @see neighbors(G&, vertex_t<G>, VVF&&) — factory function
+ * @see basic_neighbors_view — simplified target-id-only variant
  */
 template <adj_list::adjacency_list G, class VVF>
 class neighbors_view : public std::ranges::view_interface<neighbors_view<G, VVF>> {
@@ -136,8 +278,10 @@ public:
   using info_type          = neighbor_info<vertex_id_type, false, vertex_type, value_type_result>;
 
   /**
-     * @brief Forward iterator yielding neighbor_info values with computed value
-     */
+   * @brief Forward iterator yielding @c neighbor_info{tid, n, val} per neighbor.
+   *
+   * Satisfies @c std::forward_iterator.  @c operator*() may throw if VVF throws.
+   */
   class iterator {
   public:
     using iterator_category = std::forward_iterator_tag;
@@ -214,11 +358,19 @@ template <adj_list::adjacency_list G, class VVF>
 neighbors_view(G&, adj_list::vertex_t<G>, VVF) -> neighbors_view<G, VVF>;
 
 /**
- * @brief Create a neighbors view without value function
- * 
- * @param g The graph to iterate over
- * @param u The source vertex descriptor
- * @return neighbors_view yielding neighbor_info<void, false, vertex_descriptor, void>
+ * @brief Create a neighbors view over adjacent vertices (no value function).
+ *
+ * @code
+ *   for (auto [tid, n] : neighbors(g, u)) { ... }
+ * @endcode
+ *
+ * @tparam G  Graph type satisfying @c adjacency_list
+ * @param  g  The graph to iterate over.  Must outlive the returned view.
+ * @param  u  The source vertex descriptor.
+ * @return @c neighbors_view yielding @c neighbor_info{tid, n} per neighbor.
+ *
+ * @pre  @c u is a valid vertex descriptor in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::adjacency_list G>
 [[nodiscard]] constexpr auto neighbors(G& g, adj_list::vertex_t<G> u) noexcept {
@@ -226,13 +378,22 @@ template <adj_list::adjacency_list G>
 }
 
 /**
- * @brief Create a neighbors view without value function (vertex_id overload)
- * 
- * Resolves the vertex id to a descriptor and delegates to the descriptor-based overload.
+ * @brief Create a neighbors view from a vertex id (convenience overload).
  *
- * @param g The graph to iterate over
- * @param uid The source vertex id
- * @return neighbors_view yielding neighbor_info<VId, false, V, void>
+ * Resolves @c uid to a descriptor via @c find_vertex and delegates to the
+ * descriptor-based overload.
+ *
+ * @code
+ *   for (auto [tid, n] : neighbors(g, uid)) { ... }
+ * @endcode
+ *
+ * @tparam G  Graph type satisfying @c index_adjacency_list
+ * @param  g   The graph to iterate over.
+ * @param  uid The source vertex id.
+ * @return @c neighbors_view yielding @c neighbor_info{tid, n} per neighbor.
+ *
+ * @pre  @c uid is a valid vertex id in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G>
 [[nodiscard]] constexpr auto neighbors(G& g, adj_list::vertex_id_t<G> uid) noexcept {
@@ -241,12 +402,23 @@ template <adj_list::index_adjacency_list G>
 }
 
 /**
- * @brief Create a neighbors view with value function
- * 
- * @param g The graph to iterate over
- * @param u The source vertex descriptor
- * @param vvf Value function invoked for each target vertex
- * @return neighbors_view yielding neighbor_info<void, false, vertex_descriptor, VV>
+ * @brief Create a neighbors view with a vertex value function.
+ *
+ * @code
+ *   auto vvf = [](const auto& g, auto v) { return vertex_id(g, v) * 2; };
+ *   for (auto [tid, n, val] : neighbors(g, u, vvf)) { ... }
+ * @endcode
+ *
+ * @tparam G   Graph type satisfying @c adjacency_list
+ * @tparam VVF Vertex value function — @c invocable<const G&, vertex_t<G>>
+ * @param  g   The graph to iterate over.  Must outlive the returned view.
+ * @param  u   The source vertex descriptor.
+ * @param  vvf Value function invoked once per neighbor.
+ *             Use a stateless lambda for @c std::views chaining support.
+ * @return @c neighbors_view yielding @c neighbor_info{tid, n, val} per neighbor.
+ *
+ * @pre  @c u is a valid vertex descriptor in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::adjacency_list G, class VVF>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
@@ -255,14 +427,26 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
 }
 
 /**
- * @brief Create a neighbors view with value function (vertex_id overload)
- * 
- * Resolves the vertex id to a descriptor and delegates to the descriptor-based overload.
+ * @brief Create a neighbors view with value function from a vertex id
+ *        (convenience overload).
  *
- * @param g The graph to iterate over
- * @param uid The source vertex id
- * @param vvf Value function invoked for each target vertex
- * @return neighbors_view yielding neighbor_info<VId, false, V, VV>
+ * Resolves @c uid to a descriptor via @c find_vertex and delegates to the
+ * descriptor-based overload.
+ *
+ * @code
+ *   auto vvf = [](const auto& g, auto v) { return vertex_id(g, v) * 2; };
+ *   for (auto [tid, n, val] : neighbors(g, uid, vvf)) { ... }
+ * @endcode
+ *
+ * @tparam G   Graph type satisfying @c index_adjacency_list
+ * @tparam VVF Vertex value function — @c invocable<const G&, vertex_t<G>>
+ * @param  g   The graph to iterate over.
+ * @param  uid The source vertex id.
+ * @param  vvf Value function invoked once per neighbor.
+ * @return @c neighbors_view yielding @c neighbor_info{tid, n, val} per neighbor.
+ *
+ * @pre  @c uid is a valid vertex id in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G, class VVF>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
@@ -276,13 +460,34 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
 // =============================================================================
 
 /**
- * @brief Basic neighbors view without value function (target_id only)
+ * @brief Basic neighbors view — simplified variant without value function.
  *
- * Iterates over neighbors yielding neighbor_info<vertex_id_type, false, void, void>.
- * Use this when only target vertex IDs are needed (e.g., in algorithms that
- * only traverse connectivity and don't need vertex descriptors).
+ * Iterates over every neighbor of a source vertex, yielding
+ * @c neighbor_info<vertex_id_type,false,void,void>.  No target vertex
+ * descriptor is materialised — only the target id is returned, making
+ * this the lightest-weight neighbor iteration available.
  *
- * @tparam G Graph type satisfying adjacency_list concept
+ * Structured binding: @c auto [tid] where
+ * - @c tid — @c vertex_id_t<G> (target / neighbor vertex identifier)
+ *
+ * @par When to use
+ * Prefer @c basic_neighbors when you only need target IDs (e.g. for
+ * connectivity traversal in algorithms that index external containers).
+ * For access to the target vertex descriptor, use @c neighbors_view
+ * instead.  For edge descriptors, use @c incidence_view.
+ *
+ * @par Iterator category
+ * @c std::forward_iterator — sized when @c vertex_edge_range_t<G> is
+ * @c sized_range, common range.
+ *
+ * @par Performance
+ * Construction O(1).  Full iteration O(deg(u)).  Zero allocation.
+ * Avoids the target vertex lookup that the standard variant performs.
+ *
+ * @tparam G Graph type satisfying @c adjacency_list
+ *
+ * @see basic_neighbors(G&, vertex_id_t<G>) — factory function
+ * @see neighbors_view — standard variant with target descriptor
  */
 template <adj_list::adjacency_list G>
 class basic_neighbors_view<G, void> : public std::ranges::view_interface<basic_neighbors_view<G, void>> {
@@ -295,6 +500,11 @@ public:
   using edge_type          = adj_list::edge_t<G>;
   using info_type          = neighbor_info<vertex_id_type, false, void, void>;
 
+  /**
+   * @brief Forward iterator yielding @c neighbor_info{tid} per neighbor.
+   *
+   * Satisfies @c std::forward_iterator.  All operations are @c noexcept.
+   */
   class iterator {
   public:
     using iterator_category = std::forward_iterator_tag;
@@ -359,13 +569,36 @@ private:
 };
 
 /**
- * @brief Basic neighbors view with value function (target_id + value, no vertex descriptor)
+ * @brief Basic neighbors view — simplified variant with value function.
  *
- * Iterates over neighbors yielding neighbor_info<vertex_id_type, false, void, VV>
- * where VV is the result of invoking the value function on the target vertex.
+ * Iterates over every neighbor of a source vertex, yielding
+ * @c neighbor_info<vertex_id_type,false,void,VV> where @c VV =
+ * @c invoke_result_t<VVF,const G&,vertex_t<G>> .  No target vertex
+ * descriptor is materialised.
  *
- * @tparam G Graph type satisfying adjacency_list concept
- * @tparam VVF Vertex value function type
+ * Structured binding: @c auto [tid, val] where
+ * - @c tid — @c vertex_id_t<G> (target / neighbor vertex identifier)
+ * - @c val — computed value returned by VVF
+ *
+ * @par Chaining with std::views
+ * Use a stateless lambda (empty capture @c []) for the value function so
+ * the view satisfies @c std::ranges::view and chains with @c std::views
+ * adaptors.
+ *
+ * @par Iterator category
+ * @c std::forward_iterator — sized when @c vertex_edge_range_t<G> is
+ * @c sized_range, common range.
+ *
+ * @par Performance
+ * Construction O(1).  Full iteration O(deg(u)), invoking VVF once per
+ * neighbor.  Zero allocation.  Avoids the target vertex lookup that the
+ * standard variant performs.
+ *
+ * @tparam G   Graph type satisfying @c adjacency_list
+ * @tparam VVF Vertex value function — @c invocable<const G&, vertex_t<G>>
+ *
+ * @see basic_neighbors(G&, vertex_id_t<G>, VVF&&) — factory function
+ * @see neighbors_view — standard variant with target descriptor
  */
 template <adj_list::adjacency_list G, class VVF>
 class basic_neighbors_view : public std::ranges::view_interface<basic_neighbors_view<G, VVF>> {
@@ -379,6 +612,11 @@ public:
   using value_type_result  = std::invoke_result_t<VVF, const G&, vertex_type>;
   using info_type          = neighbor_info<vertex_id_type, false, void, value_type_result>;
 
+  /**
+   * @brief Forward iterator yielding @c neighbor_info{tid, val} per neighbor.
+   *
+   * Satisfies @c std::forward_iterator.  @c operator*() may throw if VVF throws.
+   */
   class iterator {
   public:
     using iterator_category = std::forward_iterator_tag;
@@ -465,11 +703,19 @@ basic_neighbors_view(G&, adj_list::vertex_t<G>, VVF) -> basic_neighbors_view<G, 
 // =============================================================================
 
 /**
- * @brief Create a basic neighbors view without value function (target_id only)
+ * @brief Create a basic neighbors view (target id only, no descriptor).
  *
- * @param g The graph to iterate over
- * @param uid The source vertex id
- * @return basic_neighbors_view yielding neighbor_info<vertex_id_type, false, void, void>
+ * @code
+ *   for (auto [tid] : basic_neighbors(g, uid)) { ... }
+ * @endcode
+ *
+ * @tparam G  Graph type satisfying @c adjacency_list
+ * @param  g   The graph to iterate over.  Must outlive the returned view.
+ * @param  uid The source vertex id.
+ * @return @c basic_neighbors_view yielding @c neighbor_info{tid} per neighbor.
+ *
+ * @pre  @c uid is a valid vertex id in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::adjacency_list G>
 [[nodiscard]] constexpr auto basic_neighbors(G& g, adj_list::vertex_id_t<G> uid) {
@@ -478,12 +724,23 @@ template <adj_list::adjacency_list G>
 }
 
 /**
- * @brief Create a basic neighbors view with value function (target_id + value)
+ * @brief Create a basic neighbors view with value function (target id + value).
  *
- * @param g The graph to iterate over
- * @param uid The source vertex id
- * @param vvf Value function invoked for each target vertex
- * @return basic_neighbors_view yielding neighbor_info<vertex_id_type, false, void, VV>
+ * @code
+ *   auto vvf = [](const auto& g, auto v) { return vertex_id(g, v) * 2; };
+ *   for (auto [tid, val] : basic_neighbors(g, uid, vvf)) { ... }
+ * @endcode
+ *
+ * @tparam G   Graph type satisfying @c adjacency_list
+ * @tparam VVF Vertex value function — @c invocable<const G&, vertex_t<G>>
+ * @param  g   The graph to iterate over.  Must outlive the returned view.
+ * @param  uid The source vertex id.
+ * @param  vvf Value function invoked once per neighbor.
+ *             Use a stateless lambda for @c std::views chaining support.
+ * @return @c basic_neighbors_view yielding @c neighbor_info{tid, val} per neighbor.
+ *
+ * @pre  @c uid is a valid vertex id in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::adjacency_list G, class VVF>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>

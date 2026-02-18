@@ -1,10 +1,107 @@
 /**
  * @file incidence.hpp
- * @brief Incidence view for iterating over edges from a vertex
- * 
- * Provides a view that iterates over all outgoing edges from a given vertex,
- * yielding edge_info<void, false, edge_t<G>, EV> for each edge. Supports
- * optional value functions to compute per-edge values.
+ * @brief Incidence views for iterating over edges incident to a vertex.
+ *
+ * @section overview Overview
+ *
+ * Provides lazy, range-based views that iterate over every outgoing edge from
+ * a given source vertex.  Each iteration step yields an @c edge_info whose
+ * fields are exposed via structured bindings.  An optional edge value function
+ * (EVF) computes a per-edge value that is included in the binding.
+ *
+ * @section variants View Variants
+ *
+ * | Variant                          | Structured Binding | Description                        |
+ * |----------------------------------|--------------------|------------------------------------|
+ * | @c incidence(g,u)                | `[tid, uv]`        | Standard view (target id + edge)   |
+ * | @c incidence(g,u,evf)            | `[tid, uv, val]`   | Standard view with value function  |
+ * | @c basic_incidence(g,uid)        | `[tid]`            | Simplified view (target id only)   |
+ * | @c basic_incidence(g,uid,evf)    | `[tid, val]`       | Simplified view with value fn      |
+ *
+ * The standard overloads also accept a vertex id @c uid in place of a
+ * descriptor @c u (requires @c index_adjacency_list).
+ *
+ * @section bindings Structured Bindings
+ *
+ * Standard view:
+ * @code
+ *   for (auto [tid, uv]      : incidence(g, u))          // tid = vertex_id_t<G>, uv = edge_t<G>
+ *   for (auto [tid, uv, val] : incidence(g, u, evf))     // val = invoke_result_t<EVF, G&, edge_t<G>>
+ * @endcode
+ *
+ * basic_ variant:
+ * @code
+ *   for (auto [tid]      : basic_incidence(g, uid))       // tid = vertex_id_t<G>
+ *   for (auto [tid, val] : basic_incidence(g, uid, evf))  // val = invoke_result_t<EVF, G&, edge_t<G>>
+ * @endcode
+ *
+ * @section iterator_properties Iterator Properties
+ *
+ * | Property        | Value                                                  |
+ * |-----------------|--------------------------------------------------------|
+ * | Concept         | @c std::forward_iterator                               |
+ * | Range concept   | @c std::ranges::forward_range                          |
+ * | Sized           | Yes when @c vertex_edge_range_t<G> is @c sized_range   |
+ * | Borrowed        | No (view holds reference)                              |
+ * | Common          | Yes (begin/end same type)                              |
+ *
+ * @section perf Performance Characteristics
+ *
+ * Construction is O(1).  Iteration is O(deg(u)), one edge per step.  The view
+ * holds only a pointer to the graph and the source vertex — no allocation.
+ * The @c basic_ variant is lighter still: it never materialises an edge
+ * descriptor and returns only the target vertex id.
+ *
+ * @section chaining Chaining with std::views
+ *
+ * Views chain with std::views when the value function is a stateless lambda
+ * (empty capture list @c []):
+ *
+ * @code
+ *   auto evf = [](const auto& g, auto uv) { return target_id(g, uv); };
+ *   auto view = g | incidence(0, evf)
+ *                 | std::views::take(3);   // ✅ compiles
+ * @endcode
+ *
+ * See @ref view_chaining_limitations.md for the design rationale.
+ *
+ * @section pipe Pipe Adaptor Syntax
+ *
+ * Pipe-style usage is available via @c graph::views::adaptors:
+ * @code
+ *   using namespace graph::views::adaptors;
+ *
+ *   for (auto [tid, uv] : g | incidence(0))              { ... }
+ *   for (auto [tid]     : g | basic_incidence(0))        { ... }
+ *   for (auto [tid, val]: g | basic_incidence(0, evf))   { ... }
+ * @endcode
+ *
+ * @section supported_graphs Supported Graph Properties
+ *
+ * - Requires: @c adjacency_list concept
+ *   (vertex-id overloads require @c index_adjacency_list)
+ * - Works with all @c dynamic_graph container combinations
+ * - Works with directed and undirected graphs
+ *
+ * @section exception_safety Exception Safety
+ *
+ * Construction is @c noexcept when EVF is nothrow move-constructible (or
+ * absent).  Iteration may propagate exceptions from the value function; all
+ * other iterator operations are @c noexcept.
+ *
+ * @section preconditions Preconditions
+ *
+ * - The graph @c g must outlive the view.
+ * - The graph must not be mutated during iteration.
+ * - The source vertex @c u / @c uid must be a valid vertex in the graph.
+ *
+ * @section see_also See Also
+ *
+ * - @ref views.md — all views overview
+ * - @ref graph_cpo_implementation.md — CPO documentation
+ * - @ref view_chaining_limitations.md — chaining design rationale
+ * - @ref vertexlist.hpp — whole-graph vertex iteration
+ * - @ref neighbors.hpp — adjacent-vertex iteration (without edge descriptors)
  */
 
 #pragma once
@@ -28,11 +125,26 @@ template <adj_list::adjacency_list G, class EVF = void>
 class basic_incidence_view;
 
 /**
- * @brief Incidence view without value function
- * 
- * Iterates over edges from a vertex yielding edge_info<void, false, edge_t<G>, void>
- * 
- * @tparam G Graph type satisfying adjacency_list concept
+ * @brief Incidence view — standard variant without value function.
+ *
+ * Iterates over every outgoing edge from a source vertex, yielding
+ * @c edge_info<vertex_id_type,false,edge_t<G>,void> per step.
+ *
+ * Structured binding: @c auto [tid, uv] where
+ * - @c tid — @c vertex_id_t<G> (target vertex identifier)
+ * - @c uv  — @c edge_t<G>      (edge descriptor)
+ *
+ * @par Iterator category
+ * @c std::forward_iterator — sized when @c vertex_edge_range_t<G> is
+ * @c sized_range, common range.
+ *
+ * @par Performance
+ * Construction O(1).  Full iteration O(deg(u)).  Zero allocation.
+ *
+ * @tparam G Graph type satisfying @c adjacency_list
+ *
+ * @see incidence(G&, vertex_t<G>) — factory function
+ * @see basic_incidence_view — simplified target-id-only variant
  */
 template <adj_list::adjacency_list G>
 class incidence_view<G, void> : public std::ranges::view_interface<incidence_view<G, void>> {
@@ -46,8 +158,10 @@ public:
   using info_type          = edge_info<vertex_id_type, false, edge_type, void>;
 
   /**
-     * @brief Forward iterator yielding edge_info values
-     */
+   * @brief Forward iterator yielding @c edge_info{tid, uv} per edge.
+   *
+   * Satisfies @c std::forward_iterator.  All operations are @c noexcept.
+   */
   class iterator {
   public:
     using iterator_category = std::forward_iterator_tag;
@@ -112,13 +226,35 @@ private:
 };
 
 /**
- * @brief Incidence view with value function
- * 
- * Iterates over edges from a vertex yielding edge_info<void, false, edge_t<G>, EV>
- * where EV is the result of invoking the value function on the edge descriptor.
- * 
- * @tparam G Graph type satisfying adjacency_list concept
- * @tparam EVF Edge value function type
+ * @brief Incidence view — standard variant with value function.
+ *
+ * Iterates over every outgoing edge from a source vertex, yielding
+ * @c edge_info<vertex_id_type,false,edge_t<G>,EV> where @c EV =
+ * @c invoke_result_t<EVF,const G&,edge_t<G>> .
+ *
+ * Structured binding: @c auto [tid, uv, val] where
+ * - @c tid — @c vertex_id_t<G> (target vertex identifier)
+ * - @c uv  — @c edge_t<G>      (edge descriptor)
+ * - @c val — computed value returned by EVF
+ *
+ * @par Chaining with std::views
+ * Use a stateless lambda (empty capture @c []) for the value function so
+ * the view satisfies @c std::ranges::view and chains with @c std::views
+ * adaptors.
+ *
+ * @par Iterator category
+ * @c std::forward_iterator — sized when @c vertex_edge_range_t<G> is
+ * @c sized_range, common range.
+ *
+ * @par Performance
+ * Construction O(1).  Full iteration O(deg(u)), invoking EVF once per edge.
+ * Zero allocation.
+ *
+ * @tparam G   Graph type satisfying @c adjacency_list
+ * @tparam EVF Edge value function — @c invocable<const G&, edge_t<G>>
+ *
+ * @see incidence(G&, vertex_t<G>, EVF&&) — factory function
+ * @see basic_incidence_view — simplified target-id-only variant
  */
 template <adj_list::adjacency_list G, class EVF>
 class incidence_view : public std::ranges::view_interface<incidence_view<G, EVF>> {
@@ -133,8 +269,10 @@ public:
   using info_type          = edge_info<vertex_id_type, false, edge_type, value_type_result>;
 
   /**
-     * @brief Forward iterator yielding edge_info values with computed value
-     */
+   * @brief Forward iterator yielding @c edge_info{tid, uv, val} per edge.
+   *
+   * Satisfies @c std::forward_iterator.  @c operator*() may throw if EVF throws.
+   */
   class iterator {
   public:
     using iterator_category = std::forward_iterator_tag;
@@ -207,11 +345,19 @@ template <adj_list::adjacency_list G, class EVF>
 incidence_view(G&, adj_list::vertex_t<G>, EVF) -> incidence_view<G, EVF>;
 
 /**
- * @brief Create an incidence view without value function
- * 
- * @param g The graph to iterate over
- * @param u The source vertex descriptor
- * @return incidence_view yielding edge_info<void, false, edge_descriptor, void>
+ * @brief Create an incidence view over edges from a vertex (no value function).
+ *
+ * @code
+ *   for (auto [tid, uv] : incidence(g, u)) { ... }
+ * @endcode
+ *
+ * @tparam G  Graph type satisfying @c adjacency_list
+ * @param  g  The graph to iterate over.  Must outlive the returned view.
+ * @param  u  The source vertex descriptor.
+ * @return @c incidence_view yielding @c edge_info{tid, uv} per edge.
+ *
+ * @pre  @c u is a valid vertex descriptor in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::adjacency_list G>
 [[nodiscard]] constexpr auto incidence(G& g, adj_list::vertex_t<G> u) noexcept {
@@ -219,12 +365,23 @@ template <adj_list::adjacency_list G>
 }
 
 /**
- * @brief Create an incidence view with value function
- * 
- * @param g The graph to iterate over
- * @param u The source vertex descriptor
- * @param evf Value function invoked for each edge
- * @return incidence_view yielding edge_info<void, false, edge_descriptor, EV>
+ * @brief Create an incidence view with an edge value function.
+ *
+ * @code
+ *   auto evf = [](const auto& g, auto uv) { return target_id(g, uv); };
+ *   for (auto [tid, uv, val] : incidence(g, u, evf)) { ... }
+ * @endcode
+ *
+ * @tparam G   Graph type satisfying @c adjacency_list
+ * @tparam EVF Edge value function — @c invocable<const G&, edge_t<G>>
+ * @param  g   The graph to iterate over.  Must outlive the returned view.
+ * @param  u   The source vertex descriptor.
+ * @param  evf Value function invoked once per edge.
+ *             Use a stateless lambda for @c std::views chaining support.
+ * @return @c incidence_view yielding @c edge_info{tid, uv, val} per edge.
+ *
+ * @pre  @c u is a valid vertex descriptor in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::adjacency_list G, class EVF>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>
@@ -233,13 +390,22 @@ requires edge_value_function<EVF, G, adj_list::edge_t<G>>
 }
 
 /**
- * @brief Create an incidence view from a vertex id (convenience overload)
+ * @brief Create an incidence view from a vertex id (convenience overload).
  *
- * Resolves the vertex id to a descriptor and delegates to the descriptor-based overload.
+ * Resolves @c uid to a descriptor via @c find_vertex and delegates to the
+ * descriptor-based overload.
  *
- * @param g The graph to iterate over
- * @param uid The source vertex id
- * @return incidence_view yielding edge_info<VId, false, E, void>
+ * @code
+ *   for (auto [tid, uv] : incidence(g, uid)) { ... }
+ * @endcode
+ *
+ * @tparam G  Graph type satisfying @c index_adjacency_list
+ * @param  g   The graph to iterate over.
+ * @param  uid The source vertex id.
+ * @return @c incidence_view yielding @c edge_info{tid, uv} per edge.
+ *
+ * @pre  @c uid is a valid vertex id in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G>
 [[nodiscard]] constexpr auto incidence(G& g, adj_list::vertex_id_t<G> uid) {
@@ -248,14 +414,26 @@ template <adj_list::index_adjacency_list G>
 }
 
 /**
- * @brief Create an incidence view with value function from a vertex id (convenience overload)
+ * @brief Create an incidence view with value function from a vertex id
+ *        (convenience overload).
  *
- * Resolves the vertex id to a descriptor and delegates to the descriptor-based overload.
+ * Resolves @c uid to a descriptor via @c find_vertex and delegates to the
+ * descriptor-based overload.
  *
- * @param g The graph to iterate over
- * @param uid The source vertex id
- * @param evf Value function invoked for each edge
- * @return incidence_view yielding edge_info<VId, false, E, EV>
+ * @code
+ *   auto evf = [](const auto& g, auto uv) { return edge_value(g, uv); };
+ *   for (auto [tid, uv, val] : incidence(g, uid, evf)) { ... }
+ * @endcode
+ *
+ * @tparam G   Graph type satisfying @c index_adjacency_list
+ * @tparam EVF Edge value function — @c invocable<const G&, edge_t<G>>
+ * @param  g   The graph to iterate over.
+ * @param  uid The source vertex id.
+ * @param  evf Value function invoked once per edge.
+ * @return @c incidence_view yielding @c edge_info{tid, uv, val} per edge.
+ *
+ * @pre  @c uid is a valid vertex id in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G, class EVF>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>
@@ -269,13 +447,34 @@ requires edge_value_function<EVF, G, adj_list::edge_t<G>>
 // =============================================================================
 
 /**
- * @brief Basic incidence view without value function (target_id only)
+ * @brief Basic incidence view — simplified variant without value function.
  *
- * Iterates over edges from a vertex yielding edge_info<vertex_id_type, false, void, void>.
- * Use this when only target vertex IDs are needed (e.g., in algorithms that
- * only traverse connectivity and don't need edge descriptors).
+ * Iterates over every outgoing edge from a source vertex, yielding
+ * @c edge_info<vertex_id_type,false,void,void>.  No edge descriptor is
+ * materialised — only the target vertex id is returned, making this the
+ * lightest-weight edge iteration available from a single vertex.
  *
- * @tparam G Graph type satisfying adjacency_list concept
+ * Structured binding: @c auto [tid] where
+ * - @c tid — @c vertex_id_t<G> (target vertex identifier)
+ *
+ * @par When to use
+ * Prefer @c basic_incidence when you only need target IDs (e.g. for
+ * connectivity traversal in algorithms such as BFS, DFS, topological sort).
+ * For access to the edge descriptor or stored edge value, use
+ * @c incidence_view instead.
+ *
+ * @par Iterator category
+ * @c std::forward_iterator — sized when @c vertex_edge_range_t<G> is
+ * @c sized_range, common range.
+ *
+ * @par Performance
+ * Construction O(1).  Full iteration O(deg(u)).  Zero allocation.  Avoids
+ * the edge descriptor that the standard variant returns.
+ *
+ * @tparam G Graph type satisfying @c adjacency_list
+ *
+ * @see basic_incidence(G&, vertex_id_t<G>) — factory function
+ * @see incidence_view — standard variant with edge descriptor
  */
 template <adj_list::adjacency_list G>
 class basic_incidence_view<G, void> : public std::ranges::view_interface<basic_incidence_view<G, void>> {
@@ -288,6 +487,11 @@ public:
   using edge_type          = adj_list::edge_t<G>;
   using info_type          = edge_info<vertex_id_type, false, void, void>;
 
+  /**
+   * @brief Forward iterator yielding @c edge_info{tid} per edge.
+   *
+   * Satisfies @c std::forward_iterator.  All operations are @c noexcept.
+   */
   class iterator {
   public:
     using iterator_category = std::forward_iterator_tag;
@@ -350,13 +554,36 @@ private:
 };
 
 /**
- * @brief Basic incidence view with value function (target_id + value, no edge descriptor)
+ * @brief Basic incidence view — simplified variant with value function.
  *
- * Iterates over edges from a vertex yielding edge_info<vertex_id_type, false, void, EV>
- * where EV is the result of invoking the value function on the edge.
+ * Iterates over every outgoing edge from a source vertex, yielding
+ * @c edge_info<vertex_id_type,false,void,EV> where @c EV =
+ * @c invoke_result_t<EVF,const G&,edge_t<G>> .  No edge descriptor is
+ * materialised.
  *
- * @tparam G Graph type satisfying adjacency_list concept
- * @tparam EVF Edge value function type
+ * Structured binding: @c auto [tid, val] where
+ * - @c tid — @c vertex_id_t<G> (target vertex identifier)
+ * - @c val — computed value returned by EVF
+ *
+ * @par Chaining with std::views
+ * Use a stateless lambda (empty capture @c []) for the value function so
+ * the view satisfies @c std::ranges::view and chains with @c std::views
+ * adaptors.
+ *
+ * @par Iterator category
+ * @c std::forward_iterator — sized when @c vertex_edge_range_t<G> is
+ * @c sized_range, common range.
+ *
+ * @par Performance
+ * Construction O(1).  Full iteration O(deg(u)), invoking EVF once per edge.
+ * Zero allocation.  Avoids the edge descriptor that the standard variant
+ * returns.
+ *
+ * @tparam G   Graph type satisfying @c adjacency_list
+ * @tparam EVF Edge value function — @c invocable<const G&, edge_t<G>>
+ *
+ * @see basic_incidence(G&, vertex_id_t<G>, EVF&&) — factory function
+ * @see incidence_view — standard variant with edge descriptor
  */
 template <adj_list::adjacency_list G, class EVF>
 class basic_incidence_view : public std::ranges::view_interface<basic_incidence_view<G, EVF>> {
@@ -370,6 +597,11 @@ public:
   using value_type_result  = std::invoke_result_t<EVF, const G&, edge_type>;
   using info_type          = edge_info<vertex_id_type, false, void, value_type_result>;
 
+  /**
+   * @brief Forward iterator yielding @c edge_info{tid, val} per edge.
+   *
+   * Satisfies @c std::forward_iterator.  @c operator*() may throw if EVF throws.
+   */
   class iterator {
   public:
     using iterator_category = std::forward_iterator_tag;
@@ -452,11 +684,19 @@ basic_incidence_view(G&, adj_list::vertex_t<G>, EVF) -> basic_incidence_view<G, 
 // =============================================================================
 
 /**
- * @brief Create a basic incidence view without value function (target_id only)
+ * @brief Create a basic incidence view (target id only, no edge descriptor).
  *
- * @param g The graph to iterate over
- * @param uid The source vertex id
- * @return basic_incidence_view yielding edge_info<vertex_id_type, false, void, void>
+ * @code
+ *   for (auto [tid] : basic_incidence(g, uid)) { ... }
+ * @endcode
+ *
+ * @tparam G  Graph type satisfying @c adjacency_list
+ * @param  g   The graph to iterate over.  Must outlive the returned view.
+ * @param  uid The source vertex id.
+ * @return @c basic_incidence_view yielding @c edge_info{tid} per edge.
+ *
+ * @pre  @c uid is a valid vertex id in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::adjacency_list G>
 [[nodiscard]] constexpr auto basic_incidence(G& g, adj_list::vertex_id_t<G> uid) {
@@ -465,12 +705,23 @@ template <adj_list::adjacency_list G>
 }
 
 /**
- * @brief Create a basic incidence view with value function (target_id + value)
+ * @brief Create a basic incidence view with value function (target id + value).
  *
- * @param g The graph to iterate over
- * @param uid The source vertex id
- * @param evf Value function invoked for each edge
- * @return basic_incidence_view yielding edge_info<vertex_id_type, false, void, EV>
+ * @code
+ *   auto evf = [](const auto& g, auto uv) { return edge_value(g, uv); };
+ *   for (auto [tid, val] : basic_incidence(g, uid, evf)) { ... }
+ * @endcode
+ *
+ * @tparam G   Graph type satisfying @c adjacency_list
+ * @tparam EVF Edge value function — @c invocable<const G&, edge_t<G>>
+ * @param  g   The graph to iterate over.  Must outlive the returned view.
+ * @param  uid The source vertex id.
+ * @param  evf Value function invoked once per edge.
+ *             Use a stateless lambda for @c std::views chaining support.
+ * @return @c basic_incidence_view yielding @c edge_info{tid, val} per edge.
+ *
+ * @pre  @c uid is a valid vertex id in @c g.
+ * @post The graph is not modified.
  */
 template <adj_list::adjacency_list G, class EVF>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>

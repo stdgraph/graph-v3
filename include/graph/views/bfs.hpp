@@ -1,36 +1,117 @@
 /**
  * @file bfs.hpp
- * @brief Breadth-first search views for vertices and edges
- * 
- * Provides views that traverse a graph in breadth-first order from a seed vertex,
- * yielding vertex_info or edge_info for each visited element.
- * 
- * @complexity Time: O(V + E) where V is reachable vertices and E is reachable edges
- *             BFS visits each reachable vertex once and traverses each reachable edge once
- * @complexity Space: O(V) for the queue and visited tracker
- * 
- * @par Examples:
+ * @brief Breadth-first search views for vertices and edges.
+ *
+ * @section overview Overview
+ *
+ * Provides lazy, single-pass views that traverse a graph in breadth-first
+ * order starting from a seed vertex.  @c vertices_bfs yields per-vertex
+ * @c vertex_info and @c edges_bfs yields per-edge @c edge_info.  An optional
+ * value function computes a per-element value included in the structured
+ * binding.
+ *
+ * Both view families expose additional accessors on the view object:
+ * - @c depth()       — maximum BFS depth reached so far
+ * - @c num_visited() — total vertices/edges visited so far
+ * - @c cancel(c)     — stop traversal (@c cancel_branch or @c cancel_all)
+ *
+ * Only vertices/edges reachable from the seed are visited.
+ *
+ * @section variants View Variants
+ *
+ * | Variant                             | Structured Binding | Description                        |
+ * |-------------------------------------|--------------------|------------------------------------|
+ * | @c vertices_bfs(g,seed)             | `[v]`              | Vertex BFS (descriptor only)       |
+ * | @c vertices_bfs(g,seed,vvf)         | `[v, val]`         | Vertex BFS with value function     |
+ * | @c edges_bfs(g,seed)                | `[uv]`             | Edge BFS (edge descriptor only)    |
+ * | @c edges_bfs(g,seed,evf)            | `[uv, val]`        | Edge BFS with value function       |
+ *
+ * Each factory also accepts a vertex descriptor in place of a vertex id,
+ * and an optional custom allocator for the internal queue and visited
+ * tracker.
+ *
+ * @section bindings Structured Bindings
+ *
+ * Vertex BFS:
  * @code
- * // Vertex traversal
- * for (auto [v] : vertices_bfs(g, seed))
- *     process_vertex(v);
- * 
- * // Vertex traversal with value function
- * for (auto [v, val] : vertices_bfs(g, seed, value_fn))
- *     process_vertex_with_value(v, val);
- * 
- * // Access depth during traversal
- * auto bfs = vertices_bfs(g, seed);
- * for (auto [v] : bfs)
- *     std::cout << "Vertex " << vertex_id(g, v) << " at depth " << bfs.depth() << "\n";
- * 
- * // Cancel search
- * auto bfs = vertices_bfs(g, seed);
- * for (auto [v] : bfs) {
- *     if (should_stop(v))
- *         bfs.cancel(cancel_search::cancel_all);
- * }
+ *   for (auto [v]      : vertices_bfs(g, seed))          // v = vertex_t<G>
+ *   for (auto [v, val] : vertices_bfs(g, seed, vvf))     // val = invoke_result_t<VVF, G&, vertex_t<G>>
  * @endcode
+ *
+ * Edge BFS:
+ * @code
+ *   for (auto [uv]      : edges_bfs(g, seed))            // uv = edge_t<G>
+ *   for (auto [uv, val] : edges_bfs(g, seed, evf))       // val = invoke_result_t<EVF, G&, edge_t<G>>
+ * @endcode
+ *
+ * @section iterator_properties Iterator Properties
+ *
+ * | Property        | Value                                             |
+ * |-----------------|---------------------------------------------------|
+ * | Concept         | @c std::input_iterator                            |
+ * | Range concept   | @c std::ranges::input_range                       |
+ * | Sized           | No                                                |
+ * | Borrowed        | No (view owns internal state)                     |
+ * | Common          | No (uses sentinel)                                |
+ *
+ * @section perf Performance Characteristics
+ *
+ * Construction allocates an O(V) visited tracker and pushes the seed vertex
+ * onto an internal queue.  Each @c operator++ is amortised O(1) — it
+ * dequeues one entry and enqueues at most deg(v) new entries.  Full
+ * traversal is O(V + E) time and O(V) space (queue width ≤ V, visited
+ * tracker = V bits).
+ *
+ * @section chaining Chaining with std::views
+ *
+ * BFS views are @c input_range (single-pass), so they chain only with
+ * adaptors that do not require forward ranges:
+ *
+ * @code
+ *   auto view = vertices_bfs(g, seed)
+ *               | std::views::take(5);  // ✅ compiles (take is input-compatible)
+ * @endcode
+ *
+ * Adaptors that buffer or require multiple passes (e.g. @c std::views::reverse)
+ * are not supported.
+ *
+ * @section search_control Search Control
+ *
+ * @code
+ *   auto bfs = vertices_bfs(g, seed);
+ *   for (auto [v] : bfs) {
+ *       if (found(v))
+ *           bfs.cancel(cancel_search::cancel_all);    // stop immediately
+ *       if (prune(v))
+ *           bfs.cancel(cancel_search::cancel_branch); // skip children
+ *       std::cout << "depth=" << bfs.depth() << "\n";
+ *   }
+ * @endcode
+ *
+ * @section supported_graphs Supported Graph Properties
+ *
+ * - Requires: @c index_adjacency_list concept
+ * - Works with all @c dynamic_graph container combinations
+ * - Works with directed and undirected graphs
+ *
+ * @section exception_safety Exception Safety
+ *
+ * Construction may throw @c std::bad_alloc (allocates visited tracker +
+ * queue).  Iteration may propagate exceptions from the value function; all
+ * other iterator operations are @c noexcept.
+ *
+ * @section preconditions Preconditions
+ *
+ * - The graph @c g must outlive the view.
+ * - The graph must not be mutated during iteration.
+ * - The seed vertex must be a valid vertex in the graph.
+ *
+ * @section see_also See Also
+ *
+ * - @ref dfs.hpp — depth-first search views
+ * - @ref views.md — all views overview
+ * - @ref graph_cpo_implementation.md — CPO documentation
+ * - @ref view_chaining_limitations.md — chaining design rationale
  */
 
 #pragma once
@@ -76,11 +157,17 @@ namespace bfs_detail {
   };
 
   /**
- * @brief Shared BFS state for vertex traversal
- * 
- * @complexity Time: O(V + E) - visits each reachable vertex once, traverses each reachable edge once
- * @complexity Space: O(V) - queue stores up to V vertices, visited tracker uses O(V) space
- */
+   * @brief Shared BFS traversal state for vertex iteration.
+   *
+   * Holds the FIFO queue, visited tracker, cancellation flag, max-depth
+   * counter and visit counter.  Shared via @c std::shared_ptr so that
+   * iterator copies and the owning view all observe the same state.
+   *
+   * @par Complexity
+   * Time: O(V + E) — visits each reachable vertex once, traverses each
+   * reachable edge once.  Space: O(V) — queue width ≤ V, visited
+   * tracker = V bits.
+   */
   template <class G, class Alloc>
   struct bfs_state {
     using graph_type     = G;
@@ -104,11 +191,14 @@ namespace bfs_detail {
   };
 
   /**
- * @brief Shared BFS state for edge traversal
- * 
- * @complexity Time: O(V + E) - visits each reachable vertex once, traverses each reachable edge once
- * @complexity Space: O(V) - queue and visited tracker use O(V) space
- */
+   * @brief Shared BFS traversal state for edge iteration.
+   *
+   * Similar to @c bfs_state but additionally stores per-vertex edge
+   * iterators so that tree edges can be yielded one at a time.
+   *
+   * @par Complexity
+   * Time: O(V + E).  Space: O(V).
+   */
   template <class G, class Alloc>
   struct bfs_edge_state {
     using graph_type     = G;
@@ -139,13 +229,20 @@ namespace bfs_detail {
 } // namespace bfs_detail
 
 /**
- * @brief BFS vertex view without value function
- * 
- * Iterates over vertices in breadth-first order yielding 
- * vertex_info<void, vertex_t<G>, void>
- * 
- * @tparam G Graph type satisfying index_adjacency_list concept
- * @tparam Alloc Allocator type for internal containers
+ * @brief BFS vertex view without value function.
+ *
+ * Traverses vertices reachable from a seed in breadth-first order,
+ * yielding @c vertex_info{v} per vertex via structured bindings.
+ *
+ * @code
+ *   for (auto [v] : vertices_bfs(g, seed)) { ... }
+ * @endcode
+ *
+ * @tparam G     Graph type satisfying @c index_adjacency_list
+ * @tparam Alloc Allocator for the internal queue and visited tracker
+ *
+ * @see vertices_bfs_view<G,VVF,Alloc> — with value function
+ * @see edges_bfs_view                 — edge-oriented BFS
  */
 template <adj_list::index_adjacency_list G, class Alloc>
 class vertices_bfs_view<G, void, Alloc> : public std::ranges::view_interface<vertices_bfs_view<G, void, Alloc>> {
@@ -162,7 +259,10 @@ private:
 
 public:
   /**
-     * @brief Input iterator for BFS vertex traversal
+     * @brief Input iterator yielding @c vertex_info{v}.
+     *
+     * Single-pass: all copies share state via @c shared_ptr, so advancing
+     * one iterator advances them all.
      */
   class iterator {
   public:
@@ -279,14 +379,22 @@ private:
 };
 
 /**
- * @brief BFS vertex view with value function
- * 
- * Iterates over vertices in breadth-first order yielding 
- * vertex_info<void, vertex_t<G>, VV> where VV is the invoke result of VVF.
- * 
- * @tparam G Graph type satisfying index_adjacency_list concept
- * @tparam VVF Vertex value function type
- * @tparam Alloc Allocator type for internal containers
+ * @brief BFS vertex view with a vertex value function.
+ *
+ * Traverses vertices reachable from a seed in breadth-first order,
+ * yielding @c vertex_info{v, val} per vertex via structured bindings.
+ *
+ * @code
+ *   auto vvf = [](const auto& g, auto v) { return vertex_id(g, v); };
+ *   for (auto [v, val] : vertices_bfs(g, seed, vvf)) { ... }
+ * @endcode
+ *
+ * @tparam G     Graph type satisfying @c index_adjacency_list
+ * @tparam VVF   Vertex value function — @c invocable<const G&, vertex_t<G>>
+ * @tparam Alloc Allocator for the internal queue and visited tracker
+ *
+ * @see vertices_bfs_view<G,void,Alloc> — without value function
+ * @see edges_bfs_view                  — edge-oriented BFS
  */
 template <adj_list::index_adjacency_list G, class VVF, class Alloc>
 class vertices_bfs_view : public std::ranges::view_interface<vertices_bfs_view<G, VVF, Alloc>> {
@@ -304,7 +412,9 @@ private:
 
 public:
   /**
-     * @brief Input iterator for BFS vertex traversal with value function
+     * @brief Input iterator yielding @c vertex_info{v, val}.
+     *
+     * Single-pass: all copies share state via @c shared_ptr.
      */
   class iterator {
   public:
@@ -440,11 +550,12 @@ template <adj_list::index_adjacency_list G, class VVF, class Alloc = std::alloca
 vertices_bfs_view(G&, adj_list::vertex_t<G>, VVF, Alloc) -> vertices_bfs_view<G, VVF, Alloc>;
 
 /**
- * @brief Create a BFS vertex view without value function (from vertex ID)
- * 
- * @param g The graph to traverse
- * @param seed Starting vertex ID for BFS
- * @return vertices_bfs_view yielding vertex_info<void, vertex_descriptor, void>
+ * @brief BFS vertex traversal from a vertex ID, default allocator.
+ *
+ * @tparam G  Graph type satisfying @c index_adjacency_list.
+ * @param  g     The graph to traverse.
+ * @param  seed  Starting vertex ID.
+ * @return A @c vertices_bfs_view whose iterators yield @c vertex_info{v}.
  */
 template <adj_list::index_adjacency_list G>
 [[nodiscard]] auto vertices_bfs(G& g, adj_list::vertex_id_t<G> seed) {
@@ -452,11 +563,12 @@ template <adj_list::index_adjacency_list G>
 }
 
 /**
- * @brief Create a BFS vertex view without value function (from vertex descriptor)
- * 
- * @param g The graph to traverse
- * @param seed_vertex Starting vertex descriptor for BFS
- * @return vertices_bfs_view yielding vertex_info<void, vertex_descriptor, void>
+ * @brief BFS vertex traversal from a vertex descriptor, default allocator.
+ *
+ * @tparam G  Graph type satisfying @c index_adjacency_list.
+ * @param  g            The graph to traverse.
+ * @param  seed_vertex  Starting vertex descriptor.
+ * @return A @c vertices_bfs_view whose iterators yield @c vertex_info{v}.
  */
 template <adj_list::index_adjacency_list G>
 [[nodiscard]] auto vertices_bfs(G& g, adj_list::vertex_t<G> seed_vertex) {
@@ -464,12 +576,14 @@ template <adj_list::index_adjacency_list G>
 }
 
 /**
- * @brief Create a BFS vertex view with value function (from vertex ID)
- * 
- * @param g The graph to traverse
- * @param seed Starting vertex ID for BFS
- * @param vvf Value function invoked for each vertex
- * @return vertices_bfs_view yielding vertex_info<void, vertex_descriptor, VV>
+ * @brief BFS vertex traversal with value function, from a vertex ID.
+ *
+ * @tparam G    Graph type satisfying @c index_adjacency_list.
+ * @tparam VVF  Vertex value function — @c invocable<const G&, vertex_t<G>>.
+ * @param  g     The graph to traverse.
+ * @param  seed  Starting vertex ID.
+ * @param  vvf   Value function invoked per vertex.
+ * @return A @c vertices_bfs_view whose iterators yield @c vertex_info{v, val}.
  */
 template <adj_list::index_adjacency_list G, class VVF>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
@@ -479,12 +593,14 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
 }
 
 /**
- * @brief Create a BFS vertex view with value function (from vertex descriptor)
- * 
- * @param g The graph to traverse
- * @param seed_vertex Starting vertex descriptor for BFS
- * @param vvf Value function invoked for each vertex
- * @return vertices_bfs_view yielding vertex_info<void, vertex_descriptor, VV>
+ * @brief BFS vertex traversal with value function, from a vertex descriptor.
+ *
+ * @tparam G    Graph type satisfying @c index_adjacency_list.
+ * @tparam VVF  Vertex value function — @c invocable<const G&, vertex_t<G>>.
+ * @param  g            The graph to traverse.
+ * @param  seed_vertex  Starting vertex descriptor.
+ * @param  vvf          Value function invoked per vertex.
+ * @return A @c vertices_bfs_view whose iterators yield @c vertex_info{v, val}.
  */
 template <adj_list::index_adjacency_list G, class VVF>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
@@ -494,12 +610,14 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
 }
 
 /**
- * @brief Create a BFS vertex view with custom allocator (from vertex ID)
- * 
- * @param g The graph to traverse
- * @param seed Starting vertex ID for BFS
- * @param alloc Allocator for internal containers
- * @return vertices_bfs_view yielding vertex_info<void, vertex_descriptor, void>
+ * @brief BFS vertex traversal from a vertex ID, custom allocator.
+ *
+ * @tparam G      Graph type satisfying @c index_adjacency_list.
+ * @tparam Alloc  Allocator for the internal queue and visited tracker.
+ * @param  g      The graph to traverse.
+ * @param  seed   Starting vertex ID.
+ * @param  alloc  Allocator instance.
+ * @return A @c vertices_bfs_view whose iterators yield @c vertex_info{v}.
  */
 template <adj_list::index_adjacency_list G, class Alloc>
 requires(!vertex_value_function<Alloc, G, adj_list::vertex_t<G>>)
@@ -508,12 +626,14 @@ requires(!vertex_value_function<Alloc, G, adj_list::vertex_t<G>>)
 }
 
 /**
- * @brief Create a BFS vertex view with custom allocator (from vertex descriptor)
- * 
- * @param g The graph to traverse
- * @param seed_vertex Starting vertex descriptor for BFS
- * @param alloc Allocator for internal containers
- * @return vertices_bfs_view yielding vertex_info<void, vertex_descriptor, void>
+ * @brief BFS vertex traversal from a vertex descriptor, custom allocator.
+ *
+ * @tparam G      Graph type satisfying @c index_adjacency_list.
+ * @tparam Alloc  Allocator for the internal queue and visited tracker.
+ * @param  g            The graph to traverse.
+ * @param  seed_vertex  Starting vertex descriptor.
+ * @param  alloc        Allocator instance.
+ * @return A @c vertices_bfs_view whose iterators yield @c vertex_info{v}.
  */
 template <adj_list::index_adjacency_list G, class Alloc>
 requires(!vertex_value_function<Alloc, G, adj_list::vertex_t<G>>)
@@ -522,13 +642,16 @@ requires(!vertex_value_function<Alloc, G, adj_list::vertex_t<G>>)
 }
 
 /**
- * @brief Create a BFS vertex view with value function and custom allocator (from vertex ID)
- * 
- * @param g The graph to traverse
- * @param seed Starting vertex ID for BFS
- * @param vvf Value function invoked for each vertex
- * @param alloc Allocator for internal containers
- * @return vertices_bfs_view yielding vertex_info<void, vertex_descriptor, VV>
+ * @brief BFS vertex traversal with value function, from a vertex ID, custom allocator.
+ *
+ * @tparam G      Graph type satisfying @c index_adjacency_list.
+ * @tparam VVF    Vertex value function — @c invocable<const G&, vertex_t<G>>.
+ * @tparam Alloc  Allocator for the internal queue and visited tracker.
+ * @param  g      The graph to traverse.
+ * @param  seed   Starting vertex ID.
+ * @param  vvf    Value function invoked per vertex.
+ * @param  alloc  Allocator instance.
+ * @return A @c vertices_bfs_view whose iterators yield @c vertex_info{v, val}.
  */
 template <adj_list::index_adjacency_list G, class VVF, class Alloc>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
@@ -537,13 +660,16 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
 }
 
 /**
- * @brief Create a BFS vertex view with value function and custom allocator (from vertex descriptor)
- * 
- * @param g The graph to traverse
- * @param seed_vertex Starting vertex descriptor for BFS
- * @param vvf Value function invoked for each vertex
- * @param alloc Allocator for internal containers
- * @return vertices_bfs_view yielding vertex_info<void, vertex_descriptor, VV>
+ * @brief BFS vertex traversal with value function, from a vertex descriptor, custom allocator.
+ *
+ * @tparam G      Graph type satisfying @c index_adjacency_list.
+ * @tparam VVF    Vertex value function — @c invocable<const G&, vertex_t<G>>.
+ * @tparam Alloc  Allocator for the internal queue and visited tracker.
+ * @param  g            The graph to traverse.
+ * @param  seed_vertex  Starting vertex descriptor.
+ * @param  vvf          Value function invoked per vertex.
+ * @param  alloc        Allocator instance.
+ * @return A @c vertices_bfs_view whose iterators yield @c vertex_info{v, val}.
  */
 template <adj_list::index_adjacency_list G, class VVF, class Alloc>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
@@ -556,13 +682,21 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
 //=============================================================================
 
 /**
- * @brief BFS edge view without value function
- * 
- * Iterates over edges in breadth-first order yielding 
- * edge_info<void, false, edge_t<G>, void>
- * 
- * @tparam G Graph type satisfying index_adjacency_list concept
- * @tparam Alloc Allocator type for internal containers
+ * @brief BFS edge view without value function.
+ *
+ * Traverses tree edges reachable from a seed in breadth-first order,
+ * yielding @c edge_info{uv} per edge via structured bindings.  The
+ * seed vertex itself has no incoming tree edge, so it is skipped.
+ *
+ * @code
+ *   for (auto [uv] : edges_bfs(g, seed)) { ... }
+ * @endcode
+ *
+ * @tparam G     Graph type satisfying @c index_adjacency_list
+ * @tparam Alloc Allocator for the internal queue and visited tracker
+ *
+ * @see edges_bfs_view<G,EVF,Alloc> — with value function
+ * @see vertices_bfs_view           — vertex-oriented BFS
  */
 template <adj_list::index_adjacency_list G, class Alloc>
 class edges_bfs_view<G, void, Alloc> : public std::ranges::view_interface<edges_bfs_view<G, void, Alloc>> {
@@ -579,7 +713,10 @@ private:
 
 public:
   /**
-     * @brief Input iterator for BFS edge traversal
+     * @brief Input iterator yielding @c edge_info{uv}.
+     *
+     * Advances to the first tree edge on construction (the seed vertex
+     * has no incoming tree edge).  Single-pass: all copies share state.
      */
   class iterator {
   public:
@@ -729,14 +866,22 @@ private:
 };
 
 /**
- * @brief BFS edge view with value function
- * 
- * Iterates over edges in breadth-first order yielding 
- * edge_info<void, false, edge_t<G>, EV> where EV is the invoke result of EVF.
- * 
- * @tparam G Graph type satisfying index_adjacency_list concept
- * @tparam EVF Edge value function type
- * @tparam Alloc Allocator type for internal containers
+ * @brief BFS edge view with an edge value function.
+ *
+ * Traverses tree edges reachable from a seed in breadth-first order,
+ * yielding @c edge_info{uv, val} per edge via structured bindings.
+ *
+ * @code
+ *   auto evf = [](const auto& g, auto uv) { return target_id(g, uv); };
+ *   for (auto [uv, val] : edges_bfs(g, seed, evf)) { ... }
+ * @endcode
+ *
+ * @tparam G     Graph type satisfying @c index_adjacency_list
+ * @tparam EVF   Edge value function — @c invocable<const G&, edge_t<G>>
+ * @tparam Alloc Allocator for the internal queue and visited tracker
+ *
+ * @see edges_bfs_view<G,void,Alloc> — without value function
+ * @see vertices_bfs_view            — vertex-oriented BFS
  */
 template <adj_list::index_adjacency_list G, class EVF, class Alloc>
 class edges_bfs_view : public std::ranges::view_interface<edges_bfs_view<G, EVF, Alloc>> {
@@ -754,7 +899,9 @@ private:
 
 public:
   /**
-     * @brief Input iterator for BFS edge traversal with value function
+     * @brief Input iterator yielding @c edge_info{uv, val}.
+     *
+     * Single-pass: all copies share state via @c shared_ptr.
      */
   class iterator {
   public:
@@ -923,11 +1070,12 @@ edges_bfs_view(G&, adj_list::vertex_t<G>, EVF, Alloc) -> edges_bfs_view<G, EVF, 
 //=============================================================================
 
 /**
- * @brief Create a BFS edge view (from vertex ID)
- * 
- * @param g The graph to traverse
- * @param seed Starting vertex ID for BFS
- * @return edges_bfs_view yielding edge_info<void, false, edge_descriptor, void>
+ * @brief BFS edge traversal from a vertex ID, default allocator.
+ *
+ * @tparam G  Graph type satisfying @c index_adjacency_list.
+ * @param  g     The graph to traverse.
+ * @param  seed  Starting vertex ID.
+ * @return An @c edges_bfs_view whose iterators yield @c edge_info{uv}.
  */
 template <adj_list::index_adjacency_list G>
 [[nodiscard]] auto edges_bfs(G& g, adj_list::vertex_id_t<G> seed) {
@@ -935,11 +1083,12 @@ template <adj_list::index_adjacency_list G>
 }
 
 /**
- * @brief Create a BFS edge view (from vertex descriptor)
- * 
- * @param g The graph to traverse
- * @param seed_vertex Starting vertex descriptor for BFS
- * @return edges_bfs_view yielding edge_info<void, false, edge_descriptor, void>
+ * @brief BFS edge traversal from a vertex descriptor, default allocator.
+ *
+ * @tparam G  Graph type satisfying @c index_adjacency_list.
+ * @param  g            The graph to traverse.
+ * @param  seed_vertex  Starting vertex descriptor.
+ * @return An @c edges_bfs_view whose iterators yield @c edge_info{uv}.
  */
 template <adj_list::index_adjacency_list G>
 [[nodiscard]] auto edges_bfs(G& g, adj_list::vertex_t<G> seed_vertex) {
@@ -947,12 +1096,14 @@ template <adj_list::index_adjacency_list G>
 }
 
 /**
- * @brief Create a BFS edge view with value function (from vertex ID)
- * 
- * @param g The graph to traverse
- * @param seed Starting vertex ID for BFS
- * @param evf Value function invoked for each edge
- * @return edges_bfs_view yielding edge_info<void, false, edge_descriptor, EV>
+ * @brief BFS edge traversal with value function, from a vertex ID.
+ *
+ * @tparam G    Graph type satisfying @c index_adjacency_list.
+ * @tparam EVF  Edge value function — @c invocable<const G&, edge_t<G>>.
+ * @param  g     The graph to traverse.
+ * @param  seed  Starting vertex ID.
+ * @param  evf   Value function invoked per edge.
+ * @return An @c edges_bfs_view whose iterators yield @c edge_info{uv, val}.
  */
 template <adj_list::index_adjacency_list G, class EVF>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>> && (!std::is_same_v<std::decay_t<EVF>, std::allocator<bool>>)
@@ -961,12 +1112,14 @@ requires edge_value_function<EVF, G, adj_list::edge_t<G>> && (!std::is_same_v<st
 }
 
 /**
- * @brief Create a BFS edge view with value function (from vertex descriptor)
- * 
- * @param g The graph to traverse
- * @param seed_vertex Starting vertex descriptor for BFS
- * @param evf Value function invoked for each edge
- * @return edges_bfs_view yielding edge_info<void, false, edge_descriptor, EV>
+ * @brief BFS edge traversal with value function, from a vertex descriptor.
+ *
+ * @tparam G    Graph type satisfying @c index_adjacency_list.
+ * @tparam EVF  Edge value function — @c invocable<const G&, edge_t<G>>.
+ * @param  g            The graph to traverse.
+ * @param  seed_vertex  Starting vertex descriptor.
+ * @param  evf          Value function invoked per edge.
+ * @return An @c edges_bfs_view whose iterators yield @c edge_info{uv, val}.
  */
 template <adj_list::index_adjacency_list G, class EVF>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>> && (!std::is_same_v<std::decay_t<EVF>, std::allocator<bool>>)
@@ -975,12 +1128,14 @@ requires edge_value_function<EVF, G, adj_list::edge_t<G>> && (!std::is_same_v<st
 }
 
 /**
- * @brief Create a BFS edge view with custom allocator (from vertex ID)
- * 
- * @param g The graph to traverse
- * @param seed Starting vertex ID for BFS
- * @param alloc Allocator for internal containers
- * @return edges_bfs_view yielding edge_info<void, false, edge_descriptor, void>
+ * @brief BFS edge traversal from a vertex ID, custom allocator.
+ *
+ * @tparam G      Graph type satisfying @c index_adjacency_list.
+ * @tparam Alloc  Allocator for the internal queue and visited tracker.
+ * @param  g      The graph to traverse.
+ * @param  seed   Starting vertex ID.
+ * @param  alloc  Allocator instance.
+ * @return An @c edges_bfs_view whose iterators yield @c edge_info{uv}.
  */
 template <adj_list::index_adjacency_list G, class Alloc>
 requires(!edge_value_function<Alloc, G, adj_list::edge_t<G>>)
@@ -989,12 +1144,14 @@ requires(!edge_value_function<Alloc, G, adj_list::edge_t<G>>)
 }
 
 /**
- * @brief Create a BFS edge view with custom allocator (from vertex descriptor)
- * 
- * @param g The graph to traverse
- * @param seed_vertex Starting vertex descriptor for BFS
- * @param alloc Allocator for internal containers
- * @return edges_bfs_view yielding edge_info<void, false, edge_descriptor, void>
+ * @brief BFS edge traversal from a vertex descriptor, custom allocator.
+ *
+ * @tparam G      Graph type satisfying @c index_adjacency_list.
+ * @tparam Alloc  Allocator for the internal queue and visited tracker.
+ * @param  g            The graph to traverse.
+ * @param  seed_vertex  Starting vertex descriptor.
+ * @param  alloc        Allocator instance.
+ * @return An @c edges_bfs_view whose iterators yield @c edge_info{uv}.
  */
 template <adj_list::index_adjacency_list G, class Alloc>
 requires(!edge_value_function<Alloc, G, adj_list::edge_t<G>>)
@@ -1003,13 +1160,16 @@ requires(!edge_value_function<Alloc, G, adj_list::edge_t<G>>)
 }
 
 /**
- * @brief Create a BFS edge view with value function and custom allocator (from vertex ID)
- * 
- * @param g The graph to traverse
- * @param seed Starting vertex ID for BFS
- * @param evf Value function invoked for each edge
- * @param alloc Allocator for internal containers
- * @return edges_bfs_view yielding edge_info<void, false, edge_descriptor, EV>
+ * @brief BFS edge traversal with value function, from a vertex ID, custom allocator.
+ *
+ * @tparam G      Graph type satisfying @c index_adjacency_list.
+ * @tparam EVF    Edge value function — @c invocable<const G&, edge_t<G>>.
+ * @tparam Alloc  Allocator for the internal queue and visited tracker.
+ * @param  g      The graph to traverse.
+ * @param  seed   Starting vertex ID.
+ * @param  evf    Value function invoked per edge.
+ * @param  alloc  Allocator instance.
+ * @return An @c edges_bfs_view whose iterators yield @c edge_info{uv, val}.
  */
 template <adj_list::index_adjacency_list G, class EVF, class Alloc>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>
@@ -1018,13 +1178,16 @@ requires edge_value_function<EVF, G, adj_list::edge_t<G>>
 }
 
 /**
- * @brief Create a BFS edge view with value function and custom allocator (from vertex descriptor)
- * 
- * @param g The graph to traverse
- * @param seed_vertex Starting vertex descriptor for BFS
- * @param evf Value function invoked for each edge
- * @param alloc Allocator for internal containers
- * @return edges_bfs_view yielding edge_info<void, false, edge_descriptor, EV>
+ * @brief BFS edge traversal with value function, from a vertex descriptor, custom allocator.
+ *
+ * @tparam G      Graph type satisfying @c index_adjacency_list.
+ * @tparam EVF    Edge value function — @c invocable<const G&, edge_t<G>>.
+ * @tparam Alloc  Allocator for the internal queue and visited tracker.
+ * @param  g            The graph to traverse.
+ * @param  seed_vertex  Starting vertex descriptor.
+ * @param  evf          Value function invoked per edge.
+ * @param  alloc        Allocator instance.
+ * @return An @c edges_bfs_view whose iterators yield @c edge_info{uv, val}.
  */
 template <adj_list::index_adjacency_list G, class EVF, class Alloc>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>

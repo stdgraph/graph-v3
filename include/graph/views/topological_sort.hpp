@@ -1,28 +1,147 @@
 /**
  * @file topological_sort.hpp
- * @brief Topological sort view for directed acyclic graphs (DAGs)
- * 
- * Provides a view that traverses a DAG in topological order, where each vertex
- * appears before all vertices it has edges to. Uses reverse DFS post-order.
- * 
- * @complexity Time: O(V + E) where V is number of vertices and E is number of edges
- *             DFS visits each vertex once and traverses each edge once
- * @complexity Space: O(V) for post-order vector and visited tracker
- * 
- * @par Examples:
+ * @brief Topological sort views for directed acyclic graphs (DAGs).
+ *
+ * Provides vertex- and edge-oriented views that traverse a directed graph in
+ * topological order — every vertex appears before all vertices it has edges
+ * to.  The ordering is computed eagerly via reverse DFS post-order over the
+ * **entire** graph (not from a single seed); disconnected components are
+ * each processed in topological order, with inter-component order arbitrary.
+ *
+ * A separate set of @c _safe factory functions enables cycle detection: they
+ * return @c tl::expected, yielding the view on success or the vertex that
+ * closes a back edge on failure.
+ *
+ * ---
+ *
+ * ## View Variants
+ *
+ * | Factory                                    | Binding      | Description                        |
+ * |--------------------------------------------|--------------|------------------------------------|
+ * | `vertices_topological_sort(g)`             | `[v]`        | Vertices in topological order      |
+ * | `vertices_topological_sort(g, vvf)`        | `[v, val]`   | With vertex value function         |
+ * | `edges_topological_sort(g)`                | `[uv]`       | Edges grouped by source, topo order|
+ * | `edges_topological_sort(g, evf)`           | `[uv, val]`  | With edge value function           |
+ * | `vertices_topological_sort_safe(g)`        | `[v]`        | With cycle detection               |
+ * | `edges_topological_sort_safe(g)`           | `[uv]`       | With cycle detection               |
+ *
+ * Each factory also has a custom-allocator overload (+ VVF/EVF variant).
+ *
+ * ---
+ *
+ * ## Structured Bindings
+ *
+ * ### Vertex views
  * @code
- * // Topological sort of all vertices
- * for (auto [v] : vertices_topological_sort(g))
- *     process_vertex_in_topo_order(v);
- * 
- * // With value function
- * for (auto [v, val] : vertices_topological_sort(g, value_fn))
- *     process_vertex_with_value(v, val);
+ *   for (auto [v]      : vertices_topological_sort(g))           // vertex_info{v}
+ *   for (auto [v, val] : vertices_topological_sort(g, vvf))      // vertex_info{v, val}
  * @endcode
- * 
- * @note This view processes ALL vertices in the graph, not just from a single seed.
- *       For connected components, vertices are processed in topological order within
- *       each component, with components visited in arbitrary order.
+ *
+ * | Element | Type                                     | Meaning             |
+ * |---------|------------------------------------------|---------------------|
+ * | `v`     | `vertex_t<G>`                            | Vertex descriptor   |
+ * | `val`   | `invoke_result_t<VVF, const G&, vertex_t<G>>` | Computed value |
+ *
+ * ### Edge views
+ * @code
+ *   for (auto [uv]      : edges_topological_sort(g))             // edge_info{uv}
+ *   for (auto [uv, val] : edges_topological_sort(g, evf))        // edge_info{uv, val}
+ * @endcode
+ *
+ * | Element | Type                                     | Meaning             |
+ * |---------|------------------------------------------|---------------------|
+ * | `uv`    | `edge_t<G>`                              | Edge descriptor     |
+ * | `val`   | `invoke_result_t<EVF, const G&, edge_t<G>>` | Computed value  |
+ *
+ * ---
+ *
+ * ## Iterator Properties
+ *
+ * | Property       | Value                                         |
+ * |----------------|-----------------------------------------------|
+ * | Category       | `std::forward_iterator_tag`                   |
+ * | Sized          | Vertex views: yes (`size()`); edge views: no  |
+ * | Common range   | No — uses sentinel                            |
+ * | Borrowed range | No — state held via `shared_ptr`              |
+ *
+ * Unlike search views (DFS/BFS), these iterators are **forward** iterators
+ * because the topological order is fully materialised before iteration
+ * begins.
+ *
+ * ---
+ *
+ * ## Performance
+ *
+ * | Metric | Bound                                                  |
+ * |--------|--------------------------------------------------------|
+ * | Time   | O(V + E) — DFS visits every vertex / edge once         |
+ * | Space  | O(V) — post-order vector + visited tracker (+ O(V)     |
+ * |        | recursion stack when cycle detection is enabled)        |
+ *
+ * ---
+ *
+ * ## Chaining
+ *
+ * The views satisfy `std::ranges::forward_range` (non-common, sentinel-
+ * based).  They compose with range adaptors that accept forward ranges
+ * (e.g. `std::views::take`, `std::views::filter`).
+ *
+ * ---
+ *
+ * ## Cycle Detection
+ *
+ * The `_safe` factory functions allocate an additional recursion stack
+ * (`std::vector<bool>`) and detect back edges during the DFS phase.
+ * If a cycle is found the factory returns `tl::unexpected(cycle_vertex)`.
+ *
+ * @code
+ *   auto result = vertices_topological_sort_safe(g);
+ *   if (result) {
+ *       for (auto [v] : *result) { ... }
+ *   } else {
+ *       auto cycle_v = result.error();   // vertex closing the back edge
+ *   }
+ * @endcode
+ *
+ * ---
+ *
+ * ## Search Control
+ *
+ * The view exposes `cancel()` / `cancel(cancel_search)` to stop iteration
+ * early.  Because the ordering is flat (not tree-shaped), `cancel_branch`
+ * is treated identically to `cancel_all`.
+ *
+ * ---
+ *
+ * ## Supported Graphs
+ *
+ * Requires @c index_adjacency_list (integer vertex IDs, O(1) vertex
+ * access).  Intended for **directed** graphs; the result on undirected
+ * graphs is well-defined but rarely meaningful.
+ *
+ * ---
+ *
+ * ## Exception Safety
+ *
+ * - Construction: may throw if DFS allocation fails — strong guarantee.
+ * - Iteration: `operator*` and `operator++` are non-throwing for the
+ *   view itself; a user-supplied value function may throw.
+ *
+ * ---
+ *
+ * ## Preconditions
+ *
+ * - The graph must remain valid and unmodified for the view's lifetime.
+ * - For the non-safe factories, behaviour is defined even when cycles
+ *   exist — the ordering is simply not a valid topological sort.
+ *
+ * ---
+ *
+ * @note This view processes **all** vertices in the graph, not just those
+ *       reachable from a single seed.
+ *
+ * @see dfs.hpp  — depth-first search views (single-seed, lazy)
+ * @see bfs.hpp  — breadth-first search views (single-seed, lazy)
  */
 
 #pragma once
@@ -55,15 +174,19 @@ class edges_topological_sort_view;
 namespace topo_detail {
 
   /**
- * @brief Shared topological sort state
- * 
- * Performs DFS from all unvisited vertices, collecting post-order into a vector,
- * then provides reverse iteration over that vector for topological order.
- * 
- * @complexity Time: O(V + E) - visits each vertex once, traverses each edge once
- * @complexity Space: O(V) - stores all vertices in post-order vector plus visited tracker
- *             When cycle detection enabled: O(2V) for additional recursion stack tracker
- */
+   * @brief Shared topological-sort state.
+   *
+   * Performs DFS from every unvisited vertex, collecting a post-order
+   * vector, then reverses it to obtain topological order.  When
+   * @c detect_cycles is true an additional recursion-stack vector
+   * tracks back edges.
+   *
+   * Shared via @c std::shared_ptr so that all iterators and the owning
+   * view observe the same materialised ordering.
+   *
+   * @par Complexity
+   * Time: O(V + E).  Space: O(V) (O(2V) with cycle detection).
+   */
   template <class G, class Alloc>
   struct topo_state {
     using graph_type     = G;
@@ -146,13 +269,20 @@ namespace topo_detail {
 } // namespace topo_detail
 
 /**
- * @brief Topological sort vertex view without value function
- * 
- * Iterates over all vertices in topological order, yielding 
- * vertex_info<void, vertex_t<G>, void>
- * 
- * @tparam G Graph type satisfying index_adjacency_list concept
- * @tparam Alloc Allocator type for internal containers
+ * @brief Topological sort vertex view without value function.
+ *
+ * Iterates over all vertices in topological order, yielding
+ * @c vertex_info{v} per vertex via structured bindings.
+ *
+ * @code
+ *   for (auto [v] : vertices_topological_sort(g)) { ... }
+ * @endcode
+ *
+ * @tparam G     Graph type satisfying @c index_adjacency_list
+ * @tparam Alloc Allocator for internal containers
+ *
+ * @see vertices_topological_sort_view<G,VVF,Alloc> — with value function
+ * @see edges_topological_sort_view                 — edge-oriented variant
  */
 template <adj_list::index_adjacency_list G, class Alloc>
 class vertices_topological_sort_view<G, void, Alloc>
@@ -169,7 +299,10 @@ private:
 
 public:
   /**
-     * @brief Forward iterator for topological order traversal
+     * @brief Forward iterator yielding @c vertex_info{v}.
+     *
+     * Iterates over the pre-computed post-order vector in reverse
+     * (topological) order.  Supports multi-pass traversal.
      */
   class iterator {
   public:
@@ -257,14 +390,22 @@ private:
 };
 
 /**
- * @brief Topological sort vertex view with value function
- * 
- * Iterates over all vertices in topological order, yielding 
- * vertex_info<void, vertex_t<G>, VV> where VV is the invoke result of VVF.
- * 
- * @tparam G Graph type satisfying index_adjacency_list concept
- * @tparam VVF Vertex value function type
- * @tparam Alloc Allocator type for internal containers
+ * @brief Topological sort vertex view with a vertex value function.
+ *
+ * Iterates over all vertices in topological order, yielding
+ * @c vertex_info{v, val} per vertex via structured bindings.
+ *
+ * @code
+ *   auto vvf = [](const auto& g, auto v) { return vertex_id(g, v); };
+ *   for (auto [v, val] : vertices_topological_sort(g, vvf)) { ... }
+ * @endcode
+ *
+ * @tparam G     Graph type satisfying @c index_adjacency_list
+ * @tparam VVF   Vertex value function — @c invocable<const G&, vertex_t<G>>
+ * @tparam Alloc Allocator for internal containers
+ *
+ * @see vertices_topological_sort_view<G,void,Alloc> — without value function
+ * @see edges_topological_sort_view                  — edge-oriented variant
  */
 template <adj_list::index_adjacency_list G, class VVF, class Alloc>
 class vertices_topological_sort_view
@@ -282,7 +423,9 @@ private:
 
 public:
   /**
-     * @brief Forward iterator with value function
+     * @brief Forward iterator yielding @c vertex_info{v, val}.
+     *
+     * Multi-pass.  The value function is invoked on each dereference.
      */
   class iterator {
   public:
@@ -385,13 +528,21 @@ template <class G, class VVF, class Alloc>
 vertices_topological_sort_view(G&, VVF, Alloc) -> vertices_topological_sort_view<G, VVF, Alloc>;
 
 /**
- * @brief Topological sort edge view without value function
- * 
- * Iterates over all edges in topological order (by source vertex), yielding
- * edge_info<void, false, edge_t<G>, void>
- * 
- * @tparam G Graph type satisfying index_adjacency_list concept
- * @tparam Alloc Allocator type for internal containers
+ * @brief Topological sort edge view without value function.
+ *
+ * Iterates over all edges grouped by source vertex in topological order,
+ * yielding @c edge_info{uv} per edge via structured bindings.  Vertices
+ * with no outgoing edges are silently skipped.
+ *
+ * @code
+ *   for (auto [uv] : edges_topological_sort(g)) { ... }
+ * @endcode
+ *
+ * @tparam G     Graph type satisfying @c index_adjacency_list
+ * @tparam Alloc Allocator for internal containers
+ *
+ * @see edges_topological_sort_view<G,EVF,Alloc> — with value function
+ * @see vertices_topological_sort_view           — vertex-oriented variant
  */
 template <adj_list::index_adjacency_list G, class Alloc>
 class edges_topological_sort_view<G, void, Alloc>
@@ -408,7 +559,10 @@ private:
 
 public:
   /**
-     * @brief Forward iterator for edges in topological order
+     * @brief Forward iterator yielding @c edge_info{uv}.
+     *
+     * Walks the adjacency-list edges of each source vertex in
+     * topological order.  Multi-pass.
      */
   class iterator {
   public:
@@ -537,14 +691,22 @@ private:
 };
 
 /**
- * @brief Topological sort edge view with value function
- * 
- * Iterates over all edges in topological order (by source vertex), yielding
- * edge_info<void, false, edge_t<G>, EV> where EV is the invoke result of EVF.
- * 
- * @tparam G Graph type satisfying index_adjacency_list concept
- * @tparam EVF Edge value function type
- * @tparam Alloc Allocator type for internal containers
+ * @brief Topological sort edge view with an edge value function.
+ *
+ * Iterates over all edges grouped by source vertex in topological order,
+ * yielding @c edge_info{uv, val} per edge via structured bindings.
+ *
+ * @code
+ *   auto evf = [](const auto& g, auto uv) { return target_id(g, uv); };
+ *   for (auto [uv, val] : edges_topological_sort(g, evf)) { ... }
+ * @endcode
+ *
+ * @tparam G     Graph type satisfying @c index_adjacency_list
+ * @tparam EVF   Edge value function — @c invocable<const G&, edge_t<G>>
+ * @tparam Alloc Allocator for internal containers
+ *
+ * @see edges_topological_sort_view<G,void,Alloc> — without value function
+ * @see vertices_topological_sort_view            — vertex-oriented variant
  */
 template <adj_list::index_adjacency_list G, class EVF, class Alloc>
 class edges_topological_sort_view : public std::ranges::view_interface<edges_topological_sort_view<G, EVF, Alloc>> {
@@ -560,6 +722,11 @@ private:
   using state_type = topo_detail::topo_state<G, Alloc>;
 
 public:
+  /**
+     * @brief Forward iterator yielding @c edge_info{uv, val}.
+     *
+     * Multi-pass.  The value function is invoked on each dereference.
+     */
   class iterator {
   public:
     using iterator_category = std::forward_iterator_tag;
@@ -705,13 +872,11 @@ edges_topological_sort_view(G&, EVF, Alloc) -> edges_topological_sort_view<G, EV
 //=============================================================================
 
 /**
- * @brief Create a topological sort vertex view without value function
- * 
- * @param g The graph to traverse
- * @return vertices_topological_sort_view yielding vertices in topological order
- * 
- * @complexity Time: O(V + E) - DFS traversal of entire graph
- * @complexity Space: O(V) - stores all vertices in result vector
+ * @brief Topological vertex traversal, default allocator.
+ *
+ * @tparam G  Graph type satisfying @c index_adjacency_list.
+ * @param  g  The graph to traverse.
+ * @return A @c vertices_topological_sort_view whose iterators yield @c vertex_info{v}.
  */
 template <adj_list::index_adjacency_list G>
 [[nodiscard]] auto vertices_topological_sort(G& g) {
@@ -719,14 +884,13 @@ template <adj_list::index_adjacency_list G>
 }
 
 /**
- * @brief Create a topological sort vertex view with value function
- * 
- * @param g The graph to traverse
- * @param vvf Value function invoked for each vertex
- * @return vertices_topological_sort_view with values
- * 
- * @complexity Time: O(V + E) - DFS traversal plus value function invocations
- * @complexity Space: O(V) - stores all vertices in result vector
+ * @brief Topological vertex traversal with value function.
+ *
+ * @tparam G    Graph type satisfying @c index_adjacency_list.
+ * @tparam VVF  Vertex value function — @c invocable<const G&, vertex_t<G>>.
+ * @param  g    The graph to traverse.
+ * @param  vvf  Value function invoked per vertex.
+ * @return A @c vertices_topological_sort_view whose iterators yield @c vertex_info{v, val}.
  */
 template <adj_list::index_adjacency_list G, class VVF>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
@@ -736,14 +900,13 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
 }
 
 /**
- * @brief Create a topological sort vertex view with custom allocator
- * 
- * @param g The graph to traverse
- * @param alloc Allocator for internal containers
- * @return vertices_topological_sort_view with custom allocator
- * 
- * @complexity Time: O(V + E) - DFS traversal of entire graph
- * @complexity Space: O(V) - stores all vertices in result vector
+ * @brief Topological vertex traversal, custom allocator.
+ *
+ * @tparam G      Graph type satisfying @c index_adjacency_list.
+ * @tparam Alloc  Allocator for the post-order vector and visited tracker.
+ * @param  g      The graph to traverse.
+ * @param  alloc  Allocator instance.
+ * @return A @c vertices_topological_sort_view whose iterators yield @c vertex_info{v}.
  */
 template <adj_list::index_adjacency_list G, class Alloc>
 requires(!vertex_value_function<Alloc, G, adj_list::vertex_t<G>>)
@@ -752,15 +915,15 @@ requires(!vertex_value_function<Alloc, G, adj_list::vertex_t<G>>)
 }
 
 /**
- * @brief Create a topological sort vertex view with value function and custom allocator
- * 
- * @param g The graph to traverse
- * @param vvf Value function invoked for each vertex
- * @param alloc Allocator for internal containers
- * @return vertices_topological_sort_view with value function and custom allocator
- * 
- * @complexity Time: O(V + E) - DFS traversal plus value function invocations
- * @complexity Space: O(V) - stores all vertices in result vector
+ * @brief Topological vertex traversal with value function, custom allocator.
+ *
+ * @tparam G      Graph type satisfying @c index_adjacency_list.
+ * @tparam VVF    Vertex value function — @c invocable<const G&, vertex_t<G>>.
+ * @tparam Alloc  Allocator for the post-order vector and visited tracker.
+ * @param  g      The graph to traverse.
+ * @param  vvf    Value function invoked per vertex.
+ * @param  alloc  Allocator instance.
+ * @return A @c vertices_topological_sort_view whose iterators yield @c vertex_info{v, val}.
  */
 template <adj_list::index_adjacency_list G, class VVF, class Alloc>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
@@ -769,13 +932,11 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
 }
 
 /**
- * @brief Create a topological sort edge view without value function
- * 
- * @param g The graph to traverse
- * @return edges_topological_sort_view yielding edges in topological order (by source vertex)
- * 
- * @complexity Time: O(V + E) - DFS traversal plus edge iteration
- * @complexity Space: O(V) - stores all vertices in result vector
+ * @brief Topological edge traversal, default allocator.
+ *
+ * @tparam G  Graph type satisfying @c index_adjacency_list.
+ * @param  g  The graph to traverse.
+ * @return An @c edges_topological_sort_view whose iterators yield @c edge_info{uv}.
  */
 template <adj_list::index_adjacency_list G>
 [[nodiscard]] auto edges_topological_sort(G& g) {
@@ -783,14 +944,13 @@ template <adj_list::index_adjacency_list G>
 }
 
 /**
- * @brief Create a topological sort edge view with value function
- * 
- * @param g The graph to traverse
- * @param evf Value function invoked for each edge
- * @return edges_topological_sort_view with values
- * 
- * @complexity Time: O(V + E) - DFS traversal plus value function invocations
- * @complexity Space: O(V) - stores all vertices in result vector
+ * @brief Topological edge traversal with value function.
+ *
+ * @tparam G    Graph type satisfying @c index_adjacency_list.
+ * @tparam EVF  Edge value function — @c invocable<const G&, edge_t<G>>.
+ * @param  g    The graph to traverse.
+ * @param  evf  Value function invoked per edge.
+ * @return An @c edges_topological_sort_view whose iterators yield @c edge_info{uv, val}.
  */
 template <adj_list::index_adjacency_list G, class EVF>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>
@@ -800,14 +960,13 @@ requires edge_value_function<EVF, G, adj_list::edge_t<G>>
 }
 
 /**
- * @brief Create a topological sort edge view with custom allocator
- * 
- * @param g The graph to traverse
- * @param alloc Allocator for internal containers
- * @return edges_topological_sort_view with custom allocator
- * 
- * @complexity Time: O(V + E) - DFS traversal plus edge iteration
- * @complexity Space: O(V) - stores all vertices in result vector
+ * @brief Topological edge traversal, custom allocator.
+ *
+ * @tparam G      Graph type satisfying @c index_adjacency_list.
+ * @tparam Alloc  Allocator for the post-order vector and visited tracker.
+ * @param  g      The graph to traverse.
+ * @param  alloc  Allocator instance.
+ * @return An @c edges_topological_sort_view whose iterators yield @c edge_info{uv}.
  */
 template <adj_list::index_adjacency_list G, class Alloc>
 requires(!edge_value_function<Alloc, G, adj_list::edge_t<G>>)
@@ -816,15 +975,15 @@ requires(!edge_value_function<Alloc, G, adj_list::edge_t<G>>)
 }
 
 /**
- * @brief Create a topological sort edge view with value function and custom allocator
- * 
- * @param g The graph to traverse
- * @param evf Value function invoked for each edge
- * @param alloc Allocator for internal containers
- * @return edges_topological_sort_view with value function and custom allocator
- * 
- * @complexity Time: O(V + E) - DFS traversal plus value function invocations
- * @complexity Space: O(V) - stores all vertices in result vector
+ * @brief Topological edge traversal with value function, custom allocator.
+ *
+ * @tparam G      Graph type satisfying @c index_adjacency_list.
+ * @tparam EVF    Edge value function — @c invocable<const G&, edge_t<G>>.
+ * @tparam Alloc  Allocator for the post-order vector and visited tracker.
+ * @param  g      The graph to traverse.
+ * @param  evf    Value function invoked per edge.
+ * @param  alloc  Allocator instance.
+ * @return An @c edges_topological_sort_view whose iterators yield @c edge_info{uv, val}.
  */
 template <adj_list::index_adjacency_list G, class EVF, class Alloc>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>
@@ -837,28 +996,22 @@ requires edge_value_function<EVF, G, adj_list::edge_t<G>>
 //=============================================================================
 
 /**
- * @brief Create a topological sort vertex view with cycle detection
- * 
- * Returns a view on success, or the vertex that closes a cycle if one is detected.
- * Uses DFS with recursion stack tracking to detect back edges (cycles).
- * 
- * @param g The graph to traverse
- * @return expected containing view on success, or cycle vertex on failure
- * 
- * @complexity Time: O(V + E) - DFS traversal with cycle detection
- *             Space: O(2V) - post-order vector + visited tracker + recursion stack
- * 
- * @par Example:
+ * @brief Topological vertex traversal with cycle detection, default allocator.
+ *
+ * Performs DFS with a recursion-stack tracker.  Returns the view on
+ * success, or the vertex that closes a back edge on failure.
+ *
+ * @tparam G  Graph type satisfying @c index_adjacency_list.
+ * @param  g  The graph to traverse.
+ * @return @c tl::expected containing the view, or the cycle vertex.
+ *
  * @code
- * auto result = vertices_topological_sort_safe(g);
- * if (result) {
- *     for (auto [v] : *result) {
- *         process_vertex(v);
- *     }
- * } else {
- *     auto cycle_v = result.error();
- *     std::cerr << "Cycle detected at vertex " << vertex_id(g, cycle_v) << "\n";
- * }
+ *   auto result = vertices_topological_sort_safe(g);
+ *   if (result) {
+ *       for (auto [v] : *result) { ... }
+ *   } else {
+ *       auto cycle_v = result.error();
+ *   }
  * @endcode
  */
 template <adj_list::index_adjacency_list G>
@@ -876,14 +1029,13 @@ template <adj_list::index_adjacency_list G>
 }
 
 /**
- * @brief Create a topological sort vertex view with value function and cycle detection
- * 
- * @param g The graph to traverse
- * @param vvf Value function invoked for each vertex
- * @return expected containing view on success, or cycle vertex on failure
- * 
- * @complexity Time: O(V + E) - DFS traversal with cycle detection plus value function invocations
- *             Space: O(2V) - post-order vector + visited tracker + recursion stack
+ * @brief Topological vertex traversal with value function and cycle detection.
+ *
+ * @tparam G    Graph type satisfying @c index_adjacency_list.
+ * @tparam VVF  Vertex value function — @c invocable<const G&, vertex_t<G>>.
+ * @param  g    The graph to traverse.
+ * @param  vvf  Value function invoked per vertex.
+ * @return @c tl::expected containing the view, or the cycle vertex.
  */
 template <adj_list::index_adjacency_list G, class VVF>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
@@ -902,14 +1054,13 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
 }
 
 /**
- * @brief Create a topological sort vertex view with custom allocator and cycle detection
- * 
- * @param g The graph to traverse
- * @param alloc Allocator for internal containers
- * @return expected containing view on success, or cycle vertex on failure
- * 
- * @complexity Time: O(V + E) - DFS traversal with cycle detection
- *             Space: O(2V) - post-order vector + visited tracker + recursion stack
+ * @brief Topological vertex traversal with cycle detection, custom allocator.
+ *
+ * @tparam G      Graph type satisfying @c index_adjacency_list.
+ * @tparam Alloc  Allocator for internal containers.
+ * @param  g      The graph to traverse.
+ * @param  alloc  Allocator instance.
+ * @return @c tl::expected containing the view, or the cycle vertex.
  */
 template <adj_list::index_adjacency_list G, class Alloc>
 requires(!vertex_value_function<Alloc, G, adj_list::vertex_t<G>>)
@@ -927,15 +1078,15 @@ requires(!vertex_value_function<Alloc, G, adj_list::vertex_t<G>>)
 }
 
 /**
- * @brief Create a topological sort vertex view with value function, allocator, and cycle detection
- * 
- * @param g The graph to traverse
- * @param vvf Value function invoked for each vertex
- * @param alloc Allocator for internal containers
- * @return expected containing view on success, or cycle vertex on failure
- * 
- * @complexity Time: O(V + E) - DFS traversal with cycle detection plus value function invocations
- *             Space: O(2V) - post-order vector + visited tracker + recursion stack
+ * @brief Topological vertex traversal with value function, allocator, and cycle detection.
+ *
+ * @tparam G      Graph type satisfying @c index_adjacency_list.
+ * @tparam VVF    Vertex value function — @c invocable<const G&, vertex_t<G>>.
+ * @tparam Alloc  Allocator for internal containers.
+ * @param  g      The graph to traverse.
+ * @param  vvf    Value function invoked per vertex.
+ * @param  alloc  Allocator instance.
+ * @return @c tl::expected containing the view, or the cycle vertex.
  */
 template <adj_list::index_adjacency_list G, class VVF, class Alloc>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
@@ -953,15 +1104,11 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
 }
 
 /**
- * @brief Create a topological sort edge view with cycle detection
- * 
- * Returns a view on success, or the vertex that closes a cycle if one is detected.
- * 
- * @param g The graph to traverse
- * @return expected containing view on success, or cycle vertex on failure
- * 
- * @complexity Time: O(V + E) - DFS traversal with cycle detection plus edge iteration
- *             Space: O(2V) - post-order vector + visited tracker + recursion stack
+ * @brief Topological edge traversal with cycle detection, default allocator.
+ *
+ * @tparam G  Graph type satisfying @c index_adjacency_list.
+ * @param  g  The graph to traverse.
+ * @return @c tl::expected containing the view, or the cycle vertex.
  */
 template <adj_list::index_adjacency_list G>
 [[nodiscard]] auto edges_topological_sort_safe(G& g)
@@ -978,14 +1125,13 @@ template <adj_list::index_adjacency_list G>
 }
 
 /**
- * @brief Create a topological sort edge view with value function and cycle detection
- * 
- * @param g The graph to traverse
- * @param evf Value function invoked for each edge
- * @return expected containing view on success, or cycle vertex on failure
- * 
- * @complexity Time: O(V + E) - DFS traversal with cycle detection plus value function invocations
- *             Space: O(2V) - post-order vector + visited tracker + recursion stack
+ * @brief Topological edge traversal with value function and cycle detection.
+ *
+ * @tparam G    Graph type satisfying @c index_adjacency_list.
+ * @tparam EVF  Edge value function — @c invocable<const G&, edge_t<G>>.
+ * @param  g    The graph to traverse.
+ * @param  evf  Value function invoked per edge.
+ * @return @c tl::expected containing the view, or the cycle vertex.
  */
 template <adj_list::index_adjacency_list G, class EVF>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>
@@ -1003,14 +1149,13 @@ requires edge_value_function<EVF, G, adj_list::edge_t<G>>
 }
 
 /**
- * @brief Create a topological sort edge view with custom allocator and cycle detection
- * 
- * @param g The graph to traverse
- * @param alloc Allocator for internal containers
- * @return expected containing view on success, or cycle vertex on failure
- * 
- * @complexity Time: O(V + E) - DFS traversal with cycle detection plus edge iteration
- *             Space: O(2V) - post-order vector + visited tracker + recursion stack
+ * @brief Topological edge traversal with cycle detection, custom allocator.
+ *
+ * @tparam G      Graph type satisfying @c index_adjacency_list.
+ * @tparam Alloc  Allocator for internal containers.
+ * @param  g      The graph to traverse.
+ * @param  alloc  Allocator instance.
+ * @return @c tl::expected containing the view, or the cycle vertex.
  */
 template <adj_list::index_adjacency_list G, class Alloc>
 requires(!edge_value_function<Alloc, G, adj_list::edge_t<G>>)
@@ -1028,15 +1173,15 @@ requires(!edge_value_function<Alloc, G, adj_list::edge_t<G>>)
 }
 
 /**
- * @brief Create a topological sort edge view with value function, allocator, and cycle detection
- * 
- * @param g The graph to traverse
- * @param evf Value function invoked for each edge
- * @param alloc Allocator for internal containers
- * @return expected containing view on success, or cycle vertex on failure
- * 
- * @complexity Time: O(V + E) - DFS traversal with cycle detection plus value function invocations
- *             Space: O(2V) - post-order vector + visited tracker + recursion stack
+ * @brief Topological edge traversal with value function, allocator, and cycle detection.
+ *
+ * @tparam G      Graph type satisfying @c index_adjacency_list.
+ * @tparam EVF    Edge value function — @c invocable<const G&, edge_t<G>>.
+ * @tparam Alloc  Allocator for internal containers.
+ * @param  g      The graph to traverse.
+ * @param  evf    Value function invoked per edge.
+ * @param  alloc  Allocator instance.
+ * @return @c tl::expected containing the view, or the cycle vertex.
  */
 template <adj_list::index_adjacency_list G, class EVF, class Alloc>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>
