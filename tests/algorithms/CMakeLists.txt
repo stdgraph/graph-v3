@@ -13,6 +13,7 @@ add_executable(test_algorithms
     test_mis.cpp
     test_mst.cpp
     test_label_propagation.cpp
+    test_articulation_points.cpp
 )
 
 target_link_libraries(test_algorithms

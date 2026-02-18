@@ -25,25 +25,26 @@
 
 // Shortest Path Algorithms
 #include "algorithm/dijkstra_shortest_paths.hpp"
-// #include "algorithm/bellman_ford.hpp"
-// #include "algorithm/bfs.hpp"
+#include "algorithm/bellman_ford.hpp"
+#include "algorithm/bfs.hpp"
 
 // Community Detection
 #include "algorithm/label_propagation.hpp"
 
 // Search Algorithms
-// #include "algorithm/dfs.hpp"
+#include "algorithm/dfs.hpp"
 
 // Minimum Spanning Tree
-// #include "algorithm/prim.hpp"
-// #include "algorithm/kruskal.hpp"
+#include "algorithm/prim.hpp"
+#include "algorithm/kruskal.hpp"
 
 // Connectivity
-// #include "algorithm/connected_components.hpp"
-// #include "algorithm/scc.hpp"
+#include "algorithm/connected_components.hpp"
+#include "algorithm/articulation_points.hpp"
+#include "algorithm/scc.hpp"
 
 // Topological Sort & DAG
-// #include "algorithm/topological_sort.hpp"
+#include "algorithm/topological_sort.hpp"
 
 // Flow Algorithms
 // #include "algorithm/ford_fulkerson.hpp"
