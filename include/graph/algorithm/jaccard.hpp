@@ -13,6 +13,7 @@
  */
 
 #include "graph/graph.hpp"
+#include "graph/views/incidence.hpp"
 
 #ifndef GRAPH_JACCARD_HPP
 #  define GRAPH_JACCARD_HPP
@@ -28,11 +29,8 @@ using adj_list::index_adjacency_list;
 using adj_list::vertex_id_t;
 using adj_list::edge_t;
 using adj_list::vertices;
-using adj_list::edges;
-using adj_list::target_id;
 using adj_list::vertex_id;
 using adj_list::num_vertices;
-using adj_list::find_vertex;
 
 /**
  * @ingroup graph_algorithms
@@ -141,8 +139,7 @@ void jaccard_coefficient(G&& g, OutOp out) {
 
   for (auto&& u : vertices(g)) {
     vid_t uid = vertex_id(g, u);
-    for (auto&& uv : edges(g, u)) {
-      vid_t tid = target_id(g, uv);
+    for (auto [tid] : views::basic_incidence(g, uid)) {
       if (tid != uid) { // skip self-loops
         nbrs[uid].insert(tid);
       }
@@ -154,9 +151,7 @@ void jaccard_coefficient(G&& g, OutOp out) {
   // ============================================================================
   for (auto&& u : vertices(g)) {
     vid_t uid = vertex_id(g, u);
-    for (auto&& uv : edges(g, u)) {
-      vid_t vid = target_id(g, uv);
-
+    for (auto&& [vid, uv] : views::incidence(g, uid)) {
       // Skip self-loops
       if (vid == uid) {
         continue;
