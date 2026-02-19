@@ -77,6 +77,7 @@ docs/
 │   ├── edge-list-interface.md      # Edge list GCI spec (EXTRACT from container_interface.md, sync with code)
 │   ├── concepts.md                 # All concepts in one place (NEW — consolidate)
 │   ├── cpo-reference.md            # CPO function signatures & behavior (NEW — extract from cpo.md)
+│   ├── algorithm-complexity.md     # Complexity cheat sheet: all algorithms, O() time/space, concepts (NEW)
 │   ├── edge-value-concepts.md      # (MOVE from docs/edge_value_concepts.md)
 │   ├── vertex-patterns.md          # (MERGE vertex_inner_value_patterns.md + vertex_storage_concepts.md)
 │   └── type-aliases.md             # Collected type alias reference (NEW)
@@ -90,11 +91,19 @@ docs/
 │   ├── view-template.md            # (MOVE from docs/view_template.md)
 │   └── view-chaining.md            # (RENAME from docs/view_chaining_limitations.md — content is the solution, not limitations)
 │
+├── FAQ.md                          # Common questions and answers (NEW)
+│
 └── archive/                        # Stale/superseded documents preserved for reference (NEW directory)
     ├── edge_map_analysis.md        # (MOVE from docs/) — Phase 4.3 design analysis
     ├── descriptor.md               # (MOVE from top-level) — early agent instruction doc
     └── include_graph_README.md     # (MOVE from include/graph/README.md) — outdated directory listing
 ```
+
+### GitHub Pages Consideration
+
+GitHub renders `docs/index.md` if linked from the repo description. Consider generating a GitHub Pages
+site in the future (e.g., via MkDocs or Jekyll) to provide searchable, navigable documentation. The
+`docs/` structure above is designed to be compatible with static site generators.
 
 ### Archive Policy
 
@@ -120,14 +129,19 @@ The README is the most critical page. It should follow the structure of successf
 ### Structure
 
 1. **Title + one-line tagline** — "A modern C++20 graph library for algorithms, views, and custom graph types."
-2. **Badges** — build status, license, C++ standard, test count
+2. **Badges (shields.io)** — Static or CI-linked badges for:
+   - ![C++20](https://img.shields.io/badge/C%2B%2B-20-blue) C++ standard
+   - ![License](https://img.shields.io/badge/license-BSL--1.0-green) License
+   - ![Tests](https://img.shields.io/badge/tests-3900%2B-brightgreen) Test count (pin to actual `ctest` output)
+   - Build status (if CI is configured)
+   - Even without public CI, static badges add professionalism and signal maturity
 3. **Highlights section** (bullet list, 5-7 items) — the "why use this" at a glance:
    - Header-only, C++20
    - Works with your existing containers (vector-of-vectors, maps, etc.) — zero boilerplate
    - 10+ algorithms (Dijkstra, Bellman-Ford, BFS, DFS, MST, connected components, ...)
    - Lazy views for traversal (BFS, DFS, topological sort) with `std::views` chaining
    - Customization Point Objects — adapt any graph type without modification
-   - 3900+ unit tests
+   - 3900+ unit tests (pin to actual number from `ctest`)
 4. **Quick example** — minimal, compilable, impressive (Dijkstra on a vector-of-vectors)
 5. **Two abstract data structures** — brief, equal-weight descriptions of:
    - **Adjacency Lists** — range-of-ranges model, vertex-centric
@@ -138,11 +152,24 @@ The README is the most critical page. It should follow the structure of successf
    - Views
    - Algorithms
    - CPO Architecture
-6. **Installation / Getting Started** — CMake integration, include paths
-7. **Documentation links** — pointer to `docs/index.md`
-8. **Contributing** — pointer to `CONTRIBUTING.md`
-9. **License**
-10. **Status footer** — compact status line with implemented CPOs, containers, views, algorithms
+7. **Supported compilers table** — Explicit compiler/version/platform matrix:
+   | Compiler | Minimum Version | Platform | Status |
+   |----------|----------------|----------|--------|
+   | GCC | 10+ | Linux | Tested |
+   | Clang | 10+ | Linux, macOS | Tested |
+   | MSVC | 2019+ | Windows | Tested |
+   This builds confidence and is more professional than a one-line mention.
+8. **Installation / Getting Started** — CMake integration, include paths
+9. **Boost.Graph comparison** (optional, brief) — 3-4 row table: "Why graph-v3 over Boost.Graph?"
+   - Modern C++20 vs. C++98/03 origins
+   - CPOs vs. property maps
+   - Works with standard containers vs. custom graph types required
+   - Header-only vs. some compiled components
+   Many C++ developers know BGL; this comparison immediately anchors graph-v3's value.
+10. **Documentation links** — pointer to `docs/index.md`
+11. **Contributing** — pointer to `CONTRIBUTING.md`
+12. **License**
+13. **Status footer** — compact status line with implemented CPOs, containers, views, algorithms (pinned to actual counts)
 
 **Explicitly removed from README:**
 - v2 comparison (→ `docs/migration-from-v2.md`)
@@ -160,17 +187,21 @@ The README is the most critical page. It should follow the structure of successf
 | Step | Action | Details |
 |------|--------|---------|
 | 1.1 | Create directory structure | `docs/user-guide/`, `docs/reference/`, `docs/contributing/`, `docs/archive/` |
-| 1.2 | Write `docs/index.md` | Navigation hub with audience-based sections and links |
+| 1.2 | Write `docs/index.md` | Navigation hub with audience-based sections and links; link from repo description |
 | 1.3 | Write `docs/migration-from-v2.md` | Extract v2 comparison from README, expand with migration guidance |
 | 1.4 | Move `docs/edge_map_analysis.md` → `docs/archive/` | Stale design doc |
+| 1.5 | Write `docs/FAQ.md` | Common questions: "Can I use my own graph type?", "How do I add edge weights?", "What's the difference between views and algorithms?", "Why descriptors instead of iterators?", "How does this compare to Boost.Graph?" |
 
 ### Phase 2: README Rewrite
 
 | Step | Action | Details |
 |------|--------|---------|
 | 2.1 | Write new `README.md` | Following the design above; compelling, accurate, concise |
-| 2.2 | Verify all code examples compile | Or mark as pseudocode |
-| 2.3 | Update status line | Accurate algorithm/view/container/test counts |
+| 2.2 | Add shields.io badges | C++20, BSL-1.0 license, test count (pinned), build status if available |
+| 2.3 | Add supported compilers table | GCC/Clang/MSVC with versions, platforms, and status |
+| 2.4 | Add Boost.Graph comparison table | Brief 3-4 row table anchoring graph-v3's value proposition |
+| 2.5 | Verify all code examples compile | Or mark as pseudocode |
+| 2.6 | Pin all numbers to reality | Run `ctest`, count algorithms/views/containers; use one source of truth for all counts. The current README says "535 tests" in one place and "3931 tests" in another — this must not happen again |
 
 ### Phase 3: User Guide
 
@@ -245,6 +276,7 @@ All 26 combinations listed with trait file names (vov, vod, vofl, vol, vos, vous
 | 4.3 | Move `edge_value_concepts.md` → `docs/reference/` | Update links |
 | 4.4 | Write `docs/reference/cpo-reference.md` | Extract pure reference (signatures, behavior) from cpo.md |
 | 4.5 | Write `docs/reference/concepts.md` | Consolidated concept reference — adjacency list concepts (9) AND edge list concepts (3) side by side |
+| 4.6 | Write `docs/reference/algorithm-complexity.md` | Single-page cheat sheet: all implemented algorithms with time/space complexity, required concepts, one-line descriptions. Extremely useful as a quick reference for users evaluating or selecting algorithms |
 
 ### Phase 5: Contributor Documentation
 
@@ -252,7 +284,7 @@ All 26 combinations listed with trait file names (vov, vod, vofl, vol, vos, vous
 |------|--------|---------|
 | 5.1 | Write `CONTRIBUTING.md` | Extract from README: conventions, testing, PR process |
 | 5.2 | Write `docs/contributing/architecture.md` | Design principles, directory structure, range-of-ranges model |
-| 5.3 | Consolidate CPO guides → `docs/contributing/cpo-implementation.md` | Merge cpo.md + graph_cpo_implementation.md, deduplicate |
+| 5.3 | Consolidate CPO guides → `docs/contributing/cpo-implementation.md` | Merge `cpo.md` (1706 lines) + `graph_cpo_implementation.md` (1434 lines), deduplicate heavily. Target ~1500 lines total. Structure as two clear parts: Part 1 "How CPOs work" (concepts, MSVC pattern, priority tiers) and Part 2 "How to implement a CPO" (step-by-step, worked `vertex_id` example). The same pattern is currently shown 3 times across the two files — reduce to once with cross-references |
 | 5.4 | Move template + convention docs into `docs/contributing/` | algorithm_template, view_template, view_chaining, guidelines, cpo_order |
 | 5.5 | Update `docs/contributing/coding-guidelines.md` | Fix outdated directory tree, remove v2 references |
 
@@ -270,26 +302,6 @@ All 26 combinations listed with trait file names (vov, vod, vofl, vol, vos, vous
 
 ---
 
-## Additional Suggestions
-
-1. **Add a `docs/` landing page to the repo description** — GitHub renders `docs/index.md` if linked; consider also generating a GitHub Pages site in the future.
-
-2. **Consider a comparison table vs. Boost.Graph** — Many C++ developers know BGL. A concise "Why graph-v3 over Boost.Graph?" section (modern C++20, header-only, CPOs vs. property maps, works with standard containers) in the README or getting-started guide would be compelling.
-
-3. **Add a "Supported Compilers" table** — Explicit compiler/version/platform matrix instead of just "GCC 10+, Clang 10+, MSVC 2019+". This builds confidence.
-
-4. **Create a `docs/FAQ.md`** — Common questions: "Can I use my own graph type?", "How do I add edge weights?", "What's the difference between views and algorithms?", "Why descriptors instead of iterators?"
-
-5. **Badge/shield images in README** — Even if CI isn't public, static badges for C++20, license, and test count add professionalism.
-
-6. **Algorithm complexity cheat sheet** — A single-page table of all implemented algorithms with time/space complexity, required concepts, and one-line descriptions. Extremely useful as quick reference.
-
-7. **Deduplicate CPO documentation** — `cpo.md` (1706 lines) and `graph_cpo_implementation.md` (1434 lines) overlap significantly. The consolidated version should be ~1500 lines with a clear split: "How CPOs work" (concepts) vs. "How to implement a CPO" (step-by-step).
-
-8. **Pin accurate numbers** — The README currently says "535 tests" in one place and "3931 tests" in another. Run `ctest` and use the real number everywhere, maintained in one place (e.g., the status footer).
-
----
-
 ## Guiding Principles
 
 - **Accuracy over aspiration** — Only document what exists. Planned features go in a clearly labeled "Roadmap" section.
@@ -299,3 +311,4 @@ All 26 combinations listed with trait file names (vov, vod, vofl, vol, vos, vous
 - **Keep it maintainable** — Templates (algorithm_template.md, view_template.md) ensure new docs are consistent without manual enforcement.
 - **Equal weight for peer ADTs** — Adjacency lists and edge lists are co-equal abstract data structures. Documentation must present them with comparable depth, even though the adjacency list has more surface area.
 - **Archive, don't delete** — Files without a clear place go to `docs/archive/` for review rather than being deleted. This preserves history and allows content to be recovered if needed.
+- **Pin numbers to reality** — Test counts, algorithm counts, and other metrics must come from a single source of truth (e.g., `ctest` output). Never hardcode the same number in multiple places — use the status footer as the canonical source and reference it elsewhere.
