@@ -14,6 +14,7 @@
 
 #include "graph/graph.hpp"
 #include "graph/views/incidence.hpp"
+#include "graph/views/vertexlist.hpp"
 
 #ifndef GRAPH_JACCARD_HPP
 #  define GRAPH_JACCARD_HPP
@@ -28,8 +29,6 @@ namespace graph {
 using adj_list::index_adjacency_list;
 using adj_list::vertex_id_t;
 using adj_list::edge_t;
-using adj_list::vertices;
-using adj_list::vertex_id;
 using adj_list::num_vertices;
 
 /**
@@ -137,8 +136,7 @@ void jaccard_coefficient(G&& g, OutOp out) {
   // ============================================================================
   std::vector<std::unordered_set<vid_t>> nbrs(N);
 
-  for (auto&& u : vertices(g)) {
-    vid_t uid = vertex_id(g, u);
+  for (auto [uid] : views::basic_vertexlist(g)) {
     for (auto [tid] : views::basic_incidence(g, uid)) {
       if (tid != uid) { // skip self-loops
         nbrs[uid].insert(tid);
@@ -149,8 +147,7 @@ void jaccard_coefficient(G&& g, OutOp out) {
   // ============================================================================
   // Phase 2: For every directed edge, compute and report the Jaccard coefficient
   // ============================================================================
-  for (auto&& u : vertices(g)) {
-    vid_t uid = vertex_id(g, u);
+  for (auto [uid] : views::basic_vertexlist(g)) {
     for (auto&& [vid, uv] : views::incidence(g, uid)) {
       // Skip self-loops
       if (vid == uid) {
