@@ -15,6 +15,7 @@ add_executable(test_algorithms
     test_label_propagation.cpp
     test_articulation_points.cpp
     test_biconnected_components.cpp
+    test_jaccard.cpp
 )
 
 target_link_libraries(test_algorithms

@@ -44,6 +44,9 @@
 #include "algorithm/biconnected_components.hpp"
 #include "algorithm/scc.hpp"
 
+// Link Analysis
+#include "algorithm/jaccard.hpp"
+
 // Topological Sort & DAG
 #include "algorithm/topological_sort.hpp"
 
