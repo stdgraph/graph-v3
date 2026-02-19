@@ -41,6 +41,7 @@
 // Connectivity
 #include "algorithm/connected_components.hpp"
 #include "algorithm/articulation_points.hpp"
+#include "algorithm/biconnected_components.hpp"
 #include "algorithm/scc.hpp"
 
 // Topological Sort & DAG
