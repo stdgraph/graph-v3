@@ -28,7 +28,14 @@ Transform the graph-v3 documentation from an internal development log into a pol
 | `docs/edge_map_analysis.md` (485 lines) | Phase 4.3 design analysis | Stale design doc; should be archived |
 | `docs/common_graph_guidelines.md` (~160 lines) | Project conventions | Directory tree outdated |
 | `docs/graph_cpo_order.md` (~175 lines) | CPO implementation order | Contains v2 path reference |
-| Other `docs/*.md` files | Concept docs, templates | Generally good quality |
+| `docs/view_chaining_limitations.md` (~160 lines) | Describes the solution for view chaining (not limitations) | Misleading title; content is about the solution |
+| `docs/edge_value_concepts.md` (314 lines) | Edge value type concepts | Good quality, API reference |
+| `docs/vertex_inner_value_patterns.md` (~210 lines) | Inner value patterns for vertices | Good quality, API reference |
+| `docs/vertex_storage_concepts.md` (~260 lines) | Vertex storage pattern concepts | Good quality, API reference |
+| `docs/algorithm_template.md` (469 lines) | Template for algorithm docs | Contributor template |
+| `docs/view_template.md` (584 lines) | Template for view docs | Contributor template |
+| `include/graph/README.md` (92 lines) | Directory structure description | Completely outdated — lists items as "Planned" that are implemented; references files that have moved |
+| `include/graph/algorithm/README.md` (200 lines) | Algorithm directory conventions | Lists algorithms that don't exist |
 | `include/graph/algorithm/README.md` (200 lines) | Algorithm directory conventions | Lists algorithms that don't exist |
 
 ### Key Problems
@@ -40,6 +47,9 @@ Transform the graph-v3 documentation from an internal development log into a pol
 5. **Algorithm docs overstate availability** — lists BFS, A*, Floyd-Warshall etc. as if implemented
 6. **Missing landing page for docs/** — no index or navigation
 7. **Stale design documents** mixed with evergreen reference docs
+8. **Edge list under-documented** — the edge list ADT is a peer to the adjacency list but gets ~25% of the space in `container_interface.md`; its namespace (`graph::edge_list`) and concept names (`basic_sourced_edgelist`) don't match the doc
+9. **Container variety not showcased** — `dynamic_graph` supports 26 vertex×edge container combinations (4 vertex containers × 7 edge containers) but this power isn't visible to users
+10. **Orphaned files** — `descriptor.md` (top-level), `include/graph/README.md`, and several `docs/` files have no clear destination in the new structure
 
 ---
 
@@ -55,13 +65,16 @@ docs/
 ├── migration-from-v2.md            # v2 comparison content + migration guide (NEW)
 │
 ├── user-guide/                     # For library users (NEW directory)
-│   ├── graphs-and-containers.md    # Graph types, when to use each (NEW)
+│   ├── adjacency-lists.md          # Adjacency list ADT: concepts, CPOs, containers (NEW)
+│   ├── edge-lists.md               # Edge list ADT: concepts, CPOs, patterns (NEW)
+│   ├── containers.md               # All 3 graph containers + container matrix (NEW)
 │   ├── views.md                    # Views documentation (MOVE from docs/views.md, update)
 │   ├── algorithms.md               # Implemented algorithms only (NEW — replace algorithms/README.md)
 │   └── examples.md                 # Annotated examples collection (NEW)
 │
 ├── reference/                      # API reference (NEW directory)
-│   ├── container-interface.md      # GCI spec (MOVE from docs/container_interface.md)
+│   ├── adjacency-list-interface.md # Adjacency list GCI spec (EXTRACT from container_interface.md)
+│   ├── edge-list-interface.md      # Edge list GCI spec (EXTRACT from container_interface.md, sync with code)
 │   ├── concepts.md                 # All concepts in one place (NEW — consolidate)
 │   ├── cpo-reference.md            # CPO function signatures & behavior (NEW — extract from cpo.md)
 │   ├── edge-value-concepts.md      # (MOVE from docs/edge_value_concepts.md)
@@ -75,11 +88,28 @@ docs/
 │   ├── cpo-order.md                # (MOVE/UPDATE graph_cpo_order.md)
 │   ├── algorithm-template.md       # (MOVE from docs/algorithm_template.md)
 │   ├── view-template.md            # (MOVE from docs/view_template.md)
-│   └── view-chaining.md            # (MOVE from docs/view_chaining_limitations.md)
+│   └── view-chaining.md            # (RENAME from docs/view_chaining_limitations.md — content is the solution, not limitations)
 │
-└── archive/                        # Stale design documents (NEW directory)
-    └── edge_map_analysis.md        # (MOVE from docs/)
+└── archive/                        # Stale/superseded documents preserved for reference (NEW directory)
+    ├── edge_map_analysis.md        # (MOVE from docs/) — Phase 4.3 design analysis
+    ├── descriptor.md               # (MOVE from top-level) — early agent instruction doc
+    └── include_graph_README.md     # (MOVE from include/graph/README.md) — outdated directory listing
 ```
+
+### Archive Policy
+
+Any file that does not have a clear place in the `user-guide/`, `reference/`, or `contributing/` sections
+should be moved to `docs/archive/` for review. This preserves content without cluttering the user-facing
+documentation. Files in `docs/archive/` can be restored, merged into other docs, or deleted after review.
+
+Candidates identified so far:
+
+| File | Reason |
+|------|--------|
+| `descriptor.md` (top-level) | Early agent instruction doc referencing nonexistent `desc/` directory structure |
+| `include/graph/README.md` | Completely outdated — lists implemented features as "Planned", references moved files |
+| `docs/edge_map_analysis.md` | Phase 4.3 design artifact, dated Dec 2024, superseded by implementation |
+| `include/graph/algorithm/README.md` | Lists algorithms (A*, Floyd-Warshall, BFS) that don't exist as headers |
 
 ---
 
@@ -99,8 +129,12 @@ The README is the most critical page. It should follow the structure of successf
    - Customization Point Objects — adapt any graph type without modification
    - 3900+ unit tests
 4. **Quick example** — minimal, compilable, impressive (Dijkstra on a vector-of-vectors)
-5. **Feature overview** — brief sections with links to detailed docs:
-   - Graph Containers
+5. **Two abstract data structures** — brief, equal-weight descriptions of:
+   - **Adjacency Lists** — range-of-ranges model, vertex-centric
+   - **Edge Lists** — flat range of sourced edges, edge-centric
+6. **Feature overview** — brief sections with links to detailed docs:
+   - Graph Containers (all 3: `dynamic_graph`, `compressed_graph`, `undirected_adjacency_list`)
+   - Container flexibility (26 vertex×edge combinations via standard containers)
    - Views
    - Algorithms
    - CPO Architecture
@@ -143,20 +177,74 @@ The README is the most critical page. It should follow the structure of successf
 | Step | Action | Details |
 |------|--------|---------|
 | 3.1 | Write `docs/getting-started.md` | Installation, CMake integration, first graph, first algorithm |
-| 3.2 | Write `docs/user-guide/graphs-and-containers.md` | dynamic_graph, compressed_graph, undirected_adjacency_list, auto-detection |
-| 3.3 | Move + update `docs/views.md` → `docs/user-guide/views.md` | Keep content, add navigation links |
-| 3.4 | Write `docs/user-guide/algorithms.md` | Only implemented algorithms; clear "planned" section |
-| 3.5 | Write `docs/user-guide/examples.md` | Curated, annotated examples |
+| 3.2 | Write `docs/user-guide/adjacency-lists.md` | Adjacency list ADT overview: range-of-ranges model, concepts (`adjacency_list`, `index_adjacency_list`), CPOs (`vertices`, `edges`, `target_id`, etc.), how descriptor views work |
+| 3.3 | Write `docs/user-guide/edge-lists.md` | Edge list ADT overview: flat sourced-edge model, concepts (`basic_sourced_edgelist`, `basic_sourced_index_edgelist`, `has_edge_value`), CPOs (`source_id`, `target_id`, `edge_value`), supported edge patterns (pair, tuple, edge_info, edge_descriptor), non-integral vertex IDs |
+| 3.4 | Write `docs/user-guide/containers.md` | All 3 graph containers with equal coverage, container selection guide, full container matrix (see below) |
+| 3.5 | Move + update `docs/views.md` → `docs/user-guide/views.md` | Keep content, add navigation links |
+| 3.6 | Write `docs/user-guide/algorithms.md` | Only implemented algorithms; clear "planned" section |
+| 3.7 | Write `docs/user-guide/examples.md` | Curated, annotated examples |
+
+#### Adjacency List vs Edge List: Equal-Weight Treatment
+
+The adjacency list is ~95% of the library's surface area, but the edge list is a distinct, peer abstract
+data structure — not a subset. Documentation must present them as co-equal to avoid the misconception that
+edge lists are secondary. Specifically:
+
+- Both get their own user-guide page (`adjacency-lists.md` and `edge-lists.md`)
+- Both get their own reference page (`adjacency-list-interface.md` and `edge-list-interface.md`)
+- The getting-started guide and README show examples of both
+- `docs/index.md` navigation lists them side by side
+- The key conceptual distinction is made explicit early: adjacency lists are a range of vertices where each
+  vertex is a range of edges; edge lists are a flat range of edges with source and target IDs
+
+#### Container Documentation Requirements
+
+The `docs/user-guide/containers.md` page must include:
+
+**All 3 graph containers:**
+
+| Container | Storage | Mutability | Best For |
+|-----------|---------|------------|----------|
+| `dynamic_graph<EV,VV,GV,VId,Sourced,Traits>` | Traits-configured vertex and edge containers | Mutable | General purpose, flexible container choice |
+| `compressed_graph<EV,VV,GV,VId,EIndex,Alloc>` | CSR (compressed sparse row) | Immutable after construction | Read-only, high-performance, memory-compact |
+| `undirected_adjacency_list<VV,EV,GV,VId,VContainer,Alloc>` | Dual doubly-linked lists per edge | Mutable, O(1) edge removal | Undirected graphs, frequent edge insertion/removal |
+
+**Full `dynamic_graph` container matrix (26 combinations):**
+
+Vertex containers:
+
+| Container | Iterator | Vertex ID | Abbreviation |
+|-----------|----------|-----------|------|
+| `std::vector` | Random access | Integral index | `v` |
+| `std::deque` | Random access | Integral index | `d` |
+| `std::map` | Bidirectional | Ordered key (any) | `m` |
+| `std::unordered_map` | Forward | Hashable key (any) | `u` |
+
+Edge containers:
+
+| Container | Iterator | Properties | Abbreviation |
+|-----------|----------|------------|------|
+| `std::vector` | Random access | Cache-friendly, allows duplicates | `v` |
+| `std::deque` | Random access | Efficient front/back insertion | `d` |
+| `std::forward_list` | Forward | Minimal memory overhead | `fl` |
+| `std::list` | Bidirectional | O(1) insertion/removal anywhere | `l` |
+| `std::set` | Bidirectional | Sorted, deduplicated | `s` |
+| `std::unordered_set` | Forward | Hash-based, O(1) avg | `us` |
+| `std::map` | Bidirectional | Sorted by target_id key | `em` |
+
+Traits naming convention: `{vertex}o{edge}_graph_traits` (e.g., `vov_graph_traits` = vector vertices, vector edges).
+
+All 26 combinations listed with trait file names (vov, vod, vofl, vol, vos, vous, voem, dov, dod, dofl, dol, dos, dous, mov, mod, mofl, mol, mos, mous, moem, uov, uod, uofl, uol, uos, uous).
 
 ### Phase 4: Reference
 
 | Step | Action | Details |
 |------|--------|---------|
-| 4.1 | Move `container_interface.md` → `docs/reference/` | Update links |
+| 4.1 | Split `container_interface.md` → `docs/reference/adjacency-list-interface.md` + `docs/reference/edge-list-interface.md` | Give each ADT its own reference page; fix edge list namespace/concept name drift (doc says `sourced_edgelist`, code has `basic_sourced_edgelist`; doc says `graph::container::edgelist`, code uses `graph::edge_list`) |
 | 4.2 | Merge vertex concept docs → `docs/reference/vertex-patterns.md` | Combine vertex_inner_value_patterns.md + vertex_storage_concepts.md |
 | 4.3 | Move `edge_value_concepts.md` → `docs/reference/` | Update links |
 | 4.4 | Write `docs/reference/cpo-reference.md` | Extract pure reference (signatures, behavior) from cpo.md |
-| 4.5 | Write `docs/reference/concepts.md` | Consolidated concept reference |
+| 4.5 | Write `docs/reference/concepts.md` | Consolidated concept reference — adjacency list concepts (9) AND edge list concepts (3) side by side |
 
 ### Phase 5: Contributor Documentation
 
@@ -168,16 +256,17 @@ The README is the most critical page. It should follow the structure of successf
 | 5.4 | Move template + convention docs into `docs/contributing/` | algorithm_template, view_template, view_chaining, guidelines, cpo_order |
 | 5.5 | Update `docs/contributing/coding-guidelines.md` | Fix outdated directory tree, remove v2 references |
 
-### Phase 6: Cleanup
+### Phase 6: Cleanup & Archive
 
 | Step | Action | Details |
-|------|--------|---------|
-| 6.1 | Remove orphaned files from `docs/` root | After all moves are complete |
-| 6.2 | Update all internal cross-references | Grep for broken `docs/` links |
-| 6.3 | Update `include/graph/algorithm/README.md` | Reflect only what exists |
-| 6.4 | Review `descriptor.md` | Move to `docs/archive/` or `docs/contributing/` as appropriate |
-| 6.5 | Write `CHANGELOG.md` | Initial version based on git history and phase completion notes |
-| 6.6 | Final review pass | Read every doc end-to-end for consistency, accuracy, broken links |
+|------|--------|--------|
+| 6.1 | Move orphaned/unclear files to `docs/archive/` | `descriptor.md` → archive, `include/graph/README.md` → archive (as `include_graph_README.md`), `include/graph/algorithm/README.md` → archive or rewrite |
+| 6.2 | Remove empty original locations | Delete `docs/edge_map_analysis.md`, etc. after moves are verified |
+| 6.3 | Update all internal cross-references | Grep for broken `docs/` links, fix all relative paths |
+| 6.4 | Verify edge list / adjacency list parity | Ensure both ADTs appear in index.md, getting-started.md, README.md, and reference/ with comparable depth |
+| 6.5 | Verify all 3 containers documented | Ensure `dynamic_graph`, `compressed_graph`, and `undirected_adjacency_list` each have clear sections |
+| 6.6 | Write `CHANGELOG.md` | Initial version based on git history and phase completion notes |
+| 6.7 | Final review pass | Read every doc end-to-end for consistency, accuracy, broken links |
 
 ---
 
@@ -208,3 +297,5 @@ The README is the most critical page. It should follow the structure of successf
 - **Progressive disclosure** — README → Getting Started → User Guide → Reference. Don't front-load complexity.
 - **One source of truth** — Each concept, CPO, or container is documented in exactly one place. Other docs link to it.
 - **Keep it maintainable** — Templates (algorithm_template.md, view_template.md) ensure new docs are consistent without manual enforcement.
+- **Equal weight for peer ADTs** — Adjacency lists and edge lists are co-equal abstract data structures. Documentation must present them with comparable depth, even though the adjacency list has more surface area.
+- **Archive, don't delete** — Files without a clear place go to `docs/archive/` for review rather than being deleted. This preserves history and allows content to be recovered if needed.
