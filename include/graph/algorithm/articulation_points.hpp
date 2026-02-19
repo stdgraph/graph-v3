@@ -157,8 +157,7 @@ void articulation_points(G&& g, Iter cut_vertices) {
   std::stack<dfs_frame> stk;
 
   // Outer loop: handle disconnected graphs
-  for (auto sv : vertices(g)) {
-    vid_t start = vertex_id(g, sv);
+  for (auto [start] : views::basic_vertexlist(g)) {
     if (disc[start] != UNVISITED) {
       continue;
     }
@@ -171,7 +170,7 @@ void articulation_points(G&& g, Iter cut_vertices) {
 
       // Collect edges into a temporary to allow indexed access
       // We advance through edges one at a time using edge_idx
-      auto edge_range = edges(g, uid);
+      auto edge_range = views::incidence(g, uid);
       auto it         = std::ranges::begin(edge_range);
       auto it_end     = std::ranges::end(edge_range);
 
@@ -226,7 +225,7 @@ void articulation_points(G&& g, Iter cut_vertices) {
       }
     }
 
-    // Root rule: root is an articulation point iff it has >= 2 DFS children
+    // Root rule: root is an articulation point iff it has >= 2 DFS children 
     if (child_count[start] >= 2 && !emitted[start]) {
       *cut_vertices++ = start;
       emitted[start]  = true;
