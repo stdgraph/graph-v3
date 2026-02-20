@@ -411,19 +411,207 @@ endpoint). Use `edges_size() / 2` for the unique edge count.
 
 ---
 
-## 4. Container Selection Guide
+## 4. Range-of-Ranges Graphs (No Library Graph Container Required)
+
+You do not need `dynamic_graph`, `compressed_graph`, or any library container
+to use graph-v3. Any **range-of-ranges** whose elements follow a recognised
+pattern works directly with all CPOs, views, and algorithms:
+
+```cpp
+#include <graph/graph.hpp>
+
+// A plain vector-of-vectors IS a graph — no wrapper needed
+std::vector<std::vector<std::pair<int,double>>> g = {
+  {{1, 1.5}, {2, 0.5}},   // vertex 0 → edges to 1 (weight 1.5) and 2 (0.5)
+  {{2, 2.0}},              // vertex 1 → edge to 2 (weight 2.0)
+  {}                       // vertex 2 → no outgoing edges
+};
+
+for (auto&& u : graph::vertices(g)) {
+  for (auto&& uv : graph::edges(g, u)) {
+    auto vid = graph::target_id(g, uv);
+    auto w   = graph::edge_value(g, uv);   // returns pair.second (the double)
+  }
+}
+```
+
+The library detects the graph structure from the **range categories** and
+**element types** — not from specific container names. Any container satisfying
+the requirements below will work, including third-party containers
+(Boost, Abseil, etc.).
+
+### Outer range (vertex container) requirements
+
+The outer range holds vertices. Each element represents one vertex; its position
+or key becomes the vertex ID.
+
+| Outer range category | Vertex ID type | Examples |
+|----------------------|----------------|----------|
+| Random-access + sized | Integral index (0 .. N-1) | `std::vector<…>`, `std::deque<…>`, `std::array<…, N>` |
+| Associative (pair-valued) | Key type | `std::map<K, …>`, `std::unordered_map<K, …>` |
+
+The outer range must be a `forward_range`. For `num_vertices(g)` to work, it
+must also be a `sized_range`.
+
+When the outer range is an associative container, vertex IDs are keys rather
+than indices:
+
+```cpp
+std::map<std::string, std::vector<std::pair<std::string, double>>> g = {
+  {"A", {{"B", 1.0}, {"C", 2.0}}},
+  {"B", {{"C", 0.5}}},
+  {"C", {}}
+};
+
+for (auto&& u : graph::vertices(g)) {
+  auto vid = graph::vertex_id(g, u);        // std::string ("A", "B", "C")
+  for (auto&& uv : graph::edges(g, u)) {
+    auto tid = graph::target_id(g, uv);     // std::string
+    auto w   = graph::edge_value(g, uv);    // double
+  }
+}
+```
+
+| Outer container | `vertex_id_t<G>` | `find_vertex` complexity |
+|----------------|-------------------|--------------------------|
+| `std::map<K, …>` | `K` | O(log V) |
+| `std::unordered_map<K, …>` | `K` | O(1) avg |
+
+In a plain range-of-ranges, the "vertex value" returned by `vertex_value(g, u)`
+**is the inner range itself** (the edge list). There is no separate vertex data
+slot. If you need per-vertex data alongside edges, use `dynamic_graph` with a
+vertex value type, or store vertex data in a separate parallel container.
+
+### Inner range (edge container) requirements
+
+Each vertex's value must be a `forward_range` whose elements are the edges
+leaving that vertex. The element type determines how `target_id` and
+`edge_value` are extracted.
+
+### Edge element patterns
+
+The library recognises four edge element patterns, checked in priority order:
+
+#### 1. Simple integral — target ID only
+
+```cpp
+std::vector<std::vector<int>> g = {
+  {1, 2},    // vertex 0 → edges to vertices 1 and 2
+  {0},       // vertex 1 → edge to vertex 0
+  {}
+};
+auto vid = graph::target_id(g, uv);   // the int value itself
+auto ev  = graph::edge_value(g, uv);  // also the int value (same as target_id)
+```
+
+| `target_id` | `edge_value` |
+|-------------|-------------|
+| The value itself | The value itself |
+
+Any `std::integral` type (`int`, `uint32_t`, `size_t`, …).
+
+#### 2. Pair — target ID + one property
+
+```cpp
+std::vector<std::vector<std::pair<int, double>>> g = {
+  {{1, 1.5}, {2, 0.5}},
+  {{2, 2.0}},
+  {}
+};
+auto vid = graph::target_id(g, uv);   // pair.first
+auto w   = graph::edge_value(g, uv);  // pair.second (mutable reference)
+```
+
+| `target_id` | `edge_value` |
+|-------------|-------------|
+| `.first` | `.second` |
+
+Works with `std::pair` and any type with `.first` and `.second` members.
+`edge_value` returns a reference, so the property is mutable in-place.
+
+#### 3. Tuple — target ID + one or more properties
+
+```cpp
+// Two-element tuple (same semantics as pair)
+std::vector<std::vector<std::tuple<int, double>>> g = { ... };
+auto vid = graph::target_id(g, uv);   // get<0>
+auto w   = graph::edge_value(g, uv);  // get<1> (single value reference)
+
+// Three-or-more-element tuple
+std::vector<std::vector<std::tuple<int, double, std::string>>> g = { ... };
+auto vid = graph::target_id(g, uv);   // get<0>
+auto ev  = graph::edge_value(g, uv);  // tuple of references: {get<1>, get<2>, ...}
+```
+
+| Elements | `target_id` | `edge_value` |
+|----------|-------------|-------------|
+| 2 | `get<0>` | `get<1>` (single reference) |
+| 3+ | `get<0>` | `forward_as_tuple(get<1>, get<2>, …)` |
+
+Any type satisfying `std::tuple_size` (e.g., `std::tuple`, `std::array`).
+
+#### 4. Custom struct — user-defined extraction
+
+```cpp
+struct MyEdge {
+  int    target;
+  double weight;
+  // Option A: provide a target_id() member
+  int target_id() const { return target; }
+};
+
+std::vector<std::vector<MyEdge>> g = { ... };
+auto vid = graph::target_id(g, uv);   // calls MyEdge::target_id()
+auto ev  = graph::edge_value(g, uv);  // returns MyEdge& (whole struct)
+```
+
+| Has `target_id()` member? | `target_id` | `edge_value` |
+|---------------------------|-------------|-------------|
+| Yes | `.target_id()` | Whole struct reference |
+| No | Must provide ADL `target_id(g, uv)` | Whole struct reference |
+
+If your struct does not have a `target_id()` member, provide a free function
+found by ADL.
+
+### `source_id(g, uv)` — always available
+
+Every edge descriptor stores its source vertex, so `source_id(g, uv)` works
+for all range-of-ranges graphs without any extra annotation.
+
+### Quick reference
+
+| Graph type | `vertex_id` type | `target_id` source | `edge_value` type |
+|-----------|-----------------|-------------------|------------------|
+| `vector<vector<int>>` | `size_t` | value | `int` |
+| `vector<vector<pair<int,double>>>` | `size_t` | `.first` | `double&` |
+| `vector<vector<tuple<int,double>>>` | `size_t` | `get<0>` | `double&` |
+| `vector<vector<tuple<int,double,string>>>` | `size_t` | `get<0>` | `tuple<double&,string&>` |
+| `vector<vector<MyEdge>>` | `size_t` | `.target_id()` | `MyEdge&` |
+| `deque<vector<int>>` | `size_t` | value | `int` |
+| `map<K, vector<pair<K,double>>>` | `K` | `.first` | `double&` |
+| `vector<set<int>>` | `size_t` | value (key) | `int` |
+
+---
+
+## 5. Container Selection Guide
 
 ```
-              ┌─ Need undirected edges        → undirected_adjacency_list
+              ┌─ Already have data in          → range-of-ranges
+              │   standard containers?            (zero-copy, no conversion)
+              │
+              ├─ Have an existing graph         → custom graph
+              │   data structure?                  (override CPOs for full control)
+              │
+              ├─ Need undirected edges          → undirected_adjacency_list
               │   with O(1) removal or
               │   mutable edge properties?
 Start ────────┤
               │
-              ├─ Graph is read-only            → compressed_graph
-              │   after construction?             (smallest memory, best cache)
+              ├─ Graph is read-only             → compressed_graph
+              │   after construction?              (smallest memory, best cache)
               │
-              └─ Need mutable vertices/edges?  → dynamic_graph
-                                                  (pick traits for your needs)
+              └─ Need mutable vertices/edges?   → dynamic_graph
+                                                   (pick traits for your needs)
 ```
 
 When `compressed_graph` or `dynamic_graph` is used to represent an undirected graph, 
@@ -431,18 +619,24 @@ edges must be duplicated (e.g. edges A/B and B/A for vertices A and B). Properti
 duplicated, or handled in a way that avoids duplication (e.g. a `std::shared_ptr` to a property 
 struct), if they are mutable.
 
-| Criterion | `dynamic_graph` | `compressed_graph` | `undirected_adjacency_list` |
-|-----------|-----------------|--------------------|-----------------------------|
-| Add/remove vertices | Yes | No | Yes |
-| Add/remove edges | Yes | No | Yes (O(1) remove) |
-| Directed | Yes | Yes | No (undirected) |
-| Undirected | Yes (duplicated edges) | Yes (duplicated edges) | Yes |
-| Mutable Properties | Directed (Yes), Undirected (No) | Directed (Yes), Undirected (No) | Yes |
-| Memory efficiency | Medium | Best (CSR) | Highest overhead |
-| Cache locality | Depends on trait | Excellent | Poor (linked-list) |
-| Multi-partite | No | Yes | No |
-| Container flexibility | 26 trait combos | Fixed (CSR) | Configurable random access vertex container |
+| Criterion | `dynamic_graph` | `compressed_graph` | `undirected_adjacency_list` | range-of-ranges |
+|-----------|-----------------|--------------------|-----------------------------|------------------|
+| Add/remove vertices | Yes | No | Yes | Depends on outer container |
+| Add/remove edges | Yes | No | Yes (O(1) remove) | Depends on inner container |
+| Directed | Yes | Yes | No (undirected) | Yes |
+| Undirected | Yes (duplicated edges) | Yes (duplicated edges) | Yes | Yes (duplicated edges) |
+| Mutable Properties | Directed (Yes), Undirected (No) | Directed (Yes), Undirected (No) | Yes | Directed (Yes), Undirected (No); your data |
+| Memory efficiency | Medium | Best (CSR) | Highest overhead | Zero overhead (existing data) |
+| Cache locality | Depends on trait | Excellent | Poor (linked-list) | Depends on containers used |
+| Multi-partite | No | Yes | No | No |
+| Container flexibility | 26 trait combos | Fixed (CSR) | Configurable random access vertex container | Any forward_range of forward_ranges |
 
+**Custom graphs.** If you have an existing graph data structure that does not model a
+range-of-ranges, you can still use it with all library views and algorithms by overriding the
+graph CPOs (`vertices`, `edges`, `target_id`, `vertex_id`, etc.) via ADL for your type.
+This gives maximum flexibility — your storage layout, indexing scheme, and memory management
+remain unchanged while the library operates on them through the CPO interface. See
+[Graph CPO Implementation](../graph_cpo_implementation.md) for details on which CPOs to override.
 
 ---
 
