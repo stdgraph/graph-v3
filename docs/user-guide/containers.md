@@ -7,11 +7,17 @@ adjacency list concepts so all CPOs, views, and algorithms work interchangeably.
 
 | Container | Storage | Mutability | Best for |
 |-----------|---------|------------|----------|
-| `dynamic_graph` | Traits-configured vertex + edge containers | Mutable | General purpose, flexible container choice |
-| `compressed_graph` | CSR (Compressed Sparse Row) | Immutable after construction | Read-only, high performance, memory-compact |
-| `undirected_adjacency_list` | Dual doubly-linked lists per edge | Mutable, O(1) edge removal | Undirected graphs, frequent edge insertion/removal |
+| [`dynamic_graph`](#1-dynamic_graph) | Traits-configured vertex + edge containers | Mutable | General purpose, flexible container choice |
+| [`compressed_graph`](#2-compressed_graph) | CSR (Compressed Sparse Row) | Immutable after construction | Read-only, high performance, memory-compact |
+| [`undirected_adjacency_list`](#3-undirected_adjacency_list) | Dual doubly-linked lists per edge | Mutable, O(1) edge removal | Undirected graphs, frequent edge insertion/removal |
 
 All three live in `graph::container`.
+
+You can also use graphs without any library container:
+
+- **[Range-of-Ranges Graphs](#4-range-of-ranges-graphs-no-library-graph-container-required)** — use standard containers (e.g. `vector<vector<int>>`) directly as graphs, zero-copy
+- **[Custom Graphs](#5-custom-graphs)** — adapt your own graph data structure by overriding graph CPOs via ADL
+- **[Container Selection Guide](#6-container-selection-guide)** — decision tree and comparison matrix
 
 ---
 
@@ -593,7 +599,71 @@ for all range-of-ranges graphs without any extra annotation.
 
 ---
 
-## 5. Container Selection Guide
+## 5. Custom Graphs
+
+If you have an existing graph data structure that does not model a range-of-ranges, you can
+still use it with all library views and algorithms by overriding the graph CPOs for your type.
+This gives maximum flexibility — your storage layout, indexing scheme, and memory management
+remain unchanged while the library operates on them through the CPO interface.
+
+### Which CPOs to override
+
+At minimum, provide ADL overloads for these core CPOs in your type's namespace:
+
+| CPO | Signature | Purpose |
+|-----|-----------|------------------|
+| `vertices(g)` | Returns a range of vertices | Vertex iteration |
+| `edges(g, u)` | Returns a range of edges for vertex `u` | Edge iteration |
+| `target_id(g, uv)` | Returns the target vertex id of edge `uv` | Edge traversal |
+| `vertex_id(g, u)` | Returns the id of vertex `u` | Vertex identification |
+
+Optional CPOs to override for richer functionality:
+
+| CPO | Purpose |
+|-----|------------------|
+| `source_id(g, uv)` | Required by algorithms that need edge source |
+| `vertex_value(g, u)` | Expose vertex properties |
+| `edge_value(g, uv)` | Expose edge properties (weights, labels, etc.) |
+| `num_vertices(g)` | Vertex count (defaults to `size(vertices(g))`) |
+| `find_vertex(g, uid)` | Sub-linear vertex lookup |
+| `find_vertex_edge(g, u, vid)` | Sub-linear edge lookup |
+
+### Example
+
+```cpp
+namespace mylib {
+
+struct my_graph {
+  struct vertex { int id; std::string name; std::vector<int> neighbors; };
+  std::vector<vertex> verts;
+};
+
+// Core CPOs — found via ADL
+auto vertices(const my_graph& g) { return std::ranges::ref_view(g.verts); }
+auto edges(const my_graph& g, const my_graph::vertex& u) {
+  return std::ranges::ref_view(u.neighbors);
+}
+auto target_id(const my_graph&, int tid) { return tid; }
+auto vertex_id(const my_graph&, const my_graph::vertex& u) { return u.id; }
+
+// Optional: expose vertex value
+auto vertex_value(const my_graph&, const my_graph::vertex& u) {
+  return std::string_view(u.name);
+}
+
+} // namespace mylib
+```
+
+With these overloads in place, `my_graph` works directly with library views
+(`vertices_breadth_first_search`, `edges_depth_first_search`, etc.) and algorithms
+(`dijkstra_shortest_paths`, `bellman_ford_shortest_paths`, etc.).
+
+See [Graph CPO Implementation](../graph_cpo_implementation.md) for the full CPO resolution
+order and advanced customization patterns.
+
+---
+
+## 6. Container Selection Guide
 
 ```
               ┌─ Already have data in          → range-of-ranges
@@ -631,12 +701,8 @@ struct), if they are mutable.
 | Multi-partite | No | Yes | No | No |
 | Container flexibility | 26 trait combos | Fixed (CSR) | Configurable random access vertex container | Any forward_range of forward_ranges |
 
-**Custom graphs.** If you have an existing graph data structure that does not model a
-range-of-ranges, you can still use it with all library views and algorithms by overriding the
-graph CPOs (`vertices`, `edges`, `target_id`, `vertex_id`, etc.) via ADL for your type.
-This gives maximum flexibility — your storage layout, indexing scheme, and memory management
-remain unchanged while the library operates on them through the CPO interface. See
-[Graph CPO Implementation](../graph_cpo_implementation.md) for details on which CPOs to override.
+**Custom graphs.** See [Section 5 (Custom Graphs)](#5-custom-graphs) for how to use your own
+graph data structure with all library views and algorithms by overriding graph CPOs.
 
 ---
 
