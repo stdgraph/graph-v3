@@ -349,25 +349,25 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 1.4 Archive stale design docs
 
-- [ ] **1.4.1** `MOVE` `docs/edge_map_analysis.md` → `docs/archive/edge_map_analysis.md`
+- [x] **1.4.1** `MOVE` `docs/edge_map_analysis.md` → `docs/archive/edge_map_analysis.md`
   - **Depends:** 1.1.1
   - **Risk:** med
   - **Action:** `git mv docs/edge_map_analysis.md docs/archive/edge_map_analysis.md`
   - **Verify:** File absent from `docs/`, present in `docs/archive/`.
 
-- [ ] **1.4.2** `MOVE` `descriptor.md` → `docs/archive/descriptor.md`
+- [x] **1.4.2** `MOVE` `descriptor.md` → `docs/archive/descriptor.md`
   - **Depends:** 1.1.1
   - **Risk:** med
   - **Action:** `git mv descriptor.md docs/archive/descriptor.md`
   - **Verify:** File absent from root, present in `docs/archive/`.
 
-- [ ] **1.4.3** `MOVE` `include/graph/README.md` → `docs/archive/include_graph_README.md`
+- [x] **1.4.3** `MOVE` `include/graph/README.md` → `docs/archive/include_graph_README.md`
   - **Depends:** 1.1.1
   - **Risk:** med
   - **Action:** `git mv include/graph/README.md docs/archive/include_graph_README.md`
   - **Verify:** File absent from `include/graph/`, present in `docs/archive/`.
 
-- [ ] **1.4.4** `MOVE` `include/graph/algorithm/README.md` → `docs/archive/include_graph_algorithm_README.md`
+- [x] **1.4.4** `MOVE` `include/graph/algorithm/README.md` → `docs/archive/include_graph_algorithm_README.md`
   - **Depends:** 1.1.1
   - **Risk:** med
   - **Action:** `git mv include/graph/algorithm/README.md docs/archive/include_graph_algorithm_README.md`
@@ -375,7 +375,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 1.5 Write FAQ
 
-- [ ] **1.5.1** `CREATE` `docs/FAQ.md`
+- [x] **1.5.1** `CREATE` `docs/FAQ.md`
   - **Depends:** 1.1.1
   - **Risk:** low
   - **Action:** Create FAQ with answers sourced from existing docs and code. Questions:
@@ -396,7 +396,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 1.6 Commit Phase 1
 
-- [ ] **1.6.1** `RUN` Commit Phase 1
+- [x] **1.6.1** `RUN` Commit Phase 1
   - **Depends:** 1.2.1, 1.3.2, 1.4.1–1.4.4, 1.5.1
   - **Risk:** low
   - **Action:**
@@ -1061,13 +1061,13 @@ This was created in step 2.2.1. Skip if already done.
 | Phase | Steps | Done | High-risk | Status | Deliverables |
 |-------|-------|------|-----------|--------|--------------|
 | 0 | 8 | 8 | 1 | **Complete** | Fixed `algorithms.hpp`, fixed `graph.hpp`, implementation matrix, canonical metrics |
-| 1 | 10 | 4 | 0 | In progress | `docs/index.md`, migration guide, FAQ, 4 archived files |
+| 1 | 10 | 10 | 0 | **Complete** | `docs/index.md`, migration guide, FAQ, 4 archived files |
 | 2 | 5 | 0 | 1 | Not started | New README, CONTRIBUTING.md |
 | 3 | 11 | 0 | 0 | Not started | 6 user-guide pages + views move |
 | 4 | 12 | 0 | 2 | Not started | 7 reference pages + 3 deleted sources |
 | 5 | 10 | 0 | 1 | Not started | Architecture guide, consolidated CPO doc, 5 moved docs |
 | 6 | 13 | 0 | 0 | Not started | CHANGELOG, cross-ref fixes, validation |
-| **Total** | **69** | **12** | **5** | **17%** | |
+| **Total** | **69** | **18** | **5** | **26%** | |
 
 > Last updated: 2026-02-19 · Commit: `fe0f187` · Branch: `newdoc`
 
