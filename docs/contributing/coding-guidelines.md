@@ -1,6 +1,6 @@
-# Common Graph Guidelines
+# Coding Guidelines
 
-These requirements apply to every graph-related instruction set, including implementations, views, algorithms, and the data model.
+These requirements apply to every graph-related component, including implementations, views, algorithms, and the data model.
 
 ## Core Architectural Commitments
 1. The interface MUST be able to adapt to existing graph data structures.
@@ -81,66 +81,18 @@ When creating a new instruction document, reference this file near the top and o
 
 ## Project Structure
 
-The implementation MUST follow this directory structure (based on graph-v2):
+## Project Structure
 
-```
-graph-v3/
-├── benchmark/              # Performance benchmarks
-│   └── CMakeLists.txt
-├── cmake/                  # CMake modules and scripts
-├── data/                   # Test data files
-├── doc/                    # Documentation (Doxygen output)
-├── docs/                   # Documentation source
-│   └── sphinx/
-├── example/                # Example programs
-│   ├── CMakeLists.txt
-│   ├── AdaptingThirdPartyGraph/
-│   ├── CppCon2021/
-│   ├── CppCon2022/
-│   └── PageRank/
-├── include/                # Public header files
-│   └── graph/
-│       ├── algorithm/        # Graph algorithms
-│       ├── container/        # Graph container implementations
-│       ├── detail/           # Implementation details (private)
-│       │   ├── graph_cpo.hpp # Graph CPOs
-│       │   └── graph_using.hpp # Using statements for common types and functions in the standard library
-│       ├── views/            # Graph views
-│       ├── edgelist.hpp      # Edge list functionality
-│       ├── graph.hpp         # Main graph header with graph concepts and graph traits
-│       ├── graph_info.hpp    # Graph information structures
-│       └── graph_utility.hpp # Utility functions
-├── scripts/                # Build and maintenance scripts
-│   └── format.sh
-├── tests/                  # Unit tests
-│   ├── CMakeLists.txt
-│   ├── catch_main.cpp      # Catch2 main
-│   ├── *_tests.cpp         # Test files for each component
-│   ├── csv.hpp             # Test utilities
-│   ├── csv_routes.cpp
-│   ├── csv_routes.hpp
-│   ├── examples.cpp
-│   └── tests.cpp
-├── .clang-format           # Code formatting rules
-├── .clang-tidy             # Static analysis rules
-├── .cmake-format.yaml      # CMake formatting rules
-├── .gitignore              # Git ignore patterns
-├── CMakeLists.txt          # Root CMake configuration
-├── CMakePresets.json       # CMake presets for build configurations
-├── CODE_OF_CONDUCT.md      # Code of conduct
-├── CONTRIBUTING.md         # Contribution guidelines
-├── LICENSE                 # License file
-├── README.md               # Project readme
-├── Notes.md                # Development notes
-└── ToDo.md                 # TODO list
-```
+See [Architecture](architecture.md) for the full directory tree and design rationale.
 
-**Key Directories**:
-- `include/graph/`: All public headers implementing the graph data model interface
-- `tests/`: Comprehensive unit tests for all functionality
-- `example/`: Example programs demonstrating usage patterns
-- `benchmark/`: Performance benchmarks and comparison tests
-- `cmake/`: Modular CMake configuration for dependencies and build settings
-- `data/`: Test data in various formats (Matrix Market, CSV)
-
-**Note**: The `out/` directory (generated build artifacts) is excluded from version control and documentation.
+**Key directories:**
+- `include/graph/` — all public headers (header-only library)
+- `include/graph/algorithm/` — one header per algorithm
+- `include/graph/views/` — lazy range views
+- `include/graph/container/` — library-provided containers (`dynamic_graph`, `compressed_graph`)
+- `include/graph/adj_list/` — descriptor system (vertex/edge descriptors, traits)
+- `include/graph/edge_list/` — edge list model
+- `include/graph/detail/` — CPO machinery and internal helpers
+- `tests/` — Catch2 test suite, mirroring the source structure
+- `examples/` — compilable example programs
+- `benchmark/` — Google Benchmark micro-benchmarks

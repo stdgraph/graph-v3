@@ -307,5 +307,5 @@ Convenience aliases extracted from a graph type `G`:
 - [Adjacency List Interface (GCI spec)](../reference/adjacency-list-interface.md) — formal adjacency list specification
 - [Edge Lists User Guide](edge-lists.md) — the peer edge-centric ADT
 - [Views User Guide](views.md) — BFS, DFS, incidence, neighbors, etc.
-- [CPO Implementation Guide](../graph_cpo_implementation.md) — how to write/override CPOs
+- [CPO Implementation Guide](../contributing/cpo-implementation.md) — how to write/override CPOs
 - [Getting Started](../getting-started.md) — installation and first examples

@@ -1,6 +1,6 @@
 # CPO Reference
 
-> [← Back to Documentation Index](../index.md) · [CPO Implementation Guide](../graph_cpo_implementation.md)
+> [← Back to Documentation Index](../index.md) · [CPO Implementation Guide](../contributing/cpo-implementation.md)
 
 **Customization Point Objects (CPOs)** are the primary API for querying graph
 structure. Each CPO resolves at compile time via a three-step priority:
@@ -332,4 +332,4 @@ also checks for data members (`.value`, `.target_id`) and tuple-like access
 - [Adjacency List Interface](adjacency-list-interface.md) — GCI spec
 - [Edge List Interface](edge-list-interface.md) — edge list GCI spec
 - [Type Aliases Reference](type-aliases.md) — return types used above
-- [CPO Implementation Guide](../graph_cpo_implementation.md) — internal implementation details
+- [CPO Implementation Guide](../contributing/cpo-implementation.md) — internal implementation details

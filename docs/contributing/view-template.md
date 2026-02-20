@@ -274,7 +274,7 @@ auto view = g | view_name(vf)
               | std::views::drop(1);     // ✅ works
 ```
 
-**Why this works:** Stateless lambdas (empty capture `[]`) are `std::semiregular`, so the resulting view satisfies `std::ranges::view`. See [View Chaining Limitations](view_chaining_limitations.md) for details.
+**Why this works:** Stateless lambdas (empty capture `[]`) are `std::semiregular`, so the resulting view satisfies `std::ranges::view`. See [View Chaining](view-chaining.md) for details.
 
 ---
 
@@ -469,7 +469,7 @@ Factory function → view_class(g, ...) → iterator(g, begin, end) → operator
 2. **Why value functions take `(G&, descriptor)` instead of capturing the graph?**
    - Stateless lambdas are `std::semiregular` → view satisfies `std::ranges::view`
    - Enables full chaining with `std::views::take`, `filter`, etc.
-   - See [View Chaining Limitations](view_chaining_limitations.md) for rationale
+   - See [View Chaining](view-chaining.md) for rationale
 
 3. **Why `view_interface` base?**
    - Provides `empty()`, `operator bool()`, `front()`, `back()`, `operator[]` automatically
@@ -497,10 +497,10 @@ Factory function → view_class(g, ...) → iterator(g, begin, end) → operator
 - [std::ranges::view concept](https://en.cppreference.com/w/cpp/ranges/view)
 
 ### Related Library Documentation
-- [Graph CPO Documentation](graph_cpo_implementation.md) - Customization point objects
-- [Adjacency List Interface](reference/adjacency-list-interface.md) - Graph container requirements
-- [View Chaining Limitations](view_chaining_limitations.md) - Chaining design rationale
-- [Views Overview](user-guide/views.md) - All views summary and usage patterns
+- [CPO Implementation Guide](cpo-implementation.md) - Customization point objects
+- [Adjacency List Interface](../reference/adjacency-list-interface.md) - Graph container requirements
+- [View Chaining](view-chaining.md) - Chaining design rationale
+- [Views Overview](../user-guide/views.md) - All views summary and usage patterns
 
 ### Related Views
 
@@ -576,8 +576,8 @@ List related views that serve similar or complementary purposes:
 
 ## See Also
 
-- [Views Overview](user-guide/views.md)
-- [Graph CPO Documentation](graph_cpo_implementation.md)
-- [Adjacency List Interface](reference/adjacency-list-interface.md)
-- [View Chaining Limitations](view_chaining_limitations.md)
-- [Testing Guidelines](../tests/README.md)
+- [Views Overview](../user-guide/views.md)
+- [CPO Implementation Guide](cpo-implementation.md)
+- [Adjacency List Interface](../reference/adjacency-list-interface.md)
+- [View Chaining](view-chaining.md)
+- [Testing Guidelines](../../tests/README.md)

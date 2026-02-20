@@ -132,7 +132,7 @@ Algorithms work with any graph container that satisfies the CPO interface:
 Each algorithm includes:
 - **Header documentation:** Doxygen comments with full API specification
 - **Algorithm documentation:** Detailed markdown in `docs/algorithms/<name>.md`
-- **Template reference:** See [`docs/algorithm_template.md`](../../docs/algorithm_template.md)
+- **Template reference:** See [Algorithm Template](../contributing/algorithm-template.md)
 
 ### Documentation Structure
 
@@ -270,7 +270,7 @@ Algorithms can be combined:
 ### Adding a New Algorithm
 
 1. **Design Phase:**
-   - Review [`algorithm_template.md`](../../docs/algorithm_template.md)
+   - Review [Algorithm Template](../contributing/algorithm-template.md)
    - Check existing implementations for patterns
    - Consider container compatibility
 
@@ -345,7 +345,7 @@ Algorithms can be combined:
 
 ## See Also
 
-- [Graph CPO Documentation](../graph_cpo_implementation.md)
+- [CPO Implementation Guide](../contributing/cpo-implementation.md)
 - [Adjacency List Interface](../reference/adjacency-list-interface.md)
 - [View Documentation](../user-guide/views.md)
 - [Main README](../../README.md)

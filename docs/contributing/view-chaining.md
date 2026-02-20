@@ -1,8 +1,8 @@
-# View Chaining with Value Functions
+# View Chaining — How It Works
 
 ## Overview
 
-Graph views in this library support **full C++20 range chaining with `std::views`**, including
+Graph views in graph-v3 support **full C++20 range chaining with `std::views`**, including
 when using value functions. This was achieved by changing value function signatures to receive the
 graph as a parameter rather than requiring lambda capture.
 

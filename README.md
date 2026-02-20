@@ -79,8 +79,8 @@ Both share a common descriptor system and customization-point interface.
 | **Algorithms** | Dijkstra, Bellman-Ford, BFS, DFS, topological sort, connected components, articulation points, biconnected components, MST, triangle counting, MIS, label propagation, Jaccard | [Algorithm reference](docs/status/implementation_matrix.md#algorithms) |
 | **Views** | vertexlist, edgelist, incidence, neighbors, BFS, DFS, topological sort | [View reference](docs/status/implementation_matrix.md#views) |
 | **Containers** | `dynamic_graph` (26 trait combos), `compressed_graph` (CSR), `undirected_adjacency_list` | [Container reference](docs/status/implementation_matrix.md#containers) |
-| **CPOs** | 19 customization point objects (vertices, edges, target_id, vertex_value, edge_value, …) | [CPO guide](docs/graph_cpo_implementation.md) |
-| **Concepts** | 9 graph concepts (edge, vertex, adjacency_list, …) | [Container interface](docs/container_interface.md) |
+| **CPOs** | 19 customization point objects (vertices, edges, target_id, vertex_value, edge_value, …) | [CPO reference](docs/reference/cpo-reference.md) |
+| **Concepts** | 9 graph concepts (edge, vertex, adjacency_list, …) | [Concepts reference](docs/reference/concepts.md) |
 
 ---
 
@@ -156,8 +156,8 @@ Quick links:
 - [Migration from graph-v2](docs/migration-from-v2.md)
 - [FAQ](docs/FAQ.md)
 - [Implementation Matrix](docs/status/implementation_matrix.md)
-- [Container Interface](docs/container_interface.md)
-- [CPO Implementation Guide](docs/graph_cpo_implementation.md)
+- [Concepts Reference](docs/reference/concepts.md)
+- [CPO Reference](docs/reference/cpo-reference.md)
 
 ---
 

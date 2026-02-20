@@ -108,8 +108,8 @@ Coverage reports are generated using the `CodeCoverage.cmake` module. See
 ## Code Style
 
 - **Formatting:** clang-format (run `scripts/format.sh` to format all source files)
-- **Naming conventions:** follow [docs/common_graph_guidelines.md](docs/common_graph_guidelines.md)
-- **CPO implementation patterns:** follow [docs/graph_cpo_implementation.md](docs/graph_cpo_implementation.md)
+- **Naming conventions:** follow [docs/contributing/coding-guidelines.md](docs/contributing/coding-guidelines.md)
+- **CPO implementation patterns:** follow [docs/contributing/cpo-implementation.md](docs/contributing/cpo-implementation.md)
 - Header-only; all code lives under `include/graph/`
 - Tests live under `tests/` mirroring the source layout
 
@@ -119,14 +119,14 @@ Coverage reports are generated using the `CodeCoverage.cmake` module. See
 
 ### New Algorithm
 
-1. Create `include/graph/algorithm/<name>.hpp`. Create documentation using `docs/algorithm_template.md`.
+1. Create `include/graph/algorithm/<name>.hpp`. Create documentation using `docs/contributing/algorithm-template.md`.
 2. Add the include to `include/graph/algorithms.hpp`
 3. Create `tests/algorithms/test_<name>.cpp` and register it in `tests/CMakeLists.txt`
 4. Update `docs/status/implementation_matrix.md`
 
 ### New View
 
-1. Create `include/graph/views/<name>.hpp`. Create documentation using `docs/view_template.md`.
+1. Create `include/graph/views/<name>.hpp`. Create documentation using `docs/contributing/view-template.md`.
 2. Add the include to `include/graph/views.hpp` (if an umbrella header exists)
 3. Create `tests/views/test_<name>.cpp` and register it in `tests/CMakeLists.txt`
 4. Update `docs/status/implementation_matrix.md`
@@ -156,8 +156,8 @@ Coverage reports are generated using the `CodeCoverage.cmake` module. See
 For architecture details, namespace structure, and design decisions, see:
 
 - [docs/index.md](docs/index.md) — documentation hub
-- [docs/common_graph_guidelines.md](docs/common_graph_guidelines.md) — conventions and project structure
-- [docs/container_interface.md](docs/container_interface.md) — Graph Container Interface specification
+- [docs/contributing/coding-guidelines.md](docs/contributing/coding-guidelines.md) — conventions and project structure
+- [docs/reference/adjacency-list-interface.md](docs/reference/adjacency-list-interface.md) — Graph Container Interface specification
 
 ---
 

@@ -658,7 +658,7 @@ With these overloads in place, `my_graph` works directly with library views
 (`vertices_breadth_first_search`, `edges_depth_first_search`, etc.) and algorithms
 (`dijkstra_shortest_paths`, `bellman_ford_shortest_paths`, etc.).
 
-See [Graph CPO Implementation](../graph_cpo_implementation.md) for the full CPO resolution
+See [CPO Implementation Guide](../contributing/cpo-implementation.md) for the full CPO resolution
 order and advanced customization patterns.
 
 ---

@@ -155,11 +155,6 @@ using graph_value_t = decltype(graph_value(declval<G&&>()));
 
 ## Notes
 
-- This order matches the reference implementation in graph-v2
 - CPOs marked as "optional" may not be needed for all graph types
 - Convenience overloads (e.g., `edges(g, uid)`, `degree(g, uid)`) can be added after core implementations
 - The order optimizes for dependency resolution (earlier CPOs are used by later ones)
-
----
-
-**Reference:** Based on `/mnt/d/dev_graph/graph-v2/include/graph/detail/graph_cpo.hpp` structure (implementation details excluded as requested)

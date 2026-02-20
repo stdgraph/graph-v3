@@ -489,7 +489,7 @@ static_assert(std::default_initializable<decltype(vvf)>);  // ✅
 static_assert(std::semiregular<decltype(vvf)>);            // ✅
 ```
 
-See [View Chaining Limitations](../view_chaining_limitations.md) for historical context.
+See [View Chaining](../contributing/view-chaining.md) for historical context.
 
 ## Performance Considerations
 
@@ -784,5 +784,5 @@ for (auto [uid, u] : views::vertexlist(g)) {
 - [Adjacency Lists User Guide](adjacency-lists.md) — concepts, CPOs, descriptors
 - [Containers User Guide](containers.md) — graph container options
 - [Edge Lists User Guide](edge-lists.md) — edge list input for graph construction
-- [CPO Documentation](../cpo.md) — customization point objects
-- [View Chaining Limitations](../view_chaining_limitations.md) — advanced chaining patterns
+- [CPO Reference](../reference/cpo-reference.md) — customization point objects
+- [View Chaining](../contributing/view-chaining.md) — advanced chaining patterns
