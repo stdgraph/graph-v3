@@ -52,61 +52,61 @@ All headers are under `include/graph/algorithm/`.
 
 **Shortest Paths**
 
-| Algorithm | Header | Brief description | Complexity |
-|-----------|--------|-------------------|------------|
-| [Bellman-Ford](algorithms/bellman_ford.md) | `bellman_ford_shortest_paths.hpp` | Shortest paths with negative weights; cycle detection | O(V·E) |
-| [Dijkstra](algorithms/dijkstra.md) | `dijkstra_shortest_paths.hpp` | Single/multi-source shortest paths (non-negative weights) | O((V+E) log V) |
+| Algorithm | Header | Brief description | Time | Space |
+|-----------|--------|-------------------|------|-------|
+| [Bellman-Ford](algorithms/bellman_ford.md) | `bellman_ford_shortest_paths.hpp` | Shortest paths with negative weights; cycle detection | O(V·E) | O(1) |
+| [Dijkstra](algorithms/dijkstra.md) | `dijkstra_shortest_paths.hpp` | Single/multi-source shortest paths (non-negative weights) | O((V+E) log V) | O(V) |
 
 **Traversal**
 
-| Algorithm | Header | Brief description | Complexity |
-|-----------|--------|-------------------|------------|
-| [BFS](algorithms/bfs.md) | `breadth_first_search.hpp` | Level-order traversal from source(s) | O(V+E) |
-| [DFS](algorithms/dfs.md) | `depth_first_search.hpp` | Depth-first traversal with edge classification | O(V+E) |
-| [Topological Sort](algorithms/topological_sort.md) | `topological_sort.hpp` | Linear ordering of DAG vertices | O(V+E) |
+| Algorithm | Header | Brief description | Time | Space |
+|-----------|--------|-------------------|------|-------|
+| [BFS](algorithms/bfs.md) | `breadth_first_search.hpp` | Level-order traversal from source(s) | O(V+E) | O(V) |
+| [DFS](algorithms/dfs.md) | `depth_first_search.hpp` | Depth-first traversal with edge classification | O(V+E) | O(V) |
+| [Topological Sort](algorithms/topological_sort.md) | `topological_sort.hpp` | Linear ordering of DAG vertices | O(V+E) | O(V) |
 
 **Components**
 
-| Algorithm | Header | Brief description | Complexity |
-|-----------|--------|-------------------|------------|
-| [Articulation Points](algorithms/articulation_points.md) | `articulation_points.hpp` | Cut vertices whose removal disconnects the graph | O(V+E) |
-| [Biconnected Components](algorithms/biconnected_components.md) | `biconnected_components.hpp` | Maximal 2-connected subgraphs (Hopcroft-Tarjan) | O(V+E) |
-| [Connected Components](algorithms/connected_components.md) | `connected_components.hpp` | Undirected CC, directed SCC (Kosaraju), union-find (afforest) | O(V+E) |
+| Algorithm | Header | Brief description | Time | Space |
+|-----------|--------|-------------------|------|-------|
+| [Articulation Points](algorithms/articulation_points.md) | `articulation_points.hpp` | Cut vertices whose removal disconnects the graph | O(V+E) | O(V) |
+| [Biconnected Components](algorithms/biconnected_components.md) | `biconnected_components.hpp` | Maximal 2-connected subgraphs (Hopcroft-Tarjan) | O(V+E) | O(V+E) |
+| [Connected Components](algorithms/connected_components.md) | `connected_components.hpp` | Undirected CC, directed SCC (Kosaraju), union-find (afforest) | O(V+E) | O(V) |
 
 **Minimum Spanning Trees**
 
-| Algorithm | Header | Brief description | Complexity |
-|-----------|--------|-------------------|------------|
-| [Kruskal MST](algorithms/mst.md#kruskals-algorithm) | `mst.hpp` | Edge-list-based MST via union-find | O(E log E) |
-| [Prim MST](algorithms/mst.md#prims-algorithm) | `mst.hpp` | Adjacency-list-based MST via priority queue | O(E log V) |
+| Algorithm | Header | Brief description | Time | Space |
+|-----------|--------|-------------------|------|-------|
+| [Kruskal MST](algorithms/mst.md#kruskals-algorithm) | `mst.hpp` | Edge-list-based MST via union-find | O(E log E) | O(E+V) |
+| [Prim MST](algorithms/mst.md#prims-algorithm) | `mst.hpp` | Adjacency-list-based MST via priority queue | O(E log V) | O(V) |
 
 **Analytics**
 
-| Algorithm | Header | Brief description | Complexity |
-|-----------|--------|-------------------|------------|
-| [Jaccard Coefficient](algorithms/jaccard.md) | `jaccard.hpp` | Pairwise neighbor-set similarity per edge | O(V + E·d) |
-| [Label Propagation](algorithms/label_propagation.md) | `label_propagation.hpp` | Community detection via majority-vote labels | O(E) per iter |
-| [Maximal Independent Set](algorithms/mis.md) | `mis.hpp` | Greedy MIS (non-adjacent vertex set) | O(V+E) |
-| [Triangle Count](algorithms/triangle_count.md) | `tc.hpp` | Count 3-cliques via sorted-list intersection | O(m^{3/2}) |
+| Algorithm | Header | Brief description | Time | Space |
+|-----------|--------|-------------------|------|-------|
+| [Jaccard Coefficient](algorithms/jaccard.md) | `jaccard.hpp` | Pairwise neighbor-set similarity per edge | O(V + E·d) | O(V+E) |
+| [Label Propagation](algorithms/label_propagation.md) | `label_propagation.hpp` | Community detection via majority-vote labels | O(E) per iter | O(V) |
+| [Maximal Independent Set](algorithms/mis.md) | `mis.hpp` | Greedy MIS (non-adjacent vertex set) | O(V+E) | O(V) |
+| [Triangle Count](algorithms/triangle_count.md) | `tc.hpp` | Count 3-cliques via sorted-list intersection | O(m^{3/2}) | O(1) |
 
 ### Alphabetical
 
-| Algorithm | Category | Header | Complexity |
-|-----------|----------|--------|------------|
-| [Articulation Points](algorithms/articulation_points.md) | Components | `articulation_points.hpp` | O(V+E) |
-| [Bellman-Ford](algorithms/bellman_ford.md) | Shortest Paths | `bellman_ford_shortest_paths.hpp` | O(V·E) |
-| [BFS](algorithms/bfs.md) | Traversal | `breadth_first_search.hpp` | O(V+E) |
-| [Biconnected Components](algorithms/biconnected_components.md) | Components | `biconnected_components.hpp` | O(V+E) |
-| [Connected Components](algorithms/connected_components.md) | Components | `connected_components.hpp` | O(V+E) |
-| [DFS](algorithms/dfs.md) | Traversal | `depth_first_search.hpp` | O(V+E) |
-| [Dijkstra](algorithms/dijkstra.md) | Shortest Paths | `dijkstra_shortest_paths.hpp` | O((V+E) log V) |
-| [Jaccard Coefficient](algorithms/jaccard.md) | Analytics | `jaccard.hpp` | O(V + E·d) |
-| [Kruskal MST](algorithms/mst.md#kruskals-algorithm) | MST | `mst.hpp` | O(E log E) |
-| [Label Propagation](algorithms/label_propagation.md) | Analytics | `label_propagation.hpp` | O(E) per iter |
-| [Maximal Independent Set](algorithms/mis.md) | Analytics | `mis.hpp` | O(V+E) |
-| [Prim MST](algorithms/mst.md#prims-algorithm) | MST | `mst.hpp` | O(E log V) |
-| [Topological Sort](algorithms/topological_sort.md) | Traversal | `topological_sort.hpp` | O(V+E) |
-| [Triangle Count](algorithms/triangle_count.md) | Analytics | `tc.hpp` | O(m^{3/2}) |
+| Algorithm | Category | Header | Time | Space |
+|-----------|----------|--------|------|-------|
+| [Articulation Points](algorithms/articulation_points.md) | Components | `articulation_points.hpp` | O(V+E) | O(V) |
+| [Bellman-Ford](algorithms/bellman_ford.md) | Shortest Paths | `bellman_ford_shortest_paths.hpp` | O(V·E) | O(1) |
+| [BFS](algorithms/bfs.md) | Traversal | `breadth_first_search.hpp` | O(V+E) | O(V) |
+| [Biconnected Components](algorithms/biconnected_components.md) | Components | `biconnected_components.hpp` | O(V+E) | O(V+E) |
+| [Connected Components](algorithms/connected_components.md) | Components | `connected_components.hpp` | O(V+E) | O(V) |
+| [DFS](algorithms/dfs.md) | Traversal | `depth_first_search.hpp` | O(V+E) | O(V) |
+| [Dijkstra](algorithms/dijkstra.md) | Shortest Paths | `dijkstra_shortest_paths.hpp` | O((V+E) log V) | O(V) |
+| [Jaccard Coefficient](algorithms/jaccard.md) | Analytics | `jaccard.hpp` | O(V + E·d) | O(V+E) |
+| [Kruskal MST](algorithms/mst.md#kruskals-algorithm) | MST | `mst.hpp` | O(E log E) | O(E+V) |
+| [Label Propagation](algorithms/label_propagation.md) | Analytics | `label_propagation.hpp` | O(E) per iter | O(V) |
+| [Maximal Independent Set](algorithms/mis.md) | Analytics | `mis.hpp` | O(V+E) | O(V) |
+| [Prim MST](algorithms/mst.md#prims-algorithm) | MST | `mst.hpp` | O(E log V) | O(V) |
+| [Topological Sort](algorithms/topological_sort.md) | Traversal | `topological_sort.hpp` | O(V+E) | O(V) |
+| [Triangle Count](algorithms/triangle_count.md) | Analytics | `tc.hpp` | O(m^{3/2}) | O(1) |
 
 ---
 
@@ -118,7 +118,7 @@ Finds single-source or multi-source shortest paths in a graph with **non-negativ
 edge weights using a binary-heap priority queue. Provides both `dijkstra_shortest_paths`
 (distances + predecessors) and `dijkstra_shortest_distances` (distances only) variants.
 
-**Complexity:** O((V+E) log V) — **Header:** `dijkstra_shortest_paths.hpp`
+**Time:** O((V+E) log V) — **Space:** O(V) — **Header:** `dijkstra_shortest_paths.hpp`
 
 ### [Bellman-Ford Shortest Paths](algorithms/bellman_ford.md)
 
@@ -126,7 +126,7 @@ Finds shortest paths supporting **negative edge weights** and detects negative-w
 cycles. Returns `std::optional<vertex_id_t<G>>` — empty if no negative cycle, or a
 vertex on the cycle. Use `find_negative_cycle` to extract the full cycle path.
 
-**Complexity:** O(V·E) — **Header:** `bellman_ford_shortest_paths.hpp`
+**Time:** O(V·E) — **Space:** O(1) — **Header:** `bellman_ford_shortest_paths.hpp`
 
 ---
 
@@ -138,7 +138,7 @@ Explores vertices in level-order (FIFO) from one or more sources. Entirely
 **visitor-driven** — you provide callback methods for vertex/edge events. Supports
 single-source and multi-source variants.
 
-**Complexity:** O(V+E) — **Header:** `breadth_first_search.hpp`
+**Time:** O(V+E) — **Space:** O(V) — **Header:** `breadth_first_search.hpp`
 
 ### [Depth-First Search](algorithms/dfs.md)
 
@@ -146,7 +146,7 @@ Performs iterative DFS with three-color marking (White/Gray/Black), enabling pre
 **edge classification** into tree, back, and forward/cross edges. Foundation for cycle
 detection, topological sorting, and SCC discovery.
 
-**Complexity:** O(V+E) — **Header:** `depth_first_search.hpp`
+**Time:** O(V+E) — **Space:** O(V) — **Header:** `depth_first_search.hpp`
 
 ### [Topological Sort](algorithms/topological_sort.md)
 
@@ -154,7 +154,7 @@ Produces a linear ordering of vertices in a DAG such that for every edge (u,v),
 u appears before v. Returns `bool` — `false` if a cycle is detected. Supports
 full-graph, single-source, and multi-source variants.
 
-**Complexity:** O(V+E) — **Header:** `topological_sort.hpp`
+**Time:** O(V+E) — **Space:** O(V) — **Header:** `topological_sort.hpp`
 
 ---
 
@@ -166,7 +166,7 @@ Three algorithms in one header: `connected_components` (DFS-based, undirected),
 `kosaraju` (two-pass DFS for directed SCC, requires transpose graph), and
 `afforest` (union-find with neighbor sampling, parallel-friendly).
 
-**Complexity:** O(V+E) — **Header:** `connected_components.hpp`
+**Time:** O(V+E) — **Space:** O(V) — **Header:** `connected_components.hpp`
 
 ### [Biconnected Components](algorithms/biconnected_components.md)
 
@@ -174,7 +174,7 @@ Finds all maximal 2-connected subgraphs using the iterative Hopcroft-Tarjan
 algorithm. Articulation points appear in multiple components; bridges form their
 own 2-vertex components.
 
-**Complexity:** O(V+E) — **Header:** `biconnected_components.hpp`
+**Time:** O(V+E) — **Space:** O(V+E) — **Header:** `biconnected_components.hpp`
 
 ### [Articulation Points](algorithms/articulation_points.md)
 
@@ -182,7 +182,7 @@ Finds cut vertices whose removal disconnects the graph, using the iterative
 Hopcroft-Tarjan algorithm with discovery times and low-link values. Each
 articulation point is emitted exactly once.
 
-**Complexity:** O(V+E) — **Header:** `articulation_points.hpp`
+**Time:** O(V+E) — **Space:** O(V) — **Header:** `articulation_points.hpp`
 
 ---
 
@@ -194,14 +194,14 @@ Edge-list-based MST using sort + union-find. Returns `{total_weight, num_compone
 Includes `inplace_kruskal` variant that sorts input in-place. Pass `std::greater<>{}`
 for maximum spanning tree.
 
-**Complexity:** O(E log E) — **Header:** `mst.hpp`
+**Time:** O(E log E) — **Space:** O(E+V) — **Header:** `mst.hpp`
 
 ### [Prim's Algorithm](algorithms/mst.md#prims-algorithm)
 
 Adjacency-list-based MST using a priority queue. Grows the MST from a seed vertex,
 filling predecessor and weight arrays. Returns total MST weight.
 
-**Complexity:** O(E log V) — **Header:** `mst.hpp`
+**Time:** O(E log V) — **Space:** O(V) — **Header:** `mst.hpp`
 
 ---
 
@@ -213,7 +213,7 @@ Counts 3-cliques via merge-based sorted-list intersection. Requires adjacency li
 sorted by target ID (`ordered_vertex_edges` concept). Works with sorted-edge
 containers (`vos`, `dos`) and `undirected_adjacency_list`.
 
-**Complexity:** O(m^{3/2}) — **Header:** `tc.hpp`
+**Time:** O(m^{3/2}) — **Space:** O(1) — **Header:** `tc.hpp`
 
 ### [Maximal Independent Set](algorithms/mis.md)
 
@@ -221,7 +221,7 @@ Greedy MIS — finds a maximal set of non-adjacent vertices starting from a seed
 Result is seed-dependent (different seeds may yield different-sized sets). Self-loops
 exclude a vertex from the MIS.
 
-**Complexity:** O(V+E) — **Header:** `mis.hpp`
+**Time:** O(V+E) — **Space:** O(V) — **Header:** `mis.hpp`
 
 ### [Jaccard Coefficient](algorithms/jaccard.md)
 
@@ -229,7 +229,7 @@ Computes pairwise neighbor-set similarity $J(u,v) = |N(u) \cap N(v)| / |N(u) \cu
 for every directed edge. Callback-driven — invokes a user-provided callable for each
 edge with its coefficient in [0.0, 1.0].
 
-**Complexity:** O(V + E·d) — **Header:** `jaccard.hpp`
+**Time:** O(V + E·d) — **Space:** O(V+E) — **Header:** `jaccard.hpp`
 
 ### [Label Propagation](algorithms/label_propagation.md)
 
@@ -237,7 +237,7 @@ Community detection via iterative majority-vote label propagation. Each vertex a
 the most frequent label among its neighbors until convergence. Supports partial
 labeling via an empty-label sentinel. Tie-breaking is random.
 
-**Complexity:** O(E) per iteration — **Header:** `label_propagation.hpp`
+**Time:** O(E) per iteration — **Space:** O(V) — **Header:** `label_propagation.hpp`
 
 ---
 
