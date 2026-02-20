@@ -553,9 +553,9 @@ The current header includes 6 non-existent paths. The mapping from broken → re
     7. **See also** — link to `reference/adjacency-list-interface.md`
   - **Verify:** File exists; concept names match code; CPO names match code.
 
-### 3.3 Edge lists user guide
+### 3.3 Edge lists user guide 
 
-- [ ] **3.3.1** `READ` Gather edge list surface area
+- [x] **3.3.1** `READ` Gather edge list surface area
   - **Depends:** —
   - **Risk:** low
   - **Action:** Read these files:
@@ -566,7 +566,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
     - `tests/edge_list/test_edge_list_integration.cpp` — integration examples
     - `docs/container_interface.md` — existing edge list section (note: terminology drift!)
 
-- [ ] **3.3.2** `CREATE` `docs/user-guide/edge-lists.md`
+- [x] **3.3.2** `CREATE` `docs/user-guide/edge-lists.md`
   - **Depends:** 3.3.1
   - **Risk:** low
   - **Action:** Write user-facing guide. Structure:
@@ -588,7 +588,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
   - **Action:** Read header files:
     - `include/graph/container/dynamic_graph.hpp` — template params, construction
     - `include/graph/container/compressed_graph.hpp` — CSR layout, construction
-    - `include/graph/container/undirected_adjacency_list.hpp` — dual-linked construction
+    - `include/graph/container/undirected_adjacency_list.hpp` — dual-linked construction using intrusive lists
     - `include/graph/container/container_utility.hpp` — shared utilities
     - List all 26 trait files in `include/graph/container/traits/`
 
