@@ -3,6 +3,7 @@
 > [← Back to Algorithm Catalog](../algorithms.md)
 
 - [Overview](#overview)
+- [When to Use](#when-to-use)
 - [Include](#include)
 - [Signatures](#signatures)
 - [Parameters](#parameters)
@@ -11,7 +12,8 @@
   - [Level-Order Traversal](#example-1-level-order-traversal)
   - [Multi-Source BFS](#example-2-multi-source-bfs)
   - [Computing Distances (Unweighted)](#example-3-computing-distances-unweighted)
-  - [Counting Events with a Visitor](#example-4-counting-events-with-a-visitor)
+  - [Connected Component Discovery](#example-4-connected-component-discovery)
+  - [Counting Events with a Visitor](#example-5-counting-events-with-a-visitor)
 - [Complexity](#complexity)
 - [Preconditions](#preconditions)
 - [See Also](#see-also)
@@ -28,6 +30,27 @@ discovery, and level-based graph analysis.
 
 The graph must satisfy `index_adjacency_list<G>` — vertices are stored in a
 contiguous, integer-indexed random-access range.
+
+> **Note:** Unlike [DFS](dfs.md), BFS does **not** classify edges (no tree/back/
+> forward edge events). If you need edge classification, use DFS instead.
+
+## When to Use
+
+- **Unweighted shortest paths** — BFS finds shortest hop-count distances in
+  O(V+E), optimal for unweighted graphs.
+- **Level-order traversal** — vertices are visited in increasing order of
+  distance from the source.
+- **Connected components** — start BFS from an unvisited vertex to discover its
+  component (though the dedicated [connected_components](connected_components.md)
+  algorithm is more convenient).
+- **Multi-source queries** — start from multiple roots simultaneously to find
+  nearest sources.
+
+**Not suitable when:**
+
+- Edges have weights → use [Dijkstra](dijkstra.md) or
+  [Bellman-Ford](bellman_ford.md).
+- You need edge classification (tree/back/cross) → use [DFS](dfs.md).
 
 ## Include
 
@@ -53,9 +76,14 @@ void breadth_first_search(G&& g, vertex_id_t<G> source,
 |-----------|-------------|
 | `g` | Graph satisfying `index_adjacency_list` |
 | `source` / `sources` | Source vertex ID or range of source vertex IDs |
-| `visitor` | Optional visitor struct with callback methods (see below) |
+| `visitor` | Optional visitor struct with callback methods (see below). Default: `empty_visitor{}`. |
 
 ## Visitor Events
+
+BFS supports an optional visitor with the following callbacks. Each vertex event
+also has an `_id` variant that receives `vertex_id_t<G>` instead of a vertex
+reference (e.g., `on_discover_vertex_id(g, uid)`). You only need to define the
+events you care about — missing methods are silently skipped.
 
 | Event | Called when |
 |-------|------------|
@@ -65,14 +93,12 @@ void breadth_first_search(G&& g, vertex_id_t<G> source,
 | `on_examine_edge(g, uv)` | Outgoing edge examined during vertex processing |
 | `on_finish_vertex(g, u)` | All adjacent edges of vertex explored |
 
-Each event also has an `_id` variant that receives `vertex_id_t<G>` instead
-of vertex/edge references.
-
 ## Examples
 
 ### Example 1: Level-Order Traversal
 
-Record the order in which vertices are discovered.
+Record the order in which vertices are discovered — this is always in
+non-decreasing order of distance from the source.
 
 ```cpp
 #include <graph/algorithm/breadth_first_search.hpp>
@@ -82,6 +108,9 @@ Record the order in which vertices are discovered.
 using Graph = container::dynamic_graph<void, void, void, uint32_t, false,
     container::vov_graph_traits<void>>;
 
+//   0 → 1 → 3
+//   ↓   ↓
+//   2 → 3 → 4
 Graph g({{0, 1}, {0, 2}, {1, 3}, {2, 3}, {3, 4}});
 
 struct DiscoveryOrder {
@@ -94,6 +123,7 @@ struct DiscoveryOrder {
 std::vector<uint32_t> order;
 breadth_first_search(g, 0u, DiscoveryOrder{order});
 // order = {0, 1, 2, 3, 4}  (level-order from vertex 0)
+// Level 0: {0}, Level 1: {1, 2}, Level 2: {3}, Level 3: {4}
 ```
 
 ### Example 2: Multi-Source BFS
@@ -123,9 +153,6 @@ BFS naturally computes shortest hop-count distances in unweighted graphs.
 struct DistanceRecorder {
     std::vector<int>& dist;
 
-    void on_discover_vertex(const auto& g, const auto& u) {
-        // Source vertex already set to 0
-    }
     void on_examine_edge(const auto& g, const auto& uv) {
         auto uid = source_id(g, uv);
         auto vid = target_id(g, uv);
@@ -136,12 +163,43 @@ struct DistanceRecorder {
 };
 
 std::vector<int> dist(num_vertices(g), -1);
-dist[0] = 0;
+dist[0] = 0;  // source distance = 0
 breadth_first_search(g, 0u, DistanceRecorder{dist});
 // dist[v] = shortest hop count from vertex 0 to v, or -1 if unreachable
 ```
 
-### Example 4: Counting Events with a Visitor
+### Example 4: Connected Component Discovery
+
+Use BFS to discover all vertices in a component, then repeat for unvisited
+vertices to find all components of a disconnected graph.
+
+```cpp
+// Disconnected graph: {0,1,2} and {3,4}
+Graph g({{0, 1}, {1, 0}, {1, 2}, {2, 1}, {3, 4}, {4, 3}});
+
+struct ComponentLabeler {
+    std::vector<int>& component;
+    int current_label;
+    void on_discover_vertex(const auto& g, const auto& u) {
+        component[vertex_id(g, u)] = current_label;
+    }
+};
+
+size_t n = num_vertices(g);
+std::vector<int> component(n, -1);
+int label = 0;
+
+for (uint32_t v = 0; v < n; ++v) {
+    if (component[v] < 0) {
+        breadth_first_search(g, v, ComponentLabeler{component, label});
+        ++label;
+    }
+}
+// component = {0, 0, 0, 1, 1}  — two components found
+// For a dedicated algorithm, see connected_components.md
+```
+
+### Example 5: Counting Events with a Visitor
 
 Track how many times each event fires — useful for testing and debugging.
 
@@ -159,8 +217,10 @@ struct CountingVisitor {
 
 CountingVisitor vis;
 breadth_first_search(g, 0u, vis);
-// vis.discovered == num reachable vertices
+// vis.discovered == num reachable vertices from source
 // vis.edges_examined == num edges explored
+// vis.finished == vis.examined == vis.discovered (every discovered vertex
+//   is eventually examined and finished)
 ```
 
 ## Complexity
@@ -168,7 +228,7 @@ breadth_first_search(g, 0u, vis);
 | Metric | Value |
 |--------|-------|
 | Time | O(V + E) |
-| Space | O(V) for the color map and queue |
+| Space | O(V) for the visited array and queue |
 
 ## Preconditions
 
@@ -178,6 +238,7 @@ breadth_first_search(g, 0u, vis);
 ## See Also
 
 - [DFS](dfs.md) — depth-first traversal with edge classification
+- [Dijkstra](dijkstra.md) — weighted shortest paths
 - [Views User Guide](../views.md) — `vertices_bfs` / `edges_bfs` lazy view wrappers
 - [Algorithm Catalog](../algorithms.md) — full list of algorithms
 - [test_breadth_first_search.cpp](../../../tests/algorithms/test_breadth_first_search.cpp) — test suite

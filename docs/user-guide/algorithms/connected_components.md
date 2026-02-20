@@ -3,6 +3,7 @@
 > [← Back to Algorithm Catalog](../algorithms.md)
 
 - [Overview](#overview)
+- [When to Use](#when-to-use)
 - [Include](#include)
 - [Algorithms](#algorithms)
   - [`connected_components` — undirected](#connected_components--undirected)
@@ -14,6 +15,8 @@
   - [Strongly Connected Components (Kosaraju)](#example-2-strongly-connected-components-kosaraju)
   - [Union-Find Components (Afforest)](#example-3-union-find-components-afforest)
   - [Undirected Adjacency List](#example-4-undirected-adjacency-list)
+  - [Counting Components and Sizes](#example-5-counting-components-and-sizes)
+  - [Compressing Afforest Component IDs](#example-6-compressing-afforest-component-ids)
 - [Complexity](#complexity)
 - [Preconditions](#preconditions)
 - [See Also](#see-also)
@@ -33,6 +36,22 @@ integer-indexed random-access range.
 
 All three fill a `component` array where `component[v]` is the component ID for
 vertex v.
+
+## When to Use
+
+- **`connected_components`** — simple and efficient for undirected graphs. Returns
+  the number of components directly.
+- **`kosaraju`** — when you need strongly connected components of a directed
+  graph. Requires constructing the transpose graph (all edges reversed).
+- **`afforest`** — when working with large graphs or when you intend to
+  parallelize later. Uses union-find with neighbor sampling, which has good
+  cache behavior on large inputs.
+
+**Not suitable when:**
+
+- You need biconnected components or articulation points → use
+  [biconnected_components](biconnected_components.md) or
+  [articulation_points](articulation_points.md).
 
 ## Include
 
@@ -73,16 +92,24 @@ void afforest(G&& g, GT&& g_transpose, Component& component,
 Union-find-based algorithm with neighbor sampling for large or parallel-friendly
 workloads. The `neighbor_rounds` parameter controls how many initial sampling
 rounds are performed before falling back to full edge iteration. Call
-`compress(component)` afterwards for canonical (root) component IDs.
+`compress(component)` afterwards for canonical (root) component IDs on a
+single-machine.
+
+The two-graph variant accepts a transpose `g_transpose` for directed-graph
+support. The transpose only needs to satisfy `adjacency_list` (not necessarily
+`index_adjacency_list`).
 
 ## Parameters
 
 | Parameter | Description |
 |-----------|-------------|
 | `g` | Graph satisfying `index_adjacency_list` |
-| `g_transpose` | Transpose graph (for `kosaraju` and `afforest` with transpose) |
+| `g_transpose` | Transpose graph (for `kosaraju` and `afforest` with transpose). `kosaraju` requires `index_adjacency_list`; `afforest` requires `adjacency_list`. |
 | `component` | Random-access range sized to `num_vertices(g)`. Filled with component IDs. |
 | `neighbor_rounds` | Number of neighbor-sampling rounds for `afforest` (default: 2) |
+
+**Return value (`connected_components` only):** `size_t` — number of connected
+components. `kosaraju` and `afforest` return `void`.
 
 ## Examples
 
@@ -129,7 +156,7 @@ std::vector<uint32_t> comp(num_vertices(g));
 kosaraju(g, g_t, comp);
 
 // comp[0] == comp[1] == comp[2]  (cycle forms an SCC)
-// comp[3] != comp[0]             (3 is its own SCC)
+// comp[3] != comp[0]             (3 is its own SCC — not on any cycle)
 ```
 
 ### Example 3: Union-Find Components (Afforest)
@@ -140,8 +167,8 @@ Afforest is suitable for large graphs and parallel-friendly workloads.
 std::vector<uint32_t> comp(num_vertices(g));
 afforest(g, comp, 2);  // 2 neighbor-sampling rounds (default)
 
-// comp[v] may not be canonical — compress for root IDs
-// Component IDs are valid for equality testing without compression
+// comp[v] gives a component representative — vertices in the same
+// component have the same value. Call compress() for canonical root IDs.
 ```
 
 ### Example 4: Undirected Adjacency List
@@ -158,7 +185,51 @@ std::vector<uint32_t> comp(num_vertices(g));
 size_t num_cc = connected_components(g, comp);
 
 // num_cc == 2
-// Same results as vov_void with bidirectional edges
+// Same results as vov with bidirectional edges, but simpler construction
+```
+
+### Example 5: Counting Components and Sizes
+
+After computing components, gather per-component statistics.
+
+```cpp
+// After running connected_components(g, comp) ...
+
+size_t n = num_vertices(g);
+std::map<uint32_t, size_t> component_sizes;
+for (size_t v = 0; v < n; ++v) {
+    ++component_sizes[comp[v]];
+}
+
+// Find the largest component
+auto largest = std::max_element(component_sizes.begin(), component_sizes.end(),
+    [](const auto& a, const auto& b) { return a.second < b.second; });
+
+std::cout << "Largest component has " << largest->second << " vertices\n";
+
+// List vertices in each component
+for (const auto& [id, size] : component_sizes) {
+    std::cout << "Component " << id << ": " << size << " vertices\n";
+}
+```
+
+### Example 6: Compressing Afforest Component IDs
+
+After `afforest`, component IDs may use intermediate representatives rather than
+root IDs. Call `compress()` to canonicalize them.
+
+```cpp
+std::vector<uint32_t> comp(num_vertices(g));
+afforest(g, comp);
+
+// Before compress: comp values are valid for equality testing
+// (comp[u] == comp[v] iff same component) but may not be root IDs
+
+compress(comp);
+
+// After compress: comp[v] is the canonical root representative
+// for vertex v's component. Still valid for equality testing
+// and now consistent across all vertices.
 ```
 
 ## Complexity

@@ -3,6 +3,7 @@
 > [← Back to Algorithm Catalog](../algorithms.md)
 
 - [Overview](#overview)
+- [When to Use](#when-to-use)
 - [Include](#include)
 - [Signatures](#signatures)
 - [Parameters](#parameters)
@@ -11,8 +12,11 @@
   - [Majority-Vote Convergence](#example-2-majority-vote-convergence)
   - [Partial Labels with Empty Sentinel](#example-3-partial-labels-with-empty-sentinel)
   - [Controlling Iterations](#example-4-controlling-iterations)
+  - [Disconnected Graph — Natural Communities](#example-5-disconnected-graph--natural-communities)
+  - [Reproducibility with Fixed RNG Seed](#example-6-reproducibility-with-fixed-rng-seed)
 - [Complexity](#complexity)
 - [Preconditions](#preconditions)
+- [Notes](#notes)
 - [See Also](#see-also)
 
 ## Overview
@@ -29,9 +33,33 @@ Key behaviors:
 
 - **Tie-breaking** is random, controlled by the caller-supplied RNG.
 - **Vertex processing order** is shuffled each iteration to avoid bias.
+- **Self-loops ARE counted** in the neighbor tally — a vertex with a self-loop
+  effectively votes for its own current label, making it more resistant to
+  label change.
 - An optional **empty label sentinel** allows starting with partially-labeled
   graphs — unlabeled vertices don't vote and propagate nothing until they
   receive a label.
+
+## When to Use
+
+- **Community detection** — discover densely connected groups in social
+  networks, biological networks, or any graph with community structure.
+- **Semi-supervised classification** — use partial labels (empty sentinel) to
+  propagate known categories to unlabeled vertices.
+- **Fast clustering** — label propagation is near-linear and often converges in
+  fewer than 10 iterations, making it practical for large graphs where
+  spectral methods are too expensive.
+
+**Consider alternatives when:**
+
+- You need a **fixed, deterministic** partition — label propagation results
+  depend on RNG and processing order. Run it multiple times and pick the best
+  result, or use a deterministic algorithm.
+- You need **hierarchical communities** — label propagation produces flat
+  partitions. Consider Louvain-like approaches (not in this library).
+- You need structural **components** — use
+  [connected_components](connected_components.md) for connectivity, not
+  community structure.
 
 ## Include
 
@@ -101,7 +129,7 @@ label_propagation(g, label, rng);
 ### Example 2: Majority-Vote Convergence
 
 When most vertices in a clique share a label, the minority converges to the
-majority.
+majority. This illustrates the "densely-connected wins" principle.
 
 ```cpp
 // K4: vertices 0, 1, 2, 3 — all connected to all
@@ -121,16 +149,21 @@ label_propagation(k4, label, rng);
 ### Example 3: Partial Labels with Empty Sentinel
 
 Start with only some vertices labeled. Unlabeled vertices (sentinel value −1)
-don't vote until they receive a label from a neighbor.
+don't vote until they receive a label from a neighbor. This enables
+**semi-supervised** community assignment.
 
 ```cpp
+// Two cliques with bridge: {0,1,2} — bridge — {3,4,5}
+// Only vertex 0 and vertex 5 are initially labeled
 std::vector<int> label = {42, -1, -1, -1, -1, 99};
 
 std::mt19937 rng{42};
 label_propagation(g, label, -1, rng);
 
-// Labels propagate from initially-labeled vertices outward
-// Vertices near 0 adopt label 42, vertices near 5 adopt label 99
+// Labels propagate outward from initially-labeled vertices:
+//   42 spreads to vertices 1, 2 (close to vertex 0)
+//   99 spreads to vertices 3, 4 (close to vertex 5)
+// Final: label ≈ {42, 42, 42, 99, 99, 99}
 ```
 
 ### Example 4: Controlling Iterations
@@ -144,11 +177,64 @@ std::iota(label.begin(), label.end(), 0u);
 std::mt19937 rng{42};
 label_propagation(g, label, rng, 1);  // single iteration
 
-// After just 1 iteration, some vertices may not have converged yet
-// Run more iterations for finer community structure
+// After just 1 iteration, some vertices may not have converged yet.
+// Useful for:
+//   - Debugging (inspect label state after each step)
+//   - Latency-sensitive settings (get a rough partition quickly)
+//   - Monitoring convergence behavior
 
-label_propagation(g, label, rng, 0);  // 0 iterations = no change
-// label unchanged
+// Re-running continues from current labels:
+label_propagation(g, label, rng, 5);  // 5 more iterations
+// Labels refine further; often converges within these additional rounds
+```
+
+### Example 5: Disconnected Graph — Natural Communities
+
+Disconnected components naturally form separate communities since labels
+cannot propagate across missing edges.
+
+```cpp
+// Component A: triangle {0,1,2}
+// Component B: path {3,4,5}
+// No edges between components
+Graph g({{0,1},{1,0}, {0,2},{2,0}, {1,2},{2,1},
+         {3,4},{4,3}, {4,5},{5,4}});
+
+std::vector<uint32_t> label(num_vertices(g));
+std::iota(label.begin(), label.end(), 0u);
+
+std::mt19937 rng{42};
+label_propagation(g, label, rng);
+
+// label[0] == label[1] == label[2]  (one community)
+// label[3] == label[4] == label[5]  (another community)
+// The two communities correspond exactly to connected components here.
+// In connected graphs, LP may find richer structure than CC.
+```
+
+### Example 6: Reproducibility with Fixed RNG Seed
+
+Label propagation is non-deterministic due to random tie-breaking and
+shuffle order. Use a fixed seed for reproducible results across runs.
+
+```cpp
+auto run_lp = [&](unsigned seed) {
+    std::vector<uint32_t> label(num_vertices(g));
+    std::iota(label.begin(), label.end(), 0u);
+    std::mt19937 rng{seed};
+    label_propagation(g, label, rng);
+    return label;
+};
+
+auto labels_a = run_lp(42);
+auto labels_b = run_lp(42);
+assert(labels_a == labels_b);  // same seed → same result
+
+auto labels_c = run_lp(123);
+// labels_c may differ from labels_a — different tie-breaking choices
+
+// For robust community detection, run LP with multiple seeds and pick
+// the partition with the highest modularity.
 ```
 
 ## Complexity
@@ -159,7 +245,8 @@ label_propagation(g, label, rng, 0);  // 0 iterations = no change
 | Space | O(V) auxiliary (shuffle buffer, frequency counts) |
 
 Typically converges in a small number of iterations (often < 10) for
-real-world graphs.
+real-world graphs. Worst-case iteration count is unbounded but rare in
+practice.
 
 ## Preconditions
 
@@ -169,6 +256,18 @@ real-world graphs.
 - The RNG must satisfy `UniformRandomBitGenerator`.
 - With `empty_label` sentinel: vertices with the sentinel label don't vote.
   If all vertices start with the sentinel, no propagation occurs.
+
+## Notes
+
+- **Self-loops ARE counted** in the neighbor tally. A vertex with a self-loop
+  counts its own label as one neighbor vote. This makes self-looped vertices
+  "stickier" — more resistant to label change. This is different from
+  [Jaccard coefficient](jaccard.md), which skips self-loops.
+- **Convergence:** the algorithm terminates when no vertex changes its label
+  in an iteration. This is not guaranteed to happen — use `max_iters` as a
+  safety bound for production use.
+- **Label type:** labels can be any equality-comparable, hashable type (they're
+  used in frequency counting). Integers are most common.
 
 ## See Also
 

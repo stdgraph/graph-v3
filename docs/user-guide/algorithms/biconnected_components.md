@@ -3,6 +3,7 @@
 > [← Back to Algorithm Catalog](../algorithms.md)
 
 - [Overview](#overview)
+- [When to Use](#when-to-use)
 - [Include](#include)
 - [Signature](#signature)
 - [Parameters](#parameters)
@@ -10,6 +11,8 @@
   - [Finding Biconnected Components](#example-1-finding-biconnected-components)
   - [Bridge Detection](#example-2-bridge-detection)
   - [Identifying Articulation Points](#example-3-identifying-articulation-points)
+  - [Complete Graph — Single Component](#example-4-complete-graph--single-component)
+  - [Disconnected Graph with Isolated Vertices](#example-5-disconnected-graph-with-isolated-vertices)
 - [Complexity](#complexity)
 - [Preconditions](#preconditions)
 - [See Also](#see-also)
@@ -30,6 +33,26 @@ Key properties of the output:
 - **Articulation points** appear in multiple biconnected components.
 - A **bridge** (cut edge) forms its own 2-vertex biconnected component.
 - A single edge between two non-articulation vertices forms a component.
+- **Isolated vertices** are emitted as single-vertex components.
+
+## When to Use
+
+- **Network reliability analysis** — identify parts of a network that survive
+  any single-node failure. A biconnected component has at least two
+  vertex-disjoint paths between every pair of vertices.
+- **Bridge detection** — bridges are biconnected components with exactly 2
+  vertices (representing a single edge whose removal disconnects the graph).
+- **Finding articulation points indirectly** — vertices appearing in multiple
+  biconnected components are articulation points (though the dedicated
+  [articulation_points](articulation_points.md) algorithm is simpler if that's
+  all you need).
+
+**Not suitable when:**
+
+- You only need connected components → use
+  [connected_components](connected_components.md).
+- You only need articulation points → use
+  [articulation_points](articulation_points.md).
 
 ## Include
 
@@ -87,17 +110,20 @@ biconnected_components(g, components);
 
 ### Example 2: Bridge Detection
 
-Bridges are biconnected components with exactly 2 vertices.
+Bridges are biconnected components with exactly 2 vertices — they represent
+a single edge whose removal disconnects the graph.
 
 ```cpp
 std::vector<std::vector<uint32_t>> components;
 biconnected_components(g, components);
 
+std::cout << "Bridges:\n";
 for (const auto& comp : components) {
     if (comp.size() == 2) {
-        std::cout << "Bridge: " << comp[0] << " — " << comp[1] << "\n";
+        std::cout << "  " << comp[0] << " — " << comp[1] << "\n";
     }
 }
+// Output: Bridge: 2 — 3
 ```
 
 ### Example 3: Identifying Articulation Points
@@ -119,8 +145,47 @@ for (uint32_t v = 0; v < count.size(); ++v) {
     if (count[v] >= 2)
         std::cout << "Articulation point: " << v << "\n";
 }
+// Output: Articulation point: 2, Articulation point: 3
 
 // For a dedicated algorithm, see articulation_points.md
+```
+
+### Example 4: Complete Graph — Single Component
+
+A complete graph (K_n) is itself biconnected — removing any single vertex
+still leaves a connected graph.
+
+```cpp
+// K4: complete graph on 4 vertices
+Graph k4({{0,1},{1,0}, {0,2},{2,0}, {0,3},{3,0},
+          {1,2},{2,1}, {1,3},{3,1}, {2,3},{3,2}});
+
+std::vector<std::vector<uint32_t>> components;
+biconnected_components(k4, components);
+
+// components.size() == 1  — the entire graph is one biconnected component
+// components[0] = {0, 1, 2, 3}
+// No articulation points, no bridges
+```
+
+### Example 5: Disconnected Graph with Isolated Vertices
+
+Isolated vertices form their own single-vertex components. Disconnected
+subgraphs are processed independently.
+
+```cpp
+// Disconnected: triangle {0,1,2}, isolated vertex 3, edge {4,5}
+Graph g({{0,1},{1,0}, {1,2},{2,1}, {0,2},{2,0},
+         {4,5},{5,4}});
+// Vertex 3 has no edges
+
+std::vector<std::vector<uint32_t>> components;
+biconnected_components(g, components);
+
+// components contains:
+//   {0, 1, 2}  — the triangle
+//   {3}        — isolated vertex
+//   {4, 5}     — the single edge (a "bridge" with no further structure)
 ```
 
 ## Complexity
