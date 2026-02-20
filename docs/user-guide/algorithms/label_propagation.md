@@ -22,6 +22,9 @@ with a label (typically its own vertex ID), and in each iteration, every vertex
 adopts the most frequent label among its neighbors (majority vote). The process
 repeats until convergence or a maximum iteration count is reached.
 
+The graph must satisfy `index_adjacency_list<G>` — vertices are stored in a
+contiguous, integer-indexed random-access range.
+
 Key behaviors:
 
 - **Tie-breaking** is random, controlled by the caller-supplied RNG.

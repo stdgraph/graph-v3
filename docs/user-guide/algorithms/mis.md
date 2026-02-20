@@ -20,6 +20,9 @@ Finds a **maximal independent set** (MIS) — a set of non-adjacent vertices
 that cannot be extended by adding any other vertex without violating the
 independence property.
 
+The graph must satisfy `index_adjacency_list<G>` — vertices are stored in a
+contiguous, integer-indexed random-access range.
+
 The algorithm is **greedy**: starting from a seed vertex, it includes that
 vertex in the MIS, marks all its neighbors as excluded, and repeats for
 remaining unmarked vertices in order.

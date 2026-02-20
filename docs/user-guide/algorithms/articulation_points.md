@@ -20,6 +20,9 @@ An **articulation point** (cut vertex) is a vertex whose removal disconnects the
 graph (or increases the number of connected components). The algorithm uses the
 iterative **Hopcroft-Tarjan** approach with discovery times and low-link values.
 
+The graph must satisfy `index_adjacency_list<G>` — vertices are stored in a
+contiguous, integer-indexed random-access range.
+
 Each articulation point is emitted exactly once to the output iterator, though
 the order is unspecified.
 

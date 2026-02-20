@@ -21,6 +21,9 @@ single vertex is removed. The algorithm uses the iterative **Hopcroft-Tarjan**
 approach with discovery times and low-link values to find all biconnected
 components.
 
+The graph must satisfy `index_adjacency_list<G>` — vertices are stored in a
+contiguous, integer-indexed random-access range.
+
 Key properties of the output:
 
 - Each biconnected component is a set of vertex IDs.

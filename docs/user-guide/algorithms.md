@@ -16,10 +16,11 @@
 
 ## Overview
 
-graph-v3 algorithms operate on any graph type satisfying the `index_adjacency_list`
-concept — this includes all three library containers (`dynamic_graph`,
-`compressed_graph`, `undirected_adjacency_list`) and range-of-ranges graphs with
-random-access vertex containers.
+All graph-v3 algorithms require a graph satisfying the `index_adjacency_list<G>`
+concept — vertices must be stored in a contiguous, integer-indexed random-access
+range. This includes all three library containers (`dynamic_graph`,
+`compressed_graph`, `undirected_adjacency_list`) and any range-of-ranges graph
+with a random-access outer container.
 
 Algorithms follow a consistent pattern:
 

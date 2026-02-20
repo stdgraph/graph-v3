@@ -26,6 +26,9 @@ invoked at each stage of the traversal.
 BFS is the foundation for unweighted shortest paths, connected-component
 discovery, and level-based graph analysis.
 
+The graph must satisfy `index_adjacency_list<G>` — vertices are stored in a
+contiguous, integer-indexed random-access range.
+
 ## Include
 
 ```cpp

@@ -31,7 +31,8 @@ The library provides two classic minimum spanning tree algorithms:
 
 Both algorithms produce an MST (or minimum spanning **forest** for disconnected
 graphs). Kruskal operates on an external edge list; Prim operates on a graph
-satisfying `index_adjacency_list`.
+satisfying `index_adjacency_list<G>` — vertices are stored in a contiguous,
+integer-indexed random-access range.
 
 ## Include
 

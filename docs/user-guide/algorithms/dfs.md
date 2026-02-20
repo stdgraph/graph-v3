@@ -22,6 +22,9 @@ Depth-first search performs iterative DFS from a single source vertex using a
 three-color marking scheme (White → Gray → Black). It is entirely
 **visitor-driven** — the algorithm itself has no output arrays.
 
+The graph must satisfy `index_adjacency_list<G>` — vertices are stored in a
+contiguous, integer-indexed random-access range.
+
 The three-color scheme enables precise **edge classification**:
 
 | Edge Type | Target Color | Meaning |

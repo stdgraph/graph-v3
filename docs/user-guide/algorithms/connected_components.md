@@ -21,7 +21,9 @@
 ## Overview
 
 The connected components header provides three algorithms for partitioning a
-graph into connected components:
+graph into connected components. All three require a graph satisfying
+`index_adjacency_list<G>` — vertices are stored in a contiguous,
+integer-indexed random-access range.
 
 | Algorithm | Use case | Approach |
 |-----------|----------|----------|

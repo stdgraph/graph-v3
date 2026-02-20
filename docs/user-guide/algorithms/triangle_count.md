@@ -20,6 +20,9 @@ Counts the number of **triangles** (3-cliques) in an undirected graph using
 merge-based sorted-list intersection. A triangle is a set of three mutually
 adjacent vertices {u, v, w}.
 
+The graph must satisfy `index_adjacency_list<G>` — vertices are stored in a
+contiguous, integer-indexed random-access range.
+
 The algorithm requires that each vertex's adjacency list is **sorted by target
 ID**. This is naturally the case for set-based containers (e.g., `vos` traits)
 and `undirected_adjacency_list`.

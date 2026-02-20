@@ -17,7 +17,10 @@
 ## Overview
 
 Computes the **Jaccard similarity coefficient** for every directed edge in the
-graph. For an edge (u, v), the coefficient is:
+graph. The graph must satisfy `index_adjacency_list<G>` — vertices are stored
+in a contiguous, integer-indexed random-access range.
+
+For an edge (u, v), the coefficient is:
 
 $$J(u, v) = \frac{|N(u) \cap N(v)|}{|N(u) \cup N(v)|}$$
 

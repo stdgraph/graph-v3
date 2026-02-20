@@ -22,6 +22,9 @@ The Bellman-Ford algorithm computes single-source (or multi-source) shortest
 paths in a weighted directed graph, supporting **negative edge weights**. Unlike
 Dijkstra's algorithm, it can detect negative-weight cycles.
 
+The graph must satisfy `index_adjacency_list<G>` — vertices are stored in a
+contiguous, integer-indexed random-access range.
+
 The algorithm relaxes all edges V−1 times, then performs a final pass to detect
 negative cycles. It returns `std::optional<vertex_id_t<G>>`: empty if no
 negative cycle exists, or a vertex ID on the cycle if one is detected.

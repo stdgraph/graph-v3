@@ -23,6 +23,9 @@ graph with **non-negative** edge weights. It uses a binary-heap priority queue
 to greedily expand the nearest unvisited vertex until all reachable vertices
 have been settled.
 
+The graph must satisfy `index_adjacency_list<G>` — vertices are stored in a
+contiguous, integer-indexed random-access range.
+
 The library provides two families of overloads:
 
 - **`dijkstra_shortest_paths`** — computes both distances and predecessor maps,
