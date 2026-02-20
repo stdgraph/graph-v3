@@ -8,8 +8,10 @@
  * - Graph information structures
  * - Basic containers (edgelist)
  * - Graph views (vertexlist, edgelist, neighbors, incidence, BFS, DFS, topological sort)
- * - Graph containers (when implemented)
- * - Graph algorithms (when implemented)
+ * 
+ * Graph containers and algorithms are available via separate includes:
+ * - Containers: <graph/container/dynamic_graph.hpp>, compressed_graph.hpp, undirected_adjacency_list.hpp
+ * - Algorithms: <graph/algorithms.hpp>
  * 
  * Include this file to access the full graph library functionality.
  */
@@ -57,14 +59,11 @@
 #include <graph/views/dfs.hpp>
 #include <graph/views/topological_sort.hpp>
 
-// Future: Container implementations will be included here
-// #include <graph/container/adjacency_list.hpp>
-// #include <graph/container/compressed_sparse_row.hpp>
-
-// Future: Algorithm implementations will be included here
-// #include <graph/algorithm/breadth_first_search.hpp>
-// #include <graph/algorithm/depth_first_search.hpp>
-// #include <graph/algorithm/dijkstra_shortest_paths.hpp>
+// Graph containers are intentionally NOT included here to avoid heavy dependencies.
+// Include specific container headers directly:
+//   <graph/container/dynamic_graph.hpp>
+//   <graph/container/compressed_graph.hpp>
+//   <graph/container/undirected_adjacency_list.hpp>
 
 /**
  * @namespace graph

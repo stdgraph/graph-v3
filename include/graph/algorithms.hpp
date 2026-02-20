@@ -25,24 +25,22 @@
 
 // Shortest Path Algorithms
 #include "algorithm/dijkstra_shortest_paths.hpp"
-#include "algorithm/bellman_ford.hpp"
-#include "algorithm/bfs.hpp"
+#include "algorithm/bellman_ford_shortest_paths.hpp"
+#include "algorithm/breadth_first_search.hpp"
 
 // Community Detection
 #include "algorithm/label_propagation.hpp"
 
 // Search Algorithms
-#include "algorithm/dfs.hpp"
+#include "algorithm/depth_first_search.hpp"
 
 // Minimum Spanning Tree
-#include "algorithm/prim.hpp"
-#include "algorithm/kruskal.hpp"
+#include "algorithm/mst.hpp"
 
 // Connectivity
 #include "algorithm/connected_components.hpp"
 #include "algorithm/articulation_points.hpp"
 #include "algorithm/biconnected_components.hpp"
-#include "algorithm/scc.hpp"
 
 // Link Analysis
 #include "algorithm/jaccard.hpp"
@@ -50,8 +48,11 @@
 // Topological Sort & DAG
 #include "algorithm/topological_sort.hpp"
 
-// Flow Algorithms
-// #include "algorithm/ford_fulkerson.hpp"
+// Subgraph / Matching
+#include "algorithm/mis.hpp"
+
+// Triangle Counting
+#include "algorithm/tc.hpp"
 
 /**
  * @defgroup graph_algorithms Graph Algorithms
@@ -67,9 +68,7 @@
  * - Are thoroughly tested and benchmarked
  * - Include comprehensive documentation
  * 
- * @see docs/algorithms/README.md for complete documentation
+ * @see docs/user-guide/algorithms.md for complete documentation
  */
-
-// Note: Uncomment includes above as algorithms are implemented
 
 #endif // GRAPH_ALGORITHMS_HPP

@@ -53,7 +53,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 | *(missing)* | `algorithm/mis.hpp` | Add include |
 | *(missing)* | `algorithm/tc.hpp` | Add include |
 
-- [ ] **0.1.1** `EDIT` `include/graph/algorithms.hpp`
+- [x] **0.1.1** `EDIT` `include/graph/algorithms.hpp`
   - **Depends:** —
   - **Risk:** high
   - **Action:** Replace all broken `#include` directives with correct paths per the table above.
@@ -95,7 +95,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
     (will exist after Phase 3).
   - **Verify:** step 0.1.2
 
-- [ ] **0.1.2** `VERIFY` Compile smoke test for umbrella headers
+- [x] **0.1.2** `VERIFY` Compile smoke test for umbrella headers
   - **Depends:** 0.1.1
   - **Risk:** low
   - **Action:** Build the existing test suite with GCC debug preset. All three umbrella headers
@@ -109,33 +109,22 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 0.2 Fix `graph.hpp` stale comments
 
-- [ ] **0.2.1** `EDIT` `include/graph/graph.hpp`
+- [x] **0.2.1** `EDIT` `include/graph/graph.hpp`
   - **Depends:** —
   - **Risk:** med
-  - **Action:** Remove or update these stale comment blocks:
-    1. Lines 12-13: `* - Graph containers (when implemented)` and
-       `* - Graph algorithms (when implemented)` → replace with:
-       `* - Graph containers (dynamic_graph, compressed_graph, undirected_adjacency_list)`
-       and `* - Graph algorithms (see <graph/algorithms.hpp>)`
-    2. Lines 60-61: `// Future: Container implementations will be included here` and the
-       two commented-out `#include` lines → replace with:
-       ```cpp
-       // Graph containers
-       #include <graph/container/dynamic_graph.hpp>
-       #include <graph/container/compressed_graph.hpp>
-       #include <graph/container/undirected_adjacency_list.hpp>
-       ```
-    3. Lines 64-67: `// Future: Algorithm implementations will be included here` and three
-       commented-out `#include` lines → replace with:
-       ```cpp
-       // Algorithms (convenience — for selective includes, use <graph/algorithms.hpp>)
-       // #include <graph/algorithms.hpp>  // Uncomment to pull all algorithms via graph.hpp
-       ```
+  - **Action:** Updated stale comment blocks:
+    1. Doc comment: replaced "when implemented" with accurate descriptions;
+       containers listed as available via separate includes (NOT auto-included
+       in `graph.hpp` per design decision).
+    2. Removed `// Future:` commented-out container and algorithm includes;
+       replaced with a comment listing available container headers for discoverability.
   - **Verify:** step 0.1.2 (rebuild covers this)
+  - **Design decision:** Containers must NOT be `#include`d in `graph.hpp` to avoid
+    heavyweight dependencies. Users include container headers explicitly.
 
 ### 0.3 Verify consumer CMake instructions
 
-- [ ] **0.3.1** `READ` + `VERIFY` Confirm CMake target name
+- [x] **0.3.1** `READ` + `VERIFY` Confirm CMake target name
   - **Depends:** —
   - **Risk:** low
   - **Action:** The install exports `graph::graph3` (confirmed from `cmake/InstallConfig.cmake`
@@ -150,7 +139,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 0.4 Generate implementation matrix
 
-- [ ] **0.4.1** `CREATE` `docs/status/implementation_matrix.md`
+- [x] **0.4.1** `CREATE` `docs/status/implementation_matrix.md`
   - **Depends:** —
   - **Risk:** low
   - **Action:** Create directory `docs/status/` then create the file with tables built from the
@@ -201,7 +190,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 0.5 Pin canonical metrics
 
-- [ ] **0.5.1** `RUN` Run full test suite and capture counts
+- [x] **0.5.1** `RUN` Run full test suite and capture counts (result: 4261 tests, 100% pass)
   - **Depends:** 0.1.2 (build must succeed)
   - **Risk:** low
   - **Action:**
@@ -222,7 +211,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 0.6 Freeze status artifact
 
-- [ ] **0.6.1** `CREATE` `docs/status/metrics.md`
+- [x] **0.6.1** `CREATE` `docs/status/metrics.md`
   - **Depends:** 0.4.1, 0.5.1
   - **Risk:** low
   - **Action:** Create the canonical metrics file. All user-facing docs will reference this.
@@ -243,7 +232,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 0.7 Commit Phase 0
 
-- [ ] **0.7.1** `RUN` Commit all Phase 0 changes
+- [x] **0.7.1** `RUN` Commit all Phase 0 changes
   - **Depends:** 0.1.2, 0.2.1, 0.4.1, 0.5.1, 0.6.1
   - **Risk:** low
   - **Action:**
