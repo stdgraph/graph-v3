@@ -640,28 +640,22 @@ The current header includes 6 non-existent paths. The mapping from broken → re
   - **Verify:** Exactly 13 algorithms in catalog; every listed header exists in file system;
     no header listed that doesn't exist.
 
-### 3.7 Examples page
+### ~~3.7 Examples page~~ (removed)
 
-- [ ] **3.7.1** `CREATE` `docs/user-guide/examples.md`
-  - **Depends:** Phase 2 complete
-  - **Risk:** low
-  - **Action:** Create curated examples page. Include annotated versions of:
-    - `examples/basic_usage.cpp`
-    - `examples/dijkstra_clrs_example.cpp`
-    - `examples/mst_usage_example.cpp`
-    Each with: goal, full code, line-by-line annotations, expected output.
-  - **Verify:** All 3 examples from `examples/` directory represented; code matches source files.
+> **Removed:** Standalone examples page is unnecessary — each algorithm page now
+> contains 5-7 annotated examples with progressive complexity. The `examples/`
+> source files are referenced in the relevant algorithm page See Also sections.
 
 ### 3.8 Commit Phase 3
 
-- [ ] **3.8.1** `RUN` Commit Phase 3
-  - **Depends:** 3.1.1, 3.2.2, 3.3.2, 3.4.2, 3.5.2, 3.6.1, 3.7.1
+- [x] **3.8.1** `RUN` Commit Phase 3
+  - **Depends:** 3.1.1, 3.2.2, 3.3.2, 3.4.2, 3.5.2, 3.6.1
   - **Risk:** low
-  - **Action:**
-    ```bash
-    git add -A
-    git commit -m "Phase 3: user guide — getting started, ADTs, containers, views, algorithms, examples"
-    ```
+  - **Action:** Phase 3 completed across multiple commits:
+    - Getting started, adjacency lists, edge lists, containers, views, algorithms landing page
+    - Per-algorithm pages (13) with catalogs, complexity tables, `index_adjacency_list` requirements
+    - Educational + reference quality pass: "When to Use" sections, 5-7 examples per algorithm
+    - Agent instructions for future algorithm documentation (`agents/algorithm_doc_guide.md`)
 
 ---
 
