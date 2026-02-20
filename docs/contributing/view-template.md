@@ -580,4 +580,3 @@ List related views that serve similar or complementary purposes:
 - [CPO Implementation Guide](cpo-implementation.md)
 - [Adjacency List Interface](../reference/adjacency-list-interface.md)
 - [View Chaining](view-chaining.md)
-- [Testing Guidelines](../../tests/README.md)

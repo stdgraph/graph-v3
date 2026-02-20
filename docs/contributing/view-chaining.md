@@ -160,4 +160,4 @@ Capturing lambdas would only occur if a user intentionally captured additional n
 - [std::ranges::view concept](https://en.cppreference.com/w/cpp/ranges/view)
 - [std::semiregular concept](https://en.cppreference.com/w/cpp/concepts/semiregular)
 - [P2548R6 - copyable_function](https://wg21.link/p2548r6)
-- [Value Function Goal](../agents/value_function_goal.md) - Design rationale
+- [Value Function Goal](../../agents/archive/value_function_goal.md) - Design rationale

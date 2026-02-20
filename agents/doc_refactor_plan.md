@@ -805,7 +805,7 @@ This was created in step 2.2.1. Skip if already done.
 
 ### 5.2 Architecture guide
 
-- [ ] **5.2.1** `CREATE` `docs/contributing/architecture.md`
+- [x] **5.2.1** `CREATE` `docs/contributing/architecture.md`
   - **Depends:** 1.1.1
   - **Risk:** low
   - **Action:** Write architecture guide. Structure:
@@ -825,7 +825,7 @@ This was created in step 2.2.1. Skip if already done.
 
 ### 5.3 Consolidate CPO implementation guides
 
-- [ ] **5.3.1** `READ` Analyze duplication between `docs/cpo.md` and `docs/graph_cpo_implementation.md`
+- [x] **5.3.1** `READ` Analyze duplication between `docs/cpo.md` and `docs/graph_cpo_implementation.md`
   - **Depends:** —
   - **Risk:** low
   - **Action:** Read both files. Identify:
@@ -834,7 +834,7 @@ This was created in step 2.2.1. Skip if already done.
     - Overlapping sections (expected: the MSVC CPO pattern, priority dispatch, worked examples)
     Record a merge plan: which sections from each file, target size ~1500 lines.
 
-- [ ] **5.3.2** `CREATE` `docs/contributing/cpo-implementation.md`
+- [x] **5.3.2** `CREATE` `docs/contributing/cpo-implementation.md`
   - **Depends:** 5.3.1, 1.1.1
   - **Risk:** low
   - **Action:** Consolidated guide with two parts:
@@ -845,7 +845,7 @@ This was created in step 2.2.1. Skip if already done.
     Target: ~1500 lines total (down from ~3140 combined).
   - **Verify:** File exists; < 2000 lines; covers both "understanding" and "implementing" use cases.
 
-- [ ] **5.3.3** `DELETE` source files after consolidation
+- [x] **5.3.3** `DELETE` source files after consolidation
   - **Depends:** 5.3.2
   - **Risk:** high
   - **Action:**
@@ -857,30 +857,30 @@ This was created in step 2.2.1. Skip if already done.
 
 ### 5.4 Move remaining contributor docs
 
-- [ ] **5.4.1** `MOVE` `docs/algorithm_template.md` → `docs/contributing/algorithm-template.md`
+- [x] **5.4.1** `MOVE` `docs/algorithm_template.md` → `docs/contributing/algorithm-template.md`
   - **Depends:** 1.1.1
   - **Risk:** med
   - **Action:** `git mv docs/algorithm_template.md docs/contributing/algorithm-template.md`
 
-- [ ] **5.4.2** `MOVE` `docs/view_template.md` → `docs/contributing/view-template.md`
+- [x] **5.4.2** `MOVE` `docs/view_template.md` → `docs/contributing/view-template.md`
   - **Depends:** 1.1.1
   - **Risk:** med
   - **Action:** `git mv docs/view_template.md docs/contributing/view-template.md`
 
-- [ ] **5.4.3** `MOVE` `docs/view_chaining_limitations.md` → `docs/contributing/view-chaining.md`
+- [x] **5.4.3** `MOVE` `docs/view_chaining_limitations.md` → `docs/contributing/view-chaining.md`
   - **Depends:** 1.1.1
   - **Risk:** med
   - **Action:** `git mv docs/view_chaining_limitations.md docs/contributing/view-chaining.md`
     Also update content: the file describes the *solution* to view chaining, not limitations.
     Rename the title inside the file accordingly.
 
-- [ ] **5.4.4** `MOVE` `docs/common_graph_guidelines.md` → `docs/contributing/coding-guidelines.md`
+- [x] **5.4.4** `MOVE` `docs/common_graph_guidelines.md` → `docs/contributing/coding-guidelines.md`
   - **Depends:** 1.1.1
   - **Risk:** med
   - **Action:** `git mv docs/common_graph_guidelines.md docs/contributing/coding-guidelines.md`
     Then update content: fix outdated directory tree, remove v2 references.
 
-- [ ] **5.4.5** `MOVE` `docs/graph_cpo_order.md` → `docs/contributing/cpo-order.md`
+- [x] **5.4.5** `MOVE` `docs/graph_cpo_order.md` → `docs/contributing/cpo-order.md`
   - **Depends:** 1.1.1
   - **Risk:** med
   - **Action:** `git mv docs/graph_cpo_order.md docs/contributing/cpo-order.md`
@@ -888,7 +888,7 @@ This was created in step 2.2.1. Skip if already done.
 
 ### 5.5 Commit Phase 5
 
-- [ ] **5.5.1** `RUN` Commit Phase 5
+- [x] **5.5.1** `RUN` Commit Phase 5 (commit `b0eafbb`, +1278/−3243, 16 files)
   - **Depends:** all 5.x steps
   - **Risk:** low
   - **Action:**
@@ -903,7 +903,7 @@ This was created in step 2.2.1. Skip if already done.
 
 ### 6.1 Archive remaining orphans
 
-- [ ] **6.1.1** `VERIFY` Check for orphaned docs
+- [x] **6.1.1** `VERIFY` Check for orphaned docs
   - **Depends:** Phase 5 complete
   - **Risk:** low
   - **Action:** List all `.md` files under `docs/` that are NOT in `user-guide/`, `reference/`,
@@ -918,14 +918,14 @@ This was created in step 2.2.1. Skip if already done.
     `docs/migration-from-v2.md`. Anything else needs to be archived or investigated.
   - **Pass condition:** Only expected files remain outside subdirectories.
 
-- [ ] **6.1.2** `MOVE` Any unexpected orphans → `docs/archive/`
+- [x] **6.1.2** `MOVE` Any unexpected orphans → `docs/archive/`
   - **Depends:** 6.1.1
   - **Risk:** med
   - **Action:** For each unexpected file found in 6.1.1, move to archive.
 
 ### 6.2 Fix all cross-references
 
-- [ ] **6.2.1** `VERIFY` Check for broken markdown links
+- [x] **6.2.1** `VERIFY` Check for broken markdown links
   - **Depends:** Phase 5 complete
   - **Risk:** low
   - **Action:**
@@ -941,14 +941,14 @@ This was created in step 2.2.1. Skip if already done.
     check may be needed if the simple grep misses context.
   - **Pass condition:** No "BROKEN:" lines in output.
 
-- [ ] **6.2.2** `EDIT` Fix any broken links found
+- [x] **6.2.2** `EDIT` Fix any broken links found
   - **Depends:** 6.2.1
   - **Risk:** med
   - **Action:** For each broken link, determine correct target and fix.
 
 ### 6.3 Verify ADT parity
 
-- [ ] **6.3.1** `VERIFY` Check adjacency list / edge list balance
+- [x] **6.3.1** `VERIFY` Check adjacency list / edge list balance
   - **Depends:** Phase 5 complete
   - **Risk:** low
   - **Action:** Verify both ADTs appear in:
@@ -969,7 +969,7 @@ This was created in step 2.2.1. Skip if already done.
 
 ### 6.4 Verify container coverage
 
-- [ ] **6.4.1** `VERIFY` All 3 containers documented
+- [x] **6.4.1** `VERIFY` All 3 containers documented
   - **Depends:** Phase 3 complete
   - **Risk:** low
   - **Action:**
@@ -981,7 +981,7 @@ This was created in step 2.2.1. Skip if already done.
 
 ### 6.5 Verify `docs/algorithms/README.md` handled
 
-- [ ] **6.5.1** `VERIFY` Old algorithm README archived or removed
+- [x] **6.5.1** `VERIFY` Old algorithm README archived or removed
   - **Depends:** 1.4.4 (archived)
   - **Risk:** low
   - **Action:** Confirm `include/graph/algorithm/README.md` no longer exists (was archived
@@ -992,7 +992,7 @@ This was created in step 2.2.1. Skip if already done.
     ```
   - **Pass condition:** Neither file exists (both archived or replaced).
 
-- [ ] **6.5.2** `MOVE` or `DELETE` `docs/algorithms/README.md`
+- [x] **6.5.2** `MOVE` or `DELETE` `docs/algorithms/README.md`
   - **Depends:** 6.5.1
   - **Risk:** med
   - **Action:** If the file still exists, archive it:
@@ -1003,7 +1003,7 @@ This was created in step 2.2.1. Skip if already done.
 
 ### 6.6 Write CHANGELOG.md
 
-- [ ] **6.6.1** `CREATE` `CHANGELOG.md`
+- [x] **6.6.1** `CREATE` `CHANGELOG.md`
   - **Depends:** Phase 5 complete
   - **Risk:** low
   - **Action:** Create initial changelog noting the documentation reorganization:
@@ -1026,7 +1026,7 @@ This was created in step 2.2.1. Skip if already done.
 
 ### 6.7 Full build verification
 
-- [ ] **6.7.1** `VERIFY` Full build + test pass
+- [x] **6.7.1** `VERIFY` Full build + test pass
   - **Depends:** all Phase 6 edits complete
   - **Risk:** low
   - **Action:**
@@ -1040,7 +1040,7 @@ This was created in step 2.2.1. Skip if already done.
 
 ### 6.8 Final commit
 
-- [ ] **6.8.1** `RUN` Commit Phase 6
+- [x] **6.8.1** `RUN` Commit Phase 6 (`0adfa3b`)
   - **Depends:** 6.7.1
   - **Risk:** low
   - **Action:**
@@ -1058,11 +1058,11 @@ This was created in step 2.2.1. Skip if already done.
 | 0 | 8 | 8 | 1 | **Complete** | Fixed `algorithms.hpp`, fixed `graph.hpp`, implementation matrix, canonical metrics |
 | 1 | 10 | 10 | 0 | **Complete** | `docs/index.md`, migration guide, FAQ, 4 archived files |
 | 2 | 5 | 5 | 1 | Complete | New README, CONTRIBUTING.md |
-| 3 | 11 | 0 | 0 | Not started | 6 user-guide pages + views move |
-| 4 | 12 | 0 | 2 | Not started | 7 reference pages + 3 deleted sources |
-| 5 | 10 | 0 | 1 | Not started | Architecture guide, consolidated CPO doc, 5 moved docs |
-| 6 | 13 | 0 | 0 | Not started | CHANGELOG, cross-ref fixes, validation |
-| **Total** | **69** | **23** | **6** | **33%** | |
+| 3 | 11 | 11 | 0 | **Complete** | 6 user-guide pages + views move |
+| 4 | 12 | 12 | 2 | **Complete** | 7 reference pages + 3 deleted sources |
+| 5 | 10 | 10 | 1 | **Complete** | Architecture guide, consolidated CPO doc, 5 moved docs |
+| 6 | 13 | 13 | 0 | **Complete** | CHANGELOG, cross-ref fixes, validation |
+| **Total** | **69** | **69** | **6** | **100%** | |
 
 > Last updated: 2026-02-19 · Branch: `newdoc`
 
