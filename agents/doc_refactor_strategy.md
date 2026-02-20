@@ -182,6 +182,19 @@ The README is the most critical page. It should follow the structure of successf
 
 ## Execution Steps
 
+### Phase 0: Truth Sync (Blocking Gate)
+
+Before moving files or rewriting content, establish the current source-of-truth so refactoring does not preserve stale claims.
+
+| Step | Action | Details |
+|------|--------|---------|
+| 0.1 | Validate public umbrella headers compile | Compile smoke tests for `#include <graph/graph.hpp>`, `#include <graph/views.hpp>`, `#include <graph/algorithms.hpp>`; fix any include drift before doc edits |
+| 0.2 | Verify README consumer instructions | Confirm CMake install/consume snippet and exported target names match actual `CMakeLists.txt` export (`graph::graph3` vs historical names) |
+| 0.3 | Generate implementation matrix from tests | Build a table from `tests/algorithms/CMakeLists.txt` and `tests/container/CMakeLists.txt` listing implemented algorithms, containers, and trait combinations |
+| 0.4 | Reconcile algorithm/header names | Ensure docs reference real headers (`breadth_first_search.hpp`, `depth_first_search.hpp`, `bellman_ford_shortest_paths.hpp`, `mst.hpp`, `tc.hpp`, etc.) |
+| 0.5 | Pin canonical metrics snapshot | Record `ctest` totals and other status metrics once, then reference that source everywhere (README footer, docs index, status summaries) |
+| 0.6 | Freeze baseline status artifact | Create a single status artifact (table in `docs/index.md` or dedicated status file) used as the source for all user-facing claims |
+
 ### Phase 1: Foundation (branch: `newdoc`)
 
 | Step | Action | Details |
@@ -299,6 +312,37 @@ All 26 combinations listed with trait file names (vov, vod, vofl, vol, vos, vous
 | 6.5 | Verify all 3 containers documented | Ensure `dynamic_graph`, `compressed_graph`, and `undirected_adjacency_list` each have clear sections |
 | 6.6 | Write `CHANGELOG.md` | Initial version based on git history and phase completion notes |
 | 6.7 | Final review pass | Read every doc end-to-end for consistency, accuracy, broken links |
+
+---
+
+## Measurable Acceptance Gates
+
+### Global Exit Criteria (must all pass)
+
+- **No broken public includes:** smoke-check translation units for `graph.hpp`, `views.hpp`, and `algorithms.hpp` compile.
+- **No broken links:** internal markdown links under `README.md` and `docs/` resolve.
+- **No stale user-facing "planned/future" drift:** landing pages only describe implemented features or clearly labeled roadmap items.
+- **Single source of truth for metrics:** test counts and feature counts match the canonical status artifact.
+- **ADT parity requirement met:** adjacency list and edge list each have user guide + reference coverage.
+
+### Phase-by-Phase Gates
+
+| Phase | Gate | Pass Condition |
+|------|------|----------------|
+| 0 | Truth sync complete | Public includes compile; README install target verified; implementation matrix and canonical metrics artifact created |
+| 1 | Foundation complete | `docs/index.md`, `docs/migration-from-v2.md`, `docs/FAQ.md`, and archive moves exist with valid links |
+| 2 | README complete | New README sections present; compiler table present; comparison table present; all snippets compile or are explicitly marked pseudocode |
+| 3 | User guide complete | `adjacency-lists.md`, `edge-lists.md`, `containers.md`, `views.md`, `algorithms.md`, `examples.md` exist and cross-link correctly |
+| 4 | Reference complete | Split interface docs exist and match code terminology (`graph::edge_list`, `basic_sourced_edgelist`, etc.); complexity cheat sheet present |
+| 5 | Contributor docs complete | Consolidated CPO implementation doc created; duplicate guidance removed; templates/guidelines moved and link-valid |
+| 6 | Cleanup complete | Orphaned docs archived or rewritten; no broken cross-references; final consistency review complete |
+
+### Quality Gates for User-Facing Pages
+
+- **Accuracy gate:** every algorithm/container/header named in user docs exists in source tree.
+- **Consistency gate:** namespace and concept names match code declarations.
+- **Navigability gate:** every user page links back to `docs/index.md` and to adjacent relevant sections.
+- **Clarity gate:** each page begins with scope, audience, and "what this page covers".
 
 ---
 
