@@ -659,11 +659,11 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ---
 
-## Phase 4 — Reference Documentation
+## Phase 4 — Reference Documentation (COMPLETE)
 
 ### 4.1 Split container interface
 
-- [ ] **4.1.1** `READ` Analyze `docs/container_interface.md` sections
+- [x] **4.1.1** `READ` Analyze `docs/container_interface.md` sections
   - **Depends:** —
   - **Risk:** low
   - **Action:** Read `docs/container_interface.md` (387 lines). Identify:
@@ -671,7 +671,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
     - Line ranges for edge list section
     - Any shared content (overview, design principles)
 
-- [ ] **4.1.2** `CREATE` `docs/reference/adjacency-list-interface.md`
+- [x] **4.1.2** `CREATE` `docs/reference/adjacency-list-interface.md`
   - **Depends:** 4.1.1, 1.1.1
   - **Risk:** low
   - **Action:** Extract adjacency list section from container_interface.md. Add:
@@ -681,7 +681,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
     - Type alias reference
   - **Verify:** Concept names match `include/graph/adj_list/adjacency_list_concepts.hpp`.
 
-- [ ] **4.1.3** `CREATE` `docs/reference/edge-list-interface.md`
+- [x] **4.1.3** `CREATE` `docs/reference/edge-list-interface.md`
   - **Depends:** 4.1.1, 1.1.1
   - **Risk:** low
   - **Action:** Extract edge list section from container_interface.md. **Critical fix:**
@@ -691,7 +691,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
     - Use `has_edge_value` concept name
   - **Verify:** All concept/namespace names match `include/graph/edge_list/edge_list.hpp`.
 
-- [ ] **4.1.4** `DELETE` `docs/container_interface.md` (after split verified)
+- [x] **4.1.4** `DELETE` `docs/container_interface.md` (after split verified)
   - **Depends:** 4.1.2, 4.1.3
   - **Risk:** high
   - **Action:** Remove the original file. Content has been split into two reference docs.
@@ -701,7 +701,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 4.2 Merge vertex concept docs
 
-- [ ] **4.2.1** `CREATE` `docs/reference/vertex-patterns.md`
+- [x] **4.2.1** `CREATE` `docs/reference/vertex-patterns.md`
   - **Depends:** 1.1.1
   - **Risk:** low
   - **Action:** Merge content from:
@@ -710,7 +710,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
     Structure as: inner value patterns section + storage concepts section + unified terminology.
   - **Verify:** File exists; covers both inner value patterns and storage concepts.
 
-- [ ] **4.2.2** `DELETE` source files after merge
+- [x] **4.2.2** `DELETE` source files after merge
   - **Depends:** 4.2.1
   - **Risk:** high
   - **Action:**
@@ -721,7 +721,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 4.3 Move edge value concepts
 
-- [ ] **4.3.1** `MOVE` `docs/edge_value_concepts.md` → `docs/reference/edge-value-concepts.md`
+- [x] **4.3.1** `MOVE` `docs/edge_value_concepts.md` → `docs/reference/edge-value-concepts.md`
   - **Depends:** 1.1.1
   - **Risk:** med
   - **Action:** `git mv docs/edge_value_concepts.md docs/reference/edge-value-concepts.md`
@@ -729,7 +729,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 4.4 Write CPO reference
 
-- [ ] **4.4.1** `READ` Extract CPO signatures
+- [x] **4.4.1** `READ` Extract CPO signatures
   - **Depends:** —
   - **Risk:** low
   - **Action:** Read these files to build a CPO reference table:
@@ -738,7 +738,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
     - `docs/cpo.md` — existing (verbose) CPO documentation
     For each CPO, record: name, namespace, signature, return type, required concepts.
 
-- [ ] **4.4.2** `CREATE` `docs/reference/cpo-reference.md`
+- [x] **4.4.2** `CREATE` `docs/reference/cpo-reference.md`
   - **Depends:** 4.4.1, 1.1.1
   - **Risk:** low
   - **Action:** Write pure reference page. Structure:
@@ -749,7 +749,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 4.5 Write concepts reference
 
-- [ ] **4.5.1** `CREATE` `docs/reference/concepts.md`
+- [x] **4.5.1** `CREATE` `docs/reference/concepts.md`
   - **Depends:** 3.2.1, 3.3.1 (from READ steps)
   - **Risk:** low
   - **Action:** Consolidated concept reference. Two sections:
@@ -760,7 +760,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 4.6 Algorithm complexity cheat sheet
 
-- [ ] **4.6.1** `CREATE` `docs/reference/algorithm-complexity.md`
+- [x] **4.6.1** `CREATE` `docs/reference/algorithm-complexity.md`
   - **Depends:** 0.4.1 (implementation matrix)
   - **Risk:** low
   - **Action:** Single-page cheat sheet. One table:
@@ -777,7 +777,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 4.7 Write type aliases reference
 
-- [ ] **4.7.1** `CREATE` `docs/reference/type-aliases.md`
+- [x] **4.7.1** `CREATE` `docs/reference/type-aliases.md`
   - **Depends:** —
   - **Risk:** low
   - **Action:** Extract all type aliases from `include/graph/graph.hpp` (lines 149-161) and
@@ -786,7 +786,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 4.8 Commit Phase 4
 
-- [ ] **4.8.1** `RUN` Commit Phase 4
+- [x] **4.8.1** `RUN` Commit Phase 4
   - **Depends:** all 4.x steps
   - **Risk:** low
   - **Action:**

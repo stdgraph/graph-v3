@@ -234,5 +234,5 @@ list from it, and **run** algorithms on the adjacency list.
 
 - [Adjacency Lists User Guide](adjacency-lists.md) — the vertex-centric ADT
 - [Containers User Guide](containers.md) — `dynamic_graph`, `compressed_graph` construction from edge lists
-- [Container Interface (GCI spec)](../container_interface.md) — formal edge list specification
+- [Edge List Interface (GCI spec)](../reference/edge-list-interface.md) — formal edge list specification
 - [Getting Started](../getting-started.md) — edge list quick-start example

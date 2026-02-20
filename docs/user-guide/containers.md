@@ -711,4 +711,5 @@ graph data structure with all library views and algorithms by overriding graph C
 - [Adjacency Lists User Guide](adjacency-lists.md) — concepts, CPOs, descriptors
 - [Edge Lists User Guide](edge-lists.md) — edge list input for graph construction
 - [Getting Started](../getting-started.md) — quick-start examples with all three containers
-- [Container Interface (GCI spec)](../container_interface.md) — formal specification
+- [Adjacency List Interface](../reference/adjacency-list-interface.md) — formal adjacency list specification
+- [Edge List Interface](../reference/edge-list-interface.md) — formal edge list specification

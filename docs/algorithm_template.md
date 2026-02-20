@@ -464,5 +464,5 @@ dijkstra(g, 0, distance, predecessor);
 
 - [Graph Algorithms Overview](README.md)
 - [Graph CPO Documentation](../graph_cpo_implementation.md)
-- [Container Interface](../container_interface.md)
+- [Adjacency List Interface](../reference/adjacency-list-interface.md)
 - [Testing Guidelines](../../tests/README.md)

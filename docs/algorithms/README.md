@@ -346,6 +346,6 @@ Algorithms can be combined:
 ## See Also
 
 - [Graph CPO Documentation](../graph_cpo_implementation.md)
-- [Container Interface](../container_interface.md)
+- [Adjacency List Interface](../reference/adjacency-list-interface.md)
 - [View Documentation](../user-guide/views.md)
 - [Main README](../../README.md)

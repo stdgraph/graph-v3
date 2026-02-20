@@ -12,7 +12,6 @@
 - [Containers](user-guide/containers.md) — `dynamic_graph`, `compressed_graph`, `undirected_adjacency_list`, 26 trait combinations
 - [Views](user-guide/views.md) — lazy traversal views (BFS, DFS, topological sort, etc.)
 - [Algorithms](user-guide/algorithms.md) — Dijkstra, Bellman-Ford, MST, connected components, and more
-- [Examples](user-guide/examples.md) — annotated, compilable examples
 
 ## Reference
 

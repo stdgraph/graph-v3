@@ -5,7 +5,8 @@
 This document provides a comprehensive guide for implementing the Graph Container Interface (GCI) using Customization Point Objects (CPOs) in `graph_cpo.hpp`. The implementation follows the P1709/D3130 specification, uses the MSVC-style CPO pattern, and integrates with the descriptor system.
 
 **References:**
-- [container_interface.md](container_interface.md) - Function signatures and specifications
+- [adjacency-list-interface.md](reference/adjacency-list-interface.md) - Adjacency list function signatures and specifications
+- [edge-list-interface.md](reference/edge-list-interface.md) - Edge list function signatures and specifications
 - [cpo.md](cpo.md) - CPO design patterns and best practices
 - Descriptor headers: `vertex_descriptor.hpp`, `edge_descriptor.hpp`
 
@@ -1288,7 +1289,7 @@ inline namespace _cpos {
 
 ### Test with All Adjacency List Types
 
-Use the 23 adjacency list types from `container_interface.md` for comprehensive testing:
+Use the 23 adjacency list types from `adjacency-list-interface.md` for comprehensive testing:
 
 1. **Types 1-5**: Basic patterns (unweighted, weighted pair/tuple, custom struct)
 2. **Types 6-11**: Forward/bidirectional edge iterators
