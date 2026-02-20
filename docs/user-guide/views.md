@@ -2,6 +2,19 @@
 
 > [← Back to Documentation Index](../index.md)
 
+- [Overview](#overview)
+- [Quick Start](#quick-start)
+- [Basic Views](#basic-views) — vertexlist, incidence, neighbors, edgelist
+- [Simplified Views (basic\_)](#simplified-views-basic_) — id-only variants
+- [Search Views](#search-views) — DFS, BFS, topological sort
+- [Range Adaptor Syntax](#range-adaptor-syntax)
+- [Value Functions](#value-functions)
+- [Chaining with std::views](#chaining-with-stdviews)
+- [Performance Considerations](#performance-considerations)
+- [Best Practices](#best-practices)
+- [Common Patterns](#common-patterns)
+- [Limitations](#limitations)
+
 ## Overview
 
 Graph views provide lazy, range-based access to graph elements using C++20 ranges and structured bindings. Views are composable, support pipe syntax, and integrate seamlessly with standard library range adaptors.
@@ -35,8 +48,8 @@ for (auto [uid, u] : views::vertexlist(g)) {
 }
 
 // Iterate over edges from vertex 0
-for (auto [tid, uv] : views::incidence(g, 0)) {
-    std::cout << "Edge to: " << tid << "\n";
+for (auto [vid, uv] : views::incidence(g, 0)) {
+    std::cout << "Edge to: " << vid << "\n";
 }
 
 // DFS traversal from vertex 0
@@ -54,7 +67,7 @@ Iterates over all vertices in the graph.
 **Signature**:
 ```cpp
 auto vertexlist(G&& g);
-auto vertexlist(G&& g, VVF&& vvf);           // with value function
+auto vertexlist(G&& g, VVF&& vvf);            // with value function
 auto vertexlist(G&& g, first, last);          // subrange by descriptor
 auto vertexlist(G&& g, first, last, VVF&&);   // subrange + value function
 auto vertexlist(G&& g, vr);                   // vertex range
@@ -98,20 +111,20 @@ auto incidence(G&& g, UID uid, EVF&& evf);  // with value function
 
 | Variant | Binding |
 |---------|---------|
-| `incidence(g, uid)` | `[tid, uv]` |
-| `incidence(g, uid, evf)` | `[tid, uv, val]` |
+| `incidence(g, uid)` | `[vid, uv]` |
+| `incidence(g, uid, evf)` | `[vid, uv, val]` |
 
 **Example**:
 ```cpp
 // Without value function
-for (auto [tid, uv] : views::incidence(g, 0)) {
-    std::cout << "Edge to " << tid << "\n";
+for (auto [vid, uv] : views::incidence(g, 0)) {
+    std::cout << "Edge to " << vid << "\n";
 }
 
 // With value function (graph passed as parameter, not captured)
 auto evf = [](const auto& g, auto& uv) { return edge_value(g, uv); };
-for (auto [tid, uv, w] : views::incidence(g, 0, evf)) {
-    std::cout << "Edge to " << tid << " weight " << w << "\n";
+for (auto [vid, uv, w] : views::incidence(g, 0, evf)) {
+    std::cout << "Edge to " << vid << " weight " << w << "\n";
 }
 ```
 
@@ -131,20 +144,20 @@ auto neighbors(G&& g, UID uid, VVF&& vvf);  // with value function
 
 | Variant | Binding |
 |---------|---------|
-| `neighbors(g, uid)` | `[tid, n]` |
-| `neighbors(g, uid, vvf)` | `[tid, n, val]` |
+| `neighbors(g, uid)` | `[vid, n]` |
+| `neighbors(g, uid, vvf)` | `[vid, n, val]` |
 
 **Example**:
 ```cpp
 // Without value function
-for (auto [tid, n] : views::neighbors(g, 0)) {
-    std::cout << "Neighbor: " << tid << "\n";
+for (auto [vid, n] : views::neighbors(g, 0)) {
+    std::cout << "Neighbor: " << vid << "\n";
 }
 
 // With value function (graph passed as parameter, not captured)
 auto vvf = [](const auto& g, auto& v) { return vertex_value(g, v); };
-for (auto [tid, n, val] : views::neighbors(g, 0, vvf)) {
-    std::cout << "Neighbor " << tid << " value: " << val << "\n";
+for (auto [vid, n, val] : views::neighbors(g, 0, vvf)) {
+    std::cout << "Neighbor " << vid << " value: " << val << "\n";
 }
 ```
 
@@ -164,20 +177,20 @@ auto edgelist(G&& g, EVF&& evf);  // with value function
 
 | Variant | Binding |
 |---------|---------|
-| `edgelist(g)` | `[sid, tid, uv]` |
-| `edgelist(g, evf)` | `[sid, tid, uv, val]` |
+| `edgelist(g)` | `[uid, vid, uv]` |
+| `edgelist(g, evf)` | `[uid, vid, uv, val]` |
 
 **Example**:
 ```cpp
 // Without value function
-for (auto [sid, tid, uv] : views::edgelist(g)) {
-    std::cout << "Edge: " << sid << " -> " << tid << "\n";
+for (auto [uid, vid, uv] : views::edgelist(g)) {
+    std::cout << "Edge: " << uid << " -> " << vid << "\n";
 }
 
 // With value function (graph passed as parameter, not captured)
 auto evf = [](const auto& g, auto& uv) { return edge_value(g, uv); };
-for (auto [sid, tid, uv, w] : views::edgelist(g, evf)) {
-    std::cout << sid << " -> " << tid << " weight " << w << "\n";
+for (auto [uid, vid, uv, w] : views::edgelist(g, evf)) {
+    std::cout << uid << " -> " << vid << " weight " << w << "\n";
 }
 ```
 
@@ -190,23 +203,23 @@ vertex or edge objects themselves.
 | Standard | Simplified | Binding |
 |----------|-----------|---------|
 | `vertexlist` → `[uid, u]` | `basic_vertexlist` → `[uid]` | vertex id only |
-| `incidence` → `[tid, uv]` | `basic_incidence` → `[tid]` | target id only |
-| `neighbors` → `[tid, n]` | `basic_neighbors` → `[tid]` | target id only |
-| `edgelist` → `[sid, tid, uv]` | `basic_edgelist` → `[sid, tid]` | source + target id |
+| `incidence` → `[vid, uv]` | `basic_incidence` → `[vid]` | target id only |
+| `neighbors` → `[vid, n]` | `basic_neighbors` → `[vid]` | target id only |
+| `edgelist` → `[uid, vid, uv]` | `basic_edgelist` → `[uid, vid]` | source + target id |
 
 All `basic_` views support value functions, adding one extra binding element:
 - `basic_vertexlist(g, vvf)` → `[uid, val]`
-- `basic_incidence(g, uid, evf)` → `[tid, val]`
-- `basic_neighbors(g, uid, vvf)` → `[tid, val]`
-- `basic_edgelist(g, evf)` → `[sid, tid, val]`
+- `basic_incidence(g, uid, evf)` → `[vid, val]`
+- `basic_neighbors(g, uid, vvf)` → `[vid, val]`
+- `basic_edgelist(g, evf)` → `[uid, vid, val]`
 
 ```cpp
 using namespace graph::views;
 
 for (auto [uid] : basic_vertexlist(g)) { ... }
-for (auto [tid] : basic_incidence(g, 0)) { ... }
-for (auto [tid] : basic_neighbors(g, 0)) { ... }
-for (auto [sid, tid] : basic_edgelist(g)) { ... }
+for (auto [vid] : basic_incidence(g, 0)) { ... }
+for (auto [vid] : basic_neighbors(g, 0)) { ... }
+for (auto [uid, vid] : basic_edgelist(g)) { ... }
 ```
 
 ## Search Views
@@ -404,7 +417,7 @@ for (auto [uid, u, deg] : views::vertexlist(g, vvf)) {
 auto evf = [](const auto& g, auto& uv) {
     return edge_value(g, uv);
 };
-for (auto [tid, uv, w] : views::incidence(g, 0, evf)) {
+for (auto [vid, uv, w] : views::incidence(g, 0, evf)) {
     // w = edge weight
 }
 ```
@@ -442,10 +455,10 @@ enabling full chaining with `std::views` adaptors.
 auto first_five = views::vertexlist(g) | std::views::take(5);
 
 // Filter edges
-for (auto [tid, uv] : views::incidence(g, 0)
+for (auto [vid, uv] : views::incidence(g, 0)
                        | std::views::filter([](auto info) {
-                           auto [tid, uv] = info;
-                           return tid > 3;
+                           auto [vid, uv] = info;
+                           return vid > 3;
                          })) {
     // Only edges to vertices > 3
 }
@@ -672,8 +685,8 @@ for (auto [v] : dfs) {
 // Find all neighbors of a vertex
 std::vector<size_t> get_neighbors(const auto& g, size_t vid) {
     std::vector<size_t> result;
-    for (auto [tid, n] : views::neighbors(g, vid)) {
-        result.push_back(tid);
+    for (auto [vid, n] : views::neighbors(g, vid)) {
+        result.push_back(vid);
     }
     return result;
 }
@@ -765,7 +778,8 @@ for (auto [uid, u] : views::vertexlist(g)) {
 // Now safe to modify graph
 ```
 
-## See Also
+> **Note:** Modifying property values (`edge_value`, `vertex_value`, `graph_value`) during
+> iteration is safe — only structural changes (adding/removing vertices or edges) are prohibited.
 
 - [Adjacency Lists User Guide](adjacency-lists.md) — concepts, CPOs, descriptors
 - [Containers User Guide](containers.md) — graph container options
