@@ -412,7 +412,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 2.1 Draft new README
 
-- [ ] **2.1.1** `READ` Inventory current README
+- [x] **2.1.1** `READ` Inventory current README
   - **Depends:** Phase 1 complete
   - **Risk:** low
   - **Action:** Read `README.md` end to end. Note:
@@ -423,7 +423,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
     - **Numbers to pin**: test count, algorithm count, view count, container count
       (from `docs/status/metrics.md`)
 
-- [ ] **2.1.2** `EDIT` `README.md` — full rewrite
+- [x] **2.1.2** `EDIT` `README.md` — full rewrite
   - **Depends:** 2.1.1, Phase 0 (metrics pinned)
   - **Risk:** high
   - **Action:** Replace entire README with new structure per strategy §"New README.md Design".
@@ -464,7 +464,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 2.2 Create CONTRIBUTING.md
 
-- [ ] **2.2.1** `CREATE` `CONTRIBUTING.md`
+- [x] **2.2.1** `CREATE` `CONTRIBUTING.md`
   - **Depends:** 2.1.1 (know what to extract from README)
   - **Risk:** low
   - **Action:** Extract from current README:
@@ -480,7 +480,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 2.3 Verify all README examples compile
 
-- [ ] **2.3.1** `VERIFY` Check README code blocks
+- [x] **2.3.1** `VERIFY` Check README code blocks
   - **Depends:** 2.1.2
   - **Risk:** low
   - **Action:** Extract each C++ code block from the new README. For each:
@@ -492,7 +492,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 2.4 Commit Phase 2
 
-- [ ] **2.4.1** `RUN` Commit Phase 2
+- [x] **2.4.1** `RUN` Commit Phase 2
   - **Depends:** 2.1.2, 2.2.1, 2.3.1
   - **Risk:** low
   - **Action:**
@@ -1062,14 +1062,14 @@ This was created in step 2.2.1. Skip if already done.
 |-------|-------|------|-----------|--------|--------------|
 | 0 | 8 | 8 | 1 | **Complete** | Fixed `algorithms.hpp`, fixed `graph.hpp`, implementation matrix, canonical metrics |
 | 1 | 10 | 10 | 0 | **Complete** | `docs/index.md`, migration guide, FAQ, 4 archived files |
-| 2 | 5 | 0 | 1 | Not started | New README, CONTRIBUTING.md |
+| 2 | 5 | 5 | 1 | Complete | New README, CONTRIBUTING.md |
 | 3 | 11 | 0 | 0 | Not started | 6 user-guide pages + views move |
 | 4 | 12 | 0 | 2 | Not started | 7 reference pages + 3 deleted sources |
 | 5 | 10 | 0 | 1 | Not started | Architecture guide, consolidated CPO doc, 5 moved docs |
 | 6 | 13 | 0 | 0 | Not started | CHANGELOG, cross-ref fixes, validation |
-| **Total** | **69** | **18** | **5** | **26%** | |
+| **Total** | **69** | **23** | **6** | **33%** | |
 
-> Last updated: 2026-02-19 · Commit: `fe0f187` · Branch: `newdoc`
+> Last updated: 2026-02-19 · Branch: `newdoc`
 
 ### Dependency graph (phases)
 
