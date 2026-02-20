@@ -582,7 +582,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 3.4 Containers user guide
 
-- [ ] **3.4.1** `READ` Gather container details
+- [x] **3.4.1** `READ` Gather container details
   - **Depends:** —
   - **Risk:** low
   - **Action:** Read header files:
@@ -590,9 +590,10 @@ The current header includes 6 non-existent paths. The mapping from broken → re
     - `include/graph/container/compressed_graph.hpp` — CSR layout, construction
     - `include/graph/container/undirected_adjacency_list.hpp` — dual-linked construction using intrusive lists
     - `include/graph/container/container_utility.hpp` — shared utilities
+    - `/mnt/d/dev_graph/P1709/D3131_Containers/` - source and latex files in subdirectories for standard library proposal on containers; use container classification table (add more items if applicable)
     - List all 26 trait files in `include/graph/container/traits/`
 
-- [ ] **3.4.2** `CREATE` `docs/user-guide/containers.md`
+- [x] **3.4.2** `CREATE` `docs/user-guide/containers.md`
   - **Depends:** 3.4.1
   - **Risk:** low
   - **Action:** Write container guide. Structure per strategy §"Container Documentation

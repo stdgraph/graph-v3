@@ -1,0 +1,454 @@
+# Graph Containers
+
+> [← Back to Documentation Index](../index.md)
+
+graph-v3 ships three purpose-built graph containers. Each satisfies the
+adjacency list concepts so all CPOs, views, and algorithms work interchangeably.
+
+| Container | Storage | Mutability | Best for |
+|-----------|---------|------------|----------|
+| `dynamic_graph` | Traits-configured vertex + edge containers | Mutable | General purpose, flexible container choice |
+| `compressed_graph` | CSR (Compressed Sparse Row) | Immutable after construction | Read-only, high performance, memory-compact |
+| `undirected_adjacency_list` | Dual doubly-linked lists per edge | Mutable, O(1) edge removal | Undirected graphs, frequent edge insertion/removal |
+
+All three live in `graph::container`.
+
+---
+
+## 1. `dynamic_graph`
+
+```cpp
+#include <graph/container/dynamic_graph.hpp>
+#include <graph/container/traits/vov_graph_traits.hpp>  // pick your trait
+
+namespace graph::container {
+template <class EV     = void,       // edge value type
+          class VV     = void,       // vertex value type
+          class GV     = void,       // graph value type
+          class VId    = uint32_t,   // vertex id type
+          bool Sourced = false,      // store source_id on edges?
+          class Traits = vofl_graph_traits<EV, VV, GV, VId, Sourced>>
+class dynamic_graph;
+}
+```
+
+`dynamic_graph` is the most flexible container. Its vertex and edge storage are
+determined entirely by the **Traits** parameter, which names the concrete
+`vertices_type` and `edges_type` (e.g., `std::vector<vertex_type>` and
+`std::forward_list<edge_type>`).
+
+### Properties
+
+| Property | Value |
+|----------|-------|
+| Vertex ID assignment | Contiguous (0 .. N-1) for `v`/`d` traits; sparse user-defined keys for `m`/`u` traits |
+| Vertex range | Random access (`v`/`d`), bidirectional (`m`), forward (`u`) |
+| Edge range per vertex | Random access (`v`/`d`), forward (`fl`/`us`), bidirectional (`l`/`s`/`em`) |
+| Partitions | No |
+| Append vertices/edges | Yes |
+
+### Complexity guarantees
+
+Complexity depends on the vertex container, the edge container, or neither.
+
+**Vertex-container-dependent operations:**
+
+| Operation | `v`/`d` | `m` | `u` |
+|-----------|---------|-----|-----|
+| `find_vertex(g, uid)` | O(1) | O(log V) | O(1) avg |
+| Add vertex | O(1) amortized | O(log V) | O(1) avg |
+
+**Edge-container-dependent operations:**
+
+| Operation | `v`/`d`/`l` | `fl` | `s`/`em` | `us` |
+|-----------|-------------|------|----------|------|
+| `find_vertex_edge(g, u, vid)` | O(degree) | O(degree) | O(log degree) | O(1) avg |
+| Add edge | O(1) amortized† | O(1) | O(log degree) | O(1) avg |
+| `degree(g, u)` | O(1) | O(degree) | O(1) | O(1) |
+
+† O(1) amortized for `v`/`d` (reallocation); O(1) for `l` (no reallocation).
+
+**Container-independent operations:**
+
+| Operation | Complexity |
+|-----------|------------|
+| `num_vertices(g)` | O(1) |
+| `num_edges(g)` | O(1) |
+| `has_edge(g)` | O(1) |
+
+### Template parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `EV` | `void` | Edge value type (`void` → no edge values) |
+| `VV` | `void` | Vertex value type (`void` → no vertex values) |
+| `GV` | `void` | Graph value type (`void` → no graph value) |
+| `VId` | `uint32_t` | Vertex ID type (integral for indexed traits, any ordered/hashable type for map-based traits) |
+| `Sourced` | `false` | When `true`, each edge stores a source vertex ID. This does not affect the ability to use `source_id(g,uv)`. |
+| `Traits` | `vofl_graph_traits<…>` | Trait struct that defines the vertex and edge container types |
+
+### Quick usage
+
+```cpp
+#include <graph/container/dynamic_graph.hpp>
+#include <graph/container/traits/vov_graph_traits.hpp>
+
+using namespace graph::container;
+
+// vector of vertices with vector of edges
+// Weighted edges (double), labeled vertices (string), no graph value
+using Traits = vov_graph_traits<double, std::string>;
+using G      = dynamic_adjacency_graph<Traits>;
+
+G g;
+// ... populate with load_edges / load_vertices ...
+```
+
+The `dynamic_adjacency_graph<Traits>` alias extracts `EV`, `VV`, `GV`, `VId`,
+and `Sourced` from the traits struct, so you only need one template argument.
+
+### Trait combinations
+
+Traits follow the naming convention **`{vertex}o{edge}_graph_traits`** — vertex
+container abbreviation, the letter `o`, edge container abbreviation.
+
+#### Vertex container abbreviations
+
+| Container | Iterator type | Vertex ID type | Other  | Abbrev |
+|-----------|---------------|----------------|--------|--------|
+| `std::vector` | Random access | Integral index | | `v` |
+| `std::deque` | Random access | Integral index | | `d` |
+| `std::map` | Bidirectional | Ordered key (any `operator<` type) | deduplicated vertex id | `m` |
+| `std::unordered_map` | Forward | Hashable key (any with `std::hash`) | deduplicated vertex id | `u` |
+
+#### Edge container abbreviations
+
+| Container | Iterator type | Properties | Abbrev |
+|-----------|---------------|------------|--------|
+| `std::vector` | Random access | Cache-friendly, allows duplicates | `v` |
+| `std::deque` | Random access | Efficient front/back insertion | `d` |
+| `std::forward_list` | Forward | Minimal memory overhead. Edges added to the front. | `fl` |
+| `std::list` | Bidirectional | O(1) insertion/removal anywhere. Edges added to the back. | `l` |
+| `std::set` | Bidirectional | Sorted, deduplicated target id | `s` |
+| `std::unordered_set` | Forward | Hash-based, O(1) avg lookup, deduplicated target id| `us` |
+| `std::map` | Bidirectional | Sorted by target_id key, deduplicated target id | `em` |
+
+#### Full 26-combination matrix
+
+Each trait struct is in `graph::container` and has its own header in
+`include/graph/container/traits/`.
+
+| Trait | Vertices | Edges | Header |
+|-------|----------|-------|--------|
+| `vov_graph_traits` | `vector` | `vector` | `traits/vov_graph_traits.hpp` |
+| `vod_graph_traits` | `vector` | `deque` | `traits/vod_graph_traits.hpp` |
+| `vofl_graph_traits` | `vector` | `forward_list` | `traits/vofl_graph_traits.hpp` |
+| `vol_graph_traits` | `vector` | `list` | `traits/vol_graph_traits.hpp` |
+| `vos_graph_traits` | `vector` | `set` | `traits/vos_graph_traits.hpp` |
+| `vous_graph_traits` | `vector` | `unordered_set` | `traits/vous_graph_traits.hpp` |
+| `voem_graph_traits` | `vector` | `map` | `traits/voem_graph_traits.hpp` |
+| `dov_graph_traits` | `deque` | `vector` | `traits/dov_graph_traits.hpp` |
+| `dod_graph_traits` | `deque` | `deque` | `traits/dod_graph_traits.hpp` |
+| `dofl_graph_traits` | `deque` | `forward_list` | `traits/dofl_graph_traits.hpp` |
+| `dol_graph_traits` | `deque` | `list` | `traits/dol_graph_traits.hpp` |
+| `dos_graph_traits` | `deque` | `set` | `traits/dos_graph_traits.hpp` |
+| `dous_graph_traits` | `deque` | `unordered_set` | `traits/dous_graph_traits.hpp` |
+| `mov_graph_traits` | `map` | `vector` | `traits/mov_graph_traits.hpp` |
+| `mod_graph_traits` | `map` | `deque` | `traits/mod_graph_traits.hpp` |
+| `mofl_graph_traits` | `map` | `forward_list` | `traits/mofl_graph_traits.hpp` |
+| `mol_graph_traits` | `map` | `list` | `traits/mol_graph_traits.hpp` |
+| `mos_graph_traits` | `map` | `set` | `traits/mos_graph_traits.hpp` |
+| `mous_graph_traits` | `map` | `unordered_set` | `traits/mous_graph_traits.hpp` |
+| `moem_graph_traits` | `map` | `map` | `traits/moem_graph_traits.hpp` |
+| `uov_graph_traits` | `unordered_map` | `vector` | `traits/uov_graph_traits.hpp` |
+| `uod_graph_traits` | `unordered_map` | `deque` | `traits/uod_graph_traits.hpp` |
+| `uofl_graph_traits` | `unordered_map` | `forward_list` | `traits/uofl_graph_traits.hpp` |
+| `uol_graph_traits` | `unordered_map` | `list` | `traits/uol_graph_traits.hpp` |
+| `uos_graph_traits` | `unordered_map` | `set` | `traits/uos_graph_traits.hpp` |
+| `uous_graph_traits` | `unordered_map` | `unordered_set` | `traits/uous_graph_traits.hpp` |
+
+#### Common trait parameters
+
+All trait structs share the same template parameters:
+
+```cpp
+template <class EV = void, class VV = void, class GV = void,
+          class VId = uint32_t, bool Sourced = false>
+struct vov_graph_traits { ... };
+```
+
+Each defines:
+- `edge_value_type`, `vertex_value_type`, `graph_value_type`, `vertex_id_type`
+- `static constexpr bool sourced`
+- `edge_type`, `vertex_type`, `graph_type`
+- `vertices_type` (e.g., `std::vector<vertex_type>`)
+- `edges_type` (e.g., `std::vector<edge_type>`)
+
+#### Using non-default traits
+
+```cpp
+#include <graph/container/dynamic_graph.hpp>
+#include <graph/container/traits/mofl_graph_traits.hpp>
+
+using namespace graph::container;
+
+// Sparse graph with string vertex IDs, double edge weights
+using Traits = mofl_graph_traits<double, std::string, void, std::string>;
+using G      = dynamic_adjacency_graph<Traits>;
+// Vertices: std::map<std::string, vertex_type>
+// Edges:    std::forward_list<edge_type>
+```
+
+> **Note:** Map-based vertex containers (`m*`, `u*` traits) require vertices to
+> be explicitly created — they do not auto-extend when edges reference undefined
+> vertex IDs, unlike `vector`/`deque`-based traits.
+
+### Defining custom traits
+
+You can define your own traits struct to use containers not in the standard
+library (e.g., Boost, Abseil, or your own). A traits struct must provide exactly
+the type aliases and constant shown below:
+
+```cpp
+#include <graph/container/dynamic_graph.hpp>
+#include <boost/container/flat_map.hpp>
+#include <boost/container/small_vector.hpp>
+
+namespace myapp {
+
+// Forward declarations required by dynamic_edge / dynamic_vertex / dynamic_graph
+using namespace graph::container;
+
+template <class EV = void, class VV = void, class GV = void,
+          class VId = uint32_t, bool Sourced = false>
+struct flat_map_small_vec_traits {
+  // --- Required type aliases ---
+  using edge_value_type         = EV;
+  using vertex_value_type       = VV;
+  using graph_value_type        = GV;
+  using vertex_id_type          = VId;
+  static constexpr bool sourced = Sourced;
+
+  // --- Edge, vertex, and graph types (always use dynamic_*) ---
+  using edge_type   = dynamic_edge<EV, VV, GV, VId, Sourced,
+                                   flat_map_small_vec_traits>;
+  using vertex_type = dynamic_vertex<EV, VV, GV, VId, Sourced,
+                                     flat_map_small_vec_traits>;
+  using graph_type  = dynamic_graph<EV, VV, GV, VId, Sourced,
+                                    flat_map_small_vec_traits>;
+
+  // --- Storage types (your custom containers) ---
+  using vertices_type = boost::container::flat_map<VId, vertex_type>;
+  using edges_type    = boost::container::small_vector<edge_type, 8>;
+};
+
+} // namespace myapp
+```
+
+**Container requirements:**
+
+| Member | Container must satisfy |
+|--------|-----------------------|
+| `vertices_type` | `std::ranges::forward_range` with `value_type` = `vertex_type`. For indexed vertex IDs, must also be a `std::ranges::sized_range` supporting `operator[]`. For keyed vertex IDs, must support `find(key)` and `end()`. |
+| `edges_type` | `std::ranges::forward_range` with `value_type` = `edge_type`. Must support insertion (`push_back`, `push_front`, `insert`, or `emplace`). |
+
+**Usage:**
+
+```cpp
+using Traits = myapp::flat_map_small_vec_traits<double, std::string>;
+using G      = graph::container::dynamic_adjacency_graph<Traits>;
+
+G g;
+// All CPOs, views, and algorithms work as normal
+```
+
+> **Tip:** Model your traits struct on one of the 26 built-in traits headers in
+> `include/graph/container/traits/`. The simplest starting point is
+> `vov_graph_traits.hpp`.
+
+---
+
+## 2. `compressed_graph`
+
+```cpp
+#include <graph/container/compressed_graph.hpp>
+
+namespace graph::container {
+template <class EV        = void,            // edge value type
+          class VV        = void,            // vertex value type
+          class GV        = void,            // graph value type
+          integral VId    = uint32_t,        // vertex id type
+          integral EIndex = uint32_t,        // edge index type
+          class Alloc     = std::allocator<VId>>
+class compressed_graph;
+}
+```
+
+`compressed_graph` uses CSR (Compressed Sparse Row) format for maximum memory
+density and cache locality. Vertices and edges cannot be added or removed after
+construction, but values on them can be modified.
+
+### Properties
+
+| Property | Value |
+|----------|-------|
+| Vertex ID assignment | Contiguous (0 .. N-1) |
+| Vertex range | Contiguous |
+| Edge range | Contiguous per vertex |
+| Partitions | Optional (multi-partite support) |
+| Append vertices/edges | No |
+
+### Complexity guarantees
+
+| Operation | Complexity |
+|-----------|------------|
+| Vertex access by ID | O(1) |
+| `find_vertex(g, uid)` | O(1) |
+| `find_vertex_edge(g, u, vid)` | O(degree) |
+| `num_vertices(g)` | O(1) |
+| `num_edges(g)` | O(1) |
+| `degree(g, u)` | O(1) |
+| Iterate edges from vertex | O(degree) |
+
+### Memory layout
+
+$$|V| \times (\text{sizeof}(\texttt{EIndex}) + \text{sizeof}(\texttt{VV})) + |E| \times (\text{sizeof}(\texttt{VId}) + \text{sizeof}(\texttt{EV})) + \text{sizeof}(\texttt{GV})$$
+
+When `VV`, `EV`, or `GV` is `void`, that term contributes zero.
+
+### Quick usage
+
+```cpp
+#include <graph/container/compressed_graph.hpp>
+
+using namespace graph::container;
+
+// Construct from an edge list (tuple<source, target, weight>)
+std::vector<std::tuple<int,int,double>> edges = {
+  {0, 1, 1.5}, {1, 2, 2.0}, {2, 0, 0.5}
+};
+compressed_graph<double> g(edges, 3);  // 3 vertices, EV=double
+
+// Values on edges are mutable even though structure is not
+for (auto&& u : graph::vertices(g)) {
+  for (auto&& uv : graph::edges(g, u)) {
+    graph::edge_value(g, uv) *= 2.0;
+  }
+}
+```
+
+### Template parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `EV` | `void` | Edge value type |
+| `VV` | `void` | Vertex value type |
+| `GV` | `void` | Graph value type |
+| `VId` | `uint32_t` | Vertex ID type (must be integral; size must hold \|V\|+1) |
+| `EIndex` | `uint32_t` | Edge index type (must be integral; size must hold \|E\|+1) |
+| `Alloc` | `std::allocator<VId>` | Allocator (rebound for internal containers) |
+
+---
+
+## 3. `undirected_adjacency_list`
+
+```cpp
+#include <graph/container/undirected_adjacency_list.hpp>
+
+namespace graph::container {
+template <typename VV                                        = void,
+          typename EV                                        = void,
+          typename GV                                        = void,
+          integral VId                                       = uint32_t,
+          template <typename V, typename A> class VContainer = std::vector,
+          typename Alloc                                     = std::allocator<char>>
+class undirected_adjacency_list;
+}
+```
+
+Each undirected edge appears in two doubly-linked lists — one at each endpoint.
+This gives O(1) edge removal from both vertices and efficient iteration of
+incident edges. Edges are not duplicated, so this is ideal when edge properties 
+need to be changed or when there are many edge properties.
+
+### Complexity guarantees
+
+| Operation | Complexity |
+|-----------|------------|
+| Vertex access by ID | O(1) |
+| `find_vertex(g, uid)` | O(1) |
+| `find_vertex_edge(g, u, vid)` | O(degree) |
+| Add vertex | O(1) amortized |
+| Add edge | O(1) |
+| Remove edge | O(degree) find + O(1) unlink |
+| Degree query | O(1) (cached) |
+| Iterate edges from vertex | O(degree) |
+| Iterate all edges | O(V + E) |
+
+### Memory overhead
+
+- Per vertex: ~24-32 bytes (list head pointers + value)
+- Per edge: ~48-64 bytes (4 list pointers, 2 vertex IDs, value, allocation overhead)
+
+### Iteration note
+
+Edge iteration at graph level visits each edge **twice** (once from each
+endpoint). Use `edges_size() / 2` for the unique edge count.
+
+### Template parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `VV` | `void` | Vertex value type |
+| `EV` | `void` | Edge value type |
+| `GV` | `void` | Graph value type |
+| `VId` | `uint32_t` | Vertex ID type (integral) |
+| `VContainer` | `std::vector` | Vertex storage container template |
+| `Alloc` | `std::allocator<char>` | Allocator |
+
+> **Note:** The template parameter order is `VV, EV, GV` (vertex-first), which
+> differs from `dynamic_graph` and `compressed_graph` (`EV, VV, GV`).
+
+---
+
+## 4. Container Selection Guide
+
+```
+              ┌─ Need undirected edges        → undirected_adjacency_list
+              │   with O(1) removal or
+              │   mutable edge properties?
+Start ────────┤
+              │
+              ├─ Graph is read-only            → compressed_graph
+              │   after construction?             (smallest memory, best cache)
+              │
+              └─ Need mutable vertices/edges?  → dynamic_graph
+                                                  (pick traits for your needs)
+```
+
+When `compressed_graph` or `dynamic_graph` is used to represent an undirected graph, 
+edges must be duplicated (e.g. edges A/B and B/A for vertices A and B). Properties must also be
+duplicated, or handled in a way that avoids duplication (e.g. a `std::shared_ptr` to a property 
+struct), if they are mutable.
+
+| Criterion | `dynamic_graph` | `compressed_graph` | `undirected_adjacency_list` |
+|-----------|-----------------|--------------------|-----------------------------|
+| Add/remove vertices | Yes | No | Yes |
+| Add/remove edges | Yes | No | Yes (O(1) remove) |
+| Directed | Yes | Yes | No (undirected) |
+| Undirected | Yes (duplicated edges) | Yes (duplicated edges) | Yes |
+| Mutable Properties | Directed (Yes), Undirected (No) | Directed (Yes), Undirected (No) | Yes |
+| Memory efficiency | Medium | Best (CSR) | Highest overhead |
+| Cache locality | Depends on trait | Excellent | Poor (linked-list) |
+| Multi-partite | No | Yes | No |
+| Container flexibility | 26 trait combos | Fixed (CSR) | Configurable random access vertex container |
+
+
+---
+
+## See Also
+
+- [Adjacency Lists User Guide](adjacency-lists.md) — concepts, CPOs, descriptors
+- [Edge Lists User Guide](edge-lists.md) — edge list input for graph construction
+- [Getting Started](../getting-started.md) — quick-start examples with all three containers
+- [Container Interface (GCI spec)](../container_interface.md) — formal specification
