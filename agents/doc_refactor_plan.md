@@ -507,7 +507,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 3.1 Getting started
 
-- [ ] **3.1.1** `CREATE` `docs/getting-started.md`
+- [x] **3.1.1** `CREATE` `docs/getting-started.md`
   - **Depends:** Phase 2 complete
   - **Risk:** low
   - **Action:** Write installation + first-graph + first-algorithm guide. Structure:
@@ -527,7 +527,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 3.2 Adjacency lists user guide
 
-- [ ] **3.2.1** `READ` Gather adjacency list surface area
+- [x] **3.2.1** `READ` Gather adjacency list surface area
   - **Depends:** —
   - **Risk:** low
   - **Action:** Read these files and note concepts, CPOs, and types:
@@ -538,7 +538,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
     - `docs/container_interface.md` — existing adjacency list documentation
   - **Output:** Notes on: concepts (9), CPOs (19), descriptor types (4), type aliases (8).
 
-- [ ] **3.2.2** `CREATE` `docs/user-guide/adjacency-lists.md`
+- [x] **3.2.2** `CREATE` `docs/user-guide/adjacency-lists.md`
   - **Depends:** 3.2.1
   - **Risk:** low
   - **Action:** Write user-facing guide. Structure:

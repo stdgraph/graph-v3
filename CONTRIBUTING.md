@@ -7,7 +7,7 @@ submit changes to the project.
 
 ## Requirements
 
-- **C++20** compiler (GCC 10+, Clang 10+, MSVC 2019+)
+- **C++20** compiler (GCC 13+, Clang 10+, MSVC 2022+)
 - **CMake 3.20+**
 - **Ninja** (recommended generator; installed by default on most Linux distros)
 
@@ -119,14 +119,14 @@ Coverage reports are generated using the `CodeCoverage.cmake` module. See
 
 ### New Algorithm
 
-1. Create `include/graph/algorithm/<name>.hpp`
+1. Create `include/graph/algorithm/<name>.hpp`. Create documentation using `docs/algorithm_template.md`.
 2. Add the include to `include/graph/algorithms.hpp`
 3. Create `tests/algorithms/test_<name>.cpp` and register it in `tests/CMakeLists.txt`
 4. Update `docs/status/implementation_matrix.md`
 
 ### New View
 
-1. Create `include/graph/views/<name>.hpp`
+1. Create `include/graph/views/<name>.hpp`. Create documentation using `docs/view_template.md`.
 2. Add the include to `include/graph/views.hpp` (if an umbrella header exists)
 3. Create `tests/views/test_<name>.cpp` and register it in `tests/CMakeLists.txt`
 4. Update `docs/status/implementation_matrix.md`

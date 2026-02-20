@@ -27,17 +27,18 @@
 ```cpp
 // (simplified — see examples/dijkstra_clrs_example.cpp for the full version)
 #include "graph/graph.hpp"
-#include "graph/container/dynamic_graph.hpp"
-#include "graph/container/traits/vol_graph_traits.hpp"
 #include "graph/algorithm/dijkstra_shortest_paths.hpp"
 #include <vector>
 #include <iostream>
 
 int main() {
-  // Weighted directed graph — edges are (source, target, weight)
-  using G = graph::container::vol_graph_traits<double>::graph_type;
-  G g({{0, 1, 10.0}, {0, 2, 5.0}, {1, 3, 1.0},
-       {2, 1, 3.0},  {2, 3, 9.0}, {3, 4, 7.0}});
+  // Weighted directed graph — edges are (target, weight) per vertex
+  using G = std::vector<std::vector<std::pair<int,double>>>;
+  G g{{{1, 10.0}, {2, 5.0}},   // vertex 0
+      {{3, 1.0}},              // vertex 1
+      {{1, 3.0}, {3, 9.0}},    // vertex 2
+      {{4, 7.0}},              // vertex 3
+      {}};                     // vertex 4
 
   std::vector<double>   distance(graph::num_vertices(g));
   std::vector<uint32_t> predecessor(graph::num_vertices(g));
@@ -49,8 +50,12 @@ int main() {
 }
 ```
 
+<!--
+A full example would be useful, but dijkstra_clrs_example uses a reference version of Dijkstra, not the
+library's version.
 > A complete, compilable example lives in
 > [examples/dijkstra_clrs_example.cpp](examples/dijkstra_clrs_example.cpp).
+-->
 
 ---
 
@@ -83,9 +88,9 @@ Both share a common descriptor system and customization-point interface.
 
 | Compiler | Version | Platform | Status |
 |----------|---------|----------|--------|
-| GCC      | 10 +    | Linux    | Tested |
+| GCC      | 13 +    | Linux    | Tested |
 | Clang    | 10 +    | Linux, macOS | Tested |
-| MSVC     | 2019 +  | Windows  | Tested |
+| MSVC     | 2022 +  | Windows  | Tested |
 
 Requires **CMake 3.20+** and a **C++20**-capable toolchain.
 
@@ -148,7 +153,7 @@ The full documentation hub is at [docs/index.md](docs/index.md).
 Quick links:
 
 - [Getting Started](docs/index.md#users)
-- [Migration from v2](docs/migration-from-v2.md)
+- [Migration from graph-v2](docs/migration-from-v2.md)
 - [FAQ](docs/FAQ.md)
 - [Implementation Matrix](docs/status/implementation_matrix.md)
 - [Container Interface](docs/container_interface.md)
