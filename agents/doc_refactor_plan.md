@@ -248,7 +248,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 1.1 Create directory structure
 
-- [ ] **1.1.1** `RUN` Create doc directories
+- [x] **1.1.1** `RUN` Create doc directories
   - **Depends:** Phase 0 complete
   - **Risk:** low
   - **Action:**
@@ -259,7 +259,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 1.2 Write docs/index.md
 
-- [ ] **1.2.1** `CREATE` `docs/index.md`
+- [x] **1.2.1** `CREATE` `docs/index.md`
   - **Depends:** 1.1.1
   - **Risk:** low
   - **Action:** Create navigation hub. Skeleton:
@@ -306,7 +306,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 1.3 Write migration-from-v2.md
 
-- [ ] **1.3.1** `READ` Extract v2 content from README.md
+- [x] **1.3.1** `READ` Extract v2 content from README.md
   - **Depends:** —
   - **Risk:** low
   - **Action:** Read `README.md` and identify all v2 comparison content. Key sections:
@@ -315,7 +315,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
       namespace changes
     Record line ranges for extraction.
 
-- [ ] **1.3.2** `CREATE` `docs/migration-from-v2.md`
+- [x] **1.3.2** `CREATE` `docs/migration-from-v2.md`
   - **Depends:** 1.3.1, 1.1.1
   - **Risk:** low
   - **Action:** Create migration guide with content extracted from README.md. Structure:
@@ -1058,16 +1058,18 @@ This was created in step 2.2.1. Skip if already done.
 
 ## Summary Statistics
 
-| Phase | Steps | High-risk | Deliverables |
-|-------|-------|-----------|-------------|
-| 0 | 9 | 1 | Fixed `algorithms.hpp`, fixed `graph.hpp`, implementation matrix, canonical metrics |
-| 1 | 10 | 0 | `docs/index.md`, migration guide, FAQ, 4 archived files |
-| 2 | 5 | 1 | New README, CONTRIBUTING.md |
-| 3 | 11 | 0 | 6 user-guide pages + views move |
-| 4 | 12 | 2 | 7 reference pages + 3 deleted sources |
-| 5 | 10 | 1 | Architecture guide, consolidated CPO doc, 5 moved docs |
-| 6 | 10 | 0 | CHANGELOG, cross-ref fixes, validation |
-| **Total** | **67** | **5** | |
+| Phase | Steps | Done | High-risk | Status | Deliverables |
+|-------|-------|------|-----------|--------|--------------|
+| 0 | 8 | 8 | 1 | **Complete** | Fixed `algorithms.hpp`, fixed `graph.hpp`, implementation matrix, canonical metrics |
+| 1 | 10 | 4 | 0 | In progress | `docs/index.md`, migration guide, FAQ, 4 archived files |
+| 2 | 5 | 0 | 1 | Not started | New README, CONTRIBUTING.md |
+| 3 | 11 | 0 | 0 | Not started | 6 user-guide pages + views move |
+| 4 | 12 | 0 | 2 | Not started | 7 reference pages + 3 deleted sources |
+| 5 | 10 | 0 | 1 | Not started | Architecture guide, consolidated CPO doc, 5 moved docs |
+| 6 | 13 | 0 | 0 | Not started | CHANGELOG, cross-ref fixes, validation |
+| **Total** | **69** | **12** | **5** | **17%** | |
+
+> Last updated: 2026-02-19 · Commit: `fe0f187` · Branch: `newdoc`
 
 ### Dependency graph (phases)
 
