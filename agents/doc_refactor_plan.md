@@ -620,7 +620,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 3.6 Algorithms user guide
 
-- [ ] **3.6.1** `CREATE` `docs/user-guide/algorithms.md`
+- [x] **3.6.1** `CREATE` `docs/user-guide/algorithms.md`
   - **Depends:** 0.4.1 (implementation matrix)
   - **Risk:** low
   - **Action:** Write algorithms guide using implementation matrix as source of truth.
