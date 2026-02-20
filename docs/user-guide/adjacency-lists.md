@@ -186,21 +186,33 @@ regardless of whether the container materializes vertex storage.
 
 ### Descriptor types
 
+Descriptors are value types that identify a single vertex or edge:
+
 | Type | Description |
 |------|-------------|
-| `vertex_descriptor<Iter>` | Wraps an iterator or index; provides `vertex_id()`, `value()`, `inner_value()` |
-| `edge_descriptor<Iter, VId>` | Wraps an edge iterator + source id; provides `source_id()`, `target_id()`, `value()` |
+| `vertex_descriptor<VId>` | Holds an index or iterator that identifies a vertex; provides `vertex_id()`, `value()`, `inner_value()` |
+| `edge_descriptor<VId, EI>` | Holds an edge iterator + source vertex descriptor; provides `source_id()`, `target_id()`, `value()` |
+
+Descriptor views are range adaptors that wrap an entire physical range and
+yield one descriptor per element:
+
+| Type | Description |
+|------|-------------|
 | `vertex_descriptor_view<G>` | Wraps the physical vertex range, yielding a `vertex_descriptor` per element |
 | `edge_descriptor_view<G>` | Wraps the physical edge range for a vertex, yielding an `edge_descriptor` per element |
 
 For **index-based** graphs (e.g., backed by `std::vector`), a vertex descriptor
-holds an integer index. For **keyed** graphs (e.g., backed by `std::map` or `std::unordered_map`), it
-wraps a bidirectional iterator. In both cases the same CPOs — `vertex_id`,
-`edges`, `target_id`, etc. — work unchanged, which is the whole point.
+holds an integer index. For **keyed** graphs it wraps a bidirectional iterator (e.g., for `std::map`)
+or forward iterator (e.g., backed by `std::unordered_map`). In all cases the
+same CPOs — `vertex_id`, `edges`, `target_id`, etc. — work unchanged, which is
+the whole point. This extends to containers defined in external libraries as
+well, as long as they satisfy `random_access_range`, `bidirectional_range`, or
+`forward_range`.
 
-Examples are given using the containers in the standard library, but it also extends to
-the containers defined in external libraries, as long as they follow the range concepts
-for `random_access_range`, `bidirectional_range`, or `forward_range`.
+`vertex_descriptor_view<G>` and `edge_descriptor_view<G>` are forward ranges,
+like most views. This doesn't limit graph algorithms because they only need
+forward iteration on vertices and edges after the range is created.
+
 
 ### Automatic pattern recognition
 
