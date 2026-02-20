@@ -604,13 +604,13 @@ The current header includes 6 non-existent paths. The mapping from broken → re
 
 ### 3.5 Move and update views
 
-- [ ] **3.5.1** `MOVE` `docs/views.md` → `docs/user-guide/views.md`
+- [x] **3.5.1** `MOVE` `docs/views.md` → `docs/user-guide/views.md`
   - **Depends:** 1.1.1 (directory exists)
   - **Risk:** med
   - **Action:** `git mv docs/views.md docs/user-guide/views.md`
   - **Verify:** File moved.
 
-- [ ] **3.5.2** `EDIT` `docs/user-guide/views.md`
+- [x] **3.5.2** `EDIT` `docs/user-guide/views.md`
   - **Depends:** 3.5.1
   - **Risk:** med
   - **Action:** Add navigation header linking to `../index.md` and cross-links to

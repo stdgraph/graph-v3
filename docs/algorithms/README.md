@@ -347,5 +347,5 @@ Algorithms can be combined:
 
 - [Graph CPO Documentation](../graph_cpo_implementation.md)
 - [Container Interface](../container_interface.md)
-- [View Documentation](../views.md)
+- [View Documentation](../user-guide/views.md)
 - [Main README](../../README.md)

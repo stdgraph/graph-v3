@@ -500,7 +500,7 @@ Factory function → view_class(g, ...) → iterator(g, begin, end) → operator
 - [Graph CPO Documentation](graph_cpo_implementation.md) - Customization point objects
 - [Container Interface](container_interface.md) - Graph container requirements
 - [View Chaining Limitations](view_chaining_limitations.md) - Chaining design rationale
-- [Views Overview](views.md) - All views summary and usage patterns
+- [Views Overview](user-guide/views.md) - All views summary and usage patterns
 
 ### Related Views
 
@@ -576,7 +576,7 @@ List related views that serve similar or complementary purposes:
 
 ## See Also
 
-- [Views Overview](views.md)
+- [Views Overview](user-guide/views.md)
 - [Graph CPO Documentation](graph_cpo_implementation.md)
 - [Container Interface](container_interface.md)
 - [View Chaining Limitations](view_chaining_limitations.md)
