@@ -1491,13 +1491,13 @@ TEST_CASE("transform - create edge descriptors with values (dofl)", "[stl][6.2.4
   auto                  v = *vertices(g).begin();
   std::vector<EdgeInfo> edge_infos;
   std::ranges::transform(edges(g, v), std::back_inserter(edge_infos),
-                         [&g](auto&& e) { return EdgeInfo{target_id(g, e), edge_value(g, e)}; });
+                         [&g](auto&& e) { return EdgeInfo{static_cast<size_t>(target_id(g, e)), edge_value(g, e)}; });
 
   std::ranges::sort(edge_infos, {}, &EdgeInfo::target);
   REQUIRE(edge_infos.size() == 2);
-  REQUIRE(edge_infos[0].target == 1);
+  REQUIRE(edge_infos[0].target == size_t(1));
   REQUIRE(edge_infos[0].value == 100);
-  REQUIRE(edge_infos[1].target == 2);
+  REQUIRE(edge_infos[1].target == size_t(2));
   REQUIRE(edge_infos[1].value == 200);
 }
 
@@ -1825,7 +1825,7 @@ TEST_CASE("sort edge infos by target then by value (vov)", "[stl][6.2.5][sort]")
   auto                  edge_range = edges(g, 0);
   std::vector<EdgeInfo> infos;
   std::ranges::transform(edge_range, std::back_inserter(infos),
-                         [&g](auto&& e) { return EdgeInfo{target_id(g, e), edge_value(g, e)}; });
+                         [&g](auto&& e) { return EdgeInfo{static_cast<vertex_id_t<G>>(target_id(g, e)), edge_value(g, e)}; });
 
   std::ranges::sort(infos);
 
@@ -1923,7 +1923,7 @@ TEST_CASE("stable_sort preserves relative order of equal elements (vov)", "[stl]
   std::vector<EdgeData> data;
   size_t                order = 0;
   std::ranges::transform(edge_range, std::back_inserter(data),
-                         [&g, &order](auto&& e) { return EdgeData{order++, target_id(g, e), edge_value(g, e)}; });
+                         [&g, &order](auto&& e) { return EdgeData{order++, static_cast<vertex_id_t<G>>(target_id(g, e)), edge_value(g, e)}; });
 
   // Stable sort by value - edges with same value maintain insertion order
   std::ranges::stable_sort(data, {}, &EdgeData::value);

@@ -17,7 +17,7 @@ using std::ranges::size;
 // Graph structure: 0 -> {1, 2}, 1 -> {2}, 2 -> {}
 using test_graph = std::vector<std::vector<int>>;
 
-auto make_test_graph() {
+inline auto make_test_graph() {
   test_graph g(3); // 3 vertices
   g[0] = {1, 2};   // vertex 0 connects to vertices 1 and 2
   g[1] = {2};      // vertex 1 connects to vertex 2
