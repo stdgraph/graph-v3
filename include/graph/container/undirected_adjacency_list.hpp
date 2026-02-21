@@ -1057,7 +1057,7 @@ public: // Vertex Creation
   /// @return Iterator to the newly created vertex.
   /// @complexity O(1) amortized
   template <class VV2>
-  requires std::constructible_from<vertex_value_type, const VV2&>
+  requires std::constructible_from<VV, const VV2&>
   vertex_iterator create_vertex(const VV2& val);
 
 public: // Edge Creation
@@ -1084,7 +1084,7 @@ public: // Edge Creation
   /// @return Iterator to the newly created edge.
   /// @complexity O(1).
   template <class EV2>
-  requires std::constructible_from<edge_value_type, const EV2&>
+  requires std::constructible_from<EV, const EV2&>
   vertex_edge_iterator create_edge(vertex_id_type uid, vertex_id_type vid, const EV2& val);
 
   /// @brief Create an edge between two vertices (by iterator).
@@ -1110,7 +1110,7 @@ public: // Edge Creation
   /// @return Iterator to the newly created edge.
   /// @complexity O(1).
   template <class EV2>
-  requires std::constructible_from<edge_value_type, const EV2&>
+  requires std::constructible_from<EV, const EV2&>
   vertex_edge_iterator create_edge(vertex_iterator u, vertex_iterator v, const EV2& val);
 
 public: // Edge Removal

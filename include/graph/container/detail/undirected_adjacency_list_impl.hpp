@@ -1454,9 +1454,7 @@ template <typename VV,
           template <typename V, typename A> class VContainer,
           typename Alloc>
 template <class VV2>
-requires std::constructible_from<
-      typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_value_type,
-      const VV2&>
+requires std::constructible_from<VV, const VV2&>
 typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_iterator
 base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_vertex(const VV2& val) {
   this->vertices_.push_back(vertex_type(this->vertices_, static_cast<vertex_id_type>(this->vertices_.size()), val));
@@ -1503,9 +1501,7 @@ template <typename VV,
           template <typename V, typename A> class VContainer,
           typename Alloc>
 template <class EV2>
-requires std::constructible_from<
-      typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::edge_value_type,
-      const EV2&>
+requires std::constructible_from<EV, const EV2&>
 typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_edge_iterator
 base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_edge(vertex_id_type from_id,
                                                                                 vertex_id_type to_id,
@@ -1554,9 +1550,7 @@ template <typename VV,
           template <typename V, typename A> class VContainer,
           typename Alloc>
 template <class EV2>
-requires std::constructible_from<
-      typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::edge_value_type,
-      const EV2&>
+requires std::constructible_from<EV, const EV2&>
 typename base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::vertex_edge_iterator
 base_undirected_adjacency_list<VV, EV, GV, VId, VContainer, Alloc>::create_edge(vertex_iterator u,
                                                                                 vertex_iterator v,
