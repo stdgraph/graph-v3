@@ -22,6 +22,12 @@ preserving full backward compatibility with existing code.
    new concepts — algorithms gracefully fall back to outgoing-only behavior.
 4. **Consistent naming.** Incoming counterparts use an `in_` prefix; where ambiguity
    arises, outgoing counterparts gain an `out_` alias.
+5. **Independent edge types.** `in_edge_t<G>` and `edge_t<G>` (i.e. `out_edge_t<G>`)
+   are independently deduced from their respective ranges. They are commonly the same
+   type but this is **not** required. For example, in a distributed graph the outgoing
+   edges may carry full property data while incoming edges are lightweight back-pointers
+   (just a source vertex ID). In a CSR+CSC compressed graph, the CSC incoming entries
+   may store only a column index plus a back-reference into the CSR value array.
 
 ---
 
@@ -54,6 +60,7 @@ existing CPOs. These are convenience only — not required:
 |---|---|
 | `out_edges(g, u)` | `edges(g, u)` |
 | `out_degree(g, u)` | `degree(g, u)` |
+| `find_out_edge(g, u, v)` | `find_vertex_edge(g, u, v)` |
 
 These are defined as inline constexpr CPO aliases or thin wrapper functions in
 `graph::adj_list` and re-exported to `graph::`.
@@ -64,7 +71,7 @@ These are defined as inline constexpr CPO aliases or thin wrapper functions in
 |---|---|
 | `in_edges(g, u)` / `in_edges(g, uid)` | Incoming edges to vertex `u` |
 | `in_degree(g, u)` / `in_degree(g, uid)` | In-degree of `u` |
-| `find_vertex_in_edge(g, u, v)` | Find incoming edge from `v` to `u` |
+| `find_in_edge(g, u, v)` | Find incoming edge from `v` to `u` |
 | `contains_in_edge(g, u, v)` | Check incoming edge from `v` to `u` |
 | `has_in_edge(g, uid, vid)` | Check incoming edge from `vid` to `uid` |
 
@@ -106,20 +113,21 @@ the reverse edge container's iterators.
 | 2 | `_adl` | ADL `in_degree(g, u)` |
 | 3 | `_default` | `size(in_edges(g, u))` or `distance(in_edges(g, u))` |
 
-### 4.3 `out_edges` / `out_degree` (aliases)
+### 4.3 `out_edges` / `out_degree` / `find_out_edge` (aliases)
 
 **File:** `include/graph/adj_list/detail/graph_cpo.hpp`
 
 ```cpp
-inline constexpr auto& out_edges  = edges;
-inline constexpr auto& out_degree = degree;
+inline constexpr auto& out_edges      = edges;
+inline constexpr auto& out_degree     = degree;
+inline constexpr auto& find_out_edge  = find_vertex_edge;
 ```
 
-### 4.4 `find_vertex_in_edge`, `contains_in_edge`, `has_in_edge`
+### 4.4 `find_in_edge`, `contains_in_edge`, `has_in_edge`
 
-These mirror `find_vertex_edge` / `contains_edge` / `has_edge` but operate on
-the reverse adjacency structure. Implementation follows the same member → ADL → default
-cascade pattern.
+These mirror `find_vertex_edge` (`find_out_edge`) / `contains_edge` / `has_edge` but
+operate on the reverse adjacency structure. Implementation follows the same
+member → ADL → default cascade pattern.
 
 ---
 
@@ -132,6 +140,10 @@ cascade pattern.
 | `in_vertex_edge_range_t<G>` | `decltype(in_edges(g, vertex_t<G>))` |
 | `in_vertex_edge_iterator_t<G>` | `ranges::iterator_t<in_vertex_edge_range_t<G>>` |
 | `in_edge_t<G>` | `ranges::range_value_t<in_vertex_edge_range_t<G>>` |
+
+`in_edge_t<G>` is **independently deduced** from the `in_edges()` return range.
+It is commonly the same type as `edge_t<G>` but this is not required. See
+Design Principle 5 and Appendix C for rationale.
 
 Also add outgoing aliases for explicitness:
 
@@ -152,11 +164,17 @@ Also add outgoing aliases for explicitness:
 ```cpp
 template <class R, class G>
 concept in_vertex_edge_range =
-    std::ranges::forward_range<R> && edge<G, std::ranges::range_value_t<R>>;
+    std::ranges::forward_range<R>;
 ```
 
-Identical constraint to `vertex_edge_range` — the distinction is semantic (incoming
-vs outgoing), enforced by which CPO returns the range.
+Note: this is intentionally **less constrained** than `vertex_edge_range` (which
+requires `edge<G, range_value_t<R>>`). Incoming edges need only be iterable —
+their element type (`in_edge_t<G>`) may be a lightweight back-pointer that does
+not satisfy the full `edge<G, E>` concept. The minimum requirement is that
+`source_id(g, ie)` can extract the neighbor vertex ID (see §6.2).
+
+When `in_edge_t<G>` and `edge_t<G>` are the same type, the range will naturally
+model `vertex_edge_range` as well.
 
 ### 6.2 `bidirectional_adjacency_list<G>`
 
@@ -164,13 +182,21 @@ vs outgoing), enforced by which CPO returns the range.
 template <class G>
 concept bidirectional_adjacency_list =
     adjacency_list<G> &&
-    requires(G& g, vertex_t<G> u) {
+    requires(G& g, vertex_t<G> u, in_edge_t<G> ie) {
       { in_edges(g, u) } -> in_vertex_edge_range<G>;
+      { source_id(g, ie) } -> std::convertible_to<vertex_id_t<G>>;
+      // Note: no edge_value() requirement on incoming edges
     };
 ```
 
 A graph that models `bidirectional_adjacency_list` supports both `edges(g, u)`
-(outgoing) and `in_edges(g, u)` (incoming).
+(outgoing) and `in_edges(g, u)` (incoming). The only requirement on incoming
+edge elements is that the neighbor vertex ID (the edge's source) can be extracted
+via `source_id()`. Notably, `edge_value(g, ie)` is **not** required — incoming
+edges may be valueless back-pointers.
+
+When `in_edge_t<G> == edge_t<G>`, `edge_value()` will work on incoming edges
+automatically.
 
 ### 6.3 `index_bidirectional_adjacency_list<G>`
 
@@ -190,8 +216,8 @@ concept index_bidirectional_adjacency_list =
 |---|---|
 | `has_in_degree<G>` | `in_degree(g, u)` and `in_degree(g, uid)` both return integral |
 | `has_in_degree_v<G>` | `bool` shorthand |
-| `has_find_vertex_in_edge<G>` | All `find_vertex_in_edge` overloads return `in_edge_t<G>` |
-| `has_find_vertex_in_edge_v<G>` | `bool` shorthand |
+| `has_find_in_edge<G>` | All `find_in_edge` overloads return `in_edge_t<G>` |
+| `has_find_in_edge_v<G>` | `bool` shorthand |
 | `has_contains_in_edge<G>` | `contains_in_edge(g, u, v)` returns bool |
 | `has_contains_in_edge_v<G>` | `bool` shorthand |
 
@@ -227,6 +253,10 @@ namespace graph::views {
 **Key difference from `incidence_view`:** The standard `incidence_view` iterates
 `edges(g, u)` and yields `target_id` per edge. The `in_incidence_view` iterates
 `in_edges(g, u)` and yields `source_id` per edge (the vertex the edge comes from).
+
+**Edge type note:** The `EVF` value function receives `in_edge_t<G>`, which may
+differ from `edge_t<G>`. When incoming edges are valueless back-pointers, the
+`void` (no value function) variants are the natural choice.
 
 ### 8.2 `in_neighbors` view
 
@@ -331,6 +361,11 @@ When `Bidirectional = true`:
 - The `edges(g, u)` CPO returns `u.out_edges_` (unchanged)
 - The `in_edges(g, u)` CPO returns `u.in_edges_`
 
+The in-edge container element type may differ from the out-edge element type.
+The default stores the same `EV` (so `in_edge_t<G> == edge_t<G>`), but an
+additional template parameter (e.g., `InEV = EV`) can allow lightweight
+back-pointer in-edges (e.g., just a source vertex ID) for reduced storage.
+
 When `Bidirectional = false`:
 - Behavior is identical to today (no storage overhead)
 
@@ -418,7 +453,8 @@ using adj_list::in_edges;
 using adj_list::in_degree;
 using adj_list::out_edges;
 using adj_list::out_degree;
-using adj_list::find_vertex_in_edge;
+using adj_list::find_out_edge;
+using adj_list::find_in_edge;
 using adj_list::contains_in_edge;
 using adj_list::has_in_edge;
 
@@ -529,9 +565,9 @@ using adj_list::out_edge_t;
 
 | Category | New | Modified | Deleted |
 |---|---|---|---|
-| **CPOs** | `in_edges`, `in_degree`, `out_edges` (alias), `out_degree` (alias), `find_vertex_in_edge`, `contains_in_edge`, `has_in_edge` | — | — |
+| **CPOs** | `in_edges`, `in_degree`, `out_edges` (alias), `out_degree` (alias), `find_out_edge` (alias), `find_in_edge`, `contains_in_edge`, `has_in_edge` | — | — |
 | **Concepts** | `in_vertex_edge_range`, `bidirectional_adjacency_list`, `index_bidirectional_adjacency_list` | — | — |
-| **Traits** | `has_in_degree`, `has_in_degree_v`, `has_find_vertex_in_edge`, `has_contains_in_edge` | — | — |
+| **Traits** | `has_in_degree`, `has_in_degree_v`, `has_find_in_edge`, `has_contains_in_edge` | — | — |
 | **Type Aliases** | `in_vertex_edge_range_t`, `in_vertex_edge_iterator_t`, `in_edge_t`, `out_vertex_edge_range_t`, `out_vertex_edge_iterator_t`, `out_edge_t` | — | — |
 | **Views** | `in_incidence.hpp`, `in_neighbors.hpp`, `out_edges_accessor`, `in_edges_accessor` | `bfs.hpp`, `dfs.hpp`, `topological_sort.hpp` (add `EdgeAccessor` param) | — |
 | **Containers** | — | `dynamic_graph.hpp` (add `Bidirectional`), `compressed_graph.hpp` (add CSC), `undirected_adjacency_list.hpp` (add `in_edges` friend) | — |
@@ -568,3 +604,30 @@ documented and all algorithms depend on it). Renaming `edges()` to `out_edges()`
 Instead we keep `edges()` as the primary outgoing CPO (matching the "default is outgoing"
 convention) and add `out_edges` as a convenience alias for codebases that want explicit
 directionality.
+
+## Appendix C: Independent In/Out Edge Types
+
+`in_edge_t<G>` and `edge_t<G>` are independently deduced:
+
+```cpp
+template <class G> using edge_t    = ranges::range_value_t<vertex_edge_range_t<G>>;    // from edges(g,u)
+template <class G> using in_edge_t = ranges::range_value_t<in_vertex_edge_range_t<G>>; // from in_edges(g,u)
+```
+
+They are commonly the same type, but this is **not required**. Scenarios where
+they differ:
+
+| Scenario | `edge_t<G>` | `in_edge_t<G>` |
+|---|---|---|
+| Symmetric (common case) | `pair<VId, Weight>` | `pair<VId, Weight>` (same) |
+| Distributed graph | `pair<VId, PropertyBundle>` | `VId` (back-pointer only) |
+| CSR + CSC compressed | Full edge with value | Column index + CSR back-ref |
+| Lightweight reverse index | `pair<VId, EV>` | `VId` (source ID only) |
+
+The `bidirectional_adjacency_list` concept (§6.2) only requires `source_id(g, ie)`
+on incoming edges — not `edge_value()`. This means:
+- Algorithms that only need the graph structure (BFS, DFS, SCC) work with any
+  `in_edge_t<G>`.
+- Algorithms that need edge properties on incoming edges (rare) can add their own
+  `requires edge_value(g, in_edge_t<G>{})` constraint.
+- The undirected case (`in_edge_t<G> == edge_t<G>`) is the zero-cost happy path.
