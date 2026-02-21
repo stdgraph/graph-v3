@@ -39,3 +39,4 @@
 - [FAQ](FAQ.md) — common questions and answers
 - [Migration from v2](migration-from-v2.md) — what changed from graph-v2 and how to migrate
 - [Status & Metrics](status/metrics.md) — canonical counts and implementation matrix
+- [Code Coverage](status/coverage.md) — line and function coverage report (95.8% lines, 92.0% functions)

@@ -13,6 +13,8 @@
 | Trait combinations | 26 | `include/graph/container/traits/` |
 | Test count | 4261 | `ctest --preset linux-gcc-debug` (100% pass, 2026-02-19) |
 | C++ standard | C++20 | `CMakeLists.txt` line 26 |
+| Line coverage | 95.8% (3300 / 3446) | `docs/status/coverage.md` (2026-02-21) |
+| Function coverage | 92.0% (27193 / 29567) | `docs/status/coverage.md` (2026-02-21) |
 | License | BSL-1.0 | `LICENSE` |
 | CMake minimum | 3.20 | `CMakeLists.txt` line 1 |
 | Consumer target | `graph::graph3` | `cmake/InstallConfig.cmake` (`find_package(graph3)`) |
