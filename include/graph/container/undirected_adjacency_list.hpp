@@ -1043,13 +1043,20 @@ public: // Vertex Creation
   /// @brief Create a new vertex with default value.
   /// @return Iterator to the newly created vertex.
   /// @complexity O(1) amortized
-  vertex_iterator create_vertex();
+  vertex_iterator create_vertex() {
+    this->vertices_.push_back(vertex_type(this->vertices_, static_cast<vertex_id_type>(this->vertices_.size())));
+    return this->vertices_.begin() + static_cast<vertex_difference_type>(this->vertices_.size() - 1);
+}
 
   /// @brief Create a new vertex with moved value.
   /// @param val Value to move into the vertex.
   /// @return Iterator to the newly created vertex.
   /// @complexity O(1) amortized
-  vertex_iterator create_vertex(vertex_value_type&& val);
+  vertex_iterator create_vertex(vertex_value_type&& val) {
+    this->vertices_.push_back(
+          vertex_type(this->vertices_, static_cast<vertex_id_type>(this->vertices_.size()), std::move(val)));
+    return this->vertices_.begin() + static_cast<vertex_difference_type>(this->vertices_.size() - 1);
+  }
 
   /// @brief Create a new vertex with copied value.
   /// @tparam VV2 Type convertible to vertex_value_type.
@@ -1070,7 +1077,11 @@ public: // Edge Creation
   /// @param vid Target vertex id.
   /// @return Iterator to the newly created edge.
   /// @complexity O(1).
-  vertex_edge_iterator create_edge(vertex_id_type uid, vertex_id_type vid);
+  vertex_edge_iterator create_edge(vertex_id_type uid, vertex_id_type vid) {
+    vertex_iterator ui = try_find_vertex(uid);
+    vertex_iterator vi = try_find_vertex(vid);
+    return create_edge(ui, vi);
+  }
 
   /// @brief Create an edge with value between two vertices (by id, move value).
   /// @param uid Source vertex id.
@@ -1078,7 +1089,11 @@ public: // Edge Creation
   /// @param val Edge value to move.
   /// @return Iterator to the newly created edge.
   /// @complexity O(1).
-  vertex_edge_iterator create_edge(vertex_id_type uid, vertex_id_type vid, edge_value_type&& val);
+  vertex_edge_iterator create_edge(vertex_id_type uid, vertex_id_type vid, edge_value_type&& val) {
+    vertex_iterator ui = this->vertices_.begin() + uid;
+    vertex_iterator vi = this->vertices_.begin() + vid;
+    return create_edge(ui, vi, std::move(val));
+  }
 
   /// @brief Create an edge with value between two vertices (by id, copy value).
   /// @tparam EV2 Type convertible to edge_value_type.
@@ -1100,7 +1115,13 @@ public: // Edge Creation
   /// @param v Target vertex iterator.
   /// @return Iterator to the newly created edge.
   /// @complexity O(1).
-  vertex_edge_iterator create_edge(vertex_iterator u, vertex_iterator v);
+  vertex_edge_iterator create_edge(vertex_iterator u, vertex_iterator v) {
+    vertex_id_type uid = static_cast<vertex_id_type>(u - this->vertices_.begin());
+    edge_type*     uv  = this->edge_alloc_.allocate(1);
+    new (uv) edge_type(static_cast<graph_type&>(*this), u, v);
+    ++this->edges_size_;
+    return vertex_edge_iterator(static_cast<graph_type&>(*this), uid, uv);
+  }
 
   /// @brief Create an edge with value between two vertices (by iterator, move value).
   /// @param u Source vertex iterator.
@@ -1108,7 +1129,13 @@ public: // Edge Creation
   /// @param val Edge value to move.
   /// @return Iterator to the newly created edge.
   /// @complexity O(1).
-  vertex_edge_iterator create_edge(vertex_iterator u, vertex_iterator v, edge_value_type&& val);
+  vertex_edge_iterator create_edge(vertex_iterator u, vertex_iterator v, edge_value_type&& val) {
+    vertex_id_type uid = static_cast<vertex_id_type>(u - this->vertices_.begin());
+    edge_type*     uv  = this->edge_alloc_.allocate(1);
+    new (uv) edge_type(static_cast<graph_type&>(*this), u, v, std::move(val));
+    ++this->edges_size_;
+    return vertex_edge_iterator(static_cast<graph_type&>(*this), uid, uv);
+  }
 
   /// @brief Create an edge with value between two vertices (by iterator, copy value).
   /// @tparam EV2 Type convertible to edge_value_type.
