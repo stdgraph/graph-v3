@@ -1058,7 +1058,11 @@ public: // Vertex Creation
   /// @complexity O(1) amortized
   template <class VV2>
   requires std::constructible_from<VV, const VV2&>
-  vertex_iterator create_vertex(const VV2& val);
+  vertex_iterator create_vertex(const VV2& val) {
+    this->vertices_.push_back(
+          vertex_type(this->vertices_, static_cast<vertex_id_type>(this->vertices_.size()), val));
+    return this->vertices_.begin() + static_cast<vertex_id_type>(this->vertices_.size() - 1);
+  }
 
 public: // Edge Creation
   /// @brief Create an edge between two vertices (by id).
@@ -1085,7 +1089,11 @@ public: // Edge Creation
   /// @complexity O(1).
   template <class EV2>
   requires std::constructible_from<EV, const EV2&>
-  vertex_edge_iterator create_edge(vertex_id_type uid, vertex_id_type vid, const EV2& val);
+  vertex_edge_iterator create_edge(vertex_id_type uid, vertex_id_type vid, const EV2& val) {
+    vertex_iterator ui = this->vertices_.begin() + uid;
+    vertex_iterator vi = this->vertices_.begin() + vid;
+    return create_edge(ui, vi, val);
+  }
 
   /// @brief Create an edge between two vertices (by iterator).
   /// @param u Source vertex iterator.
@@ -1111,7 +1119,13 @@ public: // Edge Creation
   /// @complexity O(1).
   template <class EV2>
   requires std::constructible_from<EV, const EV2&>
-  vertex_edge_iterator create_edge(vertex_iterator u, vertex_iterator v, const EV2& val);
+  vertex_edge_iterator create_edge(vertex_iterator u, vertex_iterator v, const EV2& val) {
+    vertex_id_type uid = static_cast<vertex_id_type>(u - this->vertices_.begin());
+    edge_type*     uv  = this->edge_alloc_.allocate(1);
+    new (uv) edge_type(static_cast<graph_type&>(*this), u, v, val);
+    ++this->edges_size_;
+    return vertex_edge_iterator(static_cast<graph_type&>(*this), uid, uv);
+  }
 
 public: // Edge Removal
   /// @brief Erase an edge from the graph.
