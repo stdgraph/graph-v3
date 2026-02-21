@@ -199,7 +199,7 @@ public:
     [[nodiscard]] constexpr value_type operator*() const noexcept {
       auto source_id = adj_list::vertex_id(*g_, v_);
       auto target_id = adj_list::target_id(*g_, current_edge_);
-      return value_type{source_id, target_id, current_edge_};
+      return value_type{static_cast<vertex_id_type>(source_id), static_cast<vertex_id_type>(target_id), current_edge_};
     }
 
     constexpr iterator& operator++() noexcept {
@@ -347,7 +347,7 @@ public:
     [[nodiscard]] constexpr value_type operator*() const {
       auto source_id = adj_list::vertex_id(*g_, v_);
       auto target_id = adj_list::target_id(*g_, current_edge_);
-      return value_type{source_id, target_id, current_edge_, std::invoke(*evf_, std::as_const(*g_), current_edge_)};
+      return value_type{static_cast<vertex_id_type>(source_id), static_cast<vertex_id_type>(target_id), current_edge_, std::invoke(*evf_, std::as_const(*g_), current_edge_)};
     }
 
     constexpr iterator& operator++() noexcept {

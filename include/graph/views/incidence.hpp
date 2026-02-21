@@ -175,7 +175,7 @@ public:
     constexpr iterator(G* g, edge_type e) noexcept : g_(g), current_(e) {}
 
     [[nodiscard]] constexpr value_type operator*() const noexcept {
-      return info_type{adj_list::target_id(*g_, current_), current_};
+      return info_type{static_cast<vertex_id_type>(adj_list::target_id(*g_, current_)), current_};
     }
 
     constexpr iterator& operator++() noexcept {
@@ -286,7 +286,7 @@ public:
     constexpr iterator(G* g, edge_type e, EVF* evf) noexcept : g_(g), current_(e), evf_(evf) {}
 
     [[nodiscard]] constexpr value_type operator*() const {
-      return value_type{adj_list::target_id(*g_, current_), current_, std::invoke(*evf_, std::as_const(*g_), current_)};
+      return value_type{static_cast<vertex_id_type>(adj_list::target_id(*g_, current_)), current_, std::invoke(*evf_, std::as_const(*g_), current_)};
     }
 
     constexpr iterator& operator++() noexcept {
