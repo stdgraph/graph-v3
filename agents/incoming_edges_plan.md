@@ -528,107 +528,224 @@ existing functions) and provides a real container for integration testing.
 
 ---
 
-## Phase 5 — Add `out_*` / `in_*` views to `incidence.hpp` and `neighbors.hpp`
+## Phase 5 — Edge accessor + parameterized `incidence` / `neighbors` views
 
-**Goal:** Rename existing classes in `incidence.hpp` and `neighbors.hpp` to
-`out_*` primary names, add `in_*` incoming-edge views, and keep the short
-names as convenience aliases — all in the same header files. No file renames
-or forwarding headers needed.
+**Goal:** Introduce `out_edge_accessor` / `in_edge_accessor` structs in a
+new header, then add an `Accessor` template parameter to `incidence_view`,
+`basic_incidence_view`, `neighbors_view`, and `basic_neighbors_view`.  A
+single parameterized class serves both outgoing and incoming iteration —
+no class duplication.  Factory functions provide the ergonomic names
+(`out_incidence`, `in_incidence`, `incidence` alias).
+
+**Design rationale (edge accessor):**
+
+An *edge accessor* is a stateless policy object that bundles three operations:
+
+| Method | `out_edge_accessor` | `in_edge_accessor` |
+|---|---|---|
+| `edges(g, u)` | `adj_list::edges(g, u)` | `adj_list::in_edges(g, u)` |
+| `neighbor_id(g, e)` | `adj_list::target_id(g, e)` | `adj_list::source_id(g, e)` |
+| `neighbor(g, e)` | `adj_list::target(g, e)` | `*adj_list::find_vertex(g, adj_list::source_id(g, e))` |
+
+By defaulting the accessor to `out_edge_accessor`, existing code is
+source-compatible.  The same accessor type will be reused for BFS / DFS /
+topological-sort parameterization in Phase 7.
 
 **Naming convention** (matches CPO pattern):
 
-| Primary | Alias |
-|---|---|
-| `out_incidence_view` | `incidence_view` |
-| `out_neighbors_view` | `neighbors_view` |
-| `basic_out_incidence_view` | `basic_incidence_view` |
-| `basic_out_neighbors_view` | `basic_neighbors_view` |
-| `out_incidence(g, u)` | `incidence(g, u)` |
-| `out_neighbors(g, u)` | `neighbors(g, u)` |
+| Factory (primary) | Factory (alias) | View type |
+|---|---|---|
+| `out_incidence(g, u)` | `incidence(g, u)` | `incidence_view<G, void, out_edge_accessor>` |
+| `in_incidence(g, u)` | — | `incidence_view<G, void, in_edge_accessor>` |
+| `out_neighbors(g, u)` | `neighbors(g, u)` | `neighbors_view<G, void, out_edge_accessor>` |
+| `in_neighbors(g, u)` | — | `neighbors_view<G, void, in_edge_accessor>` |
 
-Incoming-edge views (`in_*`) have no aliases — they are new additions.
+Same pattern for `basic_*` variants and EVF / VVF overloads.
 
-**Why fifth:** Views consume the CPOs from Phases 1-3 and can now also be
-tested against the undirected container from Phase 4.
-
-### Files to modify
-
-| File | Action |
-|---|---|
-| `include/graph/views/incidence.hpp` | Rename classes to `out_*`, add `in_*` classes, add alias typedefs/functions |
-| `include/graph/views/neighbors.hpp` | Same transformation |
-| `tests/views/CMakeLists.txt` | Register new test files |
+**Why fifth:** Views consume the CPOs from Phases 1-3 and can be tested
+against the undirected container from Phase 4.
 
 ### Files to create
 
 | File | Content |
 |---|---|
-| `tests/views/test_in_incidence.cpp` | View tests for `in_incidence_view` |
-| `tests/views/test_in_neighbors.cpp` | View tests for `in_neighbors_view` |
+| `include/graph/views/edge_accessor.hpp` | `out_edge_accessor`, `in_edge_accessor` |
+| `tests/views/test_in_incidence.cpp` | View tests for `in_incidence` |
+| `tests/views/test_in_neighbors.cpp` | View tests for `in_neighbors` |
+
+### Files to modify
+
+| File | Action |
+|---|---|
+| `include/graph/views/incidence.hpp` | Add `Accessor` template param to all view classes; derive types from accessor; update iterators |
+| `include/graph/views/neighbors.hpp` | Same transformation |
+| `include/graph/graph.hpp` | Include `edge_accessor.hpp`; re-export accessor types |
+| `tests/views/CMakeLists.txt` | Register new test files |
 
 ### Steps
 
-#### 5.1 Rename existing classes in `incidence.hpp` to `out_*`
-
-Within the existing `incidence.hpp`:
-
-- Rename classes: `incidence_view` → `out_incidence_view`,
-  `basic_incidence_view` → `basic_out_incidence_view`.
-- Rename factory functions: `incidence(g, u)` → `out_incidence(g, u)`,
-  `basic_incidence(g, uid)` → `basic_out_incidence(g, uid)`, etc.
-- Update all doxygen comments.
-- Keep concept constraint as `adjacency_list` (outgoing is the default).
-
-#### 5.2 Add `in_*` classes to `incidence.hpp`
-
-After the `out_*` classes/factories and before the aliases, add:
-
-- `in_incidence_view<G, EVF>` — mirrors `out_incidence_view` but:
-  - Iterates `in_edges(g, u)` instead of `out_edges(g, u)`.
-  - Extracts `source_id(g, e)` instead of `target_id(g, e)`.
-  - Uses `in_edge_t<G>` instead of `out_edge_t<G>`.
-  - Constrained on `bidirectional_adjacency_list`.
-- `basic_in_incidence_view<G, EVF>` — same transformation.
-- Factory functions: `in_incidence(g, u)`, `in_incidence(g, u, evf)`,
-  `in_incidence(g, uid)`, `in_incidence(g, uid, evf)`,
-  `basic_in_incidence(g, uid)`, `basic_in_incidence(g, uid, evf)`.
-
-#### 5.3 Add convenience aliases at the bottom of `incidence.hpp`
+#### 5.1 Create `include/graph/views/edge_accessor.hpp`
 
 ```cpp
-// Convenience aliases (incidence = out_incidence, matching CPO convention)
-template <adj_list::adjacency_list G, class EVF = void>
-using incidence_view = out_incidence_view<G, EVF>;
+#pragma once
+#include <graph/adj_list/detail/graph_cpo.hpp>
+#include <graph/adj_list/adjacency_list_concepts.hpp>
 
-template <adj_list::adjacency_list G, class EVF = void>
-using basic_incidence_view = basic_out_incidence_view<G, EVF>;
+namespace graph::views {
 
-template <adj_list::adjacency_list G>
-[[nodiscard]] constexpr auto incidence(G& g, adj_list::vertex_t<G> u) noexcept {
-  return out_incidence(g, u);
-}
-// ... all overloads ...
+/// Policy for outgoing-edge iteration (default).
+struct out_edge_accessor {
+  template <adj_list::adjacency_list G>
+  [[nodiscard]] constexpr auto edges(G& g, adj_list::vertex_t<G> u) const {
+    return adj_list::edges(g, u);
+  }
 
-template <adj_list::index_adjacency_list G>
-[[nodiscard]] constexpr auto basic_incidence(G& g, adj_list::vertex_id_t<G> uid) {
-  return basic_out_incidence(g, uid);
-}
-// ... all overloads ...
+  template <adj_list::adjacency_list G>
+  [[nodiscard]] constexpr auto neighbor_id(G& g, adj_list::edge_t<G> e) const {
+    return adj_list::target_id(g, e);
+  }
+
+  template <adj_list::adjacency_list G>
+  [[nodiscard]] constexpr auto neighbor(G& g, adj_list::edge_t<G> e) const {
+    return adj_list::target(g, e);
+  }
+};
+
+/// Policy for incoming-edge iteration.
+struct in_edge_accessor {
+  template <adj_list::bidirectional_adjacency_list G>
+  [[nodiscard]] constexpr auto edges(G& g, adj_list::vertex_t<G> u) const {
+    return adj_list::in_edges(g, u);
+  }
+
+  template <adj_list::bidirectional_adjacency_list G>
+  [[nodiscard]] constexpr auto neighbor_id(G& g, adj_list::in_edge_t<G> e) const {
+    return adj_list::source_id(g, e);
+  }
+
+  template <adj_list::bidirectional_adjacency_list G>
+  [[nodiscard]] constexpr auto neighbor(G& g, adj_list::in_edge_t<G> e) const {
+    return *adj_list::find_vertex(g, adj_list::source_id(g, e));
+  }
+};
+
+} // namespace graph::views
 ```
+
+Notes:
+- `out_edge_accessor` is constrained on `adjacency_list` (the minimum).
+- `in_edge_accessor` is constrained on `bidirectional_adjacency_list`.
+- Both are stateless — `[[no_unique_address]]` in the view makes them zero-cost.
+- `in_edge_accessor::neighbor()` uses `find_vertex(g, source_id(g, e))`
+  because there is no `source()` CPO.
+
+#### 5.2 Parameterize `incidence_view` with `Accessor` (incidence.hpp)
+
+Add `#include <graph/views/edge_accessor.hpp>` to the includes.
+
+Change every view class template to accept a trailing `class Accessor`:
+
+```cpp
+template <adj_list::adjacency_list G, class EVF = void,
+          class Accessor = out_edge_accessor>
+class incidence_view;
+```
+
+In the `void` specialization (`incidence_view<G, void, Accessor>`):
+
+1. **Derive types from accessor:**
+   ```cpp
+   using edge_range_type = decltype(
+       std::declval<const Accessor&>().edges(
+           std::declval<G&>(), std::declval<vertex_type>()));
+   using edge_type = std::ranges::range_value_t<edge_range_type>;
+   ```
+
+2. **Store accessor:**
+   ```cpp
+   [[no_unique_address]] Accessor accessor_{};
+   ```
+
+3. **Update iterator** — add `const Accessor* acc_` member; use
+   `acc_->neighbor_id(*g_, current_)` in `operator*()`.
+
+4. **Update `begin()` / `end()` / `size()`** — call
+   `accessor_.edges(*g_, source_)` instead of `adj_list::edges(...)`.
+
+5. **Pass `&accessor_`** to iterator construction.
+
+Same transformation for the non-void EVF specialization and both
+`basic_incidence_view` specializations.
+
+Deduction guides gain the `Accessor` parameter with default:
+```cpp
+template <adj_list::adjacency_list G>
+incidence_view(G&, adj_list::vertex_t<G>)
+    -> incidence_view<G, void, out_edge_accessor>;
+
+template <adj_list::adjacency_list G, class EVF>
+incidence_view(G&, adj_list::vertex_t<G>, EVF)
+    -> incidence_view<G, EVF, out_edge_accessor>;
+```
+
+#### 5.3 Add `out_incidence` / `in_incidence` factory functions
+
+After the existing `incidence()` factories (which remain unchanged and
+serve as aliases), add:
+
+```cpp
+// --- out_incidence: explicit outgoing factories ---
+template <adj_list::adjacency_list G>
+[[nodiscard]] constexpr auto out_incidence(G& g, adj_list::vertex_t<G> u) noexcept {
+  return incidence_view<G, void, out_edge_accessor>(g, u);
+}
+template <adj_list::adjacency_list G, class EVF>
+requires edge_value_function<EVF, G, adj_list::edge_t<G>>
+[[nodiscard]] constexpr auto out_incidence(G& g, adj_list::vertex_t<G> u, EVF&& evf) {
+  return incidence_view<G, std::decay_t<EVF>, out_edge_accessor>(
+      g, u, std::forward<EVF>(evf));
+}
+// uid overloads ...
+
+// --- in_incidence: incoming factories ---
+template <adj_list::bidirectional_adjacency_list G>
+[[nodiscard]] constexpr auto in_incidence(G& g, adj_list::vertex_t<G> u) noexcept {
+  return incidence_view<G, void, in_edge_accessor>(g, u);
+}
+template <adj_list::bidirectional_adjacency_list G, class EVF>
+requires edge_value_function<EVF, G, adj_list::in_edge_t<G>>
+[[nodiscard]] constexpr auto in_incidence(G& g, adj_list::vertex_t<G> u, EVF&& evf) {
+  return incidence_view<G, std::decay_t<EVF>, in_edge_accessor>(
+      g, u, std::forward<EVF>(evf));
+}
+// uid overloads ...
+
+// basic_out_incidence / basic_in_incidence — same pattern ...
+```
+
+Existing `incidence()` / `basic_incidence()` factories are **unchanged** —
+they already create `out_edge_accessor` views by default.
 
 #### 5.4 Same transformation for `neighbors.hpp`
 
-- Rename classes: `neighbors_view` → `out_neighbors_view`,
-  `basic_neighbors_view` → `basic_out_neighbors_view`.
-- Rename factory functions to `out_neighbors()`, `basic_out_neighbors()`.
-- Add `in_neighbors_view`, `basic_in_neighbors_view` (iterate `in_edges`,
-  extract `source_id`, retrieve source vertex, constrained on
-  `bidirectional_adjacency_list`).
-- Add factory functions: `in_neighbors(g, u)`, etc.
-- Add convenience aliases at the bottom: `neighbors_view = out_neighbors_view`,
-  `neighbors() = out_neighbors()`, etc.
+- Add `Accessor` template param to `neighbors_view` and
+  `basic_neighbors_view`.
+- Switch from `adj_list::edges(...)` to `accessor_.edges(...)`.
+- Switch from `adj_list::target(...)` / `adj_list::vertex_id(...)` to
+  `accessor_.neighbor(...)` / `accessor_.neighbor_id(...)`.
+- Add `out_neighbors()` / `in_neighbors()` factories; keep `neighbors()`
+  as the alias (unchanged, creates `out_edge_accessor` by default).
+- Same for `basic_out_neighbors()` / `basic_in_neighbors()`.
 
-#### 5.5 Create test files
+#### 5.5 Update `graph.hpp`
+
+- Add `#include <graph/views/edge_accessor.hpp>`.
+- Re-export `out_edge_accessor`, `in_edge_accessor` into `graph::views`.
+- Re-export `out_incidence`, `in_incidence`, `out_neighbors`,
+  `in_neighbors`, `basic_out_incidence`, `basic_in_incidence`,
+  `basic_out_neighbors`, `basic_in_neighbors` factory functions.
+
+#### 5.6 Create test files
 
 **`test_in_incidence.cpp`** — mirror `test_incidence.cpp`:
 - Use `undirected_adjacency_list` (from Phase 4) as the bidirectional graph.
@@ -636,106 +753,98 @@ template <adj_list::index_adjacency_list G>
 - Verify `in_incidence(g, u, evf)` yields `{source_id, edge, value}`.
 - Verify `basic_in_incidence(g, uid)` yields `{source_id}`.
 - Verify factory function overloads (descriptor and ID).
-- Verify `incidence_view<G>` is the same type as `out_incidence_view<G>`.
+- Verify `incidence_view<G>` is the same type as
+  `incidence_view<G, void, out_edge_accessor>` (compile-time).
+- Verify `incidence_view<G, void, in_edge_accessor>` is a different type.
 
 **`test_in_neighbors.cpp`** — mirror `test_neighbors.cpp`:
 - Verify `in_neighbors(g, u)` yields `{source_id, vertex}` tuples.
 - Verify `basic_in_neighbors(g, uid)` yields `{source_id}`.
-- Verify `neighbors_view<G>` is the same type as `out_neighbors_view<G>`.
+- Verify alias equivalence.
 
-#### 5.6 Register tests and build
+#### 5.7 Register tests and build
 
 ### Merge gate
 
-- [ ] Full test suite passes (zero regressions — aliases ensure all
-      existing code using `incidence_view` / `incidence()` still compiles).
-- [ ] `in_incidence_view` iterates incoming edges, yields `source_id`.
-- [ ] `in_neighbors_view` iterates source vertices.
-- [ ] All factory function overloads work.
-- [ ] `incidence_view<G>` is same type as `out_incidence_view<G>` (compile-time).
-- [ ] `neighbors_view<G>` is same type as `out_neighbors_view<G>` (compile-time).
+- [ ] Full test suite passes (zero regressions — default `Accessor` preserves
+      all existing `incidence_view` / `incidence()` usage).
+- [ ] `in_incidence(g, u)` iterates incoming edges, yields `source_id`.
+- [ ] `in_neighbors(g, u)` iterates source vertices.
+- [ ] All factory function overloads work (descriptor + uid, with/without EVF).
+- [ ] `incidence_view<G>` defaults to `out_edge_accessor` (compile-time).
+- [ ] Accessor is zero-cost (`sizeof(incidence_view<G>)` unchanged).
 
 ---
 
 ## Phase 6 — Pipe-syntax adaptors (rename + incoming)
 
-**Goal:** Rename existing adaptor instances to `out_*` primary names with
-`incidence` / `neighbors` as aliases, then add pipe-syntax closures for
-`in_incidence`, `in_neighbors`, `basic_in_incidence`, `basic_in_neighbors`.
+**Goal:** Add `out_incidence` / `in_incidence` / `out_neighbors` /
+`in_neighbors` adaptor instances with `incidence` / `neighbors` as aliases.
+The adaptor closures now forward to the parameterized views from Phase 5.
 
-**Why sixth:** Adaptors depend on the view headers from Phase 5.
+**Why sixth:** Adaptors depend on the accessor-parameterized views from Phase 5.
 
 ### Files to modify
 
 | File | Action |
 |---|---|
-| `include/graph/views/adaptors.hpp` | Add adaptor closures and factory fns |
-| `tests/views/test_adaptors.cpp` | Add pipe-syntax tests for new views |
+| `include/graph/views/adaptors.hpp` | Add new adaptor closures using accessor-parameterized views |
+| `tests/views/test_adaptors.cpp` | Add pipe-syntax tests for incoming views |
 
 ### Steps
 
-#### 6.1 Rename existing adaptor instances to `out_*` primary names
+#### 6.1 Add outgoing-primary and incoming adaptor closures (adaptors.hpp)
 
-In `adaptors.hpp`, rename the existing instances to use `out_*` as primary,
-keeping the short names as aliases (matching the view rename in Phase 5):
+Rename existing adaptor classes and instances to `out_*` primary names.
+Then add new `in_*` adaptor closures that construct the incoming accessor
+variant of the views. Keep the short names as aliases:
 
 ```cpp
+// Renamed adaptor classes:
+//   incidence_adaptor_fn       → out_incidence_adaptor_fn
+//   basic_incidence_adaptor_fn → basic_out_incidence_adaptor_fn
+//   neighbors_adaptor_fn       → out_neighbors_adaptor_fn
+//   basic_neighbors_adaptor_fn → basic_out_neighbors_adaptor_fn
+
+// New incoming adaptor classes — same pattern but create
+//   in_edge_accessor views:
+//   in_incidence_adaptor_fn, basic_in_incidence_adaptor_fn
+//   in_neighbors_adaptor_fn, basic_in_neighbors_adaptor_fn
+
 namespace graph::views::adaptors {
 
-// Primary outgoing adaptor instances
+// Primary outgoing
 inline constexpr out_incidence_adaptor_fn       out_incidence{};
 inline constexpr basic_out_incidence_adaptor_fn basic_out_incidence{};
 inline constexpr out_neighbors_adaptor_fn       out_neighbors{};
 inline constexpr basic_out_neighbors_adaptor_fn basic_out_neighbors{};
 
-// Convenience aliases (incidence = out_incidence, etc.)
+// Aliases (incidence = out_incidence, etc.)
 inline constexpr auto& incidence       = out_incidence;
 inline constexpr auto& basic_incidence = basic_out_incidence;
 inline constexpr auto& neighbors       = out_neighbors;
 inline constexpr auto& basic_neighbors = basic_out_neighbors;
 
-} // namespace graph::views::adaptors
-```
-
-This also requires renaming the adaptor closure and fn classes:
-`incidence_adaptor_fn` → `out_incidence_adaptor_fn`, etc.
-
-#### 6.2 Add incoming adaptor closures (adaptors.hpp)
-
-For each new incoming view, follow the existing pattern:
-
-1. `in_incidence_adaptor_closure<UID, EVF>` — holds `uid` and optional `evf`.
-   `operator|(G&& g, closure)` calls `graph::views::in_incidence(g, uid)` or
-   `graph::views::in_incidence(g, uid, evf)`.
-
-2. `in_incidence_adaptor_fn` — has `operator()(uid)`, `operator()(uid, evf)`,
-   `operator()(g, uid)`, `operator()(g, uid, evf)`.
-
-3. Same for `basic_in_incidence`, `in_neighbors`, `basic_in_neighbors`.
-
-Add to the adaptor namespace block:
-
-```cpp
+// Incoming
 inline constexpr in_incidence_adaptor_fn       in_incidence{};
 inline constexpr basic_in_incidence_adaptor_fn basic_in_incidence{};
 inline constexpr in_neighbors_adaptor_fn       in_neighbors{};
 inline constexpr basic_in_neighbors_adaptor_fn basic_in_neighbors{};
+
+} // namespace graph::views::adaptors
 ```
 
-#### 6.3 Add tests to `test_adaptors.cpp`
-
-Append new test cases:
+#### 6.2 Add tests to `test_adaptors.cpp`
 
 ```cpp
 TEST_CASE("pipe: g | out_incidence(uid)", "[adaptors][out_incidence]") { ... }
-TEST_CASE("pipe: g | out_incidence(uid, evf)", "[adaptors][out_incidence]") { ... }
 TEST_CASE("pipe: g | in_incidence(uid)", "[adaptors][in_incidence]") { ... }
 TEST_CASE("pipe: g | in_incidence(uid, evf)", "[adaptors][in_incidence]") { ... }
 TEST_CASE("pipe: g | basic_in_incidence(uid)", "[adaptors][basic_in_incidence]") { ... }
 TEST_CASE("pipe: g | in_neighbors(uid)", "[adaptors][in_neighbors]") { ... }
 TEST_CASE("pipe: g | basic_in_neighbors(uid)", "[adaptors][in_neighbors]") { ... }
-TEST_CASE("pipe: incidence/neighbors aliases forward", "[adaptors][aliases]") {
-  // Verify incidence == out_incidence, neighbors == out_neighbors
+TEST_CASE("pipe: incidence/neighbors aliases", "[adaptors][aliases]") {
+  // Verify &incidence == &out_incidence, &neighbors == &out_neighbors
 }
 ```
 
@@ -752,22 +861,23 @@ TEST_CASE("pipe: incidence/neighbors aliases forward", "[adaptors][aliases]") {
 
 ---
 
-## Phase 7 — BFS/DFS/topological-sort `EdgeAccessor` parameterization
+## Phase 7 — BFS/DFS/topological-sort `Accessor` parameterization
 
-**Goal:** Add an `EdgeAccessor` template parameter to all 6 traversal view
-classes and their factory functions; define `out_edges_accessor` and
-`in_edges_accessor` functors.
+**Goal:** Add an `Accessor` template parameter (defaulting to
+`out_edge_accessor` from Phase 5) to all 6 traversal view classes and their
+factory functions.  Replace every hardcoded `adj_list::edges()` call with
+`accessor_.edges()`.  This reuses the same accessor types introduced in
+Phase 5 — no new accessor headers are needed.
 
-**Why seventh:** This is a cross-cutting change to 3 existing view headers.
-It must not break any existing call sites (the default accessor preserves
-current behavior). Having the undirected bidirectional container (Phase 4)
-enables testing reverse traversal on a real graph.
+**Why seventh:** Traversal views already work with the accessor interface.
+This is a straightforward mechanical change now that `out_edge_accessor` /
+`in_edge_accessor` exist.
 
 ### Files to modify
 
 | File | Action |
 |---|---|
-| `include/graph/views/bfs.hpp` | Add `EdgeAccessor` param to `vertices_bfs_view`, `edges_bfs_view`; replace 5 hardcoded `adj_list::edges()` calls |
+| `include/graph/views/bfs.hpp` | Add `Accessor` param to `vertices_bfs_view`, `edges_bfs_view`; replace 5 hardcoded `adj_list::edges()` calls with `accessor_.edges()` |
 | `include/graph/views/dfs.hpp` | Same for `vertices_dfs_view`, `edges_dfs_view`; replace 5 calls |
 | `include/graph/views/topological_sort.hpp` | Same for `vertices_topological_sort_view`, `edges_topological_sort_view`; replace 7 calls |
 | `tests/views/CMakeLists.txt` | Register new test file |
@@ -776,82 +886,58 @@ enables testing reverse traversal on a real graph.
 
 | File | Content |
 |---|---|
-| `include/graph/views/edge_accessor.hpp` | `out_edges_accessor`, `in_edges_accessor` definitions |
 | `tests/views/test_reverse_traversal.cpp` | Reverse BFS/DFS tests |
 
 ### Steps
 
-#### 7.1 Create `edge_accessor.hpp`
-
-```cpp
-#pragma once
-#include <graph/adj_list/detail/graph_cpo.hpp>
-
-namespace graph::views {
-
-struct out_edges_accessor {
-  template <class G>
-  constexpr auto operator()(G& g, adj_list::vertex_t<G> u) const {
-    return adj_list::edges(g, u);
-  }
-};
-
-struct in_edges_accessor {
-  template <class G>
-  constexpr auto operator()(G& g, adj_list::vertex_t<G> u) const {
-    return adj_list::in_edges(g, u);
-  }
-};
-
-} // namespace graph::views
-```
-
-#### 7.2 Parameterize BFS views (bfs.hpp)
+#### 7.1 Parameterize BFS views (bfs.hpp)
 
 For each of `vertices_bfs_view` and `edges_bfs_view`:
 
-1. Add `class EdgeAccessor = out_edges_accessor` as the last template parameter
+1. Add `class Accessor = out_edge_accessor` as the last template parameter
    (before `Alloc` if present, or after the value function type).
 
-2. Store `[[no_unique_address]] EdgeAccessor edge_accessor_;` member.
+2. Store `[[no_unique_address]] Accessor accessor_;` member (zero-cost for
+   stateless accessors).
 
 3. Replace every `adj_list::edges(g, v)` or `adj_list::edges(*g_, v)` with
-   `edge_accessor_(g, v)` or `edge_accessor_(*g_, v)`.
+   `accessor_.edges(g, v)` or `accessor_.edges(*g_, v)`.
 
-4. Add factory function overloads accepting `EdgeAccessor`:
+4. Add factory function overloads accepting `Accessor`:
    ```cpp
    vertices_bfs(g, seed, vvf, accessor)
    edges_bfs(g, seed, evf, accessor)
    ```
 
-5. Existing signatures remain unchanged (default `EdgeAccessor`).
+5. Existing signatures remain unchanged (default `Accessor`).
 
-#### 7.3 Parameterize DFS views (dfs.hpp)
+#### 7.2 Parameterize DFS views (dfs.hpp)
 
-Same transformation: 5 `adj_list::edges()` calls → `edge_accessor_()`.
+Same transformation: 5 `adj_list::edges()` calls → `accessor_.edges()`.
 
-#### 7.4 Parameterize topological sort views (topological_sort.hpp)
+#### 7.3 Parameterize topological sort views (topological_sort.hpp)
 
-Same transformation: 7 `adj_list::edges()` calls → `edge_accessor_()`.
+Same transformation: 7 `adj_list::edges()` calls → `accessor_.edges()`.
 
-#### 7.5 Create `test_reverse_traversal.cpp`
+#### 7.4 Create `test_reverse_traversal.cpp`
 
 Using an undirected_adjacency_list (where `in_edges == edges`):
 
 1. **Forward BFS** — `vertices_bfs(g, seed)` produces expected order.
-2. **Reverse BFS** — `vertices_bfs(g, seed, void_fn, in_edges_accessor{})`
+2. **Reverse BFS** — `vertices_bfs(g, seed, void_fn, in_edge_accessor{})`
    produces expected order (same as forward for undirected).
 3. **Forward DFS** vs **Reverse DFS** — same pattern.
 4. **Source-compatibility** — existing call sites `vertices_bfs(g, seed)` and
    `vertices_bfs(g, seed, vvf)` still compile unchanged.
 
-#### 7.6 Build and run full test suite
+#### 7.5 Build and run full test suite
 
 ### Merge gate
 
 - [ ] Full test suite passes (zero regressions in existing BFS/DFS/topo tests).
-- [ ] Reverse BFS/DFS with `in_edges_accessor` produces correct traversal.
+- [ ] Reverse BFS/DFS with `in_edge_accessor` produces correct traversal.
 - [ ] Existing factory signatures compile without changes.
+- [ ] No new headers created (reuses `edge_accessor.hpp` from Phase 5).
 
 ---
 
@@ -978,7 +1064,7 @@ friend constexpr auto in_edges(graph_type& g, const U& u) noexcept
 add `transpose_view` as a zero-cost adaptor.
 
 **Why ninth:** Algorithms depend on container support (Phase 8) and the
-edge accessor infrastructure (Phase 7).
+edge accessor infrastructure (Phase 5/7).
 
 ### Files to modify
 
@@ -1017,7 +1103,7 @@ public:
 Add a compile-time branch:
 ```cpp
 if constexpr (bidirectional_adjacency_list<G>) {
-  // Use in_edges_accessor for second DFS pass
+  // Use in_edge_accessor for second DFS pass
 } else {
   // Keep existing edge-rebuild approach
 }
@@ -1086,9 +1172,9 @@ Per the table in design doc §13.1 (11 files), plus:
 | 2 | `find_in_edge`/`contains_in_edge` + traits | 3 tests | 3 | Complete CPO surface | Done |
 | 3 | Concepts + re-exports | 1 test | 2 | `bidirectional_adjacency_list` concept | Done |
 | 4 | Undirected container support | 1 test | 1 | First real bidirectional container | **Done** |
-| 5 | `out_*` / `in_*` views in existing headers | 2 tests | 3 | Primary/alias views + incoming views | Not started |
+| 5 | Edge accessor + parameterized views | 1 header + 2 tests | 4 | `out/in_edge_accessor` + accessor-parameterized views | Not started |
 | 6 | Pipe-syntax adaptors | — | 2 | `g \| in_incidence(uid)` | Not started |
-| 7 | BFS/DFS/topo EdgeAccessor | 1 header + 1 test | 3 | Reverse traversal | Not started |
+| 7 | BFS/DFS/topo Accessor | 1 test | 3 | Reverse traversal (reuses Phase 5 accessor) | Not started |
 | 8 | `dynamic_graph` bidirectional | 1 test | 1 | Directed bidirectional container | Not started |
 | 9 | Algorithms | 2 headers + 2 tests | 1 | Kosaraju + transpose | Not started |
 | 10 | Documentation | 1 guide | 12 | Complete docs | Not started |
@@ -1103,16 +1189,21 @@ Per the table in design doc §13.1 (11 files), plus:
    Existing tests pass between every phase.
 
 2. **Default template arguments preserve source compatibility.**
-   `EdgeAccessor = out_edges_accessor` means no existing call site changes.
+   `Accessor = out_edge_accessor` means no existing call site changes.
 
-3. **Stub graphs in early phases isolate CPO testing from container code.**
+3. **The edge accessor is introduced once (Phase 5) and reused everywhere.**
+   Phases 5, 6, and 7 all share `out_edge_accessor` / `in_edge_accessor`
+   from `edge_accessor.hpp`, eliminating class duplication in views and
+   avoiding a separate accessor header in Phase 7.
+
+4. **Stub graphs in early phases isolate CPO testing from container code.**
    Phases 1-3 don't touch any container — they use lightweight test stubs.
 
-4. **The simplest container change comes first (Phase 4).**
+5. **The simplest container change comes first (Phase 4).**
    Undirected just forwards to the existing `edges()` function.
 
-5. **The most complex change (Phase 8) comes last in the implementation
+6. **The most complex change (Phase 8) comes last in the implementation
    sequence**, after all the infrastructure it depends on is proven.
 
-6. **Each phase has an explicit merge gate** — a checklist of conditions
+7. **Each phase has an explicit merge gate** — a checklist of conditions
    that must pass before proceeding.
