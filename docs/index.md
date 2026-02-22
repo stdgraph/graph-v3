@@ -1,6 +1,13 @@
+<table><tr>
+<td><img src="assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # graph-v3 Documentation
 
 > A modern C++20 graph library — 13 algorithms, 7 lazy views, 3 containers, 4261+ tests.
+
+</td>
+</tr></table>
 
 ---
 

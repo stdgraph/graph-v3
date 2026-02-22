@@ -1,6 +1,13 @@
+<table><tr>
+<td><img src="docs/assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # graph-v3
 
 **A modern C++20 graph library — header-only, descriptor-based, works with your containers.**
+
+</td>
+</tr></table>
 
 <!-- Canonical counts from docs/status/metrics.md — update there first. -->
 
