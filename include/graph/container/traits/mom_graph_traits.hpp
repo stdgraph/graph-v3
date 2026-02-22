@@ -14,7 +14,7 @@ class dynamic_vertex;
 template <class EV, class VV, class GV, class VId, bool Sourced, class Traits>
 class dynamic_graph;
 
-// moem_graph_traits
+// mom_graph_traits
 //  Vertices: std::map<VId, vertex_type> (ordered map keyed by vertex ID)
 //  Edges:    std::map<VId, edge_type> (ordered map keyed by target vertex ID)
 //
@@ -34,18 +34,18 @@ class dynamic_graph;
 //  - Efficient vertex insertion/deletion without affecting other IDs
 //  - Memory overhead: ~24-32 bytes per vertex + ~8-16 bytes per edge
 //
-//  Parameter semantics mirror voem_graph_traits.
+//  Parameter semantics mirror vom_graph_traits.
 template <class EV = void, class VV = void, class GV = void, class VId = uint32_t, bool Sourced = false>
-struct moem_graph_traits {
+struct mom_graph_traits {
   using edge_value_type         = EV;
   using vertex_value_type       = VV;
   using graph_value_type        = GV;
   using vertex_id_type          = VId;
   static constexpr bool sourced = Sourced;
 
-  using edge_type   = dynamic_edge<EV, VV, GV, VId, Sourced, moem_graph_traits>;
-  using vertex_type = dynamic_vertex<EV, VV, GV, VId, Sourced, moem_graph_traits>;
-  using graph_type  = dynamic_graph<EV, VV, GV, VId, Sourced, moem_graph_traits>;
+  using edge_type   = dynamic_edge<EV, VV, GV, VId, Sourced, mom_graph_traits>;
+  using vertex_type = dynamic_vertex<EV, VV, GV, VId, Sourced, mom_graph_traits>;
+  using graph_type  = dynamic_graph<EV, VV, GV, VId, Sourced, mom_graph_traits>;
 
   using vertices_type = std::map<VId, vertex_type>; // Map keyed by vertex ID
   using edges_type    = std::map<VId, edge_type>;   // Map keyed by target vertex ID

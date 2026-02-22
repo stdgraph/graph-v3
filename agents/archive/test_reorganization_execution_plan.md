@@ -149,8 +149,8 @@ git mv tests/test_dynamic_graph_uol.cpp tests/container/dynamic_graph/
 git mv tests/test_dynamic_graph_uov.cpp tests/container/dynamic_graph/
 git mv tests/test_dynamic_graph_uod.cpp tests/container/dynamic_graph/
 git mv tests/test_dynamic_graph_vos.cpp tests/container/dynamic_graph/
-git mv tests/test_dynamic_graph_voem.cpp tests/container/dynamic_graph/
-git mv tests/test_dynamic_graph_moem.cpp tests/container/dynamic_graph/
+git mv tests/test_dynamic_graph_vom.cpp tests/container/dynamic_graph/
+git mv tests/test_dynamic_graph_mom.cpp tests/container/dynamic_graph/
 git mv tests/test_dynamic_graph_dos.cpp tests/container/dynamic_graph/
 git mv tests/test_dynamic_graph_mos.cpp tests/container/dynamic_graph/
 git mv tests/test_dynamic_graph_uos.cpp tests/container/dynamic_graph/
@@ -190,8 +190,8 @@ git mv tests/test_dynamic_graph_cpo_uol.cpp tests/container/dynamic_graph/
 git mv tests/test_dynamic_graph_cpo_uov.cpp tests/container/dynamic_graph/
 git mv tests/test_dynamic_graph_cpo_uod.cpp tests/container/dynamic_graph/
 git mv tests/test_dynamic_graph_cpo_vos.cpp tests/container/dynamic_graph/
-git mv tests/test_dynamic_graph_cpo_voem.cpp tests/container/dynamic_graph/
-git mv tests/test_dynamic_graph_cpo_moem.cpp tests/container/dynamic_graph/
+git mv tests/test_dynamic_graph_cpo_vom.cpp tests/container/dynamic_graph/
+git mv tests/test_dynamic_graph_cpo_mom.cpp tests/container/dynamic_graph/
 git mv tests/test_dynamic_graph_cpo_dos.cpp tests/container/dynamic_graph/
 git mv tests/test_dynamic_graph_cpo_mos.cpp tests/container/dynamic_graph/
 git mv tests/test_dynamic_graph_cpo_uos.cpp tests/container/dynamic_graph/
@@ -309,8 +309,8 @@ add_executable(graph3_container_tests
     dynamic_graph/test_dynamic_graph_uov.cpp
     dynamic_graph/test_dynamic_graph_uod.cpp
     dynamic_graph/test_dynamic_graph_vos.cpp
-    dynamic_graph/test_dynamic_graph_voem.cpp
-    dynamic_graph/test_dynamic_graph_moem.cpp
+    dynamic_graph/test_dynamic_graph_vom.cpp
+    dynamic_graph/test_dynamic_graph_mom.cpp
     dynamic_graph/test_dynamic_graph_dos.cpp
     dynamic_graph/test_dynamic_graph_mos.cpp
     dynamic_graph/test_dynamic_graph_uos.cpp
@@ -350,8 +350,8 @@ add_executable(graph3_container_tests
     dynamic_graph/test_dynamic_graph_cpo_uov.cpp
     dynamic_graph/test_dynamic_graph_cpo_uod.cpp
     dynamic_graph/test_dynamic_graph_cpo_vos.cpp
-    dynamic_graph/test_dynamic_graph_cpo_voem.cpp
-    dynamic_graph/test_dynamic_graph_cpo_moem.cpp
+    dynamic_graph/test_dynamic_graph_cpo_vom.cpp
+    dynamic_graph/test_dynamic_graph_cpo_mom.cpp
     dynamic_graph/test_dynamic_graph_cpo_dos.cpp
     dynamic_graph/test_dynamic_graph_cpo_mos.cpp
     dynamic_graph/test_dynamic_graph_cpo_uos.cpp

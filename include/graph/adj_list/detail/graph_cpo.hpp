@@ -2198,11 +2198,19 @@ namespace _cpo_impls {
              * 
              * This provides access to user-defined vertex properties/data stored in the graph.
              * 
+             * **Return-type preservation guarantee:** The `operator()` returns `decltype(auto)`,
+             * which faithfully preserves the exact return type of the resolved function:
+             * return-by-value (`T`), return-by-reference (`T&`), return-by-const-reference
+             * (`const T&`), and return-by-rvalue-reference (`T&&`) are all forwarded without
+             * decay or copy.
+             * 
              * @tparam G Graph type
              * @tparam U Vertex descriptor type (constrained to be a vertex_descriptor_type)
              * @param g Graph container
              * @param u Vertex descriptor
-             * @return Reference to the vertex value/data
+             * @return Exactly the type returned by the resolved dispatch path (`decltype(auto)`).
+             *         By-value, by-reference, by-const-reference, and by-rvalue-reference
+             *         are all preserved.
              */
       template <typename G, vertex_descriptor_type U>
       [[nodiscard]] constexpr decltype(auto) operator()(G&& g, const U& u) const
@@ -2292,9 +2300,17 @@ namespace _cpo_impls {
              * This provides access to user-defined graph-level properties/metadata
              * stored in the graph container (e.g., name, creation date, statistics).
              * 
+             * **Return-type preservation guarantee:** The `operator()` returns `decltype(auto)`,
+             * which faithfully preserves the exact return type of the resolved function:
+             * return-by-value (`T`), return-by-reference (`T&`), return-by-const-reference
+             * (`const T&`), and return-by-rvalue-reference (`T&&`) are all forwarded without
+             * decay or copy.
+             * 
              * @tparam G Graph type
              * @param g Graph container
-             * @return Reference to the graph value/properties (or by-value if custom implementation returns by-value)
+             * @return Exactly the type returned by the resolved dispatch path (`decltype(auto)`).
+             *         By-value, by-reference, by-const-reference, and by-rvalue-reference
+             *         are all preserved.
              */
       template <typename G>
       [[nodiscard]] constexpr decltype(auto) operator()(G&& g) const noexcept(_Choice<std::remove_cvref_t<G>>._No_throw)

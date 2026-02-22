@@ -20,8 +20,8 @@
 - ✅ uous (unordered_map + unordered_set): Basic + CPO tests COMPLETE (53 test cases, 563 assertions)
 
 **Phase 4.3: Map-Based Edge Containers - COMPLETE ✅**
-- ✅ voem (vector + map edges): Basic + CPO tests COMPLETE (46 test cases, 292 assertions)
-- ✅ moem (map + map edges): Basic + CPO tests COMPLETE (53 test cases, 578 assertions)
+- ✅ vom (vector + map edges): Basic + CPO tests COMPLETE (46 test cases, 292 assertions)
+- ✅ mom (map + map edges): Basic + CPO tests COMPLETE (53 test cases, 578 assertions)
 
 **Phase 4 Overall: 100% COMPLETE ✅ (10/10 traits implemented)**
 
@@ -102,8 +102,8 @@
 - test_dynamic_graph_uous.cpp + test_dynamic_graph_cpo_uous.cpp ✅
 
 *Map Edge Containers (4 files):*
-- test_dynamic_graph_voem.cpp + test_dynamic_graph_cpo_voem.cpp ✅
-- test_dynamic_graph_moem.cpp + test_dynamic_graph_cpo_moem.cpp ✅
+- test_dynamic_graph_vom.cpp + test_dynamic_graph_cpo_vom.cpp ✅
+- test_dynamic_graph_mom.cpp + test_dynamic_graph_cpo_mom.cpp ✅
 
 *Additional Test Files:*
 - test_dynamic_graph_common.cpp ✅
@@ -965,42 +965,42 @@ All prerequisites for both std::set (Phase 4.1) and std::unordered_set (Phase 4.
 | 4.3.1b | Identify changes needed for map-based edge access (key vs iterator) | ✅ DONE |
 | 4.3.1c | Design edge_descriptor changes for map-based edges (if any) | ✅ DONE |
 
-**Step 4.3.2: Create voem_graph_traits (vector + edge map)** ✅ **COMPLETE** (2024-12-28)
+**Step 4.3.2: Create vom_graph_traits (vector + edge map)** ✅ **COMPLETE** (2024-12-28)
 
 **Implementation Summary:**
 - Added is_map_based_edge_container concept to container_utility.hpp
 - Added emplace_edge helper for pair-wrapped edge insertion
 - Updated edge_descriptor::target_id() to unwrap map pairs
 - Updated edge_value CPO to extract values from map pairs  
-- Created voem_graph_traits.hpp with std::map<VId, edge_type> edges
-- Created test_dynamic_graph_voem.cpp (~741 lines, 25 test cases)
-- Created test_dynamic_graph_cpo_voem.cpp (~1273 lines, 21 test cases)
+- Created vom_graph_traits.hpp with std::map<VId, edge_type> edges
+- Created test_dynamic_graph_vom.cpp (~741 lines, 25 test cases)
+- Created test_dynamic_graph_cpo_vom.cpp (~1273 lines, 21 test cases)
 - All 46 test cases passing
 
 | Step | Task | Status |
 |------|------|--------|
-| 4.3.2a | Create voem_graph_traits.hpp | ✅ DONE |
+| 4.3.2a | Create vom_graph_traits.hpp | ✅ DONE |
 | 4.3.2b | Update load_edges or edge insertion for map semantics | ✅ DONE |
-| 4.3.2c | Create test_dynamic_graph_voem.cpp basic tests (~800 lines) | ✅ DONE |
-| 4.3.2d | Create test_dynamic_graph_cpo_voem.cpp CPO tests (~1200 lines) | ✅ DONE |
+| 4.3.2c | Create test_dynamic_graph_vom.cpp basic tests (~800 lines) | ✅ DONE |
+| 4.3.2d | Create test_dynamic_graph_cpo_vom.cpp CPO tests (~1200 lines) | ✅ DONE |
 | 4.3.2e | Update CMakeLists.txt and verify tests pass | ✅ DONE |
 
-**Step 4.3.3: Create moem_graph_traits (map vertices + edge map)** ✅ **COMPLETE** (2024-12-28)
+**Step 4.3.3: Create mom_graph_traits (map vertices + edge map)** ✅ **COMPLETE** (2024-12-28)
 
 **Implementation Summary:**
-- Created moem_graph_traits.hpp with std::map vertices and std::map edges
+- Created mom_graph_traits.hpp with std::map vertices and std::map edges
 - Simplified operator[] using at() for both container types (throws if not found)
 - Added is_map_based_vertex_container concept
 - Tests derived from mos (which also has map vertices)
-- Created test_dynamic_graph_moem.cpp (~1123 lines, 27 test cases)
-- Created test_dynamic_graph_cpo_moem.cpp (~1274 lines, 26 test cases)
+- Created test_dynamic_graph_mom.cpp (~1123 lines, 27 test cases)
+- Created test_dynamic_graph_cpo_mom.cpp (~1274 lines, 26 test cases)
 - All 53 test cases passing
 
 | Step | Task | Status |
 |------|------|--------|
-| 4.3.3a | Create moem_graph_traits.hpp | ✅ DONE |
-| 4.3.3b | Create test_dynamic_graph_moem.cpp (~800 lines) | ✅ DONE |
-| 4.3.3c | Create test_dynamic_graph_cpo_moem.cpp (~1200 lines) | ✅ DONE |
+| 4.3.3a | Create mom_graph_traits.hpp | ✅ DONE |
+| 4.3.3b | Create test_dynamic_graph_mom.cpp (~800 lines) | ✅ DONE |
+| 4.3.3c | Create test_dynamic_graph_cpo_mom.cpp (~1200 lines) | ✅ DONE |
 | 4.3.3d | Update CMakeLists.txt and verify tests pass | ✅ DONE |
 
 ---
@@ -1010,7 +1010,7 @@ All prerequisites for both std::set (Phase 4.1) and std::unordered_set (Phase 4.
 **Total New Traits:**
 - Set edges: vos, dos, mos, uos (4 traits)
 - Unordered set edges: vous, dous, mous, uous (4 traits)
-- Map edges: voem, moem (2 traits)
+- Map edges: vom, mom (2 traits)
 
 **Implementation Changes:**
 - operator<=> for dynamic_edge (generates <, >, <=, >=)
@@ -1038,8 +1038,8 @@ that map/unordered_map-based vertex containers work correctly with various ID ty
 the standard integral types.
 
 **Current State Analysis:**
-- Map-based containers (mos, moem, mol, etc.) already support `std::string` vertex IDs
-- Tests exist with `std::string` IDs in: mos, mous, moem, mol, mov, mod, mofl tests
+- Map-based containers (mos, mom, mol, etc.) already support `std::string` vertex IDs
+- Tests exist with `std::string` IDs in: mos, mous, mom, mol, mov, mod, mofl tests
 - Basic string ID functionality is validated but not comprehensively tested
 - No tests exist for: double IDs, compound types, custom types with complex comparison
 
@@ -1088,7 +1088,7 @@ the standard integral types.
 |-------|-------------|-----------|-----------------|
 | mos | 3 test cases | 22 sections | ✅ Comprehensive |
 | mous | 3 test cases | 22 sections | ✅ Comprehensive |
-| moem | 3 test cases | 22 sections | ✅ Comprehensive |
+| mom | 3 test cases | 22 sections | ✅ Comprehensive |
 | mol | 3 test cases | ~20 sections | ✅ Comprehensive |
 | mov | 3 test cases | ~20 sections | ✅ Comprehensive |
 | mod | 3 test cases | ~20 sections | ✅ Comprehensive |
@@ -2080,7 +2080,7 @@ For Phase 5 (non-integral):
 1. **Finish Phase 4.1.4** - Complete mos CPO tests (1-2 days)
 2. **Phase 4.1.5** - uos (unordered_map + set) basic + CPO tests (2-3 days)
 3. **Phase 4.2** - Unordered set edge containers (vous, dous, mous, uous) (4-5 days)
-4. **Phase 4.3** - Map-based edge containers (voem, moem) (3-4 days)
+4. **Phase 4.3** - Map-based edge containers (vom, mom) (3-4 days)
 5. **Phase 7.3** - Edge cases (ongoing, 2-3 days)
 6. **Phase 6** - Integration tests (2-3 days)
 7. **Phase 7.1** - Mutation operations (2-3 days)

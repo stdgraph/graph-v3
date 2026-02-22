@@ -3,7 +3,7 @@
  * @brief Comprehensive tests for dynamic_graph with vector vertices + set edges
  * 
  * Phase 4.1.2: Set Edge Container Support
- * Tests voem_graph_traits (vector vertices + set edges)
+ * Tests vom_graph_traits (vector vertices + set edges)
  * 
  * Key characteristics of std::set edges:
  * - Automatic deduplication (no parallel edges with same endpoints)
@@ -15,7 +15,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_template_test_macros.hpp>
-#include <graph/container/traits/voem_graph_traits.hpp>
+#include <graph/container/traits/vom_graph_traits.hpp>
 #include <graph/container/dynamic_graph.hpp>
 #include <string>
 #include <vector>
@@ -28,17 +28,17 @@ using namespace graph::container;
 
 // Type aliases for common test configurations
 using vos_void_void_void =
-      dynamic_graph<void, void, void, uint32_t, false, voem_graph_traits<void, void, void, uint32_t, false>>;
+      dynamic_graph<void, void, void, uint32_t, false, vom_graph_traits<void, void, void, uint32_t, false>>;
 using vos_int_void_void =
-      dynamic_graph<int, void, void, uint32_t, false, voem_graph_traits<int, void, void, uint32_t, false>>;
+      dynamic_graph<int, void, void, uint32_t, false, vom_graph_traits<int, void, void, uint32_t, false>>;
 using vos_void_int_void =
-      dynamic_graph<void, int, void, uint32_t, false, voem_graph_traits<void, int, void, uint32_t, false>>;
+      dynamic_graph<void, int, void, uint32_t, false, vom_graph_traits<void, int, void, uint32_t, false>>;
 using vos_int_int_void =
-      dynamic_graph<int, int, void, uint32_t, false, voem_graph_traits<int, int, void, uint32_t, false>>;
+      dynamic_graph<int, int, void, uint32_t, false, vom_graph_traits<int, int, void, uint32_t, false>>;
 using vos_void_void_int =
-      dynamic_graph<void, void, int, uint32_t, false, voem_graph_traits<void, void, int, uint32_t, false>>;
+      dynamic_graph<void, void, int, uint32_t, false, vom_graph_traits<void, void, int, uint32_t, false>>;
 using vos_int_int_int =
-      dynamic_graph<int, int, int, uint32_t, false, voem_graph_traits<int, int, int, uint32_t, false>>;
+      dynamic_graph<int, int, int, uint32_t, false, vom_graph_traits<int, int, int, uint32_t, false>>;
 
 using vos_string_string_string =
       dynamic_graph<std::string,
@@ -46,12 +46,12 @@ using vos_string_string_string =
                     std::string,
                     uint32_t,
                     false,
-                    voem_graph_traits<std::string, std::string, std::string, uint32_t, false>>;
+                    vom_graph_traits<std::string, std::string, std::string, uint32_t, false>>;
 
 using vos_sourced =
-      dynamic_graph<void, void, void, uint32_t, true, voem_graph_traits<void, void, void, uint32_t, true>>;
+      dynamic_graph<void, void, void, uint32_t, true, vom_graph_traits<void, void, void, uint32_t, true>>;
 using vos_int_sourced =
-      dynamic_graph<int, void, void, uint32_t, true, voem_graph_traits<int, void, void, uint32_t, true>>;
+      dynamic_graph<int, void, void, uint32_t, true, vom_graph_traits<int, void, void, uint32_t, true>>;
 
 // Edge and vertex data types for loading
 using edge_void  = copyable_edge_t<uint32_t, void>;
@@ -72,7 +72,7 @@ size_t count_all_edges(G& g) {
 // 1. Construction Tests
 //==================================================================================================
 
-TEST_CASE("voem default construction", "[voem][construction]") {
+TEST_CASE("vom default construction", "[vom][construction]") {
   SECTION("creates empty graph") {
     vos_void_void_void g;
     REQUIRE(g.size() == 0);
@@ -109,7 +109,7 @@ TEST_CASE("voem default construction", "[voem][construction]") {
   }
 }
 
-TEST_CASE("voem constructor with graph value", "[voem][construction]") {
+TEST_CASE("vom constructor with graph value", "[vom][construction]") {
   SECTION("void GV - no graph value can be passed") {
     vos_void_void_void g;
     REQUIRE(g.size() == 0);
@@ -126,7 +126,7 @@ TEST_CASE("voem constructor with graph value", "[voem][construction]") {
 // 2. Load Edges Tests
 //==================================================================================================
 
-TEST_CASE("voem load_edges", "[voem][load]") {
+TEST_CASE("vom load_edges", "[vom][load]") {
   SECTION("simple edges") {
     vos_void_void_void     g;
     std::vector<edge_void> ee = {{0, 1}, {0, 2}, {1, 2}};
@@ -168,7 +168,7 @@ TEST_CASE("voem load_edges", "[voem][load]") {
 // 3. Initializer List Construction Tests
 //==================================================================================================
 
-TEST_CASE("voem initializer list construction", "[voem][construction][initializer_list]") {
+TEST_CASE("vom initializer list construction", "[vom][construction][initializer_list]") {
   SECTION("simple initializer list") {
     vos_void_void_void g({{0, 1}, {0, 2}, {1, 2}});
 
@@ -181,7 +181,7 @@ TEST_CASE("voem initializer list construction", "[voem][construction][initialize
 // 4. Set-Specific Behavior: Deduplication Tests
 //==================================================================================================
 
-TEST_CASE("voem edge deduplication", "[voem][set][deduplication]") {
+TEST_CASE("vom edge deduplication", "[vom][set][deduplication]") {
   SECTION("duplicate edges are ignored - unsourced") {
     vos_void_void_void g;
     // Load edges with duplicates
@@ -238,7 +238,7 @@ TEST_CASE("voem edge deduplication", "[voem][set][deduplication]") {
 // 5. Set-Specific Behavior: Sorted Order Tests
 //==================================================================================================
 
-TEST_CASE("voem edges are sorted by target_id", "[voem][set][sorted]") {
+TEST_CASE("vom edges are sorted by target_id", "[vom][set][sorted]") {
   SECTION("unsourced edges sorted by target_id") {
     // Insert edges in unsorted order
     vos_void_void_void     g;
@@ -276,7 +276,7 @@ TEST_CASE("voem edges are sorted by target_id", "[voem][set][sorted]") {
 // 6. Vertex Access Tests
 //==================================================================================================
 
-TEST_CASE("voem vertex access", "[voem][vertex][access]") {
+TEST_CASE("vom vertex access", "[vom][vertex][access]") {
   SECTION("operator[] access") {
     vos_void_void_void g({{0, 1}, {1, 2}, {2, 3}});
 
@@ -305,7 +305,7 @@ TEST_CASE("voem vertex access", "[voem][vertex][access]") {
   }
 }
 
-TEST_CASE("voem vertex iteration", "[voem][vertex][iteration]") {
+TEST_CASE("vom vertex iteration", "[vom][vertex][iteration]") {
   SECTION("range-based for") {
     vos_void_void_void g({{0, 1}, {1, 2}, {2, 0}});
 
@@ -335,7 +335,7 @@ TEST_CASE("voem vertex iteration", "[voem][vertex][iteration]") {
 // 7. Edge Access Tests
 //==================================================================================================
 
-TEST_CASE("voem edge access", "[voem][edge][access]") {
+TEST_CASE("vom edge access", "[vom][edge][access]") {
   SECTION("edges() returns set") {
     vos_void_void_void g({{0, 1}, {0, 2}, {0, 3}});
 
@@ -364,7 +364,7 @@ TEST_CASE("voem edge access", "[voem][edge][access]") {
   }
 }
 
-TEST_CASE("voem edge bidirectional iteration", "[voem][edge][iteration]") {
+TEST_CASE("vom edge bidirectional iteration", "[vom][edge][iteration]") {
   SECTION("forward iteration") {
     vos_void_void_void g({{0, 1}, {0, 2}, {0, 3}});
 
@@ -397,7 +397,7 @@ TEST_CASE("voem edge bidirectional iteration", "[voem][edge][iteration]") {
 // 8. Vertex and Edge Value Tests
 //==================================================================================================
 
-TEST_CASE("voem vertex values", "[voem][vertex][value]") {
+TEST_CASE("vom vertex values", "[vom][vertex][value]") {
   SECTION("vertex value access") {
     vos_void_int_void       g;
     std::vector<vertex_int> vv = {{0, 100}, {1, 200}};
@@ -411,7 +411,7 @@ TEST_CASE("voem vertex values", "[voem][vertex][value]") {
   }
 }
 
-TEST_CASE("voem edge values", "[voem][edge][value]") {
+TEST_CASE("vom edge values", "[vom][edge][value]") {
   SECTION("edge values preserved after deduplication") {
     // First edge with value 100 should be kept
     vos_int_void_void     g;
@@ -430,7 +430,7 @@ TEST_CASE("voem edge values", "[voem][edge][value]") {
 // 9. Sourced Edge Tests
 //==================================================================================================
 
-TEST_CASE("voem sourced edges", "[voem][sourced]") {
+TEST_CASE("vom sourced edges", "[vom][sourced]") {
   SECTION("source_id access") {
     vos_sourced g({{0, 1}, {0, 2}, {1, 0}});
 
@@ -468,7 +468,7 @@ TEST_CASE("voem sourced edges", "[voem][sourced]") {
 // 10. Self-Loop Tests
 //==================================================================================================
 
-TEST_CASE("voem self-loops", "[voem][self-loop]") {
+TEST_CASE("vom self-loops", "[vom][self-loop]") {
   SECTION("single self-loop") {
     vos_void_void_void g({{0, 0}});
 
@@ -507,7 +507,7 @@ TEST_CASE("voem self-loops", "[voem][self-loop]") {
 // 11. Large Graph Tests
 //==================================================================================================
 
-TEST_CASE("voem large graph", "[voem][performance]") {
+TEST_CASE("vom large graph", "[vom][performance]") {
   SECTION("1000 vertices linear chain") {
     std::vector<edge_void> ee;
     for (uint32_t i = 0; i < 999; ++i) {
@@ -543,7 +543,7 @@ TEST_CASE("voem large graph", "[voem][performance]") {
 // 12. Iterator Stability Tests (std::set guarantees)
 //==================================================================================================
 
-TEST_CASE("voem set iterator stability", "[voem][set][iterator]") {
+TEST_CASE("vom set iterator stability", "[vom][set][iterator]") {
   SECTION("edge iterators are bidirectional") {
     vos_void_void_void g({{0, 1}, {0, 2}, {0, 3}});
 
@@ -570,7 +570,7 @@ TEST_CASE("voem set iterator stability", "[voem][set][iterator]") {
 // 13. Algorithm Compatibility Tests
 //==================================================================================================
 
-TEST_CASE("voem algorithm compatibility", "[voem][algorithm]") {
+TEST_CASE("vom algorithm compatibility", "[vom][algorithm]") {
   SECTION("std::ranges::for_each on vertices") {
     vos_void_void_void g({{0, 1}, {1, 2}, {2, 0}});
 
@@ -613,7 +613,7 @@ TEST_CASE("voem algorithm compatibility", "[voem][algorithm]") {
 // 14. Edge Case Tests
 //==================================================================================================
 
-TEST_CASE("voem edge cases", "[voem][edge-cases]") {
+TEST_CASE("vom edge cases", "[vom][edge-cases]") {
   SECTION("empty graph operations") {
     vos_void_void_void g;
 
@@ -657,9 +657,9 @@ TEST_CASE("voem edge cases", "[voem][edge-cases]") {
 // 15. Type Trait Tests
 //==================================================================================================
 
-TEST_CASE("voem type traits", "[voem][traits]") {
+TEST_CASE("vom type traits", "[vom][traits]") {
   SECTION("edge_type is correct") {
-    using traits = voem_graph_traits<int, void, void, uint32_t, false>;
+    using traits = vom_graph_traits<int, void, void, uint32_t, false>;
     using edge_t = traits::edge_type;
 
     static_assert(std::is_same_v<edge_t::value_type, int>);
@@ -667,7 +667,7 @@ TEST_CASE("voem type traits", "[voem][traits]") {
   }
 
   SECTION("edges_type is std::set") {
-    using traits  = voem_graph_traits<void, void, void, uint32_t, false>;
+    using traits  = vom_graph_traits<void, void, void, uint32_t, false>;
     using edges_t = traits::edges_type;
 
     // Verify it's a set by checking it has set-specific types
@@ -675,8 +675,8 @@ TEST_CASE("voem type traits", "[voem][traits]") {
   }
 
   SECTION("sourced trait") {
-    using traits_unsourced = voem_graph_traits<void, void, void, uint32_t, false>;
-    using traits_sourced   = voem_graph_traits<void, void, void, uint32_t, true>;
+    using traits_unsourced = vom_graph_traits<void, void, void, uint32_t, false>;
+    using traits_sourced   = vom_graph_traits<void, void, void, uint32_t, true>;
 
     static_assert(traits_unsourced::sourced == false);
     static_assert(traits_sourced::sourced == true);
@@ -687,7 +687,7 @@ TEST_CASE("voem type traits", "[voem][traits]") {
 // 16. Complex Graph Structure Tests
 //==================================================================================================
 
-TEST_CASE("voem complex structures", "[voem][complex]") {
+TEST_CASE("vom complex structures", "[vom][complex]") {
   SECTION("complete graph K4") {
     std::vector<edge_void> ee;
     for (uint32_t i = 0; i < 4; ++i) {

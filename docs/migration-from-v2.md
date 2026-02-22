@@ -50,7 +50,7 @@ edges without holding references to the underlying container.
   - Vertex storage in `map` and `unordered_map` (for sparse vertex IDs).
   - Edge storage in `map`, `set`, `unordered_set` (for sorted or deduplicated edges).
   - Non-integral vertex IDs.
-  - 26 vertex×edge container combinations via traits (see
+  - 27 vertex×edge container combinations via traits (see
     [Containers](user-guide/containers.md)).
 
 ### Graph Container Interface

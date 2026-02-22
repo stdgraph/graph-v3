@@ -739,7 +739,7 @@ Created `tests/views/test_edgelist.cpp`:
 - Value function receives descriptor
 - Structured bindings work: `for (auto [e] : edgelist(g))` and `for (auto [e, val] : edgelist(g, evf))`
 - Tests pass with sanitizers
-- Map-based containers supported (vov, voem, mov, moem)
+- Map-based containers supported (vov, vom, mov, mom)
 
 **Commit Message**:
 ```

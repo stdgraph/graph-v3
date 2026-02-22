@@ -435,9 +435,9 @@ using G = dynamic_graph<double, std::string, void, uint32_t, false,
 
 | Vertices | Edges | Trait |
 |----------|-------|-------|
-| vector | vector, list, forward_list, deque, set, unordered_set, edge_multimap | vov, vol, vofl, vod, vos, vous, voem |
+| vector | vector, list, forward_list, deque, set, unordered_set, edge_multimap | vov, vol, vofl, vod, vos, vous, vom |
 | deque | vector, list, forward_list, deque, set, unordered_set | dov, dol, dofl, dod, dos, dous |
-| map | vector, list, forward_list, deque, set, unordered_set, edge_multimap | mov, mol, mofl, mod, mos, mous, moem |
+| map | vector, list, forward_list, deque, set, unordered_set, edge_multimap | mov, mol, mofl, mod, mos, mous, mom |
 | unordered_map | vector, list, forward_list, deque, unordered_set | uov, uol, uofl, uod, uous |
 
 #### Level 4: compressed_graph (CSR Format)

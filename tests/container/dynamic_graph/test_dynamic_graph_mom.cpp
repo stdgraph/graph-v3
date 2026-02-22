@@ -3,7 +3,7 @@
  * @brief Tests for dynamic_graph with map vertices + set edges
  * 
  * Phase 4.1.4: Map Vertex + Set Edge Containers
- * Tests moem_graph_traits (map vertices + set edges)
+ * Tests mom_graph_traits (map vertices + set edges)
  * 
  * Key characteristics:
  * - Vertices: std::map (associative; key-based lookup; bidirectional iteration)
@@ -18,7 +18,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_template_test_macros.hpp>
-#include <graph/container/traits/moem_graph_traits.hpp>
+#include <graph/container/traits/mom_graph_traits.hpp>
 #include <graph/container/dynamic_graph.hpp>
 #include <string>
 #include <vector>
@@ -31,35 +31,35 @@ using namespace graph::container;
 
 // Type aliases for common test configurations with uint32_t vertex IDs
 using mos_void_void_void =
-      dynamic_graph<void, void, void, uint32_t, false, moem_graph_traits<void, void, void, uint32_t, false>>;
+      dynamic_graph<void, void, void, uint32_t, false, mom_graph_traits<void, void, void, uint32_t, false>>;
 using mos_int_void_void =
-      dynamic_graph<int, void, void, uint32_t, false, moem_graph_traits<int, void, void, uint32_t, false>>;
+      dynamic_graph<int, void, void, uint32_t, false, mom_graph_traits<int, void, void, uint32_t, false>>;
 using mos_void_int_void =
-      dynamic_graph<void, int, void, uint32_t, false, moem_graph_traits<void, int, void, uint32_t, false>>;
+      dynamic_graph<void, int, void, uint32_t, false, mom_graph_traits<void, int, void, uint32_t, false>>;
 using mos_int_int_void =
-      dynamic_graph<int, int, void, uint32_t, false, moem_graph_traits<int, int, void, uint32_t, false>>;
+      dynamic_graph<int, int, void, uint32_t, false, mom_graph_traits<int, int, void, uint32_t, false>>;
 using mos_void_void_int =
-      dynamic_graph<void, void, int, uint32_t, false, moem_graph_traits<void, void, int, uint32_t, false>>;
+      dynamic_graph<void, void, int, uint32_t, false, mom_graph_traits<void, void, int, uint32_t, false>>;
 using mos_int_int_int =
-      dynamic_graph<int, int, int, uint32_t, false, moem_graph_traits<int, int, int, uint32_t, false>>;
+      dynamic_graph<int, int, int, uint32_t, false, mom_graph_traits<int, int, int, uint32_t, false>>;
 
 // Type aliases with string vertex IDs (the primary use case for map containers)
 using mos_str_void_void_void =
-      dynamic_graph<void, void, void, std::string, false, moem_graph_traits<void, void, void, std::string, false>>;
+      dynamic_graph<void, void, void, std::string, false, mom_graph_traits<void, void, void, std::string, false>>;
 using mos_str_int_void_void =
-      dynamic_graph<int, void, void, std::string, false, moem_graph_traits<int, void, void, std::string, false>>;
+      dynamic_graph<int, void, void, std::string, false, mom_graph_traits<int, void, void, std::string, false>>;
 using mos_str_void_int_void =
-      dynamic_graph<void, int, void, std::string, false, moem_graph_traits<void, int, void, std::string, false>>;
+      dynamic_graph<void, int, void, std::string, false, mom_graph_traits<void, int, void, std::string, false>>;
 using mos_str_int_int_int =
-      dynamic_graph<int, int, int, std::string, false, moem_graph_traits<int, int, int, std::string, false>>;
+      dynamic_graph<int, int, int, std::string, false, mom_graph_traits<int, int, int, std::string, false>>;
 
 using mos_sourced =
-      dynamic_graph<void, void, void, uint32_t, true, moem_graph_traits<void, void, void, uint32_t, true>>;
+      dynamic_graph<void, void, void, uint32_t, true, mom_graph_traits<void, void, void, uint32_t, true>>;
 using mos_int_sourced =
-      dynamic_graph<int, void, void, uint32_t, true, moem_graph_traits<int, void, void, uint32_t, true>>;
+      dynamic_graph<int, void, void, uint32_t, true, mom_graph_traits<int, void, void, uint32_t, true>>;
 
 using mos_str_sourced =
-      dynamic_graph<void, void, void, std::string, true, moem_graph_traits<void, void, void, std::string, true>>;
+      dynamic_graph<void, void, void, std::string, true, mom_graph_traits<void, void, void, std::string, true>>;
 
 // Edge and vertex data types for loading
 using edge_void  = copyable_edge_t<uint32_t, void>;
@@ -80,9 +80,9 @@ size_t count_all_edges(G& g) {
 // 1. Traits Verification Tests
 //==================================================================================================
 
-TEST_CASE("moem traits verification", "[dynamic_graph][moem][traits]") {
+TEST_CASE("mom traits verification", "[dynamic_graph][mom][traits]") {
   SECTION("vertices_type is std::map") {
-    using traits     = moem_graph_traits<void, void, void, uint32_t, false>;
+    using traits     = mom_graph_traits<void, void, void, uint32_t, false>;
     using vertices_t = typename traits::vertices_type;
     // Verify it's a map by checking for map-specific members
     static_assert(requires { typename vertices_t::key_type; });
@@ -91,7 +91,7 @@ TEST_CASE("moem traits verification", "[dynamic_graph][moem][traits]") {
   }
 
   SECTION("edges_type is std::set") {
-    using traits  = moem_graph_traits<void, void, void, uint32_t, false>;
+    using traits  = mom_graph_traits<void, void, void, uint32_t, false>;
     using edges_t = typename traits::edges_type;
     // set has key_type and doesn't have mapped_type (unlike map)
     static_assert(requires { typename edges_t::key_type; });
@@ -99,27 +99,27 @@ TEST_CASE("moem traits verification", "[dynamic_graph][moem][traits]") {
   }
 
   SECTION("vertex_id_type can be string") {
-    using traits = moem_graph_traits<void, void, void, std::string, false>;
+    using traits = mom_graph_traits<void, void, void, std::string, false>;
     static_assert(std::same_as<typename traits::vertex_id_type, std::string>);
     REQUIRE(true);
   }
 
   SECTION("sourced flag is preserved") {
-    using traits_unsourced = moem_graph_traits<void, void, void, uint32_t, false>;
-    using traits_sourced   = moem_graph_traits<void, void, void, uint32_t, true>;
+    using traits_unsourced = mom_graph_traits<void, void, void, uint32_t, false>;
+    using traits_sourced   = mom_graph_traits<void, void, void, uint32_t, true>;
     static_assert(traits_unsourced::sourced == false);
     static_assert(traits_sourced::sourced == true);
     REQUIRE(true);
   }
 
   SECTION("vertex_id_type for uint32_t") {
-    using traits = moem_graph_traits<void, void, void, uint32_t, false>;
+    using traits = mom_graph_traits<void, void, void, uint32_t, false>;
     static_assert(std::same_as<typename traits::vertex_id_type, uint32_t>);
     REQUIRE(true);
   }
 
   SECTION("custom vertex_id_type") {
-    using traits = moem_graph_traits<void, void, void, int64_t, false>;
+    using traits = mom_graph_traits<void, void, void, int64_t, false>;
     static_assert(std::same_as<typename traits::vertex_id_type, int64_t>);
     REQUIRE(true);
   }
@@ -129,7 +129,7 @@ TEST_CASE("moem traits verification", "[dynamic_graph][moem][traits]") {
 // 2. Iterator Category Tests
 //==================================================================================================
 
-TEST_CASE("moem iterator categories", "[dynamic_graph][moem][iterators]") {
+TEST_CASE("mom iterator categories", "[dynamic_graph][mom][iterators]") {
   SECTION("underlying map iterators are bidirectional") {
     using G      = mos_void_void_void;
     using iter_t = typename G::vertices_type::iterator;
@@ -139,7 +139,7 @@ TEST_CASE("moem iterator categories", "[dynamic_graph][moem][iterators]") {
   }
 
   SECTION("set edge iterators are bidirectional") {
-    using traits      = moem_graph_traits<void, void, void, uint32_t, false>;
+    using traits      = mom_graph_traits<void, void, void, uint32_t, false>;
     using edges_t     = typename traits::edges_type;
     using edge_iter_t = typename edges_t::iterator;
     // set iterators are bidirectional
@@ -161,7 +161,7 @@ TEST_CASE("moem iterator categories", "[dynamic_graph][moem][iterators]") {
 // 3. Construction Tests
 //==================================================================================================
 
-TEST_CASE("moem construction", "[dynamic_graph][moem][construction]") {
+TEST_CASE("mom construction", "[dynamic_graph][mom][construction]") {
   SECTION("default constructor creates empty graph") {
     mos_void_void_void g;
     REQUIRE(g.size() == 0);
@@ -223,7 +223,7 @@ TEST_CASE("moem construction", "[dynamic_graph][moem][construction]") {
   }
 }
 
-TEST_CASE("moem construction with string vertex IDs", "[dynamic_graph][moem][construction][string]") {
+TEST_CASE("mom construction with string vertex IDs", "[dynamic_graph][mom][construction][string]") {
   SECTION("default constructor creates empty graph") {
     mos_str_void_void_void g;
     REQUIRE(g.size() == 0);
@@ -245,7 +245,7 @@ TEST_CASE("moem construction with string vertex IDs", "[dynamic_graph][moem][con
   }
 }
 
-TEST_CASE("moem construction sourced", "[dynamic_graph][moem][construction][sourced]") {
+TEST_CASE("mom construction sourced", "[dynamic_graph][mom][construction][sourced]") {
   SECTION("sourced edge construction with uint32_t IDs") {
     mos_sourced g;
     REQUIRE(g.size() == 0);
@@ -266,7 +266,7 @@ TEST_CASE("moem construction sourced", "[dynamic_graph][moem][construction][sour
 // 4. Basic Properties Tests
 //==================================================================================================
 
-TEST_CASE("moem properties", "[dynamic_graph][moem][properties]") {
+TEST_CASE("mom properties", "[dynamic_graph][mom][properties]") {
   SECTION("size() on empty graph") {
     mos_void_void_void g;
     REQUIRE(g.size() == 0);
@@ -293,7 +293,7 @@ TEST_CASE("moem properties", "[dynamic_graph][moem][properties]") {
   }
 }
 
-TEST_CASE("moem properties with string IDs", "[dynamic_graph][moem][properties][string]") {
+TEST_CASE("mom properties with string IDs", "[dynamic_graph][mom][properties][string]") {
   SECTION("size() on empty graph") {
     mos_str_void_void_void g;
     REQUIRE(g.size() == 0);
@@ -309,7 +309,7 @@ TEST_CASE("moem properties with string IDs", "[dynamic_graph][moem][properties][
 // 5. Initializer List Construction Tests (uint32_t vertex IDs)
 //==================================================================================================
 
-TEST_CASE("moem initializer_list construction", "[dynamic_graph][moem][initializer_list]") {
+TEST_CASE("mom initializer_list construction", "[dynamic_graph][mom][initializer_list]") {
   SECTION("empty initializer list") {
     using G = mos_void_void_void;
     G g({});
@@ -371,7 +371,7 @@ TEST_CASE("moem initializer_list construction", "[dynamic_graph][moem][initializ
 // 6. Set-Specific Behavior: Deduplication Tests
 //==================================================================================================
 
-TEST_CASE("moem edge deduplication", "[dynamic_graph][moem][set][deduplication]") {
+TEST_CASE("mom edge deduplication", "[dynamic_graph][mom][set][deduplication]") {
   SECTION("duplicate edges are ignored - unsourced") {
     mos_void_void_void g;
     // Load edges with duplicates
@@ -429,7 +429,7 @@ TEST_CASE("moem edge deduplication", "[dynamic_graph][moem][set][deduplication]"
 // 7. Set-Specific Behavior: Sorted Order Tests
 //==================================================================================================
 
-TEST_CASE("moem edges are sorted by target_id", "[dynamic_graph][moem][set][sorted]") {
+TEST_CASE("mom edges are sorted by target_id", "[dynamic_graph][mom][set][sorted]") {
   SECTION("unsourced edges sorted by target_id") {
     // Insert edges in unsorted order
     mos_void_void_void     g;
@@ -469,7 +469,7 @@ TEST_CASE("moem edges are sorted by target_id", "[dynamic_graph][moem][set][sort
 // 8. Initializer List Construction Tests (string vertex IDs)
 //==================================================================================================
 
-TEST_CASE("moem initializer_list construction string IDs", "[dynamic_graph][moem][initializer_list][string]") {
+TEST_CASE("mom initializer_list construction string IDs", "[dynamic_graph][mom][initializer_list][string]") {
   SECTION("single edge with string IDs") {
     using G = mos_str_void_void_void;
     G g({{"alice", "bob"}});
@@ -510,7 +510,7 @@ TEST_CASE("moem initializer_list construction string IDs", "[dynamic_graph][moem
 // 9. Graph Value Tests
 //==================================================================================================
 
-TEST_CASE("moem graph value access", "[dynamic_graph][moem][graph_value]") {
+TEST_CASE("mom graph value access", "[dynamic_graph][mom][graph_value]") {
   SECTION("graph_value() returns reference") {
     mos_void_void_int g(100);
     REQUIRE(g.graph_value() == 100);
@@ -542,7 +542,7 @@ TEST_CASE("moem graph value access", "[dynamic_graph][moem][graph_value]") {
 // 10. Graph Iteration Tests
 //==================================================================================================
 
-TEST_CASE("moem graph iteration", "[dynamic_graph][moem][iteration]") {
+TEST_CASE("mom graph iteration", "[dynamic_graph][mom][iteration]") {
   SECTION("iterate over empty graph") {
     mos_void_void_void g;
     size_t             count = 0;
@@ -604,7 +604,7 @@ TEST_CASE("moem graph iteration", "[dynamic_graph][moem][iteration]") {
 // 11. Vertex Accessor Methods Tests
 //==================================================================================================
 
-TEST_CASE("moem contains_vertex", "[dynamic_graph][moem][accessor][contains_vertex]") {
+TEST_CASE("mom contains_vertex", "[dynamic_graph][mom][accessor][contains_vertex]") {
   SECTION("uint32_t vertex IDs") {
     using G = mos_void_void_void;
     G g({{0, 1}, {1, 2}, {5, 10}});
@@ -654,7 +654,7 @@ TEST_CASE("moem contains_vertex", "[dynamic_graph][moem][accessor][contains_vert
   }
 }
 
-TEST_CASE("moem try_find_vertex", "[dynamic_graph][moem][accessor][try_find_vertex]") {
+TEST_CASE("mom try_find_vertex", "[dynamic_graph][mom][accessor][try_find_vertex]") {
   SECTION("uint32_t vertex IDs - found") {
     using G = mos_void_void_void;
     G g({{0, 1}, {1, 2}, {5, 10}});
@@ -718,7 +718,7 @@ TEST_CASE("moem try_find_vertex", "[dynamic_graph][moem][accessor][try_find_vert
   }
 }
 
-TEST_CASE("moem vertex_at", "[dynamic_graph][moem][accessor][vertex_at]") {
+TEST_CASE("mom vertex_at", "[dynamic_graph][mom][accessor][vertex_at]") {
   SECTION("uint32_t vertex IDs - found") {
     using G = mos_void_void_void;
     G g({{0, 1}, {1, 2}});
@@ -778,7 +778,7 @@ TEST_CASE("moem vertex_at", "[dynamic_graph][moem][accessor][vertex_at]") {
 // 12. load_vertices Tests
 //==================================================================================================
 
-TEST_CASE("moem load_vertices", "[dynamic_graph][moem][load_vertices]") {
+TEST_CASE("mom load_vertices", "[dynamic_graph][mom][load_vertices]") {
   SECTION("uint32_t IDs - basic load") {
     using G           = mos_void_int_void;
     using vertex_data = copyable_vertex_t<uint32_t, int>;
@@ -829,7 +829,7 @@ TEST_CASE("moem load_vertices", "[dynamic_graph][moem][load_vertices]") {
 // 13. load_edges Tests
 //==================================================================================================
 
-TEST_CASE("moem load_edges explicit", "[dynamic_graph][moem][load_edges]") {
+TEST_CASE("mom load_edges explicit", "[dynamic_graph][mom][load_edges]") {
   SECTION("uint32_t IDs - basic load") {
     using G         = mos_int_void_void;
     using edge_data = copyable_edge_t<uint32_t, int>;
@@ -883,7 +883,7 @@ TEST_CASE("moem load_edges explicit", "[dynamic_graph][moem][load_edges]") {
 // 14. Edge Cases and Error Handling
 //==================================================================================================
 
-TEST_CASE("moem edge cases", "[dynamic_graph][moem][edge_cases]") {
+TEST_CASE("mom edge cases", "[dynamic_graph][mom][edge_cases]") {
   SECTION("graph with single vertex (self-loop)") {
     using G = mos_void_void_void;
     G g({{0, 0}});
@@ -944,7 +944,7 @@ TEST_CASE("moem edge cases", "[dynamic_graph][moem][edge_cases]") {
 // 15. Const Correctness Tests
 //==================================================================================================
 
-TEST_CASE("moem const correctness", "[dynamic_graph][moem][const]") {
+TEST_CASE("mom const correctness", "[dynamic_graph][mom][const]") {
   SECTION("const graph properties") {
     using G = mos_int_void_void;
     const G g({{0, 1, 10}, {1, 2, 20}});
@@ -969,7 +969,7 @@ TEST_CASE("moem const correctness", "[dynamic_graph][moem][const]") {
 // 16. Memory and Resource Management Tests
 //==================================================================================================
 
-TEST_CASE("moem memory management", "[dynamic_graph][moem][memory]") {
+TEST_CASE("mom memory management", "[dynamic_graph][mom][memory]") {
   SECTION("multiple independent graphs") {
     using G = mos_void_void_int;
     G g1(100, {{0, 1}});
@@ -1005,7 +1005,7 @@ TEST_CASE("moem memory management", "[dynamic_graph][moem][memory]") {
 // 17. Template Instantiation Tests
 //==================================================================================================
 
-TEST_CASE("moem template instantiation", "[dynamic_graph][moem][compilation]") {
+TEST_CASE("mom template instantiation", "[dynamic_graph][mom][compilation]") {
   [[maybe_unused]] mos_void_void_void     g1;
   [[maybe_unused]] mos_int_void_void      g2;
   [[maybe_unused]] mos_void_int_void      g3;
@@ -1026,7 +1026,7 @@ TEST_CASE("moem template instantiation", "[dynamic_graph][moem][compilation]") {
 // 18. Sparse Vertex Behavior Tests
 //==================================================================================================
 
-TEST_CASE("moem sparse vertex behavior", "[dynamic_graph][moem][sparse]") {
+TEST_CASE("mom sparse vertex behavior", "[dynamic_graph][mom][sparse]") {
   SECTION("only referenced vertices are created") {
     using G = mos_void_void_void;
 
@@ -1053,7 +1053,7 @@ TEST_CASE("moem sparse vertex behavior", "[dynamic_graph][moem][sparse]") {
 // 19. Edge Bidirectional Iteration Tests
 //==================================================================================================
 
-TEST_CASE("moem edge bidirectional iteration", "[dynamic_graph][moem][set][iteration]") {
+TEST_CASE("mom edge bidirectional iteration", "[dynamic_graph][mom][set][iteration]") {
   SECTION("forward iteration") {
     mos_void_void_void g({{0, 1}, {0, 2}, {0, 3}});
 
@@ -1090,7 +1090,7 @@ TEST_CASE("moem edge bidirectional iteration", "[dynamic_graph][moem][set][itera
 // 20. Sourced Edge Tests
 //==================================================================================================
 
-TEST_CASE("moem sourced edges", "[dynamic_graph][moem][sourced]") {
+TEST_CASE("mom sourced edges", "[dynamic_graph][mom][sourced]") {
   SECTION("source_id access") {
     mos_sourced g({{0, 1}, {0, 2}, {1, 0}});
 

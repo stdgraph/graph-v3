@@ -41,7 +41,7 @@ graph-v3/
 │   │   ├── jaccard.hpp
 │   │   └── traversal_common.hpp
 │   ├── container/                     # Library-provided containers
-│   │   ├── dynamic_graph.hpp          # 26 trait combinations
+│   │   ├── dynamic_graph.hpp          # 27 trait combinations
 │   │   ├── compressed_graph.hpp       # CSR format
 │   │   ├── undirected_adjacency_list.hpp
 │   │   ├── container_utility.hpp
@@ -206,7 +206,7 @@ Tests mirror the source structure:
 |----------------|---------------|
 | `tests/adj_list/` | Descriptor construction, CPO dispatch, type aliases |
 | `tests/algorithms/` | One test file per algorithm (Dijkstra, BFS, DFS, …) |
-| `tests/container/` | Container conformance — all 26 trait combinations |
+| `tests/container/` | Container conformance — all 27 trait combinations |
 | `tests/edge_list/` | Edge list model tests |
 | `tests/views/` | View iteration and composition |
 | `tests/common/` | Shared test utilities and helpers |

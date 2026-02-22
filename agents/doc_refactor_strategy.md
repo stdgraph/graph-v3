@@ -48,7 +48,7 @@ Transform the graph-v3 documentation from an internal development log into a pol
 6. **Missing landing page for docs/** — no index or navigation
 7. **Stale design documents** mixed with evergreen reference docs
 8. **Edge list under-documented** — the edge list ADT is a peer to the adjacency list but gets ~25% of the space in `container_interface.md`; its namespace (`graph::edge_list`) and concept names (`basic_sourced_edgelist`) don't match the doc
-9. **Container variety not showcased** — `dynamic_graph` supports 26 vertex×edge container combinations (4 vertex containers × 7 edge containers) but this power isn't visible to users
+9. **Container variety not showcased** — `dynamic_graph` supports 27 vertex×edge container combinations (4 vertex containers × 7 edge containers) but this power isn't visible to users
 10. **Orphaned files** — `descriptor.md` (top-level), `include/graph/README.md`, and several `docs/` files have no clear destination in the new structure
 
 ---
@@ -251,7 +251,7 @@ The `docs/user-guide/containers.md` page must include:
 |-----------|---------|------------|----------|
 | `dynamic_graph<EV,VV,GV,VId,Sourced,Traits>` | Traits-configured vertex and edge containers | Mutable | General purpose, flexible container choice |
 | `compressed_graph<EV,VV,GV,VId,EIndex,Alloc>` | CSR (compressed sparse row) | Immutable after construction | Read-only, high-performance, memory-compact |
-| `undirected_adjacency_list<VV,EV,GV,VId,VContainer,Alloc>` | Dual doubly-linked lists per edge | Mutable, O(1) edge removal | Undirected graphs, frequent edge insertion/removal |
+| `undirected_adjacency_list<EV,VV,GV,VId,VContainer,Alloc>` | Dual doubly-linked lists per edge | Mutable, O(1) edge removal | Undirected graphs, frequent edge insertion/removal |
 
 **Full `dynamic_graph` container matrix (26 combinations):**
 
@@ -278,7 +278,7 @@ Edge containers:
 
 Traits naming convention: `{vertex}o{edge}_graph_traits` (e.g., `vov_graph_traits` = vector vertices, vector edges).
 
-All 26 combinations listed with trait file names (vov, vod, vofl, vol, vos, vous, voem, dov, dod, dofl, dol, dos, dous, mov, mod, mofl, mol, mos, mous, moem, uov, uod, uofl, uol, uos, uous).
+All 27 combinations listed with trait file names (vov, vod, vofl, vol, vos, vous, vom, voum, dov, dod, dofl, dol, dos, dous, mov, mod, mofl, mol, mos, mous, mom, uov, uod, uofl, uol, uos, uous).
 
 ### Phase 4: Reference
 
