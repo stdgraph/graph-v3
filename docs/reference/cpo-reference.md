@@ -11,6 +11,12 @@ structure. Each CPO resolves at compile time via a three-step priority:
 All CPOs listed below are available in `namespace graph` after
 `#include <graph/graph.hpp>`.
 
+> **Convention:** The explicit directional names (`out_edges`, `out_degree`,
+> `find_out_edge`, `out_edge_range_t`, etc.) are the primary definitions.
+> Shorter convenience aliases (`edges`, `degree`, `find_vertex_edge`,
+> `vertex_edge_range_t`, `edge_t`, etc.) are provided and **preferred in
+> examples and user code** for brevity.
+
 ---
 
 ## Quick Reference Table
@@ -21,8 +27,8 @@ All CPOs listed below are available in `namespace graph` after
 | `vertices` | `(g, pid)` | `vertex_range_t<G>` | O(1) | No |
 | `vertex_id` | `(g, ui)` | `vertex_id_t<G>` | O(1) | Yes |
 | `find_vertex` | `(g, uid)` | `vertex_iterator_t<G>` | O(1) | Yes |
-| `out_edges` | `(g, u)` | `out_edge_range_t<G>` | O(1) | Yes |
-| `out_edges` | `(g, uid)` | `out_edge_range_t<G>` | O(1) | Yes |
+| `out_edges` | `(g, u)` / `(g, uid)` | `out_edge_range_t<G>` | O(1) | Yes |
+| `in_edges` | `(g, u)` / `(g, uid)` | `in_edge_range_t<G>` | O(1) | Yes |
 | `target_id` | `(g, uv)` | `vertex_id_t<G>` | O(1) | Yes |
 | `target` | `(g, uv)` | `vertex_t<G>&` | O(1) | Yes |
 | `source_id` | `(g, uv)` | `vertex_id_t<G>` | O(1) | Yes |
@@ -32,14 +38,36 @@ All CPOs listed below are available in `namespace graph` after
 | `num_edges` | `(g)` | integral | O(V) | Yes |
 | `num_edges` | `(g, u)` / `(g, uid)` | integral | O(1) | Yes |
 | `out_degree` | `(g, u)` / `(g, uid)` | integral | O(1) | Yes |
+| `in_degree` | `(g, u)` / `(g, uid)` | integral | O(1) | Yes |
 | `find_out_edge` | `(g, u, v)` / `(g, uid, vid)` | `out_edge_iterator_t<G>` | O(deg) | Yes |
-| `contains_edge` | `(g, uid, vid)` | `bool` | O(deg) | Yes |
+| `find_in_edge` | `(g, u, v)` / `(g, uid, vid)` | `in_edge_iterator_t<G>` | O(deg) | Yes |
+| `contains_out_edge` | `(g, uid, vid)` | `bool` | O(deg) | Yes |
+| `contains_in_edge` | `(g, uid, vid)` | `bool` | O(deg) | Yes |
 | `has_edge` | `(g)` | `bool` | O(V) | Yes |
 | `vertex_value` | `(g, u)` | `decltype(auto)` | O(1) | No |
 | `edge_value` | `(g, uv)` | `decltype(auto)` | O(1) | Yes |
 | `graph_value` | `(g)` | `decltype(auto)` | O(1) | No |
 | `partition_id` | `(g, u)` | `partition_id_t<G>` | O(1) | No |
 | `num_partitions` | `(g)` | integral | O(1) | Yes (1) |
+
+### Convenience Aliases
+
+Several CPOs have shorter alias names that forward to the primary definition:
+
+| Alias | Forwards To |
+|-------|-------------|
+| `edges(g, u)` / `edges(g, uid)` | `out_edges(g, u)` / `out_edges(g, uid)` |
+| `degree(g, u)` / `degree(g, uid)` | `out_degree(g, u)` / `out_degree(g, uid)` |
+| `find_vertex_edge(g, ...)` | `find_out_edge(g, ...)` |
+| `contains_edge(g, uid, vid)` | `contains_out_edge(g, uid, vid)` |
+
+Similarly for type aliases:
+
+| Alias | Primary |
+|-------|---------|
+| `vertex_edge_range_t<G>` | `out_edge_range_t<G>` |
+| `vertex_edge_iterator_t<G>` | `out_edge_iterator_t<G>` |
+| `edge_t<G>` | `out_edge_t<G>` |
 
 ---
 
@@ -229,13 +257,15 @@ Finds the outgoing edge from `u` to `v` (or `uid` to `vid`).
 | **Default** | Linear scan: `ranges::find_if(out_edges(g, u), [&](auto& uv) { return target_id(g, uv) == vid; })` |
 | **Complexity** | O(degree(u)) |
 
-### `contains_edge(g, uid, vid)`
+### `contains_out_edge(g, uid, vid)`
+
+Alias: `contains_edge(g, uid, vid)`
 
 ```cpp
-auto contains_edge(G& g, vertex_id_t<G> uid, vertex_id_t<G> vid) -> bool;
+auto contains_out_edge(G& g, vertex_id_t<G> uid, vertex_id_t<G> vid) -> bool;
 ```
 
-Tests whether an edge from `uid` to `vid` exists.
+Tests whether an outgoing edge from `uid` to `vid` exists.
 
 | Property | Value |
 |----------|-------|
@@ -254,6 +284,67 @@ Tests whether the graph has at least one edge.
 |----------|-------|
 | **Default** | Iterates vertices checking for non-empty edge ranges |
 | **Complexity** | O(V) worst case |
+
+---
+
+## Incoming Edge CPOs
+
+### `in_edges(g, u)` / `in_edges(g, uid)`
+
+```cpp
+auto in_edges(G& g, vertex_t<G>& u)       -> in_edge_range_t<G>;
+auto in_edges(G& g, vertex_id_t<G> uid)    -> in_edge_range_t<G>;
+```
+
+Returns the incoming edge range for vertex `u` (by descriptor or ID).
+
+| Property | Value |
+|----------|-------|
+| **Constraint** | `in_edge_range<G>` |
+| **Default** | Descriptor: `u.in_edges(g)` → ADL. ID: `in_edges(g, *find_vertex(g, uid))` |
+| **Complexity** | O(1) |
+
+### `in_degree(g, u)` / `in_degree(g, uid)`
+
+```cpp
+auto in_degree(G& g, vertex_t<G>& u)       -> integral;
+auto in_degree(G& g, vertex_id_t<G> uid)    -> integral;
+```
+
+Returns the in-degree of vertex `u`.
+
+| Property | Value |
+|----------|-------|
+| **Default** | `ranges::size(in_edges(g, u))` |
+| **Complexity** | O(1) |
+
+### `find_in_edge(g, ...)`
+
+```cpp
+auto find_in_edge(G& g, vertex_t<G>& u, vertex_t<G>& v)       -> in_edge_iterator_t<G>;
+auto find_in_edge(G& g, vertex_t<G>& u, vertex_id_t<G> vid)   -> in_edge_iterator_t<G>;
+auto find_in_edge(G& g, vertex_id_t<G> uid, vertex_id_t<G> vid) -> in_edge_iterator_t<G>;
+```
+
+Finds the incoming edge to `u` from `v` (or `uid` from `vid`).
+
+| Property | Value |
+|----------|-------|
+| **Default** | Linear scan: `ranges::find_if(in_edges(g, u), [&](auto& uv) { return source_id(g, uv) == vid; })` |
+| **Complexity** | O(in_degree(u)) |
+
+### `contains_in_edge(g, uid, vid)`
+
+```cpp
+auto contains_in_edge(G& g, vertex_id_t<G> uid, vertex_id_t<G> vid) -> bool;
+```
+
+Tests whether an incoming edge to `uid` from `vid` exists.
+
+| Property | Value |
+|----------|-------|
+| **Default** | `find_in_edge(g, uid, vid) != ranges::end(in_edges(g, uid))` |
+| **Complexity** | O(in_degree(uid)) |
 
 ---
 

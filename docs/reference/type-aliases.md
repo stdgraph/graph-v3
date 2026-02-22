@@ -33,11 +33,11 @@ concepts.
 template <graph::index_adjacency_list G>
 void example(G& g) {
     using VId = graph::vertex_id_t<G>;       // e.g. size_t
-    using Edge = graph::out_edge_t<G>;       // edge value type
+    using Edge = graph::edge_t<G>;            // edge value type
     
     for (auto& u : graph::vertices(g)) {
         VId uid = graph::vertex_id(g, std::ranges::begin(graph::vertices(g)));
-        for (Edge& uv : graph::out_edges(g, u)) {
+        for (Edge& uv : graph::edges(g, u)) {
             VId vid = graph::target_id(g, uv);
         }
     }
@@ -97,9 +97,9 @@ vertices(g)  ──→  vertex_range_t<G>
 
 vertex_id(g, ui)  ──→  vertex_id_t<G>
 
-out_edges(g, u)  ──→  out_edge_range_t<G>      (alias: vertex_edge_range_t<G>)
-                      ├── iterator_t  ──→  out_edge_iterator_t<G>  (alias: vertex_edge_iterator_t<G>)
-                      └── range_value_t  ──→  out_edge_t<G>        (alias: edge_t<G>)
+edges(g, u)  ──→  vertex_edge_range_t<G>      (primary: out_edge_range_t<G>)
+                   ├── iterator_t  ──→  vertex_edge_iterator_t<G>  (primary: out_edge_iterator_t<G>)
+                   └── range_value_t  ──→  edge_t<G>               (primary: out_edge_t<G>)
 ```
 
 ---

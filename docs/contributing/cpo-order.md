@@ -45,7 +45,7 @@ The following order should be followed for implementing CPOs and their correspon
 | # | CPO Function | Type Aliases | Description |
 |---|--------------|--------------|-------------|
 | 10 | `find_out_edge(g, u, vid)` | - | Find edge from u to vid. Alias: `find_vertex_edge(g, u, vid)`. |
-| 11 | `contains_edge(g, uid, vid)` | - | Check if edge exists |
+| 11 | `contains_out_edge(g, uid, vid)` | - | Check if outgoing edge exists. Alias: `contains_edge(g, uid, vid)`. |
 
 ### 5. Partition Support
 
@@ -105,7 +105,7 @@ The following order should be followed for implementing CPOs and their correspon
 ### Phase 3: Edge Queries (Medium Priority)
 **Required for advanced graph operations**
 - `find_out_edge(g, u, vid)`
-- `contains_edge(g, uid, vid)`
+- `contains_out_edge(g, uid, vid)`
 
 ### Phase 4: Optional Features (Low Priority)
 **For specialized graph types**

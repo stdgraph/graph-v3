@@ -2796,12 +2796,13 @@ inline namespace _cpo_instances {
      * @brief CPO for checking if an edge exists from source vertex u to target vertex v
      * 
      * Usage: 
-     *   bool exists = graph::contains_edge(my_graph, u_descriptor, v_descriptor);
-     *   bool exists = graph::contains_edge(my_graph, source_id, target_id);
+     *   bool exists = graph::contains_out_edge(my_graph, u_descriptor, v_descriptor);
+     *   bool exists = graph::contains_out_edge(my_graph, source_id, target_id);
      * 
      * Returns: true if edge exists, false otherwise
      */
-  inline constexpr _cpo_impls::_contains_edge::_fn contains_edge{};
+  inline constexpr _cpo_impls::_contains_edge::_fn contains_out_edge{};
+  inline constexpr auto&                           contains_edge = contains_out_edge;
 } // namespace _cpo_instances
 
 namespace _cpo_impls {

@@ -147,6 +147,7 @@ using adj_list::num_vertices;
 using adj_list::num_edges;
 using adj_list::degree;
 using adj_list::find_vertex_edge;
+using adj_list::contains_out_edge;
 using adj_list::contains_edge;
 using adj_list::has_edge;
 using adj_list::vertex_value;
