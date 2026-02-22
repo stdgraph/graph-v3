@@ -69,6 +69,8 @@ Similarly for type aliases:
 | `vertex_edge_iterator_t<G>` | `out_edge_iterator_t<G>` |
 | `edge_t<G>` | `out_edge_t<G>` |
 
+> Note: It's tempting to replace `find_vertex_edge(g, ...)` and `vertex_edge_range_t<G>` with the simpler `find_edge(g, ...)` and `edge_range_t<G>`. However, that could run into name conflicts with the abstract edge data structure and its types. They are in different namespaces to isolate the names, but it's safer to keep them the way they are until more thought is put into it. -PR 2/22/2026
+
 ---
 
 ## Vertex CPOs

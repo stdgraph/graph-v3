@@ -490,80 +490,41 @@ using adj_list::has_contains_in_edge_v;
 
 ---
 
-## Phase 4 — `undirected_adjacency_list` incoming-edge support
+## Phase 4 — `undirected_adjacency_list` incoming-edge support  ✅ Done
 
-**Goal:** Add `in_edges()` and `in_degree()` ADL friends to
-`undirected_adjacency_list` that return the same ranges as `edges()` and
-`degree()`, making undirected graphs model `bidirectional_adjacency_list`
-at zero cost.
+**Status:** Complete. 10 new test cases pass (concept, in_edges, in_degree,
+find_in_edge, contains_in_edge, integration); 4352/4352 tests pass with zero
+regressions. Committed on branch `incoming`.
+
+**Goal:** Add `in_edges()` ADL friends to `undirected_adjacency_list` that
+return the same ranges as `edges()`, making undirected graphs model
+`bidirectional_adjacency_list` at zero cost. `in_degree` handled automatically
+by CPO default tier (`size(in_edges(g, u))`).
 
 **Why fourth:** This is the simplest container change (just forwarding to
 existing functions) and provides a real container for integration testing.
 
-### Files to modify
+### Files modified
 
 | File | Action |
 |---|---|
-| `include/graph/container/undirected_adjacency_list.hpp` | Add `in_edges`, `in_degree` friends |
-| `tests/container/CMakeLists.txt` | Register new test file |
+| `include/graph/container/undirected_adjacency_list.hpp` | Added `in_edges` ADL friends (mutable + const) |
+| `tests/container/CMakeLists.txt` | Registered new test file |
 
-### Files to create
+### Files created
 
 | File | Content |
 |---|---|
-| `tests/container/test_undirected_bidirectional.cpp` | Integration tests |
-
-### Steps
-
-#### 4.1 Add ADL friends (undirected_adjacency_list.hpp)
-
-In `base_undirected_adjacency_list`, immediately after the existing `edges()`
-friend functions (around line 1030), add:
-
-```cpp
-  // in_edges(g, u) — for undirected graphs, same as edges(g, u)
-  template <typename U>
-  requires adj_list::vertex_descriptor_type<U>
-  friend constexpr auto in_edges(graph_type& g, const U& u) noexcept {
-    auto uid = static_cast<vertex_id_type>(u.vertex_id());
-    return g.vertices_[uid].edges(g, uid);
-  }
-  template <typename U>
-  requires adj_list::vertex_descriptor_type<U>
-  friend constexpr auto in_edges(const graph_type& g, const U& u) noexcept {
-    auto uid = static_cast<vertex_id_type>(u.vertex_id());
-    return g.vertices_[uid].edges(g, uid);
-  }
-```
-
-Also add `in_degree` friends if the class has a `degree()` member/friend.
-Otherwise, the `in_degree` CPO's default tier (`size(in_edges(g, u))`) will
-handle it automatically.
-
-#### 4.2 Create test file
-
-Test using actual `undirected_adjacency_list` instances (e.g., `vov_graph`):
-
-1. **`in_edges` returns same edges as `edges`** — for each vertex, verify
-   `in_edges(g, u)` and `edges(g, u)` yield the same edge set.
-
-2. **`in_degree` equals `degree`** — for each vertex.
-
-3. **Concept satisfaction** — `static_assert(bidirectional_adjacency_list<G>)`.
-
-4. **`find_in_edge` works** — since `in_edges` returns the same range.
-
-5. **`contains_in_edge` works** — mirrors `contains_edge`.
-
-6. Run against multiple trait types (at least `vov` and `vol`).
-
-#### 4.3 Register test and build
+| `tests/container/undirected_adjacency_list/test_undirected_bidirectional.cpp` | Integration tests |
 
 ### Merge gate
 
-- [ ] Full test suite passes.
-- [ ] `undirected_adjacency_list` models `bidirectional_adjacency_list`.
-- [ ] `in_edges(g, u)` and `edges(g, u)` produce identical results.
+- [x] Full test suite passes (4352/4352).
+- [x] `undirected_adjacency_list` models `bidirectional_adjacency_list`.
+- [x] `undirected_adjacency_list` models `index_bidirectional_adjacency_list`.
+- [x] `in_edges(g, u)` and `edges(g, u)` produce identical results.
+- [x] `in_degree(g, u) == degree(g, u)` for all vertices.
+- [x] `find_in_edge` and `contains_in_edge` work correctly on undirected graphs.
 
 ---
 

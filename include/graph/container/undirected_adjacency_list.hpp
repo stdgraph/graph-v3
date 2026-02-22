@@ -1029,6 +1029,28 @@ private: // CPO support via ADL (friend functions)
     return g.vertices_[uid].edges(g, uid);
   }
 
+  /// @brief Get incoming edges to a vertex descriptor (CPO: in_edges(g, u)).
+  /// @details For undirected graphs, incoming edges are the same as outgoing edges,
+  ///          so this simply delegates to the same underlying edge range.
+  ///          This makes undirected_adjacency_list model bidirectional_adjacency_list.
+  /// @tparam U Vertex descriptor type.
+  /// @param g The graph.
+  /// @param u The vertex descriptor.
+  /// @return Native vertex_edge_range (CPO will wrap in edge_descriptor_view).
+  /// @complexity O(1)
+  template <typename U>
+  requires adj_list::vertex_descriptor_type<U>
+  friend constexpr auto in_edges(graph_type& g, const U& u) noexcept {
+    auto uid = static_cast<vertex_id_type>(u.vertex_id());
+    return g.vertices_[uid].edges(g, uid);
+  }
+  template <typename U>
+  requires adj_list::vertex_descriptor_type<U>
+  friend constexpr auto in_edges(const graph_type& g, const U& u) noexcept {
+    auto uid = static_cast<vertex_id_type>(u.vertex_id());
+    return g.vertices_[uid].edges(g, uid);
+  }
+
 public:
   /// @brief Get range of all edges.
   /// @note Each undirected edge appears twice in iteration (once from each endpoint).
