@@ -54,9 +54,9 @@ concept edge = is_edge_descriptor_v<std::remove_cvref_t<E>> && requires(G& g, co
 // =============================================================================
 
 /**
- * @brief Concept for a forward range of edges
+ * @brief Concept for a forward range of outgoing edges
  * 
- * A vertex_edge_range is a range where each element satisfies the edge concept.
+ * An out_edge_range is a range where each element satisfies the edge concept.
  * This is used to represent the outgoing edges from a vertex in an adjacency list,
  * or all edges in an edge list.
  * 
@@ -73,7 +73,7 @@ concept edge = is_edge_descriptor_v<std::remove_cvref_t<E>> && requires(G& g, co
  * @tparam G Graph type
  */
 template <class R, class G>
-concept vertex_edge_range = std::ranges::forward_range<R> && edge<G, std::ranges::range_value_t<R>>;
+concept out_edge_range = std::ranges::forward_range<R> && edge<G, std::ranges::range_value_t<R>>;
 
 // =============================================================================
 // Vertex Concepts
@@ -169,57 +169,6 @@ concept index_vertex_range =
       } && std::integral<vertex_id_t<G>> &&
       std::random_access_iterator<typename vertex_range_t<G>::vertex_desc::iterator_type>;
 
-// =============================================================================
-// Adjacency List Concepts
-// =============================================================================
-
-/**
- * @brief Concept for graphs with adjacency list structure
- * 
- * An adjacency_list is a graph where:
- * - Vertices can be iterated as a vertex_range (forward)
- * - Each vertex has outgoing edges as a vertex_edge_range
- * 
- * Requirements:
- * - vertices(g) returns a vertex_range
- * - edges(g, u) returns a vertex_edge_range for vertex u
- * - Supports vertex_id(g, u) for each vertex
- * - Supports source_id(g, e), source(g, e), target_id(g, e), and target(g, e) for each edge
- * 
- * Examples:
- * - std::vector<std::vector<int>> - vector-based adjacency list
- * - std::map<int, std::vector<int>> - map-based adjacency list
- * - std::deque<std::vector<pair<int, double>>> - weighted adjacency list
- * 
- * @tparam G Graph type
- */
-template <class G>
-concept adjacency_list = requires(G& g, vertex_t<G> u) {
-  { vertices(g) } -> vertex_range<G>;
-  { edges(g, u) } -> vertex_edge_range<G>;
-};
-
-/**
- * @brief Concept for graphs with index-based adjacency list structure
- * 
- * An index_adjacency_list is an adjacency_list where vertices support
- * random access via an index_vertex_range.
- * 
- * Requirements:
- * - Must satisfy adjacency_list
- * - vertices(g) returns an index_vertex_range (random access)
- * 
- * Examples:
- * - std::vector<std::vector<int>> - contiguous vector storage
- * - std::deque<std::vector<int>> - deque-based storage
- * 
- * Note: std::map-based graphs do NOT satisfy this concept.
- * 
- * @tparam G Graph type
- */
-template <class G>
-concept index_adjacency_list = adjacency_list<G> && index_vertex_range<G>;
-
 /**
  * @brief Concept for graphs with sorted adjacency lists.
  * 
@@ -253,6 +202,123 @@ template <class G>
 concept ordered_vertex_edges = adjacency_list<G> && requires(G& g, vertex_t<G> u) {
   requires std::forward_iterator<decltype(std::ranges::begin(edges(g, u)))>;
 };
+
+// =============================================================================
+// Adjacency List Concepts
+// =============================================================================
+
+/**
+ * @brief Concept for graphs with adjacency list structure
+ * 
+ * An adjacency_list is a graph where:
+ * - Vertices can be iterated as a vertex_range (forward)
+ * - Each vertex has outgoing edges as an out_edge_range
+ * 
+ * Requirements:
+ * - vertices(g) returns a vertex_range
+ * - edges(g, u) returns an out_edge_range for vertex u
+ * - Supports vertex_id(g, u) for each vertex
+ * - Supports source_id(g, e), source(g, e), target_id(g, e), and target(g, e) for each edge
+ * 
+ * Examples:
+ * - std::vector<std::vector<int>> - vector-based adjacency list
+ * - std::map<int, std::vector<int>> - map-based adjacency list
+ * - std::deque<std::vector<pair<int, double>>> - weighted adjacency list
+ * 
+ * @tparam G Graph type
+ */
+template <class G>
+concept adjacency_list = requires(G& g, vertex_t<G> u) {
+  { vertices(g) } -> vertex_range<G>;
+  { edges(g, u) } -> out_edge_range<G>;
+};
+
+/**
+ * @brief Concept for graphs with index-based adjacency list structure
+ * 
+ * An index_adjacency_list is an adjacency_list where vertices support
+ * random access via an index_vertex_range.
+ * 
+ * Requirements:
+ * - Must satisfy adjacency_list
+ * - vertices(g) returns an index_vertex_range (random access)
+ * 
+ * Examples:
+ * - std::vector<std::vector<int>> - contiguous vector storage
+ * - std::deque<std::vector<int>> - deque-based storage
+ * 
+ * Note: std::map-based graphs do NOT satisfy this concept.
+ * 
+ * @tparam G Graph type
+ */
+template <class G>
+concept index_adjacency_list = adjacency_list<G> && index_vertex_range<G>;
+
+// =============================================================================
+// Incoming Edge Concepts
+// =============================================================================
+
+/**
+ * @brief Concept for a forward range of incoming edges
+ * 
+ * An in_edge_range is a range where each element satisfies the edge concept.
+ * This is used to represent incoming edges to a vertex in a bidirectional graph.
+ * The incoming edge descriptor type (in_edge_t<G>) may differ from the outgoing
+ * edge descriptor type (edge_t<G>), but both must support the full edge interface
+ * (source_id, source, target_id, target).
+ * 
+ * Requirements:
+ * - Must be a std::ranges::forward_range
+ * - Range value type must satisfy the edge concept
+ * 
+ * @tparam R Range type
+ * @tparam G Graph type
+ */
+template <class R, class G>
+concept in_edge_range = std::ranges::forward_range<R> && edge<G, std::ranges::range_value_t<R>>;
+
+/**
+ * @brief Concept for graphs with bidirectional adjacency list structure
+ * 
+ * A bidirectional_adjacency_list is an adjacency_list that also provides
+ * access to incoming edges for each vertex. This enables traversing the
+ * graph in reverse (from targets back to sources).
+ * 
+ * Requirements:
+ * - Must satisfy adjacency_list
+ * - in_edges(g, u) must return an in_edge_range
+ * - source_id(g, ie) must return a value convertible to vertex_id_t<G>
+ *   for incoming edge elements
+ * 
+ * Note: source_id on an incoming edge returns the ID of the vertex from
+ * which the edge originates (the "source" in the original directed sense).
+ * 
+ * @tparam G Graph type
+ */
+template <class G>
+concept bidirectional_adjacency_list =
+      adjacency_list<G> &&
+      requires(G& g, vertex_t<G> u, in_edge_t<G> ie) {
+        { in_edges(g, u) } -> in_edge_range<G>;
+        { source_id(g, ie) } -> std::convertible_to<vertex_id_t<G>>;
+      };
+
+/**
+ * @brief Concept for bidirectional graphs with index-based vertex access
+ * 
+ * An index_bidirectional_adjacency_list combines bidirectional traversal
+ * with O(1) index-based vertex lookup.
+ * 
+ * Requirements:
+ * - Must satisfy bidirectional_adjacency_list
+ * - Must satisfy index_vertex_range (random access vertices)
+ * 
+ * @tparam G Graph type
+ */
+template <class G>
+concept index_bidirectional_adjacency_list =
+      bidirectional_adjacency_list<G> && index_vertex_range<G>;
+
 
 
 } // namespace graph::adj_list

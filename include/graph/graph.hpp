@@ -106,12 +106,15 @@ using adj_list::is_edge_descriptor_view_v;
 // Adjacency list concepts
 using adj_list::edge;
 using adj_list::vertex;
-using adj_list::vertex_edge_range;
+using adj_list::out_edge_range;
 using adj_list::vertex_range;
 using adj_list::index_vertex_range;
 using adj_list::adjacency_list;
 using adj_list::index_adjacency_list;
 using adj_list::ordered_vertex_edges;
+using adj_list::in_edge_range;
+using adj_list::bidirectional_adjacency_list;
+using adj_list::index_bidirectional_adjacency_list;
 
 // Adjacency list traits
 using adj_list::has_degree;
@@ -126,6 +129,12 @@ using adj_list::has_basic_queries;
 using adj_list::has_basic_queries_v;
 using adj_list::has_full_queries;
 using adj_list::has_full_queries_v;
+using adj_list::has_in_degree;
+using adj_list::has_in_degree_v;
+using adj_list::has_find_in_edge;
+using adj_list::has_find_in_edge_v;
+using adj_list::has_contains_in_edge;
+using adj_list::has_contains_in_edge_v;
 
 // CPOs (Customization Point Objects)
 using adj_list::vertices;
@@ -147,6 +156,13 @@ using adj_list::source_id;
 using adj_list::source;
 using adj_list::partition_id;
 using adj_list::num_partitions;
+using adj_list::in_edges;
+using adj_list::in_degree;
+using adj_list::find_in_edge;
+using adj_list::contains_in_edge;
+using adj_list::out_edges;
+using adj_list::out_degree;
+using adj_list::find_out_edge;
 
 // Type aliases
 using adj_list::vertex_range_t;
@@ -156,4 +172,10 @@ using adj_list::vertex_id_t;
 using adj_list::vertex_edge_range_t;
 using adj_list::vertex_edge_iterator_t;
 using adj_list::edge_t;
+using adj_list::in_edge_range_t;
+using adj_list::in_edge_iterator_t;
+using adj_list::in_edge_t;
+using adj_list::out_edge_range_t;
+using adj_list::out_edge_iterator_t;
+using adj_list::out_edge_t;
 } // namespace graph

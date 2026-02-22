@@ -26,7 +26,7 @@ All concepts are in `graph::adj_list`, re-exported to `graph`.
 
 | Concept | Parameters | Description |
 |---------|------------|-------------|
-| `vertex_edge_range<R, G>` | Range `R`, graph `G` | `forward_range<R>` whose values satisfy `edge<G, …>` |
+| `out_edge_range<R, G>` | Range `R`, graph `G` | `forward_range<R>` whose values satisfy `edge<G, …>` |
 
 ### Vertex Concepts
 
@@ -40,7 +40,7 @@ All concepts are in `graph::adj_list`, re-exported to `graph`.
 
 | Concept | Parameters | Description |
 |---------|------------|-------------|
-| `adjacency_list<G>` | Graph `G` | `vertices(g)` → `vertex_range`, `edges(g,u)` → `vertex_edge_range` |
+| `adjacency_list<G>` | Graph `G` | `vertices(g)` → `vertex_range`, `edges(g,u)` → `out_edge_range` |
 | `index_adjacency_list<G>` | Graph `G` | `adjacency_list<G>` + `index_vertex_range<G>` (random-access vertices, integral IDs) |
 | `ordered_vertex_edges<G>` | Graph `G` | `adjacency_list<G>` + edge ranges sorted by `target_id` |
 

@@ -23,7 +23,10 @@ and passing all tests. Within each phase, steps are listed in execution order.
 
 ---
 
-## Phase 1 — `in_edges` and `in_degree` CPOs + type aliases
+## Phase 1 — `in_edges` and `in_degree` CPOs + type aliases  ✅ Done
+
+**Status:** Complete. All 11 test cases pass; 4316/4316 tests pass with zero
+regressions. Committed on branch `incoming`.
 
 **Goal:** Add the two core incoming-edge CPOs, their public instances, the
 outgoing aliases (`out_edges`, `out_degree`, `find_out_edge`), the six new type
@@ -107,13 +110,13 @@ inline namespace _cpo_instances {
 }
 
 template <typename G>
-using in_vertex_edge_range_t = decltype(in_edges(std::declval<G&>(), std::declval<vertex_t<G>>()));
+using in_edge_range_t = decltype(in_edges(std::declval<G&>(), std::declval<vertex_t<G>>()));
 
 template <typename G>
-using in_vertex_edge_iterator_t = std::ranges::iterator_t<in_vertex_edge_range_t<G>>;
+using in_edge_iterator_t = std::ranges::iterator_t<in_edge_range_t<G>>;
 
 template <typename G>
-using in_edge_t = std::ranges::range_value_t<in_vertex_edge_range_t<G>>;
+using in_edge_t = std::ranges::range_value_t<in_edge_range_t<G>>;
 ```
 
 #### 1.3 Add `in_degree` CPO
@@ -153,10 +156,10 @@ inline namespace _cpo_instances {
 
 ```cpp
 template <typename G>
-using out_vertex_edge_range_t = vertex_edge_range_t<G>;
+using out_edge_range_t = vertex_edge_range_t<G>;
 
 template <typename G>
-using out_vertex_edge_iterator_t = vertex_edge_iterator_t<G>;
+using out_edge_iterator_t = vertex_edge_iterator_t<G>;
 
 template <typename G>
 using out_edge_t = edge_t<G>;
@@ -176,8 +179,8 @@ Test the following scenarios (mirror `test_edges_cpo.cpp` structure):
 3. **`(g, uid)` overload with default** — verify `_default` tier delegates
    through `find_vertex` + `in_edges(g, u)`.
 
-4. **Type alias verification** — `in_vertex_edge_range_t<G>`,
-   `in_vertex_edge_iterator_t<G>`, `in_edge_t<G>` all compile and produce
+4. **Type alias verification** — `in_edge_range_t<G>`,
+   `in_edge_iterator_t<G>`, `in_edge_t<G>` all compile and produce
    expected types.
 
 5. **Mixed-type test** — a stub graph where `edge_t<G>` is
@@ -210,10 +213,10 @@ cd build/linux-gcc-debug && ctest --output-on-failure
 
 ### Merge gate
 
-- [ ] Full test suite passes with zero regressions.
-- [ ] All 8 test scenarios pass.
-- [ ] `in_edge_t<G> != edge_t<G>` mixed-type test passes.
-- [ ] `out_edges` alias identity check passes.
+- [x] Full test suite passes with zero regressions (4316/4316).
+- [x] All 8 test scenarios pass (11 test cases total).
+- [x] `in_edge_t<G> != edge_t<G>` mixed-type test passes.
+- [x] `out_edges` alias identity check passes.
 
 ---
 
@@ -363,7 +366,7 @@ Add to `tests/adj_list/CMakeLists.txt`:
 
 ## Phase 3 — Concepts + namespace re-exports
 
-**Goal:** Define `in_vertex_edge_range`, `bidirectional_adjacency_list`,
+**Goal:** Define `in_edge_range`, `bidirectional_adjacency_list`,
 `index_bidirectional_adjacency_list` concepts; update `graph.hpp` with all
 re-exports for Phases 1-3.
 
@@ -392,13 +395,13 @@ After the `index_adjacency_list` concept:
 
 ```cpp
 template <class R, class G>
-concept in_vertex_edge_range = std::ranges::forward_range<R>;
+concept in_edge_range = std::ranges::forward_range<R>;
 
 template <class G>
 concept bidirectional_adjacency_list =
     adjacency_list<G> &&
     requires(G& g, vertex_t<G> u, in_edge_t<G> ie) {
-      { in_edges(g, u) } -> in_vertex_edge_range<G>;
+      { in_edges(g, u) } -> in_edge_range<G>;
       { source_id(g, ie) } -> std::convertible_to<vertex_id_t<G>>;
     };
 
@@ -424,17 +427,17 @@ using adj_list::out_degree;
 using adj_list::find_out_edge;
 
 // Incoming-edge type aliases
-using adj_list::in_vertex_edge_range_t;
-using adj_list::in_vertex_edge_iterator_t;
+using adj_list::in_edge_range_t;
+using adj_list::in_edge_iterator_t;
 using adj_list::in_edge_t;
 
 // Outgoing type aliases
-using adj_list::out_vertex_edge_range_t;
-using adj_list::out_vertex_edge_iterator_t;
+using adj_list::out_edge_range_t;
+using adj_list::out_edge_iterator_t;
 using adj_list::out_edge_t;
 
 // Incoming-edge concepts
-using adj_list::in_vertex_edge_range;
+using adj_list::in_edge_range;
 using adj_list::bidirectional_adjacency_list;
 using adj_list::index_bidirectional_adjacency_list;
 
@@ -1056,18 +1059,18 @@ Per the table in design doc §13.1 (11 files), plus:
 
 ## Phase summary
 
-| Phase | Title | New files | Modified files | Key deliverable |
-|---|---|---|---|---|
-| 1 | `in_edges`/`in_degree` CPOs + aliases | 1 test | 2 | Core CPOs + type aliases |
-| 2 | `find_in_edge`/`contains_in_edge` + traits | 3 tests | 3 | Complete CPO surface |
-| 3 | Concepts + re-exports | 1 test | 2 | `bidirectional_adjacency_list` concept |
-| 4 | Undirected container support | 1 test | 1 | First real bidirectional container |
-| 5 | `in_incidence`/`in_neighbors` views | 2 headers + 2 tests | 1 | Incoming-edge views |
-| 6 | Pipe-syntax adaptors | — | 2 | `g \| in_incidence(uid)` |
-| 7 | BFS/DFS/topo EdgeAccessor | 1 header + 1 test | 3 | Reverse traversal |
-| 8 | `dynamic_graph` bidirectional | 1 test | 1 | Directed bidirectional container |
-| 9 | Algorithms | 2 headers + 2 tests | 1 | Kosaraju + transpose |
-| 10 | Documentation | 1 guide | 12 | Complete docs |
+| Phase | Title | New files | Modified files | Key deliverable | Status |
+|---|---|---|---|---|---|
+| 1 | `in_edges`/`in_degree` CPOs + aliases | 1 test | 2 | Core CPOs + type aliases | **Done** |
+| 2 | `find_in_edge`/`contains_in_edge` + traits | 3 tests | 3 | Complete CPO surface | Done |
+| 3 | Concepts + re-exports | 1 test | 2 | `bidirectional_adjacency_list` concept | Done |
+| 4 | Undirected container support | 1 test | 1 | First real bidirectional container | Not started |
+| 5 | `in_incidence`/`in_neighbors` views | 2 headers + 2 tests | 1 | Incoming-edge views | Not started |
+| 6 | Pipe-syntax adaptors | — | 2 | `g \| in_incidence(uid)` | Not started |
+| 7 | BFS/DFS/topo EdgeAccessor | 1 header + 1 test | 3 | Reverse traversal | Not started |
+| 8 | `dynamic_graph` bidirectional | 1 test | 1 | Directed bidirectional container | Not started |
+| 9 | Algorithms | 2 headers + 2 tests | 1 | Kosaraju + transpose | Not started |
+| 10 | Documentation | 1 guide | 12 | Complete docs | Not started |
 
 **Total estimated effort:** 11-15 days (same as design doc estimate)
 

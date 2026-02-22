@@ -119,7 +119,7 @@ Returns the edge range for vertex `u` (by descriptor or ID).
 
 | Property | Value |
 |----------|-------|
-| **Constraint** | `vertex_edge_range<G>` |
+| **Constraint** | `out_edge_range<G>` |
 | **Default** | Descriptor: dereference `u` (range-of-ranges). ID: `edges(g, *find_vertex(g, uid))` |
 | **Complexity** | O(1) |
 

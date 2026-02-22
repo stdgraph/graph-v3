@@ -16,7 +16,7 @@ Header: `<graph/adj_list/adjacency_list_concepts.hpp>`
 
 ```
 edge<G, E>
-└── vertex_edge_range<R, G>
+└── out_edge_range<R, G>
     └── vertex<G, V>
         └── vertex_range<R, G>
             └── index_vertex_range<G>
@@ -36,13 +36,13 @@ concept edge = requires(G& g, E& e) {
 };
 ```
 
-### `vertex_edge_range<R, G>`
+### `out_edge_range<R, G>`
 
-A forward range of edges adjacent to a vertex.
+A forward range of outgoing edges adjacent to a vertex.
 
 ```cpp
 template <class R, class G>
-concept vertex_edge_range =
+concept out_edge_range =
     std::ranges::forward_range<R> &&
     edge<G, std::ranges::range_value_t<R>>;
 ```
@@ -54,7 +54,7 @@ A vertex exposes an edge range via the `edges` CPO.
 ```cpp
 template <class G, class V = void>
 concept vertex = requires(G& g, V& u) {
-    { edges(g, u) } -> vertex_edge_range<G>;
+    { edges(g, u) } -> out_edge_range<G>;
 };
 ```
 
