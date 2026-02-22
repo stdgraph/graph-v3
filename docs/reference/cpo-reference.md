@@ -35,9 +35,9 @@ All CPOs listed below are available in `namespace graph` after
 | `find_vertex_edge` | `(g, u, v)` / `(g, uid, vid)` | `vertex_edge_iterator_t<G>` | O(deg) | Yes |
 | `contains_edge` | `(g, uid, vid)` | `bool` | O(deg) | Yes |
 | `has_edge` | `(g)` | `bool` | O(V) | Yes |
-| `vertex_value` | `(g, u)` | deduced | O(1) | No |
-| `edge_value` | `(g, uv)` | deduced | O(1) | Yes |
-| `graph_value` | `(g)` | deduced | O(1) | No |
+| `vertex_value` | `(g, u)` | `decltype(auto)` | O(1) | No |
+| `edge_value` | `(g, uv)` | `decltype(auto)` | O(1) | Yes |
+| `graph_value` | `(g)` | `decltype(auto)` | O(1) | No |
 | `partition_id` | `(g, u)` | `partition_id_t<G>` | O(1) | No |
 | `num_partitions` | `(g)` | integral | O(1) | Yes (1) |
 
@@ -253,19 +253,31 @@ Tests whether the graph has at least one edge.
 
 ## Value CPOs
 
+All three value CPOs (`vertex_value`, `edge_value`, `graph_value`) return
+`decltype(auto)`, which **preserves the exact return type** of the resolved
+member, ADL, or default function.  Return-by-value (`T`),
+return-by-reference (`T&`), return-by-const-reference (`const T&`), and
+return-by-rvalue-reference (`T&&`) are all faithfully forwarded without
+decay or copy.
+
 ### `vertex_value(g, u)`
 
 ```cpp
-auto vertex_value(G& g, vertex_t<G>& u) -> /* deduced */;
+auto vertex_value(G& g, vertex_t<G>& u) -> /* decltype(auto) */;
 ```
 
 Returns the user-defined value associated with vertex `u`. **No default** —
 the graph must provide this via member or ADL.
 
+| Property | Value |
+|----------|-------|
+| **Return type** | `decltype(auto)` — preserves by-value, by-ref, by-const-ref, and by-rvalue-ref |
+| **Complexity** | O(1) |
+
 ### `edge_value(g, uv)`
 
 ```cpp
-auto edge_value(G& g, edge_t<G>& uv) -> /* deduced */;
+auto edge_value(G& g, edge_t<G>& uv) -> /* decltype(auto) */;
 ```
 
 Returns the user-defined value associated with edge `uv`.
@@ -273,16 +285,22 @@ Returns the user-defined value associated with edge `uv`.
 | Property | Value |
 |----------|-------|
 | **Default** | Resolution chain: `uv.edge_value(g)` → ADL → descriptor → `uv.value` member → tuple `get<1>(uv)` (adj_list) / `get<2>(uv)` (edge list) |
+| **Return type** | `decltype(auto)` — preserves by-value, by-ref, by-const-ref, and by-rvalue-ref |
 | **Complexity** | O(1) |
 
 ### `graph_value(g)`
 
 ```cpp
-auto graph_value(G& g) -> /* deduced */;
+auto graph_value(G& g) -> /* decltype(auto) */;
 ```
 
 Returns the user-defined value associated with the graph itself. **No
 default** — the graph must provide this.
+
+| Property | Value |
+|----------|-------|
+| **Return type** | `decltype(auto)` — preserves by-value, by-ref, by-const-ref, and by-rvalue-ref |
+| **Complexity** | O(1) |
 
 ---
 

@@ -829,6 +829,7 @@ strategy:
 8. **Mark `[[nodiscard]]`** on CPOs that return values.
 9. **Mark `constexpr`** on all CPOs — enable compile-time evaluation where possible.
 10. **Document compiler workarounds** if any are needed, with `#if defined(_MSC_VER)` guards.
+11. **Use `decltype(auto)` for value CPOs** — the three value CPOs (`vertex_value`, `edge_value`, `graph_value`) must return `decltype(auto)` so that the exact return type of the resolved member/ADL/default function is preserved. Return-by-value (`T`), return-by-reference (`T&`), return-by-const-reference (`const T&`), and return-by-rvalue-reference (`T&&`) must all be forwarded faithfully without decay or copy.
 
 ### `_Fake_copy_init` Pattern (Advanced)
 
@@ -938,6 +939,7 @@ For each new CPO:
 - [ ] `_fn::operator()` uses `if constexpr` chain (no separate overloads)
 - [ ] `noexcept` specification references `_Choice<T>._No_throw`
 - [ ] `[[nodiscard]]` on operator()
+- [ ] Value CPOs use `decltype(auto)` return type to preserve by-value/by-ref/by-const-ref/by-rvalue-ref semantics
 - [ ] `static_assert` with helpful message in the `_none` branch
 - [ ] `std::remove_cvref_t` used consistently for `_Choice` lookups
 - [ ] Type alias defined after the CPO (if applicable)

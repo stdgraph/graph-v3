@@ -486,11 +486,19 @@ namespace _cpo_impls {
              * 
              * This provides access to user-defined edge properties/weights stored in the graph.
              * 
+             * **Return-type preservation guarantee:** The `operator()` returns `decltype(auto)`,
+             * which faithfully preserves the exact return type of the resolved function:
+             * return-by-value (`T`), return-by-reference (`T&`), return-by-const-reference
+             * (`const T&`), and return-by-rvalue-reference (`T&&`) are all forwarded without
+             * decay or copy.
+             * 
              * @tparam G Graph type
              * @tparam E Edge descriptor or edge type
              * @param g Graph container
              * @param uv Edge descriptor or edge
-             * @return Reference to the edge value/properties (or by-value if custom implementation returns by-value)
+             * @return Exactly the type returned by the resolved dispatch path (`decltype(auto)`).
+             *         By-value, by-reference, by-const-reference, and by-rvalue-reference
+             *         are all preserved.
              */
       template <typename G, typename E>
       [[nodiscard]] constexpr decltype(auto) operator()(G&& g, E&& uv) const
