@@ -9,8 +9,10 @@ add_executable(graph3_views_tests
     test_basic_vertexlist.cpp
     test_incidence.cpp
     test_basic_incidence.cpp
+    test_in_incidence.cpp
     test_neighbors.cpp
     test_basic_neighbors.cpp
+    test_in_neighbors.cpp
     test_edgelist.cpp
     test_basic_edgelist.cpp
     test_basic_views.cpp

@@ -51,6 +51,7 @@
 #include <graph/views/view_concepts.hpp>
 #include <graph/views/adaptors.hpp>
 #include <graph/views/basic_views.hpp>
+#include <graph/views/edge_accessor.hpp>
 #include <graph/views/vertexlist.hpp>
 #include <graph/views/edgelist.hpp>
 #include <graph/views/neighbors.hpp>
