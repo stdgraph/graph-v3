@@ -19,9 +19,11 @@ concepts.
 | `vertex_iterator_t<G>` | `std::ranges::iterator_t<vertex_range_t<G>>` | `vertex_range` |
 | `vertex_t<G>` | `std::ranges::range_value_t<vertex_range_t<G>>` | `vertex_range` |
 | `vertex_id_t<G>` | Result type of `vertex_id(g, ui)` — typically `std::size_t` | `index_vertex_range` |
-| `vertex_edge_range_t<G>` | Type of the range returned by `edges(g, u)` | `vertex` |
-| `vertex_edge_iterator_t<G>` | `std::ranges::iterator_t<vertex_edge_range_t<G>>` | `vertex` |
-| `edge_t<G>` | `std::ranges::range_value_t<vertex_edge_range_t<G>>` | `vertex` |
+| `out_edge_range_t<G>` | Type of the range returned by `out_edges(g, u)` | `vertex` |
+| `out_edge_iterator_t<G>` | `std::ranges::iterator_t<out_edge_range_t<G>>` | `vertex` |
+| `out_edge_t<G>` | `std::ranges::range_value_t<out_edge_range_t<G>>` | `vertex` |
+
+> **Convenience aliases:** `vertex_edge_range_t<G>` = `out_edge_range_t<G>`, `vertex_edge_iterator_t<G>` = `out_edge_iterator_t<G>`, `edge_t<G>` = `out_edge_t<G>`. The old names remain available.
 
 ### Usage
 
@@ -31,11 +33,11 @@ concepts.
 template <graph::index_adjacency_list G>
 void example(G& g) {
     using VId = graph::vertex_id_t<G>;       // e.g. size_t
-    using Edge = graph::edge_t<G>;           // edge value type
+    using Edge = graph::out_edge_t<G>;       // edge value type
     
     for (auto& u : graph::vertices(g)) {
         VId uid = graph::vertex_id(g, std::ranges::begin(graph::vertices(g)));
-        for (Edge& uv : graph::edges(g, u)) {
+        for (Edge& uv : graph::out_edges(g, u)) {
             VId vid = graph::target_id(g, uv);
         }
     }
@@ -95,9 +97,9 @@ vertices(g)  ──→  vertex_range_t<G>
 
 vertex_id(g, ui)  ──→  vertex_id_t<G>
 
-edges(g, u)  ──→  vertex_edge_range_t<G>
-                   ├── iterator_t  ──→  vertex_edge_iterator_t<G>
-                   └── range_value_t  ──→  edge_t<G>
+out_edges(g, u)  ──→  out_edge_range_t<G>      (alias: vertex_edge_range_t<G>)
+                      ├── iterator_t  ──→  out_edge_iterator_t<G>  (alias: vertex_edge_iterator_t<G>)
+                      └── range_value_t  ──→  out_edge_t<G>        (alias: edge_t<G>)
 ```
 
 ---

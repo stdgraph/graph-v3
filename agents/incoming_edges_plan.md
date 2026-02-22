@@ -137,32 +137,42 @@ inline namespace _cpo_instances {
 }
 ```
 
-Key difference from `degree`: the `_default` tier calls `in_edges(g, u)` instead
-of `edges(g, u)`.
+Key difference from `out_degree`: the `_default` tier calls `in_edges(g, u)` instead
+of `out_edges(g, u)`.
 
-#### 1.4 Add outgoing aliases
+#### 1.4 Add convenience aliases
 
-After the `in_degree` public instance:
+> **Note:** As of the primary/alias swap, `out_edges`, `out_degree`, and
+> `find_out_edge` are the primary CPO instances. The shorter names `edges`,
+> `degree`, and `find_vertex_edge` are convenience aliases.
 
 ```cpp
 inline namespace _cpo_instances {
-  inline constexpr auto& out_edges     = edges;
-  inline constexpr auto& out_degree    = degree;
-  inline constexpr auto& find_out_edge = find_vertex_edge;
+  inline constexpr auto& edges            = out_edges;
+  inline constexpr auto& degree           = out_degree;
+  inline constexpr auto& find_vertex_edge = find_out_edge;
 }
 ```
 
-#### 1.5 Add outgoing type aliases
+#### 1.5 Type aliases (primary → alias)
+
+> **Note:** `out_edge_range_t`, `out_edge_iterator_t`, and `out_edge_t` are now
+> the primary type alias definitions. The old names are convenience aliases.
 
 ```cpp
 template <typename G>
-using out_edge_range_t = vertex_edge_range_t<G>;
+using out_edge_range_t = decltype(out_edges(std::declval<G&>(), ...));
 
 template <typename G>
-using out_edge_iterator_t = vertex_edge_iterator_t<G>;
+using out_edge_iterator_t = std::ranges::iterator_t<out_edge_range_t<G>>;
 
 template <typename G>
-using out_edge_t = edge_t<G>;
+using out_edge_t = std::ranges::range_value_t<out_edge_range_t<G>>;
+
+// Convenience aliases:
+template <typename G> using vertex_edge_range_t    = out_edge_range_t<G>;
+template <typename G> using vertex_edge_iterator_t  = out_edge_iterator_t<G>;
+template <typename G> using edge_t                  = out_edge_t<G>;
 ```
 
 #### 1.6 Create test file `tests/adj_list/cpo/test_in_edges_cpo.cpp`
@@ -183,18 +193,18 @@ Test the following scenarios (mirror `test_edges_cpo.cpp` structure):
    `in_edge_iterator_t<G>`, `in_edge_t<G>` all compile and produce
    expected types.
 
-5. **Mixed-type test** — a stub graph where `edge_t<G>` is
+5. **Mixed-type test** — a stub graph where `out_edge_t<G>` is
    `pair<int, double>` but `in_edge_t<G>` is just `int`. Verify both
    aliases are independently deduced.
 
-6. **`out_edges` / `out_degree` / `find_out_edge` aliases** — verify they
-   are the exact same object as `edges` / `degree` / `find_vertex_edge`
-   (use `static_assert(&out_edges == &edges)`).
+6. **`edges` / `degree` / `find_vertex_edge` aliases** — verify they
+   are the exact same object as `out_edges` / `out_degree` / `find_out_edge`
+   (use `static_assert(&edges == &out_edges)`).
 
 7. **`in_degree` CPO** — test member, ADL, and default (`size(in_edges)`)
    resolution tiers.
 
-8. **Outgoing type aliases** — verify `out_edge_t<G>` is `edge_t<G>` etc.
+8. **Alias type verification** — verify `edge_t<G>` is `out_edge_t<G>` etc.
 
 #### 1.7 Register test in CMakeLists
 

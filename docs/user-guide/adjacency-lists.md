@@ -56,7 +56,7 @@ graph-v3 defines 9 concepts in `graph::adj_list` (re-exported into `graph::`).
 
 | Concept | Description |
 |---------|-------------|
-| `adjacency_list<G>` | `vertices(g)` returns a `vertex_range`; `edges(g, u)` returns an `out_edge_range` |
+| `adjacency_list<G>` | `vertices(g)` returns a `vertex_range`; `out_edges(g, u)` returns an `out_edge_range` |
 | `index_adjacency_list<G>` | An `adjacency_list` whose vertex range is also an `index_vertex_range` (O(1) vertex lookup) |
 | `ordered_vertex_edges<G>` | An `adjacency_list` whose edge ranges are sorted by `target_id` (enables algorithms like triangle counting) |
 
@@ -75,7 +75,7 @@ three tiers: custom member → ADL free function → built-in default.
 | CPO | Signature sketch | Returns |
 |-----|------------------|---------|
 | `vertices(g)` | `g` → vertex range | `vertex_descriptor_view` |
-| `edges(g, u)` | `g`, vertex → edge range | `edge_descriptor_view` |
+| `out_edges(g, u)` | `g`, vertex → edge range | `edge_descriptor_view` |
 | `vertex_id(g, u)` | `g`, vertex → id | Integral index or key |
 | `target_id(g, uv)` | `g`, edge → id | Target vertex ID |
 | `target(g, uv)` | `g`, edge → vertex | Target vertex descriptor |
@@ -84,13 +84,13 @@ three tiers: custom member → ADL free function → built-in default.
 | `find_vertex(g, uid)` | `g`, id → vertex | Vertex descriptor |
 | `num_vertices(g)` | `g` → count | `size_t` |
 | `num_edges(g, u)` | `g`, vertex → count | `size_t` |
-| `degree(g, u)` | `g`, vertex → count | Number of outgoing edges |
+| `out_degree(g, u)` | `g`, vertex → count | Number of outgoing edges |
 
 ### Query CPOs
 
 | CPO | Description |
 |-----|-------------|
-| `find_vertex_edge(g, u, v)` | Find edge from vertex `u` to vertex `v` |
+| `find_out_edge(g, u, v)` | Find outgoing edge from vertex `u` to vertex `v` |
 | `contains_edge(g, u, v)` | Returns `true` if edge u→v exists |
 | `has_edge(g, uid, vid)` | Returns `true` if edge uid→vid exists |
 
@@ -119,8 +119,8 @@ int main() {
   for (auto&& u : graph::vertices(g)) {
     auto uid = graph::vertex_id(g, u);
     std::cout << "vertex " << uid
-              << "  degree=" << graph::degree(g, u) << "\n";
-    for (auto&& uv : graph::edges(g, u)) {
+              << "  degree=" << graph::out_degree(g, u) << "\n";
+    for (auto&& uv : graph::out_edges(g, u)) {
       std::cout << "  -> " << graph::target_id(g, uv) << "\n";
     }
   }
@@ -204,7 +204,7 @@ yield one descriptor per element:
 For **index-based** graphs (e.g., backed by `std::vector`), a vertex descriptor
 holds an integer index. For **keyed** graphs it wraps a bidirectional iterator (e.g., for `std::map`)
 or forward iterator (e.g., backed by `std::unordered_map`). In all cases the
-same CPOs — `vertex_id`, `edges`, `target_id`, etc. — work unchanged, which is
+same CPOs — `vertex_id`, `out_edges`, `target_id`, etc. — work unchanged, which is
 the whole point. This extends to containers defined in external libraries as
 well, as long as they satisfy `random_access_range`, `bidirectional_range`, or
 `forward_range`.
@@ -239,7 +239,7 @@ using namespace graph;
 // CPO style (manual extraction):
 for (auto&& u : vertices(g)) {
   auto uid = vertex_id(g, u);
-  for (auto&& uv : edges(g, u)) {
+  for (auto&& uv : out_edges(g, u)) {
     auto vid = target_id(g, uv);
     // ...
   }
@@ -275,9 +275,9 @@ Traits let you query a graph type's capabilities at compile time:
 
 | Trait | What it checks |
 |-------|----------------|
-| `has_degree<G>` | `degree(g, u)` and `degree(g, uid)` are valid |
+| `has_degree<G>` | `out_degree(g, u)` and `out_degree(g, uid)` are valid |
 | `has_find_vertex<G>` | `find_vertex(g, uid)` returns `vertex_t<G>` |
-| `has_find_vertex_edge<G>` | All three `find_vertex_edge` overloads work |
+| `has_find_vertex_edge<G>` | All three `find_out_edge` overloads work |
 | `has_contains_edge<G, V>` | `contains_edge(g, u, v)` returns `bool` |
 | `has_basic_queries<G>` | `has_degree` ∧ `has_find_vertex` ∧ `has_find_vertex_edge` |
 | `has_full_queries<G>` | `has_basic_queries` ∧ `has_contains_edge` |
@@ -296,9 +296,9 @@ Convenience aliases extracted from a graph type `G`:
 | `vertex_iterator_t<G>` | Iterator type of the vertex range |
 | `vertex_t<G>` | Value type of the vertex range (a vertex descriptor) |
 | `vertex_id_t<G>` | Vertex ID type (`size_t` for indexed, key type for map-based) |
-| `vertex_edge_range_t<G>` | Return type of `edges(g, u)`  (an `edge_descriptor_view`)|
-| `vertex_edge_iterator_t<G>` | Iterator type of the edge range |
-| `edge_t<G>` | Value type of the edge range (an edge descriptor) |
+| `out_edge_range_t<G>` | Return type of `out_edges(g, u)` (an `edge_descriptor_view`). Alias: `vertex_edge_range_t<G>` |
+| `out_edge_iterator_t<G>` | Iterator type of the edge range. Alias: `vertex_edge_iterator_t<G>` |
+| `out_edge_t<G>` | Value type of the edge range (an edge descriptor). Alias: `edge_t<G>` |
 
 ---
 

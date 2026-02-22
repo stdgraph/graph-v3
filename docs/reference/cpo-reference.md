@@ -21,8 +21,8 @@ All CPOs listed below are available in `namespace graph` after
 | `vertices` | `(g, pid)` | `vertex_range_t<G>` | O(1) | No |
 | `vertex_id` | `(g, ui)` | `vertex_id_t<G>` | O(1) | Yes |
 | `find_vertex` | `(g, uid)` | `vertex_iterator_t<G>` | O(1) | Yes |
-| `edges` | `(g, u)` | `vertex_edge_range_t<G>` | O(1) | Yes |
-| `edges` | `(g, uid)` | `vertex_edge_range_t<G>` | O(1) | Yes |
+| `out_edges` | `(g, u)` | `out_edge_range_t<G>` | O(1) | Yes |
+| `out_edges` | `(g, uid)` | `out_edge_range_t<G>` | O(1) | Yes |
 | `target_id` | `(g, uv)` | `vertex_id_t<G>` | O(1) | Yes |
 | `target` | `(g, uv)` | `vertex_t<G>&` | O(1) | Yes |
 | `source_id` | `(g, uv)` | `vertex_id_t<G>` | O(1) | Yes |
@@ -31,8 +31,8 @@ All CPOs listed below are available in `namespace graph` after
 | `num_vertices` | `(g, pid)` | integral | O(1) | No |
 | `num_edges` | `(g)` | integral | O(V) | Yes |
 | `num_edges` | `(g, u)` / `(g, uid)` | integral | O(1) | Yes |
-| `degree` | `(g, u)` / `(g, uid)` | integral | O(1) | Yes |
-| `find_vertex_edge` | `(g, u, v)` / `(g, uid, vid)` | `vertex_edge_iterator_t<G>` | O(deg) | Yes |
+| `out_degree` | `(g, u)` / `(g, uid)` | integral | O(1) | Yes |
+| `find_out_edge` | `(g, u, v)` / `(g, uid, vid)` | `out_edge_iterator_t<G>` | O(deg) | Yes |
 | `contains_edge` | `(g, uid, vid)` | `bool` | O(deg) | Yes |
 | `has_edge` | `(g)` | `bool` | O(V) | Yes |
 | `vertex_value` | `(g, u)` | `decltype(auto)` | O(1) | No |
@@ -108,25 +108,27 @@ Returns the number of vertices.
 
 ## Edge CPOs
 
-### `edges(g, u)` / `edges(g, uid)`
+### `out_edges(g, u)` / `out_edges(g, uid)`
+
+Alias: `edges(g, u)` / `edges(g, uid)`
 
 ```cpp
-auto edges(G& g, vertex_t<G>& u)       -> vertex_edge_range_t<G>;
-auto edges(G& g, vertex_id_t<G> uid)    -> vertex_edge_range_t<G>;
+auto out_edges(G& g, vertex_t<G>& u)       -> out_edge_range_t<G>;
+auto out_edges(G& g, vertex_id_t<G> uid)    -> out_edge_range_t<G>;
 ```
 
-Returns the edge range for vertex `u` (by descriptor or ID).
+Returns the outgoing edge range for vertex `u` (by descriptor or ID).
 
 | Property | Value |
 |----------|-------|
 | **Constraint** | `out_edge_range<G>` |
-| **Default** | Descriptor: dereference `u` (range-of-ranges). ID: `edges(g, *find_vertex(g, uid))` |
+| **Default** | Descriptor: dereference `u` (range-of-ranges). ID: `out_edges(g, *find_vertex(g, uid))` |
 | **Complexity** | O(1) |
 
 ### `target_id(g, uv)`
 
 ```cpp
-auto target_id(G& g, edge_t<G>& uv) -> vertex_id_t<G>;
+auto target_id(G& g, out_edge_t<G>& uv) -> vertex_id_t<G>;
 ```
 
 Returns the target vertex ID for edge `uv`.
@@ -140,7 +142,7 @@ Returns the target vertex ID for edge `uv`.
 ### `target(g, uv)`
 
 ```cpp
-auto target(G& g, edge_t<G>& uv) -> vertex_t<G>&;
+auto target(G& g, out_edge_t<G>& uv) -> vertex_t<G>&;
 ```
 
 Returns a reference to the target vertex for edge `uv`.
@@ -154,7 +156,7 @@ Returns a reference to the target vertex for edge `uv`.
 ### `source_id(g, uv)`
 
 ```cpp
-auto source_id(G& g, edge_t<G>& uv) -> vertex_id_t<G>;
+auto source_id(G& g, out_edge_t<G>& uv) -> vertex_id_t<G>;
 ```
 
 Returns the source vertex ID for edge `uv`. Not all graph models support this
@@ -169,7 +171,7 @@ Returns the source vertex ID for edge `uv`. Not all graph models support this
 ### `source(g, uv)`
 
 ```cpp
-auto source(G& g, edge_t<G>& uv) -> vertex_t<G>&;
+auto source(G& g, out_edge_t<G>& uv) -> vertex_t<G>&;
 ```
 
 Returns a reference to the source vertex for edge `uv`.
@@ -194,33 +196,37 @@ Returns the number of edges (whole graph or per vertex).
 | **Default (whole graph)** | Sum of `ranges::size(edges(g, u))` over all vertices — **O(V)** |
 | **Default (per vertex)** | `ranges::size(edges(g, u))` — **O(1)** |
 
-### `degree(g, u)` / `degree(g, uid)`
+### `out_degree(g, u)` / `out_degree(g, uid)`
+
+Alias: `degree(g, u)` / `degree(g, uid)`
 
 ```cpp
-auto degree(G& g, vertex_t<G>& u)       -> integral;
-auto degree(G& g, vertex_id_t<G> uid)    -> integral;
+auto out_degree(G& g, vertex_t<G>& u)       -> integral;
+auto out_degree(G& g, vertex_id_t<G> uid)    -> integral;
 ```
 
 Returns the out-degree of vertex `u`.
 
 | Property | Value |
 |----------|-------|
-| **Default** | `ranges::size(edges(g, u))` |
+| **Default** | `ranges::size(out_edges(g, u))` |
 | **Complexity** | O(1) |
 
-### `find_vertex_edge(g, ...)`
+### `find_out_edge(g, ...)`
+
+Alias: `find_vertex_edge(g, ...)`
 
 ```cpp
-auto find_vertex_edge(G& g, vertex_t<G>& u, vertex_t<G>& v)       -> vertex_edge_iterator_t<G>;
-auto find_vertex_edge(G& g, vertex_t<G>& u, vertex_id_t<G> vid)   -> vertex_edge_iterator_t<G>;
-auto find_vertex_edge(G& g, vertex_id_t<G> uid, vertex_id_t<G> vid) -> vertex_edge_iterator_t<G>;
+auto find_out_edge(G& g, vertex_t<G>& u, vertex_t<G>& v)       -> out_edge_iterator_t<G>;
+auto find_out_edge(G& g, vertex_t<G>& u, vertex_id_t<G> vid)   -> out_edge_iterator_t<G>;
+auto find_out_edge(G& g, vertex_id_t<G> uid, vertex_id_t<G> vid) -> out_edge_iterator_t<G>;
 ```
 
-Finds the edge from `u` to `v` (or `uid` to `vid`).
+Finds the outgoing edge from `u` to `v` (or `uid` to `vid`).
 
 | Property | Value |
 |----------|-------|
-| **Default** | Linear scan: `ranges::find_if(edges(g, u), [&](auto& uv) { return target_id(g, uv) == vid; })` |
+| **Default** | Linear scan: `ranges::find_if(out_edges(g, u), [&](auto& uv) { return target_id(g, uv) == vid; })` |
 | **Complexity** | O(degree(u)) |
 
 ### `contains_edge(g, uid, vid)`

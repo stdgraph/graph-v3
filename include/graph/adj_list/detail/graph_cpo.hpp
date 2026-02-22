@@ -786,46 +786,61 @@ namespace _cpo_impls {
 } // namespace _cpo_impls
 
 // =============================================================================
-// edges(g, u) - Public CPO instance and type aliases
+// out_edges(g, u) - Public CPO instance and type aliases
 // =============================================================================
 
 inline namespace _cpo_instances {
   /**
      * @brief CPO for getting outgoing edges from a vertex
      * 
-     * Usage: auto vertex_edges = graph::edges(my_graph, vertex_descriptor);
+     * Usage: auto vertex_edges = graph::out_edges(my_graph, vertex_descriptor);
      * 
      * Returns: edge_descriptor_view
      */
-  inline constexpr _cpo_impls::_edges::_fn edges{};
+  inline constexpr _cpo_impls::_edges::_fn out_edges{};
+
+  /// @brief Alias for out_edges — provided for convenience.
+  inline constexpr auto& edges = out_edges;
 } // namespace _cpo_instances
 
 /**
- * @brief Range type returned by edges(g, u)
+ * @brief Range type returned by out_edges(g, u)
  * 
  * This is always edge_descriptor_view<EdgeIter, VertexIter> where EdgeIter
  * is the iterator type of the underlying edge container and VertexIter is
  * the iterator type of the vertex container.
  */
 template <typename G>
-using vertex_edge_range_t = decltype(edges(std::declval<G&>(), std::declval<vertex_t<G>>()));
+using out_edge_range_t = decltype(out_edges(std::declval<G&>(), std::declval<vertex_t<G>>()));
 
 /**
- * @brief Iterator type for traversing edges from a vertex
+ * @brief Iterator type for traversing outgoing edges from a vertex
  * 
- * Iterator over the edge_descriptor_view returned by edges(g, u).
+ * Iterator over the edge_descriptor_view returned by out_edges(g, u).
  */
 template <typename G>
-using vertex_edge_iterator_t = std::ranges::iterator_t<vertex_edge_range_t<G>>;
+using out_edge_iterator_t = std::ranges::iterator_t<out_edge_range_t<G>>;
 
 /**
- * @brief Edge descriptor type for graph G
+ * @brief Outgoing edge descriptor type for graph G
  * 
  * This is the value_type of the edge range - an edge_descriptor<EdgeIter, VertexIter>
  * that wraps an edge and maintains its source vertex.
  */
 template <typename G>
-using edge_t = std::ranges::range_value_t<vertex_edge_range_t<G>>;
+using out_edge_t = std::ranges::range_value_t<out_edge_range_t<G>>;
+
+/// @brief Alias for out_edge_range_t — provided for convenience.
+template <typename G>
+using vertex_edge_range_t = out_edge_range_t<G>;
+
+/// @brief Alias for out_edge_iterator_t — provided for convenience.
+template <typename G>
+using vertex_edge_iterator_t = out_edge_iterator_t<G>;
+
+/// @brief Alias for out_edge_t — provided for convenience.
+template <typename G>
+using edge_t = out_edge_t<G>;
 
 namespace _cpo_impls {} // namespace _cpo_impls
 
@@ -1913,20 +1928,23 @@ namespace _cpo_impls {
 } // namespace _cpo_impls
 
 // =============================================================================
-// degree(g, u) and degree(g, uid) - Public CPO instances
+// out_degree(g, u) and out_degree(g, uid) - Public CPO instances
 // =============================================================================
 
 inline namespace _cpo_instances {
   /**
-     * @brief CPO for getting the degree (number of outgoing edges) of a vertex
+     * @brief CPO for getting the out-degree (number of outgoing edges) of a vertex
      * 
      * Usage: 
-     *   auto deg = graph::degree(my_graph, vertex_descriptor);
-     *   auto deg = graph::degree(my_graph, vertex_id);
+     *   auto deg = graph::out_degree(my_graph, vertex_descriptor);
+     *   auto deg = graph::out_degree(my_graph, vertex_id);
      * 
      * Returns: Number of outgoing edges from the vertex (integral type)
      */
-  inline constexpr _cpo_impls::_degree::_fn degree{};
+  inline constexpr _cpo_impls::_degree::_fn out_degree{};
+
+  /// @brief Alias for out_degree — provided for convenience.
+  inline constexpr auto& degree = out_degree;
 } // namespace _cpo_instances
 
 namespace _cpo_impls {
@@ -2159,45 +2177,25 @@ namespace _cpo_impls {
 } // namespace _cpo_impls
 
 // =============================================================================
-// find_vertex_edge(g, u, v/vid) and find_vertex_edge(g, uid, vid) - Public CPO instances
+// find_out_edge(g, u, v/vid) and find_out_edge(g, uid, vid) - Public CPO instances
 // =============================================================================
 
 inline namespace _cpo_instances {
   /**
-     * @brief CPO for finding an edge from source vertex u to target vertex v
+     * @brief CPO for finding an outgoing edge from source vertex u to target vertex v
      * 
      * Usage: 
-     *   auto e = graph::find_vertex_edge(my_graph, u_descriptor, v_descriptor);
-     *   auto e = graph::find_vertex_edge(my_graph, u_descriptor, target_id);
-     *   auto e = graph::find_vertex_edge(my_graph, source_id, target_id);
+     *   auto e = graph::find_out_edge(my_graph, u_descriptor, v_descriptor);
+     *   auto e = graph::find_out_edge(my_graph, u_descriptor, target_id);
+     *   auto e = graph::find_out_edge(my_graph, source_id, target_id);
      * 
      * Returns: Edge descriptor if found, or end iterator/sentinel if not found
      */
-  inline constexpr _cpo_impls::_find_vertex_edge::_fn find_vertex_edge{};
+  inline constexpr _cpo_impls::_find_vertex_edge::_fn find_out_edge{};
+
+  /// @brief Alias for find_out_edge — provided for convenience.
+  inline constexpr auto& find_vertex_edge = find_out_edge;
 } // namespace _cpo_instances
-
-// =============================================================================
-// Outgoing aliases: out_edges, out_degree, find_out_edge
-// =============================================================================
-
-inline namespace _cpo_instances {
-  inline constexpr auto& out_edges     = edges;
-  inline constexpr auto& out_degree    = degree;
-  inline constexpr auto& find_out_edge = find_vertex_edge;
-} // namespace _cpo_instances
-
-// =============================================================================
-// Outgoing type aliases
-// =============================================================================
-
-template <typename G>
-using out_edge_range_t = vertex_edge_range_t<G>;
-
-template <typename G>
-using out_edge_iterator_t = vertex_edge_iterator_t<G>;
-
-template <typename G>
-using out_edge_t = edge_t<G>;
 
 // =============================================================================
 // find_in_edge(g, u, v), find_in_edge(g, u, vid), find_in_edge(g, uid, vid) CPO

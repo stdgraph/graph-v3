@@ -91,9 +91,11 @@ All follow the `_t<G>` naming convention.
 
 | Alias | Definition |
 |-------|------------|
-| `vertex_edge_range_t<G>` | `decltype(edges(g, u))` |
-| `vertex_edge_iterator_t<G>` | `std::ranges::iterator_t<vertex_edge_range_t<G>>` |
-| `edge_t<G>` | `std::ranges::range_value_t<vertex_edge_range_t<G>>` |
+| `out_edge_range_t<G>` | `decltype(out_edges(g, u))` |
+| `out_edge_iterator_t<G>` | `std::ranges::iterator_t<out_edge_range_t<G>>` |
+| `out_edge_t<G>` | `std::ranges::range_value_t<out_edge_range_t<G>>` |
+
+> **Convenience aliases:** `vertex_edge_range_t<G>`, `vertex_edge_iterator_t<G>`, and `edge_t<G>` remain available as aliases for the above.
 
 ### Value Types (Optional)
 

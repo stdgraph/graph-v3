@@ -169,6 +169,57 @@ concept index_vertex_range =
       } && std::integral<vertex_id_t<G>> &&
       std::random_access_iterator<typename vertex_range_t<G>::vertex_desc::iterator_type>;
 
+// =============================================================================
+// Adjacency List Concepts
+// =============================================================================
+
+/**
+ * @brief Concept for graphs with adjacency list structure
+ * 
+ * An adjacency_list is a graph where:
+ * - Vertices can be iterated as a vertex_range (forward)
+ * - Each vertex has outgoing edges as an out_edge_range
+ * 
+ * Requirements:
+ * - vertices(g) returns a vertex_range
+ * - out_edges(g, u) returns an out_edge_range for vertex u
+ * - Supports vertex_id(g, u) for each vertex
+ * - Supports source_id(g, e), source(g, e), target_id(g, e), and target(g, e) for each edge
+ * 
+ * Examples:
+ * - std::vector<std::vector<int>> - vector-based adjacency list
+ * - std::map<int, std::vector<int>> - map-based adjacency list
+ * - std::deque<std::vector<pair<int, double>>> - weighted adjacency list
+ * 
+ * @tparam G Graph type
+ */
+template <class G>
+concept adjacency_list = requires(G& g, vertex_t<G> u) {
+  { vertices(g) } -> vertex_range<G>;
+  { out_edges(g, u) } -> out_edge_range<G>;
+};
+
+/**
+ * @brief Concept for graphs with index-based adjacency list structure
+ * 
+ * An index_adjacency_list is an adjacency_list where vertices support
+ * random access via an index_vertex_range.
+ * 
+ * Requirements:
+ * - Must satisfy adjacency_list
+ * - vertices(g) returns an index_vertex_range (random access)
+ * 
+ * Examples:
+ * - std::vector<std::vector<int>> - contiguous vector storage
+ * - std::deque<std::vector<int>> - deque-based storage
+ * 
+ * Note: std::map-based graphs do NOT satisfy this concept.
+ * 
+ * @tparam G Graph type
+ */
+template <class G>
+concept index_adjacency_list = adjacency_list<G> && index_vertex_range<G>;
+
 /**
  * @brief Concept for graphs with sorted adjacency lists.
  * 
@@ -200,59 +251,8 @@ concept index_vertex_range =
  */
 template <class G>
 concept ordered_vertex_edges = adjacency_list<G> && requires(G& g, vertex_t<G> u) {
-  requires std::forward_iterator<decltype(std::ranges::begin(edges(g, u)))>;
+  requires std::forward_iterator<decltype(std::ranges::begin(out_edges(g, u)))>;
 };
-
-// =============================================================================
-// Adjacency List Concepts
-// =============================================================================
-
-/**
- * @brief Concept for graphs with adjacency list structure
- * 
- * An adjacency_list is a graph where:
- * - Vertices can be iterated as a vertex_range (forward)
- * - Each vertex has outgoing edges as an out_edge_range
- * 
- * Requirements:
- * - vertices(g) returns a vertex_range
- * - edges(g, u) returns an out_edge_range for vertex u
- * - Supports vertex_id(g, u) for each vertex
- * - Supports source_id(g, e), source(g, e), target_id(g, e), and target(g, e) for each edge
- * 
- * Examples:
- * - std::vector<std::vector<int>> - vector-based adjacency list
- * - std::map<int, std::vector<int>> - map-based adjacency list
- * - std::deque<std::vector<pair<int, double>>> - weighted adjacency list
- * 
- * @tparam G Graph type
- */
-template <class G>
-concept adjacency_list = requires(G& g, vertex_t<G> u) {
-  { vertices(g) } -> vertex_range<G>;
-  { edges(g, u) } -> out_edge_range<G>;
-};
-
-/**
- * @brief Concept for graphs with index-based adjacency list structure
- * 
- * An index_adjacency_list is an adjacency_list where vertices support
- * random access via an index_vertex_range.
- * 
- * Requirements:
- * - Must satisfy adjacency_list
- * - vertices(g) returns an index_vertex_range (random access)
- * 
- * Examples:
- * - std::vector<std::vector<int>> - contiguous vector storage
- * - std::deque<std::vector<int>> - deque-based storage
- * 
- * Note: std::map-based graphs do NOT satisfy this concept.
- * 
- * @tparam G Graph type
- */
-template <class G>
-concept index_adjacency_list = adjacency_list<G> && index_vertex_range<G>;
 
 // =============================================================================
 // Incoming Edge Concepts

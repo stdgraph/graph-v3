@@ -53,22 +53,22 @@ These requirements apply to every graph-related component, including implementat
 
 | Template Parameter | Type Alias | Variable Name | Description |
 |-------------------|------------|---------------|-------------|
-| `E` | `edge_t<G>` | `uv`, `vw` | Edge descriptor. `uv` is an edge from vertices `u` to `v`. `vw` is an edge from vertices `v` to `w`. |
+| `E` | `out_edge_t<G>` | `uv`, `vw` | Edge descriptor. `uv` is an edge from vertices `u` to `v`. `vw` is an edge from vertices `v` to `w`. Alias: `edge_t<G>`. |
 | `EV` | `edge_value_t<G>` | `val` | Edge Value, value or reference. This can be either the user-defined value on an edge, or a value returned by a function object (e.g. `EVF`) that is related to the edge. |
-| `ER` | `vertex_edge_range_t<G>` | | Edge Range for edges of a vertex |
-| `EI` | `vertex_edge_iterator_t<G>` | `uvi`, `vwi` | Edge Iterator for an edge of a vertex. `uvi` is an iterator for an edge from vertices `u` to `v`. `vwi` is an iterator for an edge from vertices `v` to `w`. |
+| `ER` | `out_edge_range_t<G>` | | Edge Range for outgoing edges of a vertex. Alias: `vertex_edge_range_t<G>`. |
+| `EI` | `out_edge_iterator_t<G>` | `uvi`, `vwi` | Edge Iterator for an outgoing edge of a vertex. `uvi` is an iterator for an edge from vertices `u` to `v`. `vwi` is an iterator for an edge from vertices `v` to `w`. Alias: `vertex_edge_iterator_t<G>`. |
 | `EVF` | | `evf` | Edge Value Function: `evf(g, uv)` → edge value. Graph passed as first parameter for stateless lambdas enabling `std::views` chaining. |
 | `EProj` | | `eproj` | Edge info projection function: `eproj(uv)` → `edge_info<VId,Sourced,EV>`. |
 
 ## Parameterized Type Aliases
 Types use the `_t<G>` suffix to indicate they are parameterized by graph type `G`:
 - `vertex_t<G>` - Vertex descriptor type (corresponds to `V`)
-- `edge_t<G>` - Edge descriptor type (corresponds to `E`)
+- `out_edge_t<G>` - Edge descriptor type (corresponds to `E`). Alias: `edge_t<G>`.
 - `vertex_id_t<G>`, `vertex_value_t<G>`, `edge_value_t<G>`, etc. - Other derived types
 - `vertex_iterator_t<G>` - Iterator type for traversing vertices
 - `vertex_range_t<G>` - Range type that enumerates vertices
-- `vertex_edge_range_t<G>` - Range type for the outgoing edges of a vertex
-- `edge_iterator_t<G>` - Iterator type for traversing edges
+- `out_edge_range_t<G>` - Range type for the outgoing edges of a vertex. Alias: `vertex_edge_range_t<G>`.
+- `out_edge_iterator_t<G>` - Iterator type for traversing outgoing edges. Alias: `vertex_edge_iterator_t<G>`.
 
 ## Public Interface Requirements
 All public functions for the graph data model have the following requirements:
