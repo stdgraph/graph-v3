@@ -48,7 +48,7 @@ The current names remain as-is and **continue to mean "outgoing edges"**:
 | `num_edges(g)` | Yes | Total edge count (direction-agnostic) |
 | `find_vertex_edge(g, u, v)` | Yes | Find outgoing edge from `u` to `v` |
 | `contains_edge(g, u, v)` | Yes | Check outgoing edge from `u` to `v` |
-| `has_edge(g, uid, vid)` | Yes | Check outgoing edge from `uid` to `vid` |
+| `has_edge(g)` | Yes | Check whether graph has at least one edge |
 | `edge_value(g, uv)` | Yes | Edge property (direction-agnostic) |
 
 ### 3.2 New outgoing aliases (optional clarity)
@@ -75,9 +75,23 @@ These are defined as inline constexpr CPO aliases or thin wrapper functions in
 |---|---|
 | `in_edges(g, u)` / `in_edges(g, uid)` | Incoming edges to vertex `u` |
 | `in_degree(g, u)` / `in_degree(g, uid)` | In-degree of `u` |
-| `find_in_edge(g, u, v)` | Find incoming edge from `v` to `u` |
-| `contains_in_edge(g, u, v)` | Check incoming edge from `v` to `u` |
-| `has_in_edge(g, uid, vid)` | Check incoming edge from `vid` to `uid` |
+| `find_in_edge(g, u, v)` | Find incoming edge from `v` to `u` (both descriptors) |
+| `find_in_edge(g, u, vid)` | Find incoming edge from `vid` to `u` (descriptor + ID) |
+| `find_in_edge(g, uid, vid)` | Find incoming edge from `vid` to `uid` (both IDs) |
+| `contains_in_edge(g, u, v)` | Check incoming edge from `v` to `u` (both descriptors) |
+| `contains_in_edge(g, uid, vid)` | Check incoming edge from `vid` to `uid` (both IDs) |
+
+Parameter convention for incoming-edge queries:
+
+- `u`/`uid` = **target** vertex (the vertex receiving incoming edges)
+- `v`/`vid` = **source** vertex (the vertex the edge comes from)
+
+Example:
+
+```cpp
+// true if edge 7 -> 3 exists
+bool b = contains_in_edge(g, /*target=*/3, /*source=*/7);
+```
 
 ---
 
@@ -93,7 +107,6 @@ These are defined as inline constexpr CPO aliases or thin wrapper functions in
 |---|---|---|
 | 1 | `_vertex_member` | `u.inner_value(g).in_edges()` |
 | 2 | `_adl` | ADL `in_edges(g, u)` |
-| 3 | `_edge_value_pattern` | (not applicable — no implicit reverse structure) |
 
 For the `(g, uid)` overload:
 
@@ -102,8 +115,9 @@ For the `(g, uid)` overload:
 | 1 | `_adl` | ADL `in_edges(g, uid)` |
 | 2 | `_default` | `in_edges(g, *find_vertex(g, uid))` |
 
-**Return type:** `in_vertex_edge_range_t<G>` — an `edge_descriptor_view` wrapping
-the reverse edge container's iterators.
+**Return type:** `in_vertex_edge_range_t<G>` — i.e. the exact range type returned by
+`in_edges(g, u)` after CPO resolution. This may be an `edge_descriptor_view`, but
+custom member/ADL implementations may return a different valid range type.
 
 ### 4.2 `in_degree(g, u)` / `in_degree(g, uid)`
 
@@ -127,11 +141,29 @@ inline constexpr auto& out_degree     = degree;
 inline constexpr auto& find_out_edge  = find_vertex_edge;
 ```
 
-### 4.4 `find_in_edge`, `contains_in_edge`, `has_in_edge`
+### 4.4 `find_in_edge`, `contains_in_edge`
 
-These mirror `find_vertex_edge` (`find_out_edge`) / `contains_edge` / `has_edge` but
-operate on the reverse adjacency structure. Implementation follows the same
+These mirror `find_vertex_edge` (`find_out_edge`) / `contains_edge` but operate
+on the reverse adjacency structure. Implementation follows the same
 member → ADL → default cascade pattern.
+
+`find_in_edge` has three overloads mirroring `find_vertex_edge`:
+- `find_in_edge(g, u, v)` — both vertex descriptors
+- `find_in_edge(g, u, vid)` — descriptor + vertex ID
+- `find_in_edge(g, uid, vid)` — both vertex IDs
+
+`contains_in_edge` has two overloads mirroring `contains_edge`:
+- `contains_in_edge(g, u, v)` — both vertex descriptors
+- `contains_in_edge(g, uid, vid)` — both vertex IDs
+
+The default implementation of `find_in_edge` iterates `in_edges(g, u)` and
+matches `source_id(g, ie)` against the target vertex (the in-neighbor). The default
+`contains_in_edge` calls `find_in_edge` and checks the result.
+
+> **Note:** There is no `has_in_edge` counterpart. The existing `has_edge(g)` takes
+> only the graph and means "graph has at least one edge" — a direction-agnostic
+> query. A `has_in_edge(g)` variant would be redundant with `has_edge(g)`, and
+> `has_in_edge(g, uid, vid)` would duplicate `contains_in_edge(g, uid, vid)`.
 
 ---
 
@@ -220,9 +252,9 @@ concept index_bidirectional_adjacency_list =
 |---|---|
 | `has_in_degree<G>` | `in_degree(g, u)` and `in_degree(g, uid)` both return integral |
 | `has_in_degree_v<G>` | `bool` shorthand |
-| `has_find_in_edge<G>` | All `find_in_edge` overloads return `in_edge_t<G>` |
+| `has_find_in_edge<G>` | `find_in_edge` CPO resolves for graph type `G` |
 | `has_find_in_edge_v<G>` | `bool` shorthand |
-| `has_contains_in_edge<G>` | `contains_in_edge(g, u, v)` returns bool |
+| `has_contains_in_edge<G>` | `contains_in_edge` CPO resolves for graph type `G` |
 | `has_contains_in_edge_v<G>` | `bool` shorthand |
 
 ---
@@ -288,13 +320,42 @@ namespace graph::views {
 }
 ```
 
+### 8.4 Pipe-syntax adaptors
+
+**File:** `include/graph/views/adaptors.hpp` (extend existing)
+
+The existing `adaptors.hpp` provides pipe-syntax closures for all outgoing views
+(`g | incidence(uid)`, `g | neighbors(uid)`, etc.). Corresponding closures must
+be added for the new incoming views:
+
+| Pipe expression | Expands to |
+|---|---|
+| `g \| in_incidence(uid)` | `in_incidence(g, uid)` |
+| `g \| in_incidence(uid, evf)` | `in_incidence(g, uid, evf)` |
+| `g \| basic_in_incidence(uid)` | `basic_in_incidence(g, uid)` |
+| `g \| basic_in_incidence(uid, evf)` | `basic_in_incidence(g, uid, evf)` |
+| `g \| in_neighbors(uid)` | `in_neighbors(g, uid)` |
+| `g \| in_neighbors(uid, vvf)` | `in_neighbors(g, uid, vvf)` |
+| `g \| basic_in_neighbors(uid)` | `basic_in_neighbors(g, uid)` |
+| `g \| basic_in_neighbors(uid, vvf)` | `basic_in_neighbors(g, uid, vvf)` |
+
+Outgoing aliases for symmetry:
+
+| Pipe alias | Forwards to |
+|---|---|
+| `g \| out_incidence(uid)` | `g \| incidence(uid)` |
+| `g \| out_neighbors(uid)` | `g \| neighbors(uid)` |
+| `g \| basic_out_incidence(uid)` | `g \| basic_incidence(uid)` |
+| `g \| basic_out_neighbors(uid)` | `g \| basic_neighbors(uid)` |
+
 ---
 
-## 9. BFS/DFS Parameterization
+## 9. BFS/DFS/Topological-Sort Parameterization
 
 ### Problem
 
-`bfs.hpp` and `dfs.hpp` hardcode `adj_list::edges(g, vertex)` in ~6 locations each.
+`bfs.hpp`, `dfs.hpp`, and `topological_sort.hpp` hardcode `adj_list::edges(g, vertex)`
+(5 locations in BFS, 5 in DFS, 7 in topological sort).
 To support reverse traversal (following incoming edges), they need parameterization.
 
 ### Solution
@@ -336,7 +397,9 @@ vertices_bfs(g, seed, vvf, in_edges_accessor{})  // reverse BFS
 edges_bfs(g, seed, evf, in_edges_accessor{})      // reverse BFS
 ```
 
-Same pattern applies to DFS and topological sort views.
+Same pattern applies to DFS views (`vertices_dfs_view`, `edges_dfs_view`) and
+topological sort views (`vertices_topological_sort_view`, `edges_topological_sort_view`).
+All three view families receive identical `EdgeAccessor` parameterization.
 
 ---
 
@@ -413,7 +476,7 @@ at zero cost.
 
 ### 10.4 New trait type combinations for `dynamic_graph`
 
-For each existing trait file (26 total in `include/graph/container/traits/`), a
+For each existing trait file (27 total in `include/graph/container/traits/`), a
 corresponding `b` (bidirectional) variant may be added:
 
 | Existing | Bidirectional Variant | Description |
@@ -424,6 +487,30 @@ corresponding `b` (bidirectional) variant may be added:
 
 Alternatively, a single set of traits with `Bidirectional` as a template parameter
 avoids the combinatorial explosion.
+
+### 10.5 Mutator Invariants & Storage/Complexity Budget
+
+To keep the implementation predictable, reverse adjacency support must define and
+enforce container invariants explicitly.
+
+**Mutator invariants (Bidirectional = true):**
+
+1. `create_edge(u, v)` inserts one forward entry in `u.out_edges_` and one reverse
+   entry in `v.in_edges_` representing the same logical edge.
+2. `erase_edge(u, v)` removes both forward and reverse entries.
+3. `erase_vertex(x)` removes all incident edges and corresponding mirrored entries
+   in opposite adjacency lists.
+4. `clear_vertex(x)` removes both outgoing and incoming incidence for `x`.
+5. `clear()` empties both forward and reverse structures.
+6. Copy/move/swap preserve forward↔reverse consistency.
+
+**Complexity/storage targets:**
+
+- Outgoing-only mode (`Bidirectional = false`) remains unchanged.
+- Bidirectional mode targets O(1) additional work per edge insertion/erasure in
+  adjacency-list containers (plus container-specific costs).
+- Storage overhead target is roughly one additional reverse entry per edge
+  (`O(E)` extra), with optional reduced footprint via lightweight `in_edge_t`.
 
 ---
 
@@ -460,7 +547,6 @@ using adj_list::out_degree;
 using adj_list::find_out_edge;
 using adj_list::find_in_edge;
 using adj_list::contains_in_edge;
-using adj_list::has_in_edge;
 
 // New concepts
 using adj_list::in_vertex_edge_range;
@@ -501,7 +587,7 @@ using adj_list::out_edge_t;
 | `docs/user-guide/algorithms.md` | Note which algorithms benefit from bidirectional access |
 | `docs/user-guide/containers.md` | Document bidirectional dynamic_graph and compressed_graph |
 | `docs/reference/concepts.md` | Add `bidirectional_adjacency_list`, `in_vertex_edge_range` |
-| `docs/reference/cpo-reference.md` | Add `in_edges`, `in_degree`, `out_edges`, `out_degree`, `find_vertex_in_edge`, `contains_in_edge`, `has_in_edge` |
+| `docs/reference/cpo-reference.md` | Add `in_edges`, `in_degree`, `out_edges`, `out_degree`, `find_in_edge`, `contains_in_edge` |
 | `docs/reference/type-aliases.md` | Add `in_vertex_edge_range_t`, `in_edge_t`, etc. |
 | `docs/reference/adjacency-list-interface.md` | Add incoming edge section |
 | `docs/contributing/cpo-implementation.md` | Add `in_edges` as an example of the CPO pattern |
@@ -527,22 +613,26 @@ using adj_list::out_edge_t;
 6. Add `has_in_degree` trait
 7. Update `graph.hpp` re-exports
 8. Add unit tests for CPO resolution (stub graph with `in_edges()` member)
+9. Add compile-time concept tests for `bidirectional_adjacency_list`
+10. Add mixed-type tests where `in_edge_t<G> != edge_t<G>` (source-only incoming edges)
 
 ### Phase 2: Views (~2 days)
 
 1. Create `in_incidence.hpp` (copy+adapt `incidence.hpp`)
 2. Create `in_neighbors.hpp` (copy+adapt `neighbors.hpp`)
 3. Add `out_incidence` / `out_neighbors` aliases
-4. Unit tests for all new views
+4. Add pipe-syntax adaptors to `adaptors.hpp` (§8.4)
+5. Unit tests for all new views (including pipe-syntax adaptor tests)
 
 ### Phase 3: Container Support (~3-4 days)
 
 1. Add `Bidirectional` parameter to `dynamic_graph_base`
 2. Update `create_edge` / `erase_edge` / `clear` to maintain reverse lists
-3. Add ADL `in_edges()` friend to bidirectional dynamic_graph
-4. Add CSC support to `compressed_graph`
-5. Add `in_edges()` to `undirected_adjacency_list` (returns same as `edges()`)
-6. Unit tests for all three containers
+3. Update `erase_vertex` / `clear_vertex` / copy-move-swap paths to preserve reverse invariants
+4. Add ADL `in_edges()` friend to bidirectional dynamic_graph
+5. Add CSC support to `compressed_graph`
+6. Add `in_edges()` to `undirected_adjacency_list` (returns same as `edges()`)
+7. Unit tests for all three containers (including mutator invariant checks)
 
 ### Phase 4: BFS/DFS Parameterization (~1-2 days)
 
@@ -563,17 +653,65 @@ using adj_list::out_edge_t;
 2. Create `bidirectional-access.md` tutorial
 3. Update CHANGELOG.md
 
+### Recommended execution order (risk-first)
+
+To reduce integration risk and keep PRs reviewable, execute phases with strict
+merge gates and defer high-churn container internals until API contracts are
+proven by tests.
+
+1. **Phase 1 (CPOs/concepts/traits) first, in one or two PRs max.**
+2. **Phase 2 (views) second**, consuming only the new public CPOs.
+3. **Phase 4 (BFS/DFS parameterization) third**, before container internals,
+   to validate the accessor approach on existing graphs.
+4. **Phase 3 (container support) fourth**, split by container:
+   `undirected_adjacency_list` → `dynamic_graph` → `compressed_graph`.
+5. **Phase 5 (algorithm updates) fifth**, after reverse traversal behavior is
+   stable and benchmarked.
+6. **Phase 6 (docs/changelog) last**, plus updates in each phase PR where needed.
+
+### Merge gates (go/no-go criteria)
+
+Each phase must satisfy all gates before proceeding:
+
+- `linux-gcc-debug` full test suite passes.
+- New compile-time concept tests pass (`requires`/`static_assert` coverage).
+- No regressions in existing outgoing-edge APIs (`edges`, `degree`, `find_vertex_edge`).
+- New incoming APIs are documented in reference docs for that phase.
+
+Additional phase-specific gates:
+
+- **After Phase 1:**
+  - Mixed-type incoming-edge test (`in_edge_t<G> != edge_t<G>`) passes.
+  - `in_edges`/`in_degree` ADL and member dispatch paths are covered.
+- **After Phase 4:**
+  - Reverse BFS/DFS outputs validated against expected traversal sets.
+  - Existing BFS/DFS/topological-sort signatures remain source-compatible.
+- **After Phase 3:**
+  - Mutator invariant tests pass (`create_edge`, `erase_edge`, `erase_vertex`,
+    `clear_vertex`, `clear`, copy/move/swap consistency).
+
+### Fallback and scope control
+
+- If CSC integration in `compressed_graph` slips, ship `dynamic_graph` +
+  `undirected_adjacency_list` incoming support first and keep CSC behind a
+  follow-up milestone.
+- Keep `transpose_view` optional for initial release; prioritize core CPOs,
+  views, and reverse traversal correctness.
+- If API pressure grows, keep only the decided aliases (`out_*`) and avoid
+  introducing additional directional synonyms.
+
 ---
 
 ## 15. Summary of All Changes
 
 | Category | New | Modified | Deleted |
 |---|---|---|---|
-| **CPOs** | `in_edges`, `in_degree`, `out_edges` (alias), `out_degree` (alias), `find_out_edge` (alias), `find_in_edge`, `contains_in_edge`, `has_in_edge` | — | — |
+| **CPOs** | `in_edges`, `in_degree`, `out_edges` (alias), `out_degree` (alias), `find_out_edge` (alias), `find_in_edge`, `contains_in_edge` | — | — |
 | **Concepts** | `in_vertex_edge_range`, `bidirectional_adjacency_list`, `index_bidirectional_adjacency_list` | — | — |
 | **Traits** | `has_in_degree`, `has_in_degree_v`, `has_find_in_edge`, `has_contains_in_edge` | — | — |
 | **Type Aliases** | `in_vertex_edge_range_t`, `in_vertex_edge_iterator_t`, `in_edge_t`, `out_vertex_edge_range_t`, `out_vertex_edge_iterator_t`, `out_edge_t` | — | — |
-| **Views** | `in_incidence.hpp`, `in_neighbors.hpp`, `out_edges_accessor`, `in_edges_accessor` | `bfs.hpp`, `dfs.hpp`, `topological_sort.hpp` (add `EdgeAccessor` param) | — |
+| **Views** | `in_incidence.hpp`, `in_neighbors.hpp` | `bfs.hpp`, `dfs.hpp`, `topological_sort.hpp` (add `EdgeAccessor` param), `adaptors.hpp` (add pipe closures) | — |
+| **Traversal policies** | `out_edges_accessor`, `in_edges_accessor` | — | — |
 | **Containers** | — | `dynamic_graph.hpp` (add `Bidirectional`), `compressed_graph.hpp` (add CSC), `undirected_adjacency_list.hpp` (add `in_edges` friend) | — |
 | **Algorithms** | `transpose_view` | `connected_components.hpp` (Kosaraju optimization) | — |
 | **Headers** | — | `graph.hpp` (new includes & re-exports) | — |
@@ -592,8 +730,14 @@ using adj_list::out_edge_t;
 | `in_edges(g, u)` | `u.inner_value(g).in_edges()` | ADL `in_edges(g, u)` | *(no default)* |
 | `degree(g, u)` | `g.degree(u)` | ADL `degree(g, u)` | `size(edges(g, u))` |
 | `in_degree(g, u)` | `g.in_degree(u)` | ADL `in_degree(g, u)` | `size(in_edges(g, u))` |
+| `find_vertex_edge(g, u, v)` | `g.find_vertex_edge(u, v)` | ADL `find_vertex_edge(g, u, v)` | iterate `edges(g, u)`, match `target_id` |
+| `find_in_edge(g, u, v)` | `g.find_in_edge(u, v)` | ADL `find_in_edge(g, u, v)` | iterate `in_edges(g, u)`, match `source_id` |
+| `contains_edge(g, u, v)` | `g.contains_edge(u, v)` | ADL `contains_edge(g, u, v)` | iterate `edges(g, u)`, match `target_id` |
+| `contains_in_edge(g, u, v)` | `g.contains_in_edge(u, v)` | ADL `contains_in_edge(g, u, v)` | iterate `in_edges(g, u)`, match `source_id` |
+| `has_edge(g)` | `g.has_edge()` | ADL `has_edge(g)` | iterate vertices, find non-empty edges |
 | `out_edges(g, u)` | → `edges(g, u)` | | |
 | `out_degree(g, u)` | → `degree(g, u)` | | |
+| `find_out_edge(g, u, v)` | → `find_vertex_edge(g, u, v)` | | |
 
 ## Appendix B: No-Rename Justification
 
@@ -635,6 +779,13 @@ on incoming edges — not `edge_value()`. This means:
 - Algorithms that need edge properties on incoming edges (rare) can add their own
   `requires edge_value(g, in_edge_t<G>{})` constraint.
 - The undirected case (`in_edge_t<G> == edge_t<G>`) is the zero-cost happy path.
+
+Minimum incoming-edge contract for algorithms:
+
+- **Always required:** `in_edges(g, u)`, `source_id(g, ie)`
+- **Conditionally required:** `edge_value(g, ie)` only for algorithms/views that
+  explicitly consume incoming edge properties
+- **Not required:** `target_id(g, ie)` for incoming-only traversal algorithms
 
 ## Appendix D: `out_` Alias Retention Decision
 
