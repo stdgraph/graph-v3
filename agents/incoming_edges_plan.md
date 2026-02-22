@@ -528,75 +528,146 @@ existing functions) and provides a real container for integration testing.
 
 ---
 
-## Phase 5 — `in_incidence` and `in_neighbors` views
+## Phase 5 — Rename views to `out_*` primary + create `in_*` views
 
-**Goal:** Create the incoming-edge view files, their factory functions,
-and tests.
+**Goal:** Rename existing `incidence.hpp` → `out_incidence.hpp` and
+`neighbors.hpp` → `out_neighbors.hpp`, making `out_incidence_view` /
+`out_neighbors_view` the primary class names. Keep `incidence` /
+`neighbors` as convenience aliases (matching the CPO convention). Then
+create new `in_incidence.hpp` / `in_neighbors.hpp` for incoming edges.
+
+**Naming convention** (matches CPO pattern):
+
+| Primary | Alias |
+|---|---|
+| `out_incidence_view` | `incidence_view` |
+| `out_neighbors_view` | `neighbors_view` |
+| `basic_out_incidence_view` | `basic_incidence_view` |
+| `basic_out_neighbors_view` | `basic_neighbors_view` |
+| `out_incidence(g, u)` | `incidence(g, u)` |
+| `out_neighbors(g, u)` | `neighbors(g, u)` |
 
 **Why fifth:** Views consume the CPOs from Phases 1-3 and can now also be
 tested against the undirected container from Phase 4.
 
-### Files to modify
+### Files to rename
 
-| File | Action |
+| Old path | New path |
 |---|---|
-| `tests/views/CMakeLists.txt` | Register new test files |
+| `include/graph/views/incidence.hpp` | `include/graph/views/out_incidence.hpp` |
+| `include/graph/views/neighbors.hpp` | `include/graph/views/out_neighbors.hpp` |
 
 ### Files to create
 
 | File | Content |
 |---|---|
+| `include/graph/views/incidence.hpp` | Thin forwarding header — includes `out_incidence.hpp`, adds aliases |
+| `include/graph/views/neighbors.hpp` | Thin forwarding header — includes `out_neighbors.hpp`, adds aliases |
 | `include/graph/views/in_incidence.hpp` | `in_incidence_view`, `basic_in_incidence_view`, factory functions |
 | `include/graph/views/in_neighbors.hpp` | `in_neighbors_view`, `basic_in_neighbors_view`, factory functions |
 | `tests/views/test_in_incidence.cpp` | View tests |
 | `tests/views/test_in_neighbors.cpp` | View tests |
 
+### Files to modify
+
+| File | Action |
+|---|---|
+| `include/graph/graph.hpp` | Add includes for `in_incidence.hpp`, `in_neighbors.hpp` |
+| `tests/views/CMakeLists.txt` | Register new test files |
+
 ### Steps
 
-#### 5.1 Create `include/graph/views/in_incidence.hpp`
+#### 5.1 Rename `incidence.hpp` → `out_incidence.hpp`
 
-Copy `incidence.hpp` and make these changes:
+```bash
+git mv include/graph/views/incidence.hpp include/graph/views/out_incidence.hpp
+```
 
-- Rename all classes: `incidence_view` → `in_incidence_view`,
-  `basic_incidence_view` → `basic_in_incidence_view`.
-- Change edge iteration from `edges(g, u)` to `in_edges(g, u)`.
+Inside `out_incidence.hpp`:
+
+- Rename classes: `incidence_view` → `out_incidence_view`,
+  `basic_incidence_view` → `basic_out_incidence_view`.
+- Rename factory functions: `incidence(g, u)` → `out_incidence(g, u)`,
+  `basic_incidence(g, uid)` → `basic_out_incidence(g, uid)`, etc.
+- Update all doxygen comments.
+- Keep concept constraint as `adjacency_list` (outgoing is the default).
+
+#### 5.2 Create forwarding `incidence.hpp`
+
+Thin header that includes `out_incidence.hpp` and provides aliases:
+
+```cpp
+#pragma once
+#include <graph/views/out_incidence.hpp>
+
+namespace graph::views {
+
+// Convenience aliases (match CPO convention: incidence = out_incidence)
+template <adj_list::adjacency_list G, class EVF = void>
+using incidence_view = out_incidence_view<G, EVF>;
+
+template <adj_list::adjacency_list G, class EVF = void>
+using basic_incidence_view = basic_out_incidence_view<G, EVF>;
+
+// Factory function aliases
+template <adj_list::adjacency_list G>
+[[nodiscard]] constexpr auto incidence(G& g, adj_list::vertex_t<G> u) noexcept {
+  return out_incidence(g, u);
+}
+// ... all overloads ...
+
+template <adj_list::index_adjacency_list G>
+[[nodiscard]] constexpr auto basic_incidence(G& g, adj_list::vertex_id_t<G> uid) {
+  return basic_out_incidence(g, uid);
+}
+// ... all overloads ...
+
+} // namespace graph::views
+```
+
+#### 5.3 Rename `neighbors.hpp` → `out_neighbors.hpp`
+
+```bash
+git mv include/graph/views/neighbors.hpp include/graph/views/out_neighbors.hpp
+```
+
+Same transformation as step 5.1: rename classes to `out_neighbors_view`,
+`basic_out_neighbors_view`; rename factory functions to `out_neighbors()`,
+`basic_out_neighbors()`.
+
+#### 5.4 Create forwarding `neighbors.hpp`
+
+Same pattern as step 5.2 — include `out_neighbors.hpp`, add alias
+class templates and factory functions.
+
+#### 5.5 Create `include/graph/views/in_incidence.hpp`
+
+Copy `out_incidence.hpp` and make these changes:
+
+- Rename all classes: `out_incidence_view` → `in_incidence_view`,
+  `basic_out_incidence_view` → `basic_in_incidence_view`.
+- Change edge iteration from `out_edges(g, u)` to `in_edges(g, u)`.
 - Change neighbor ID extraction from `target_id(g, e)` to `source_id(g, e)`.
-- Change `edge_t<G>` references to `in_edge_t<G>`.
+- Change `out_edge_t<G>` references to `in_edge_t<G>`.
 - Change concept constraint from `adjacency_list` to `bidirectional_adjacency_list`.
 - Update all doxygen comments.
 - Update the `edge_info` yield: `{sid, uv}` / `{sid, uv, val}` / `{sid}` / `{sid, val}`.
+- Factory functions: `in_incidence(g, u)`, `in_incidence(g, u, evf)`,
+  `in_incidence(g, uid)`, `in_incidence(g, uid, evf)`,
+  `basic_in_incidence(g, uid)`, `basic_in_incidence(g, uid, evf)`.
 
-#### 5.2 Create `include/graph/views/in_neighbors.hpp`
+#### 5.6 Create `include/graph/views/in_neighbors.hpp`
 
-Copy `neighbors.hpp` and apply the same transformation:
+Copy `out_neighbors.hpp` and apply the same transformation:
 
-- Rename: `neighbors_view` → `in_neighbors_view`.
-- Iterate `in_edges` instead of `edges`.
+- Rename: `out_neighbors_view` → `in_neighbors_view`, etc.
+- Iterate `in_edges` instead of `out_edges`.
 - Extract `source_id` instead of `target_id`.
 - Retrieve source vertex via `source(g, e)` instead of `target(g, e)`.
 - Constrain with `bidirectional_adjacency_list`.
+- Factory functions: `in_neighbors(g, u)`, etc.
 
-#### 5.3 Add outgoing view aliases
-
-At the bottom of `in_incidence.hpp`:
-
-```cpp
-namespace graph::views {
-  inline constexpr auto& out_incidence       = incidence;
-  inline constexpr auto& basic_out_incidence = basic_incidence;
-}
-```
-
-At the bottom of `in_neighbors.hpp`:
-
-```cpp
-namespace graph::views {
-  inline constexpr auto& out_neighbors       = neighbors;
-  inline constexpr auto& basic_out_neighbors = basic_neighbors;
-}
-```
-
-#### 5.4 Update `graph.hpp`
+#### 5.7 Update `graph.hpp`
 
 Add includes:
 
@@ -605,38 +676,46 @@ Add includes:
 #include <graph/views/in_neighbors.hpp>
 ```
 
-#### 5.5 Create test files
+The existing `#include <graph/views/incidence.hpp>` and
+`#include <graph/views/neighbors.hpp>` still work because those are now
+thin forwarding headers.
+
+#### 5.8 Create test files
 
 **`test_in_incidence.cpp`** — mirror `test_incidence.cpp`:
-- Use undirected_adjacency_list (from Phase 4) as the bidirectional graph.
+- Use `undirected_adjacency_list` (from Phase 4) as the bidirectional graph.
 - Verify `in_incidence(g, u)` yields `{source_id, edge}` tuples.
 - Verify `in_incidence(g, u, evf)` yields `{source_id, edge, value}`.
 - Verify `basic_in_incidence(g, uid)` yields `{source_id}`.
 - Verify factory function overloads (descriptor and ID).
-- Verify `out_incidence` alias is the same as `incidence`.
+- Verify `incidence` alias resolves to `out_incidence`.
+- Verify `out_incidence` alias identity
+  (`&out_incidence_view == &incidence_view` via `static_assert`).
 
 **`test_in_neighbors.cpp`** — mirror `test_neighbors.cpp`:
 - Verify `in_neighbors(g, u)` yields `{source_id, vertex}` tuples.
 - Verify `basic_in_neighbors(g, uid)` yields `{source_id}`.
-- Verify `out_neighbors` alias.
+- Verify `neighbors` alias resolves to `out_neighbors`.
 
-#### 5.6 Register tests and build
+#### 5.9 Register tests and build
 
 ### Merge gate
 
-- [ ] Full test suite passes.
+- [ ] Full test suite passes (zero regressions — forwarding headers
+      ensure existing `#include <graph/views/incidence.hpp>` still works).
 - [ ] `in_incidence_view` iterates incoming edges, yields `source_id`.
 - [ ] `in_neighbors_view` iterates source vertices.
 - [ ] All factory function overloads work.
-- [ ] Outgoing aliases are identity references.
+- [ ] `incidence` / `neighbors` aliases resolve to `out_incidence` /
+      `out_neighbors` (compile-time verified).
 
 ---
 
-## Phase 6 — Pipe-syntax adaptors
+## Phase 6 — Pipe-syntax adaptors (rename + incoming)
 
-**Goal:** Add pipe-syntax closures for `in_incidence`, `in_neighbors`,
-`basic_in_incidence`, `basic_in_neighbors`, and their `out_` aliases
-to `adaptors.hpp`.
+**Goal:** Rename existing adaptor instances to `out_*` primary names with
+`incidence` / `neighbors` as aliases, then add pipe-syntax closures for
+`in_incidence`, `in_neighbors`, `basic_in_incidence`, `basic_in_neighbors`.
 
 **Why sixth:** Adaptors depend on the view headers from Phase 5.
 
@@ -649,9 +728,35 @@ to `adaptors.hpp`.
 
 ### Steps
 
-#### 6.1 Add adaptor closures (adaptors.hpp)
+#### 6.1 Rename existing adaptor instances to `out_*` primary names
 
-For each new view, follow the existing pattern:
+In `adaptors.hpp`, rename the existing instances to use `out_*` as primary,
+keeping the short names as aliases (matching the view rename in Phase 5):
+
+```cpp
+namespace graph::views::adaptors {
+
+// Primary outgoing adaptor instances
+inline constexpr out_incidence_adaptor_fn       out_incidence{};
+inline constexpr basic_out_incidence_adaptor_fn basic_out_incidence{};
+inline constexpr out_neighbors_adaptor_fn       out_neighbors{};
+inline constexpr basic_out_neighbors_adaptor_fn basic_out_neighbors{};
+
+// Convenience aliases (incidence = out_incidence, etc.)
+inline constexpr auto& incidence       = out_incidence;
+inline constexpr auto& basic_incidence = basic_out_incidence;
+inline constexpr auto& neighbors       = out_neighbors;
+inline constexpr auto& basic_neighbors = basic_out_neighbors;
+
+} // namespace graph::views::adaptors
+```
+
+This also requires renaming the adaptor closure and fn classes:
+`incidence_adaptor_fn` → `out_incidence_adaptor_fn`, etc.
+
+#### 6.2 Add incoming adaptor closures (adaptors.hpp)
+
+For each new incoming view, follow the existing pattern:
 
 1. `in_incidence_adaptor_closure<UID, EVF>` — holds `uid` and optional `evf`.
    `operator|(G&& g, closure)` calls `graph::views::in_incidence(g, uid)` or
@@ -662,15 +767,7 @@ For each new view, follow the existing pattern:
 
 3. Same for `basic_in_incidence`, `in_neighbors`, `basic_in_neighbors`.
 
-4. Outgoing aliases:
-   ```cpp
-   inline constexpr auto& out_incidence       = incidence;
-   inline constexpr auto& basic_out_incidence = basic_incidence;
-   inline constexpr auto& out_neighbors       = neighbors;
-   inline constexpr auto& basic_out_neighbors = basic_neighbors;
-   ```
-
-Add to the adaptor namespace block at the bottom:
+Add to the adaptor namespace block:
 
 ```cpp
 inline constexpr in_incidence_adaptor_fn       in_incidence{};
@@ -679,25 +776,32 @@ inline constexpr in_neighbors_adaptor_fn       in_neighbors{};
 inline constexpr basic_in_neighbors_adaptor_fn basic_in_neighbors{};
 ```
 
-#### 6.2 Add tests to `test_adaptors.cpp`
+#### 6.3 Add tests to `test_adaptors.cpp`
 
 Append new test cases:
 
 ```cpp
+TEST_CASE("pipe: g | out_incidence(uid)", "[adaptors][out_incidence]") { ... }
+TEST_CASE("pipe: g | out_incidence(uid, evf)", "[adaptors][out_incidence]") { ... }
 TEST_CASE("pipe: g | in_incidence(uid)", "[adaptors][in_incidence]") { ... }
 TEST_CASE("pipe: g | in_incidence(uid, evf)", "[adaptors][in_incidence]") { ... }
 TEST_CASE("pipe: g | basic_in_incidence(uid)", "[adaptors][basic_in_incidence]") { ... }
 TEST_CASE("pipe: g | in_neighbors(uid)", "[adaptors][in_neighbors]") { ... }
 TEST_CASE("pipe: g | basic_in_neighbors(uid)", "[adaptors][in_neighbors]") { ... }
-TEST_CASE("pipe: out_ aliases forward", "[adaptors][aliases]") { ... }
+TEST_CASE("pipe: incidence/neighbors aliases forward", "[adaptors][aliases]") {
+  // Verify incidence == out_incidence, neighbors == out_neighbors
+}
 ```
 
 #### 6.3 Build and run full test suite
 
 ### Merge gate
 
-- [ ] Full test suite passes.
+- [ ] Full test suite passes (zero regressions — alias forwarding ensures
+      existing `incidence`/`neighbors` usage still compiles).
+- [ ] `g | out_incidence(uid)` produces same results as `out_incidence(g, uid)`.
 - [ ] `g | in_incidence(uid)` produces same results as `in_incidence(g, uid)`.
+- [ ] `incidence` / `neighbors` aliases resolve to `out_incidence` / `out_neighbors`.
 - [ ] All 8 pipe expressions from design doc §8.4 work.
 
 ---
@@ -1035,8 +1139,8 @@ Per the table in design doc §13.1 (11 files), plus:
 | 1 | `in_edges`/`in_degree` CPOs + aliases | 1 test | 2 | Core CPOs + type aliases | **Done** |
 | 2 | `find_in_edge`/`contains_in_edge` + traits | 3 tests | 3 | Complete CPO surface | Done |
 | 3 | Concepts + re-exports | 1 test | 2 | `bidirectional_adjacency_list` concept | Done |
-| 4 | Undirected container support | 1 test | 1 | First real bidirectional container | Not started |
-| 5 | `in_incidence`/`in_neighbors` views | 2 headers + 2 tests | 1 | Incoming-edge views | Not started |
+| 4 | Undirected container support | 1 test | 1 | First real bidirectional container | **Done** |
+| 5 | Rename views to `out_*` + create `in_*` | 4 headers + 2 fwd + 2 tests | 2 | Primary/alias views + incoming views | Not started |
 | 6 | Pipe-syntax adaptors | — | 2 | `g \| in_incidence(uid)` | Not started |
 | 7 | BFS/DFS/topo EdgeAccessor | 1 header + 1 test | 3 | Reverse traversal | Not started |
 | 8 | `dynamic_graph` bidirectional | 1 test | 1 | Directed bidirectional container | Not started |
