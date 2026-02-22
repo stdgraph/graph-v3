@@ -65,6 +65,10 @@ existing CPOs. These are convenience only — not required:
 These are defined as inline constexpr CPO aliases or thin wrapper functions in
 `graph::adj_list` and re-exported to `graph::`.
 
+> **Design decision (2026-02-21):** These aliases are **retained**. See
+> [Appendix D](#appendix-d-out_-alias-retention-decision) for the full trade-off
+> analysis.
+
 ### 3.3 New incoming names
 
 | New Name | Meaning |
@@ -631,3 +635,48 @@ on incoming edges — not `edge_value()`. This means:
 - Algorithms that need edge properties on incoming edges (rare) can add their own
   `requires edge_value(g, in_edge_t<G>{})` constraint.
 - The undirected case (`in_edge_t<G> == edge_t<G>`) is the zero-cost happy path.
+
+## Appendix D: `out_` Alias Retention Decision
+
+**Date:** 2026-02-21
+
+### Question
+
+Should the library provide `out_edges`, `out_degree`, `find_out_edge`,
+`out_incidence`, `out_neighbors` (and their `basic_` variants) as aliases for the
+existing outgoing CPOs/views, or should it omit them entirely?
+
+### Arguments for removing the aliases
+
+| # | Argument |
+|---|---|
+| R1 | `edges()` already means "outgoing" and always has — adding `out_edges()` is redundant and inflates the API surface. |
+| R2 | Two spellings for the same operation create ambiguity: users must learn that `out_edges(g, u)` and `edges(g, u)` are identical. |
+| R3 | Aliases clutter autocomplete, documentation tables, and error messages. |
+| R4 | No existing user code ever spells `out_edges()` today, so removing the aliases breaks nobody. |
+| R5 | If a future rename is ever desired (`edges` → `out_edges`), aliases make that rename harder because both names are already established. |
+
+### Arguments for keeping the aliases
+
+| # | Argument |
+|---|---|
+| K1 | **Symmetry with `in_edges`:** When a codebase uses `in_edges()` alongside `edges()`, the lack of an `out_` counterpart is visually jarring. `out_edges` / `in_edges` reads as a matched pair. |
+| K2 | **Self-documenting code:** `out_edges(g, u)` makes directionality explicit at the call site; `edges(g, u)` requires the reader to know the convention. |
+| K3 | **Familiar vocabulary:** Boost.Graph, NetworkX, LEDA, and the P1709 proposal all provide an `out_edges` name. Users migrating from those libraries expect it. |
+| K4 | **Zero runtime cost:** The aliases are `inline constexpr` references to the existing CPO objects — no code duplication, no template bloat, no additional overload resolution. |
+| K5 | **Grep-ability:** Searching a codebase for `out_edges` immediately reveals all outgoing-edge access; searching for `edges` produces false positives from `in_edges`, `num_edges`, `has_edge`, etc. |
+| K6 | **Non-breaking:** Aliases are purely additive. Users who prefer `edges()` continue to use it unchanged. |
+
+### Resolution
+
+**Keep all `out_` aliases** (CPOs and view factory functions) as designed in §3.2,
+§4.3, and §8.3.
+
+The symmetry (K1), self-documentation (K2), and familiarity (K3) benefits outweigh
+the API-surface concern (R1–R3). The aliases are zero-cost (K4) and non-breaking (K6).
+
+To mitigate confusion (R2), documentation will:
+- Note that `out_edges(g, u)` is an alias for `edges(g, u)` wherever it appears.
+- Use `edges()` as the primary spelling in algorithm implementations.
+- Use `out_edges()` in examples that also use `in_edges()`, to keep the pairing
+  visually clear.

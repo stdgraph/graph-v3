@@ -251,7 +251,7 @@ The `docs/user-guide/containers.md` page must include:
 |-----------|---------|------------|----------|
 | `dynamic_graph<EV,VV,GV,VId,Sourced,Traits>` | Traits-configured vertex and edge containers | Mutable | General purpose, flexible container choice |
 | `compressed_graph<EV,VV,GV,VId,EIndex,Alloc>` | CSR (compressed sparse row) | Immutable after construction | Read-only, high-performance, memory-compact |
-| `undirected_adjacency_list<VV,EV,GV,VId,VContainer,Alloc>` | Dual doubly-linked lists per edge | Mutable, O(1) edge removal | Undirected graphs, frequent edge insertion/removal |
+| `undirected_adjacency_list<EV,VV,GV,VId,VContainer,Alloc>` | Dual doubly-linked lists per edge | Mutable, O(1) edge removal | Undirected graphs, frequent edge insertion/removal |
 
 **Full `dynamic_graph` container matrix (26 combinations):**
 

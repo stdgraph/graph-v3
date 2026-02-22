@@ -1562,7 +1562,7 @@ TEST_CASE("erase_edge with iterator range", "[undirected_adjacency_list][edge][e
 
 /*
 TEST_CASE("graph with void vertex value", "[undirected_adjacency_list][void_types]") {
-    undirected_adjacency_list<void, int> g;
+    undirected_adjacency_list<int, void> g;
     g.create_vertex();
     g.create_vertex();
     g.create_edge(0, 1, 100);
@@ -1577,7 +1577,7 @@ TEST_CASE("graph with void vertex value", "[undirected_adjacency_list][void_type
 }
 
 TEST_CASE("graph with void edge value", "[undirected_adjacency_list][void_types]") {
-    undirected_adjacency_list<int, void> g;
+    undirected_adjacency_list<void, int> g;
     g.create_vertex(10);
     g.create_vertex(20);
     g.create_edge(0, 1);

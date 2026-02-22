@@ -362,8 +362,8 @@ for (auto&& u : graph::vertices(g)) {
 #include <graph/container/undirected_adjacency_list.hpp>
 
 namespace graph::container {
-template <typename VV                                        = void,
-          typename EV                                        = void,
+template <typename EV                                        = void,
+          typename VV                                        = void,
           typename GV                                        = void,
           integral VId                                       = uint32_t,
           template <typename V, typename A> class VContainer = std::vector,
@@ -405,15 +405,12 @@ endpoint). Use `edges_size() / 2` for the unique edge count.
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `VV` | `void` | Vertex value type |
 | `EV` | `void` | Edge value type |
+| `VV` | `void` | Vertex value type |
 | `GV` | `void` | Graph value type |
 | `VId` | `uint32_t` | Vertex ID type (integral) |
 | `VContainer` | `std::vector` | Vertex storage container template |
 | `Alloc` | `std::allocator<char>` | Allocator |
-
-> **Note:** The template parameter order is `VV, EV, GV` (vertex-first), which
-> differs from `dynamic_graph` and `compressed_graph` (`EV, VV, GV`).
 
 ---
 
