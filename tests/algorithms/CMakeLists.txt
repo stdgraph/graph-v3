@@ -16,6 +16,7 @@ add_executable(test_algorithms
     test_articulation_points.cpp
     test_biconnected_components.cpp
     test_jaccard.cpp
+    test_scc_bidirectional.cpp
 )
 
 target_link_libraries(test_algorithms

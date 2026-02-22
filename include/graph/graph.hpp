@@ -59,6 +59,7 @@
 #include <graph/views/bfs.hpp>
 #include <graph/views/dfs.hpp>
 #include <graph/views/topological_sort.hpp>
+#include <graph/views/transpose.hpp>
 
 // Graph containers are intentionally NOT included here to avoid heavy dependencies.
 // Include specific container headers directly:

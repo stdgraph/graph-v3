@@ -24,6 +24,7 @@ add_executable(graph3_views_tests
     test_unified_header.cpp
     test_graph_hpp_includes_views.cpp
     test_edge_cases.cpp
+    test_transpose.cpp
 )
 
 target_link_libraries(graph3_views_tests

@@ -1124,39 +1124,38 @@ edge accessor infrastructure (Phase 5/7).
 
 ### Steps
 
-#### 9.1 Add `transpose_view`
+#### 9.1 Add `transpose_view` — Done
 
-A lightweight wrapper that swaps `edges()` ↔ `in_edges()`:
+Created `include/graph/views/transpose.hpp` — zero-cost bidirectional graph
+adaptor that swaps edges↔in_edges, target↔source via ADL friends.
+Documented limitation: CPO tier-1 (`_native_edge_member`) bypasses ADL for
+forward-iterator containers (vol, dol), so transpose_view works correctly
+only for random-access containers (vov, vod, dov, dod, dofl).
 
-```cpp
-template <bidirectional_adjacency_list G>
-class transpose_view {
-  G* g_;
-public:
-  // ADL friends: edges(tv, u) → in_edges(*g_, u)
-  //              in_edges(tv, u) → edges(*g_, u)
-  // Forward all other CPOs to underlying graph
-};
-```
+#### 9.2 Optimize Kosaraju's SCC — Done
 
-#### 9.2 Optimize Kosaraju's SCC
+Added `kosaraju(G&& g, Component& component)` overload constrained on
+`index_bidirectional_adjacency_list`. Uses manual iterative stack-based DFS
+with `in_edges`/`source_id` for the second pass — works with ALL container
+types (no transpose_view needed). Same O(V+E) complexity with lower constant
+factor (no transpose construction).
 
-Add a compile-time branch:
-```cpp
-if constexpr (bidirectional_adjacency_list<G>) {
-  // Use in_edge_accessor for second DFS pass
-} else {
-  // Keep existing edge-rebuild approach
-}
-```
+#### 9.3 Create tests and build — Done
 
-#### 9.3 Create tests and build
+- `tests/views/test_transpose.cpp` — 9 test cases, 14 assertions
+  (vertex forwarding, edge swap, degree swap, double-transpose, edge_value,
+  empty graph, single vertex)
+- `tests/algorithms/test_scc_bidirectional.cpp` — 14 test cases, 68 assertions
+  (single vertex, cycle, two SCCs, DAG, complex, self-loops, weighted,
+  disconnected, agreement with two-graph overload — tested on both vov and vol)
+- Updated `graph.hpp` to include `transpose.hpp`
+- 4405/4405 tests pass on GCC-15 and Clang
 
 ### Merge gate
 
-- [ ] Full test suite passes.
-- [ ] SCC produces correct results on bidirectional graph.
-- [ ] `transpose_view` swaps edge directions correctly.
+- [x] Full test suite passes (4405/4405 on GCC-15 and Clang).
+- [x] SCC produces correct results on bidirectional graph (vov + vol).
+- [x] `transpose_view` swaps edge directions correctly (vov).
 
 ---
 
@@ -1217,7 +1216,7 @@ Per the table in design doc §13.1 (11 files), plus:
 | 6 | Pipe-syntax adaptors | — | 2 | `g \| in_incidence(uid)` | Not started |
 | 7 | BFS/DFS/topo Accessor | 1 test | 3 | Reverse traversal (reuses Phase 5 accessor) | Not started |
 | 8 | `dynamic_graph` bidirectional | 1 test | 1 | Directed bidirectional container | **Done** |
-| 9 | Algorithms | 2 headers + 2 tests | 1 | Kosaraju + transpose | Not started |
+| 9 | Algorithms | 2 headers + 2 tests | 1 | Kosaraju + transpose | **Done** |
 | 10 | Documentation | 1 guide | 12 | Complete docs | Not started |
 
 **Total estimated effort:** 11-15 days (same as design doc estimate)
