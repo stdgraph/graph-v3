@@ -184,7 +184,7 @@ public:
 
     [[nodiscard]] constexpr value_type operator*() const noexcept {
       auto nbr    = Accessor{}.neighbor(*g_, current_edge_);
-      auto nbr_id = Accessor{}.neighbor_id(*g_, current_edge_);
+      auto nbr_id = static_cast<vertex_id_type>(Accessor{}.neighbor_id(*g_, current_edge_));
       return value_type{nbr_id, nbr};
     }
 
@@ -298,7 +298,7 @@ public:
 
     [[nodiscard]] constexpr value_type operator*() const {
       auto nbr    = Accessor{}.neighbor(*g_, current_edge_);
-      auto nbr_id = Accessor{}.neighbor_id(*g_, current_edge_);
+      auto nbr_id = static_cast<vertex_id_type>(Accessor{}.neighbor_id(*g_, current_edge_));
       return value_type{nbr_id, nbr, std::invoke(*vvf_, std::as_const(*g_), nbr)};
     }
 

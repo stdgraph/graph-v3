@@ -62,16 +62,16 @@ namespace graph::views {
 struct out_edge_accessor {
   /// Edge range type for a graph @c G.
   template <class G>
-  using edge_range_t = adj_list::vertex_edge_range_t<G>;
+  using edge_range_t = adj_list::out_edge_range_t<G>;
 
   /// Edge descriptor type for a graph @c G.
   template <class G>
-  using edge_t = adj_list::edge_t<G>;
+  using edge_t = adj_list::out_edge_t<G>;
 
   /// Return the outgoing edge range for vertex @c u.
   template <adj_list::adjacency_list G>
   [[nodiscard]] constexpr auto edges(G& g, adj_list::vertex_t<G> u) const {
-    return adj_list::edges(g, u);
+    return adj_list::out_edges(g, u);
   }
 
   /// Return the neighbor (target) vertex id from edge @c e.
