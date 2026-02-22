@@ -112,7 +112,7 @@ Vertices: 4
 ### Using `dynamic_graph`
 
 For richer features — edge values, flexible container selection, partitioning —
-use `dynamic_graph` with one of the 26 trait combinations.
+use `dynamic_graph` with one of the 27 trait combinations.
 
 ```cpp
 #include <graph/container/dynamic_graph.hpp>

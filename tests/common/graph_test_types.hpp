@@ -50,8 +50,10 @@
 #include <graph/container/traits/uod_graph_traits.hpp>
 #include <graph/container/traits/uofl_graph_traits.hpp>
 // Edge multiset containers (sorted edges with duplicates allowed)
-#include <graph/container/traits/voem_graph_traits.hpp>
-#include <graph/container/traits/moem_graph_traits.hpp>
+#include <graph/container/traits/vom_graph_traits.hpp>
+#include <graph/container/traits/mom_graph_traits.hpp>
+// Edge unordered_map containers (hash-based, deduplicated by target_id)
+#include <graph/container/traits/voum_graph_traits.hpp>
 #include <string>
 namespace graph::test {
 
@@ -349,22 +351,33 @@ struct uofl_tag {
  * @brief Tag for vector<vertex> + map<edge> container type
  * @note Edges are sorted by target_id (map key), deduplicated (only one edge per target)
  */
-struct voem_tag {
-  static constexpr const char* name = "voem";
+struct vom_tag {
+  static constexpr const char* name = "vom";
 
   template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::voem_graph_traits<EV, VV, GV, VId, Sourced>;
+  using traits = graph::container::vom_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 /**
  * @brief Tag for map<vertex> + map<edge> container type
  * @note Vertices are sparse, edges are sorted by target_id (map key), deduplicated
  */
-struct moem_tag {
-  static constexpr const char* name = "moem";
+struct mom_tag {
+  static constexpr const char* name = "mom";
 
   template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::moem_graph_traits<EV, VV, GV, VId, Sourced>;
+  using traits = graph::container::mom_graph_traits<EV, VV, GV, VId, Sourced>;
+};
+
+/**
+ * @brief Tag for vector<vertex> + unordered_map<edge> container type
+ * @note Edges are hash-based, deduplicated (only one edge per target), unordered
+ */
+struct voum_tag {
+  static constexpr const char* name = "voum";
+
+  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
+  using traits = graph::container::voum_graph_traits<EV, VV, GV, VId, Sourced>;
 };
 
 // =============================================================================

@@ -15,7 +15,7 @@ class dynamic_vertex;
 template <class EV, class VV, class GV, class VId, bool Sourced, class Traits>
 class dynamic_graph;
 
-// voem_graph_traits
+// vom_graph_traits
 //  Vertices: std::vector (contiguous; random access by vertex ID)
 //  Edges:    std::map<VId, edge_type> (ordered map keyed by target vertex ID)
 //
@@ -34,16 +34,16 @@ class dynamic_graph;
 //
 //  Parameter semantics mirror vofl_graph_traits.
 template <class EV = void, class VV = void, class GV = void, class VId = uint32_t, bool Sourced = false>
-struct voem_graph_traits {
+struct vom_graph_traits {
   using edge_value_type         = EV;
   using vertex_value_type       = VV;
   using graph_value_type        = GV;
   using vertex_id_type          = VId;
   static constexpr bool sourced = Sourced;
 
-  using edge_type   = dynamic_edge<EV, VV, GV, VId, Sourced, voem_graph_traits>;
-  using vertex_type = dynamic_vertex<EV, VV, GV, VId, Sourced, voem_graph_traits>;
-  using graph_type  = dynamic_graph<EV, VV, GV, VId, Sourced, voem_graph_traits>;
+  using edge_type   = dynamic_edge<EV, VV, GV, VId, Sourced, vom_graph_traits>;
+  using vertex_type = dynamic_vertex<EV, VV, GV, VId, Sourced, vom_graph_traits>;
+  using graph_type  = dynamic_graph<EV, VV, GV, VId, Sourced, vom_graph_traits>;
 
   using vertices_type = std::vector<vertex_type>;
   using edges_type    = std::map<VId, edge_type>; // Map keyed by target vertex ID

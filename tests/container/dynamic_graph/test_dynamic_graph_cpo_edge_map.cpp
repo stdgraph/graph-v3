@@ -1,12 +1,12 @@
 /**
  * @file test_dynamic_graph_cpo_edge_map.cpp
- * @brief Consolidated CPO tests for edge map containers (voem, moem)
+ * @brief Consolidated CPO tests for edge map containers (vom, mom, voum)
  * 
- * Edge map containers use std::map for edge storage (keyed by target_id):
- * - Edges are sorted by target_id
+ * Edge map containers use std::map or std::unordered_map for edge storage (keyed by target_id):
  * - Edges are DEDUPLICATED (only one edge per target vertex - no parallel edges)
- * - voem: vector vertices (resize_vertices), map edges
- * - moem: map vertices (sparse, on-demand), map edges
+ * - vom: vector vertices (resize_vertices), map edges (sorted by target_id)
+ * - mom: map vertices (sparse, on-demand), map edges (sorted by target_id)
+ * - voum: vector vertices (resize_vertices), unordered_map edges (hash-based, unordered)
  * 
  * Tests are adapted to handle both vertex container semantics.
  */
@@ -26,7 +26,11 @@ using namespace graph::test;
 
 // Helper to check if a tag uses map-based vertices (sparse)
 template <typename Tag>
-constexpr bool is_map_based_v = std::is_same_v<Tag, moem_tag>;
+constexpr bool is_map_based_v = std::is_same_v<Tag, mom_tag>;
+
+// Helper to check if a tag uses unordered edge containers (no sorted order guarantee)
+template <typename Tag>
+constexpr bool is_unordered_edges_v = std::is_same_v<Tag, voum_tag>;
 
 // Helper type for edges
 using edge_void = copyable_edge_t<uint32_t, void>;
@@ -36,7 +40,7 @@ using edge_int  = copyable_edge_t<uint32_t, int>;
 // 1. vertices(g) CPO Tests
 //==================================================================================================
 
-TEMPLATE_TEST_CASE("edge_map CPO vertices(g)", "[dynamic_graph][cpo][vertices][edge_map]", voem_tag, moem_tag) {
+TEMPLATE_TEST_CASE("edge_map CPO vertices(g)", "[dynamic_graph][cpo][vertices][edge_map]", vom_tag, mom_tag, voum_tag) {
   using Types        = graph_test_types<TestType>;
   using Graph_void   = typename Types::void_type;
   using Graph_int_ev = typename Types::int_ev;
@@ -94,7 +98,7 @@ TEMPLATE_TEST_CASE("edge_map CPO vertices(g)", "[dynamic_graph][cpo][vertices][e
 // 2. num_vertices(g) CPO Tests
 //==================================================================================================
 
-TEMPLATE_TEST_CASE("edge_map CPO num_vertices(g)", "[dynamic_graph][cpo][num_vertices][edge_map]", voem_tag, moem_tag) {
+TEMPLATE_TEST_CASE("edge_map CPO num_vertices(g)", "[dynamic_graph][cpo][num_vertices][edge_map]", vom_tag, mom_tag, voum_tag) {
   using Types        = graph_test_types<TestType>;
   using Graph_void   = typename Types::void_type;
   using Graph_int_ev = typename Types::int_ev;
@@ -164,8 +168,9 @@ TEMPLATE_TEST_CASE("edge_map CPO num_vertices(g)", "[dynamic_graph][cpo][num_ver
 
 TEMPLATE_TEST_CASE("edge_map CPO find_vertex(g, uid)",
                    "[dynamic_graph][cpo][find_vertex][edge_map]",
-                   voem_tag,
-                   moem_tag) {
+                   vom_tag,
+                   mom_tag,
+                   voum_tag) {
   using Types        = graph_test_types<TestType>;
   using Graph_void   = typename Types::void_type;
   using Graph_int_ev = typename Types::int_ev;
@@ -243,7 +248,7 @@ TEMPLATE_TEST_CASE("edge_map CPO find_vertex(g, uid)",
 // 4. vertex_id(g, u) CPO Tests
 //==================================================================================================
 
-TEMPLATE_TEST_CASE("edge_map CPO vertex_id(g, u)", "[dynamic_graph][cpo][vertex_id][edge_map]", voem_tag, moem_tag) {
+TEMPLATE_TEST_CASE("edge_map CPO vertex_id(g, u)", "[dynamic_graph][cpo][vertex_id][edge_map]", vom_tag, mom_tag, voum_tag) {
   using Types        = graph_test_types<TestType>;
   using Graph_void   = typename Types::void_type;
   using Graph_int_ev = typename Types::int_ev;
@@ -321,7 +326,7 @@ TEMPLATE_TEST_CASE("edge_map CPO vertex_id(g, u)", "[dynamic_graph][cpo][vertex_
 // 5. num_edges(g) CPO Tests
 //==================================================================================================
 
-TEMPLATE_TEST_CASE("edge_map CPO num_edges(g)", "[dynamic_graph][cpo][num_edges][edge_map]", voem_tag, moem_tag) {
+TEMPLATE_TEST_CASE("edge_map CPO num_edges(g)", "[dynamic_graph][cpo][num_edges][edge_map]", vom_tag, mom_tag, voum_tag) {
   using Types        = graph_test_types<TestType>;
   using Graph_void   = typename Types::void_type;
   using Graph_int_ev = typename Types::int_ev;
@@ -395,7 +400,7 @@ TEMPLATE_TEST_CASE("edge_map CPO num_edges(g)", "[dynamic_graph][cpo][num_edges]
 // 6. has_edge(g) CPO Tests
 //==================================================================================================
 
-TEMPLATE_TEST_CASE("edge_map CPO has_edge(g)", "[dynamic_graph][cpo][has_edge][edge_map]", voem_tag, moem_tag) {
+TEMPLATE_TEST_CASE("edge_map CPO has_edge(g)", "[dynamic_graph][cpo][has_edge][edge_map]", vom_tag, mom_tag, voum_tag) {
   using Types        = graph_test_types<TestType>;
   using Graph_void   = typename Types::void_type;
   using Graph_int_ev = typename Types::int_ev;
@@ -450,7 +455,7 @@ TEMPLATE_TEST_CASE("edge_map CPO has_edge(g)", "[dynamic_graph][cpo][has_edge][e
 // 7. edges(g, u) CPO Tests
 //==================================================================================================
 
-TEMPLATE_TEST_CASE("edge_map CPO edges(g, u)", "[dynamic_graph][cpo][edges][edge_map]", voem_tag, moem_tag) {
+TEMPLATE_TEST_CASE("edge_map CPO edges(g, u)", "[dynamic_graph][cpo][edges][edge_map]", vom_tag, mom_tag, voum_tag) {
   using Types        = graph_test_types<TestType>;
   using Graph_void   = typename Types::void_type;
   using Graph_int_ev = typename Types::int_ev;
@@ -473,8 +478,10 @@ TEMPLATE_TEST_CASE("edge_map CPO edges(g, u)", "[dynamic_graph][cpo][edges][edge
       targets.push_back(target_id(g, uv));
     }
 
-    // Edges are sorted by target_id in multiset
     REQUIRE(targets.size() == 2);
+    if constexpr (is_unordered_edges_v<TestType>) {
+      std::ranges::sort(targets);
+    }
     REQUIRE(targets[0] == 1);
     REQUIRE(targets[1] == 2);
   }
@@ -565,7 +572,7 @@ TEMPLATE_TEST_CASE("edge_map CPO edges(g, u)", "[dynamic_graph][cpo][edges][edge
 // 8. degree(g, u) CPO Tests
 //==================================================================================================
 
-TEMPLATE_TEST_CASE("edge_map CPO degree(g, u)", "[dynamic_graph][cpo][degree][edge_map]", voem_tag, moem_tag) {
+TEMPLATE_TEST_CASE("edge_map CPO degree(g, u)", "[dynamic_graph][cpo][degree][edge_map]", vom_tag, mom_tag, voum_tag) {
   using Types        = graph_test_types<TestType>;
   using Graph_void   = typename Types::void_type;
   using Graph_int_ev = typename Types::int_ev;
@@ -647,7 +654,7 @@ TEMPLATE_TEST_CASE("edge_map CPO degree(g, u)", "[dynamic_graph][cpo][degree][ed
 // 9. target_id(g, uv) CPO Tests
 //==================================================================================================
 
-TEMPLATE_TEST_CASE("edge_map CPO target_id(g, uv)", "[dynamic_graph][cpo][target_id][edge_map]", voem_tag, moem_tag) {
+TEMPLATE_TEST_CASE("edge_map CPO target_id(g, uv)", "[dynamic_graph][cpo][target_id][edge_map]", vom_tag, mom_tag, voum_tag) {
   using Types        = graph_test_types<TestType>;
   using Graph_void   = typename Types::void_type;
   using Graph_int_ev = typename Types::int_ev;
@@ -669,8 +676,10 @@ TEMPLATE_TEST_CASE("edge_map CPO target_id(g, uv)", "[dynamic_graph][cpo][target
       targets.push_back(target_id(g, uv));
     }
 
-    // Map keeps edges sorted by target
     REQUIRE(targets.size() == 2);
+    if constexpr (is_unordered_edges_v<TestType>) {
+      std::ranges::sort(targets);
+    }
     REQUIRE(targets[0] == 1);
     REQUIRE(targets[1] == 2);
   }
@@ -734,7 +743,7 @@ TEMPLATE_TEST_CASE("edge_map CPO target_id(g, uv)", "[dynamic_graph][cpo][target
 // 10. target(g, uv) CPO Tests
 //==================================================================================================
 
-TEMPLATE_TEST_CASE("edge_map CPO target(g, uv)", "[dynamic_graph][cpo][target][edge_map]", voem_tag, moem_tag) {
+TEMPLATE_TEST_CASE("edge_map CPO target(g, uv)", "[dynamic_graph][cpo][target][edge_map]", vom_tag, mom_tag, voum_tag) {
   using Types        = graph_test_types<TestType>;
   using Graph_void   = typename Types::void_type;
   using Graph_int_ev = typename Types::int_ev;
@@ -816,8 +825,9 @@ TEMPLATE_TEST_CASE("edge_map CPO target(g, uv)", "[dynamic_graph][cpo][target][e
 
 TEMPLATE_TEST_CASE("edge_map CPO find_vertex_edge(g, uid, vid)",
                    "[dynamic_graph][cpo][find_vertex_edge][edge_map]",
-                   voem_tag,
-                   moem_tag) {
+                   vom_tag,
+                   mom_tag,
+                   voum_tag) {
   using Types        = graph_test_types<TestType>;
   using Graph_void   = typename Types::void_type;
   using Graph_int_ev = typename Types::int_ev;
@@ -886,8 +896,9 @@ TEMPLATE_TEST_CASE("edge_map CPO find_vertex_edge(g, uid, vid)",
 
 TEMPLATE_TEST_CASE("edge_map CPO contains_edge(g, uid, vid)",
                    "[dynamic_graph][cpo][contains_edge][edge_map]",
-                   voem_tag,
-                   moem_tag) {
+                   vom_tag,
+                   mom_tag,
+                   voum_tag) {
   using Types        = graph_test_types<TestType>;
   using Graph_void   = typename Types::void_type;
   using Graph_int_ev = typename Types::int_ev;
@@ -972,8 +983,9 @@ TEMPLATE_TEST_CASE("edge_map CPO contains_edge(g, uid, vid)",
 
 TEMPLATE_TEST_CASE("edge_map CPO vertex_value(g, u)",
                    "[dynamic_graph][cpo][vertex_value][edge_map]",
-                   voem_tag,
-                   moem_tag) {
+                   vom_tag,
+                   mom_tag,
+                   voum_tag) {
   using Types        = graph_test_types<TestType>;
   using Graph_int_vv = typename Types::int_vv;
 
@@ -1029,7 +1041,7 @@ TEMPLATE_TEST_CASE("edge_map CPO vertex_value(g, u)",
 // 14. edge_value(g, uv) CPO Tests
 //==================================================================================================
 
-TEMPLATE_TEST_CASE("edge_map CPO edge_value(g, uv)", "[dynamic_graph][cpo][edge_value][edge_map]", voem_tag, moem_tag) {
+TEMPLATE_TEST_CASE("edge_map CPO edge_value(g, uv)", "[dynamic_graph][cpo][edge_value][edge_map]", vom_tag, mom_tag, voum_tag) {
   using Types        = graph_test_types<TestType>;
   using Graph_int_ev = typename Types::int_ev;
 
@@ -1099,7 +1111,7 @@ TEMPLATE_TEST_CASE("edge_map CPO edge_value(g, uv)", "[dynamic_graph][cpo][edge_
 // 15. graph_value(g) CPO Tests
 //==================================================================================================
 
-TEMPLATE_TEST_CASE("edge_map CPO graph_value(g)", "[dynamic_graph][cpo][graph_value][edge_map]", voem_tag, moem_tag) {
+TEMPLATE_TEST_CASE("edge_map CPO graph_value(g)", "[dynamic_graph][cpo][graph_value][edge_map]", vom_tag, mom_tag, voum_tag) {
   using Types         = graph_test_types<TestType>;
   using Graph_all_int = typename Types::all_int;
 
@@ -1151,7 +1163,7 @@ TEMPLATE_TEST_CASE("edge_map CPO graph_value(g)", "[dynamic_graph][cpo][graph_va
 // 16. source_id(g, uv) CPO Tests (Sourced=true)
 //==================================================================================================
 
-TEMPLATE_TEST_CASE("edge_map CPO source_id(g, uv)", "[dynamic_graph][cpo][source_id][edge_map]", voem_tag, moem_tag) {
+TEMPLATE_TEST_CASE("edge_map CPO source_id(g, uv)", "[dynamic_graph][cpo][source_id][edge_map]", vom_tag, mom_tag, voum_tag) {
   using Types             = graph_test_types<TestType>;
   using Graph_sourced     = typename Types::sourced_void;
   using Graph_sourced_int = typename Types::sourced_int;
@@ -1228,7 +1240,7 @@ TEMPLATE_TEST_CASE("edge_map CPO source_id(g, uv)", "[dynamic_graph][cpo][source
 // 17. source(g, uv) CPO Tests (Sourced=true)
 //==================================================================================================
 
-TEMPLATE_TEST_CASE("edge_map CPO source(g, uv)", "[dynamic_graph][cpo][source][edge_map]", voem_tag, moem_tag) {
+TEMPLATE_TEST_CASE("edge_map CPO source(g, uv)", "[dynamic_graph][cpo][source][edge_map]", vom_tag, mom_tag, voum_tag) {
   using Types             = graph_test_types<TestType>;
   using Graph_sourced     = typename Types::sourced_void;
   using Graph_sourced_int = typename Types::sourced_int;
@@ -1310,8 +1322,9 @@ TEMPLATE_TEST_CASE("edge_map CPO source(g, uv)", "[dynamic_graph][cpo][source][e
 
 TEMPLATE_TEST_CASE("edge_map CPO partition_id(g, u)",
                    "[dynamic_graph][cpo][partition_id][edge_map]",
-                   voem_tag,
-                   moem_tag) {
+                   vom_tag,
+                   mom_tag,
+                   voum_tag) {
   using Types      = graph_test_types<TestType>;
   using Graph_void = typename Types::void_type;
 
@@ -1353,8 +1366,9 @@ TEMPLATE_TEST_CASE("edge_map CPO partition_id(g, u)",
 
 TEMPLATE_TEST_CASE("edge_map CPO num_partitions(g)",
                    "[dynamic_graph][cpo][num_partitions][edge_map]",
-                   voem_tag,
-                   moem_tag) {
+                   vom_tag,
+                   mom_tag,
+                   voum_tag) {
   using Types      = graph_test_types<TestType>;
   using Graph_void = typename Types::void_type;
 
@@ -1397,8 +1411,9 @@ TEMPLATE_TEST_CASE("edge_map CPO num_partitions(g)",
 
 TEMPLATE_TEST_CASE("edge_map CPO vertices(g, pid)",
                    "[dynamic_graph][cpo][vertices][partition][edge_map]",
-                   voem_tag,
-                   moem_tag) {
+                   vom_tag,
+                   mom_tag,
+                   voum_tag) {
   using Types      = graph_test_types<TestType>;
   using Graph_void = typename Types::void_type;
 
@@ -1454,8 +1469,9 @@ TEMPLATE_TEST_CASE("edge_map CPO vertices(g, pid)",
 
 TEMPLATE_TEST_CASE("edge_map CPO num_vertices(g, pid)",
                    "[dynamic_graph][cpo][num_vertices][partition][edge_map]",
-                   voem_tag,
-                   moem_tag) {
+                   vom_tag,
+                   mom_tag,
+                   voum_tag) {
   using Types      = graph_test_types<TestType>;
   using Graph_void = typename Types::void_type;
 
@@ -1511,8 +1527,9 @@ TEMPLATE_TEST_CASE("edge_map CPO num_vertices(g, pid)",
 
 TEMPLATE_TEST_CASE("edge_map CPO integration: duplicate edges",
                    "[dynamic_graph][cpo][integration][edge_map]",
-                   voem_tag,
-                   moem_tag) {
+                   vom_tag,
+                   mom_tag,
+                   voum_tag) {
   using Types        = graph_test_types<TestType>;
   using Graph_int_ev = typename Types::int_ev;
 
@@ -1569,8 +1586,9 @@ TEMPLATE_TEST_CASE("edge_map CPO integration: duplicate edges",
 
 TEMPLATE_TEST_CASE("edge_map CPO integration: values",
                    "[dynamic_graph][cpo][integration][edge_map]",
-                   voem_tag,
-                   moem_tag) {
+                   vom_tag,
+                   mom_tag,
+                   voum_tag) {
   using Types         = graph_test_types<TestType>;
   using Graph_all_int = typename Types::all_int;
 
@@ -1612,8 +1630,9 @@ TEMPLATE_TEST_CASE("edge_map CPO integration: values",
 
 TEMPLATE_TEST_CASE("edge_map CPO integration: traversal",
                    "[dynamic_graph][cpo][integration][edge_map]",
-                   voem_tag,
-                   moem_tag) {
+                   vom_tag,
+                   mom_tag,
+                   voum_tag) {
   using Types      = graph_test_types<TestType>;
   using Graph_void = typename Types::void_type;
 
@@ -1654,8 +1673,11 @@ TEMPLATE_TEST_CASE("edge_map CPO integration: traversal",
       targets.push_back(target_id(g, uv));
     }
 
-    // Map sorts by target key
+    // Map sorts by target key; unordered_map does not, so sort for comparison
     REQUIRE(targets.size() == 3);
+    if constexpr (is_unordered_edges_v<TestType>) {
+      std::ranges::sort(targets);
+    }
     REQUIRE(targets[0] == 1);
     REQUIRE(targets[1] == 2);
     REQUIRE(targets[2] == 3);

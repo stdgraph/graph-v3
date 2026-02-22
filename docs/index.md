@@ -9,7 +9,7 @@
 - [Getting Started](getting-started.md) — installation, first graph, first algorithm
 - [Adjacency Lists](user-guide/adjacency-lists.md) — range-of-ranges model, concepts, CPOs
 - [Edge Lists](user-guide/edge-lists.md) — flat sourced-edge model, concepts, patterns
-- [Containers](user-guide/containers.md) — `dynamic_graph`, `compressed_graph`, `undirected_adjacency_list`, 26 trait combinations
+- [Containers](user-guide/containers.md) — `dynamic_graph`, `compressed_graph`, `undirected_adjacency_list`, 27 trait combinations
 - [Views](user-guide/views.md) — lazy traversal views (BFS, DFS, topological sort, etc.)
 - [Algorithms](user-guide/algorithms.md) — Dijkstra, Bellman-Ford, MST, connected components, and more
 

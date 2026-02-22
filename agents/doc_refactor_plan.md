@@ -205,7 +205,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
     # View count (exclude infrastructure: view_concepts, adaptors, basic_views, search_base)
     echo "7 views (vertexlist, edgelist, incidence, neighbors, bfs, dfs, topological_sort)"
     # Container count
-    echo "3 containers + 26 trait combinations"
+    echo "3 containers + 27 trait combinations"
     ```
   - **Pass condition:** Numbers recorded; will be used in status artifact (0.6.1).
 
@@ -431,7 +431,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
     1. Title + tagline
     2. Shields.io badges (C++20, BSL-1.0, test count from metrics.md, build status placeholder)
     3. Highlights (7 bullets — header-only, works with your containers, 13 algorithms,
-       7 lazy views, CPOs, 3 containers + 26 combinations, test count)
+       7 lazy views, CPOs, 3 containers + 27 combinations, test count)
     4. Quick example (Dijkstra on vector-of-vectors — extract & modernize from current README
        or `examples/dijkstra_clrs_example.cpp`)
     5. Two ADTs: brief equal-weight description of adjacency lists and edge lists
@@ -591,7 +591,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
     - `include/graph/container/undirected_adjacency_list.hpp` — dual-linked construction using intrusive lists
     - `include/graph/container/container_utility.hpp` — shared utilities
     - `/mnt/d/dev_graph/P1709/D3131_Containers/` - source and latex files in subdirectories for standard library proposal on containers; use container classification table (add more items if applicable)
-    - List all 26 trait files in `include/graph/container/traits/`
+    - List all 27 trait files in `include/graph/container/traits/`
 
 - [x] **3.4.2** `CREATE` `docs/user-guide/containers.md`
   - **Depends:** 3.4.1
@@ -599,7 +599,7 @@ The current header includes 6 non-existent paths. The mapping from broken → re
   - **Action:** Write container guide. Structure per strategy §"Container Documentation
     Requirements" — includes all 3 containers, selection guide, full 26-combination matrix,
     abbreviation conventions, and example usage of `dynamic_graph` with non-default traits.
-  - **Verify:** File mentions all 3 containers with equal depth; 26 trait combinations listed;
+  - **Verify:** File mentions all 3 containers with equal depth; 27 trait combinations listed;
     trait naming convention (`{vertex}o{edge}_graph_traits`) documented.
 
 ### 3.5 Move and update views
@@ -1016,7 +1016,7 @@ This was created in step 2.2.1. Skip if already done.
     - Complete documentation reorganization: user guide, reference, contributor docs
     - New README with badges, compiler table, feature highlights
     - Separated adjacency list and edge list documentation
-    - Full container documentation including 26 dynamic_graph trait combinations
+    - Full container documentation including 27 dynamic_graph trait combinations
     - Consolidated CPO implementation guide (from 3140 lines → ~1500)
     - Created FAQ, migration guide, getting started, and examples pages
     - Fixed algorithms.hpp umbrella header (6 broken includes)

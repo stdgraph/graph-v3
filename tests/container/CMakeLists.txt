@@ -22,8 +22,9 @@ add_executable(graph3_container_tests
     dynamic_graph/test_dynamic_graph_uov.cpp
     dynamic_graph/test_dynamic_graph_uod.cpp
     dynamic_graph/test_dynamic_graph_vos.cpp
-    dynamic_graph/test_dynamic_graph_voem.cpp
-    dynamic_graph/test_dynamic_graph_moem.cpp
+    dynamic_graph/test_dynamic_graph_vom.cpp
+    dynamic_graph/test_dynamic_graph_voum.cpp
+    dynamic_graph/test_dynamic_graph_mom.cpp
     dynamic_graph/test_dynamic_graph_dos.cpp
     dynamic_graph/test_dynamic_graph_mos.cpp
     dynamic_graph/test_dynamic_graph_uos.cpp
@@ -53,7 +54,7 @@ add_executable(graph3_container_tests
     dynamic_graph/test_dynamic_graph_cpo_map_vertices.cpp
     dynamic_graph/test_dynamic_graph_cpo_unordered_map_vertices.cpp
     
-    # dynamic_graph - CPO tests (edge map containers - voem, moem)
+    # dynamic_graph - CPO tests (edge map containers - vom, mom)
     dynamic_graph/test_dynamic_graph_cpo_edge_map.cpp
     
     # undirected_adjacency_list

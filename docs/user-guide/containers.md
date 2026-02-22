@@ -137,9 +137,10 @@ container abbreviation, the letter `o`, edge container abbreviation.
 | `std::list` | Bidirectional | O(1) insertion/removal anywhere. Edges added to the back. | `l` |
 | `std::set` | Bidirectional | Sorted, deduplicated target id | `s` |
 | `std::unordered_set` | Forward | Hash-based, O(1) avg lookup, deduplicated target id| `us` |
-| `std::map` | Bidirectional | Sorted by target_id key, deduplicated target id | `em` |
+| `std::map` | Bidirectional | Sorted by target_id key, deduplicated target id | `m` |
+| `std::unordered_map` | Forward | Hash-based, O(1) avg lookup, deduplicated target id | `um` |
 
-#### Full 26-combination matrix
+#### Full 27-combination matrix
 
 Each trait struct is in `graph::container` and has its own header in
 `include/graph/container/traits/`.
@@ -152,7 +153,8 @@ Each trait struct is in `graph::container` and has its own header in
 | `vol_graph_traits` | `vector` | `list` | `traits/vol_graph_traits.hpp` |
 | `vos_graph_traits` | `vector` | `set` | `traits/vos_graph_traits.hpp` |
 | `vous_graph_traits` | `vector` | `unordered_set` | `traits/vous_graph_traits.hpp` |
-| `voem_graph_traits` | `vector` | `map` | `traits/voem_graph_traits.hpp` |
+| `vom_graph_traits` | `vector` | `map` | `traits/vom_graph_traits.hpp` |
+| `voum_graph_traits` | `vector` | `unordered_map` | `traits/voum_graph_traits.hpp` |
 | `dov_graph_traits` | `deque` | `vector` | `traits/dov_graph_traits.hpp` |
 | `dod_graph_traits` | `deque` | `deque` | `traits/dod_graph_traits.hpp` |
 | `dofl_graph_traits` | `deque` | `forward_list` | `traits/dofl_graph_traits.hpp` |
@@ -165,7 +167,7 @@ Each trait struct is in `graph::container` and has its own header in
 | `mol_graph_traits` | `map` | `list` | `traits/mol_graph_traits.hpp` |
 | `mos_graph_traits` | `map` | `set` | `traits/mos_graph_traits.hpp` |
 | `mous_graph_traits` | `map` | `unordered_set` | `traits/mous_graph_traits.hpp` |
-| `moem_graph_traits` | `map` | `map` | `traits/moem_graph_traits.hpp` |
+| `mom_graph_traits` | `map` | `map` | `traits/mom_graph_traits.hpp` |
 | `uov_graph_traits` | `unordered_map` | `vector` | `traits/uov_graph_traits.hpp` |
 | `uod_graph_traits` | `unordered_map` | `deque` | `traits/uod_graph_traits.hpp` |
 | `uofl_graph_traits` | `unordered_map` | `forward_list` | `traits/uofl_graph_traits.hpp` |
@@ -268,7 +270,7 @@ G g;
 // All CPOs, views, and algorithms work as normal
 ```
 
-> **Tip:** Model your traits struct on one of the 26 built-in traits headers in
+> **Tip:** Model your traits struct on one of the 27 built-in traits headers in
 > `include/graph/container/traits/`. The simplest starting point is
 > `vov_graph_traits.hpp`.
 
@@ -696,7 +698,7 @@ struct), if they are mutable.
 | Memory efficiency | Medium | Best (CSR) | Highest overhead | Zero overhead (existing data) |
 | Cache locality | Depends on trait | Excellent | Poor (linked-list) | Depends on containers used |
 | Multi-partite | No | Yes | No | No |
-| Container flexibility | 26 trait combos | Fixed (CSR) | Configurable random access vertex container | Any forward_range of forward_ranges |
+| Container flexibility | 27 trait combos | Fixed (CSR) | Configurable random access vertex container | Any forward_range of forward_ranges |
 
 **Custom graphs.** See [Section 5 (Custom Graphs)](#5-custom-graphs) for how to use your own
 graph data structure with all library views and algorithms by overriding graph CPOs.

@@ -666,11 +666,11 @@ with both index-based and iterator-based vertex/edge storage:
 
 **Edge Container Types**:
 - `vector<edge>` - Random-access edges
-- `map<VId, EV>` (voem, moem, etc.) - Sorted edges by target, deduplicated
+- `map<VId, EV>` (vom, mom, etc.) - Sorted edges by target, deduplicated
 - `list<edge>` - Forward-only edges
 
 **Test Matrix** (minimum coverage per view):
-| View | vov | mov | voem | moem |
+| View | vov | mov | vom | mom |
 |------|-----|-----|------|------|
 | vertexlist | ✓ | ✓ | ✓ | ✓ |
 | incidence | ✓ | ✓ | ✓ | ✓ |

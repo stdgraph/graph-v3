@@ -82,9 +82,10 @@ Utility header: `container_utility.hpp`.
 | `std::list` | Bidirectional | O(1) insertion/removal anywhere | `l` |
 | `std::set` | Bidirectional | Sorted, deduplicated | `s` |
 | `std::unordered_set` | Forward | Hash-based, O(1) avg lookup | `us` |
-| `std::map` | Bidirectional | Sorted by target_id key | `em` |
+| `std::map` | Bidirectional | Sorted by target_id key | `m` |
+| `std::unordered_map` | Forward | Hash-based, O(1) avg lookup by target_id | `um` |
 
-### All 26 trait files
+### All 27 trait files
 
 Naming convention: `{vertex}o{edge}_graph_traits.hpp`
 
@@ -96,26 +97,27 @@ Naming convention: `{vertex}o{edge}_graph_traits.hpp`
 | 4 | `vol_graph_traits.hpp` | vector | list |
 | 5 | `vos_graph_traits.hpp` | vector | set |
 | 6 | `vous_graph_traits.hpp` | vector | unordered_set |
-| 7 | `voem_graph_traits.hpp` | vector | map |
-| 8 | `dov_graph_traits.hpp` | deque | vector |
-| 9 | `dod_graph_traits.hpp` | deque | deque |
-| 10 | `dofl_graph_traits.hpp` | deque | forward_list |
-| 11 | `dol_graph_traits.hpp` | deque | list |
-| 12 | `dos_graph_traits.hpp` | deque | set |
-| 13 | `dous_graph_traits.hpp` | deque | unordered_set |
-| 14 | `mov_graph_traits.hpp` | map | vector |
-| 15 | `mod_graph_traits.hpp` | map | deque |
-| 16 | `mofl_graph_traits.hpp` | map | forward_list |
-| 17 | `mol_graph_traits.hpp` | map | list |
-| 18 | `mos_graph_traits.hpp` | map | set |
-| 19 | `mous_graph_traits.hpp` | map | unordered_set |
-| 20 | `moem_graph_traits.hpp` | map | map |
-| 21 | `uov_graph_traits.hpp` | unordered_map | vector |
-| 22 | `uod_graph_traits.hpp` | unordered_map | deque |
-| 23 | `uofl_graph_traits.hpp` | unordered_map | forward_list |
-| 24 | `uol_graph_traits.hpp` | unordered_map | list |
-| 25 | `uos_graph_traits.hpp` | unordered_map | set |
-| 26 | `uous_graph_traits.hpp` | unordered_map | unordered_set |
+| 7 | `vom_graph_traits.hpp` | vector | map |
+| 8 | `voum_graph_traits.hpp` | vector | unordered_map |
+| 9 | `dov_graph_traits.hpp` | deque | vector |
+| 10 | `dod_graph_traits.hpp` | deque | deque |
+| 11 | `dofl_graph_traits.hpp` | deque | forward_list |
+| 12 | `dol_graph_traits.hpp` | deque | list |
+| 13 | `dos_graph_traits.hpp` | deque | set |
+| 14 | `dous_graph_traits.hpp` | deque | unordered_set |
+| 15 | `mov_graph_traits.hpp` | map | vector |
+| 16 | `mod_graph_traits.hpp` | map | deque |
+| 17 | `mofl_graph_traits.hpp` | map | forward_list |
+| 18 | `mol_graph_traits.hpp` | map | list |
+| 19 | `mos_graph_traits.hpp` | map | set |
+| 20 | `mous_graph_traits.hpp` | map | unordered_set |
+| 21 | `mom_graph_traits.hpp` | map | map |
+| 22 | `uov_graph_traits.hpp` | unordered_map | vector |
+| 23 | `uod_graph_traits.hpp` | unordered_map | deque |
+| 24 | `uofl_graph_traits.hpp` | unordered_map | forward_list |
+| 25 | `uol_graph_traits.hpp` | unordered_map | list |
+| 26 | `uos_graph_traits.hpp` | unordered_map | set |
+| 27 | `uous_graph_traits.hpp` | unordered_map | unordered_set |
 
 ---
 

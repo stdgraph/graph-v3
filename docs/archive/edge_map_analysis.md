@@ -288,7 +288,7 @@ if constexpr (is_map_based_edge_container<edges_type>) {
 
 ### 4.1 Minimal Viable Changes
 
-**Required for Phase 4.3.2 (voem_graph_traits):**
+**Required for Phase 4.3.2 (vom_graph_traits):**
 
 1. **Add `is_map_based_edge_container` concept** (container_utility.hpp)
    ```cpp
@@ -331,7 +331,7 @@ These can be added later in Phase 4.3:
 
 ### 4.3 Testing Strategy
 
-For `voem_graph_traits` (vector vertices + map edges):
+For `vom_graph_traits` (vector vertices + map edges):
 
 1. **Basic functionality tests:**
    - Edge insertion (automatic target_id keying)
@@ -346,7 +346,7 @@ For `voem_graph_traits` (vector vertices + map edges):
    - `contains_edge(g, uid, vid)` works correctly
 
 3. **Comparison with existing traits:**
-   - voem should behave like vov except:
+   - vom should behave like vov except:
      - No parallel edges (map uniqueness)
      - Edges sorted by target_id
      - O(log n) lookup instead of O(n)
@@ -405,7 +405,7 @@ For `voem_graph_traits` (vector vertices + map edges):
 **Problem:** Map uniqueness means only one edge per target, even if multiple edges should exist.
 
 **Mitigation:**
-- Document this limitation clearly in voem/moem trait headers
+- Document this limitation clearly in vom/mom trait headers
 - For multigraphs, users should use vector/list/set edge containers
 - This is a feature, not a bug: map-based edges are for graphs with unique edges
 
@@ -444,21 +444,21 @@ For typical edge (1-2 VId members): ~8-16 bytes overhead per edge
 - [x] Design edge_descriptor changes for map-based edges
 - [x] Document findings in edge_map_analysis.md
 
-### Phase 4.3.2 (voem_graph_traits) - ⏳ PENDING
+### Phase 4.3.2 (vom_graph_traits) - ⏳ PENDING
 
 - [ ] Add `is_map_based_edge_container` concept to container_utility.hpp
 - [ ] Add `emplace_edge` helper function to container_utility.hpp
 - [ ] Update `edge_descriptor::target_id()` to handle map pair unwrapping
 - [ ] Update `load_edges` functions to use map-aware edge construction
-- [ ] Create voem_graph_traits.hpp
-- [ ] Create test_dynamic_graph_voem.cpp with basic tests
-- [ ] Create test_dynamic_graph_cpo_voem.cpp with CPO tests
+- [ ] Create vom_graph_traits.hpp
+- [ ] Create test_dynamic_graph_vom.cpp with basic tests
+- [ ] Create test_dynamic_graph_cpo_vom.cpp with CPO tests
 - [ ] Verify all tests pass
 
-### Phase 4.3.3 (moem_graph_traits) - ⏳ PENDING
+### Phase 4.3.3 (mom_graph_traits) - ⏳ PENDING
 
-- [ ] Create moem_graph_traits.hpp (reuse voem infrastructure)
-- [ ] Create test files for moem
+- [ ] Create mom_graph_traits.hpp (reuse vom infrastructure)
+- [ ] Create test files for mom
 - [ ] Verify all tests pass
 
 ## 9. Conclusion
@@ -468,13 +468,13 @@ For typical edge (1-2 VId members): ~8-16 bytes overhead per edge
 1. **Container Utility:** Add concept detection and helper for map pair construction
 2. **Edge Descriptor:** Update target_id extraction to unwrap map pairs
 3. **Load Functions:** Add conditional logic for map-based edge insertion
-4. **Trait Headers:** Define new voem/moem traits with `std::map<VId, edge_type>`
+4. **Trait Headers:** Define new vom/mom traits with `std::map<VId, edge_type>`
 
 **Estimated Effort:**
 - Container utility changes: ~50 lines
 - Edge descriptor updates: ~20 lines  
 - Load function updates: ~30 lines per load variant
-- Trait headers: ~40 lines each (voem, moem)
+- Trait headers: ~40 lines each (vom, mom)
 - Test files: ~2000 lines per trait (existing template)
 
 **Total:** ~200 lines of core changes + ~4000 lines of tests for two new traits.
