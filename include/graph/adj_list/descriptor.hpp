@@ -12,6 +12,11 @@
 
 namespace graph::adj_list {
 
+/// @brief Tag type indicating an out-edge (default) descriptor direction
+struct out_edge_tag {};
+/// @brief Tag type indicating an in-edge descriptor direction
+struct in_edge_tag {};
+
 /**
  * @brief Concept to check if a type is pair-like (has at least 2 members accessible via tuple protocol)
  * 

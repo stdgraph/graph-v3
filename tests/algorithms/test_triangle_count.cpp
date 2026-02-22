@@ -16,7 +16,7 @@ using namespace graph;
 using namespace graph::container;
 
 // Graph type with sorted edges (required for triangle_count)
-using vos_void = dynamic_graph<void, void, void, uint32_t, false, vos_graph_traits<void, void, void, uint32_t, false>>;
+using vos_void = dynamic_graph<void, void, void, uint32_t, false, false, vos_graph_traits<void, void, void, uint32_t, false>>;
 
 // Undirected adjacency list (automatically handles bidirectional edges)
 using ual_int = undirected_adjacency_list<int, int>;

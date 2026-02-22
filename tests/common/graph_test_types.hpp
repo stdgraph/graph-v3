@@ -405,34 +405,34 @@ struct graph_test_types {
 
   // Non-sourced configurations
   using void_type = graph::container::
-        dynamic_graph<void, void, void, VId, false, typename Tag::template traits<void, void, void, VId, false>>;
+        dynamic_graph<void, void, void, VId, false, false, typename Tag::template traits<void, void, void, VId, false>>;
 
   using int_ev = graph::container::
-        dynamic_graph<int, void, void, VId, false, typename Tag::template traits<int, void, void, VId, false>>;
+        dynamic_graph<int, void, void, VId, false, false, typename Tag::template traits<int, void, void, VId, false>>;
 
   using int_vv = graph::container::
-        dynamic_graph<void, int, void, VId, false, typename Tag::template traits<void, int, void, VId, false>>;
+        dynamic_graph<void, int, void, VId, false, false, typename Tag::template traits<void, int, void, VId, false>>;
 
   using all_int = graph::container::
-        dynamic_graph<int, int, int, VId, false, typename Tag::template traits<int, int, int, VId, false>>;
+        dynamic_graph<int, int, int, VId, false, false, typename Tag::template traits<int, int, int, VId, false>>;
 
   using string_type = graph::container::dynamic_graph<
         std::string,
         std::string,
         std::string,
         VId,
-        false,
+        false, false,
         typename Tag::template traits<std::string, std::string, std::string, VId, false>>;
 
   // Sourced configurations (for source_id/source CPO tests)
   using sourced_void = graph::container::
-        dynamic_graph<void, void, void, VId, true, typename Tag::template traits<void, void, void, VId, true>>;
+        dynamic_graph<void, void, void, VId, true, false, typename Tag::template traits<void, void, void, VId, true>>;
 
   using sourced_int = graph::container::
-        dynamic_graph<int, void, void, VId, true, typename Tag::template traits<int, void, void, VId, true>>;
+        dynamic_graph<int, void, void, VId, true, false, typename Tag::template traits<int, void, void, VId, true>>;
 
   using sourced_all = graph::container::
-        dynamic_graph<int, int, int, VId, true, typename Tag::template traits<int, int, int, VId, true>>;
+        dynamic_graph<int, int, int, VId, true, false, typename Tag::template traits<int, int, int, VId, true>>;
 
   // Container name for test output
   static constexpr const char* name = Tag::name;

@@ -22,30 +22,29 @@ using namespace graph::container;
 
 // Type aliases for common test configurations
 using vofl_void_void_void =
-      dynamic_graph<void, void, void, uint32_t, false, vofl_graph_traits<void, void, void, uint32_t, false>>;
+      dynamic_graph<void, void, void, uint32_t, false, false, vofl_graph_traits<void, void, void, uint32_t, false>>;
 using vofl_int_void_void =
-      dynamic_graph<int, void, void, uint32_t, false, vofl_graph_traits<int, void, void, uint32_t, false>>;
+      dynamic_graph<int, void, void, uint32_t, false, false, vofl_graph_traits<int, void, void, uint32_t, false>>;
 using vofl_void_int_void =
-      dynamic_graph<void, int, void, uint32_t, false, vofl_graph_traits<void, int, void, uint32_t, false>>;
+      dynamic_graph<void, int, void, uint32_t, false, false, vofl_graph_traits<void, int, void, uint32_t, false>>;
 using vofl_int_int_void =
-      dynamic_graph<int, int, void, uint32_t, false, vofl_graph_traits<int, int, void, uint32_t, false>>;
+      dynamic_graph<int, int, void, uint32_t, false, false, vofl_graph_traits<int, int, void, uint32_t, false>>;
 using vofl_void_void_int =
-      dynamic_graph<void, void, int, uint32_t, false, vofl_graph_traits<void, void, int, uint32_t, false>>;
+      dynamic_graph<void, void, int, uint32_t, false, false, vofl_graph_traits<void, void, int, uint32_t, false>>;
 using vofl_int_int_int =
-      dynamic_graph<int, int, int, uint32_t, false, vofl_graph_traits<int, int, int, uint32_t, false>>;
+      dynamic_graph<int, int, int, uint32_t, false, false, vofl_graph_traits<int, int, int, uint32_t, false>>;
 
 using vofl_string_string_string =
       dynamic_graph<std::string,
                     std::string,
                     std::string,
                     uint32_t,
-                    false,
-                    vofl_graph_traits<std::string, std::string, std::string, uint32_t, false>>;
+                    false, false, vofl_graph_traits<std::string, std::string, std::string, uint32_t, false>>;
 
 using vofl_sourced =
-      dynamic_graph<void, void, void, uint32_t, true, vofl_graph_traits<void, void, void, uint32_t, true>>;
+      dynamic_graph<void, void, void, uint32_t, true, false, vofl_graph_traits<void, void, void, uint32_t, true>>;
 using vofl_int_sourced =
-      dynamic_graph<int, void, void, uint32_t, true, vofl_graph_traits<int, void, void, uint32_t, true>>;
+      dynamic_graph<int, void, void, uint32_t, true, false, vofl_graph_traits<int, void, void, uint32_t, true>>;
 
 //==================================================================================================
 // 1. Construction Tests (40 tests)
@@ -498,19 +497,19 @@ TEST_CASE("vofl edge_cases", "[dynamic_graph][vofl][edge_cases]") {
 
 TEST_CASE("vofl value_types", "[dynamic_graph][vofl][value_types]") {
   SECTION("with void edge value") {
-    using graph_t = dynamic_graph<void, int, int, uint32_t, false, vofl_graph_traits<void, int, int, uint32_t, false>>;
+    using graph_t = dynamic_graph<void, int, int, uint32_t, false, false, vofl_graph_traits<void, int, int, uint32_t, false>>;
     graph_t g(100);
     REQUIRE(g.graph_value() == 100);
   }
 
   SECTION("with void vertex value") {
-    using graph_t = dynamic_graph<int, void, int, uint32_t, false, vofl_graph_traits<int, void, int, uint32_t, false>>;
+    using graph_t = dynamic_graph<int, void, int, uint32_t, false, false, vofl_graph_traits<int, void, int, uint32_t, false>>;
     graph_t g(100);
     REQUIRE(g.graph_value() == 100);
   }
 
   SECTION("with void graph value") {
-    using graph_t = dynamic_graph<int, int, void, uint32_t, false, vofl_graph_traits<int, int, void, uint32_t, false>>;
+    using graph_t = dynamic_graph<int, int, void, uint32_t, false, false, vofl_graph_traits<int, int, void, uint32_t, false>>;
     graph_t g;
     REQUIRE(g.size() == 0);
   }
@@ -541,22 +540,19 @@ TEST_CASE("vofl value_types", "[dynamic_graph][vofl][value_types]") {
   }
 
   SECTION("with string edge value type") {
-    using graph_t = dynamic_graph<std::string, void, void, uint32_t, false,
-                                  vofl_graph_traits<std::string, void, void, uint32_t, false>>;
+    using graph_t = dynamic_graph<std::string, void, void, uint32_t, false, false, vofl_graph_traits<std::string, void, void, uint32_t, false>>;
     graph_t g;
     REQUIRE(g.size() == 0);
   }
 
   SECTION("with string vertex value type") {
-    using graph_t = dynamic_graph<void, std::string, void, uint32_t, false,
-                                  vofl_graph_traits<void, std::string, void, uint32_t, false>>;
+    using graph_t = dynamic_graph<void, std::string, void, uint32_t, false, false, vofl_graph_traits<void, std::string, void, uint32_t, false>>;
     graph_t g;
     REQUIRE(g.size() == 0);
   }
 
   SECTION("with string graph value type") {
-    using graph_t = dynamic_graph<void, void, std::string, uint32_t, false,
-                                  vofl_graph_traits<void, void, std::string, uint32_t, false>>;
+    using graph_t = dynamic_graph<void, void, std::string, uint32_t, false, false, vofl_graph_traits<void, void, std::string, uint32_t, false>>;
     graph_t g(std::string("test"));
     REQUIRE(g.graph_value() == "test");
   }
@@ -574,33 +570,33 @@ TEST_CASE("vofl value_types", "[dynamic_graph][vofl][value_types]") {
 TEST_CASE("vofl vertex_id", "[dynamic_graph][vofl][vertex_id]") {
   SECTION("with uint32_t vertex id") {
     using graph_t =
-          dynamic_graph<void, void, void, uint32_t, false, vofl_graph_traits<void, void, void, uint32_t, false>>;
+          dynamic_graph<void, void, void, uint32_t, false, false, vofl_graph_traits<void, void, void, uint32_t, false>>;
     graph_t g;
     REQUIRE(g.size() == 0);
   }
 
   SECTION("with uint64_t vertex id") {
     using graph_t =
-          dynamic_graph<void, void, void, uint64_t, false, vofl_graph_traits<void, void, void, uint64_t, false>>;
+          dynamic_graph<void, void, void, uint64_t, false, false, vofl_graph_traits<void, void, void, uint64_t, false>>;
     graph_t g;
     REQUIRE(g.size() == 0);
   }
 
   SECTION("with int32_t vertex id") {
     using graph_t =
-          dynamic_graph<void, void, void, int32_t, false, vofl_graph_traits<void, void, void, int32_t, false>>;
+          dynamic_graph<void, void, void, int32_t, false, false, vofl_graph_traits<void, void, void, int32_t, false>>;
     graph_t g;
     REQUIRE(g.size() == 0);
   }
 
   SECTION("with int8_t vertex id") {
-    using graph_t = dynamic_graph<void, void, void, int8_t, false, vofl_graph_traits<void, void, void, int8_t, false>>;
+    using graph_t = dynamic_graph<void, void, void, int8_t, false, false, vofl_graph_traits<void, void, void, int8_t, false>>;
     graph_t g;
     REQUIRE(g.size() == 0);
   }
 
   SECTION("with int vertex id") {
-    using graph_t = dynamic_graph<void, void, void, int, false, vofl_graph_traits<void, void, void, int, false>>;
+    using graph_t = dynamic_graph<void, void, void, int, false, false, vofl_graph_traits<void, void, void, int, false>>;
     graph_t g;
     REQUIRE(g.size() == 0);
   }
@@ -1069,8 +1065,7 @@ TEST_CASE("vofl load_vertices", "[dynamic_graph][vofl][load_vertices]") {
   }
 
   SECTION("custom projection - load with projection from struct") {
-    using G           = dynamic_graph<int, std::string, void, uint32_t, false,
-                                      vofl_graph_traits<int, std::string, void, uint32_t, false>>;
+    using G           = dynamic_graph<int, std::string, void, uint32_t, false, false, vofl_graph_traits<int, std::string, void, uint32_t, false>>;
     using vertex_data = copyable_vertex_t<uint32_t, std::string>;
     struct Person {
       uint32_t    id;
@@ -1215,8 +1210,7 @@ TEST_CASE("vofl load_edges", "[dynamic_graph][vofl][load_edges]") {
   }
 
   SECTION("custom projection - load with projection from custom struct") {
-    using G           = dynamic_graph<std::string, int, void, uint32_t, false,
-                                      vofl_graph_traits<std::string, int, void, uint32_t, false>>;
+    using G           = dynamic_graph<std::string, int, void, uint32_t, false, false, vofl_graph_traits<std::string, int, void, uint32_t, false>>;
     using vertex_data = copyable_vertex_t<uint32_t, int>;
     using edge_data   = copyable_edge_t<uint32_t, std::string>;
     struct Edge {

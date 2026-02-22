@@ -37,33 +37,33 @@ using namespace graph::container;
 
 // Type aliases for common test configurations with uint32_t vertex IDs
 using uod_void_void_void =
-      dynamic_graph<void, void, void, uint32_t, false, uod_graph_traits<void, void, void, uint32_t, false>>;
+      dynamic_graph<void, void, void, uint32_t, false, false, uod_graph_traits<void, void, void, uint32_t, false>>;
 using uod_int_void_void =
-      dynamic_graph<int, void, void, uint32_t, false, uod_graph_traits<int, void, void, uint32_t, false>>;
+      dynamic_graph<int, void, void, uint32_t, false, false, uod_graph_traits<int, void, void, uint32_t, false>>;
 using uod_void_int_void =
-      dynamic_graph<void, int, void, uint32_t, false, uod_graph_traits<void, int, void, uint32_t, false>>;
+      dynamic_graph<void, int, void, uint32_t, false, false, uod_graph_traits<void, int, void, uint32_t, false>>;
 using uod_int_int_void =
-      dynamic_graph<int, int, void, uint32_t, false, uod_graph_traits<int, int, void, uint32_t, false>>;
+      dynamic_graph<int, int, void, uint32_t, false, false, uod_graph_traits<int, int, void, uint32_t, false>>;
 using uod_void_void_int =
-      dynamic_graph<void, void, int, uint32_t, false, uod_graph_traits<void, void, int, uint32_t, false>>;
-using uod_int_int_int = dynamic_graph<int, int, int, uint32_t, false, uod_graph_traits<int, int, int, uint32_t, false>>;
+      dynamic_graph<void, void, int, uint32_t, false, false, uod_graph_traits<void, void, int, uint32_t, false>>;
+using uod_int_int_int = dynamic_graph<int, int, int, uint32_t, false, false, uod_graph_traits<int, int, int, uint32_t, false>>;
 
 // Type aliases with string vertex IDs (a common use case for unordered_map containers)
 using uod_str_void_void_void =
-      dynamic_graph<void, void, void, std::string, false, uod_graph_traits<void, void, void, std::string, false>>;
+      dynamic_graph<void, void, void, std::string, false, false, uod_graph_traits<void, void, void, std::string, false>>;
 using uod_str_int_void_void =
-      dynamic_graph<int, void, void, std::string, false, uod_graph_traits<int, void, void, std::string, false>>;
+      dynamic_graph<int, void, void, std::string, false, false, uod_graph_traits<int, void, void, std::string, false>>;
 using uod_str_void_int_void =
-      dynamic_graph<void, int, void, std::string, false, uod_graph_traits<void, int, void, std::string, false>>;
+      dynamic_graph<void, int, void, std::string, false, false, uod_graph_traits<void, int, void, std::string, false>>;
 using uod_str_int_int_int =
-      dynamic_graph<int, int, int, std::string, false, uod_graph_traits<int, int, int, std::string, false>>;
+      dynamic_graph<int, int, int, std::string, false, false, uod_graph_traits<int, int, int, std::string, false>>;
 
-using uod_sourced = dynamic_graph<void, void, void, uint32_t, true, uod_graph_traits<void, void, void, uint32_t, true>>;
+using uod_sourced = dynamic_graph<void, void, void, uint32_t, true, false, uod_graph_traits<void, void, void, uint32_t, true>>;
 using uod_int_sourced =
-      dynamic_graph<int, void, void, uint32_t, true, uod_graph_traits<int, void, void, uint32_t, true>>;
+      dynamic_graph<int, void, void, uint32_t, true, false, uod_graph_traits<int, void, void, uint32_t, true>>;
 
 using uod_str_sourced =
-      dynamic_graph<void, void, void, std::string, true, uod_graph_traits<void, void, void, std::string, true>>;
+      dynamic_graph<void, void, void, std::string, true, false, uod_graph_traits<void, void, void, std::string, true>>;
 
 //==================================================================================================
 // 1. Traits Verification Tests

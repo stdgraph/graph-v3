@@ -59,28 +59,28 @@ struct std::hash<PersonId> {
 
 // String ID graphs (ordered and unordered)
 using mos_string =
-      dynamic_graph<void, void, void, std::string, false, mos_graph_traits<void, void, void, std::string, false>>;
+      dynamic_graph<void, void, void, std::string, false, false, mos_graph_traits<void, void, void, std::string, false>>;
 using mous_string =
-      dynamic_graph<void, void, void, std::string, false, mous_graph_traits<void, void, void, std::string, false>>;
+      dynamic_graph<void, void, void, std::string, false, false, mous_graph_traits<void, void, void, std::string, false>>;
 using mos_string_ev =
-      dynamic_graph<int, void, void, std::string, false, mos_graph_traits<int, void, void, std::string, false>>;
+      dynamic_graph<int, void, void, std::string, false, false, mos_graph_traits<int, void, void, std::string, false>>;
 using mos_string_sourced =
-      dynamic_graph<void, void, void, std::string, true, mos_graph_traits<void, void, void, std::string, true>>;
+      dynamic_graph<void, void, void, std::string, true, false, mos_graph_traits<void, void, void, std::string, true>>;
 
 // Double ID graphs
-using mos_double  = dynamic_graph<void, void, void, double, false, mos_graph_traits<void, void, void, double, false>>;
-using mous_double = dynamic_graph<void, void, void, double, false, mous_graph_traits<void, void, void, double, false>>;
-using mos_double_ev = dynamic_graph<int, void, void, double, false, mos_graph_traits<int, void, void, double, false>>;
+using mos_double  = dynamic_graph<void, void, void, double, false, false, mos_graph_traits<void, void, void, double, false>>;
+using mous_double = dynamic_graph<void, void, void, double, false, false, mous_graph_traits<void, void, void, double, false>>;
+using mos_double_ev = dynamic_graph<int, void, void, double, false, false, mos_graph_traits<int, void, void, double, false>>;
 using mos_double_sourced =
-      dynamic_graph<void, void, void, double, true, mos_graph_traits<void, void, void, double, true>>;
+      dynamic_graph<void, void, void, double, true, false, mos_graph_traits<void, void, void, double, true>>;
 
 // PersonId (compound type) graphs
 using mos_person =
-      dynamic_graph<void, void, void, PersonId, false, mos_graph_traits<void, void, void, PersonId, false>>;
+      dynamic_graph<void, void, void, PersonId, false, false, mos_graph_traits<void, void, void, PersonId, false>>;
 using mous_person =
-      dynamic_graph<void, void, void, PersonId, false, mous_graph_traits<void, void, void, PersonId, false>>;
+      dynamic_graph<void, void, void, PersonId, false, false, mous_graph_traits<void, void, void, PersonId, false>>;
 using mos_person_ev =
-      dynamic_graph<int, void, void, PersonId, false, mos_graph_traits<int, void, void, PersonId, false>>;
+      dynamic_graph<int, void, void, PersonId, false, false, mos_graph_traits<int, void, void, PersonId, false>>;
 
 // Helper to count edges
 template <typename G>

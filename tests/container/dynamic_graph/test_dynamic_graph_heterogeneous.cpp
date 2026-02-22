@@ -13,14 +13,14 @@ using namespace graph::adj_list;
 using namespace graph::container;
 
 // Type aliases for different graph types
-using vov_uint = dynamic_graph<void, void, void, uint64_t, false, vov_graph_traits<void, void, void, uint64_t, false>>;
+using vov_uint = dynamic_graph<void, void, void, uint64_t, false, false, vov_graph_traits<void, void, void, uint64_t, false>>;
 
 using mos_string =
-      dynamic_graph<void, void, void, std::string, false, mos_graph_traits<void, void, void, std::string, false>>;
+      dynamic_graph<void, void, void, std::string, false, false, mos_graph_traits<void, void, void, std::string, false>>;
 
-using dofl_int = dynamic_graph<void, void, void, int, false, dofl_graph_traits<void, void, void, int, false>>;
+using dofl_int = dynamic_graph<void, void, void, int, false, false, dofl_graph_traits<void, void, void, int, false>>;
 
-using dov_uint = dynamic_graph<void, void, void, uint64_t, false, dov_graph_traits<void, void, void, uint64_t, false>>;
+using dov_uint = dynamic_graph<void, void, void, uint64_t, false, false, dov_graph_traits<void, void, void, uint64_t, false>>;
 
 // Type alias for graph containers
 using copyable_edge_uint     = copyable_edge_t<uint64_t, void>;

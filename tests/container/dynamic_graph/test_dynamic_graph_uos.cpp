@@ -32,33 +32,33 @@ using namespace graph::container;
 
 // Type aliases for common test configurations with uint32_t vertex IDs
 using uos_void_void_void =
-      dynamic_graph<void, void, void, uint32_t, false, uos_graph_traits<void, void, void, uint32_t, false>>;
+      dynamic_graph<void, void, void, uint32_t, false, false, uos_graph_traits<void, void, void, uint32_t, false>>;
 using uos_int_void_void =
-      dynamic_graph<int, void, void, uint32_t, false, uos_graph_traits<int, void, void, uint32_t, false>>;
+      dynamic_graph<int, void, void, uint32_t, false, false, uos_graph_traits<int, void, void, uint32_t, false>>;
 using uos_void_int_void =
-      dynamic_graph<void, int, void, uint32_t, false, uos_graph_traits<void, int, void, uint32_t, false>>;
+      dynamic_graph<void, int, void, uint32_t, false, false, uos_graph_traits<void, int, void, uint32_t, false>>;
 using uos_int_int_void =
-      dynamic_graph<int, int, void, uint32_t, false, uos_graph_traits<int, int, void, uint32_t, false>>;
+      dynamic_graph<int, int, void, uint32_t, false, false, uos_graph_traits<int, int, void, uint32_t, false>>;
 using uos_void_void_int =
-      dynamic_graph<void, void, int, uint32_t, false, uos_graph_traits<void, void, int, uint32_t, false>>;
-using uos_int_int_int = dynamic_graph<int, int, int, uint32_t, false, uos_graph_traits<int, int, int, uint32_t, false>>;
+      dynamic_graph<void, void, int, uint32_t, false, false, uos_graph_traits<void, void, int, uint32_t, false>>;
+using uos_int_int_int = dynamic_graph<int, int, int, uint32_t, false, false, uos_graph_traits<int, int, int, uint32_t, false>>;
 
 // Type aliases with string vertex IDs (the primary use case for unordered_map containers)
 using uos_str_void_void_void =
-      dynamic_graph<void, void, void, std::string, false, uos_graph_traits<void, void, void, std::string, false>>;
+      dynamic_graph<void, void, void, std::string, false, false, uos_graph_traits<void, void, void, std::string, false>>;
 using uos_str_int_void_void =
-      dynamic_graph<int, void, void, std::string, false, uos_graph_traits<int, void, void, std::string, false>>;
+      dynamic_graph<int, void, void, std::string, false, false, uos_graph_traits<int, void, void, std::string, false>>;
 using uos_str_void_int_void =
-      dynamic_graph<void, int, void, std::string, false, uos_graph_traits<void, int, void, std::string, false>>;
+      dynamic_graph<void, int, void, std::string, false, false, uos_graph_traits<void, int, void, std::string, false>>;
 using uos_str_int_int_int =
-      dynamic_graph<int, int, int, std::string, false, uos_graph_traits<int, int, int, std::string, false>>;
+      dynamic_graph<int, int, int, std::string, false, false, uos_graph_traits<int, int, int, std::string, false>>;
 
-using uos_sourced = dynamic_graph<void, void, void, uint32_t, true, uos_graph_traits<void, void, void, uint32_t, true>>;
+using uos_sourced = dynamic_graph<void, void, void, uint32_t, true, false, uos_graph_traits<void, void, void, uint32_t, true>>;
 using uos_int_sourced =
-      dynamic_graph<int, void, void, uint32_t, true, uos_graph_traits<int, void, void, uint32_t, true>>;
+      dynamic_graph<int, void, void, uint32_t, true, false, uos_graph_traits<int, void, void, uint32_t, true>>;
 
 using uos_str_sourced =
-      dynamic_graph<void, void, void, std::string, true, uos_graph_traits<void, void, void, std::string, true>>;
+      dynamic_graph<void, void, void, std::string, true, false, uos_graph_traits<void, void, void, std::string, true>>;
 
 // Edge and vertex data types for loading
 using edge_void  = copyable_edge_t<uint32_t, void>;

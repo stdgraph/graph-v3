@@ -25,19 +25,19 @@ using namespace graph::container;
 
 // EV != void, Sourced = true (primary template)
 using edge_ev_sourced =
-      dynamic_edge<int, void, void, uint32_t, true, vov_graph_traits<int, void, void, uint32_t, true>>;
+      dynamic_edge<int, void, void, uint32_t, true, false, vov_graph_traits<int, void, void, uint32_t, true>>;
 
 // EV = void, Sourced = true
 using edge_void_sourced =
-      dynamic_edge<void, void, void, uint32_t, true, vov_graph_traits<void, void, void, uint32_t, true>>;
+      dynamic_edge<void, void, void, uint32_t, true, false, vov_graph_traits<void, void, void, uint32_t, true>>;
 
 // EV != void, Sourced = false
 using edge_ev_unsourced =
-      dynamic_edge<int, void, void, uint32_t, false, vov_graph_traits<int, void, void, uint32_t, false>>;
+      dynamic_edge<int, void, void, uint32_t, false, false, vov_graph_traits<int, void, void, uint32_t, false>>;
 
 // EV = void, Sourced = false
 using edge_void_unsourced =
-      dynamic_edge<void, void, void, uint32_t, false, vov_graph_traits<void, void, void, uint32_t, false>>;
+      dynamic_edge<void, void, void, uint32_t, false, false, vov_graph_traits<void, void, void, uint32_t, false>>;
 
 //==================================================================================================
 // 1. operator<=> Tests - Sourced edges (compare by source_id, then target_id)

@@ -18,15 +18,27 @@ namespace graph::adj_list {
  * Provides a lightweight, type-safe handle to edges stored in various container types.
  * Maintains both the edge location and the source vertex descriptor.
  * 
+ * The EdgeDirection tag controls source/target semantics:
+ * - out_edge_tag (default): source_ is the source vertex, target navigates .edges()
+ * - in_edge_tag: source_ is the target vertex, source navigates .in_edges()
+ * 
  * @tparam EdgeIter Iterator type of the underlying edge container
  * @tparam VertexIter Iterator type of the vertex container
+ * @tparam EdgeDirection Direction tag: out_edge_tag or in_edge_tag
  */
-template <edge_iterator EdgeIter, vertex_iterator VertexIter>
+template <edge_iterator EdgeIter, vertex_iterator VertexIter, class EdgeDirection = out_edge_tag>
 class edge_descriptor {
 public:
   using edge_iterator_type   = EdgeIter;
   using vertex_iterator_type = VertexIter;
   using vertex_desc          = vertex_descriptor<VertexIter>;
+  using edge_direction       = EdgeDirection;
+
+  /// True when this descriptor wraps an in-edge (source/target semantics are swapped).
+  static constexpr bool is_in_edge = std::is_same_v<EdgeDirection, in_edge_tag>;
+
+  /// True when this descriptor wraps an out-edge (default direction).
+  static constexpr bool is_out_edge = std::is_same_v<EdgeDirection, out_edge_tag>;
 
   // Conditional storage type for edge: size_t for random access, iterator for forward
   using edge_storage_type = std::conditional_t<std::random_access_iterator<EdgeIter>, std::size_t, EdgeIter>;
@@ -93,8 +105,87 @@ public:
      * 3. Wrap return expressions in parentheses: return (edge_val.first);
      * See descriptor.md "Lambda Reference Binding Issues" section for details.
      */
+  /**
+     * @brief Get the source vertex ID by navigating the edge container (in-edge only)
+     * @param vertex_data The vertex/edge data structure passed from the CPO
+     * @return The source vertex identifier extracted from the native in-edge
+     * 
+     * For in-edge descriptors, source_id() (no args) returns the owning vertex ID
+     * which is actually the target. This overload navigates the in_edges container
+     * to retrieve the native edge's source_id — the actual source vertex.
+     * 
+     * Only available when EdgeDirection is in_edge_tag.
+     */
   template <typename VertexData>
-  [[nodiscard]] constexpr auto target_id(const VertexData& vertex_data) const noexcept {
+  [[nodiscard]] constexpr auto source_id(const VertexData& vertex_data) const noexcept
+  requires(is_in_edge) {
+    const auto& edge_container = [&]() -> decltype(auto) {
+      if constexpr (requires { vertex_data.in_edges(); }) {
+        return vertex_data.in_edges();
+      } else if constexpr (requires {
+                             vertex_data.first;
+                             vertex_data.second;
+                           }) {
+        if constexpr (requires { vertex_data.second.in_edges(); }) {
+          return vertex_data.second.in_edges();
+        } else {
+          return vertex_data.second;
+        }
+      } else {
+        return vertex_data;
+      }
+    }();
+
+    const auto& edge_val = [&]() -> decltype(auto) {
+      if constexpr (std::random_access_iterator<EdgeIter>) {
+        return edge_container[edge_storage_];
+      } else {
+        return *edge_storage_;
+      }
+    }();
+
+    // Extract source_id from the native edge
+    if constexpr (requires { edge_val.second.source_id(); }) {
+      return edge_val.second.source_id();
+    } else if constexpr (requires { edge_val.source_id(); }) {
+      return edge_val.source_id();
+    } else if constexpr (requires { edge_val.first; }) {
+      return edge_val.first;
+    } else if constexpr (requires { std::get<0>(edge_val); }) {
+      return std::get<0>(edge_val);
+    } else {
+      return edge_val;
+    }
+  }
+
+  /**
+     * @brief Get the target vertex ID for an in-edge descriptor
+     * @param vertex_data The vertex/edge data structure passed from the CPO (unused)
+     * @return The target vertex identifier (the owning vertex)
+     * 
+     * For in-edges, the owning vertex IS the target — no container navigation needed.
+     * The vertex_data parameter is accepted for interface consistency with the CPO.
+     * 
+     * Only available when EdgeDirection is in_edge_tag.
+     */
+  template <typename VertexData>
+  [[nodiscard]] constexpr auto target_id(const VertexData& /*vertex_data*/) const noexcept
+  requires(is_in_edge) {
+    return source_.vertex_id();
+  }
+
+  /**
+     * @brief Get the target vertex ID for an out-edge descriptor
+     * @param vertex_data The vertex/edge data structure passed from the CPO
+     * @return The target vertex identifier extracted from the edge
+     * 
+     * Navigates the out-edge container (.edges()) to extract the target vertex ID.
+     * 
+     * Only available when EdgeDirection is out_edge_tag.
+     */
+  template <typename VertexData>
+  [[nodiscard]] constexpr auto target_id(const VertexData& vertex_data) const noexcept
+  requires(is_out_edge) {
     using edge_value_type = typename std::iterator_traits<EdgeIter>::value_type;
 
     // Extract the actual edge container from vertex_data:
@@ -164,9 +255,13 @@ public:
      */
   template <typename VertexData>
   [[nodiscard]] constexpr decltype(auto) underlying_value(VertexData& vertex_data) const noexcept {
-    // Extract the actual edge container from vertex_data (see target_id for details)
+    // Extract the actual edge container from vertex_data
+    // For in-edge descriptors, navigate .in_edges() instead of .edges()
     if constexpr (requires { vertex_data.edges(); }) {
-      auto& edge_container = vertex_data.edges();
+      auto& edge_container = [&]() -> decltype(auto) {
+        if constexpr (is_in_edge && requires { vertex_data.in_edges(); }) return (vertex_data.in_edges());
+        else return (vertex_data.edges());
+      }();
       if constexpr (std::random_access_iterator<EdgeIter>) {
         return (edge_container[edge_storage_]);
       } else {
@@ -177,7 +272,10 @@ public:
                            vertex_data.second;
                          }) {
       if constexpr (requires { vertex_data.second.edges(); }) {
-        auto& edge_container = vertex_data.second.edges();
+        auto& edge_container = [&]() -> decltype(auto) {
+          if constexpr (is_in_edge && requires { vertex_data.second.in_edges(); }) return (vertex_data.second.in_edges());
+          else return (vertex_data.second.edges());
+        }();
         if constexpr (std::random_access_iterator<EdgeIter>) {
           return (edge_container[edge_storage_]);
         } else {
@@ -207,9 +305,12 @@ public:
      */
   template <typename VertexData>
   [[nodiscard]] constexpr decltype(auto) underlying_value(const VertexData& vertex_data) const noexcept {
-    // Extract the actual edge container from vertex_data (see target_id for details)
+    // Extract the actual edge container from vertex_data
     if constexpr (requires { vertex_data.edges(); }) {
-      const auto& edge_container = vertex_data.edges();
+      const auto& edge_container = [&]() -> decltype(auto) {
+        if constexpr (is_in_edge && requires { vertex_data.in_edges(); }) return (vertex_data.in_edges());
+        else return (vertex_data.edges());
+      }();
       if constexpr (std::random_access_iterator<EdgeIter>) {
         return (edge_container[edge_storage_]);
       } else {
@@ -220,7 +321,10 @@ public:
                            vertex_data.second;
                          }) {
       if constexpr (requires { vertex_data.second.edges(); }) {
-        const auto& edge_container = vertex_data.second.edges();
+        const auto& edge_container = [&]() -> decltype(auto) {
+          if constexpr (is_in_edge && requires { vertex_data.second.in_edges(); }) return (vertex_data.second.in_edges());
+          else return (vertex_data.second.edges());
+        }();
         if constexpr (std::random_access_iterator<EdgeIter>) {
           return (edge_container[edge_storage_]);
         } else {
@@ -260,9 +364,13 @@ public:
   [[nodiscard]] constexpr decltype(auto) inner_value(VertexData& vertex_data) const noexcept {
     using edge_value_type = typename std::iterator_traits<EdgeIter>::value_type;
 
-    // Extract the actual edge container from vertex_data (see target_id for details)
+    // Extract the actual edge container from vertex_data
+    // For in-edge descriptors, navigate .in_edges() instead of .edges()
     if constexpr (requires { vertex_data.edges(); }) {
-      auto& edge_container = vertex_data.edges();
+      auto& edge_container = [&]() -> decltype(auto) {
+        if constexpr (is_in_edge && requires { vertex_data.in_edges(); }) return (vertex_data.in_edges());
+        else return (vertex_data.edges());
+      }();
       // Simple type: just the target ID, return it (no separate property)
       if constexpr (std::integral<edge_value_type>) {
         if constexpr (std::random_access_iterator<EdgeIter>) {
@@ -450,9 +558,13 @@ public:
   [[nodiscard]] constexpr decltype(auto) inner_value(const VertexData& vertex_data) const noexcept {
     using edge_value_type = typename std::iterator_traits<EdgeIter>::value_type;
 
-    // Extract the actual edge container from vertex_data (see target_id for details)
+    // Extract the actual edge container from vertex_data
+    // For in-edge descriptors, navigate .in_edges() instead of .edges()
     if constexpr (requires { vertex_data.edges(); }) {
-      const auto& edge_container = vertex_data.edges();
+      const auto& edge_container = [&]() -> decltype(auto) {
+        if constexpr (is_in_edge && requires { vertex_data.in_edges(); }) return (vertex_data.in_edges());
+        else return (vertex_data.edges());
+      }();
       // Simple type: just the target ID, return it (no separate property)
       if constexpr (std::integral<edge_value_type>) {
         if constexpr (std::random_access_iterator<EdgeIter>) {
@@ -655,9 +767,9 @@ private:
 
 // Hash specialization for std::unordered containers
 namespace std {
-template <graph::adj_list::edge_iterator EdgeIter, graph::adj_list::vertex_iterator VertexIter>
-struct hash<graph::adj_list::edge_descriptor<EdgeIter, VertexIter>> {
-  [[nodiscard]] size_t operator()(const graph::adj_list::edge_descriptor<EdgeIter, VertexIter>& ed) const noexcept {
+template <graph::adj_list::edge_iterator EdgeIter, graph::adj_list::vertex_iterator VertexIter, class Dir>
+struct hash<graph::adj_list::edge_descriptor<EdgeIter, VertexIter, Dir>> {
+  [[nodiscard]] size_t operator()(const graph::adj_list::edge_descriptor<EdgeIter, VertexIter, Dir>& ed) const noexcept {
     // Combine hash of edge storage and source vertex
     size_t h1 = [&ed]() {
       if constexpr (std::random_access_iterator<EdgeIter>) {

@@ -68,7 +68,7 @@ TEMPLATE_TEST_CASE("default construction creates empty graph",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   Graph g;
   REQUIRE(g.size() == 0);
@@ -85,7 +85,7 @@ TEMPLATE_TEST_CASE("construction with graph value",
                    (dol_graph_traits<void, void, int, uint64_t, false>),
                    (dov_graph_traits<void, void, int, uint64_t, false>),
                    (dod_graph_traits<void, void, int, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, int, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, int, uint64_t, false, false, TestType>;
 
   Graph g(42);
   REQUIRE(g.size() == 0);
@@ -102,7 +102,7 @@ TEMPLATE_TEST_CASE("construction with edge values",
                    (dol_graph_traits<int, void, void, uint64_t, false>),
                    (dov_graph_traits<int, void, void, uint64_t, false>),
                    (dod_graph_traits<int, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, void, void, uint64_t, false, false, TestType>;
 
   Graph g;
   REQUIRE(g.size() == 0);
@@ -118,7 +118,7 @@ TEMPLATE_TEST_CASE("copy construction",
                    (dol_graph_traits<int, int, int, uint64_t, false>),
                    (dov_graph_traits<int, int, int, uint64_t, false>),
                    (dod_graph_traits<int, int, int, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, int, int, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, int, int, uint64_t, false, false, TestType>;
 
   Graph g1;
   Graph g2(g1);
@@ -136,7 +136,7 @@ TEMPLATE_TEST_CASE("move construction",
                    (dol_graph_traits<int, int, int, uint64_t, false>),
                    (dov_graph_traits<int, int, int, uint64_t, false>),
                    (dod_graph_traits<int, int, int, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, int, int, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, int, int, uint64_t, false, false, TestType>;
 
   Graph g1;
   Graph g2(std::move(g1));
@@ -153,7 +153,7 @@ TEMPLATE_TEST_CASE("construction with initializer_list edges",
                    (dol_graph_traits<int, void, void, uint64_t, false>),
                    (dov_graph_traits<int, void, void, uint64_t, false>),
                    (dod_graph_traits<int, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, void, void, uint64_t, false, false, TestType>;
 
   Graph g({{0, 1, 10}, {1, 2, 20}, {2, 0, 30}});
   REQUIRE(g.size() == 3);
@@ -179,7 +179,7 @@ TEMPLATE_TEST_CASE("construction with edge range and load",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph     = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph     = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
   using edge_data = copyable_edge_t<uint64_t, void>;
 
   Graph                  g;
@@ -199,7 +199,7 @@ TEMPLATE_TEST_CASE("construction with graph value copy",
                    (dol_graph_traits<void, void, std::string, uint64_t, false>),
                    (dov_graph_traits<void, void, std::string, uint64_t, false>),
                    (dod_graph_traits<void, void, std::string, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, std::string, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, std::string, uint64_t, false, false, TestType>;
 
   std::string val = "test_value";
   Graph       g(val);
@@ -217,7 +217,7 @@ TEMPLATE_TEST_CASE("construction with graph value move",
                    (dol_graph_traits<void, void, std::string, uint64_t, false>),
                    (dov_graph_traits<void, void, std::string, uint64_t, false>),
                    (dod_graph_traits<void, void, std::string, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, std::string, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, std::string, uint64_t, false, false, TestType>;
 
   std::string val = "test_value";
   Graph       g(std::move(val));
@@ -234,7 +234,7 @@ TEMPLATE_TEST_CASE("assignment operators",
                    (dol_graph_traits<int, int, int, uint64_t, false>),
                    (dov_graph_traits<int, int, int, uint64_t, false>),
                    (dod_graph_traits<int, int, int, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, int, int, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, int, int, uint64_t, false, false, TestType>;
 
   Graph g1, g2, g3;
 
@@ -257,7 +257,7 @@ TEMPLATE_TEST_CASE("empty graph properties",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   Graph g;
   REQUIRE(g.size() == 0);
@@ -275,7 +275,7 @@ TEMPLATE_TEST_CASE("const graph access",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   const Graph g;
   REQUIRE(g.size() == 0);
@@ -292,7 +292,7 @@ TEMPLATE_TEST_CASE("construction with pre-sized vertex container",
                    (dol_graph_traits<void, int, void, uint64_t, false>),
                    (dov_graph_traits<void, int, void, uint64_t, false>),
                    (dod_graph_traits<void, int, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, int, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, int, void, uint64_t, false, false, TestType>;
 
   Graph g;
   g.resize_vertices(10);
@@ -317,7 +317,7 @@ TEMPLATE_TEST_CASE("construction from different sized graphs",
                    (dol_graph_traits<int, int, int, uint64_t, false>),
                    (dov_graph_traits<int, int, int, uint64_t, false>),
                    (dod_graph_traits<int, int, int, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, int, int, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, int, int, uint64_t, false, false, TestType>;
 
   Graph                                         small(1);
   std::vector<copyable_vertex_t<uint64_t, int>> v1 = {{0, 10}};
@@ -343,7 +343,7 @@ TEMPLATE_TEST_CASE("default value initialization",
                    (dol_graph_traits<void, int, void, uint64_t, false>),
                    (dov_graph_traits<void, int, void, uint64_t, false>),
                    (dod_graph_traits<void, int, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, int, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, int, void, uint64_t, false, false, TestType>;
 
   Graph g;
   g.resize_vertices(5);
@@ -372,7 +372,7 @@ TEMPLATE_TEST_CASE("load_edges with simple edge list",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph     = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph     = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
   using edge_data = copyable_edge_t<uint64_t, void>;
 
   std::vector<edge_data> edges = {{0, 1}, {1, 2}, {2, 0}};
@@ -393,7 +393,7 @@ TEMPLATE_TEST_CASE("load_edges with edge values",
                    (dol_graph_traits<int, void, void, uint64_t, false>),
                    (dov_graph_traits<int, void, void, uint64_t, false>),
                    (dod_graph_traits<int, void, void, uint64_t, false>)) {
-  using Graph     = dynamic_graph<int, void, void, uint64_t, false, TestType>;
+  using Graph     = dynamic_graph<int, void, void, uint64_t, false, false, TestType>;
   using edge_data = copyable_edge_t<uint64_t, int>;
 
   std::vector<edge_data> edges = {{0, 1, 10}, {1, 2, 20}, {2, 0, 30}};
@@ -425,7 +425,7 @@ TEMPLATE_TEST_CASE("load_vertices basic",
                    (dol_graph_traits<void, int, void, uint64_t, false>),
                    (dov_graph_traits<void, int, void, uint64_t, false>),
                    (dod_graph_traits<void, int, void, uint64_t, false>)) {
-  using Graph       = dynamic_graph<void, int, void, uint64_t, false, TestType>;
+  using Graph       = dynamic_graph<void, int, void, uint64_t, false, false, TestType>;
   using vertex_data = copyable_vertex_t<uint64_t, int>;
 
   std::vector<vertex_data> vertices = {{0, 100}, {1, 200}, {2, 300}};
@@ -449,7 +449,7 @@ TEMPLATE_TEST_CASE("load_edges with empty range",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph     = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph     = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
   using edge_data = copyable_edge_t<uint64_t, void>;
 
   std::vector<edge_data> edges;
@@ -470,7 +470,7 @@ TEMPLATE_TEST_CASE("load_edges auto-extends vertex count",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph     = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph     = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
   using edge_data = copyable_edge_t<uint64_t, void>;
 
   std::vector<edge_data> edges = {{0, 10}, {5, 20}};
@@ -491,7 +491,7 @@ TEMPLATE_TEST_CASE("load_vertices then load_edges",
                    (dol_graph_traits<int, int, void, uint64_t, false>),
                    (dov_graph_traits<int, int, void, uint64_t, false>),
                    (dod_graph_traits<int, int, void, uint64_t, false>)) {
-  using Graph       = dynamic_graph<int, int, void, uint64_t, false, TestType>;
+  using Graph       = dynamic_graph<int, int, void, uint64_t, false, false, TestType>;
   using vertex_data = copyable_vertex_t<uint64_t, int>;
   using edge_data   = copyable_edge_t<uint64_t, int>;
 
@@ -524,7 +524,7 @@ TEMPLATE_TEST_CASE("load_edges with projection",
                    (dol_graph_traits<int, void, void, uint64_t, false>),
                    (dov_graph_traits<int, void, void, uint64_t, false>),
                    (dod_graph_traits<int, void, void, uint64_t, false>)) {
-  using Graph     = dynamic_graph<int, void, void, uint64_t, false, TestType>;
+  using Graph     = dynamic_graph<int, void, void, uint64_t, false, false, TestType>;
   using edge_data = copyable_edge_t<uint64_t, int>;
 
   struct CustomEdge {
@@ -549,7 +549,7 @@ TEMPLATE_TEST_CASE("load_vertices with projection",
                    (dol_graph_traits<void, int, void, uint64_t, false>),
                    (dov_graph_traits<void, int, void, uint64_t, false>),
                    (dod_graph_traits<void, int, void, uint64_t, false>)) {
-  using Graph       = dynamic_graph<void, int, void, uint64_t, false, TestType>;
+  using Graph       = dynamic_graph<void, int, void, uint64_t, false, false, TestType>;
   using vertex_data = copyable_vertex_t<uint64_t, int>;
 
   struct CustomVertex {
@@ -575,7 +575,7 @@ TEMPLATE_TEST_CASE("incremental edge loading",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph     = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph     = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
   using edge_data = copyable_edge_t<uint64_t, void>;
 
   Graph g;
@@ -599,7 +599,7 @@ TEMPLATE_TEST_CASE("load with self-loops",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph     = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph     = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
   using edge_data = copyable_edge_t<uint64_t, void>;
 
   std::vector<edge_data> edges = {{0, 0}, {1, 1}, {0, 1}};
@@ -629,7 +629,7 @@ TEMPLATE_TEST_CASE("load vertices with non-contiguous IDs",
                    (dol_graph_traits<void, int, void, uint64_t, false>),
                    (dov_graph_traits<void, int, void, uint64_t, false>),
                    (dod_graph_traits<void, int, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, int, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, int, void, uint64_t, false, false, TestType>;
 
   Graph g;
   g.resize_vertices(11); // Pre-allocate for vertices 0-10
@@ -652,7 +652,7 @@ TEMPLATE_TEST_CASE("load vertices in reverse order",
                    (dol_graph_traits<void, int, void, uint64_t, false>),
                    (dov_graph_traits<void, int, void, uint64_t, false>),
                    (dod_graph_traits<void, int, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, int, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, int, void, uint64_t, false, false, TestType>;
 
   Graph                                         g;
   std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{4, 400}, {3, 300}, {2, 200}, {1, 100}, {0, 0}};
@@ -678,7 +678,7 @@ TEMPLATE_TEST_CASE("vertex access by index",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}};
   Graph                                        g;
@@ -702,7 +702,7 @@ TEMPLATE_TEST_CASE("vertex iteration",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {1, 2}};
   Graph                                        g;
@@ -725,7 +725,7 @@ TEMPLATE_TEST_CASE("const vertex iteration",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {1, 2}};
   Graph                                        g;
@@ -749,7 +749,7 @@ TEMPLATE_TEST_CASE("range-based for loop on vertices",
                    (dol_graph_traits<void, int, void, uint64_t, false>),
                    (dov_graph_traits<void, int, void, uint64_t, false>),
                    (dod_graph_traits<void, int, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, int, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, int, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 10}, {1, 20}, {2, 30}};
   Graph                                         g;
@@ -772,7 +772,7 @@ TEMPLATE_TEST_CASE("size queries on vertices",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   Graph g;
   REQUIRE(g.size() == 0);
@@ -793,7 +793,7 @@ TEMPLATE_TEST_CASE("single vertex access",
                    (dol_graph_traits<void, int, void, uint64_t, false>),
                    (dov_graph_traits<void, int, void, uint64_t, false>),
                    (dod_graph_traits<void, int, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, int, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, int, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 42}};
   Graph                                         g;
@@ -813,7 +813,7 @@ TEMPLATE_TEST_CASE("large graph vertex access",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, void>> edges;
   for (uint64_t i = 0; i < 100; ++i) {
@@ -838,7 +838,7 @@ TEMPLATE_TEST_CASE("vertex value access and modification",
                    (dol_graph_traits<void, int, void, uint64_t, false>),
                    (dov_graph_traits<void, int, void, uint64_t, false>),
                    (dod_graph_traits<void, int, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, int, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, int, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 10}, {1, 20}};
   Graph                                         g;
@@ -859,7 +859,7 @@ TEMPLATE_TEST_CASE("empty graph vertex access safety",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   Graph g;
   REQUIRE(g.size() == 0);
@@ -876,7 +876,7 @@ TEMPLATE_TEST_CASE("vertex iterator validity",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {1, 2}};
   Graph                                        g;
@@ -900,7 +900,7 @@ TEMPLATE_TEST_CASE("vertex access bounds checking",
                    (dol_graph_traits<void, int, void, uint64_t, false>),
                    (dov_graph_traits<void, int, void, uint64_t, false>),
                    (dod_graph_traits<void, int, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, int, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, int, void, uint64_t, false, false, TestType>;
 
   Graph                                         g;
   std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 10}, {1, 20}, {2, 30}};
@@ -928,7 +928,7 @@ TEMPLATE_TEST_CASE("edge iteration from vertex",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {0, 2}, {0, 3}};
   Graph                                        g;
@@ -954,7 +954,7 @@ TEMPLATE_TEST_CASE("empty vertex has no edges",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}};
   Graph                                        g;
@@ -979,7 +979,7 @@ TEMPLATE_TEST_CASE("parallel edges support",
                    (dol_graph_traits<int, void, void, uint64_t, false>),
                    (dov_graph_traits<int, void, void, uint64_t, false>),
                    (dod_graph_traits<int, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, void, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 10}, {0, 1, 20}, {0, 1, 30}};
   Graph                                       g;
@@ -1004,7 +1004,7 @@ TEMPLATE_TEST_CASE("edge degree queries",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {0, 2}, {0, 3}, {1, 2}};
   Graph                                        g;
@@ -1028,7 +1028,7 @@ TEMPLATE_TEST_CASE("edge empty check",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}};
   Graph                                        g;
@@ -1051,7 +1051,7 @@ TEMPLATE_TEST_CASE("bidirectional edge traversal",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {1, 0}};
   Graph                                        g;
@@ -1085,7 +1085,7 @@ TEMPLATE_TEST_CASE("edge target validation",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {0, 2}, {0, 3}};
   Graph                                        g;
@@ -1114,7 +1114,7 @@ TEMPLATE_TEST_CASE("edge value iteration",
                    (dol_graph_traits<int, void, void, uint64_t, false>),
                    (dov_graph_traits<int, void, void, uint64_t, false>),
                    (dod_graph_traits<int, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, void, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 10}, {0, 2, 20}, {0, 3, 30}};
   Graph                                       g;
@@ -1138,7 +1138,7 @@ TEMPLATE_TEST_CASE("edge iterator increment",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {0, 2}, {0, 3}};
   Graph                                        g;
@@ -1168,7 +1168,7 @@ TEMPLATE_TEST_CASE("high degree vertex",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, void>> edges;
   for (uint64_t i = 1; i <= 50; ++i) {
@@ -1193,7 +1193,7 @@ TEMPLATE_TEST_CASE("edge range filtering",
                    (dol_graph_traits<int, void, void, uint64_t, false>),
                    (dov_graph_traits<int, void, void, uint64_t, false>),
                    (dod_graph_traits<int, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, void, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 10}, {0, 2, 25}, {0, 3, 30}, {0, 4, 15}};
   Graph                                       g;
@@ -1214,7 +1214,7 @@ TEMPLATE_TEST_CASE("edge access from const vertex reference",
                    (dol_graph_traits<int, void, void, uint64_t, false>),
                    (dov_graph_traits<int, void, void, uint64_t, false>),
                    (dod_graph_traits<int, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, void, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 10}, {0, 2, 20}};
   Graph                                       g;
@@ -1238,7 +1238,7 @@ TEMPLATE_TEST_CASE("vertex value modification",
                    (dol_graph_traits<void, double, void, uint64_t, false>),
                    (dov_graph_traits<void, double, void, uint64_t, false>),
                    (dod_graph_traits<void, double, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, double, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, double, void, uint64_t, false, false, TestType>;
 
   Graph                                            g;
   std::vector<copyable_vertex_t<uint64_t, double>> vertices = {{0, 1.5}, {1, 2.5}};
@@ -1265,7 +1265,7 @@ TEMPLATE_TEST_CASE("sourced edges construction",
                    (dol_graph_traits<void, void, void, uint64_t, true>),
                    (dov_graph_traits<void, void, void, uint64_t, true>),
                    (dod_graph_traits<void, void, void, uint64_t, true>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, true, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, true, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {1, 2}};
   Graph                                        g;
@@ -1288,7 +1288,7 @@ TEMPLATE_TEST_CASE("sourced edges with values",
                    (dol_graph_traits<int, int, void, uint64_t, true>),
                    (dov_graph_traits<int, int, void, uint64_t, true>),
                    (dod_graph_traits<int, int, void, uint64_t, true>)) {
-  using Graph = dynamic_graph<int, int, void, uint64_t, true, TestType>;
+  using Graph = dynamic_graph<int, int, void, uint64_t, true, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 10}, {1, 2, 20}};
   Graph                                       g;
@@ -1312,7 +1312,7 @@ TEMPLATE_TEST_CASE("sourced self-loops",
                    (dol_graph_traits<void, void, void, uint64_t, true>),
                    (dov_graph_traits<void, void, void, uint64_t, true>),
                    (dod_graph_traits<void, void, void, uint64_t, true>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, true, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, true, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 0}, {1, 1}};
   Graph                                        g;
@@ -1335,7 +1335,7 @@ TEMPLATE_TEST_CASE("sourced multiple edges from vertex",
                    (dol_graph_traits<void, void, void, uint64_t, true>),
                    (dov_graph_traits<void, void, void, uint64_t, true>),
                    (dod_graph_traits<void, void, void, uint64_t, true>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, true, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, true, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {0, 2}, {0, 3}};
   Graph                                        g;
@@ -1357,7 +1357,7 @@ TEMPLATE_TEST_CASE("sourced edge iteration consistency",
                    (dol_graph_traits<int, void, void, uint64_t, true>),
                    (dov_graph_traits<int, void, void, uint64_t, true>),
                    (dod_graph_traits<int, void, void, uint64_t, true>)) {
-  using Graph = dynamic_graph<int, void, void, uint64_t, true, TestType>;
+  using Graph = dynamic_graph<int, void, void, uint64_t, true, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 10}, {1, 2, 20}, {2, 0, 30}};
   Graph                                       g;
@@ -1385,7 +1385,7 @@ TEMPLATE_TEST_CASE("string values work correctly",
                    (dol_graph_traits<std::string, std::string, std::string, uint64_t, false>),
                    (dov_graph_traits<std::string, std::string, std::string, uint64_t, false>),
                    (dod_graph_traits<std::string, std::string, std::string, uint64_t, false>)) {
-  using Graph = dynamic_graph<std::string, std::string, std::string, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<std::string, std::string, std::string, uint64_t, false, false, TestType>;
 
   Graph g("graph_value");
   REQUIRE(g.graph_value() == "graph_value");
@@ -1414,7 +1414,7 @@ TEMPLATE_TEST_CASE("edge value modification",
                    (dol_graph_traits<int, void, void, uint64_t, false>),
                    (dov_graph_traits<int, void, void, uint64_t, false>),
                    (dod_graph_traits<int, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, void, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 10}};
   Graph                                       g;
@@ -1440,7 +1440,7 @@ TEMPLATE_TEST_CASE("vertex value modification",
                    (dol_graph_traits<void, int, void, uint64_t, false>),
                    (dov_graph_traits<void, int, void, uint64_t, false>),
                    (dod_graph_traits<void, int, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, int, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, int, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 10}, {1, 20}};
   Graph                                         g;
@@ -1463,7 +1463,7 @@ TEMPLATE_TEST_CASE("graph value modification",
                    (dol_graph_traits<void, void, int, uint64_t, false>),
                    (dov_graph_traits<void, void, int, uint64_t, false>),
                    (dod_graph_traits<void, void, int, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, int, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, int, uint64_t, false, false, TestType>;
 
   Graph g(42);
   REQUIRE(g.graph_value() == 42);
@@ -1482,7 +1482,7 @@ TEMPLATE_TEST_CASE("value move semantics",
                    (dol_graph_traits<std::string, std::string, std::string, uint64_t, false>),
                    (dov_graph_traits<std::string, std::string, std::string, uint64_t, false>),
                    (dod_graph_traits<std::string, std::string, std::string, uint64_t, false>)) {
-  using Graph = dynamic_graph<std::string, std::string, std::string, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<std::string, std::string, std::string, uint64_t, false, false, TestType>;
 
   std::string gval = "graph";
   Graph       g(std::move(gval));
@@ -1499,7 +1499,7 @@ TEMPLATE_TEST_CASE("mixed value types",
                    (dol_graph_traits<int, std::string, double, uint64_t, false>),
                    (dov_graph_traits<int, std::string, double, uint64_t, false>),
                    (dod_graph_traits<int, std::string, double, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, std::string, double, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, std::string, double, uint64_t, false, false, TestType>;
 
   Graph g(3.14);
   REQUIRE(g.graph_value() == 3.14);
@@ -1526,7 +1526,7 @@ TEMPLATE_TEST_CASE("const value access",
                    (dol_graph_traits<int, int, int, uint64_t, false>),
                    (dov_graph_traits<int, int, int, uint64_t, false>),
                    (dod_graph_traits<int, int, int, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, int, int, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, int, int, uint64_t, false, false, TestType>;
 
   Graph                                         g(42);
   std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 10}};
@@ -1553,7 +1553,7 @@ TEMPLATE_TEST_CASE("sourced edges with parallel edges",
                    (dol_graph_traits<int, void, void, uint64_t, true>),
                    (dov_graph_traits<int, void, void, uint64_t, true>),
                    (dod_graph_traits<int, void, void, uint64_t, true>)) {
-  using Graph = dynamic_graph<int, void, void, uint64_t, true, TestType>;
+  using Graph = dynamic_graph<int, void, void, uint64_t, true, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, int>> edges = {
         {0, 1, 10},
@@ -1588,7 +1588,7 @@ TEMPLATE_TEST_CASE("large graph construction",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   // Create a graph with 1000 vertices
   std::vector<copyable_edge_t<uint64_t, void>> edges;
@@ -1612,7 +1612,7 @@ TEMPLATE_TEST_CASE("graph size tracking",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   Graph g;
   REQUIRE(g.size() == 0);
@@ -1636,7 +1636,7 @@ TEMPLATE_TEST_CASE("begin/end iteration",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {1, 2}};
   Graph                                        g;
@@ -1659,7 +1659,7 @@ TEMPLATE_TEST_CASE("cbegin/cend const iteration",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {1, 2}};
   Graph                                        g;
@@ -1682,7 +1682,7 @@ TEMPLATE_TEST_CASE("empty graph properties",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   Graph g;
   REQUIRE(g.size() == 0);
@@ -1700,7 +1700,7 @@ TEMPLATE_TEST_CASE("vertex count after incremental loads",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   Graph g;
 
@@ -1726,7 +1726,7 @@ TEMPLATE_TEST_CASE("graph iterator distance",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {1, 2}, {2, 3}};
   Graph                                        g;
@@ -1746,7 +1746,7 @@ TEMPLATE_TEST_CASE("copy preserves structure",
                    (dol_graph_traits<int, int, void, uint64_t, false>),
                    (dov_graph_traits<int, int, void, uint64_t, false>),
                    (dod_graph_traits<int, int, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, int, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, int, void, uint64_t, false, false, TestType>;
 
   Graph                                         g1;
   std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 10}, {1, 20}};
@@ -1770,7 +1770,7 @@ TEMPLATE_TEST_CASE("ranges integration",
                    (dol_graph_traits<int, void, void, uint64_t, false>),
                    (dov_graph_traits<int, void, void, uint64_t, false>),
                    (dod_graph_traits<int, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, void, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 10}, {0, 2, 20}, {1, 2, 30}};
   Graph                                       g;
@@ -1792,7 +1792,7 @@ TEMPLATE_TEST_CASE("graph equality comparison",
                    (dol_graph_traits<void, int, int, uint64_t, false>),
                    (dov_graph_traits<void, int, int, uint64_t, false>),
                    (dod_graph_traits<void, int, int, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, int, int, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, int, int, uint64_t, false, false, TestType>;
 
   Graph                                         g1;
   std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 10}, {1, 20}};
@@ -1816,7 +1816,7 @@ TEMPLATE_TEST_CASE("graph capacity queries",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   Graph                                        g;
   std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {1, 2}, {2, 3}};
@@ -1844,7 +1844,7 @@ TEMPLATE_TEST_CASE("copy graphs preserve independence",
                    (dol_graph_traits<int, int, int, uint64_t, false>),
                    (dov_graph_traits<int, int, int, uint64_t, false>),
                    (dod_graph_traits<int, int, int, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, int, int, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, int, int, uint64_t, false, false, TestType>;
 
   Graph                                         g1(10);
   std::vector<copyable_vertex_t<uint64_t, int>> vertices1 = {{0, 100}};
@@ -1868,7 +1868,7 @@ TEMPLATE_TEST_CASE("clear graph",
                    (dol_graph_traits<int, int, void, uint64_t, false>),
                    (dov_graph_traits<int, int, void, uint64_t, false>),
                    (dod_graph_traits<int, int, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, int, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, int, void, uint64_t, false, false, TestType>;
 
   Graph                                         g;
   std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 10}, {1, 20}};
@@ -1893,7 +1893,7 @@ TEMPLATE_TEST_CASE("resize graph",
                    (dol_graph_traits<void, int, void, uint64_t, false>),
                    (dov_graph_traits<void, int, void, uint64_t, false>),
                    (dod_graph_traits<void, int, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, int, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, int, void, uint64_t, false, false, TestType>;
 
   Graph                                         g;
   std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 10}, {1, 20}};
@@ -1917,7 +1917,7 @@ TEMPLATE_TEST_CASE("repeated load operations",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   Graph g;
 
@@ -1939,7 +1939,7 @@ TEMPLATE_TEST_CASE("large vertex count",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   Graph                                        g;
   std::vector<copyable_edge_t<uint64_t, void>> edges;
@@ -1962,7 +1962,7 @@ TEMPLATE_TEST_CASE("move assignment efficiency",
                    (dol_graph_traits<std::string, std::string, void, uint64_t, false>),
                    (dov_graph_traits<std::string, std::string, void, uint64_t, false>),
                    (dod_graph_traits<std::string, std::string, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<std::string, std::string, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<std::string, std::string, void, uint64_t, false, false, TestType>;
 
   Graph                                                 g1;
   std::vector<copyable_vertex_t<uint64_t, std::string>> vertices = {{0, "test"}};
@@ -1985,7 +1985,7 @@ TEMPLATE_TEST_CASE("sparse graph memory",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   Graph g;
   // Create sparse graph: only edges 0->100 and 50->150
@@ -2014,7 +2014,7 @@ TEMPLATE_TEST_CASE("memory efficiency with reserve",
                    (dol_graph_traits<void, int, void, uint64_t, false>),
                    (dov_graph_traits<void, int, void, uint64_t, false>),
                    (dod_graph_traits<void, int, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, int, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, int, void, uint64_t, false, false, TestType>;
 
   Graph g;
   g.resize_vertices(100);
@@ -2042,7 +2042,7 @@ TEMPLATE_TEST_CASE("single vertex graph",
                    (dol_graph_traits<void, int, void, uint64_t, false>),
                    (dov_graph_traits<void, int, void, uint64_t, false>),
                    (dod_graph_traits<void, int, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, int, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, int, void, uint64_t, false, false, TestType>;
 
   Graph                                         g;
   std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 42}};
@@ -2063,7 +2063,7 @@ TEMPLATE_TEST_CASE("only self-loops",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   Graph                                        g;
   std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 0}, {1, 1}, {2, 2}};
@@ -2092,7 +2092,7 @@ TEMPLATE_TEST_CASE("disconnected vertices",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   Graph                                        g;
   std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {2, 3}};
@@ -2114,7 +2114,7 @@ TEMPLATE_TEST_CASE("complete graph small",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   Graph g;
   // Complete graph K4: all vertices connected to all others
@@ -2146,7 +2146,7 @@ TEMPLATE_TEST_CASE("star graph",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   Graph g;
   // Star: center vertex 0 connects to all others
@@ -2175,7 +2175,7 @@ TEMPLATE_TEST_CASE("chain graph",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   Graph                                        g;
   std::vector<copyable_edge_t<uint64_t, void>> edges;
@@ -2203,7 +2203,7 @@ TEMPLATE_TEST_CASE("duplicate edge loading",
                    (dol_graph_traits<int, void, void, uint64_t, false>),
                    (dov_graph_traits<int, void, void, uint64_t, false>),
                    (dod_graph_traits<int, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, void, void, uint64_t, false, false, TestType>;
 
   Graph                                       g;
   std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 10}, {0, 1, 20}, {0, 1, 30}};
@@ -2224,7 +2224,7 @@ TEMPLATE_TEST_CASE("very large vertex ID",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   Graph                                        g;
   std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1000}};
@@ -2243,7 +2243,7 @@ TEMPLATE_TEST_CASE("mixed load order",
                    (dol_graph_traits<int, int, void, uint64_t, false>),
                    (dov_graph_traits<int, int, void, uint64_t, false>),
                    (dod_graph_traits<int, int, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, int, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, int, void, uint64_t, false, false, TestType>;
 
   Graph g;
 
@@ -2269,7 +2269,7 @@ TEMPLATE_TEST_CASE("cycle graph",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   Graph                                        g;
   std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
@@ -2294,7 +2294,7 @@ TEMPLATE_TEST_CASE("bipartite graph",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   Graph g;
   // Bipartite: group 0,1,2 connects only to group 3,4,5
@@ -2327,7 +2327,7 @@ TEMPLATE_TEST_CASE("empty initializer list",
                    (dol_graph_traits<int, void, void, uint64_t, false>),
                    (dov_graph_traits<int, void, void, uint64_t, false>),
                    (dod_graph_traits<int, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, void, void, uint64_t, false, false, TestType>;
 
   Graph g({});
   REQUIRE(g.size() <= 1);
@@ -2343,7 +2343,7 @@ TEMPLATE_TEST_CASE("zero vertex ID",
                    (dol_graph_traits<void, int, void, uint64_t, false>),
                    (dov_graph_traits<void, int, void, uint64_t, false>),
                    (dod_graph_traits<void, int, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, int, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, int, void, uint64_t, false, false, TestType>;
 
   Graph                                         g;
   std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 42}};
@@ -2363,7 +2363,7 @@ TEMPLATE_TEST_CASE("maximum vertex ID handling",
                    (dol_graph_traits<void, int, void, uint32_t, false>),
                    (dov_graph_traits<void, int, void, uint32_t, false>),
                    (dod_graph_traits<void, int, void, uint32_t, false>)) {
-  using Graph = dynamic_graph<void, int, void, uint32_t, false, TestType>;
+  using Graph = dynamic_graph<void, int, void, uint32_t, false, false, TestType>;
 
   Graph g;
   g.resize_vertices(1001); // Pre-allocate for vertices 0-1000
@@ -2384,7 +2384,7 @@ TEMPLATE_TEST_CASE("unordered edge loading",
                    (dol_graph_traits<int, void, void, uint64_t, false>),
                    (dov_graph_traits<int, void, void, uint64_t, false>),
                    (dod_graph_traits<int, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, void, void, uint64_t, false, false, TestType>;
 
   std::vector<copyable_edge_t<uint64_t, int>> edges = {{5, 2, 52}, {0, 3, 3}, {2, 1, 21}, {3, 5, 35}};
   Graph                                       g;
@@ -2414,7 +2414,7 @@ TEMPLATE_TEST_CASE("vertex iterator pre-increment",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   Graph                                        g;
   std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {1, 2}};
@@ -2436,7 +2436,7 @@ TEMPLATE_TEST_CASE("edge iterator comparison",
                    (dol_graph_traits<void, void, void, uint64_t, false>),
                    (dov_graph_traits<void, void, void, uint64_t, false>),
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, void, void, uint64_t, false, false, TestType>;
 
   Graph                                        g;
   std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {0, 2}};
@@ -2461,7 +2461,7 @@ TEMPLATE_TEST_CASE("ranges filter edges",
                    (dol_graph_traits<int, void, void, uint64_t, false>),
                    (dov_graph_traits<int, void, void, uint64_t, false>),
                    (dod_graph_traits<int, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, void, void, uint64_t, false, false, TestType>;
 
   Graph                                       g;
   std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 5}, {0, 2, 15}, {0, 3, 25}, {0, 4, 35}};
@@ -2484,7 +2484,7 @@ TEMPLATE_TEST_CASE("ranges transform edges",
                    (dol_graph_traits<int, void, void, uint64_t, false>),
                    (dov_graph_traits<int, void, void, uint64_t, false>),
                    (dod_graph_traits<int, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, void, void, uint64_t, false, false, TestType>;
 
   Graph                                       g;
   std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 10}, {0, 2, 20}, {0, 3, 30}};
@@ -2510,7 +2510,7 @@ TEMPLATE_TEST_CASE("ranges accumulate edge values",
                    (dol_graph_traits<int, void, void, uint64_t, false>),
                    (dov_graph_traits<int, void, void, uint64_t, false>),
                    (dod_graph_traits<int, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, void, void, uint64_t, false, false, TestType>;
 
   Graph                                       g;
   std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 10}, {0, 2, 20}, {0, 3, 30}};
@@ -2534,7 +2534,7 @@ TEMPLATE_TEST_CASE("ranges find edge",
                    (dol_graph_traits<int, void, void, uint64_t, false>),
                    (dov_graph_traits<int, void, void, uint64_t, false>),
                    (dod_graph_traits<int, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, void, void, uint64_t, false, false, TestType>;
 
   Graph                                       g;
   std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 10}, {0, 2, 20}, {0, 3, 30}};
@@ -2557,7 +2557,7 @@ TEMPLATE_TEST_CASE("ranges all_of edge predicate",
                    (dol_graph_traits<int, void, void, uint64_t, false>),
                    (dov_graph_traits<int, void, void, uint64_t, false>),
                    (dod_graph_traits<int, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, void, void, uint64_t, false, false, TestType>;
 
   Graph                                       g;
   std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 10}, {0, 2, 20}, {0, 3, 30}};
@@ -2579,7 +2579,7 @@ TEMPLATE_TEST_CASE("ranges any_of edge predicate",
                    (dol_graph_traits<int, void, void, uint64_t, false>),
                    (dov_graph_traits<int, void, void, uint64_t, false>),
                    (dod_graph_traits<int, void, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, void, void, uint64_t, false, false, TestType>;
 
   Graph                                       g;
   std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 5}, {0, 2, 15}, {0, 3, 25}};
@@ -2605,7 +2605,7 @@ TEMPLATE_TEST_CASE("build graph incrementally",
                    (dol_graph_traits<int, int, void, uint64_t, false>),
                    (dov_graph_traits<int, int, void, uint64_t, false>),
                    (dod_graph_traits<int, int, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, int, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, int, void, uint64_t, false, false, TestType>;
 
   Graph g;
 
@@ -2638,7 +2638,7 @@ TEMPLATE_TEST_CASE("modify and query",
                    (dol_graph_traits<int, int, void, uint64_t, false>),
                    (dov_graph_traits<int, int, void, uint64_t, false>),
                    (dod_graph_traits<int, int, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, int, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, int, void, uint64_t, false, false, TestType>;
 
   Graph                                         g;
   std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 10}, {1, 20}};
@@ -2669,7 +2669,7 @@ TEMPLATE_TEST_CASE("copy and modify independently",
                    (dol_graph_traits<int, int, void, uint64_t, false>),
                    (dov_graph_traits<int, int, void, uint64_t, false>),
                    (dod_graph_traits<int, int, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, int, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, int, void, uint64_t, false, false, TestType>;
 
   Graph                                         g1;
   std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 10}};
@@ -2694,7 +2694,7 @@ TEMPLATE_TEST_CASE("clear and rebuild",
                    (dol_graph_traits<int, int, void, uint64_t, false>),
                    (dov_graph_traits<int, int, void, uint64_t, false>),
                    (dod_graph_traits<int, int, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, int, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, int, void, uint64_t, false, false, TestType>;
 
   Graph                                         g;
   std::vector<copyable_vertex_t<uint64_t, int>> vertices1 = {{0, 10}};
@@ -2720,7 +2720,7 @@ TEMPLATE_TEST_CASE("resize and fill",
                    (dol_graph_traits<void, int, void, uint64_t, false>),
                    (dov_graph_traits<void, int, void, uint64_t, false>),
                    (dod_graph_traits<void, int, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, int, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, int, void, uint64_t, false, false, TestType>;
 
   Graph g;
   g.resize_vertices(10);
@@ -2747,7 +2747,7 @@ TEMPLATE_TEST_CASE("move assignment",
                    (dol_graph_traits<int, int, int, uint64_t, false>),
                    (dov_graph_traits<int, int, int, uint64_t, false>),
                    (dod_graph_traits<int, int, int, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, int, int, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, int, int, uint64_t, false, false, TestType>;
 
   Graph                                         g1(10);
   std::vector<copyable_vertex_t<uint64_t, int>> v1 = {{0, 100}};
@@ -2771,7 +2771,7 @@ TEMPLATE_TEST_CASE("complex graph construction",
                    (dol_graph_traits<int, std::string, double, uint64_t, false>),
                    (dov_graph_traits<int, std::string, double, uint64_t, false>),
                    (dod_graph_traits<int, std::string, double, uint64_t, false>)) {
-  using Graph = dynamic_graph<int, std::string, double, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<int, std::string, double, uint64_t, false, false, TestType>;
 
   Graph g(3.14159);
 
@@ -2805,7 +2805,7 @@ TEMPLATE_TEST_CASE("multi-component graph workflow",
                    (dol_graph_traits<void, int, void, uint64_t, false>),
                    (dov_graph_traits<void, int, void, uint64_t, false>),
                    (dod_graph_traits<void, int, void, uint64_t, false>)) {
-  using Graph = dynamic_graph<void, int, void, uint64_t, false, TestType>;
+  using Graph = dynamic_graph<void, int, void, uint64_t, false, false, TestType>;
 
   Graph g;
   g.resize_vertices(8); // Pre-allocate space for all vertices

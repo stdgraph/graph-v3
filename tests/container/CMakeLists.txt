@@ -46,6 +46,9 @@ add_executable(graph3_container_tests
     dynamic_graph/test_dynamic_graph_conversions.cpp
     dynamic_graph/test_dynamic_graph_heterogeneous.cpp
     
+    # dynamic_graph - bidirectional (in_edges) tests
+    dynamic_graph/test_dynamic_graph_bidirectional.cpp
+    
     # dynamic_graph - CPO tests (consolidated)
     dynamic_graph/test_dynamic_graph_cpo_random_access.cpp
     dynamic_graph/test_dynamic_graph_cpo_forward_list.cpp

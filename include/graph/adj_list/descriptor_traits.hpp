@@ -15,13 +15,13 @@ namespace graph::adj_list {
 template <vertex_iterator VertexIter>
 class vertex_descriptor;
 
-template <edge_iterator EdgeIter, vertex_iterator VertexIter>
+template <edge_iterator EdgeIter, vertex_iterator VertexIter, class EdgeDirection>
 class edge_descriptor;
 
 template <vertex_iterator VertexIter>
 class vertex_descriptor_view;
 
-template <edge_iterator EdgeIter, vertex_iterator VertexIter>
+template <edge_iterator EdgeIter, vertex_iterator VertexIter, class EdgeDirection>
 class edge_descriptor_view;
 
 // =============================================================================
@@ -56,8 +56,8 @@ struct is_edge_descriptor : std::false_type {};
 /**
  * @brief Specialization for edge_descriptor
  */
-template <edge_iterator EdgeIter, vertex_iterator VertexIter>
-struct is_edge_descriptor<edge_descriptor<EdgeIter, VertexIter>> : std::true_type {};
+template <edge_iterator EdgeIter, vertex_iterator VertexIter, class EdgeDirection>
+struct is_edge_descriptor<edge_descriptor<EdgeIter, VertexIter, EdgeDirection>> : std::true_type {};
 
 /**
  * @brief Helper variable template for is_edge_descriptor
@@ -65,6 +65,26 @@ struct is_edge_descriptor<edge_descriptor<EdgeIter, VertexIter>> : std::true_typ
  */
 template <typename T>
 inline constexpr bool is_edge_descriptor_v = is_edge_descriptor<std::remove_cv_t<T>>::value;
+
+/**
+ * @brief Primary template - not an in-edge descriptor
+ */
+template <typename T>
+struct is_in_edge_descriptor : std::false_type {};
+
+/**
+ * @brief Specialization: true when EdgeDirection is in_edge_tag
+ */
+template <edge_iterator EdgeIter, vertex_iterator VertexIter, class EdgeDirection>
+struct is_in_edge_descriptor<edge_descriptor<EdgeIter, VertexIter, EdgeDirection>>
+      : std::bool_constant<std::is_same_v<EdgeDirection, in_edge_tag>> {};
+
+/**
+ * @brief Helper variable template for is_in_edge_descriptor
+ * Removes cv-qualifiers before checking
+ */
+template <typename T>
+inline constexpr bool is_in_edge_descriptor_v = is_in_edge_descriptor<std::remove_cv_t<T>>::value;
 
 /**
  * @brief Primary template - not a descriptor
@@ -81,8 +101,8 @@ struct is_descriptor<vertex_descriptor<VertexIter>> : std::true_type {};
 /**
  * @brief Specialization for edge_descriptor
  */
-template <edge_iterator EdgeIter, vertex_iterator VertexIter>
-struct is_descriptor<edge_descriptor<EdgeIter, VertexIter>> : std::true_type {};
+template <edge_iterator EdgeIter, vertex_iterator VertexIter, class EdgeDirection>
+struct is_descriptor<edge_descriptor<EdgeIter, VertexIter, EdgeDirection>> : std::true_type {};
 
 /**
  * @brief Helper variable template for is_descriptor
@@ -123,8 +143,8 @@ struct is_edge_descriptor_view : std::false_type {};
 /**
  * @brief Specialization for edge_descriptor_view
  */
-template <edge_iterator EdgeIter, vertex_iterator VertexIter>
-struct is_edge_descriptor_view<edge_descriptor_view<EdgeIter, VertexIter>> : std::true_type {};
+template <edge_iterator EdgeIter, vertex_iterator VertexIter, class EdgeDirection>
+struct is_edge_descriptor_view<edge_descriptor_view<EdgeIter, VertexIter, EdgeDirection>> : std::true_type {};
 
 /**
  * @brief Helper variable template for is_edge_descriptor_view
@@ -148,8 +168,8 @@ struct is_descriptor_view<vertex_descriptor_view<VertexIter>> : std::true_type {
 /**
  * @brief Specialization for edge_descriptor_view
  */
-template <edge_iterator EdgeIter, vertex_iterator VertexIter>
-struct is_descriptor_view<edge_descriptor_view<EdgeIter, VertexIter>> : std::true_type {};
+template <edge_iterator EdgeIter, vertex_iterator VertexIter, class EdgeDirection>
+struct is_descriptor_view<edge_descriptor_view<EdgeIter, VertexIter, EdgeDirection>> : std::true_type {};
 
 /**
  * @brief Helper variable template for is_descriptor_view
@@ -190,13 +210,13 @@ using descriptor_iterator_type_t = typename descriptor_iterator_type<T>::type;
 template <typename T>
 struct edge_descriptor_edge_iterator_type;
 
-template <edge_iterator EdgeIter, vertex_iterator VertexIter>
-struct edge_descriptor_edge_iterator_type<edge_descriptor<EdgeIter, VertexIter>> {
+template <edge_iterator EdgeIter, vertex_iterator VertexIter, class EdgeDirection>
+struct edge_descriptor_edge_iterator_type<edge_descriptor<EdgeIter, VertexIter, EdgeDirection>> {
   using type = EdgeIter;
 };
 
-template <edge_iterator EdgeIter, vertex_iterator VertexIter>
-struct edge_descriptor_edge_iterator_type<edge_descriptor_view<EdgeIter, VertexIter>> {
+template <edge_iterator EdgeIter, vertex_iterator VertexIter, class EdgeDirection>
+struct edge_descriptor_edge_iterator_type<edge_descriptor_view<EdgeIter, VertexIter, EdgeDirection>> {
   using type = EdgeIter;
 };
 
@@ -212,13 +232,13 @@ using edge_descriptor_edge_iterator_type_t = typename edge_descriptor_edge_itera
 template <typename T>
 struct edge_descriptor_vertex_iterator_type;
 
-template <edge_iterator EdgeIter, vertex_iterator VertexIter>
-struct edge_descriptor_vertex_iterator_type<edge_descriptor<EdgeIter, VertexIter>> {
+template <edge_iterator EdgeIter, vertex_iterator VertexIter, class EdgeDirection>
+struct edge_descriptor_vertex_iterator_type<edge_descriptor<EdgeIter, VertexIter, EdgeDirection>> {
   using type = VertexIter;
 };
 
-template <edge_iterator EdgeIter, vertex_iterator VertexIter>
-struct edge_descriptor_vertex_iterator_type<edge_descriptor_view<EdgeIter, VertexIter>> {
+template <edge_iterator EdgeIter, vertex_iterator VertexIter, class EdgeDirection>
+struct edge_descriptor_vertex_iterator_type<edge_descriptor_view<EdgeIter, VertexIter, EdgeDirection>> {
   using type = VertexIter;
 };
 
@@ -251,9 +271,9 @@ using descriptor_storage_type_t = typename descriptor_storage_type<T>::type;
 template <typename T>
 struct edge_descriptor_storage_type;
 
-template <edge_iterator EdgeIter, vertex_iterator VertexIter>
-struct edge_descriptor_storage_type<edge_descriptor<EdgeIter, VertexIter>> {
-  using type = typename edge_descriptor<EdgeIter, VertexIter>::edge_storage_type;
+template <edge_iterator EdgeIter, vertex_iterator VertexIter, class EdgeDirection>
+struct edge_descriptor_storage_type<edge_descriptor<EdgeIter, VertexIter, EdgeDirection>> {
+  using type = typename edge_descriptor<EdgeIter, VertexIter, EdgeDirection>::edge_storage_type;
 };
 
 /**
@@ -276,8 +296,8 @@ template <vertex_iterator VertexIter>
 struct is_random_access_descriptor<vertex_descriptor<VertexIter>>
       : std::bool_constant<std::random_access_iterator<VertexIter>> {};
 
-template <edge_iterator EdgeIter, vertex_iterator VertexIter>
-struct is_random_access_descriptor<edge_descriptor<EdgeIter, VertexIter>>
+template <edge_iterator EdgeIter, vertex_iterator VertexIter, class EdgeDirection>
+struct is_random_access_descriptor<edge_descriptor<EdgeIter, VertexIter, EdgeDirection>>
       : std::bool_constant<std::random_access_iterator<EdgeIter>> {};
 
 /**
@@ -297,8 +317,8 @@ template <vertex_iterator VertexIter>
 struct is_iterator_based_descriptor<vertex_descriptor<VertexIter>>
       : std::bool_constant<!std::random_access_iterator<VertexIter>> {};
 
-template <edge_iterator EdgeIter, vertex_iterator VertexIter>
-struct is_iterator_based_descriptor<edge_descriptor<EdgeIter, VertexIter>>
+template <edge_iterator EdgeIter, vertex_iterator VertexIter, class EdgeDirection>
+struct is_iterator_based_descriptor<edge_descriptor<EdgeIter, VertexIter, EdgeDirection>>
       : std::bool_constant<!std::random_access_iterator<EdgeIter>> {};
 
 /**

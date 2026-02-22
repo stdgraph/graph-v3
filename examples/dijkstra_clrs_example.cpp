@@ -25,6 +25,7 @@ using Graph = container::dynamic_graph<double,
                                        void,
                                        unsigned,
                                        false,
+                                       false,
                                        container::vol_graph_traits<double, void, void, unsigned, false>>;
 
 void print_path(const vector<unsigned>& predecessor, unsigned source, unsigned target) {

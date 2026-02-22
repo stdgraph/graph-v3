@@ -895,12 +895,14 @@ namespace _cpo_impls {
     };
 
     // Check if we can use default: find_vertex + in_edges(g, u)
+    // Accepts both vertex_member and ADL tiers for the vertex descriptor overload
     template <typename G, typename VId>
     concept _has_default_uid =
           requires(G& g, const VId& uid) {
             { find_vertex(g, uid) } -> std::input_iterator;
             requires vertex_descriptor_type<decltype(*find_vertex(g, uid))>;
-          } && _has_adl_u<G, decltype(*find_vertex(std::declval<G&>(), std::declval<const VId&>()))>;
+          } && (_has_vertex_member_u<G, decltype(*find_vertex(std::declval<G&>(), std::declval<const VId&>()))> ||
+                _has_adl_u<G, decltype(*find_vertex(std::declval<G&>(), std::declval<const VId&>()))>);
 
     template <typename G, typename VId>
     [[nodiscard]] consteval _Choice_t<_St_uid> _Choose_uid() noexcept {
@@ -910,6 +912,24 @@ namespace _cpo_impls {
         return {_St_uid::_default, false};
       } else {
         return {_St_uid::_none, false};
+      }
+    }
+
+    // Helper to wrap result in edge_descriptor_view with in_edge_tag.
+    // Unlike _edges::_wrap_if_needed (which defaults to out_edge_tag),
+    // this always produces in-edge-tagged descriptors.
+    template <typename Result, typename U>
+    [[nodiscard]] constexpr auto _wrap_in_edge(Result&& result, const U& source_vertex) noexcept {
+      using ResultType = std::remove_cvref_t<Result>;
+      if constexpr (is_edge_descriptor_view_v<ResultType>) {
+        // Already an edge_descriptor_view — trust the caller's tag
+        return std::forward<Result>(result);
+      } else {
+        // Wrap raw range/container in edge_descriptor_view<..., in_edge_tag>
+        using edge_iter_t   = std::ranges::iterator_t<Result>;
+        using vertex_iter_t = typename std::remove_cvref_t<U>::iterator_type;
+        return edge_descriptor_view<edge_iter_t, vertex_iter_t, in_edge_tag>(
+              std::forward<Result>(result), source_vertex);
       }
     }
 
@@ -937,9 +957,9 @@ namespace _cpo_impls {
         using _G = std::remove_cvref_t<G>;
         using _U = std::remove_cvref_t<U>;
         if constexpr (_Choice_u<_G, _U>._Strategy == _St_u::_vertex_member) {
-          return _edges::_wrap_if_needed(u.inner_value(g).in_edges(), u);
+          return _wrap_in_edge(u.inner_value(g).in_edges(), u);
         } else if constexpr (_Choice_u<_G, _U>._Strategy == _St_u::_adl) {
-          return _edges::_wrap_if_needed(in_edges(g, u), u);
+          return _wrap_in_edge(in_edges(g, u), u);
         }
       }
 
@@ -968,7 +988,7 @@ namespace _cpo_impls {
             }
           }();
           auto v = *find_vertex(g, static_cast<vertex_id_t<_G>>(uid));
-          return _edges::_wrap_if_needed(std::move(result), v);
+          return _wrap_in_edge(std::move(result), v);
         } else if constexpr (_Choice_uid<_G, _VId>._Strategy == _St_uid::_default) {
           auto v = *find_vertex(std::forward<G>(g), static_cast<vertex_id_t<_G>>(uid));
           return (*this)(std::forward<G>(g), v);

@@ -108,13 +108,13 @@ TEST_CASE("bidirectional_adjacency_list runtime validation",
   REQUIRE(std::ranges::distance(in2) == 2); // from vertices 0, 1
 
   // Verify source_id on incoming edges compiles and returns a vertex ID.
-  // Note: With _wrap_if_needed, source_id returns the queried vertex's ID (2),
-  // while the actual source vertex IDs are in the raw range values.
-  // target_id on wrapped incoming edges accesses the wrong container
-  // (outgoing instead of incoming), so we only verify source_id here.
+  // For BidirGraph (which stores in-edges as plain ints without .in_edges()
+  // on the vertex), source_id() returns the owning/target vertex ID.
+  // Graphs that store in-edges with .in_edges() on the vertex (like
+  // dynamic_graph) get the actual source vertex ID instead.
   for (auto ie : in_edges(g, v2)) {
     auto sid = source_id(g, ie);
-    REQUIRE(sid == 2); // The vertex we called in_edges on
+    REQUIRE(sid == 2); // The vertex we called in_edges on (owning vertex)
   }
 }
 

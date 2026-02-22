@@ -80,11 +80,6 @@ public:
     }
   }
 
-  /**
-     * @brief Get the underlying container value (const version)
-     * @param container The underlying vertex container
-     * @return Const reference to the vertex data from the container
-     */
   template <typename Container>
   [[nodiscard]] constexpr decltype(auto) underlying_value(const Container& container) const noexcept {
     if constexpr (std::random_access_iterator<VertexIter>) {

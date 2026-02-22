@@ -31,35 +31,35 @@ using namespace graph::container;
 
 // Type aliases for common test configurations with uint32_t vertex IDs
 using mos_void_void_void =
-      dynamic_graph<void, void, void, uint32_t, false, mom_graph_traits<void, void, void, uint32_t, false>>;
+      dynamic_graph<void, void, void, uint32_t, false, false, mom_graph_traits<void, void, void, uint32_t, false>>;
 using mos_int_void_void =
-      dynamic_graph<int, void, void, uint32_t, false, mom_graph_traits<int, void, void, uint32_t, false>>;
+      dynamic_graph<int, void, void, uint32_t, false, false, mom_graph_traits<int, void, void, uint32_t, false>>;
 using mos_void_int_void =
-      dynamic_graph<void, int, void, uint32_t, false, mom_graph_traits<void, int, void, uint32_t, false>>;
+      dynamic_graph<void, int, void, uint32_t, false, false, mom_graph_traits<void, int, void, uint32_t, false>>;
 using mos_int_int_void =
-      dynamic_graph<int, int, void, uint32_t, false, mom_graph_traits<int, int, void, uint32_t, false>>;
+      dynamic_graph<int, int, void, uint32_t, false, false, mom_graph_traits<int, int, void, uint32_t, false>>;
 using mos_void_void_int =
-      dynamic_graph<void, void, int, uint32_t, false, mom_graph_traits<void, void, int, uint32_t, false>>;
+      dynamic_graph<void, void, int, uint32_t, false, false, mom_graph_traits<void, void, int, uint32_t, false>>;
 using mos_int_int_int =
-      dynamic_graph<int, int, int, uint32_t, false, mom_graph_traits<int, int, int, uint32_t, false>>;
+      dynamic_graph<int, int, int, uint32_t, false, false, mom_graph_traits<int, int, int, uint32_t, false>>;
 
 // Type aliases with string vertex IDs (the primary use case for map containers)
 using mos_str_void_void_void =
-      dynamic_graph<void, void, void, std::string, false, mom_graph_traits<void, void, void, std::string, false>>;
+      dynamic_graph<void, void, void, std::string, false, false, mom_graph_traits<void, void, void, std::string, false>>;
 using mos_str_int_void_void =
-      dynamic_graph<int, void, void, std::string, false, mom_graph_traits<int, void, void, std::string, false>>;
+      dynamic_graph<int, void, void, std::string, false, false, mom_graph_traits<int, void, void, std::string, false>>;
 using mos_str_void_int_void =
-      dynamic_graph<void, int, void, std::string, false, mom_graph_traits<void, int, void, std::string, false>>;
+      dynamic_graph<void, int, void, std::string, false, false, mom_graph_traits<void, int, void, std::string, false>>;
 using mos_str_int_int_int =
-      dynamic_graph<int, int, int, std::string, false, mom_graph_traits<int, int, int, std::string, false>>;
+      dynamic_graph<int, int, int, std::string, false, false, mom_graph_traits<int, int, int, std::string, false>>;
 
 using mos_sourced =
-      dynamic_graph<void, void, void, uint32_t, true, mom_graph_traits<void, void, void, uint32_t, true>>;
+      dynamic_graph<void, void, void, uint32_t, true, false, mom_graph_traits<void, void, void, uint32_t, true>>;
 using mos_int_sourced =
-      dynamic_graph<int, void, void, uint32_t, true, mom_graph_traits<int, void, void, uint32_t, true>>;
+      dynamic_graph<int, void, void, uint32_t, true, false, mom_graph_traits<int, void, void, uint32_t, true>>;
 
 using mos_str_sourced =
-      dynamic_graph<void, void, void, std::string, true, mom_graph_traits<void, void, void, std::string, true>>;
+      dynamic_graph<void, void, void, std::string, true, false, mom_graph_traits<void, void, void, std::string, true>>;
 
 // Edge and vertex data types for loading
 using edge_void  = copyable_edge_t<uint32_t, void>;

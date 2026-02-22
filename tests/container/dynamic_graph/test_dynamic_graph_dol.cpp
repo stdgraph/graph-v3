@@ -24,28 +24,27 @@ using namespace graph::container;
 
 // Type aliases for common test configurations
 using dol_void_void_void =
-      dynamic_graph<void, void, void, uint32_t, false, dol_graph_traits<void, void, void, uint32_t, false>>;
+      dynamic_graph<void, void, void, uint32_t, false, false, dol_graph_traits<void, void, void, uint32_t, false>>;
 using dol_int_void_void =
-      dynamic_graph<int, void, void, uint32_t, false, dol_graph_traits<int, void, void, uint32_t, false>>;
+      dynamic_graph<int, void, void, uint32_t, false, false, dol_graph_traits<int, void, void, uint32_t, false>>;
 using dol_void_int_void =
-      dynamic_graph<void, int, void, uint32_t, false, dol_graph_traits<void, int, void, uint32_t, false>>;
+      dynamic_graph<void, int, void, uint32_t, false, false, dol_graph_traits<void, int, void, uint32_t, false>>;
 using dol_int_int_void =
-      dynamic_graph<int, int, void, uint32_t, false, dol_graph_traits<int, int, void, uint32_t, false>>;
+      dynamic_graph<int, int, void, uint32_t, false, false, dol_graph_traits<int, int, void, uint32_t, false>>;
 using dol_void_void_int =
-      dynamic_graph<void, void, int, uint32_t, false, dol_graph_traits<void, void, int, uint32_t, false>>;
-using dol_int_int_int = dynamic_graph<int, int, int, uint32_t, false, dol_graph_traits<int, int, int, uint32_t, false>>;
+      dynamic_graph<void, void, int, uint32_t, false, false, dol_graph_traits<void, void, int, uint32_t, false>>;
+using dol_int_int_int = dynamic_graph<int, int, int, uint32_t, false, false, dol_graph_traits<int, int, int, uint32_t, false>>;
 
 using dol_string_string_string =
       dynamic_graph<std::string,
                     std::string,
                     std::string,
                     uint32_t,
-                    false,
-                    dol_graph_traits<std::string, std::string, std::string, uint32_t, false>>;
+                    false, false, dol_graph_traits<std::string, std::string, std::string, uint32_t, false>>;
 
-using dol_sourced = dynamic_graph<void, void, void, uint32_t, true, dol_graph_traits<void, void, void, uint32_t, true>>;
+using dol_sourced = dynamic_graph<void, void, void, uint32_t, true, false, dol_graph_traits<void, void, void, uint32_t, true>>;
 using dol_int_sourced =
-      dynamic_graph<int, void, void, uint32_t, true, dol_graph_traits<int, void, void, uint32_t, true>>;
+      dynamic_graph<int, void, void, uint32_t, true, false, dol_graph_traits<int, void, void, uint32_t, true>>;
 
 //==================================================================================================
 // 1. Construction Tests
@@ -372,19 +371,19 @@ TEST_CASE("dol empty graph edge cases", "[dol][edge_cases]") {
 
 TEST_CASE("dol value types", "[dol][value_types]") {
   SECTION("with void edge value") {
-    using graph_t = dynamic_graph<void, int, int, uint32_t, false, dol_graph_traits<void, int, int, uint32_t, false>>;
+    using graph_t = dynamic_graph<void, int, int, uint32_t, false, false, dol_graph_traits<void, int, int, uint32_t, false>>;
     graph_t g(100);
     REQUIRE(g.graph_value() == 100);
   }
 
   SECTION("with void vertex value") {
-    using graph_t = dynamic_graph<int, void, int, uint32_t, false, dol_graph_traits<int, void, int, uint32_t, false>>;
+    using graph_t = dynamic_graph<int, void, int, uint32_t, false, false, dol_graph_traits<int, void, int, uint32_t, false>>;
     graph_t g(100);
     REQUIRE(g.graph_value() == 100);
   }
 
   SECTION("with void graph value") {
-    using graph_t = dynamic_graph<int, int, void, uint32_t, false, dol_graph_traits<int, int, void, uint32_t, false>>;
+    using graph_t = dynamic_graph<int, int, void, uint32_t, false, false, dol_graph_traits<int, int, void, uint32_t, false>>;
     graph_t g;
     REQUIRE(g.size() == 0);
   }
@@ -415,22 +414,19 @@ TEST_CASE("dol value types", "[dol][value_types]") {
   }
 
   SECTION("with string edge value type") {
-    using graph_t = dynamic_graph<std::string, void, void, uint32_t, false,
-                                  dol_graph_traits<std::string, void, void, uint32_t, false>>;
+    using graph_t = dynamic_graph<std::string, void, void, uint32_t, false, false, dol_graph_traits<std::string, void, void, uint32_t, false>>;
     graph_t g;
     REQUIRE(g.size() == 0);
   }
 
   SECTION("with string vertex value type") {
-    using graph_t = dynamic_graph<void, std::string, void, uint32_t, false,
-                                  dol_graph_traits<void, std::string, void, uint32_t, false>>;
+    using graph_t = dynamic_graph<void, std::string, void, uint32_t, false, false, dol_graph_traits<void, std::string, void, uint32_t, false>>;
     graph_t g;
     REQUIRE(g.size() == 0);
   }
 
   SECTION("with string graph value type") {
-    using graph_t = dynamic_graph<void, void, std::string, uint32_t, false,
-                                  dol_graph_traits<void, void, std::string, uint32_t, false>>;
+    using graph_t = dynamic_graph<void, void, std::string, uint32_t, false, false, dol_graph_traits<void, void, std::string, uint32_t, false>>;
     graph_t g(std::string("test"));
     REQUIRE(g.graph_value() == "test");
   }
@@ -448,32 +444,32 @@ TEST_CASE("dol value types", "[dol][value_types]") {
 TEST_CASE("dol vertex ID types", "[dol][vertex_id]") {
   SECTION("with uint32_t vertex id") {
     using graph_t =
-          dynamic_graph<void, void, void, uint32_t, false, dol_graph_traits<void, void, void, uint32_t, false>>;
+          dynamic_graph<void, void, void, uint32_t, false, false, dol_graph_traits<void, void, void, uint32_t, false>>;
     graph_t g;
     REQUIRE(g.size() == 0);
   }
 
   SECTION("with uint64_t vertex id") {
     using graph_t =
-          dynamic_graph<void, void, void, uint64_t, false, dol_graph_traits<void, void, void, uint64_t, false>>;
+          dynamic_graph<void, void, void, uint64_t, false, false, dol_graph_traits<void, void, void, uint64_t, false>>;
     graph_t g;
     REQUIRE(g.size() == 0);
   }
 
   SECTION("with int32_t vertex id") {
-    using graph_t = dynamic_graph<void, void, void, int32_t, false, dol_graph_traits<void, void, void, int32_t, false>>;
+    using graph_t = dynamic_graph<void, void, void, int32_t, false, false, dol_graph_traits<void, void, void, int32_t, false>>;
     graph_t g;
     REQUIRE(g.size() == 0);
   }
 
   SECTION("with int8_t vertex id") {
-    using graph_t = dynamic_graph<void, void, void, int8_t, false, dol_graph_traits<void, void, void, int8_t, false>>;
+    using graph_t = dynamic_graph<void, void, void, int8_t, false, false, dol_graph_traits<void, void, void, int8_t, false>>;
     graph_t g;
     REQUIRE(g.size() == 0);
   }
 
   SECTION("with int vertex id") {
-    using graph_t = dynamic_graph<void, void, void, int, false, dol_graph_traits<void, void, void, int, false>>;
+    using graph_t = dynamic_graph<void, void, void, int, false, false, dol_graph_traits<void, void, void, int, false>>;
     graph_t g;
     REQUIRE(g.size() == 0);
   }
@@ -945,8 +941,7 @@ TEST_CASE("dol load_vertices", "[dynamic_graph][dol][load_vertices]") {
   }
 
   SECTION("load with custom projection from struct") {
-    using G2           = dynamic_graph<int, std::string, void, uint32_t, false,
-                                       dol_graph_traits<int, std::string, void, uint32_t, false>>;
+    using G2           = dynamic_graph<int, std::string, void, uint32_t, false, false, dol_graph_traits<int, std::string, void, uint32_t, false>>;
     using vertex_data2 = copyable_vertex_t<uint32_t, std::string>;
 
     struct Person {
@@ -1080,8 +1075,7 @@ TEST_CASE("dol load_edges", "[dynamic_graph][dol][load_edges]") {
   }
 
   SECTION("load with custom projection from struct") {
-    using G3           = dynamic_graph<std::string, int, void, uint32_t, false,
-                                       dol_graph_traits<std::string, int, void, uint32_t, false>>;
+    using G3           = dynamic_graph<std::string, int, void, uint32_t, false, false, dol_graph_traits<std::string, int, void, uint32_t, false>>;
     using vertex_data3 = copyable_vertex_t<uint32_t, int>;
     using edge_data3   = copyable_edge_t<uint32_t, std::string>;
 

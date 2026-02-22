@@ -32,72 +32,68 @@ using namespace graph::container;
 //==================================================================================================
 
 // Sequential container graphs (integral VId) - void edges
-using vov_void = dynamic_graph<void, void, void, uint64_t, false, vov_graph_traits<void, void, void, uint64_t, false>>;
+using vov_void = dynamic_graph<void, void, void, uint64_t, false, false, vov_graph_traits<void, void, void, uint64_t, false>>;
 using vofl_void =
-      dynamic_graph<void, void, void, uint64_t, false, vofl_graph_traits<void, void, void, uint64_t, false>>;
-using dol_void = dynamic_graph<void, void, void, uint64_t, false, dol_graph_traits<void, void, void, uint64_t, false>>;
+      dynamic_graph<void, void, void, uint64_t, false, false, vofl_graph_traits<void, void, void, uint64_t, false>>;
+using dol_void = dynamic_graph<void, void, void, uint64_t, false, false, dol_graph_traits<void, void, void, uint64_t, false>>;
 using dofl_void =
-      dynamic_graph<void, void, void, uint64_t, false, dofl_graph_traits<void, void, void, uint64_t, false>>;
-using dov_void = dynamic_graph<void, void, void, uint64_t, false, dov_graph_traits<void, void, void, uint64_t, false>>;
+      dynamic_graph<void, void, void, uint64_t, false, false, dofl_graph_traits<void, void, void, uint64_t, false>>;
+using dov_void = dynamic_graph<void, void, void, uint64_t, false, false, dov_graph_traits<void, void, void, uint64_t, false>>;
 
 // Sequential container graphs (integral VId) - int edges
-using vov_int  = dynamic_graph<int, void, void, uint64_t, false, vov_graph_traits<int, void, void, uint64_t, false>>;
-using vofl_int = dynamic_graph<int, void, void, uint64_t, false, vofl_graph_traits<int, void, void, uint64_t, false>>;
-using dol_int  = dynamic_graph<int, void, void, uint64_t, false, dol_graph_traits<int, void, void, uint64_t, false>>;
-using dofl_int = dynamic_graph<int, void, void, uint64_t, false, dofl_graph_traits<int, void, void, uint64_t, false>>;
-using dov_int  = dynamic_graph<int, void, void, uint64_t, false, dov_graph_traits<int, void, void, uint64_t, false>>;
+using vov_int  = dynamic_graph<int, void, void, uint64_t, false, false, vov_graph_traits<int, void, void, uint64_t, false>>;
+using vofl_int = dynamic_graph<int, void, void, uint64_t, false, false, vofl_graph_traits<int, void, void, uint64_t, false>>;
+using dol_int  = dynamic_graph<int, void, void, uint64_t, false, false, dol_graph_traits<int, void, void, uint64_t, false>>;
+using dofl_int = dynamic_graph<int, void, void, uint64_t, false, false, dofl_graph_traits<int, void, void, uint64_t, false>>;
+using dov_int  = dynamic_graph<int, void, void, uint64_t, false, false, dov_graph_traits<int, void, void, uint64_t, false>>;
 
 // Map-based graphs (string VId) - void edges
 using mos_void =
-      dynamic_graph<void, void, void, std::string, false, mos_graph_traits<void, void, void, std::string, false>>;
+      dynamic_graph<void, void, void, std::string, false, false, mos_graph_traits<void, void, void, std::string, false>>;
 using mol_void =
-      dynamic_graph<void, void, void, std::string, false, mol_graph_traits<void, void, void, std::string, false>>;
+      dynamic_graph<void, void, void, std::string, false, false, mol_graph_traits<void, void, void, std::string, false>>;
 using mous_void =
-      dynamic_graph<void, void, void, std::string, false, mous_graph_traits<void, void, void, std::string, false>>;
+      dynamic_graph<void, void, void, std::string, false, false, mous_graph_traits<void, void, void, std::string, false>>;
 
 // Map-based graphs (string VId) - int edges
 using mos_int =
-      dynamic_graph<int, void, void, std::string, false, mos_graph_traits<int, void, void, std::string, false>>;
+      dynamic_graph<int, void, void, std::string, false, false, mos_graph_traits<int, void, void, std::string, false>>;
 using mol_int =
-      dynamic_graph<int, void, void, std::string, false, mol_graph_traits<int, void, void, std::string, false>>;
+      dynamic_graph<int, void, void, std::string, false, false, mol_graph_traits<int, void, void, std::string, false>>;
 using mous_int =
-      dynamic_graph<int, void, void, std::string, false, mous_graph_traits<int, void, void, std::string, false>>;
+      dynamic_graph<int, void, void, std::string, false, false, mous_graph_traits<int, void, void, std::string, false>>;
 
 // Set-based edge container graphs (integral VId) - void edges
-using vos_void = dynamic_graph<void, void, void, uint64_t, false, vos_graph_traits<void, void, void, uint64_t, false>>;
+using vos_void = dynamic_graph<void, void, void, uint64_t, false, false, vos_graph_traits<void, void, void, uint64_t, false>>;
 
 // Unordered set-based edge container graphs (integral VId) - void edges
 using vous_void =
-      dynamic_graph<void, void, void, uint64_t, false, vous_graph_traits<void, void, void, uint64_t, false>>;
+      dynamic_graph<void, void, void, uint64_t, false, false, vous_graph_traits<void, void, void, uint64_t, false>>;
 
 // Set-based edge container graphs (integral VId) - int edges
-using vos_int = dynamic_graph<int, void, void, uint64_t, false, vos_graph_traits<int, void, void, uint64_t, false>>;
+using vos_int = dynamic_graph<int, void, void, uint64_t, false, false, vos_graph_traits<int, void, void, uint64_t, false>>;
 
 // String edge value types
 using vov_string  = dynamic_graph<std::string,
                                   void,
                                   void,
                                   uint64_t,
-                                  false,
-                                  vov_graph_traits<std::string, void, void, uint64_t, false>>;
+                                  false, false, vov_graph_traits<std::string, void, void, uint64_t, false>>;
 using vofl_string = dynamic_graph<std::string,
                                   void,
                                   void,
                                   uint64_t,
-                                  false,
-                                  vofl_graph_traits<std::string, void, void, uint64_t, false>>;
+                                  false, false, vofl_graph_traits<std::string, void, void, uint64_t, false>>;
 using mos_string  = dynamic_graph<std::string,
                                   void,
                                   void,
                                   std::string,
-                                  false,
-                                  mos_graph_traits<std::string, void, void, std::string, false>>;
+                                  false, false, mos_graph_traits<std::string, void, void, std::string, false>>;
 using mol_string  = dynamic_graph<std::string,
                                   void,
                                   void,
                                   std::string,
-                                  false,
-                                  mol_graph_traits<std::string, void, void, std::string, false>>;
+                                  false, false, mol_graph_traits<std::string, void, void, std::string, false>>;
 
 //==================================================================================================
 // Helper: Count all edges

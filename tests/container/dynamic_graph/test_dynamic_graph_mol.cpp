@@ -34,33 +34,33 @@ using namespace graph::container;
 
 // Type aliases for common test configurations with uint32_t vertex IDs
 using mol_void_void_void =
-      dynamic_graph<void, void, void, uint32_t, false, mol_graph_traits<void, void, void, uint32_t, false>>;
+      dynamic_graph<void, void, void, uint32_t, false, false, mol_graph_traits<void, void, void, uint32_t, false>>;
 using mol_int_void_void =
-      dynamic_graph<int, void, void, uint32_t, false, mol_graph_traits<int, void, void, uint32_t, false>>;
+      dynamic_graph<int, void, void, uint32_t, false, false, mol_graph_traits<int, void, void, uint32_t, false>>;
 using mol_void_int_void =
-      dynamic_graph<void, int, void, uint32_t, false, mol_graph_traits<void, int, void, uint32_t, false>>;
+      dynamic_graph<void, int, void, uint32_t, false, false, mol_graph_traits<void, int, void, uint32_t, false>>;
 using mol_int_int_void =
-      dynamic_graph<int, int, void, uint32_t, false, mol_graph_traits<int, int, void, uint32_t, false>>;
+      dynamic_graph<int, int, void, uint32_t, false, false, mol_graph_traits<int, int, void, uint32_t, false>>;
 using mol_void_void_int =
-      dynamic_graph<void, void, int, uint32_t, false, mol_graph_traits<void, void, int, uint32_t, false>>;
-using mol_int_int_int = dynamic_graph<int, int, int, uint32_t, false, mol_graph_traits<int, int, int, uint32_t, false>>;
+      dynamic_graph<void, void, int, uint32_t, false, false, mol_graph_traits<void, void, int, uint32_t, false>>;
+using mol_int_int_int = dynamic_graph<int, int, int, uint32_t, false, false, mol_graph_traits<int, int, int, uint32_t, false>>;
 
 // Type aliases with string vertex IDs (the primary use case for map containers)
 using mol_str_void_void_void =
-      dynamic_graph<void, void, void, std::string, false, mol_graph_traits<void, void, void, std::string, false>>;
+      dynamic_graph<void, void, void, std::string, false, false, mol_graph_traits<void, void, void, std::string, false>>;
 using mol_str_int_void_void =
-      dynamic_graph<int, void, void, std::string, false, mol_graph_traits<int, void, void, std::string, false>>;
+      dynamic_graph<int, void, void, std::string, false, false, mol_graph_traits<int, void, void, std::string, false>>;
 using mol_str_void_int_void =
-      dynamic_graph<void, int, void, std::string, false, mol_graph_traits<void, int, void, std::string, false>>;
+      dynamic_graph<void, int, void, std::string, false, false, mol_graph_traits<void, int, void, std::string, false>>;
 using mol_str_int_int_int =
-      dynamic_graph<int, int, int, std::string, false, mol_graph_traits<int, int, int, std::string, false>>;
+      dynamic_graph<int, int, int, std::string, false, false, mol_graph_traits<int, int, int, std::string, false>>;
 
-using mol_sourced = dynamic_graph<void, void, void, uint32_t, true, mol_graph_traits<void, void, void, uint32_t, true>>;
+using mol_sourced = dynamic_graph<void, void, void, uint32_t, true, false, mol_graph_traits<void, void, void, uint32_t, true>>;
 using mol_int_sourced =
-      dynamic_graph<int, void, void, uint32_t, true, mol_graph_traits<int, void, void, uint32_t, true>>;
+      dynamic_graph<int, void, void, uint32_t, true, false, mol_graph_traits<int, void, void, uint32_t, true>>;
 
 using mol_str_sourced =
-      dynamic_graph<void, void, void, std::string, true, mol_graph_traits<void, void, void, std::string, true>>;
+      dynamic_graph<void, void, void, std::string, true, false, mol_graph_traits<void, void, void, std::string, true>>;
 
 //==================================================================================================
 // 1. Traits Verification Tests
