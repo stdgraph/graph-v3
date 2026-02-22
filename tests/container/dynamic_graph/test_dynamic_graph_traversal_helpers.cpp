@@ -142,7 +142,7 @@ size_t count_self_loops(const G& g) {
 }
 
 // ============================================================================
-// Test Cases: has_edge
+// Test Cases: has_edges
 // ============================================================================
 
 TEST_CASE("generic_has_edge - empty graph (vov)", "[6.3.2][generic_has_edge][traversal]") {

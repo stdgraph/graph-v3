@@ -384,11 +384,11 @@ TEMPLATE_TEST_CASE("unordered_map CPO num_edges(g)",
 }
 
 //==================================================================================================
-// 6. has_edge(g) CPO Tests
+// 6. has_edges(g) CPO Tests
 //==================================================================================================
 
-TEMPLATE_TEST_CASE("unordered_map CPO has_edge(g)",
-                   "[dynamic_graph][cpo][has_edge][unordered_map]",
+TEMPLATE_TEST_CASE("unordered_map CPO has_edges(g)",
+                   "[dynamic_graph][cpo][has_edges][unordered_map]",
                    uol_tag,
                    uov_tag,
                    uod_tag,
@@ -401,22 +401,22 @@ TEMPLATE_TEST_CASE("unordered_map CPO has_edge(g)",
 
   SECTION("graph with edges") {
     auto g = make_basic_graph_void<Graph_void>();
-    REQUIRE(has_edge(g) == true);
+    REQUIRE(has_edges(g) == true);
   }
 
   SECTION("empty graph") {
     Graph_void g;
-    REQUIRE(has_edge(g) == false);
+    REQUIRE(has_edges(g) == false);
   }
 
   SECTION("const correctness") {
     const auto g = make_sparse_graph_void<Graph_void>();
-    REQUIRE(has_edge(g) == true);
+    REQUIRE(has_edges(g) == true);
   }
 
   SECTION("with edge values") {
     auto g = make_sparse_graph_int<Graph_int_ev>();
-    REQUIRE(has_edge(g) == true);
+    REQUIRE(has_edges(g) == true);
   }
 }
 

@@ -129,7 +129,7 @@ pattern. See [CPO Reference](cpo-reference.md) for full resolution order.
 | `num_vertices(g)` | integral | O(1) | `size(vertices(g))` |
 | `num_vertices(g, pid)` | integral | O(1) | `size(vertices(g))` |
 | `num_edges(g)` | integral | O(V + E) | Sum of `distance(edges(g, u))` over all vertices |
-| `has_edge(g)` | bool | O(V) | First vertex with non-empty edge range |
+| `has_edges(g)` | bool | O(V) | First vertex with non-empty edge range |
 | `num_partitions(g)` | integral | O(1) | `1` |
 
 ### Vertex Functions

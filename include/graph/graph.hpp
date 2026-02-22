@@ -149,7 +149,7 @@ using adj_list::degree;
 using adj_list::find_vertex_edge;
 using adj_list::contains_out_edge;
 using adj_list::contains_edge;
-using adj_list::has_edge;
+using adj_list::has_edges;
 using adj_list::vertex_value;
 using adj_list::edge_value;
 using adj_list::graph_value;

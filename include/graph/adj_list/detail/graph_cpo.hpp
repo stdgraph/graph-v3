@@ -2898,7 +2898,7 @@ namespace _cpo_impls {
 } // namespace _cpo_impls
 
 // =============================================================================
-// has_edge(g) - Public CPO instance
+// has_edges(g) - Public CPO instance
 // =============================================================================
 
 inline namespace _cpo_instances {
@@ -2906,11 +2906,11 @@ inline namespace _cpo_instances {
      * @brief CPO for checking if the graph has any edges
      * 
      * Usage: 
-     *   bool has_edges = graph::has_edge(my_graph);
+     *   bool result = graph::has_edges(my_graph);
      * 
      * Returns: true if graph has at least one edge, false otherwise
      */
-  inline constexpr _cpo_impls::_has_edge::_fn has_edge{};
+  inline constexpr _cpo_impls::_has_edge::_fn has_edges{};
 } // namespace _cpo_instances
 
 namespace _cpo_impls {

@@ -74,7 +74,7 @@ adjacency list edges and edge list edges.
 | `target_id(el, uv)` | `vertex_id_t<EL>` | O(1) | Automatic for tuple and edge_descriptor patterns |
 | `edge_value(el, uv)` | `edge_value_t<EL>` | O(1) | Automatic for 3+-element tuples and edge_descriptor patterns |
 | `num_edges(el)` | integral | O(1) | `std::ranges::size(el)` |
-| `has_edge(el)` | bool | O(1) | `num_edges(el) > 0` |
+| `has_edges(el)` | bool | O(1) | `num_edges(el) > 0` |
 | `contains_edge(el, uid, vid)` | bool | O(E) | Linear search for matching `source_id`/`target_id` |
 
 ---

@@ -261,29 +261,29 @@ TEMPLATE_TEST_CASE("forward_list CPO num_edges(g)", "[dynamic_graph][cpo][num_ed
 }
 
 //==================================================================================================
-// 6. has_edge(g) CPO Tests
+// 6. has_edges(g) CPO Tests
 //==================================================================================================
 
-TEMPLATE_TEST_CASE("forward_list CPO has_edge(g)", "[dynamic_graph][cpo][has_edge]", vofl_tag, dofl_tag) {
+TEMPLATE_TEST_CASE("forward_list CPO has_edges(g)", "[dynamic_graph][cpo][has_edges]", vofl_tag, dofl_tag) {
   using Types      = graph_test_types<TestType>;
   using Graph_void = typename Types::void_type;
 
   SECTION("empty graph") {
     Graph_void g;
-    REQUIRE(!has_edge(g));
+    REQUIRE(!has_edges(g));
   }
 
   SECTION("with edges") {
     Graph_void g({{0, 1}});
-    REQUIRE(has_edge(g));
+    REQUIRE(has_edges(g));
   }
 
   SECTION("matches num_edges") {
     Graph_void g1;
     Graph_void g2({{0, 1}});
 
-    REQUIRE(has_edge(g1) == (num_edges(g1) > 0));
-    REQUIRE(has_edge(g2) == (num_edges(g2) > 0));
+    REQUIRE(has_edges(g1) == (num_edges(g1) > 0));
+    REQUIRE(has_edges(g2) == (num_edges(g2) > 0));
   }
 }
 
@@ -2958,7 +2958,7 @@ TEMPLATE_TEST_CASE("forward_list CPO integration", "[dynamic_graph][cpo][integra
 
     REQUIRE(num_vertices(g) == 3);
     REQUIRE(num_edges(g) == 2);
-    REQUIRE(has_edge(g));
+    REQUIRE(has_edges(g));
   }
 
   SECTION("empty graph properties") {
@@ -2966,7 +2966,7 @@ TEMPLATE_TEST_CASE("forward_list CPO integration", "[dynamic_graph][cpo][integra
 
     REQUIRE(num_vertices(g) == 0);
     REQUIRE(num_edges(g) == 0);
-    REQUIRE(!has_edge(g));
+    REQUIRE(!has_edges(g));
   }
 
   SECTION("find vertex by id") {

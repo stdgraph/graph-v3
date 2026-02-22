@@ -43,7 +43,7 @@ All CPOs listed below are available in `namespace graph` after
 | `find_in_edge` | `(g, u, v)` / `(g, uid, vid)` | `in_edge_iterator_t<G>` | O(deg) | Yes |
 | `contains_out_edge` | `(g, uid, vid)` | `bool` | O(deg) | Yes |
 | `contains_in_edge` | `(g, uid, vid)` | `bool` | O(deg) | Yes |
-| `has_edge` | `(g)` | `bool` | O(V) | Yes |
+| `has_edges` | `(g)` | `bool` | O(V) | Yes |
 | `vertex_value` | `(g, u)` | `decltype(auto)` | O(1) | No |
 | `edge_value` | `(g, uv)` | `decltype(auto)` | O(1) | Yes |
 | `graph_value` | `(g)` | `decltype(auto)` | O(1) | No |
@@ -272,10 +272,10 @@ Tests whether an outgoing edge from `uid` to `vid` exists.
 | **Default** | `find_vertex_edge(g, uid, vid) != ranges::end(edges(g, uid))` |
 | **Complexity** | O(degree(uid)) |
 
-### `has_edge(g)`
+### `has_edges(g)`
 
 ```cpp
-auto has_edge(G& g) -> bool;
+auto has_edges(G& g) -> bool;
 ```
 
 Tests whether the graph has at least one edge.

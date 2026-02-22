@@ -30,7 +30,7 @@ add_executable(graph3_adj_list_tests
     cpo/test_contains_in_edge_cpo.cpp
     cpo/test_find_vertex_edge_cpo.cpp
     cpo/test_contains_edge_cpo.cpp
-    cpo/test_has_edge_cpo.cpp
+    cpo/test_has_edges_cpo.cpp
     cpo/test_vertex_value_cpo.cpp
     cpo/test_edge_value_cpo.cpp
     cpo/test_edge_value_cpo_value_method.cpp

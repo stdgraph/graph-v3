@@ -397,17 +397,17 @@ TEMPLATE_TEST_CASE("edge_map CPO num_edges(g)", "[dynamic_graph][cpo][num_edges]
 }
 
 //==================================================================================================
-// 6. has_edge(g) CPO Tests
+// 6. has_edges(g) CPO Tests
 //==================================================================================================
 
-TEMPLATE_TEST_CASE("edge_map CPO has_edge(g)", "[dynamic_graph][cpo][has_edge][edge_map]", vom_tag, mom_tag, voum_tag) {
+TEMPLATE_TEST_CASE("edge_map CPO has_edges(g)", "[dynamic_graph][cpo][has_edges][edge_map]", vom_tag, mom_tag, voum_tag) {
   using Types        = graph_test_types<TestType>;
   using Graph_void   = typename Types::void_type;
   using Graph_int_ev = typename Types::int_ev;
 
   SECTION("empty graph") {
     Graph_void g;
-    REQUIRE(has_edge(g) == false);
+    REQUIRE(has_edges(g) == false);
   }
 
   SECTION("graph with edges") {
@@ -420,7 +420,7 @@ TEMPLATE_TEST_CASE("edge_map CPO has_edge(g)", "[dynamic_graph][cpo][has_edge][e
       g.load_edges(edgelist);
     }
 
-    REQUIRE(has_edge(g) == true);
+    REQUIRE(has_edges(g) == true);
   }
 
   SECTION("const correctness") {
@@ -434,7 +434,7 @@ TEMPLATE_TEST_CASE("edge_map CPO has_edge(g)", "[dynamic_graph][cpo][has_edge][e
     }
 
     const auto& cg = g;
-    REQUIRE(has_edge(cg) == true);
+    REQUIRE(has_edges(cg) == true);
   }
 
   SECTION("with edge values") {
@@ -447,7 +447,7 @@ TEMPLATE_TEST_CASE("edge_map CPO has_edge(g)", "[dynamic_graph][cpo][has_edge][e
       g.load_edges(edgelist);
     }
 
-    REQUIRE(has_edge(g) == true);
+    REQUIRE(has_edges(g) == true);
   }
 }
 

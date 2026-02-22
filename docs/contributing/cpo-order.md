@@ -73,7 +73,7 @@ The following order should be followed for implementing CPOs and their correspon
 | # | CPO Function | Type Aliases | Description |
 |---|--------------|--------------|-------------|
 | 18 | `num_partitions(g)` | - | Get number of partitions (optional) |
-| 19 | `has_edge(g)` | - | Check if graph has any edges |
+| 19 | `has_edges(g)` | - | Check if graph has any edges |
 
 ## Implementation Priority
 
@@ -113,7 +113,7 @@ The following order should be followed for implementing CPOs and their correspon
 - `source(g, uv)` - For sourced edges
 - `partition_id(g, u)` - For multipartite graphs
 - `num_partitions(g)` - For multipartite graphs
-- `has_edge(g)` - Convenience function
+- `has_edges(g)` - Convenience function
 
 ### Phase 5: Value Access (Optional)
 **For graphs with user-defined values**

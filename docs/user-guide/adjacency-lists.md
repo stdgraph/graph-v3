@@ -92,7 +92,7 @@ three tiers: custom member → ADL free function → built-in default.
 |-----|-------------|
 | `find_vertex_edge(g, u, v)` | Find outgoing edge from vertex `u` to vertex `v` |
 | `contains_edge(g, u, v)` | Returns `true` if edge u→v exists |
-| `has_edge(g, uid, vid)` | Returns `true` if edge uid→vid exists |
+| `has_edges(g)` | Returns `true` if graph has at least one edge |
 
 ### Partition CPOs
 

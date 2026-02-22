@@ -80,7 +80,7 @@ Complexity depends on the vertex container, the edge container, or neither.
 |-----------|------------|
 | `num_vertices(g)` | O(1) |
 | `num_edges(g)` | O(1) |
-| `has_edge(g)` | O(1) |
+| `has_edges(g)` | O(1) |
 
 ### Template parameters
 
