@@ -891,13 +891,13 @@ Message: `docs: cleanup Doxygen, update user docs, archive strategy (Phase 6)`
 | 1 | Add `dynamic_in_edge` + detection aliases | COMPLETE | |
 | 2 | Wire `in_edge_type` into bidir support | COMPLETE | |
 | 3 | Rename `dynamic_edge` → `dynamic_out_edge` | COMPLETE | f560d86 |
-| 4a | Remove `Sourced` from edge classes | NOT STARTED | |
-| 4b | Remove `Sourced` from vertex/graph classes | NOT STARTED | |
-| 4c | Remove `Sourced` from 27 traits files | NOT STARTED | |
-| 4d | Update `load_edges`, remove `make_in_edge` | NOT STARTED | |
-| 4e | Update `dynamic_adjacency_graph` alias | NOT STARTED | |
-| 4f | Update `std::hash` specializations | NOT STARTED | |
-| 4g | Compile non-test code | NOT STARTED | |
+| 4a | Remove `Sourced` from edge classes | COMPLETE | 89e1018 |
+| 4b | Remove `Sourced` from vertex/graph classes | COMPLETE | 08e6ef6 |
+| 4c | Remove `Sourced` from 27 traits files | COMPLETE | 67a0e1f |
+| 4d | Update `load_edges`, remove `make_in_edge` | COMPLETE | 7b06988 |
+| 4e | Update `dynamic_adjacency_graph` alias | COMPLETE | done in 4b (08e6ef6) |
+| 4f | Update `std::hash` specializations | COMPLETE | done in 4a (89e1018) |
+| 4g | Compile non-test code | COMPLETE | 01a980a |
 | 5.1 | Update `graph_test_types.hpp` | NOT STARTED | |
 | 5.2 | Update ~48 container test files | NOT STARTED | |
 | 5.3 | Update bidir container-native tests | NOT STARTED | |
