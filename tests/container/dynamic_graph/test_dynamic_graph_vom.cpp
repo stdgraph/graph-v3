@@ -28,29 +28,25 @@ using namespace graph::container;
 
 // Type aliases for common test configurations
 using vos_void_void_void =
-      dynamic_graph<void, void, void, uint32_t, false, false, vom_graph_traits<void, void, void, uint32_t, false>>;
+      dynamic_graph<void, void, void, uint32_t, false, vom_graph_traits<void, void, void, uint32_t, false>>;
 using vos_int_void_void =
-      dynamic_graph<int, void, void, uint32_t, false, false, vom_graph_traits<int, void, void, uint32_t, false>>;
+      dynamic_graph<int, void, void, uint32_t, false, vom_graph_traits<int, void, void, uint32_t, false>>;
 using vos_void_int_void =
-      dynamic_graph<void, int, void, uint32_t, false, false, vom_graph_traits<void, int, void, uint32_t, false>>;
+      dynamic_graph<void, int, void, uint32_t, false, vom_graph_traits<void, int, void, uint32_t, false>>;
 using vos_int_int_void =
-      dynamic_graph<int, int, void, uint32_t, false, false, vom_graph_traits<int, int, void, uint32_t, false>>;
+      dynamic_graph<int, int, void, uint32_t, false, vom_graph_traits<int, int, void, uint32_t, false>>;
 using vos_void_void_int =
-      dynamic_graph<void, void, int, uint32_t, false, false, vom_graph_traits<void, void, int, uint32_t, false>>;
+      dynamic_graph<void, void, int, uint32_t, false, vom_graph_traits<void, void, int, uint32_t, false>>;
 using vos_int_int_int =
-      dynamic_graph<int, int, int, uint32_t, false, false, vom_graph_traits<int, int, int, uint32_t, false>>;
+      dynamic_graph<int, int, int, uint32_t, false, vom_graph_traits<int, int, int, uint32_t, false>>;
 
 using vos_string_string_string =
       dynamic_graph<std::string,
                     std::string,
                     std::string,
                     uint32_t,
-                    false, false, vom_graph_traits<std::string, std::string, std::string, uint32_t, false>>;
+                    false, vom_graph_traits<std::string, std::string, std::string, uint32_t, false>>;
 
-using vos_sourced =
-      dynamic_graph<void, void, void, uint32_t, true, false, vom_graph_traits<void, void, void, uint32_t, true>>;
-using vos_int_sourced =
-      dynamic_graph<int, void, void, uint32_t, true, false, vom_graph_traits<int, void, void, uint32_t, true>>;
 
 // Edge and vertex data types for loading
 using edge_void  = copyable_edge_t<uint32_t, void>;
@@ -218,19 +214,6 @@ TEST_CASE("vom edge deduplication", "[vom][set][deduplication]") {
     REQUIRE(v0.edges().begin()->second.value() == 100);
   }
 
-  SECTION("sourced edges - deduplication by (source_id, target_id)") {
-    vos_sourced            g;
-    std::vector<edge_void> ee = {
-          {0, 1},
-          {0, 1}, // Duplicates
-          {1, 0},
-          {1, 0} // Different direction, also duplicates
-    };
-    g.load_edges(ee, std::identity{});
-
-    // Should have exactly 2 unique edges (0->1 and 1->0)
-    REQUIRE(count_all_edges(g) == 2);
-  }
 }
 
 //==================================================================================================
@@ -254,21 +237,6 @@ TEST_CASE("vom edges are sorted by target_id", "[vom][set][sorted]") {
     REQUIRE(target_ids == std::vector<uint32_t>{1, 2, 3, 5, 8});
   }
 
-  SECTION("sourced edges sorted by target_id (source is same per vertex)") {
-    vos_sourced            g;
-    std::vector<edge_void> ee = {{0, 7}, {0, 3}, {0, 9}, {0, 1}};
-    g.load_edges(ee, std::identity{});
-
-    auto&                 v0 = g[0];
-    std::vector<uint32_t> target_ids;
-    for (const auto& edge : v0.edges()) {
-      target_ids.push_back(edge.second.target_id());
-    }
-
-    // Note: For sourced edges, comparison is (source_id, target_id)
-    // Since source_id is same (0) for all edges from v0, they sort by target_id
-    REQUIRE(target_ids == std::vector<uint32_t>{1, 3, 7, 9});
-  }
 }
 
 //==================================================================================================
@@ -429,39 +397,6 @@ TEST_CASE("vom edge values", "[vom][edge][value]") {
 // 9. Sourced Edge Tests
 //==================================================================================================
 
-TEST_CASE("vom sourced edges", "[vom][sourced]") {
-  SECTION("source_id access") {
-    vos_sourced g({{0, 1}, {0, 2}, {1, 0}});
-
-    auto& v0 = g[0];
-    for (const auto& edge : v0.edges()) {
-      REQUIRE(edge.second.source_id() == 0);
-    }
-
-    auto& v1 = g[1];
-    for (const auto& edge : v1.edges()) {
-      REQUIRE(edge.second.source_id() == 1);
-    }
-  }
-
-  SECTION("sourced edge with values") {
-    vos_int_sourced       g;
-    std::vector<edge_int> ee = {{0, 1, 100}, {1, 0, 200}};
-    g.load_edges(ee, std::identity{});
-
-    auto& v0  = g[0];
-    auto  it0 = v0.edges().begin();
-    REQUIRE(it0->second.source_id() == 0);
-    REQUIRE(it0->second.target_id() == 1);
-    REQUIRE(it0->second.value() == 100);
-
-    auto& v1  = g[1];
-    auto  it1 = v1.edges().begin();
-    REQUIRE(it1->second.source_id() == 1);
-    REQUIRE(it1->second.target_id() == 0);
-    REQUIRE(it1->second.value() == 200);
-  }
-}
 
 //==================================================================================================
 // 10. Self-Loop Tests
@@ -673,13 +608,6 @@ TEST_CASE("vom type traits", "[vom][traits]") {
     static_assert(requires { typename edges_t::key_type; });
   }
 
-  SECTION("sourced trait") {
-    using traits_unsourced = vom_graph_traits<void, void, void, uint32_t, false>;
-    using traits_sourced   = vom_graph_traits<void, void, void, uint32_t, true>;
-
-    static_assert(traits_unsourced::sourced == false);
-    static_assert(traits_sourced::sourced == true);
-  }
 }
 
 //==================================================================================================

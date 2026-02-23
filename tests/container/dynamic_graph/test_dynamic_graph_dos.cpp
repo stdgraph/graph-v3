@@ -28,27 +28,24 @@ using namespace graph::container;
 
 // Type aliases for common test configurations
 using dos_void_void_void =
-      dynamic_graph<void, void, void, uint32_t, false, false, dos_graph_traits<void, void, void, uint32_t, false>>;
+      dynamic_graph<void, void, void, uint32_t, false, dos_graph_traits<void, void, void, uint32_t, false>>;
 using dos_int_void_void =
-      dynamic_graph<int, void, void, uint32_t, false, false, dos_graph_traits<int, void, void, uint32_t, false>>;
+      dynamic_graph<int, void, void, uint32_t, false, dos_graph_traits<int, void, void, uint32_t, false>>;
 using dos_void_int_void =
-      dynamic_graph<void, int, void, uint32_t, false, false, dos_graph_traits<void, int, void, uint32_t, false>>;
+      dynamic_graph<void, int, void, uint32_t, false, dos_graph_traits<void, int, void, uint32_t, false>>;
 using dos_int_int_void =
-      dynamic_graph<int, int, void, uint32_t, false, false, dos_graph_traits<int, int, void, uint32_t, false>>;
+      dynamic_graph<int, int, void, uint32_t, false, dos_graph_traits<int, int, void, uint32_t, false>>;
 using dos_void_void_int =
-      dynamic_graph<void, void, int, uint32_t, false, false, dos_graph_traits<void, void, int, uint32_t, false>>;
-using dos_int_int_int = dynamic_graph<int, int, int, uint32_t, false, false, dos_graph_traits<int, int, int, uint32_t, false>>;
+      dynamic_graph<void, void, int, uint32_t, false, dos_graph_traits<void, void, int, uint32_t, false>>;
+using dos_int_int_int = dynamic_graph<int, int, int, uint32_t, false, dos_graph_traits<int, int, int, uint32_t, false>>;
 
 using dos_string_string_string =
       dynamic_graph<std::string,
                     std::string,
                     std::string,
                     uint32_t,
-                    false, false, dos_graph_traits<std::string, std::string, std::string, uint32_t, false>>;
+                    false, dos_graph_traits<std::string, std::string, std::string, uint32_t, false>>;
 
-using dos_sourced = dynamic_graph<void, void, void, uint32_t, true, false, dos_graph_traits<void, void, void, uint32_t, true>>;
-using dos_int_sourced =
-      dynamic_graph<int, void, void, uint32_t, true, false, dos_graph_traits<int, void, void, uint32_t, true>>;
 
 // Edge and vertex data types for loading
 using edge_void  = copyable_edge_t<uint32_t, void>;
@@ -216,19 +213,6 @@ TEST_CASE("dos edge deduplication", "[dos][set][deduplication]") {
     REQUIRE(v0.edges().begin()->value() == 100);
   }
 
-  SECTION("sourced edges - deduplication by (source_id, target_id)") {
-    dos_sourced            g;
-    std::vector<edge_void> ee = {
-          {0, 1},
-          {0, 1}, // Duplicates
-          {1, 0},
-          {1, 0} // Different direction, also duplicates
-    };
-    g.load_edges(ee, std::identity{});
-
-    // Should have exactly 2 unique edges (0->1 and 1->0)
-    REQUIRE(count_all_edges(g) == 2);
-  }
 }
 
 //==================================================================================================
@@ -252,21 +236,6 @@ TEST_CASE("dos edges are sorted by target_id", "[dos][set][sorted]") {
     REQUIRE(target_ids == std::vector<uint32_t>{1, 2, 3, 5, 8});
   }
 
-  SECTION("sourced edges sorted by target_id (source is same per vertex)") {
-    dos_sourced            g;
-    std::vector<edge_void> ee = {{0, 7}, {0, 3}, {0, 9}, {0, 1}};
-    g.load_edges(ee, std::identity{});
-
-    auto&                 v0 = g[0];
-    std::vector<uint32_t> target_ids;
-    for (const auto& edge : v0.edges()) {
-      target_ids.push_back(edge.target_id());
-    }
-
-    // Note: For sourced edges, comparison is (source_id, target_id)
-    // Since source_id is same (0) for all edges from v0, they sort by target_id
-    REQUIRE(target_ids == std::vector<uint32_t>{1, 3, 7, 9});
-  }
 }
 
 //==================================================================================================
@@ -427,39 +396,6 @@ TEST_CASE("dos edge values", "[dos][edge][value]") {
 // 9. Sourced Edge Tests
 //==================================================================================================
 
-TEST_CASE("dos sourced edges", "[dos][sourced]") {
-  SECTION("source_id access") {
-    dos_sourced g({{0, 1}, {0, 2}, {1, 0}});
-
-    auto& v0 = g[0];
-    for (const auto& edge : v0.edges()) {
-      REQUIRE(edge.source_id() == 0);
-    }
-
-    auto& v1 = g[1];
-    for (const auto& edge : v1.edges()) {
-      REQUIRE(edge.source_id() == 1);
-    }
-  }
-
-  SECTION("sourced edge with values") {
-    dos_int_sourced       g;
-    std::vector<edge_int> ee = {{0, 1, 100}, {1, 0, 200}};
-    g.load_edges(ee, std::identity{});
-
-    auto& v0  = g[0];
-    auto  it0 = v0.edges().begin();
-    REQUIRE(it0->source_id() == 0);
-    REQUIRE(it0->target_id() == 1);
-    REQUIRE(it0->value() == 100);
-
-    auto& v1  = g[1];
-    auto  it1 = v1.edges().begin();
-    REQUIRE(it1->source_id() == 1);
-    REQUIRE(it1->target_id() == 0);
-    REQUIRE(it1->value() == 200);
-  }
-}
 
 //==================================================================================================
 // 10. Self-Loop Tests
@@ -706,13 +642,6 @@ TEST_CASE("dos type traits", "[dos][traits]") {
     static_assert(requires(vertices_t& v) { v.push_front(std::declval<typename vertices_t::value_type>()); });
   }
 
-  SECTION("sourced trait") {
-    using traits_unsourced = dos_graph_traits<void, void, void, uint32_t, false>;
-    using traits_sourced   = dos_graph_traits<void, void, void, uint32_t, true>;
-
-    static_assert(traits_unsourced::sourced == false);
-    static_assert(traits_sourced::sourced == true);
-  }
 }
 
 //==================================================================================================

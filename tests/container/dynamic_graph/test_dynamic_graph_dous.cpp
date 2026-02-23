@@ -32,29 +32,25 @@ using namespace graph::container;
 
 // Type aliases for common test configurations
 using dous_void_void_void =
-      dynamic_graph<void, void, void, uint32_t, false, false, dous_graph_traits<void, void, void, uint32_t, false>>;
+      dynamic_graph<void, void, void, uint32_t, false, dous_graph_traits<void, void, void, uint32_t, false>>;
 using dous_int_void_void =
-      dynamic_graph<int, void, void, uint32_t, false, false, dous_graph_traits<int, void, void, uint32_t, false>>;
+      dynamic_graph<int, void, void, uint32_t, false, dous_graph_traits<int, void, void, uint32_t, false>>;
 using dous_void_int_void =
-      dynamic_graph<void, int, void, uint32_t, false, false, dous_graph_traits<void, int, void, uint32_t, false>>;
+      dynamic_graph<void, int, void, uint32_t, false, dous_graph_traits<void, int, void, uint32_t, false>>;
 using dous_int_int_void =
-      dynamic_graph<int, int, void, uint32_t, false, false, dous_graph_traits<int, int, void, uint32_t, false>>;
+      dynamic_graph<int, int, void, uint32_t, false, dous_graph_traits<int, int, void, uint32_t, false>>;
 using dous_void_void_int =
-      dynamic_graph<void, void, int, uint32_t, false, false, dous_graph_traits<void, void, int, uint32_t, false>>;
+      dynamic_graph<void, void, int, uint32_t, false, dous_graph_traits<void, void, int, uint32_t, false>>;
 using dous_int_int_int =
-      dynamic_graph<int, int, int, uint32_t, false, false, dous_graph_traits<int, int, int, uint32_t, false>>;
+      dynamic_graph<int, int, int, uint32_t, false, dous_graph_traits<int, int, int, uint32_t, false>>;
 
 using dous_string_string_string =
       dynamic_graph<std::string,
                     std::string,
                     std::string,
                     uint32_t,
-                    false, false, dous_graph_traits<std::string, std::string, std::string, uint32_t, false>>;
+                    false, dous_graph_traits<std::string, std::string, std::string, uint32_t, false>>;
 
-using dous_sourced =
-      dynamic_graph<void, void, void, uint32_t, true, false, dous_graph_traits<void, void, void, uint32_t, true>>;
-using dous_int_sourced =
-      dynamic_graph<int, void, void, uint32_t, true, false, dous_graph_traits<int, void, void, uint32_t, true>>;
 
 // Edge and vertex data types for loading
 using edge_void  = copyable_edge_t<uint32_t, void>;
@@ -295,34 +291,6 @@ TEST_CASE("dous value access", "[dous][values]") {
 // 6. Sourced Edge Tests
 //==================================================================================================
 
-TEST_CASE("dous sourced edges", "[dous][sourced]") {
-  SECTION("source_id access") {
-    dous_sourced          g;
-    std::deque<edge_void> ee = {{0, 1}, {1, 2}, {0, 2}};
-    g.load_edges(ee, std::identity{});
-
-    auto& v0 = g[0];
-    for (auto& e : v0.edges()) {
-      REQUIRE(e.source_id() == 0);
-    }
-
-    auto& v1 = g[1];
-    for (auto& e : v1.edges()) {
-      REQUIRE(e.source_id() == 1);
-    }
-  }
-
-  SECTION("sourced edge deduplication") {
-    dous_int_sourced g;
-    // Multiple edges from 0 to 1 with different values
-    std::deque<edge_int> ee = {{0, 1, 100}, {0, 1, 200}, {0, 1, 300}};
-    g.load_edges(ee, std::identity{});
-
-    auto& v0 = g[0];
-    // unordered_set deduplicates by (source_id, target_id) pair
-    REQUIRE(std::ranges::distance(v0.edges()) == 1);
-  }
-}
 
 //==================================================================================================
 // 7. Unordered Set Specific Behavior

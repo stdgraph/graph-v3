@@ -37,33 +37,28 @@ using namespace graph::container;
 
 // Type aliases for common test configurations with uint32_t vertex IDs
 using uov_void_void_void =
-      dynamic_graph<void, void, void, uint32_t, false, false, uov_graph_traits<void, void, void, uint32_t, false>>;
+      dynamic_graph<void, void, void, uint32_t, false, uov_graph_traits<void, void, void, uint32_t, false>>;
 using uov_int_void_void =
-      dynamic_graph<int, void, void, uint32_t, false, false, uov_graph_traits<int, void, void, uint32_t, false>>;
+      dynamic_graph<int, void, void, uint32_t, false, uov_graph_traits<int, void, void, uint32_t, false>>;
 using uov_void_int_void =
-      dynamic_graph<void, int, void, uint32_t, false, false, uov_graph_traits<void, int, void, uint32_t, false>>;
+      dynamic_graph<void, int, void, uint32_t, false, uov_graph_traits<void, int, void, uint32_t, false>>;
 using uov_int_int_void =
-      dynamic_graph<int, int, void, uint32_t, false, false, uov_graph_traits<int, int, void, uint32_t, false>>;
+      dynamic_graph<int, int, void, uint32_t, false, uov_graph_traits<int, int, void, uint32_t, false>>;
 using uov_void_void_int =
-      dynamic_graph<void, void, int, uint32_t, false, false, uov_graph_traits<void, void, int, uint32_t, false>>;
-using uov_int_int_int = dynamic_graph<int, int, int, uint32_t, false, false, uov_graph_traits<int, int, int, uint32_t, false>>;
+      dynamic_graph<void, void, int, uint32_t, false, uov_graph_traits<void, void, int, uint32_t, false>>;
+using uov_int_int_int = dynamic_graph<int, int, int, uint32_t, false, uov_graph_traits<int, int, int, uint32_t, false>>;
 
 // Type aliases with string vertex IDs (a common use case for unordered_map containers)
 using uov_str_void_void_void =
-      dynamic_graph<void, void, void, std::string, false, false, uov_graph_traits<void, void, void, std::string, false>>;
+      dynamic_graph<void, void, void, std::string, false, uov_graph_traits<void, void, void, std::string, false>>;
 using uov_str_int_void_void =
-      dynamic_graph<int, void, void, std::string, false, false, uov_graph_traits<int, void, void, std::string, false>>;
+      dynamic_graph<int, void, void, std::string, false, uov_graph_traits<int, void, void, std::string, false>>;
 using uov_str_void_int_void =
-      dynamic_graph<void, int, void, std::string, false, false, uov_graph_traits<void, int, void, std::string, false>>;
+      dynamic_graph<void, int, void, std::string, false, uov_graph_traits<void, int, void, std::string, false>>;
 using uov_str_int_int_int =
-      dynamic_graph<int, int, int, std::string, false, false, uov_graph_traits<int, int, int, std::string, false>>;
+      dynamic_graph<int, int, int, std::string, false, uov_graph_traits<int, int, int, std::string, false>>;
 
-using uov_sourced = dynamic_graph<void, void, void, uint32_t, true, false, uov_graph_traits<void, void, void, uint32_t, true>>;
-using uov_int_sourced =
-      dynamic_graph<int, void, void, uint32_t, true, false, uov_graph_traits<int, void, void, uint32_t, true>>;
 
-using uov_str_sourced =
-      dynamic_graph<void, void, void, std::string, true, false, uov_graph_traits<void, void, void, std::string, true>>;
 
 //==================================================================================================
 // 1. Traits Verification Tests
@@ -104,13 +99,6 @@ TEST_CASE("uov traits verification", "[dynamic_graph][uov][traits]") {
     REQUIRE(true);
   }
 
-  SECTION("sourced flag is preserved") {
-    using traits_unsourced = uov_graph_traits<void, void, void, uint32_t, false>;
-    using traits_sourced   = uov_graph_traits<void, void, void, uint32_t, true>;
-    static_assert(traits_unsourced::sourced == false);
-    static_assert(traits_sourced::sourced == true);
-    REQUIRE(true);
-  }
 
   SECTION("vertex_id_type for uint32_t") {
     using traits = uov_graph_traits<void, void, void, uint32_t, false>;
@@ -244,22 +232,6 @@ TEST_CASE("uov construction with string vertex IDs", "[dynamic_graph][uov][const
   }
 }
 
-TEST_CASE("uov construction sourced", "[dynamic_graph][uov][construction][sourced]") {
-  SECTION("sourced edge construction with uint32_t IDs") {
-    uov_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-
-  SECTION("sourced with edge value construction") {
-    uov_int_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-
-  SECTION("sourced edge construction with string IDs") {
-    uov_str_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-}
 
 //==================================================================================================
 // 4. Basic Properties Tests
@@ -312,15 +284,9 @@ TEST_CASE("uov type aliases", "[dynamic_graph][uov][types]") {
   SECTION("graph type aliases are correct") {
     using G = uov_int_int_int;
     static_assert(std::same_as<typename G::value_type, int>); // GV
-    static_assert(G::sourced == false);
     REQUIRE(true);
   }
 
-  SECTION("sourced graph type aliases are correct") {
-    using G = uov_sourced;
-    static_assert(G::sourced == true);
-    REQUIRE(true);
-  }
 
   SECTION("string key graph type aliases are correct") {
     using G      = uov_str_int_int_int;
@@ -443,11 +409,6 @@ TEST_CASE("uov initializer_list construction string IDs", "[dynamic_graph][uov][
     REQUIRE(g.size() == 5);
   }
 
-  SECTION("sourced edges with string IDs") {
-    using G = uov_str_sourced;
-    G g({{"alice", "bob"}, {"bob", "charlie"}});
-    REQUIRE(g.size() == 3);
-  }
 }
 
 //==================================================================================================
@@ -675,12 +636,9 @@ TEST_CASE("uov template instantiation", "[dynamic_graph][uov][compilation]") {
   [[maybe_unused]] uov_int_int_void       g4;
   [[maybe_unused]] uov_void_void_int      g5;
   [[maybe_unused]] uov_int_int_int        g6;
-  [[maybe_unused]] uov_sourced            g7;
-  [[maybe_unused]] uov_int_sourced        g8;
   [[maybe_unused]] uov_str_void_void_void g9;
   [[maybe_unused]] uov_str_int_void_void  g10;
   [[maybe_unused]] uov_str_int_int_int    g11;
-  [[maybe_unused]] uov_str_sourced        g12;
 
   REQUIRE(true);
 }

@@ -526,6 +526,7 @@ TEMPLATE_TEST_CASE("forward_list CPO edges(g, u)", "[dynamic_graph][cpo][edges]"
 
 TEMPLATE_TEST_CASE("forward_list CPO edges(g, uid)", "[dynamic_graph][cpo][edges]", vofl_tag, dofl_tag) {
   using Types      = graph_test_types<TestType>;
+  using Graph_int_ev = typename Types::int_ev;
   using Graph_void = typename Types::void_type;
 
   SECTION("with vertex ID") {
@@ -2580,11 +2581,11 @@ TEMPLATE_TEST_CASE("forward_list CPO num_vertices(g, pid)",
 
 TEMPLATE_TEST_CASE("forward_list CPO source_id(g, uv)", "[dynamic_graph][cpo][source_id]", vofl_tag, dofl_tag) {
   using Types              = graph_test_types<TestType>;
-  using Graph_sourced_void = typename Types::sourced_void;
-  using Graph_sourced_int  = typename Types::sourced_int;
+  using Graph_void   = typename Types::void_type;
+  using Graph_int_ev = typename Types::int_ev;
 
   SECTION("basic usage") {
-    Graph_sourced_void g({{0, 1}, {1, 2}, {0, 2}});
+    Graph_void g({{0, 1}, {1, 2}, {0, 2}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2593,7 +2594,7 @@ TEMPLATE_TEST_CASE("forward_list CPO source_id(g, uv)", "[dynamic_graph][cpo][so
   }
 
   SECTION("different sources") {
-    Graph_sourced_void g({{0, 1}, {1, 2}, {2, 3}});
+    Graph_void g({{0, 1}, {1, 2}, {2, 3}});
 
     for (size_t i = 0; i < 3; ++i) {
       auto u = *find_vertex(g, i);
@@ -2604,7 +2605,7 @@ TEMPLATE_TEST_CASE("forward_list CPO source_id(g, uv)", "[dynamic_graph][cpo][so
   }
 
   SECTION("const correctness") {
-    const Graph_sourced_void g({{0, 1}, {1, 2}});
+    const Graph_void g({{0, 1}, {1, 2}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2613,7 +2614,7 @@ TEMPLATE_TEST_CASE("forward_list CPO source_id(g, uv)", "[dynamic_graph][cpo][so
   }
 
   SECTION("with edge values") {
-    Graph_sourced_int g({{0, 1, 10}, {1, 2, 20}});
+    Graph_int_ev g({{0, 1, 10}, {1, 2, 20}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2623,7 +2624,7 @@ TEMPLATE_TEST_CASE("forward_list CPO source_id(g, uv)", "[dynamic_graph][cpo][so
   }
 
   SECTION("with self-loop") {
-    Graph_sourced_void g({{0, 0}, {0, 1}});
+    Graph_void g({{0, 0}, {0, 1}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2632,7 +2633,7 @@ TEMPLATE_TEST_CASE("forward_list CPO source_id(g, uv)", "[dynamic_graph][cpo][so
   }
 
   SECTION("with parallel edges") {
-    Graph_sourced_int g;
+    Graph_int_ev g;
     g.resize_vertices(3);
 
     std::vector<copyable_edge_t<uint32_t, int>> edge_data = {{0, 1, 10}, {0, 1, 20}, {0, 1, 30}};
@@ -2645,7 +2646,7 @@ TEMPLATE_TEST_CASE("forward_list CPO source_id(g, uv)", "[dynamic_graph][cpo][so
   }
 
   SECTION("large graph") {
-    Graph_sourced_void g;
+    Graph_void g;
     g.resize_vertices(100);
 
     std::vector<copyable_edge_t<uint32_t, void>> edge_data;
@@ -2661,7 +2662,7 @@ TEMPLATE_TEST_CASE("forward_list CPO source_id(g, uv)", "[dynamic_graph][cpo][so
   }
 
   SECTION("multiple edges from same source") {
-    Graph_sourced_void g({{0, 1}, {0, 2}, {0, 3}});
+    Graph_void g({{0, 1}, {0, 2}, {0, 3}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2670,7 +2671,7 @@ TEMPLATE_TEST_CASE("forward_list CPO source_id(g, uv)", "[dynamic_graph][cpo][so
   }
 
   SECTION("star graph") {
-    Graph_sourced_void g;
+    Graph_void g;
     g.resize_vertices(6);
 
     std::vector<copyable_edge_t<uint32_t, void>> edge_data;
@@ -2686,7 +2687,7 @@ TEMPLATE_TEST_CASE("forward_list CPO source_id(g, uv)", "[dynamic_graph][cpo][so
   }
 
   SECTION("chain graph") {
-    Graph_sourced_void g({{0, 1}, {1, 2}, {2, 3}});
+    Graph_void g({{0, 1}, {1, 2}, {2, 3}});
 
     for (size_t i = 0; i < 3; ++i) {
       auto u = *find_vertex(g, i);
@@ -2697,7 +2698,7 @@ TEMPLATE_TEST_CASE("forward_list CPO source_id(g, uv)", "[dynamic_graph][cpo][so
   }
 
   SECTION("cycle graph") {
-    Graph_sourced_void g({{0, 1}, {1, 2}, {2, 3}, {3, 0}});
+    Graph_void g({{0, 1}, {1, 2}, {2, 3}, {3, 0}});
 
     for (size_t i = 0; i < 4; ++i) {
       auto u = *find_vertex(g, i);
@@ -2708,7 +2709,7 @@ TEMPLATE_TEST_CASE("forward_list CPO source_id(g, uv)", "[dynamic_graph][cpo][so
   }
 
   SECTION("consistency with source(g, uv)") {
-    Graph_sourced_void g({{0, 1}, {1, 2}, {2, 3}});
+    Graph_void g({{0, 1}, {1, 2}, {2, 3}});
 
     for (auto u : vertices(g)) {
       for (auto uv : edges(g, u)) {
@@ -2719,7 +2720,7 @@ TEMPLATE_TEST_CASE("forward_list CPO source_id(g, uv)", "[dynamic_graph][cpo][so
   }
 
   SECTION("self-loops") {
-    Graph_sourced_void g({{0, 0}, {1, 1}});
+    Graph_void g({{0, 0}, {1, 1}});
 
     // Self-loops: source and target are the same
     auto u0 = *find_vertex(g, 0);
@@ -2742,11 +2743,12 @@ TEMPLATE_TEST_CASE("forward_list CPO source_id(g, uv)", "[dynamic_graph][cpo][so
 
 TEMPLATE_TEST_CASE("forward_list CPO source(g, uv)", "[dynamic_graph][cpo][source]", vofl_tag, dofl_tag) {
   using Types              = graph_test_types<TestType>;
-  using Graph_sourced_void = typename Types::sourced_void;
-  using Graph_sourced_int  = typename Types::sourced_int;
+  using Graph_void   = typename Types::void_type;
+  using Graph_int_ev = typename Types::int_ev;
+  using Graph_all    = typename Types::all_int;
 
   SECTION("basic usage") {
-    Graph_sourced_void g({{0, 1}, {1, 2}});
+    Graph_void g({{0, 1}, {1, 2}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2756,7 +2758,7 @@ TEMPLATE_TEST_CASE("forward_list CPO source(g, uv)", "[dynamic_graph][cpo][sourc
   }
 
   SECTION("consistency with source_id") {
-    Graph_sourced_void g({{0, 1}, {1, 2}, {2, 3}});
+    Graph_void g({{0, 1}, {1, 2}, {2, 3}});
 
     for (auto u : vertices(g)) {
       for (auto uv : edges(g, u)) {
@@ -2767,7 +2769,7 @@ TEMPLATE_TEST_CASE("forward_list CPO source(g, uv)", "[dynamic_graph][cpo][sourc
   }
 
   SECTION("const correctness") {
-    const Graph_sourced_void g({{0, 1}, {1, 2}});
+    const Graph_void g({{0, 1}, {1, 2}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2777,7 +2779,7 @@ TEMPLATE_TEST_CASE("forward_list CPO source(g, uv)", "[dynamic_graph][cpo][sourc
   }
 
   SECTION("with edge values") {
-    Graph_sourced_int g({{0, 1, 100}, {1, 2, 200}});
+    Graph_int_ev g({{0, 1, 100}, {1, 2, 200}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2788,7 +2790,7 @@ TEMPLATE_TEST_CASE("forward_list CPO source(g, uv)", "[dynamic_graph][cpo][sourc
   }
 
   SECTION("with self-loop") {
-    Graph_sourced_void g({{0, 0}, {0, 1}});
+    Graph_void g({{0, 0}, {0, 1}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2798,7 +2800,7 @@ TEMPLATE_TEST_CASE("forward_list CPO source(g, uv)", "[dynamic_graph][cpo][sourc
   }
 
   SECTION("different sources") {
-    Graph_sourced_void g({{0, 1}, {1, 2}, {2, 3}, {3, 4}});
+    Graph_void g({{0, 1}, {1, 2}, {2, 3}, {3, 4}});
 
     for (size_t i = 0; i < 4; ++i) {
       auto u = *find_vertex(g, i);
@@ -2810,7 +2812,7 @@ TEMPLATE_TEST_CASE("forward_list CPO source(g, uv)", "[dynamic_graph][cpo][sourc
   }
 
   SECTION("large graph") {
-    Graph_sourced_void g;
+    Graph_void g;
     g.resize_vertices(100);
 
     std::vector<copyable_edge_t<uint32_t, void>> edge_data;
@@ -2827,7 +2829,7 @@ TEMPLATE_TEST_CASE("forward_list CPO source(g, uv)", "[dynamic_graph][cpo][sourc
   }
 
   SECTION("returns valid descriptor") {
-    Graph_sourced_void g({{0, 1}, {1, 2}});
+    Graph_void g({{0, 1}, {1, 2}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2838,10 +2840,9 @@ TEMPLATE_TEST_CASE("forward_list CPO source(g, uv)", "[dynamic_graph][cpo][sourc
   }
 
   SECTION("with vertex values") {
-    // Use sourced_all which has VV=int and Sourced=true
-    using Graph_sourced_all = typename Types::sourced_all;
+    // Use all_int which has EV=int, VV=int, GV=int
 
-    Graph_sourced_all g({{0, 1, 10}, {1, 2, 20}});
+    Graph_all g({{0, 1, 10}, {1, 2, 20}});
 
     int val = 100;
     for (auto u : vertices(g)) {
@@ -2857,7 +2858,7 @@ TEMPLATE_TEST_CASE("forward_list CPO source(g, uv)", "[dynamic_graph][cpo][sourc
   }
 
   SECTION("parallel edges") {
-    Graph_sourced_int g;
+    Graph_int_ev g;
     g.resize_vertices(2);
 
     std::vector<copyable_edge_t<uint32_t, int>> edge_data = {{0, 1, 10}, {0, 1, 20}, {0, 1, 30}};
@@ -2871,7 +2872,7 @@ TEMPLATE_TEST_CASE("forward_list CPO source(g, uv)", "[dynamic_graph][cpo][sourc
   }
 
   SECTION("chain graph") {
-    Graph_sourced_void g({{0, 1}, {1, 2}, {2, 3}});
+    Graph_void g({{0, 1}, {1, 2}, {2, 3}});
 
     for (size_t i = 0; i < 3; ++i) {
       auto u = *find_vertex(g, i);
@@ -2883,7 +2884,7 @@ TEMPLATE_TEST_CASE("forward_list CPO source(g, uv)", "[dynamic_graph][cpo][sourc
   }
 
   SECTION("star graph") {
-    Graph_sourced_void g;
+    Graph_void g;
     g.resize_vertices(6);
 
     std::vector<copyable_edge_t<uint32_t, void>> edge_data;
@@ -2900,7 +2901,7 @@ TEMPLATE_TEST_CASE("forward_list CPO source(g, uv)", "[dynamic_graph][cpo][sourc
   }
 
   SECTION("can traverse from source to target") {
-    Graph_sourced_void g({{0, 1}, {1, 2}});
+    Graph_void g({{0, 1}, {1, 2}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2913,7 +2914,7 @@ TEMPLATE_TEST_CASE("forward_list CPO source(g, uv)", "[dynamic_graph][cpo][sourc
   }
 
   SECTION("accumulate values from edges") {
-    Graph_sourced_int g({{0, 1, 10}, {0, 2, 20}, {1, 2, 30}});
+    Graph_int_ev g({{0, 1, 10}, {0, 2, 20}, {1, 2, 30}});
 
     int sum = 0;
     for (auto u : vertices(g)) {
@@ -2926,7 +2927,7 @@ TEMPLATE_TEST_CASE("forward_list CPO source(g, uv)", "[dynamic_graph][cpo][sourc
   }
 
   SECTION("self-loops") {
-    Graph_sourced_void g({{0, 0}, {1, 1}});
+    Graph_void g({{0, 0}, {1, 1}});
 
     // For self-loops, source and target should be the same vertex
     auto u0 = *find_vertex(g, 0);

@@ -54,6 +54,7 @@
 #include <graph/container/traits/mom_graph_traits.hpp>
 // Edge unordered_map containers (hash-based, deduplicated by target_id)
 #include <graph/container/traits/voum_graph_traits.hpp>
+#include <list>    // for vol_bidir_graph_traits::in_edges_type
 #include <string>
 namespace graph::test {
 
@@ -450,6 +451,70 @@ constexpr const char* container_name() {
 // =============================================================================
 // Convenience aliases for Catch2 TEMPLATE_TEST_CASE
 // =============================================================================
+
+// =============================================================================
+// Non-uniform bidirectional traits
+//
+// These traits define in_edge_type = dynamic_in_edge so that source_id(g, ie)
+// is resolved via the native edge member CPO tier (Tier 1) rather than the
+// descriptor-based Tier 4. This is required to satisfy the
+// bidirectional_adjacency_list concept, which requires source_id(g, ie) to
+// compile for in_edge_t<G>.
+// =============================================================================
+
+/**
+ * @brief Non-uniform bidir traits: vector<vertex> + vector<out_edge> + vector<in_edge>
+ *
+ * Uses dynamic_in_edge for in_edges_type so that source_id(g, ie) dispatches
+ * to dynamic_in_edge::source_id() (Tier 1), not the descriptor-based Tier 4.
+ */
+template <class EV = void, class VV = void, class GV = void, class VId = uint32_t>
+struct vov_bidir_graph_traits {
+  using edge_value_type   = EV;
+  using vertex_value_type = VV;
+  using graph_value_type  = GV;
+  using vertex_id_type    = VId;
+  static constexpr bool bidirectional = true;
+
+  using edge_type    = graph::container::dynamic_out_edge<EV, VV, GV, VId, true, vov_bidir_graph_traits>;
+  using in_edge_type = graph::container::dynamic_in_edge<EV, VV, GV, VId, true, vov_bidir_graph_traits>;
+  using vertex_type  = graph::container::dynamic_vertex<EV, VV, GV, VId, true, vov_bidir_graph_traits>;
+  using graph_type   = graph::container::dynamic_graph<EV, VV, GV, VId, true, vov_bidir_graph_traits>;
+
+  using edges_type    = std::vector<edge_type>;
+  using in_edges_type = std::vector<in_edge_type>;
+  using vertices_type = std::vector<vertex_type>;
+};
+
+/**
+ * @brief Non-uniform bidir traits: vector<vertex> + list<out_edge> + list<in_edge>
+ *
+ * List-based edges for tests that need non-random-access edge containers.
+ */
+template <class EV = void, class VV = void, class GV = void, class VId = uint32_t>
+struct vol_bidir_graph_traits {
+  using edge_value_type   = EV;
+  using vertex_value_type = VV;
+  using graph_value_type  = GV;
+  using vertex_id_type    = VId;
+  static constexpr bool bidirectional = true;
+
+  using edge_type    = graph::container::dynamic_out_edge<EV, VV, GV, VId, true, vol_bidir_graph_traits>;
+  using in_edge_type = graph::container::dynamic_in_edge<EV, VV, GV, VId, true, vol_bidir_graph_traits>;
+  using vertex_type  = graph::container::dynamic_vertex<EV, VV, GV, VId, true, vol_bidir_graph_traits>;
+  using graph_type   = graph::container::dynamic_graph<EV, VV, GV, VId, true, vol_bidir_graph_traits>;
+
+  using edges_type    = std::list<edge_type>;
+  using in_edges_type = std::list<in_edge_type>;
+  using vertices_type = std::vector<vertex_type>;
+};
+
+// Convenience type aliases
+using bidir_nu_vov_void = graph::container::dynamic_graph<void, void, void, uint32_t, true, vov_bidir_graph_traits<>>;
+using bidir_nu_vov_int  = graph::container::dynamic_graph<int,  void, void, uint32_t, true, vov_bidir_graph_traits<int>>;
+using bidir_nu_vov_all  = graph::container::dynamic_graph<int,  int,  int,  uint32_t, true, vov_bidir_graph_traits<int, int, int>>;
+using bidir_nu_vol_void = graph::container::dynamic_graph<void, void, void, uint32_t, true, vol_bidir_graph_traits<>>;
+using bidir_nu_vol_int  = graph::container::dynamic_graph<int,  void, void, uint32_t, true, vol_bidir_graph_traits<int>>;
 
 // Random-access containers (support num_edges(g,u), sized_range edges)
 using random_access_container_tags = std::tuple<vov_tag, vod_tag, dov_tag, dod_tag>;

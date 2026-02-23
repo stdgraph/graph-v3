@@ -40,33 +40,28 @@ using namespace graph::container;
 // Format: mod_EV_VV_GV (Edge Value, Vertex Value, Graph Value)
 // "void" means no value (using graph::void_t)
 using mod_void_void_void =
-      dynamic_graph<void, void, void, uint32_t, false, false, mod_graph_traits<void, void, void, uint32_t, false>>;
+      dynamic_graph<void, void, void, uint32_t, false, mod_graph_traits<void, void, void, uint32_t, false>>;
 using mod_int_void_void =
-      dynamic_graph<int, void, void, uint32_t, false, false, mod_graph_traits<int, void, void, uint32_t, false>>;
+      dynamic_graph<int, void, void, uint32_t, false, mod_graph_traits<int, void, void, uint32_t, false>>;
 using mod_void_int_void =
-      dynamic_graph<void, int, void, uint32_t, false, false, mod_graph_traits<void, int, void, uint32_t, false>>;
+      dynamic_graph<void, int, void, uint32_t, false, mod_graph_traits<void, int, void, uint32_t, false>>;
 using mod_int_int_void =
-      dynamic_graph<int, int, void, uint32_t, false, false, mod_graph_traits<int, int, void, uint32_t, false>>;
+      dynamic_graph<int, int, void, uint32_t, false, mod_graph_traits<int, int, void, uint32_t, false>>;
 using mod_void_void_int =
-      dynamic_graph<void, void, int, uint32_t, false, false, mod_graph_traits<void, void, int, uint32_t, false>>;
-using mod_int_int_int = dynamic_graph<int, int, int, uint32_t, false, false, mod_graph_traits<int, int, int, uint32_t, false>>;
+      dynamic_graph<void, void, int, uint32_t, false, mod_graph_traits<void, void, int, uint32_t, false>>;
+using mod_int_int_int = dynamic_graph<int, int, int, uint32_t, false, mod_graph_traits<int, int, int, uint32_t, false>>;
 
 // String vertex ID variants
 using mod_str_void_void_void =
-      dynamic_graph<void, void, void, std::string, false, false, mod_graph_traits<void, void, void, std::string, false>>;
+      dynamic_graph<void, void, void, std::string, false, mod_graph_traits<void, void, void, std::string, false>>;
 using mod_str_int_void_void =
-      dynamic_graph<int, void, void, std::string, false, false, mod_graph_traits<int, void, void, std::string, false>>;
+      dynamic_graph<int, void, void, std::string, false, mod_graph_traits<int, void, void, std::string, false>>;
 using mod_str_void_int_void =
-      dynamic_graph<void, int, void, std::string, false, false, mod_graph_traits<void, int, void, std::string, false>>;
+      dynamic_graph<void, int, void, std::string, false, mod_graph_traits<void, int, void, std::string, false>>;
 using mod_str_int_int_int =
-      dynamic_graph<int, int, int, std::string, false, false, mod_graph_traits<int, int, int, std::string, false>>;
+      dynamic_graph<int, int, int, std::string, false, mod_graph_traits<int, int, int, std::string, false>>;
 
 // Sourced edge variants (store source vertex ID in edge)
-using mod_sourced = dynamic_graph<void, void, void, uint32_t, true, false, mod_graph_traits<void, void, void, uint32_t, true>>;
-using mod_int_sourced =
-      dynamic_graph<int, void, void, uint32_t, true, false, mod_graph_traits<int, void, void, uint32_t, true>>;
-using mod_str_sourced =
-      dynamic_graph<void, void, void, std::string, true, false, mod_graph_traits<void, void, void, std::string, true>>;
 
 //==================================================================================================
 // 2. Traits Verification Tests
@@ -204,22 +199,6 @@ TEST_CASE("mod construction with string vertex IDs", "[dynamic_graph][mod][const
   }
 }
 
-TEST_CASE("mod construction sourced", "[dynamic_graph][mod][construction][sourced]") {
-  SECTION("sourced edge construction with uint32_t IDs") {
-    mod_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-
-  SECTION("sourced with edge value construction") {
-    mod_int_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-
-  SECTION("sourced edge construction with string IDs") {
-    mod_str_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-}
 
 //==================================================================================================
 // 4. Basic Properties Tests
@@ -272,15 +251,9 @@ TEST_CASE("mod type aliases", "[dynamic_graph][mod][types]") {
   SECTION("graph type aliases are correct") {
     using G = mod_int_int_int;
     static_assert(std::same_as<typename G::value_type, int>); // GV
-    static_assert(G::sourced == false);
     REQUIRE(true);
   }
 
-  SECTION("sourced graph type aliases are correct") {
-    using G = mod_sourced;
-    static_assert(G::sourced == true);
-    REQUIRE(true);
-  }
 
   SECTION("string key graph type aliases are correct") {
     using G      = mod_str_int_int_int;
@@ -403,11 +376,6 @@ TEST_CASE("mod initializer_list construction string IDs", "[dynamic_graph][mod][
     REQUIRE(g.size() == 5);
   }
 
-  SECTION("sourced edges with string IDs") {
-    using G = mod_str_sourced;
-    G g({{"alice", "bob"}, {"bob", "charlie"}});
-    REQUIRE(g.size() == 3);
-  }
 }
 
 //==================================================================================================
@@ -628,12 +596,9 @@ TEST_CASE("mod template instantiation", "[dynamic_graph][mod][compilation]") {
   [[maybe_unused]] mod_int_int_void       g4;
   [[maybe_unused]] mod_void_void_int      g5;
   [[maybe_unused]] mod_int_int_int        g6;
-  [[maybe_unused]] mod_sourced            g7;
-  [[maybe_unused]] mod_int_sourced        g8;
   [[maybe_unused]] mod_str_void_void_void g9;
   [[maybe_unused]] mod_str_int_void_void  g10;
   [[maybe_unused]] mod_str_int_int_int    g11;
-  [[maybe_unused]] mod_str_sourced        g12;
 
   REQUIRE(true);
 }

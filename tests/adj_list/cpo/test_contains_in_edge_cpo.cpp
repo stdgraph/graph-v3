@@ -7,6 +7,9 @@
 #include <graph/adj_list/detail/graph_cpo.hpp>
 #include <graph/adj_list/vertex_descriptor.hpp>
 #include <graph/adj_list/edge_descriptor.hpp>
+#include <graph/container/dynamic_graph.hpp>
+#include <graph/graph.hpp>
+#include "../../common/graph_test_types.hpp"
 #include <vector>
 
 using namespace graph;
@@ -138,4 +141,65 @@ TEST_CASE("contains_in_edge(g, uid, vid) handles empty incoming edges by ID",
   REQUIRE(contains_in_edge(graph, size_t(0), size_t(1)) == false);
   REQUIRE(contains_in_edge(graph, size_t(1), size_t(0)) == false);
   REQUIRE(contains_in_edge(graph, size_t(2), size_t(0)) == false);
+}
+
+// =============================================================================
+// dynamic_graph with non-uniform bidirectional traits
+// =============================================================================
+
+using DynBiDirContainsGraph =
+      graph::container::dynamic_graph<void, void, void, uint32_t, true,
+                                      graph::test::vov_bidir_graph_traits<>>;
+
+TEST_CASE("contains_in_edge(g, u, v) - dynamic_graph non-uniform bidir",
+          "[contains_in_edge][cpo][dynamic_graph]") {
+  using namespace graph;
+  using namespace graph::container;
+
+  // Graph: 0->1, 0->2, 1->2, 3->0
+  DynBiDirContainsGraph g({{0, 1}, {0, 2}, {1, 2}, {3, 0}});
+
+  auto verts = vertices(g);
+  auto it    = verts.begin();
+  auto v0    = *it++;
+  auto v1    = *it++;
+  auto v2    = *it++;
+  auto v3    = *it;
+
+  SECTION("existing in-edges return true") {
+    REQUIRE(contains_in_edge(g, v0, v3) == true); // 3->0
+    REQUIRE(contains_in_edge(g, v1, v0) == true); // 0->1
+    REQUIRE(contains_in_edge(g, v2, v0) == true); // 0->2
+    REQUIRE(contains_in_edge(g, v2, v1) == true); // 1->2
+  }
+
+  SECTION("non-existing in-edges return false") {
+    REQUIRE(contains_in_edge(g, v0, v0) == false);
+    REQUIRE(contains_in_edge(g, v0, v1) == false);
+    REQUIRE(contains_in_edge(g, v3, v0) == false); // v3 has no incoming edges
+    REQUIRE(contains_in_edge(g, v3, v2) == false);
+  }
+}
+
+TEST_CASE("contains_in_edge(g, uid, vid) - dynamic_graph non-uniform bidir",
+          "[contains_in_edge][cpo][dynamic_graph][uidvid]") {
+  using namespace graph;
+  using namespace graph::container;
+
+  // Graph: 0->1, 0->2, 1->2, 3->0
+  DynBiDirContainsGraph g({{0, 1}, {0, 2}, {1, 2}, {3, 0}});
+
+  SECTION("existing in-edges return true by ID") {
+    REQUIRE(contains_in_edge(g, uint32_t(0), uint32_t(3)) == true);
+    REQUIRE(contains_in_edge(g, uint32_t(1), uint32_t(0)) == true);
+    REQUIRE(contains_in_edge(g, uint32_t(2), uint32_t(0)) == true);
+    REQUIRE(contains_in_edge(g, uint32_t(2), uint32_t(1)) == true);
+  }
+
+  SECTION("non-existing in-edges return false by ID") {
+    REQUIRE(contains_in_edge(g, uint32_t(0), uint32_t(0)) == false);
+    REQUIRE(contains_in_edge(g, uint32_t(0), uint32_t(1)) == false);
+    REQUIRE(contains_in_edge(g, uint32_t(3), uint32_t(0)) == false);
+    REQUIRE(contains_in_edge(g, uint32_t(3), uint32_t(2)) == false);
+  }
 }

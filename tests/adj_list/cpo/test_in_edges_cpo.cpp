@@ -9,6 +9,9 @@
 #include <graph/adj_list/edge_descriptor.hpp>
 #include <graph/adj_list/vertex_descriptor_view.hpp>
 #include <graph/adj_list/edge_descriptor_view.hpp>
+#include <graph/container/dynamic_graph.hpp>
+#include <graph/graph.hpp>
+#include "../../common/graph_test_types.hpp"
 #include <vector>
 
 using namespace graph;
@@ -320,4 +323,81 @@ TEST_CASE("out_edge_range_t, out_edge_iterator_t, out_edge_t match existing alia
   STATIC_REQUIRE(std::is_same_v<out_edge_range_t<Graph>, vertex_edge_range_t<Graph>>);
   STATIC_REQUIRE(std::is_same_v<out_edge_iterator_t<Graph>, vertex_edge_iterator_t<Graph>>);
   STATIC_REQUIRE(std::is_same_v<out_edge_t<Graph>, edge_t<Graph>>);
+}
+
+// =============================================================================
+// Scenario 9: dynamic_graph with non-uniform bidirectional traits
+//
+// dynamic_graph<void,...,true,vov_bidir_graph_traits<>> satisfies the
+// bidirectional_adjacency_list concept because its in_edge_type is
+// dynamic_in_edge, which has source_id() — enabling CPO Tier 1 dispatch.
+// =============================================================================
+
+using DynBiDirGraph =
+      graph::container::dynamic_graph<void, void, void, uint32_t, true,
+                                      graph::test::vov_bidir_graph_traits<>>;
+
+TEST_CASE("in_edges(g,u) - dynamic_graph non-uniform bidir traits",
+          "[in_edges][cpo][dynamic_graph]") {
+  using namespace graph;
+  using namespace graph::container;
+
+  // Graph: 0->1, 0->2, 1->2, 2->3
+  // Expected in-edges: 0↦{}, 1↦{0→1}, 2↦{0→2,1→2}, 3↦{2→3}
+  DynBiDirGraph g({{0, 1}, {0, 2}, {1, 2}, {2, 3}});
+
+  SECTION("vertex 2 has two incoming edges") {
+    auto   u2  = *find_vertex(g, uint32_t(2));
+    size_t cnt = 0;
+    for ([[maybe_unused]] auto ie : in_edges(g, u2))
+      ++cnt;
+    REQUIRE(cnt == 2);
+  }
+
+  SECTION("vertex 0 has no incoming edges") {
+    auto u0 = *find_vertex(g, uint32_t(0));
+    REQUIRE(std::ranges::empty(in_edges(g, u0)));
+  }
+
+  SECTION("vertex 3 has one incoming edge") {
+    auto   u3  = *find_vertex(g, uint32_t(3));
+    size_t cnt = 0;
+    for ([[maybe_unused]] auto ie : in_edges(g, u3))
+      ++cnt;
+    REQUIRE(cnt == 1);
+  }
+
+  SECTION("in_degree matches in_edges count for all vertices") {
+    for (auto u : vertices(g)) {
+      size_t deg = in_degree(g, u);
+      size_t cnt = 0;
+      for ([[maybe_unused]] auto ie : in_edges(g, u))
+        ++cnt;
+      REQUIRE(deg == cnt);
+    }
+  }
+
+  SECTION("in_edges(g, uid) overload") {
+    size_t cnt = 0;
+    for ([[maybe_unused]] auto ie : in_edges(g, uint32_t(2)))
+      ++cnt;
+    REQUIRE(cnt == 2);
+  }
+
+  SECTION("in_degree(g, uid) overload") {
+    REQUIRE(in_degree(g, uint32_t(2)) == 2);
+    REQUIRE(in_degree(g, uint32_t(0)) == 0);
+  }
+}
+
+TEST_CASE("in_edges type aliases for dynamic_graph non-uniform bidir",
+          "[in_edges][cpo][dynamic_graph][type_alias]") {
+  using G       = DynBiDirGraph;
+  using InRange = in_edge_range_t<G>;
+  using InIter  = in_edge_iterator_t<G>;
+  using InEdge  = in_edge_t<G>;
+
+  STATIC_REQUIRE(std::ranges::forward_range<InRange>);
+  STATIC_REQUIRE(std::input_iterator<InIter>);
+  STATIC_REQUIRE(std::is_same_v<InEdge, std::ranges::range_value_t<InRange>>);
 }

@@ -1357,7 +1357,7 @@ TEMPLATE_TEST_CASE("unordered_map CPO graph_value(g)",
 }
 
 //==================================================================================================
-// 21. source_id(g, uv) CPO Tests (Sourced=true)
+// 21. source_id(g, uv) CPO Tests
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("unordered_map CPO source_id(g, uv)",
@@ -1369,11 +1369,11 @@ TEMPLATE_TEST_CASE("unordered_map CPO source_id(g, uv)",
                    uos_tag,
                    uous_tag) {
   using Types             = graph_test_types<TestType>;
-  using Graph_sourced     = typename Types::sourced_void;
-  using Graph_sourced_int = typename Types::sourced_int;
+  using Graph_void   = typename Types::void_type;
+  using Graph_int_ev = typename Types::int_ev;
 
   SECTION("sparse source IDs") {
-    auto g = make_sparse_graph_void<Graph_sourced>();
+    auto g = make_sparse_graph_void<Graph_void>();
 
     auto v100 = *find_vertex(g, uint32_t(100));
 
@@ -1383,7 +1383,7 @@ TEMPLATE_TEST_CASE("unordered_map CPO source_id(g, uv)",
   }
 
   SECTION("different sources") {
-    auto g = make_sparse_graph_void<Graph_sourced>();
+    auto g = make_sparse_graph_void<Graph_void>();
 
     for (auto u : vertices(g)) {
       auto uid = vertex_id(g, u);
@@ -1394,7 +1394,7 @@ TEMPLATE_TEST_CASE("unordered_map CPO source_id(g, uv)",
   }
 
   SECTION("const correctness") {
-    const auto g = make_sparse_graph_void<Graph_sourced>();
+    const auto g = make_sparse_graph_void<Graph_void>();
 
     auto v100 = *find_vertex(g, uint32_t(100));
     for (auto uv : edges(g, v100)) {
@@ -1403,7 +1403,7 @@ TEMPLATE_TEST_CASE("unordered_map CPO source_id(g, uv)",
   }
 
   SECTION("with edge values") {
-    auto g = make_sparse_graph_int<Graph_sourced_int>();
+    auto g = make_sparse_graph_int<Graph_int_ev>();
 
     auto v100 = *find_vertex(g, uint32_t(100));
     for (auto uv : edges(g, v100)) {
@@ -1412,7 +1412,7 @@ TEMPLATE_TEST_CASE("unordered_map CPO source_id(g, uv)",
   }
 
   SECTION("self-loop") {
-    auto g = make_self_loop_graph<Graph_sourced>();
+    auto g = make_self_loop_graph<Graph_void>();
 
     auto v100 = *find_vertex(g, uint32_t(100));
     for (auto uv : edges(g, v100)) {
@@ -1422,7 +1422,7 @@ TEMPLATE_TEST_CASE("unordered_map CPO source_id(g, uv)",
 }
 
 //==================================================================================================
-// 22. source(g, uv) CPO Tests (Sourced=true)
+// 22. source(g, uv) CPO Tests
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("unordered_map CPO source(g, uv)",
@@ -1434,11 +1434,11 @@ TEMPLATE_TEST_CASE("unordered_map CPO source(g, uv)",
                    uos_tag,
                    uous_tag) {
   using Types             = graph_test_types<TestType>;
-  using Graph_sourced     = typename Types::sourced_void;
-  using Graph_sourced_int = typename Types::sourced_int;
+  using Graph_void   = typename Types::void_type;
+  using Graph_int_ev = typename Types::int_ev;
 
   SECTION("basic usage") {
-    auto g = make_sparse_graph_void<Graph_sourced>();
+    auto g = make_sparse_graph_void<Graph_void>();
 
     auto v100 = *find_vertex(g, uint32_t(100));
     for (auto uv : edges(g, v100)) {
@@ -1448,7 +1448,7 @@ TEMPLATE_TEST_CASE("unordered_map CPO source(g, uv)",
   }
 
   SECTION("consistency with source_id") {
-    auto g = make_sparse_graph_void<Graph_sourced>();
+    auto g = make_sparse_graph_void<Graph_void>();
 
     for (auto u : vertices(g)) {
       for (auto uv : edges(g, u)) {
@@ -1459,7 +1459,7 @@ TEMPLATE_TEST_CASE("unordered_map CPO source(g, uv)",
   }
 
   SECTION("const correctness") {
-    const auto g = make_sparse_graph_void<Graph_sourced>();
+    const auto g = make_sparse_graph_void<Graph_void>();
 
     auto v100 = *find_vertex(g, uint32_t(100));
     for (auto uv : edges(g, v100)) {
@@ -1469,7 +1469,7 @@ TEMPLATE_TEST_CASE("unordered_map CPO source(g, uv)",
   }
 
   SECTION("with edge values") {
-    auto g = make_sparse_graph_int<Graph_sourced_int>();
+    auto g = make_sparse_graph_int<Graph_int_ev>();
 
     auto v100 = *find_vertex(g, uint32_t(100));
     for (auto uv : edges(g, v100)) {
@@ -1479,7 +1479,7 @@ TEMPLATE_TEST_CASE("unordered_map CPO source(g, uv)",
   }
 
   SECTION("different sources") {
-    auto g = make_sparse_graph_void<Graph_sourced>();
+    auto g = make_sparse_graph_void<Graph_void>();
 
     for (auto u : vertices(g)) {
       auto uid = vertex_id(g, u);

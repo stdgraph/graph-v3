@@ -32,27 +32,24 @@ using namespace graph::container;
 
 // Type aliases for common test configurations
 using vod_void_void_void =
-      dynamic_graph<void, void, void, uint32_t, false, false, vod_graph_traits<void, void, void, uint32_t, false>>;
+      dynamic_graph<void, void, void, uint32_t, false, vod_graph_traits<void, void, void, uint32_t, false>>;
 using vod_int_void_void =
-      dynamic_graph<int, void, void, uint32_t, false, false, vod_graph_traits<int, void, void, uint32_t, false>>;
+      dynamic_graph<int, void, void, uint32_t, false, vod_graph_traits<int, void, void, uint32_t, false>>;
 using vod_void_int_void =
-      dynamic_graph<void, int, void, uint32_t, false, false, vod_graph_traits<void, int, void, uint32_t, false>>;
+      dynamic_graph<void, int, void, uint32_t, false, vod_graph_traits<void, int, void, uint32_t, false>>;
 using vod_int_int_void =
-      dynamic_graph<int, int, void, uint32_t, false, false, vod_graph_traits<int, int, void, uint32_t, false>>;
+      dynamic_graph<int, int, void, uint32_t, false, vod_graph_traits<int, int, void, uint32_t, false>>;
 using vod_void_void_int =
-      dynamic_graph<void, void, int, uint32_t, false, false, vod_graph_traits<void, void, int, uint32_t, false>>;
-using vod_int_int_int = dynamic_graph<int, int, int, uint32_t, false, false, vod_graph_traits<int, int, int, uint32_t, false>>;
+      dynamic_graph<void, void, int, uint32_t, false, vod_graph_traits<void, void, int, uint32_t, false>>;
+using vod_int_int_int = dynamic_graph<int, int, int, uint32_t, false, vod_graph_traits<int, int, int, uint32_t, false>>;
 
 using vod_string_string_string =
       dynamic_graph<std::string,
                     std::string,
                     std::string,
                     uint32_t,
-                    false, false, vod_graph_traits<std::string, std::string, std::string, uint32_t, false>>;
+                    false, vod_graph_traits<std::string, std::string, std::string, uint32_t, false>>;
 
-using vod_sourced = dynamic_graph<void, void, void, uint32_t, true, false, vod_graph_traits<void, void, void, uint32_t, true>>;
-using vod_int_sourced =
-      dynamic_graph<int, void, void, uint32_t, true, false, vod_graph_traits<int, void, void, uint32_t, true>>;
 
 //==================================================================================================
 // 1. Construction Tests
@@ -140,17 +137,6 @@ TEST_CASE("vod copy and move construction", "[vod][construction]") {
   }
 }
 
-TEST_CASE("vod sourced construction", "[vod][construction][sourced]") {
-  SECTION("sourced edge construction") {
-    vod_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-
-  SECTION("sourced with edge value construction") {
-    vod_int_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-}
 
 //==================================================================================================
 // 2. Basic Properties Tests
@@ -291,13 +277,8 @@ TEST_CASE("vod_graph_traits", "[vod][traits]") {
     STATIC_REQUIRE(std::is_same_v<traits::vertex_value_type, std::string>);
     STATIC_REQUIRE(std::is_same_v<traits::graph_value_type, void>);
     STATIC_REQUIRE(std::is_same_v<traits::vertex_id_type, uint32_t>);
-    STATIC_REQUIRE(traits::sourced == false);
   }
 
-  SECTION("sourced = true") {
-    using traits = vod_graph_traits<int, std::string, void, uint32_t, true>;
-    STATIC_REQUIRE(traits::sourced == true);
-  }
 
   SECTION("vertex_id_type variations") {
     using traits_u64 = vod_graph_traits<void, void, void, uint64_t, false>;
@@ -379,19 +360,19 @@ TEST_CASE("vod empty graph edge cases", "[vod][edge_cases]") {
 
 TEST_CASE("vod value types", "[vod][value_types]") {
   SECTION("with void edge value") {
-    using graph_t = dynamic_graph<void, int, int, uint32_t, false, false, vod_graph_traits<void, int, int, uint32_t, false>>;
+    using graph_t = dynamic_graph<void, int, int, uint32_t, false, vod_graph_traits<void, int, int, uint32_t, false>>;
     graph_t g(100);
     REQUIRE(g.graph_value() == 100);
   }
 
   SECTION("with void vertex value") {
-    using graph_t = dynamic_graph<int, void, int, uint32_t, false, false, vod_graph_traits<int, void, int, uint32_t, false>>;
+    using graph_t = dynamic_graph<int, void, int, uint32_t, false, vod_graph_traits<int, void, int, uint32_t, false>>;
     graph_t g(100);
     REQUIRE(g.graph_value() == 100);
   }
 
   SECTION("with void graph value") {
-    using graph_t = dynamic_graph<int, int, void, uint32_t, false, false, vod_graph_traits<int, int, void, uint32_t, false>>;
+    using graph_t = dynamic_graph<int, int, void, uint32_t, false, vod_graph_traits<int, int, void, uint32_t, false>>;
     graph_t g;
     REQUIRE(g.size() == 0);
   }
@@ -422,19 +403,19 @@ TEST_CASE("vod value types", "[vod][value_types]") {
   }
 
   SECTION("with string edge value type") {
-    using graph_t = dynamic_graph<std::string, void, void, uint32_t, false, false, vod_graph_traits<std::string, void, void, uint32_t, false>>;
+    using graph_t = dynamic_graph<std::string, void, void, uint32_t, false, vod_graph_traits<std::string, void, void, uint32_t, false>>;
     graph_t g;
     REQUIRE(g.size() == 0);
   }
 
   SECTION("with string vertex value type") {
-    using graph_t = dynamic_graph<void, std::string, void, uint32_t, false, false, vod_graph_traits<void, std::string, void, uint32_t, false>>;
+    using graph_t = dynamic_graph<void, std::string, void, uint32_t, false, vod_graph_traits<void, std::string, void, uint32_t, false>>;
     graph_t g;
     REQUIRE(g.size() == 0);
   }
 
   SECTION("with string graph value type") {
-    using graph_t = dynamic_graph<void, void, std::string, uint32_t, false, false, vod_graph_traits<void, void, std::string, uint32_t, false>>;
+    using graph_t = dynamic_graph<void, void, std::string, uint32_t, false, vod_graph_traits<void, void, std::string, uint32_t, false>>;
     graph_t g(std::string("test"));
     REQUIRE(g.graph_value() == "test");
   }
@@ -452,32 +433,32 @@ TEST_CASE("vod value types", "[vod][value_types]") {
 TEST_CASE("vod vertex ID types", "[vod][vertex_id]") {
   SECTION("with uint32_t vertex id") {
     using graph_t =
-          dynamic_graph<void, void, void, uint32_t, false, false, vod_graph_traits<void, void, void, uint32_t, false>>;
+          dynamic_graph<void, void, void, uint32_t, false, vod_graph_traits<void, void, void, uint32_t, false>>;
     graph_t g;
     REQUIRE(g.size() == 0);
   }
 
   SECTION("with uint64_t vertex id") {
     using graph_t =
-          dynamic_graph<void, void, void, uint64_t, false, false, vod_graph_traits<void, void, void, uint64_t, false>>;
+          dynamic_graph<void, void, void, uint64_t, false, vod_graph_traits<void, void, void, uint64_t, false>>;
     graph_t g;
     REQUIRE(g.size() == 0);
   }
 
   SECTION("with int32_t vertex id") {
-    using graph_t = dynamic_graph<void, void, void, int32_t, false, false, vod_graph_traits<void, void, void, int32_t, false>>;
+    using graph_t = dynamic_graph<void, void, void, int32_t, false, vod_graph_traits<void, void, void, int32_t, false>>;
     graph_t g;
     REQUIRE(g.size() == 0);
   }
 
   SECTION("with int8_t vertex id") {
-    using graph_t = dynamic_graph<void, void, void, int8_t, false, false, vod_graph_traits<void, void, void, int8_t, false>>;
+    using graph_t = dynamic_graph<void, void, void, int8_t, false, vod_graph_traits<void, void, void, int8_t, false>>;
     graph_t g;
     REQUIRE(g.size() == 0);
   }
 
   SECTION("with int vertex id") {
-    using graph_t = dynamic_graph<void, void, void, int, false, false, vod_graph_traits<void, void, void, int, false>>;
+    using graph_t = dynamic_graph<void, void, void, int, false, vod_graph_traits<void, void, void, int, false>>;
     graph_t g;
     REQUIRE(g.size() == 0);
   }
@@ -487,41 +468,6 @@ TEST_CASE("vod vertex ID types", "[vod][vertex_id]") {
 // 9. Sourced Edge Tests
 //==================================================================================================
 
-TEST_CASE("vod sourced edges", "[vod][sourced]") {
-  SECTION("sourced=false by default") {
-    vod_void_void_void g;
-    using traits = vod_graph_traits<void, void, void, uint32_t, false>;
-    STATIC_REQUIRE(traits::sourced == false);
-  }
-
-  SECTION("sourced=true explicit") {
-    vod_sourced g;
-    using traits = vod_graph_traits<void, void, void, uint32_t, true>;
-    STATIC_REQUIRE(traits::sourced == true);
-  }
-
-  SECTION("sourced with void values") {
-    vod_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-
-  SECTION("sourced with int edge value") {
-    vod_int_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-
-  SECTION("sourced copy construction") {
-    vod_sourced g1;
-    vod_sourced g2 = g1;
-    REQUIRE(g2.size() == 0);
-  }
-
-  SECTION("sourced move construction") {
-    vod_sourced g1;
-    vod_sourced g2 = std::move(g1);
-    REQUIRE(g2.size() == 0);
-  }
-}
 
 //==================================================================================================
 // 10. Const Correctness Tests
@@ -619,8 +565,6 @@ TEST_CASE("vod various template instantiations compile", "[vod][compilation]") {
   [[maybe_unused]] vod_void_void_int        g5;
   [[maybe_unused]] vod_int_int_int          g6;
   [[maybe_unused]] vod_string_string_string g7;
-  [[maybe_unused]] vod_sourced              g8;
-  [[maybe_unused]] vod_int_sourced          g9;
 
   REQUIRE(true); // Just ensuring compilation
 }
@@ -842,22 +786,6 @@ TEST_CASE("vod initializer_list constructor with all value types", "[vod][constr
   }
 }
 
-TEST_CASE("vod initializer_list constructor with sourced edges", "[vod][construction][initializer_list][sourced]") {
-  using G = vod_sourced;
-
-  SECTION("construct sourced graph with initializer list") {
-    G g({{0, 1}, {1, 2}, {2, 0}});
-    REQUIRE(g.size() == 3);
-
-    // Verify sourced edges have source_id
-    auto& v0     = g[0];
-    auto  edges0 = v0.edges();
-    REQUIRE(std::ranges::distance(edges0) == 1);
-    auto e0 = edges0.begin();
-    REQUIRE(e0->source_id() == 0);
-    REQUIRE(e0->target_id() == 1);
-  }
-}
 
 TEST_CASE("vod initializer_list complex graph patterns", "[vod][construction][initializer_list]") {
   using G = vod_int_void_void;
@@ -947,7 +875,7 @@ TEST_CASE("vod load_vertices", "[dynamic_graph][vod][load_vertices]") {
   }
 
   SECTION("with custom projection from struct") {
-    using G2           = dynamic_graph<int, std::string, void, uint32_t, false, false, vod_graph_traits<int, std::string, void, uint32_t, false>>;
+    using G2           = dynamic_graph<int, std::string, void, uint32_t, false, vod_graph_traits<int, std::string, void, uint32_t, false>>;
     using vertex_data2 = copyable_vertex_t<uint32_t, std::string>;
 
     struct Person {
@@ -1084,7 +1012,7 @@ TEST_CASE("vod load_edges", "[dynamic_graph][vod][load_edges]") {
   }
 
   SECTION("with custom projection") {
-    using G2           = dynamic_graph<std::string, int, void, uint32_t, false, false, vod_graph_traits<std::string, int, void, uint32_t, false>>;
+    using G2           = dynamic_graph<std::string, int, void, uint32_t, false, vod_graph_traits<std::string, int, void, uint32_t, false>>;
     using vertex_data2 = copyable_vertex_t<uint32_t, int>;
     using edge_data2   = copyable_edge_t<uint32_t, std::string>;
 

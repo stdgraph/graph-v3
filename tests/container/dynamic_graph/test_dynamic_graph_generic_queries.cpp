@@ -160,15 +160,15 @@ bool is_empty(const G& g) {
 //==================================================================================================
 
 // Sequential container graphs (integral VId)
-using vov_void = dynamic_graph<void, void, void, uint64_t, false, false, vov_graph_traits<void, void, void, uint64_t, false>>;
+using vov_void = dynamic_graph<void, void, void, uint64_t, false, vov_graph_traits<void, void, void, uint64_t, false>>;
 using dofl_void =
-      dynamic_graph<void, void, void, uint64_t, false, false, dofl_graph_traits<void, void, void, uint64_t, false>>;
+      dynamic_graph<void, void, void, uint64_t, false, dofl_graph_traits<void, void, void, uint64_t, false>>;
 
 // Map-based graphs (string VId)
 using mos_void =
-      dynamic_graph<void, void, void, std::string, false, false, mos_graph_traits<void, void, void, std::string, false>>;
+      dynamic_graph<void, void, void, std::string, false, mos_graph_traits<void, void, void, std::string, false>>;
 using mous_void =
-      dynamic_graph<void, void, void, std::string, false, false, mous_graph_traits<void, void, void, std::string, false>>;
+      dynamic_graph<void, void, void, std::string, false, mous_graph_traits<void, void, void, std::string, false>>;
 
 //==================================================================================================
 // Phase 6.3.1: Generic Graph Queries Tests

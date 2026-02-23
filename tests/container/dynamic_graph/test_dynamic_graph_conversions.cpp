@@ -15,12 +15,12 @@ using namespace graph::adj_list;
 using namespace graph::container;
 
 // Graph type aliases
-using vov_uint = dynamic_graph<void, void, void, uint64_t, false, false, vov_graph_traits<void, void, void, uint64_t, false>>;
+using vov_uint = dynamic_graph<void, void, void, uint64_t, false, vov_graph_traits<void, void, void, uint64_t, false>>;
 using mos_string =
-      dynamic_graph<void, void, void, std::string, false, false, mos_graph_traits<void, void, void, std::string, false>>;
-using vov_int = dynamic_graph<void, void, void, int, false, false, vov_graph_traits<void, void, void, int, false>>;
+      dynamic_graph<void, void, void, std::string, false, mos_graph_traits<void, void, void, std::string, false>>;
+using vov_int = dynamic_graph<void, void, void, int, false, vov_graph_traits<void, void, void, int, false>>;
 using dofl_uint =
-      dynamic_graph<void, void, void, uint64_t, false, false, dofl_graph_traits<void, void, void, uint64_t, false>>;
+      dynamic_graph<void, void, void, uint64_t, false, dofl_graph_traits<void, void, void, uint64_t, false>>;
 
 // ID mapper class: converts IDs from one type to another
 template <typename FromId, typename ToId>

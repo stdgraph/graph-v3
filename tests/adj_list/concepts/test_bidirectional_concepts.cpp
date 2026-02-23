@@ -7,7 +7,9 @@
 #include <catch2/catch_test_macros.hpp>
 #include <graph/adj_list/adjacency_list_concepts.hpp>
 #include <graph/adj_list/detail/graph_cpo.hpp>
+#include <graph/container/dynamic_graph.hpp>
 #include <graph/graph.hpp>
+#include "../../common/graph_test_types.hpp"
 #include <vector>
 
 using namespace graph;
@@ -198,4 +200,91 @@ TEST_CASE("incoming-edge traits accessible via graph:: namespace",
   STATIC_REQUIRE(graph::has_in_degree_v<Graph>);
   STATIC_REQUIRE(graph::has_find_in_edge<Graph>);
   STATIC_REQUIRE(graph::has_find_in_edge_v<Graph>);
+}
+
+// =============================================================================
+// dynamic_graph concept checks
+// =============================================================================
+
+// Non-uniform bidirectional: in_edge_type = dynamic_in_edge, which has
+// source_id() — CPO Tier 1 fires, satisfying bidirectional_adjacency_list.
+using DynBidirVov = graph::container::dynamic_graph<void, void, void, uint32_t, true,
+                                                    graph::test::vov_bidir_graph_traits<>>;
+using DynBidirVovInt = graph::container::dynamic_graph<int, void, void, uint32_t, true,
+                                                       graph::test::vov_bidir_graph_traits<int>>;
+using DynBidirVol = graph::container::dynamic_graph<void, void, void, uint32_t, true,
+                                                    graph::test::vol_bidir_graph_traits<>>;
+
+// Non-bidirectional: Bidirectional=false → no in_edges at all.
+using DynNonBidir = graph::container::dynamic_graph<void, void, void, uint32_t, false,
+                                                    graph::container::vov_graph_traits<void, void, void, uint32_t, false>>;
+
+TEST_CASE("bidirectional_adjacency_list satisfied by dynamic_graph with non-uniform bidir traits",
+          "[adjacency_list][concepts][bidirectional_adjacency_list][dynamic_graph]") {
+  // vov (vector edges) non-uniform bidir
+  STATIC_REQUIRE(bidirectional_adjacency_list<DynBidirVov>);
+  STATIC_REQUIRE(bidirectional_adjacency_list<DynBidirVovInt>);
+  // vol (list edges) non-uniform bidir
+  STATIC_REQUIRE(bidirectional_adjacency_list<DynBidirVol>);
+}
+
+TEST_CASE("bidirectional_adjacency_list NOT satisfied by non-bidirectional dynamic_graph",
+          "[adjacency_list][concepts][bidirectional_adjacency_list][dynamic_graph]") {
+  STATIC_REQUIRE_FALSE(bidirectional_adjacency_list<DynNonBidir>);
+}
+
+TEST_CASE("dynamic_graph with non-uniform bidir traits also satisfies adjacency_list",
+          "[adjacency_list][concepts][adjacency_list][dynamic_graph]") {
+  // bidirectional implies adjacency_list
+  STATIC_REQUIRE(adjacency_list<DynBidirVov>);
+  STATIC_REQUIRE(adjacency_list<DynNonBidir>);
+}
+
+TEST_CASE("index_bidirectional_adjacency_list satisfied by non-uniform bidir dynamic_graph",
+          "[adjacency_list][concepts][index_bidirectional_adjacency_list][dynamic_graph]") {
+  STATIC_REQUIRE(index_bidirectional_adjacency_list<DynBidirVov>);
+  STATIC_REQUIRE(index_bidirectional_adjacency_list<DynBidirVovInt>);
+  STATIC_REQUIRE(index_bidirectional_adjacency_list<DynBidirVol>);
+}
+
+TEST_CASE("index_bidirectional_adjacency_list NOT satisfied by non-bidirectional dynamic_graph",
+          "[adjacency_list][concepts][index_bidirectional_adjacency_list][dynamic_graph]") {
+  STATIC_REQUIRE_FALSE(index_bidirectional_adjacency_list<DynNonBidir>);
+}
+
+TEST_CASE("dynamic_graph non-uniform bidir concept checks via graph:: namespace",
+          "[adjacency_list][concepts][dynamic_graph][re-export]") {
+  STATIC_REQUIRE(graph::bidirectional_adjacency_list<DynBidirVov>);
+  STATIC_REQUIRE(graph::bidirectional_adjacency_list<DynBidirVol>);
+  STATIC_REQUIRE_FALSE(graph::bidirectional_adjacency_list<DynNonBidir>);
+  STATIC_REQUIRE(graph::index_bidirectional_adjacency_list<DynBidirVov>);
+  STATIC_REQUIRE_FALSE(graph::index_bidirectional_adjacency_list<DynNonBidir>);
+}
+
+TEST_CASE("dynamic_graph non-uniform bidir runtime validation",
+          "[adjacency_list][concepts][bidirectional_adjacency_list][dynamic_graph][runtime]") {
+  // 0->1, 0->2, 1->2, 2->3
+  DynBidirVov g({{0, 1}, {0, 2}, {1, 2}, {2, 3}});
+
+  // vertex 0: 0 in-edges; vertex 2: 2 in-edges (from 0 and 1)
+  REQUIRE(in_degree(g, uint32_t(0)) == 0);
+  REQUIRE(in_degree(g, uint32_t(1)) == 1);
+  REQUIRE(in_degree(g, uint32_t(2)) == 2);
+  REQUIRE(in_degree(g, uint32_t(3)) == 1);
+
+  // source_id on in-edges returns the actual source vertex, not the target
+  auto u2 = *find_vertex(g, uint32_t(2));
+  for (auto ie : in_edges(g, u2)) {
+    auto sid = source_id(g, ie);
+    REQUIRE((sid == 0 || sid == 1));
+  }
+}
+
+TEST_CASE("in_edge_t for dynamic_graph bidir differs from edge_t (out-edge)",
+          "[adjacency_list][concepts][dynamic_graph][type]") {
+  // in_edge_t<G> is an edge_descriptor over dynamic_in_edge iterators;
+  // edge_t<G> is an edge_descriptor over dynamic_out_edge iterators.
+  // They are distinct types because the underlying iterators differ.
+  STATIC_REQUIRE_FALSE(std::is_same_v<in_edge_t<DynBidirVov>, edge_t<DynBidirVov>>);
+  STATIC_REQUIRE_FALSE(std::is_same_v<in_edge_t<DynBidirVol>, edge_t<DynBidirVol>>);
 }

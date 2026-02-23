@@ -17,6 +17,7 @@
 #include <graph/container/traits/vol_graph_traits.hpp>
 #include <graph/graph.hpp>
 #include <algorithm>
+#include <list>
 #include <map>
 #include <numeric>
 #include <set>
@@ -26,45 +27,91 @@ using namespace graph::container;
 using graph::copyable_vertex_t;
 
 // ============================================================================
-// Type aliases — Bidirectional graphs (Sourced=true, Bidirectional=true)
+// Non-uniform bidirectional traits
+//
+// Uniform traits (vov_graph_traits<..., true>) store dynamic_out_edge for
+// in-edges, which lacks source_id(). Non-uniform traits define
+// in_edge_type = dynamic_in_edge so that source_id(g, ie) works via the
+// native edge member CPO tier and the bidirectional_adjacency_list concept
+// is satisfied.
+// ============================================================================
+
+template <class EV = void, class VV = void, class GV = void, class VId = uint32_t>
+struct vov_bidir_graph_traits {
+  using edge_value_type   = EV;
+  using vertex_value_type = VV;
+  using graph_value_type  = GV;
+  using vertex_id_type    = VId;
+  static constexpr bool bidirectional = true;
+
+  using edge_type    = dynamic_out_edge<EV, VV, GV, VId, true, vov_bidir_graph_traits>;
+  using in_edge_type = dynamic_in_edge<EV, VV, GV, VId, true, vov_bidir_graph_traits>;
+  using vertex_type  = dynamic_vertex<EV, VV, GV, VId, true, vov_bidir_graph_traits>;
+  using graph_type   = dynamic_graph<EV, VV, GV, VId, true, vov_bidir_graph_traits>;
+
+  using edges_type    = std::vector<edge_type>;
+  using in_edges_type = std::vector<in_edge_type>;
+  using vertices_type = std::vector<vertex_type>;
+};
+
+template <class EV = void, class VV = void, class GV = void, class VId = uint32_t>
+struct vol_bidir_graph_traits {
+  using edge_value_type   = EV;
+  using vertex_value_type = VV;
+  using graph_value_type  = GV;
+  using vertex_id_type    = VId;
+  static constexpr bool bidirectional = true;
+
+  using edge_type    = dynamic_out_edge<EV, VV, GV, VId, true, vol_bidir_graph_traits>;
+  using in_edge_type = dynamic_in_edge<EV, VV, GV, VId, true, vol_bidir_graph_traits>;
+  using vertex_type  = dynamic_vertex<EV, VV, GV, VId, true, vol_bidir_graph_traits>;
+  using graph_type   = dynamic_graph<EV, VV, GV, VId, true, vol_bidir_graph_traits>;
+
+  using edges_type    = std::list<edge_type>;
+  using in_edges_type = std::list<in_edge_type>;
+  using vertices_type = std::vector<vertex_type>;
+};
+
+// ============================================================================
+// Type aliases — Bidirectional graphs using non-uniform traits
 // ============================================================================
 
 // vov: vector vertices + vector edges — EV=int for weighted edges
 using bidir_vov_int =
-      dynamic_graph<int, void, void, uint32_t, true, true,
-                    vov_graph_traits<int, void, void, uint32_t, true, true>>;
+      dynamic_graph<int, void, void, uint32_t, true,
+                    vov_bidir_graph_traits<int, void, void, uint32_t>>;
 
 // vov: void edge value (unweighted)
 using bidir_vov_void =
-      dynamic_graph<void, void, void, uint32_t, true, true,
-                    vov_graph_traits<void, void, void, uint32_t, true, true>>;
+      dynamic_graph<void, void, void, uint32_t, true,
+                    vov_bidir_graph_traits<void, void, void, uint32_t>>;
 
 // vol: vector vertices + list edges — EV=int for weighted edges
 using bidir_vol_int =
-      dynamic_graph<int, void, void, uint32_t, true, true,
-                    vol_graph_traits<int, void, void, uint32_t, true, true>>;
+      dynamic_graph<int, void, void, uint32_t, true,
+                    vol_bidir_graph_traits<int, void, void, uint32_t>>;
 
 // vol: void edge value (unweighted)
 using bidir_vol_void =
-      dynamic_graph<void, void, void, uint32_t, true, true,
-                    vol_graph_traits<void, void, void, uint32_t, true, true>>;
+      dynamic_graph<void, void, void, uint32_t, true,
+                    vol_bidir_graph_traits<void, void, void, uint32_t>>;
 
 // vov with vertex value
 using bidir_vov_int_vv =
-      dynamic_graph<int, int, void, uint32_t, true, true,
-                    vov_graph_traits<int, int, void, uint32_t, true, true>>;
+      dynamic_graph<int, int, void, uint32_t, true,
+                    vov_bidir_graph_traits<int, int, void, uint32_t>>;
 
 // ============================================================================
 // Non-bidirectional baselines for regression comparison
 // ============================================================================
 
 using nonbidir_vov =
-      dynamic_graph<int, void, void, uint32_t, true, false,
-                    vov_graph_traits<int, void, void, uint32_t, true, false>>;
+      dynamic_graph<int, void, void, uint32_t, false,
+                    vov_graph_traits<int, void, void, uint32_t, false>>;
 
 using nonbidir_vol =
-      dynamic_graph<int, void, void, uint32_t, true, false,
-                    vol_graph_traits<int, void, void, uint32_t, true, false>>;
+      dynamic_graph<int, void, void, uint32_t, false,
+                    vol_graph_traits<int, void, void, uint32_t, false>>;
 
 // ============================================================================
 // CPOs in scope
@@ -179,7 +226,7 @@ TEST_CASE("non-bidir dynamic_graph works identically to before",
   }
   REQUIRE(edge_count == 3);
 
-  // source_id works (Sourced=true)
+  // source_id works (bidirectional graph stores source in out-edges)
   for (auto v : vertices(g)) {
     auto uid = vertex_id(g, v);
     for (auto e : edges(g, v)) {
@@ -489,7 +536,7 @@ TEST_CASE("bidir move assignment preserves reverse adjacency",
 
 TEST_CASE("bidir initializer_list construction",
           "[dynamic_graph][bidirectional][init_list]") {
-  // Sourced + EV=int: initializer_list<copyable_edge<VId, EV>>
+  // bidir + EV=int: initializer_list<copyable_edge<VId, EV>>
   bidir_vov_int g({{0, 1, 10}, {0, 2, 30}, {1, 2, 20}});
 
   REQUIRE(num_vertices(g) == 3);

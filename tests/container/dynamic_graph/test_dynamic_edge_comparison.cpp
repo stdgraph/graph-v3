@@ -1,11 +1,13 @@
 /**
  * @file test_dynamic_edge_comparison.cpp
- * @brief Tests for dynamic_edge comparison operators and std::hash
- * 
- * Phase 4.1: Set Container Support Prerequisites
- * Tests operator<=>, operator==, and std::hash for dynamic_edge
- * 
- * These operators are required for using dynamic_edge with std::set (ordered)
+ * @brief Tests for dynamic_out_edge and dynamic_in_edge comparison operators and std::hash
+ *
+ * Phase 4.1 / Phase 5 refactor: Set Container Support Prerequisites
+ * Tests operator<=>, operator==, and std::hash for:
+ *   - dynamic_out_edge (out-edges: compare by target_id)
+ *   - dynamic_in_edge  (in-edges:  compare by source_id)
+ *
+ * These operators are required for using edges with std::set (ordered)
  * and std::unordered_set (unordered) edge containers.
  */
 
@@ -19,34 +21,93 @@
 
 using namespace graph::container;
 
-//==================================================================================================
-// Test edge type definitions for all 4 specializations
-//==================================================================================================
+//==============================================================================
+// Type aliases — dynamic_out_edge (out-edges, compare by target_id)
+//==============================================================================
 
-// EV != void, Sourced = true (primary template)
-using edge_ev_sourced =
-      dynamic_edge<int, void, void, uint32_t, true, false, vov_graph_traits<int, void, void, uint32_t, true>>;
+// EV != void
+using edge_ev_out =
+      dynamic_out_edge<int, void, void, uint32_t, false, vov_graph_traits<int, void, void, uint32_t>>;
 
-// EV = void, Sourced = true
-using edge_void_sourced =
-      dynamic_edge<void, void, void, uint32_t, true, false, vov_graph_traits<void, void, void, uint32_t, true>>;
+// EV = void
+using edge_void_out =
+      dynamic_out_edge<void, void, void, uint32_t, false, vov_graph_traits<void, void, void, uint32_t>>;
 
-// EV != void, Sourced = false
-using edge_ev_unsourced =
-      dynamic_edge<int, void, void, uint32_t, false, false, vov_graph_traits<int, void, void, uint32_t, false>>;
+//==============================================================================
+// Type aliases — dynamic_in_edge (in-edges, compare by source_id)
+//==============================================================================
 
-// EV = void, Sourced = false
-using edge_void_unsourced =
-      dynamic_edge<void, void, void, uint32_t, false, false, vov_graph_traits<void, void, void, uint32_t, false>>;
+// EV != void
+using edge_ev_in =
+      dynamic_in_edge<int, void, void, uint32_t, false, vov_graph_traits<int, void, void, uint32_t>>;
 
-//==================================================================================================
-// 1. operator<=> Tests - Sourced edges (compare by source_id, then target_id)
-//==================================================================================================
+// EV = void
+using edge_void_in =
+      dynamic_in_edge<void, void, void, uint32_t, false, vov_graph_traits<void, void, void, uint32_t>>;
 
-TEST_CASE("dynamic_edge operator<=> with Sourced=true, EV!=void", "[edge][comparison][spaceship]") {
+//==============================================================================
+// 1. operator<=> Tests - dynamic_out_edge (compare by target_id only)
+//==============================================================================
+
+TEST_CASE("dynamic_out_edge operator<=> EV!=void", "[edge][comparison][spaceship]") {
   SECTION("equal edges") {
-    edge_ev_sourced e1(1, 2, 100);
-    edge_ev_sourced e2(1, 2, 200); // Different value, same ids
+    edge_ev_out e1(2, 100);
+    edge_ev_out e2(2, 200); // Different value, same target_id
+
+    REQUIRE((e1 <=> e2) == std::strong_ordering::equal);
+    REQUIRE(!(e1 < e2));
+    REQUIRE(!(e1 > e2));
+    REQUIRE(e1 <= e2);
+    REQUIRE(e1 >= e2);
+  }
+
+  SECTION("less by target_id") {
+    edge_ev_out e1(2, 100);
+    edge_ev_out e2(5, 100);
+
+    REQUIRE((e1 <=> e2) == std::strong_ordering::less);
+    REQUIRE(e1 < e2);
+    REQUIRE(!(e1 > e2));
+    REQUIRE(e1 <= e2);
+    REQUIRE(!(e1 >= e2));
+  }
+
+  SECTION("greater by target_id") {
+    edge_ev_out e1(7, 100);
+    edge_ev_out e2(3, 100);
+
+    REQUIRE((e1 <=> e2) == std::strong_ordering::greater);
+    REQUIRE(!(e1 < e2));
+    REQUIRE(e1 > e2);
+    REQUIRE(!(e1 <= e2));
+    REQUIRE(e1 >= e2);
+  }
+}
+
+TEST_CASE("dynamic_out_edge operator<=> EV=void", "[edge][comparison][spaceship]") {
+  SECTION("equal edges") {
+    edge_void_out e1(5);
+    edge_void_out e2(5);
+
+    REQUIRE((e1 <=> e2) == std::strong_ordering::equal);
+  }
+
+  SECTION("ordering by target_id") {
+    edge_void_out e1(3);
+    edge_void_out e2(7);
+
+    REQUIRE(e1 < e2);
+  }
+}
+
+//==============================================================================
+// 2. operator<=> Tests - dynamic_in_edge (compare by source_id only)
+//==============================================================================
+
+TEST_CASE("dynamic_in_edge operator<=> EV!=void", "[edge][comparison][spaceship]") {
+  SECTION("equal edges") {
+    edge_ev_in e1(1, 100);
+    edge_ev_in e2(1, 200); // Different value, same source_id
 
     REQUIRE((e1 <=> e2) == std::strong_ordering::equal);
     REQUIRE(!(e1 < e2));
@@ -56,8 +117,8 @@ TEST_CASE("dynamic_edge operator<=> with Sourced=true, EV!=void", "[edge][compar
   }
 
   SECTION("less by source_id") {
-    edge_ev_sourced e1(1, 5, 100);
-    edge_ev_sourced e2(2, 3, 100); // Larger source_id but smaller target_id
+    edge_ev_in e1(1, 100);
+    edge_ev_in e2(2, 100);
 
     REQUIRE((e1 <=> e2) == std::strong_ordering::less);
     REQUIRE(e1 < e2);
@@ -67,8 +128,8 @@ TEST_CASE("dynamic_edge operator<=> with Sourced=true, EV!=void", "[edge][compar
   }
 
   SECTION("greater by source_id") {
-    edge_ev_sourced e1(3, 1, 100);
-    edge_ev_sourced e2(2, 5, 100);
+    edge_ev_in e1(3, 100);
+    edge_ev_in e2(2, 100);
 
     REQUIRE((e1 <=> e2) == std::strong_ordering::greater);
     REQUIRE(!(e1 < e2));
@@ -76,274 +137,192 @@ TEST_CASE("dynamic_edge operator<=> with Sourced=true, EV!=void", "[edge][compar
     REQUIRE(!(e1 <= e2));
     REQUIRE(e1 >= e2);
   }
-
-  SECTION("same source_id, less by target_id") {
-    edge_ev_sourced e1(1, 2, 100);
-    edge_ev_sourced e2(1, 3, 100);
-
-    REQUIRE((e1 <=> e2) == std::strong_ordering::less);
-    REQUIRE(e1 < e2);
-  }
-
-  SECTION("same source_id, greater by target_id") {
-    edge_ev_sourced e1(1, 5, 100);
-    edge_ev_sourced e2(1, 3, 100);
-
-    REQUIRE((e1 <=> e2) == std::strong_ordering::greater);
-    REQUIRE(e1 > e2);
-  }
 }
 
-TEST_CASE("dynamic_edge operator<=> with Sourced=true, EV=void", "[edge][comparison][spaceship]") {
+TEST_CASE("dynamic_in_edge operator<=> EV=void", "[edge][comparison][spaceship]") {
   SECTION("equal edges") {
-    edge_void_sourced e1(1, 2);
-    edge_void_sourced e2(1, 2);
+    edge_void_in e1(2);
+    edge_void_in e2(2);
 
     REQUIRE((e1 <=> e2) == std::strong_ordering::equal);
   }
 
-  SECTION("ordering by source_id first, then target_id") {
-    edge_void_sourced e1(1, 2);
-    edge_void_sourced e2(2, 1);
+  SECTION("ordering by source_id") {
+    edge_void_in e1(1);
+    edge_void_in e2(2);
 
     REQUIRE(e1 < e2); // source_id 1 < 2
   }
 
-  SECTION("same source, different target") {
-    edge_void_sourced e1(1, 3);
-    edge_void_sourced e2(1, 2);
-
-    REQUIRE(e1 > e2); // target_id 3 > 2
-  }
-}
-
-//==================================================================================================
-// 2. operator<=> Tests - Unsourced edges (compare by target_id only)
-//==================================================================================================
-
-TEST_CASE("dynamic_edge operator<=> with Sourced=false, EV!=void", "[edge][comparison][spaceship]") {
-  SECTION("equal edges") {
-    edge_ev_unsourced e1(2, 100);
-    edge_ev_unsourced e2(2, 200); // Different value, same target_id
-
-    REQUIRE((e1 <=> e2) == std::strong_ordering::equal);
-  }
-
-  SECTION("less by target_id") {
-    edge_ev_unsourced e1(2, 100);
-    edge_ev_unsourced e2(5, 100);
-
-    REQUIRE(e1 < e2);
-  }
-
-  SECTION("greater by target_id") {
-    edge_ev_unsourced e1(7, 100);
-    edge_ev_unsourced e2(3, 100);
+  SECTION("reverse order") {
+    edge_void_in e1(3);
+    edge_void_in e2(1);
 
     REQUIRE(e1 > e2);
   }
 }
 
-TEST_CASE("dynamic_edge operator<=> with Sourced=false, EV=void", "[edge][comparison][spaceship]") {
-  SECTION("equal edges") {
-    edge_void_unsourced e1(5);
-    edge_void_unsourced e2(5);
+//==============================================================================
+// 3. operator== Tests - dynamic_out_edge
+//==============================================================================
 
-    REQUIRE((e1 <=> e2) == std::strong_ordering::equal);
+TEST_CASE("dynamic_out_edge operator==", "[edge][comparison][equality]") {
+  SECTION("EV != void - equal edges with different values") {
+    edge_ev_out e1(2, 100);
+    edge_ev_out e2(2, 999); // Different value
+
+    REQUIRE(e1 == e2); // compares only target_id
   }
 
-  SECTION("ordering by target_id") {
-    edge_void_unsourced e1(3);
-    edge_void_unsourced e2(7);
+  SECTION("EV != void - unequal by target_id") {
+    edge_ev_out e1(2, 100);
+    edge_ev_out e2(5, 100);
 
-    REQUIRE(e1 < e2);
+    REQUIRE(!(e1 == e2));
+    REQUIRE(e1 != e2);
+  }
+
+  SECTION("EV = void - equal edges") {
+    edge_void_out e1(5);
+    edge_void_out e2(5);
+
+    REQUIRE(e1 == e2);
+  }
+
+  SECTION("EV = void - unequal edges") {
+    edge_void_out e1(5);
+    edge_void_out e2(7);
+
+    REQUIRE(e1 != e2);
   }
 }
 
-//==================================================================================================
-// 3. operator== Tests
-//==================================================================================================
+//==============================================================================
+// 4. operator== Tests - dynamic_in_edge
+//==============================================================================
 
-TEST_CASE("dynamic_edge operator== with Sourced=true", "[edge][comparison][equality]") {
+TEST_CASE("dynamic_in_edge operator==", "[edge][comparison][equality]") {
   SECTION("EV != void - equal edges with different values") {
-    edge_ev_sourced e1(1, 2, 100);
-    edge_ev_sourced e2(1, 2, 999); // Different value
+    edge_ev_in e1(1, 100);
+    edge_ev_in e2(1, 999); // Different value
 
-    REQUIRE(e1 == e2); // Compares only source_id and target_id
+    REQUIRE(e1 == e2); // compares only source_id
   }
 
   SECTION("EV != void - unequal by source_id") {
-    edge_ev_sourced e1(1, 2, 100);
-    edge_ev_sourced e2(3, 2, 100);
-
-    REQUIRE(!(e1 == e2));
-    REQUIRE(e1 != e2);
-  }
-
-  SECTION("EV != void - unequal by target_id") {
-    edge_ev_sourced e1(1, 2, 100);
-    edge_ev_sourced e2(1, 5, 100);
+    edge_ev_in e1(1, 100);
+    edge_ev_in e2(3, 100);
 
     REQUIRE(!(e1 == e2));
     REQUIRE(e1 != e2);
   }
 
   SECTION("EV = void - equal edges") {
-    edge_void_sourced e1(1, 2);
-    edge_void_sourced e2(1, 2);
+    edge_void_in e1(2);
+    edge_void_in e2(2);
 
     REQUIRE(e1 == e2);
   }
 
   SECTION("EV = void - unequal edges") {
-    edge_void_sourced e1(1, 2);
-    edge_void_sourced e2(1, 3);
+    edge_void_in e1(2);
+    edge_void_in e2(3);
 
     REQUIRE(e1 != e2);
   }
 }
 
-TEST_CASE("dynamic_edge operator== with Sourced=false", "[edge][comparison][equality]") {
-  SECTION("EV != void - equal edges with different values") {
-    edge_ev_unsourced e1(2, 100);
-    edge_ev_unsourced e2(2, 999);
+//==============================================================================
+// 5. std::hash Tests - dynamic_out_edge
+//==============================================================================
 
-    REQUIRE(e1 == e2);
-  }
-
-  SECTION("EV != void - unequal by target_id") {
-    edge_ev_unsourced e1(2, 100);
-    edge_ev_unsourced e2(5, 100);
-
-    REQUIRE(e1 != e2);
-  }
-
-  SECTION("EV = void - equal edges") {
-    edge_void_unsourced e1(5);
-    edge_void_unsourced e2(5);
-
-    REQUIRE(e1 == e2);
-  }
-
-  SECTION("EV = void - unequal edges") {
-    edge_void_unsourced e1(5);
-    edge_void_unsourced e2(7);
-
-    REQUIRE(e1 != e2);
-  }
-}
-
-//==================================================================================================
-// 4. std::hash Tests
-//==================================================================================================
-
-TEST_CASE("std::hash for dynamic_edge with Sourced=true", "[edge][hash]") {
+TEST_CASE("std::hash for dynamic_out_edge", "[edge][hash]") {
   SECTION("EV != void - equal edges have same hash") {
-    edge_ev_sourced e1(1, 2, 100);
-    edge_ev_sourced e2(1, 2, 999); // Different value
+    edge_ev_out e1(2, 100);
+    edge_ev_out e2(2, 999); // Different value
 
-    std::hash<edge_ev_sourced> hasher;
+    std::hash<edge_ev_out> hasher;
     REQUIRE(hasher(e1) == hasher(e2));
   }
 
-  SECTION("EV != void - different edges likely have different hash") {
-    edge_ev_sourced e1(1, 2, 100);
-    edge_ev_sourced e2(1, 3, 100); // Different target
-    edge_ev_sourced e3(2, 2, 100); // Different source
+  SECTION("EV != void - different target_ids likely have different hash") {
+    edge_ev_out e1(2, 100);
+    edge_ev_out e2(5, 100);
 
-    std::hash<edge_ev_sourced> hasher;
-    // Note: Different hash is not guaranteed but highly likely
+    std::hash<edge_ev_out> hasher;
     REQUIRE(hasher(e1) != hasher(e2));
-    REQUIRE(hasher(e1) != hasher(e3));
   }
 
   SECTION("EV = void - equal edges have same hash") {
-    edge_void_sourced e1(1, 2);
-    edge_void_sourced e2(1, 2);
+    edge_void_out e1(5);
+    edge_void_out e2(5);
 
-    std::hash<edge_void_sourced> hasher;
-    REQUIRE(hasher(e1) == hasher(e2));
-  }
-}
-
-TEST_CASE("std::hash for dynamic_edge with Sourced=false", "[edge][hash]") {
-  SECTION("EV != void - equal edges have same hash") {
-    edge_ev_unsourced e1(2, 100);
-    edge_ev_unsourced e2(2, 999);
-
-    std::hash<edge_ev_unsourced> hasher;
-    REQUIRE(hasher(e1) == hasher(e2));
-  }
-
-  SECTION("EV = void - equal edges have same hash") {
-    edge_void_unsourced e1(5);
-    edge_void_unsourced e2(5);
-
-    std::hash<edge_void_unsourced> hasher;
+    std::hash<edge_void_out> hasher;
     REQUIRE(hasher(e1) == hasher(e2));
   }
 
   SECTION("EV = void - different edges likely have different hash") {
-    edge_void_unsourced e1(5);
-    edge_void_unsourced e2(7);
+    edge_void_out e1(5);
+    edge_void_out e2(7);
 
-    std::hash<edge_void_unsourced> hasher;
+    std::hash<edge_void_out> hasher;
     REQUIRE(hasher(e1) != hasher(e2));
   }
 }
 
-//==================================================================================================
-// 5. Integration with std::set (requires operator<=>)
-//==================================================================================================
+//==============================================================================
+// 6. std::hash Tests - dynamic_in_edge
+//==============================================================================
 
-TEST_CASE("dynamic_edge works with std::set", "[edge][set][integration]") {
-  SECTION("Sourced edges - deduplicates by source_id and target_id") {
-    std::set<edge_ev_sourced> edge_set;
+TEST_CASE("std::hash for dynamic_in_edge", "[edge][hash]") {
+  SECTION("EV != void - equal edges have same hash") {
+    edge_ev_in e1(1, 100);
+    edge_ev_in e2(1, 999); // Different value
 
-    edge_set.insert(edge_ev_sourced(1, 2, 100));
-    edge_set.insert(edge_ev_sourced(1, 2, 999)); // Duplicate (same ids)
-    edge_set.insert(edge_ev_sourced(1, 3, 100));
-    edge_set.insert(edge_ev_sourced(2, 1, 100));
-
-    REQUIRE(edge_set.size() == 3); // Only 3 unique edges
+    std::hash<edge_ev_in> hasher;
+    REQUIRE(hasher(e1) == hasher(e2));
   }
 
-  SECTION("Sourced edges - maintains sorted order") {
-    std::set<edge_void_sourced> edge_set;
+  SECTION("EV != void - different source_ids likely have different hash") {
+    edge_ev_in e1(1, 100);
+    edge_ev_in e2(3, 100);
 
-    edge_set.insert(edge_void_sourced(2, 3));
-    edge_set.insert(edge_void_sourced(1, 2));
-    edge_set.insert(edge_void_sourced(1, 3));
-    edge_set.insert(edge_void_sourced(2, 1));
-
-    std::vector<std::pair<uint32_t, uint32_t>> expected = {{1, 2}, {1, 3}, {2, 1}, {2, 3}};
-
-    size_t i = 0;
-    for (const auto& e : edge_set) {
-      REQUIRE(e.source_id() == expected[i].first);
-      REQUIRE(e.target_id() == expected[i].second);
-      ++i;
-    }
+    std::hash<edge_ev_in> hasher;
+    REQUIRE(hasher(e1) != hasher(e2));
   }
 
-  SECTION("Unsourced edges - deduplicates by target_id") {
-    std::set<edge_ev_unsourced> edge_set;
+  SECTION("EV = void - equal edges have same hash") {
+    edge_void_in e1(2);
+    edge_void_in e2(2);
 
-    edge_set.insert(edge_ev_unsourced(2, 100));
-    edge_set.insert(edge_ev_unsourced(2, 999)); // Duplicate
-    edge_set.insert(edge_ev_unsourced(5, 100));
-    edge_set.insert(edge_ev_unsourced(3, 100));
+    std::hash<edge_void_in> hasher;
+    REQUIRE(hasher(e1) == hasher(e2));
+  }
+}
+
+//==============================================================================
+// 7. Integration with std::set (requires operator<=>)
+//==============================================================================
+
+TEST_CASE("dynamic_out_edge works with std::set", "[edge][set][integration]") {
+  SECTION("deduplicates by target_id") {
+    std::set<edge_ev_out> edge_set;
+
+    edge_set.insert(edge_ev_out(2, 100));
+    edge_set.insert(edge_ev_out(2, 999)); // Duplicate (same target_id)
+    edge_set.insert(edge_ev_out(5, 100));
+    edge_set.insert(edge_ev_out(3, 100));
 
     REQUIRE(edge_set.size() == 3);
   }
 
-  SECTION("Unsourced edges - maintains sorted order") {
-    std::set<edge_void_unsourced> edge_set;
+  SECTION("maintains sorted order by target_id") {
+    std::set<edge_void_out> edge_set;
 
-    edge_set.insert(edge_void_unsourced(5));
-    edge_set.insert(edge_void_unsourced(2));
-    edge_set.insert(edge_void_unsourced(8));
-    edge_set.insert(edge_void_unsourced(1));
+    edge_set.insert(edge_void_out(5));
+    edge_set.insert(edge_void_out(2));
+    edge_set.insert(edge_void_out(8));
+    edge_set.insert(edge_void_out(1));
 
     std::vector<uint32_t> expected = {1, 2, 5, 8};
 
@@ -355,95 +334,130 @@ TEST_CASE("dynamic_edge works with std::set", "[edge][set][integration]") {
   }
 }
 
-//==================================================================================================
-// 6. Integration with std::unordered_set (requires operator== and std::hash)
-//==================================================================================================
+TEST_CASE("dynamic_in_edge works with std::set", "[edge][set][integration]") {
+  SECTION("deduplicates by source_id") {
+    std::set<edge_ev_in> edge_set;
 
-TEST_CASE("dynamic_edge works with std::unordered_set", "[edge][unordered_set][integration]") {
-  SECTION("Sourced edges - deduplicates by source_id and target_id") {
-    std::unordered_set<edge_ev_sourced> edge_set;
-
-    edge_set.insert(edge_ev_sourced(1, 2, 100));
-    edge_set.insert(edge_ev_sourced(1, 2, 999)); // Duplicate
-    edge_set.insert(edge_ev_sourced(1, 3, 100));
-    edge_set.insert(edge_ev_sourced(2, 1, 100));
+    edge_set.insert(edge_ev_in(1, 100));
+    edge_set.insert(edge_ev_in(1, 999)); // Duplicate (same source_id)
+    edge_set.insert(edge_ev_in(2, 100));
+    edge_set.insert(edge_ev_in(3, 100));
 
     REQUIRE(edge_set.size() == 3);
   }
 
-  SECTION("Sourced edges - find works correctly") {
-    std::unordered_set<edge_void_sourced> edge_set;
+  SECTION("maintains sorted order by source_id") {
+    std::set<edge_void_in> edge_set;
 
-    edge_set.insert(edge_void_sourced(1, 2));
-    edge_set.insert(edge_void_sourced(2, 3));
+    edge_set.insert(edge_void_in(3));
+    edge_set.insert(edge_void_in(1));
+    edge_set.insert(edge_void_in(4));
+    edge_set.insert(edge_void_in(2));
 
-    REQUIRE(edge_set.find(edge_void_sourced(1, 2)) != edge_set.end());
-    REQUIRE(edge_set.find(edge_void_sourced(1, 5)) == edge_set.end());
+    std::vector<uint32_t> expected = {1, 2, 3, 4};
+
+    size_t i = 0;
+    for (const auto& e : edge_set) {
+      REQUIRE(e.source_id() == expected[i]);
+      ++i;
+    }
   }
+}
 
-  SECTION("Unsourced edges - deduplicates by target_id") {
-    std::unordered_set<edge_ev_unsourced> edge_set;
+//==============================================================================
+// 8. Integration with std::unordered_set
+//==============================================================================
 
-    edge_set.insert(edge_ev_unsourced(2, 100));
-    edge_set.insert(edge_ev_unsourced(2, 999)); // Duplicate
-    edge_set.insert(edge_ev_unsourced(5, 100));
+TEST_CASE("dynamic_out_edge works with std::unordered_set",
+          "[edge][unordered_set][integration]") {
+  SECTION("deduplicates by target_id") {
+    std::unordered_set<edge_ev_out> edge_set;
+
+    edge_set.insert(edge_ev_out(2, 100));
+    edge_set.insert(edge_ev_out(2, 999)); // Duplicate
+    edge_set.insert(edge_ev_out(5, 100));
 
     REQUIRE(edge_set.size() == 2);
   }
 
-  SECTION("Unsourced edges - find works correctly") {
-    std::unordered_set<edge_void_unsourced> edge_set;
+  SECTION("find works correctly") {
+    std::unordered_set<edge_void_out> edge_set;
 
-    edge_set.insert(edge_void_unsourced(3));
-    edge_set.insert(edge_void_unsourced(7));
+    edge_set.insert(edge_void_out(3));
+    edge_set.insert(edge_void_out(7));
 
-    REQUIRE(edge_set.find(edge_void_unsourced(3)) != edge_set.end());
-    REQUIRE(edge_set.find(edge_void_unsourced(5)) == edge_set.end());
+    REQUIRE(edge_set.find(edge_void_out(3)) != edge_set.end());
+    REQUIRE(edge_set.find(edge_void_out(5)) == edge_set.end());
   }
 }
 
-//==================================================================================================
-// 7. Edge case tests
-//==================================================================================================
+TEST_CASE("dynamic_in_edge works with std::unordered_set",
+          "[edge][unordered_set][integration]") {
+  SECTION("deduplicates by source_id") {
+    std::unordered_set<edge_ev_in> edge_set;
 
-TEST_CASE("dynamic_edge comparison edge cases", "[edge][comparison][edge-cases]") {
-  SECTION("default constructed edges are equal") {
-    edge_void_unsourced e1;
-    edge_void_unsourced e2;
+    edge_set.insert(edge_ev_in(1, 100));
+    edge_set.insert(edge_ev_in(1, 999)); // Duplicate
+    edge_set.insert(edge_ev_in(3, 100));
+
+    REQUIRE(edge_set.size() == 2);
+  }
+
+  SECTION("find works correctly") {
+    std::unordered_set<edge_void_in> edge_set;
+
+    edge_set.insert(edge_void_in(1));
+    edge_set.insert(edge_void_in(2));
+
+    REQUIRE(edge_set.find(edge_void_in(1)) != edge_set.end());
+    REQUIRE(edge_set.find(edge_void_in(5)) == edge_set.end());
+  }
+}
+
+//==============================================================================
+// 9. Edge case tests
+//==============================================================================
+
+TEST_CASE("dynamic edge comparison edge cases", "[edge][comparison][edge-cases]") {
+  SECTION("default constructed out-edges are equal") {
+    edge_void_out e1;
+    edge_void_out e2;
 
     REQUIRE(e1 == e2);
     REQUIRE((e1 <=> e2) == std::strong_ordering::equal);
   }
 
-  SECTION("edge with id 0") {
-    edge_void_unsourced e1(0);
-    edge_void_unsourced e2(0);
+  SECTION("out-edge with target_id 0") {
+    edge_void_out e1(0);
+    edge_void_out e2(0);
 
     REQUIRE(e1 == e2);
-    REQUIRE(std::hash<edge_void_unsourced>{}(e1) == std::hash<edge_void_unsourced>{}(e2));
+    REQUIRE(std::hash<edge_void_out>{}(e1) == std::hash<edge_void_out>{}(e2));
   }
 
-  SECTION("large vertex ids") {
-    uint32_t          max_id = std::numeric_limits<uint32_t>::max();
-    edge_void_sourced e1(max_id, max_id);
-    edge_void_sourced e2(max_id, max_id);
+  SECTION("in-edge with source_id 0") {
+    edge_void_in e1(0);
+    edge_void_in e2(0);
 
     REQUIRE(e1 == e2);
-    REQUIRE(std::hash<edge_void_sourced>{}(e1) == std::hash<edge_void_sourced>{}(e2));
+    REQUIRE(std::hash<edge_void_in>{}(e1) == std::hash<edge_void_in>{}(e2));
   }
 
-  SECTION("self-loop edges") {
-    edge_void_sourced e1(5, 5);
-    edge_void_sourced e2(5, 5);
+  SECTION("out-edge large vertex ids") {
+    uint32_t      max_id = std::numeric_limits<uint32_t>::max();
+    edge_void_out e1(max_id);
+    edge_void_out e2(max_id);
 
     REQUIRE(e1 == e2);
+    REQUIRE(std::hash<edge_void_out>{}(e1) == std::hash<edge_void_out>{}(e2));
   }
 
-  SECTION("reverse edges are not equal for sourced") {
-    edge_void_sourced e1(1, 2);
-    edge_void_sourced e2(2, 1);
+  SECTION("in-edge large vertex ids") {
+    uint32_t     max_id = std::numeric_limits<uint32_t>::max();
+    edge_void_in e1(max_id);
+    edge_void_in e2(max_id);
 
-    REQUIRE(e1 != e2);
-    REQUIRE(e1 < e2); // (1, 2) < (2, 1) by source_id
+    REQUIRE(e1 == e2);
+    REQUIRE(std::hash<edge_void_in>{}(e1) == std::hash<edge_void_in>{}(e2));
   }
 }

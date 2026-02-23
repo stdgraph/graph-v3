@@ -24,9 +24,29 @@ using namespace graph;
 using namespace graph::views;
 using namespace graph::adj_list;
 
-// Bidirectional graph type (Sourced=true, Bidirectional=true) with void edge values
-using bidir_graph = container::dynamic_graph<void, void, void, uint32_t, true, true,
-                                             container::vov_graph_traits<void, void, void, uint32_t, true, true>>;
+// Non-uniform bidirectional traits: in_edge_type = dynamic_in_edge (has source_id())
+// so that bidirectional_adjacency_list concept is satisfied.
+template <class EV = void, class VV = void, class GV = void, class VId = uint32_t>
+struct vov_bidir_graph_traits {
+  using edge_value_type   = EV;
+  using vertex_value_type = VV;
+  using graph_value_type  = GV;
+  using vertex_id_type    = VId;
+  static constexpr bool bidirectional = true;
+
+  using edge_type    = container::dynamic_out_edge<EV, VV, GV, VId, true, vov_bidir_graph_traits>;
+  using in_edge_type = container::dynamic_in_edge<EV, VV, GV, VId, true, vov_bidir_graph_traits>;
+  using vertex_type  = container::dynamic_vertex<EV, VV, GV, VId, true, vov_bidir_graph_traits>;
+  using graph_type   = container::dynamic_graph<EV, VV, GV, VId, true, vov_bidir_graph_traits>;
+
+  using edges_type    = std::vector<edge_type>;
+  using in_edges_type = std::vector<in_edge_type>;
+  using vertices_type = std::vector<vertex_type>;
+};
+
+// Bidirectional graph type with void edge values using non-uniform bidir traits
+using bidir_graph = container::dynamic_graph<void, void, void, uint32_t, true,
+                                             vov_bidir_graph_traits<void, void, void, uint32_t>>;
 
 // =============================================================================
 // Helper: build a small directed bidirectional graph

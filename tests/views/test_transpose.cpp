@@ -18,6 +18,7 @@
 #include <graph/container/dynamic_graph.hpp>
 #include <graph/container/traits/vov_graph_traits.hpp>
 #include <algorithm>
+#include <list>
 #include <set>
 #include <vector>
 
@@ -25,14 +26,33 @@ namespace adj  = graph::adj_list;
 namespace view = graph::views;
 using namespace graph::container;
 
+// Non-uniform bidirectional traits: in_edge_type = dynamic_in_edge (has source_id())
+// so that bidirectional_adjacency_list concept is satisfied.
+template <class EV = void, class VV = void, class GV = void, class VId = uint32_t>
+struct vov_bidir_graph_traits {
+  using edge_value_type   = EV;
+  using vertex_value_type = VV;
+  using graph_value_type  = GV;
+  using vertex_id_type    = VId;
+  static constexpr bool bidirectional = true;
+
+  using edge_type    = dynamic_out_edge<EV, VV, GV, VId, true, vov_bidir_graph_traits>;
+  using in_edge_type = dynamic_in_edge<EV, VV, GV, VId, true, vov_bidir_graph_traits>;
+  using vertex_type  = dynamic_vertex<EV, VV, GV, VId, true, vov_bidir_graph_traits>;
+  using graph_type   = dynamic_graph<EV, VV, GV, VId, true, vov_bidir_graph_traits>;
+
+  using edges_type    = std::vector<edge_type>;
+  using in_edges_type = std::vector<in_edge_type>;
+  using vertices_type = std::vector<vertex_type>;
+};
+
 // Bidirectional vov graph (random-access edges — full transpose_view support)
-// Template: <EV, VV, GV, VId, Sourced, Bidirectional, Traits>
-using bidir_vov = dynamic_graph<int, void, void, uint32_t, true, true,
-                                vov_graph_traits<int, void, void, uint32_t, true, true>>;
+using bidir_vov = dynamic_graph<int, void, void, uint32_t, true,
+                                vov_bidir_graph_traits<int, void, void, uint32_t>>;
 
 // Bidirectional vov with void edge values
-using bidir_vov_void = dynamic_graph<void, void, void, uint32_t, true, true,
-                                     vov_graph_traits<void, void, void, uint32_t, true, true>>;
+using bidir_vov_void = dynamic_graph<void, void, void, uint32_t, true,
+                                     vov_bidir_graph_traits<void, void, void, uint32_t>>;
 
 // =============================================================================
 // Helper: build a small directed graph for transpose testing

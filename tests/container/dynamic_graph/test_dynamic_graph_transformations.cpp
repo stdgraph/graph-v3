@@ -36,15 +36,15 @@ using namespace graph::adj_list;
 using namespace graph::container;
 
 // Type aliases for testing
-using vov_void = dynamic_graph<void, void, void, uint64_t, false, false, vov_graph_traits<void, void, void, uint64_t, false>>;
+using vov_void = dynamic_graph<void, void, void, uint64_t, false, vov_graph_traits<void, void, void, uint64_t, false>>;
 
 using mos_void =
-      dynamic_graph<void, void, void, std::string, false, false, mos_graph_traits<void, void, void, std::string, false>>;
+      dynamic_graph<void, void, void, std::string, false, mos_graph_traits<void, void, void, std::string, false>>;
 
 using dofl_void =
-      dynamic_graph<void, void, void, uint64_t, false, false, dofl_graph_traits<void, void, void, uint64_t, false>>;
+      dynamic_graph<void, void, void, uint64_t, false, dofl_graph_traits<void, void, void, uint64_t, false>>;
 
-using dov_void = dynamic_graph<void, void, void, uint64_t, false, false, dov_graph_traits<void, void, void, uint64_t, false>>;
+using dov_void = dynamic_graph<void, void, void, uint64_t, false, dov_graph_traits<void, void, void, uint64_t, false>>;
 
 // ============================================================================
 // Generic Transformation Functions (CPO-based)

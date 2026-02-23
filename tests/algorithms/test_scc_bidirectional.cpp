@@ -6,6 +6,9 @@
  * - Correctness of SCC detection using in_edges (no separate transpose graph)
  * - Agreement with the two-graph kosaraju overload
  * - Works with both vov (random-access) and vol (forward-iterator) containers
+ *
+ * Uses NON-UNIFORM bidirectional traits so that in_edges store dynamic_in_edge
+ * (which has source_id()), satisfying the bidirectional_adjacency_list concept.
  */
 
 #include <catch2/catch_test_macros.hpp>
@@ -15,6 +18,7 @@
 #include <graph/container/traits/vol_graph_traits.hpp>
 #include "../common/graph_fixtures.hpp"
 #include <algorithm>
+#include <list>
 #include <set>
 #include <vector>
 
@@ -22,15 +26,58 @@ using namespace graph;
 using namespace graph::container;
 using namespace graph::test::fixtures;
 
-// Bidirectional graph types — all use Sourced=true, Bidirectional=true
-using bidir_vov_void = dynamic_graph<void, void, void, uint32_t, true, true,
-                                     vov_graph_traits<void, void, void, uint32_t, true, true>>;
+// =============================================================================
+// Non-uniform bidirectional traits
+// Uniform traits (vov_graph_traits<..., true>) store dynamic_out_edge for in-edges,
+// which lacks source_id(). Non-uniform traits define in_edge_type = dynamic_in_edge
+// so that source_id(g, ie) works via the native edge member tier.
+// =============================================================================
 
-using bidir_vol_void = dynamic_graph<void, void, void, uint32_t, true, true,
-                                     vol_graph_traits<void, void, void, uint32_t, true, true>>;
+template <class EV = void, class VV = void, class GV = void, class VId = uint32_t>
+struct vov_bidir_graph_traits {
+  using edge_value_type   = EV;
+  using vertex_value_type = VV;
+  using graph_value_type  = GV;
+  using vertex_id_type    = VId;
+  static constexpr bool bidirectional = true;
 
-using bidir_vov_int = dynamic_graph<int, void, void, uint32_t, true, true,
-                                    vov_graph_traits<int, void, void, uint32_t, true, true>>;
+  using edge_type    = dynamic_out_edge<EV, VV, GV, VId, true, vov_bidir_graph_traits>;
+  using in_edge_type = dynamic_in_edge<EV, VV, GV, VId, true, vov_bidir_graph_traits>;
+  using vertex_type  = dynamic_vertex<EV, VV, GV, VId, true, vov_bidir_graph_traits>;
+  using graph_type   = dynamic_graph<EV, VV, GV, VId, true, vov_bidir_graph_traits>;
+
+  using edges_type    = std::vector<edge_type>;
+  using in_edges_type = std::vector<in_edge_type>;
+  using vertices_type = std::vector<vertex_type>;
+};
+
+template <class EV = void, class VV = void, class GV = void, class VId = uint32_t>
+struct vol_bidir_graph_traits {
+  using edge_value_type   = EV;
+  using vertex_value_type = VV;
+  using graph_value_type  = GV;
+  using vertex_id_type    = VId;
+  static constexpr bool bidirectional = true;
+
+  using edge_type    = dynamic_out_edge<EV, VV, GV, VId, true, vol_bidir_graph_traits>;
+  using in_edge_type = dynamic_in_edge<EV, VV, GV, VId, true, vol_bidir_graph_traits>;
+  using vertex_type  = dynamic_vertex<EV, VV, GV, VId, true, vol_bidir_graph_traits>;
+  using graph_type   = dynamic_graph<EV, VV, GV, VId, true, vol_bidir_graph_traits>;
+
+  using edges_type    = std::list<edge_type>;
+  using in_edges_type = std::list<in_edge_type>;
+  using vertices_type = std::vector<vertex_type>;
+};
+
+// Bidirectional graph types using non-uniform traits
+using bidir_vov_void = dynamic_graph<void, void, void, uint32_t, true,
+                                     vov_bidir_graph_traits<void, void, void, uint32_t>>;
+
+using bidir_vol_void = dynamic_graph<void, void, void, uint32_t, true,
+                                     vol_bidir_graph_traits<void, void, void, uint32_t>>;
+
+using bidir_vov_int = dynamic_graph<int, void, void, uint32_t, true,
+                                    vov_bidir_graph_traits<int, void, void, uint32_t>>;
 
 // =============================================================================
 // Helpers (mirrored from test_connected_components.cpp)
@@ -226,8 +273,8 @@ TEST_CASE("kosaraju bidir - agrees with two-graph overload", "[algorithm][kosara
   bidir_vov_void g_bidir({{0, 1}, {1, 2}, {2, 0}, {2, 3}, {3, 4}, {4, 3}, {4, 5}});
 
   // Non-bidir version + transpose
-  using vov_dir = dynamic_graph<void, void, void, uint32_t, true, false,
-                                vov_graph_traits<void, void, void, uint32_t, true, false>>;
+  using vov_dir = dynamic_graph<void, void, void, uint32_t, false,
+                                vov_graph_traits<void, void, void, uint32_t, false>>;
   vov_dir g_fwd({{0, 1}, {1, 2}, {2, 0}, {2, 3}, {3, 4}, {4, 3}, {4, 5}});
   vov_dir g_rev({{1, 0}, {2, 1}, {0, 2}, {3, 2}, {4, 3}, {3, 4}, {5, 4}});
 

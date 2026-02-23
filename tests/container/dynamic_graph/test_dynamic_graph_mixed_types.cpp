@@ -12,14 +12,14 @@ using namespace graph::adj_list;
 using namespace graph::container;
 
 // Graph type aliases with uint64_t IDs
-using vov_void = dynamic_graph<void, void, void, uint64_t, false, false, vov_graph_traits<void, void, void, uint64_t, false>>;
-using mos_void = dynamic_graph<void, void, void, uint64_t, false, false, mos_graph_traits<void, void, void, uint64_t, false>>;
+using vov_void = dynamic_graph<void, void, void, uint64_t, false, vov_graph_traits<void, void, void, uint64_t, false>>;
+using mos_void = dynamic_graph<void, void, void, uint64_t, false, mos_graph_traits<void, void, void, uint64_t, false>>;
 using dofl_void =
-      dynamic_graph<void, void, void, uint64_t, false, false, dofl_graph_traits<void, void, void, uint64_t, false>>;
+      dynamic_graph<void, void, void, uint64_t, false, dofl_graph_traits<void, void, void, uint64_t, false>>;
 
 // Graph type with string IDs
 using mos_string =
-      dynamic_graph<void, void, void, std::string, false, false, mos_graph_traits<void, void, void, std::string, false>>;
+      dynamic_graph<void, void, void, std::string, false, mos_graph_traits<void, void, void, std::string, false>>;
 
 // Generic edge counting function
 template <typename G>

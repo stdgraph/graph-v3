@@ -7,6 +7,9 @@
 #include <graph/adj_list/detail/graph_cpo.hpp>
 #include <graph/adj_list/vertex_descriptor.hpp>
 #include <graph/adj_list/edge_descriptor.hpp>
+#include <graph/container/dynamic_graph.hpp>
+#include <graph/graph.hpp>
+#include "../../common/graph_test_types.hpp"
 #include <vector>
 #include <deque>
 #include <map>
@@ -481,5 +484,94 @@ TEST_CASE("source_id(g,uv) - self-loops", "[source_id][cpo][selfloop]") {
 
     REQUIRE(sources.size() == 1);
     REQUIRE(sources[0] == 1); // self-loop source
+  }
+}
+
+// =============================================================================
+// Test: dynamic_graph non-uniform bidir — source_id on in-edges (Tier 1)
+//
+// Non-uniform bidir traits define in_edge_type = dynamic_in_edge, which has a
+// source_id() member. The CPO resolves via Tier 1 (native edge member), not
+// the descriptor-based Tier 4 used for generic adj-list out-edges.
+// =============================================================================
+
+using DynBidirSrcId =
+      graph::container::dynamic_graph<void, void, void, uint32_t, true,
+                                      graph::test::vov_bidir_graph_traits<>>;
+
+TEST_CASE("source_id(g,ie) - dynamic_graph in-edges via non-uniform bidir (Tier 1)",
+          "[source_id][cpo][dynamic_graph][bidir][in_edges]") {
+  using namespace graph;
+  using namespace graph::container;
+
+  // Graph: 0->1, 0->2, 1->2, 2->3
+  // In-edges of vertex 2: from 0 and 1
+  DynBidirSrcId g({{0, 1}, {0, 2}, {1, 2}, {2, 3}});
+
+  auto u2 = *find_vertex(g, uint32_t(2));
+
+  SECTION("source_id of in-edges to vertex 2 are 0 and 1") {
+    std::vector<uint32_t> sources;
+    for (auto ie : in_edges(g, u2))
+      sources.push_back(source_id(g, ie));
+    std::sort(sources.begin(), sources.end());
+    REQUIRE(sources.size() == 2);
+    REQUIRE(sources[0] == 0);
+    REQUIRE(sources[1] == 1);
+  }
+
+  SECTION("source_id of in-edge to vertex 3 is 2") {
+    auto u3 = *find_vertex(g, uint32_t(3));
+    for (auto ie : in_edges(g, u3))
+      REQUIRE(source_id(g, ie) == 2);
+  }
+
+  SECTION("all source_ids from in-edges are valid vertex IDs") {
+    for (auto u : vertices(g)) {
+      for (auto ie : in_edges(g, u)) {
+        auto sid = source_id(g, ie);
+        REQUIRE(sid < num_vertices(g));
+      }
+    }
+  }
+}
+
+TEST_CASE("source_id(g,oe) - dynamic_graph out-edges in bidir graph (Tier 4)",
+          "[source_id][cpo][dynamic_graph][bidir][out_edges]") {
+  using namespace graph;
+  using namespace graph::container;
+
+  // Out-edge source_id on a bidir graph works the same as non-bidir (Tier 4).
+  DynBidirSrcId g({{0, 1}, {0, 2}, {1, 2}});
+
+  SECTION("source_id of out-edges matches the source vertex for all") {
+    for (auto u : vertices(g)) {
+      auto vid = vertex_id(g, u);
+      for (auto oe : edges(g, u))
+        REQUIRE(source_id(g, oe) == vid);
+    }
+  }
+}
+
+TEST_CASE("source_id(g,ie) - dynamic_graph weighted non-uniform bidir",
+          "[source_id][cpo][dynamic_graph][bidir][weighted]") {
+  using namespace graph;
+  using namespace graph::container;
+
+  using WeightedG =
+        graph::container::dynamic_graph<int, void, void, uint32_t, true,
+                                        graph::test::vov_bidir_graph_traits<int>>;
+
+  WeightedG g({{0, 1, 10}, {0, 2, 20}, {1, 2, 30}});
+
+  SECTION("source_id of in-edges to vertex 2 are 0 and 1") {
+    auto u2 = *find_vertex(g, uint32_t(2));
+    std::vector<uint32_t> sources;
+    for (auto ie : in_edges(g, u2))
+      sources.push_back(source_id(g, ie));
+    std::sort(sources.begin(), sources.end());
+    REQUIRE(sources.size() == 2);
+    REQUIRE(sources[0] == 0);
+    REQUIRE(sources[1] == 1);
   }
 }

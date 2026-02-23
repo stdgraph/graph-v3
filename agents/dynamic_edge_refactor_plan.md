@@ -898,12 +898,12 @@ Message: `docs: cleanup Doxygen, update user docs, archive strategy (Phase 6)`
 | 4e | Update `dynamic_adjacency_graph` alias | COMPLETE | done in 4b (08e6ef6) |
 | 4f | Update `std::hash` specializations | COMPLETE | done in 4a (89e1018) |
 | 4g | Compile non-test code | COMPLETE | 01a980a |
-| 5.1 | Update `graph_test_types.hpp` | NOT STARTED | |
-| 5.2 | Update ~48 container test files | NOT STARTED | |
-| 5.3 | Update bidir container-native tests | NOT STARTED | |
-| 5.4 | Update/add CPO bidir tests | NOT STARTED | |
-| 5.5 | Update concept tests | NOT STARTED | |
-| 5.6 | Update algorithm test types | NOT STARTED | |
-| 5.7 | Update examples/benchmarks | NOT STARTED | |
-| 5.8 | Full test suite verification | NOT STARTED | |
+| 5.1 | Update `graph_test_types.hpp` | COMPLETE | 9fd9c1f; tags 6-param; sourced_* → bidir_* |
+| 5.2 | Update ~48 container test files | COMPLETE | bulk script + manual CPO fixes; `Types::all` → `all_int` |
+| 5.3 | Update bidir container-native tests | COMPLETE | non-uniform traits added to bidir/scc/transpose/reverse_traversal |
+| 5.4 | Update/add CPO bidir tests | COMPLETE | 5.4.1–5.4.5; 20 new tests; 4329/4329 pass (2026-02-23) |
+| 5.5 | Update concept tests | COMPLETE | 8 STATIC_REQUIREs for dynamic_graph; 4337/4337 pass (2026-02-23) |
+| 5.6 | Update algorithm test types | COMPLETE | no changes needed; file does not reference `Sourced` |
+| 5.7 | Update examples/benchmarks | COMPLETE | no changes needed in examples/; transpose + reverse_traversal fixed |
+| 5.8 | Full test suite verification | COMPLETE | 4309/4309 pass (2026-02-23) |
 | 6 | Cleanup + documentation | NOT STARTED | |

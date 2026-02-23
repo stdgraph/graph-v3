@@ -39,6 +39,7 @@ add_executable(graph3_adj_list_tests
     cpo/test_num_partitions_cpo.cpp
     cpo/test_vertices_pid_cpo.cpp
     cpo/test_num_vertices_pid_cpo.cpp
+    cpo/test_bidir_cpo_consistency.cpp
     
     # Traits
     traits/test_type_aliases.cpp

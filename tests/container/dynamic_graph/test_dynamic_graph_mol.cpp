@@ -34,33 +34,28 @@ using namespace graph::container;
 
 // Type aliases for common test configurations with uint32_t vertex IDs
 using mol_void_void_void =
-      dynamic_graph<void, void, void, uint32_t, false, false, mol_graph_traits<void, void, void, uint32_t, false>>;
+      dynamic_graph<void, void, void, uint32_t, false, mol_graph_traits<void, void, void, uint32_t, false>>;
 using mol_int_void_void =
-      dynamic_graph<int, void, void, uint32_t, false, false, mol_graph_traits<int, void, void, uint32_t, false>>;
+      dynamic_graph<int, void, void, uint32_t, false, mol_graph_traits<int, void, void, uint32_t, false>>;
 using mol_void_int_void =
-      dynamic_graph<void, int, void, uint32_t, false, false, mol_graph_traits<void, int, void, uint32_t, false>>;
+      dynamic_graph<void, int, void, uint32_t, false, mol_graph_traits<void, int, void, uint32_t, false>>;
 using mol_int_int_void =
-      dynamic_graph<int, int, void, uint32_t, false, false, mol_graph_traits<int, int, void, uint32_t, false>>;
+      dynamic_graph<int, int, void, uint32_t, false, mol_graph_traits<int, int, void, uint32_t, false>>;
 using mol_void_void_int =
-      dynamic_graph<void, void, int, uint32_t, false, false, mol_graph_traits<void, void, int, uint32_t, false>>;
-using mol_int_int_int = dynamic_graph<int, int, int, uint32_t, false, false, mol_graph_traits<int, int, int, uint32_t, false>>;
+      dynamic_graph<void, void, int, uint32_t, false, mol_graph_traits<void, void, int, uint32_t, false>>;
+using mol_int_int_int = dynamic_graph<int, int, int, uint32_t, false, mol_graph_traits<int, int, int, uint32_t, false>>;
 
 // Type aliases with string vertex IDs (the primary use case for map containers)
 using mol_str_void_void_void =
-      dynamic_graph<void, void, void, std::string, false, false, mol_graph_traits<void, void, void, std::string, false>>;
+      dynamic_graph<void, void, void, std::string, false, mol_graph_traits<void, void, void, std::string, false>>;
 using mol_str_int_void_void =
-      dynamic_graph<int, void, void, std::string, false, false, mol_graph_traits<int, void, void, std::string, false>>;
+      dynamic_graph<int, void, void, std::string, false, mol_graph_traits<int, void, void, std::string, false>>;
 using mol_str_void_int_void =
-      dynamic_graph<void, int, void, std::string, false, false, mol_graph_traits<void, int, void, std::string, false>>;
+      dynamic_graph<void, int, void, std::string, false, mol_graph_traits<void, int, void, std::string, false>>;
 using mol_str_int_int_int =
-      dynamic_graph<int, int, int, std::string, false, false, mol_graph_traits<int, int, int, std::string, false>>;
+      dynamic_graph<int, int, int, std::string, false, mol_graph_traits<int, int, int, std::string, false>>;
 
-using mol_sourced = dynamic_graph<void, void, void, uint32_t, true, false, mol_graph_traits<void, void, void, uint32_t, true>>;
-using mol_int_sourced =
-      dynamic_graph<int, void, void, uint32_t, true, false, mol_graph_traits<int, void, void, uint32_t, true>>;
 
-using mol_str_sourced =
-      dynamic_graph<void, void, void, std::string, true, false, mol_graph_traits<void, void, void, std::string, true>>;
 
 //==================================================================================================
 // 1. Traits Verification Tests
@@ -91,13 +86,6 @@ TEST_CASE("mol traits verification", "[dynamic_graph][mol][traits]") {
     REQUIRE(true);
   }
 
-  SECTION("sourced flag is preserved") {
-    using traits_unsourced = mol_graph_traits<void, void, void, uint32_t, false>;
-    using traits_sourced   = mol_graph_traits<void, void, void, uint32_t, true>;
-    static_assert(traits_unsourced::sourced == false);
-    static_assert(traits_sourced::sourced == true);
-    REQUIRE(true);
-  }
 
   SECTION("vertex_id_type for uint32_t") {
     using traits = mol_graph_traits<void, void, void, uint32_t, false>;
@@ -242,22 +230,6 @@ TEST_CASE("mol construction with string vertex IDs", "[dynamic_graph][mol][const
   }
 }
 
-TEST_CASE("mol construction sourced", "[dynamic_graph][mol][construction][sourced]") {
-  SECTION("sourced edge construction with uint32_t IDs") {
-    mol_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-
-  SECTION("sourced with edge value construction") {
-    mol_int_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-
-  SECTION("sourced edge construction with string IDs") {
-    mol_str_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-}
 
 //==================================================================================================
 // 4. Basic Properties Tests
@@ -310,15 +282,9 @@ TEST_CASE("mol type aliases", "[dynamic_graph][mol][types]") {
   SECTION("graph type aliases are correct") {
     using G = mol_int_int_int;
     static_assert(std::same_as<typename G::value_type, int>); // GV
-    static_assert(G::sourced == false);
     REQUIRE(true);
   }
 
-  SECTION("sourced graph type aliases are correct") {
-    using G = mol_sourced;
-    static_assert(G::sourced == true);
-    REQUIRE(true);
-  }
 
   SECTION("string key graph type aliases are correct") {
     using G      = mol_str_int_int_int;
@@ -441,11 +407,6 @@ TEST_CASE("mol initializer_list construction string IDs", "[dynamic_graph][mol][
     REQUIRE(g.size() == 5);
   }
 
-  SECTION("sourced edges with string IDs") {
-    using G = mol_str_sourced;
-    G g({{"alice", "bob"}, {"bob", "charlie"}});
-    REQUIRE(g.size() == 3);
-  }
 }
 
 //==================================================================================================
@@ -666,12 +627,9 @@ TEST_CASE("mol template instantiation", "[dynamic_graph][mol][compilation]") {
   [[maybe_unused]] mol_int_int_void       g4;
   [[maybe_unused]] mol_void_void_int      g5;
   [[maybe_unused]] mol_int_int_int        g6;
-  [[maybe_unused]] mol_sourced            g7;
-  [[maybe_unused]] mol_int_sourced        g8;
   [[maybe_unused]] mol_str_void_void_void g9;
   [[maybe_unused]] mol_str_int_void_void  g10;
   [[maybe_unused]] mol_str_int_int_int    g11;
-  [[maybe_unused]] mol_str_sourced        g12;
 
   REQUIRE(true);
 }
