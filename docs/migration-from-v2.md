@@ -19,13 +19,13 @@ This guide summarizes what changed and what you need to update if you're migrati
 |------|----------|----------|
 | Access model | Reference-based | Value-based (descriptors) |
 | Concepts | 18 | 9 |
-| "Sourced" function overloads | Required | Eliminated — source vertex always available via edge descriptor |
+| "Sourced" function and view overloads | Required | Eliminated — source vertex always available via edge descriptor |
 | Vertex ID-only vs reference overloads | Both needed | Single overload via descriptors |
 | Undirected graph tagging | Required | Not required (verified by `undirected_adjacency_list` tests) |
 | Vertex containers | `vector` and `deque` only | `vector`, `deque`, `map`, `unordered_map` (sparse vertex ids)|
 | Edge containers | `vector` and `deque` only | `vector`, `deque`, `forward_list`, `list`, `set`, `unordered_set`, `map` |
 | Non-integral vertex IDs | Not supported | Supported in `dynamic_graph` |
-| Bidirectional graphs (incoming edges) | Not supported | `dynamic_graph<...,true,true,...>` and `undirected_adjacency_list` satisfy `bidirectional_adjacency_list` |
+| Bidirectional graphs (incoming edges) | Not supported | `dynamic_graph<...,true,true,...>` and `undirected_adjacency_list` satisfy new `bidirectional_adjacency_list` |
 | Namespaces | `graph::`, `graph::edge_list::`, `graph::views::`, `graph::container::` | `graph::adj_list::`, `graph::edge_list::`, `graph::views::`, `graph::container::` |
 
 ---
