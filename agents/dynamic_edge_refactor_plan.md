@@ -889,7 +889,7 @@ Message: `docs: cleanup Doxygen, update user docs, archive strategy (Phase 6)`
 | Phase | Description | Status | Notes |
 |-------|-------------|--------|-------|
 | 1 | Add `dynamic_in_edge` + detection aliases | COMPLETE | |
-| 2 | Wire `in_edge_type` into bidir support | NOT STARTED | |
+| 2 | Wire `in_edge_type` into bidir support | COMPLETE | |
 | 3 | Rename `dynamic_edge` → `dynamic_out_edge` | NOT STARTED | |
 | 4a | Remove `Sourced` from edge classes | NOT STARTED | |
 | 4b | Remove `Sourced` from vertex/graph classes | NOT STARTED | |
