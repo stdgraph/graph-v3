@@ -231,7 +231,7 @@ public:
       // Access the edge through .second, then call target_id()
       return edge_val.second.target_id();
     } else if constexpr (requires { edge_val.target_id(); }) {
-      // Edge object with target_id() member (e.g., dynamic_edge)
+      // Edge object with target_id() member (e.g., dynamic_out_edge)
       return edge_val.target_id();
     } else if constexpr (requires { edge_val.first; }) {
       // Pair-like: .first is the target ID
