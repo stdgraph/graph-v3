@@ -177,8 +177,9 @@ namespace detail {
  * @ingroup graph_containers
  * @brief Implementation of the @c target_id(g,uv) property of a @c dynamic_out_edge in a @c dynamic_graph.
  * 
- * This is one of three composable classes used to define properties for a @c dynamic_out_edge, the
- * others being dynamic_edge_source for the source id and dynamic_edge_value for an edge value.
+ * This is one of two composable classes used to define properties for a @c dynamic_out_edge, the
+ * other being @c dynamic_edge_value for an edge value. (@c dynamic_edge_source is used by
+ * @c dynamic_in_edge to store the source id.)
  * 
  * Unlike the other composable edge property classes, this class doesn't have an option for not
  * existing. The target id always exists. It could easily be merged into the dynamic_out_edge class,
@@ -239,8 +240,8 @@ private:
  * This is one of three composable classes used to define properties for an edge, the
  * others being dynamic_edge_target for the target id and dynamic_edge_value for an edge value.
  * 
- * After the Sourced removal (Phase 4a), this class unconditionally stores source_id and serves
- * as the base for @c dynamic_in_edge. It is no longer used as a base for @c dynamic_out_edge.
+ * This class unconditionally stores source_id and serves as the base for @c dynamic_in_edge.
+ * It is not used by @c dynamic_out_edge (which stores only a target id and optional edge value).
  * 
  * @tparam EV      The edge value type. If "void" is used no user value is stored on the edge and 
  *                 calls to @c edge_value(g,uv) will generate a compile error.
@@ -862,8 +863,8 @@ public:
 /**-------------------------------------------------------------------------------------------------
  * @ingroup graph_containers
  * @brief dynamic_graph_base defines the core implementation for a graph with a variety 
- * characteristics including edge, vertex and graph value types, whether edges are sourced or not, 
- * the vertex id type, and selection of the containers used for vertices and edges.
+ * of characteristics including edge, vertex and graph value types, whether bidirectional in-edge
+ * support is enabled, the vertex id type, and selection of the containers used for vertices and edges.
  * 
  * This class includes the vertices and functions to access them, and the constructors and 
  * functions to load the vertices and edges into the graph.
@@ -1795,9 +1796,9 @@ private: // CPO properties
 
 /**
  * @ingroup graph_containers
- * @brief dynamic_graph defines a graph with a variety characteristics including edge, vertex 
- * and graph value types, whether edges are sourced or not, the vertex id type, and selection 
- * of the containers used for vertices and edges.
+ * @brief dynamic_graph defines a graph with a variety of characteristics including edge, vertex
+ * and graph value types, whether bidirectional in-edge support is enabled, the vertex id type,
+ * and selection of the containers used for vertices and edges.
  * 
  * dynamic_graph provides the interface that includes or excludes (GV=void) a graph value.
  * dynamic_graph_base has the core implementation for the graph.
