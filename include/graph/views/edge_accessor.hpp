@@ -122,9 +122,11 @@ struct in_edge_accessor {
   }
 
   /// Return the neighbor (source) vertex descriptor from incoming edge @c e.
+  /// Uses source_id + find_vertex because the source() CPO on in-edge
+  /// descriptors returns the owning vertex (target), not the actual source.
   template <adj_list::bidirectional_adjacency_list G>
   [[nodiscard]] constexpr auto neighbor(G& g, adj_list::in_edge_t<G> e) const {
-    return adj_list::source(g, e);
+    return *adj_list::find_vertex(g, adj_list::source_id(g, e));
   }
 };
 

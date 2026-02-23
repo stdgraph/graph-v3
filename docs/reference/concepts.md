@@ -22,7 +22,8 @@ edge<G, E>
             └── index_vertex_range<G>
                 └── adjacency_list<G>
                     └── index_adjacency_list<G>
-                        └── ordered_vertex_edges<G>
+                        ├── ordered_vertex_edges<G>
+                        └── bidirectional_adjacency_list<G>
 ```
 
 ### `edge<G, E>`
@@ -126,6 +127,35 @@ concept ordered_vertex_edges =
         { find_vertex_edge(g, u, vid) } -> /* valid iterator */;
     };
 ```
+
+### `bidirectional_adjacency_list<G>`
+
+An adjacency list that also provides incoming-edge iteration.
+
+```cpp
+template <class G>
+concept bidirectional_adjacency_list =
+    index_adjacency_list<G> &&
+    requires(G& g, vertex_t<G>& u) {
+        { in_edges(g, u) } -> std::ranges::forward_range;
+        { in_degree(g, u) } -> std::integral;
+    };
+```
+
+| Requirement | Expression |
+|-------------|-----------|
+| Incoming edge range | `in_edges(g, u)` returns a `forward_range` of in-edge descriptors |
+| In-degree query | `in_degree(g, u)` returns an integral count |
+| Find incoming edge | `find_in_edge(g, uid, vid)` returns an in-edge iterator |
+| Contains check | `contains_in_edge(g, uid, vid)` returns `bool` |
+
+**Satisfied by:**
+- `dynamic_graph<..., Bidirectional=true, ...>`
+- `undirected_adjacency_list` (incoming = outgoing for undirected graphs)
+
+This concept is required by algorithms that need reverse traversal, such as
+Kosaraju's SCC algorithm, and by the `in_edge_accessor` policy used for
+reverse BFS/DFS/topological-sort views.
 
 ---
 

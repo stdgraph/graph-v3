@@ -25,6 +25,7 @@ add_executable(graph3_views_tests
     test_graph_hpp_includes_views.cpp
     test_edge_cases.cpp
     test_transpose.cpp
+    test_reverse_traversal.cpp
 )
 
 target_link_libraries(graph3_views_tests

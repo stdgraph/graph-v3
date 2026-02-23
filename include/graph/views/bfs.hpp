@@ -128,14 +128,17 @@
 #include <graph/adj_list/adjacency_list_concepts.hpp>
 #include <graph/views/view_concepts.hpp>
 #include <graph/views/search_base.hpp>
+#include <graph/views/edge_accessor.hpp>
 
 namespace graph::views {
 
 // Forward declarations
-template <adj_list::index_adjacency_list G, class VVF = void, class Alloc = std::allocator<bool>>
+template <adj_list::index_adjacency_list G, class VVF = void, class Alloc = std::allocator<bool>,
+          class Accessor = out_edge_accessor>
 class vertices_bfs_view;
 
-template <adj_list::index_adjacency_list G, class EVF = void, class Alloc = std::allocator<bool>>
+template <adj_list::index_adjacency_list G, class EVF = void, class Alloc = std::allocator<bool>,
+          class Accessor = out_edge_accessor>
 class edges_bfs_view;
 
 namespace bfs_detail {
@@ -199,12 +202,12 @@ namespace bfs_detail {
    * @par Complexity
    * Time: O(V + E).  Space: O(V).
    */
-  template <class G, class Alloc>
+  template <class G, class Alloc, class Accessor = out_edge_accessor>
   struct bfs_edge_state {
     using graph_type     = G;
     using vertex_type    = adj_list::vertex_t<G>;
     using vertex_id_type = adj_list::vertex_id_t<G>;
-    using edge_iter_type = adj_list::vertex_edge_iterator_t<G>;
+    using edge_iter_type = std::ranges::iterator_t<typename Accessor::template edge_range_t<G>>;
     using allocator_type = Alloc;
     using entry_type     = edge_queue_entry<vertex_type, edge_iter_type>;
     using queue_alloc    = typename std::allocator_traits<Alloc>::template rebind_alloc<entry_type>;
@@ -218,7 +221,7 @@ namespace bfs_detail {
 
     bfs_edge_state(G& g, vertex_type seed_vertex, std::size_t num_vertices, Alloc alloc = {})
           : queue_(std::deque<entry_type, queue_alloc>(alloc)), visited_(num_vertices, alloc) {
-      auto edge_range = adj_list::edges(g, seed_vertex);
+      auto edge_range = Accessor{}.edges(g, seed_vertex);
       auto edge_begin = std::ranges::begin(edge_range);
       auto edge_end   = std::ranges::end(edge_range);
       queue_.push({seed_vertex, 0, edge_end, edge_begin});
@@ -244,13 +247,13 @@ namespace bfs_detail {
  * @see vertices_bfs_view<G,VVF,Alloc> — with value function
  * @see edges_bfs_view                 — edge-oriented BFS
  */
-template <adj_list::index_adjacency_list G, class Alloc>
-class vertices_bfs_view<G, void, Alloc> : public std::ranges::view_interface<vertices_bfs_view<G, void, Alloc>> {
+template <adj_list::index_adjacency_list G, class Alloc, class Accessor>
+class vertices_bfs_view<G, void, Alloc, Accessor> : public std::ranges::view_interface<vertices_bfs_view<G, void, Alloc, Accessor>> {
 public:
   using graph_type     = G;
   using vertex_type    = adj_list::vertex_t<G>;
   using vertex_id_type = adj_list::vertex_id_t<G>;
-  using edge_type      = adj_list::edge_t<G>;
+  using edge_type      = typename Accessor::template edge_t<G>;
   using allocator_type = Alloc;
   using info_type      = vertex_info<void, vertex_type, void>;
 
@@ -318,9 +321,9 @@ public:
       }
 
       // Explore neighbors (enqueue unvisited ones)
-      auto edge_range = adj_list::edges(*g_, current.vertex);
+      auto edge_range = Accessor{}.edges(*g_, current.vertex);
       for (auto edge : edge_range) {
-        auto target_v   = adj_list::target(*g_, edge);
+        auto target_v   = Accessor{}.neighbor(*g_, edge);
         auto target_vid = adj_list::vertex_id(*g_, target_v);
 
         if (!state_->visited_.is_visited(target_vid)) {
@@ -396,13 +399,13 @@ private:
  * @see vertices_bfs_view<G,void,Alloc> — without value function
  * @see edges_bfs_view                  — edge-oriented BFS
  */
-template <adj_list::index_adjacency_list G, class VVF, class Alloc>
-class vertices_bfs_view : public std::ranges::view_interface<vertices_bfs_view<G, VVF, Alloc>> {
+template <adj_list::index_adjacency_list G, class VVF, class Alloc, class Accessor>
+class vertices_bfs_view : public std::ranges::view_interface<vertices_bfs_view<G, VVF, Alloc, Accessor>> {
 public:
   using graph_type        = G;
   using vertex_type       = adj_list::vertex_t<G>;
   using vertex_id_type    = adj_list::vertex_id_t<G>;
-  using edge_type         = adj_list::edge_t<G>;
+  using edge_type         = typename Accessor::template edge_t<G>;
   using allocator_type    = Alloc;
   using value_result_type = std::invoke_result_t<VVF, const G&, vertex_type>;
   using info_type         = vertex_info<void, vertex_type, value_result_type>;
@@ -470,9 +473,9 @@ public:
         return;
       }
 
-      auto edge_range = adj_list::edges(*g_, current.vertex);
+      auto edge_range = Accessor{}.edges(*g_, current.vertex);
       for (auto edge : edge_range) {
-        auto target_v   = adj_list::target(*g_, edge);
+        auto target_v   = Accessor{}.neighbor(*g_, edge);
         auto target_vid = adj_list::vertex_id(*g_, target_v);
 
         if (!state_->visited_.is_visited(target_vid)) {
@@ -698,18 +701,18 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
  * @see edges_bfs_view<G,EVF,Alloc> — with value function
  * @see vertices_bfs_view           — vertex-oriented BFS
  */
-template <adj_list::index_adjacency_list G, class Alloc>
-class edges_bfs_view<G, void, Alloc> : public std::ranges::view_interface<edges_bfs_view<G, void, Alloc>> {
+template <adj_list::index_adjacency_list G, class Alloc, class Accessor>
+class edges_bfs_view<G, void, Alloc, Accessor> : public std::ranges::view_interface<edges_bfs_view<G, void, Alloc, Accessor>> {
 public:
   using graph_type     = G;
   using vertex_type    = adj_list::vertex_t<G>;
   using vertex_id_type = adj_list::vertex_id_t<G>;
-  using edge_type      = adj_list::edge_t<G>;
+  using edge_type      = typename Accessor::template edge_t<G>;
   using allocator_type = Alloc;
   using info_type      = edge_info<void, false, edge_type, void>;
 
 private:
-  using state_type = bfs_detail::bfs_edge_state<G, Alloc>;
+  using state_type = bfs_detail::bfs_edge_state<G, Alloc, Accessor>;
 
 public:
   /**
@@ -788,14 +791,14 @@ public:
           auto edge = *current.edge_current;
           ++current.edge_current;
 
-          auto target_v   = adj_list::target(*g_, edge);
+          auto target_v   = Accessor{}.neighbor(*g_, edge);
           auto target_vid = adj_list::vertex_id(*g_, target_v);
 
           if (!state_->visited_.is_visited(target_vid)) {
             state_->visited_.mark_visited(target_vid);
 
             // Add target vertex to queue with its edge range
-            auto target_edge_range = adj_list::edges(*g_, target_v);
+            auto target_edge_range = Accessor{}.edges(*g_, target_v);
             auto target_begin      = std::ranges::begin(target_edge_range);
             auto target_end        = std::ranges::end(target_edge_range);
             state_->queue_.push({target_v, current.depth + 1, target_end, target_begin});
@@ -883,19 +886,19 @@ private:
  * @see edges_bfs_view<G,void,Alloc> — without value function
  * @see vertices_bfs_view            — vertex-oriented BFS
  */
-template <adj_list::index_adjacency_list G, class EVF, class Alloc>
-class edges_bfs_view : public std::ranges::view_interface<edges_bfs_view<G, EVF, Alloc>> {
+template <adj_list::index_adjacency_list G, class EVF, class Alloc, class Accessor>
+class edges_bfs_view : public std::ranges::view_interface<edges_bfs_view<G, EVF, Alloc, Accessor>> {
 public:
   using graph_type        = G;
   using vertex_type       = adj_list::vertex_t<G>;
   using vertex_id_type    = adj_list::vertex_id_t<G>;
-  using edge_type         = adj_list::edge_t<G>;
+  using edge_type         = typename Accessor::template edge_t<G>;
   using allocator_type    = Alloc;
   using value_result_type = std::invoke_result_t<EVF, const G&, edge_type>;
   using info_type         = edge_info<void, false, edge_type, value_result_type>;
 
 private:
-  using state_type = bfs_detail::bfs_edge_state<G, Alloc>;
+  using state_type = bfs_detail::bfs_edge_state<G, Alloc, Accessor>;
 
 public:
   /**
@@ -975,14 +978,14 @@ public:
           auto edge = *current.edge_current;
           ++current.edge_current;
 
-          auto target_v   = adj_list::target(*g_, edge);
+          auto target_v   = Accessor{}.neighbor(*g_, edge);
           auto target_vid = adj_list::vertex_id(*g_, target_v);
 
           if (!state_->visited_.is_visited(target_vid)) {
             state_->visited_.mark_visited(target_vid);
 
             // Add target vertex to queue with its edge range
-            auto target_edge_range = adj_list::edges(*g_, target_v);
+            auto target_edge_range = Accessor{}.edges(*g_, target_v);
             auto target_begin      = std::ranges::begin(target_edge_range);
             auto target_end        = std::ranges::end(target_edge_range);
             state_->queue_.push({target_v, current.depth + 1, target_end, target_begin});
@@ -1193,6 +1196,68 @@ template <adj_list::index_adjacency_list G, class EVF, class Alloc>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>
 [[nodiscard]] auto edges_bfs(G& g, adj_list::vertex_t<G> seed_vertex, EVF&& evf, Alloc alloc) {
   return edges_bfs_view<G, std::decay_t<EVF>, Alloc>(g, seed_vertex, std::forward<EVF>(evf), alloc);
+}
+
+//=============================================================================
+// Accessor-parameterized factory functions
+//=============================================================================
+// Usage: vertices_bfs<in_edge_accessor>(g, seed)
+//        edges_bfs<in_edge_accessor>(g, seed)
+
+/// BFS vertex traversal with explicit Accessor, from vertex ID.
+template <class Accessor, adj_list::index_adjacency_list G>
+[[nodiscard]] auto vertices_bfs(G& g, adj_list::vertex_id_t<G> seed) {
+  return vertices_bfs_view<G, void, std::allocator<bool>, Accessor>(g, seed, std::allocator<bool>{});
+}
+
+/// BFS vertex traversal with explicit Accessor, from vertex descriptor.
+template <class Accessor, adj_list::index_adjacency_list G>
+[[nodiscard]] auto vertices_bfs(G& g, adj_list::vertex_t<G> seed_vertex) {
+  return vertices_bfs_view<G, void, std::allocator<bool>, Accessor>(g, seed_vertex, std::allocator<bool>{});
+}
+
+/// BFS vertex traversal with explicit Accessor and value function, from vertex ID.
+template <class Accessor, adj_list::index_adjacency_list G, class VVF>
+requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
+[[nodiscard]] auto vertices_bfs(G& g, adj_list::vertex_id_t<G> seed, VVF&& vvf) {
+  return vertices_bfs_view<G, std::decay_t<VVF>, std::allocator<bool>, Accessor>(g, seed, std::forward<VVF>(vvf),
+                                                                                  std::allocator<bool>{});
+}
+
+/// BFS vertex traversal with explicit Accessor and value function, from vertex descriptor.
+template <class Accessor, adj_list::index_adjacency_list G, class VVF>
+requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
+[[nodiscard]] auto vertices_bfs(G& g, adj_list::vertex_t<G> seed_vertex, VVF&& vvf) {
+  return vertices_bfs_view<G, std::decay_t<VVF>, std::allocator<bool>, Accessor>(g, seed_vertex,
+                                                                                  std::forward<VVF>(vvf),
+                                                                                  std::allocator<bool>{});
+}
+
+/// BFS edge traversal with explicit Accessor, from vertex ID.
+template <class Accessor, adj_list::index_adjacency_list G>
+[[nodiscard]] auto edges_bfs(G& g, adj_list::vertex_id_t<G> seed) {
+  return edges_bfs_view<G, void, std::allocator<bool>, Accessor>(g, seed);
+}
+
+/// BFS edge traversal with explicit Accessor, from vertex descriptor.
+template <class Accessor, adj_list::index_adjacency_list G>
+[[nodiscard]] auto edges_bfs(G& g, adj_list::vertex_t<G> seed_vertex) {
+  return edges_bfs_view<G, void, std::allocator<bool>, Accessor>(g, seed_vertex);
+}
+
+/// BFS edge traversal with explicit Accessor and value function, from vertex ID.
+template <class Accessor, adj_list::index_adjacency_list G, class EVF>
+requires edge_value_function<EVF, G, typename Accessor::template edge_t<G>>
+[[nodiscard]] auto edges_bfs(G& g, adj_list::vertex_id_t<G> seed, EVF&& evf) {
+  return edges_bfs_view<G, std::decay_t<EVF>, std::allocator<bool>, Accessor>(g, seed, std::forward<EVF>(evf));
+}
+
+/// BFS edge traversal with explicit Accessor and value function, from vertex descriptor.
+template <class Accessor, adj_list::index_adjacency_list G, class EVF>
+requires edge_value_function<EVF, G, typename Accessor::template edge_t<G>>
+[[nodiscard]] auto edges_bfs(G& g, adj_list::vertex_t<G> seed_vertex, EVF&& evf) {
+  return edges_bfs_view<G, std::decay_t<EVF>, std::allocator<bool>, Accessor>(g, seed_vertex,
+                                                                               std::forward<EVF>(evf));
 }
 
 } // namespace graph::views

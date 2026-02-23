@@ -5,8 +5,10 @@
 - [Overview](#overview)
 - [Quick Start](#quick-start)
 - [Basic Views](#basic-views) — vertexlist, incidence, neighbors, edgelist
+- [Incoming Edge Views](#incoming-edge-views) — in_incidence, in_neighbors
 - [Simplified Views (basic\_)](#simplified-views-basic_) — id-only variants
 - [Search Views](#search-views) — DFS, BFS, topological sort
+- [Reverse Search (Accessor Parameter)](#reverse-search-accessor-parameter) — BFS/DFS/topo over incoming edges
 - [Range Adaptor Syntax](#range-adaptor-syntax)
 - [Value Functions](#value-functions)
 - [Chaining with std::views](#chaining-with-stdviews)
@@ -194,6 +196,85 @@ for (auto [uid, vid, uv, w] : views::edgelist(g, evf)) {
 }
 ```
 
+## Incoming Edge Views
+
+For graphs that support bidirectional edge access (e.g., `dynamic_graph` with
+`Bidirectional = true`, or `undirected_adjacency_list`), the library provides
+incoming-edge view variants.
+
+### in_incidence
+
+Iterates over **incoming** edges to a specific vertex.
+
+**Signature**:
+```cpp
+auto in_incidence(G&& g, UID uid);
+auto in_incidence(G&& g, UID uid, EVF&& evf);  // with value function
+```
+
+**Structured Bindings**:
+
+| Variant | Binding |
+|---------|---------|
+| `in_incidence(g, uid)` | `[sid, uv]` |
+| `in_incidence(g, uid, evf)` | `[sid, uv, val]` |
+
+**Example**:
+```cpp
+// Incoming edges to vertex 3
+for (auto [sid, uv] : views::in_incidence(g, 3)) {
+    std::cout << "Edge from " << sid << "\n";
+}
+
+// With value function
+auto evf = [](const auto& g, auto& uv) { return edge_value(g, uv); };
+for (auto [sid, uv, w] : views::in_incidence(g, 3, evf)) {
+    std::cout << "Edge from " << sid << " weight " << w << "\n";
+}
+```
+
+**Pipe syntax**:
+```cpp
+using namespace graph::views::adaptors;
+auto view = g | in_incidence(3);
+```
+
+---
+
+### in_neighbors
+
+Iterates over vertices that have edges **to** a specific vertex (predecessor
+vertices).
+
+**Signature**:
+```cpp
+auto in_neighbors(G&& g, UID uid);
+auto in_neighbors(G&& g, UID uid, VVF&& vvf);  // with value function
+```
+
+**Structured Bindings**:
+
+| Variant | Binding |
+|---------|---------|
+| `in_neighbors(g, uid)` | `[sid, n]` |
+| `in_neighbors(g, uid, vvf)` | `[sid, n, val]` |
+
+**Example**:
+```cpp
+// Predecessors of vertex 3
+for (auto [sid, n] : views::in_neighbors(g, 3)) {
+    std::cout << "Predecessor: " << sid << "\n";
+}
+```
+
+**Pipe syntax**:
+```cpp
+using namespace graph::views::adaptors;
+auto view = g | in_neighbors(3);
+```
+
+---
+
 ## Simplified Views (basic\_)
 
 Each basic view has a `basic_` variant that returns **ids only** (no vertex/edge descriptors).
@@ -378,6 +459,68 @@ if (result) {
 }
 ```
 
+## Reverse Search (Accessor Parameter)
+
+All search views (BFS, DFS, topological sort) accept an **Accessor** template
+parameter that controls which edges are traversed.  By default, views use
+`out_edge_accessor` (outgoing edges).  Pass `in_edge_accessor` as the first
+explicit template argument to traverse **incoming** edges instead.
+
+This requires a graph that supports bidirectional edge access.
+
+**Header**: `<graph/views/edge_accessor.hpp>`
+
+| Accessor | `edges()` | `neighbor_id()` | `neighbor()` |
+|----------|-----------|------------------|--------------|
+| `out_edge_accessor` (default) | `out_edges(g, u)` | `target_id(g, e)` | `target(g, e)` |
+| `in_edge_accessor` | `in_edges(g, u)` | `source_id(g, e)` | `source(g, e)` |
+
+**Reverse BFS**:
+```cpp
+#include <graph/views/bfs.hpp>
+#include <graph/views/edge_accessor.hpp>
+
+using namespace graph::views;
+
+// Forward BFS (default)
+for (auto [v] : vertices_bfs(g, 0)) { ... }
+
+// Reverse BFS — follow incoming edges
+for (auto [v] : vertices_bfs<in_edge_accessor>(g, 3)) { ... }
+
+// Reverse BFS with value function
+auto vvf = [](const auto& g, auto& v) { return vertex_id(g, v); };
+for (auto [v, id] : vertices_bfs<in_edge_accessor>(g, 3, vvf)) { ... }
+```
+
+**Reverse DFS**:
+```cpp
+#include <graph/views/dfs.hpp>
+
+for (auto [v] : vertices_dfs<in_edge_accessor>(g, 3)) { ... }
+for (auto [uv] : edges_dfs<in_edge_accessor>(g, 3)) { ... }
+```
+
+**Reverse Topological Sort**:
+```cpp
+#include <graph/views/topological_sort.hpp>
+
+for (auto [v] : vertices_topological_sort<in_edge_accessor>(g)) { ... }
+
+// Safe variant with cycle detection
+auto result = vertices_topological_sort_safe<in_edge_accessor>(g);
+if (result) {
+    for (auto [v] : *result) { ... }
+}
+```
+
+**Key points**:
+- The Accessor is a **zero-cost abstraction** — it is stateless and compiles away entirely.
+- Existing code is **source-compatible** — the default `out_edge_accessor` matches prior behavior.
+- All value function and allocator overloads work with both accessors.
+
+---
+
 ## Range Adaptor Syntax
 
 All views support both direct call and pipe syntax:
@@ -533,6 +676,8 @@ auto dfs = g | vertices_dfs(0);  // Allocates visited tracker
 | edges_bfs | O(V) | Visited tracker + queue |
 | vertices_topological_sort | O(V) | Visited tracker + result |
 | edges_topological_sort | O(V) | Visited tracker + result |
+| in_incidence | O(1) | References graph |
+| in_neighbors | O(1) | References graph |
 
 ### Optimization Tips
 
@@ -782,6 +927,7 @@ for (auto [uid, u] : views::vertexlist(g)) {
 > iteration is safe — only structural changes (adding/removing vertices or edges) are prohibited.
 
 - [Adjacency Lists User Guide](adjacency-lists.md) — concepts, CPOs, descriptors
+- [Bidirectional Access](bidirectional-access.md) — incoming edges, reverse traversal, `in_edge_accessor`
 - [Containers User Guide](containers.md) — graph container options
 - [Edge Lists User Guide](edge-lists.md) — edge list input for graph construction
 - [CPO Reference](../reference/cpo-reference.md) — customization point objects

@@ -32,6 +32,12 @@ Algorithms follow a consistent pattern:
 - **Initialization**: use `init_shortest_paths()` to properly set up distance and
   predecessor vectors before calling shortest-path algorithms
 
+> **Bidirectional graphs:** Algorithms that benefit from incoming-edge access
+> (e.g., Kosaraju SCC, transpose graph) can use bidirectional `dynamic_graph`
+> containers.  Search views (BFS, DFS, topological sort) also accept an
+> `in_edge_accessor` for reverse traversal — see
+> [Bidirectional Access](bidirectional-access.md).
+
 ```cpp
 #include <graph/algorithm/dijkstra_shortest_paths.hpp>
 
@@ -99,6 +105,7 @@ All headers are under `include/graph/algorithm/`.
 | [BFS](algorithms/bfs.md) | Traversal | `breadth_first_search.hpp` | O(V+E) | O(V) |
 | [Biconnected Components](algorithms/biconnected_components.md) | Components | `biconnected_components.hpp` | O(V+E) | O(V+E) |
 | [Connected Components](algorithms/connected_components.md) | Components | `connected_components.hpp` | O(V+E) | O(V) |
+| [Kosaraju SCC](algorithms/connected_components.md) | Components | `connected_components.hpp` | O(V+E) | O(V) |
 | [DFS](algorithms/dfs.md) | Traversal | `depth_first_search.hpp` | O(V+E) | O(V) |
 | [Dijkstra](algorithms/dijkstra.md) | Shortest Paths | `dijkstra_shortest_paths.hpp` | O((V+E) log V) | O(V) |
 | [Jaccard Coefficient](algorithms/jaccard.md) | Analytics | `jaccard.hpp` | O(V + E·d) | O(V+E) |
@@ -164,8 +171,19 @@ full-graph, single-source, and multi-source variants.
 ### [Connected Components](algorithms/connected_components.md)
 
 Three algorithms in one header: `connected_components` (DFS-based, undirected),
-`kosaraju` (two-pass DFS for directed SCC, requires transpose graph), and
-`afforest` (union-find with neighbor sampling, parallel-friendly).
+`kosaraju` (two-pass DFS for directed SCC, uses `in_edge_accessor` for the
+reverse pass on bidirectional graphs), and `afforest` (union-find with neighbor
+sampling, parallel-friendly).
+
+Kosaraju’s algorithm works with any graph that supports both outgoing and
+incoming edge iteration (i.e., `bidirectional_adjacency_list` concept).
+A **`transpose_graph`** view is also available for algorithms that need a
+transposed adjacency structure:
+
+```cpp
+#include <graph/algorithm/connected_components.hpp>
+#include <graph/algorithm/transpose_graph.hpp>
+```
 
 **Time:** O(V+E) — **Space:** O(V) — **Header:** `connected_components.hpp`
 

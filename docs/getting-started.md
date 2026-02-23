@@ -312,11 +312,75 @@ Edge lists are useful for algorithms that operate on edges directly
 
 ---
 
-## 6. Next Steps
+## 6. Incoming Edges and Reverse Traversal
+
+graph-v3 supports **bidirectional edge access** — you can query incoming edges
+just as easily as outgoing edges.  To enable incoming edges, construct a
+`dynamic_graph` with the `Bidirectional` template parameter set to `true`:
+
+```cpp
+#include <graph/container/dynamic_graph.hpp>
+#include <graph/container/traits/vov_graph_traits.hpp>
+
+using namespace graph;
+using namespace graph::container;
+
+// Bidirectional = true (sixth template parameter)
+using Graph = dynamic_graph<void, void, void, uint32_t, true, true,
+                            vov_graph_traits<void, void, void, uint32_t, true>>;
+```
+
+With a bidirectional graph, you can use the incoming-edge CPOs:
+
+```cpp
+Graph g({{0, 1}, {0, 2}, {1, 3}, {2, 3}});
+
+// Incoming edges to vertex 3
+for (auto&& e : in_edges(g, *find_vertex(g, 3))) {
+    std::cout << source_id(g, e) << " -> 3\n";
+}
+// Output: 1 -> 3
+//         2 -> 3
+
+std::cout << "In-degree of vertex 3: " << in_degree(g, *find_vertex(g, 3)) << "\n";
+// Output: 2
+```
+
+### Reverse BFS and DFS
+
+All search views (BFS, DFS, topological sort) accept an **Accessor** template
+parameter that controls traversal direction.  Pass `in_edge_accessor` to
+traverse in reverse — following incoming edges instead of outgoing:
+
+```cpp
+#include <graph/views/bfs.hpp>
+#include <graph/views/edge_accessor.hpp>
+
+using namespace graph::views;
+
+// Forward BFS from vertex 0 (default — outgoing edges)
+for (auto [v] : vertices_bfs(g, 0)) {
+    std::cout << vertex_id(g, v) << " ";
+}
+// Output: 1 2 3
+
+// Reverse BFS from vertex 3 (incoming edges)
+for (auto [v] : vertices_bfs<in_edge_accessor>(g, 3)) {
+    std::cout << vertex_id(g, v) << " ";
+}
+// Output: 1 2 0
+```
+
+For the full guide, see **[Bidirectional Access](user-guide/bidirectional-access.md)**.
+
+---
+
+## 7. Next Steps
 
 - **[Adjacency Lists User Guide](user-guide/adjacency-lists.md)** — concepts, CPOs, descriptors
 - **[Edge Lists User Guide](user-guide/edge-lists.md)** — edge patterns, vertex ID types
 - **[Views](user-guide/views.md)** — BFS, DFS, topological sort, incidence, neighbors
+- **[Bidirectional Access](user-guide/bidirectional-access.md)** — incoming edges, reverse traversal
 - **[Container Guide](user-guide/containers.md)** — `dynamic_graph`, `compressed_graph`, `undirected_adjacency_list`
 - **[Algorithm Reference](status/implementation_matrix.md#algorithms)** — all 13 algorithms
 - **[Migration from v2](migration-from-v2.md)** — what changed from graph-v2

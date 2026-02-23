@@ -961,6 +961,51 @@ auto ids = vertices
 
 ---
 
+## Incoming Edge CPOs — `in_edges` Example
+
+The `in_edges` CPO follows the same `_Choice_t` pattern as `out_edges` but
+resolves to the incoming-edge list.  This is the pattern used by all four
+incoming-edge CPOs (`in_edges`, `in_degree`, `find_in_edge`, `contains_in_edge`).
+
+```cpp
+namespace _in_edges {
+    enum class _St { _none, _member, _adl };
+
+    template<typename G, typename U>
+    concept _has_member = requires(G& g, U& u) {
+        { g.in_edges(u) } -> std::ranges::forward_range;
+    };
+
+    template<typename G, typename U>
+    concept _has_adl = requires(G& g, U& u) {
+        { in_edges(g, u) } -> std::ranges::forward_range;
+    };
+
+    // No default — in_edges requires explicit container support
+    template<typename G, typename U>
+    [[nodiscard]] consteval _Choice_t<_St> _Choose() noexcept {
+        if constexpr (_has_member<G, U>) {
+            return {_St::_member, /* noexcept */ };
+        } else if constexpr (_has_adl<G, U>) {
+            return {_St::_adl, /* noexcept */ };
+        } else {
+            return {_St::_none, false};
+        }
+    }
+    // ... operator() dispatches via if constexpr ...
+};
+```
+
+**Key difference from `out_edges`:** there is no built-in default — a graph
+must explicitly provide `in_edges` (via member or ADL).  The
+`bidirectional_adjacency_list` concept constrains on this CPO being valid.
+
+The `in_edge_accessor` edge-access policy (see `edge_accessor.hpp`) delegates
+to `in_edges`, `source_id`, and `source` to flip any view from outgoing to
+incoming iteration.
+
+---
+
 ## See Also
 
 - [Architecture](architecture.md) — project structure and design principles
