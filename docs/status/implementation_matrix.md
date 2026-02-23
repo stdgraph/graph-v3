@@ -16,7 +16,7 @@
 | Breadth-first search | `breadth_first_search.hpp` | `test_breadth_first_search.cpp` | Implemented |
 | Depth-first search | `depth_first_search.hpp` | `test_depth_first_search.cpp` | Implemented |
 | Topological sort | `topological_sort.hpp` | `test_topological_sort.cpp` | Implemented |
-| Connected components | `connected_components.hpp` | `test_connected_components.cpp` | Implemented |
+| Connected components (Kosaraju SCC) | `connected_components.hpp` | `test_connected_components.cpp`, `test_scc_bidirectional.cpp` | Implemented |
 | Articulation points | `articulation_points.hpp` | `test_articulation_points.cpp` | Implemented |
 | Biconnected components | `biconnected_components.hpp` | `test_biconnected_components.cpp` | Implemented |
 | MST (Prim / Kruskal) | `mst.hpp` | `test_mst.cpp` | Implemented |
@@ -29,19 +29,20 @@
 
 ## Views
 
-7 user-facing views in `include/graph/views/` (excluding infrastructure headers):
+10 user-facing views in `include/graph/views/` (excluding infrastructure headers):
 
 | View | Header | Category |
 |------|--------|----------|
 | vertexlist | `vertexlist.hpp` | Basic |
 | edgelist | `edgelist.hpp` | Basic |
-| incidence | `incidence.hpp` | Basic |
-| neighbors | `neighbors.hpp` | Basic |
+| incidence / out_incidence / in_incidence | `incidence.hpp` | Basic |
+| neighbors / in_neighbors | `neighbors.hpp` | Basic |
 | BFS (vertices + edges) | `bfs.hpp` | Search |
 | DFS (vertices + edges) | `dfs.hpp` | Search |
 | Topological sort (vertices + edges) | `topological_sort.hpp` | Search |
+| Transpose adaptor | `transpose.hpp` | Adaptor |
 
-Infrastructure headers (not user views): `view_concepts.hpp`, `adaptors.hpp`, `basic_views.hpp`, `search_base.hpp`.
+Infrastructure headers (not user views): `view_concepts.hpp`, `adaptors.hpp`, `basic_views.hpp`, `search_base.hpp`, `edge_accessor.hpp`.
 
 ---
 
@@ -61,7 +62,7 @@ Utility header: `container_utility.hpp`.
 
 ## `dynamic_graph` Trait Combinations
 
-26 combinations in `include/graph/container/traits/`:
+27 combinations in `include/graph/container/traits/`:
 
 ### Vertex containers
 
@@ -150,6 +151,3 @@ Naming convention: `{vertex}o{edge}_graph_traits.hpp`
 find_package(graph3 REQUIRED)
 target_link_libraries(your_target PRIVATE graph::graph3)
 ```
-
-> **Note:** The README (as of Phase 0) incorrectly says `graph::graph`. The actual exported target
-> is `graph::graph3`, as defined in `cmake/InstallConfig.cmake`. This will be fixed in Phase 2.
