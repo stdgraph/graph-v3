@@ -87,7 +87,7 @@ struct mofl_graph_traits;
 // dynamic_graph forward references
 //
 
-template <class EV, class VV, class GV, class VId, bool Sourced, bool Bidirectional, class Traits>
+template <class EV, class VV, class GV, class VId, bool Bidirectional, class Traits>
 class dynamic_out_edge;
 
 template <class EV, class VV, class GV, class VId, bool Bidirectional, class Traits>
@@ -192,19 +192,17 @@ namespace detail {
  *                 and calls to @c vertex_value(g,u) will generate a compile error.
  * @tparam GV      The graph value type. If "void" is used no user value is stored on the graph
  *                 and calls to @c graph_value(g) will generate a compile error.
- * @tparam Sourced Is a source vertex id stored on the edge? If false, calls to @c source_id(g,uv)
- *                 and @c source(g,uv) will generate a compile error.
  * @tparam VId     Vertex id type
  * @tparam Traits  Defines the types for vertex and edge containers.
 */
-template <class EV, class VV, class GV, class VId, bool Sourced, bool Bidirectional, class Traits>
+template <class EV, class VV, class GV, class VId, bool Bidirectional, class Traits>
 class dynamic_edge_target {
 public:
   using vertex_id_type = VId;
   using value_type     = EV;
-  using graph_type     = dynamic_graph<EV, VV, GV, VId, Sourced, Bidirectional, Traits>;
-  using vertex_type    = dynamic_vertex<EV, VV, GV, VId, Sourced, Bidirectional, Traits>;
-  using edge_type      = dynamic_out_edge<EV, VV, GV, VId, Sourced, Bidirectional, Traits>;
+  using graph_type     = dynamic_graph<EV, VV, GV, VId, Bidirectional, Traits>;
+  using vertex_type    = dynamic_vertex<EV, VV, GV, VId, Bidirectional, Traits>;
+  using edge_type      = dynamic_out_edge<EV, VV, GV, VId, Bidirectional, Traits>;
 
 public:
   constexpr dynamic_edge_target(vertex_id_type targ_id) : target_id_(targ_id) {}
@@ -238,17 +236,13 @@ private:
 
 /**
  * @ingroup graph_containers
- * @brief Implementation of the @c source_id(g,uv) property of a @c dynamic_out_edge in a @c dynamic_graph.
+ * @brief Implementation of the @c source_id(g,uv) property of an edge in a @c dynamic_graph.
  * 
- * This is one of three composable classes used to define properties for a @c dynamic_out_edge, the
+ * This is one of three composable classes used to define properties for an edge, the
  * others being dynamic_edge_target for the target id and dynamic_edge_value for an edge value.
  * 
- * A specialization for @c Sourced=false exists as an empty class so any call to @c source_id(g,uv) will
- * generate a compile error.
- * 
- * The edge descriptor provides a reliable way to get the source vertex id, so storing it on the edge
- * is optional for most use cases. Howeever, it's useful to support it to provide a fully self-contained
- * edge object that can be used in the context of an independent graph that is effective in its own right.
+ * After the Sourced removal (Phase 4a), this class unconditionally stores source_id and serves
+ * as the base for @c dynamic_in_edge. It is no longer used as a base for @c dynamic_out_edge.
  * 
  * @tparam EV      The edge value type. If "void" is used no user value is stored on the edge and 
  *                 calls to @c edge_value(g,uv) will generate a compile error.
@@ -256,19 +250,17 @@ private:
  *                 and calls to @c vertex_value(g,u) will generate a compile error.
  * @tparam GV      The graph value type. If "void" is used no user value is stored on the graph
  *                 and calls to @c graph_value(g) will generate a compile error.
- * @tparam Sourced Is a source vertex id stored on the edge? If false, calls to @c source_id(g,uv)
- *                 and @c source(g,uv) will generate a compile error.
  * @tparam VId     Vertex id type
  * @tparam Traits  Defines the types for vertex and edge containers.
 */
-template <class EV, class VV, class GV, class VId, bool Sourced, bool Bidirectional, class Traits>
+template <class EV, class VV, class GV, class VId, bool Bidirectional, class Traits>
 class dynamic_edge_source {
 public:
   using vertex_id_type = VId;
   using value_type     = EV;
-  using graph_type     = dynamic_graph<EV, VV, GV, VId, Sourced, Bidirectional, Traits>;
-  using vertex_type    = dynamic_vertex<EV, VV, GV, VId, Sourced, Bidirectional, Traits>;
-  using edge_type      = dynamic_out_edge<EV, VV, GV, VId, Sourced, Bidirectional, Traits>;
+  using graph_type     = dynamic_graph<EV, VV, GV, VId, Bidirectional, Traits>;
+  using vertex_type    = dynamic_vertex<EV, VV, GV, VId, Bidirectional, Traits>;
+  using edge_type      = dynamic_out_edge<EV, VV, GV, VId, Bidirectional, Traits>;
 
 public:
   constexpr dynamic_edge_source(vertex_id_type source_id) : source_id_(source_id) {}
@@ -301,31 +293,6 @@ private:
 
 /**
  * @ingroup graph_containers
- * @brief Implementation of the @c source_id(g,uv) property of a @c dynamic_out_edge in a @c dynamic_graph.
- * 
- * This is one of three composable classes used to define properties for a @c dynamic_out_edge, the
- * others being dynamic_edge_target for the target id and dynamic_edge_value for an edge value.
- * 
- * This specialization for @c Sourced=false is a simple placeholder that doesn't define anything.
- * If the user attempts to call to @c source_id(g,uv) or @c source(g,uv) will generate a compile 
- * error so they can resolve the incorrect usage.
- * 
- * @tparam EV      The edge value type. If "void" is used no user value is stored on the edge and 
- *                 calls to @c edge_value(g,uv) will generate a compile error.
- * @tparam VV      The vertex value type. If "void" is used no user value is stored on the vertex
- *                 and calls to @c vertex_value(g,u) will generate a compile error.
- * @tparam GV      The graph value type. If "void" is used no user value is stored on the graph
- *                 and calls to @c graph_value(g) will generate a compile error.
- * @tparam Sourced [false] Source id is not stored on the edge. Use of @c source_id(g,uv) or 
- *                 source(g,uv) will generate an error.
- * @tparam VId     Vertex id type
- * @tparam Traits  Defines the types for vertex and edge containers.
-*/
-template <class EV, class VV, class GV, class VId, bool Bidirectional, class Traits>
-class dynamic_edge_source<EV, VV, GV, VId, false, Bidirectional, Traits> {};
-
-/**
- * @ingroup graph_containers
  * @brief Implementation of the @c edge_value(g,uv) property of a @c dynamic_out_edge in a @c dynamic_graph.
  * 
  * This is one of three composable classes used to define properties for a @c dynamic_out_edge, the
@@ -340,18 +307,16 @@ class dynamic_edge_source<EV, VV, GV, VId, false, Bidirectional, Traits> {};
  *                 and calls to @c vertex_value(g,u) will generate a compile error.
  * @tparam GV      The graph value type. If "void" is used no user value is stored on the graph
  *                 and calls to @c graph_value(g) will generate a compile error.
- * @tparam Sourced Is a source vertex id stored on the edge? If false, calls to @c source_id(g,uv)
- *                 and @c source(g,uv) will generate a compile error.
  * @tparam VId     Vertex id type
  * @tparam Traits  Defines the types for vertex and edge containers.
 */
-template <class EV, class VV, class GV, class VId, bool Sourced, bool Bidirectional, class Traits>
+template <class EV, class VV, class GV, class VId, bool Bidirectional, class Traits>
 class dynamic_edge_value {
 public:
   using value_type  = EV;
-  using graph_type  = dynamic_graph<EV, VV, GV, VId, Sourced, Bidirectional, Traits>;
-  using vertex_type = dynamic_vertex<EV, VV, GV, VId, Sourced, Bidirectional, Traits>;
-  using edge_type   = dynamic_out_edge<EV, VV, GV, VId, Sourced, Bidirectional, Traits>;
+  using graph_type  = dynamic_graph<EV, VV, GV, VId, Bidirectional, Traits>;
+  using vertex_type = dynamic_vertex<EV, VV, GV, VId, Bidirectional, Traits>;
+  using edge_type   = dynamic_out_edge<EV, VV, GV, VId, Bidirectional, Traits>;
 
 public:
   constexpr dynamic_edge_value(const value_type& value) : value_(value) {}
@@ -396,31 +361,24 @@ private: // CPO properties
  *                 and calls to @c vertex_value(g,u) will generate a compile error.
  * @tparam GV      The graph value type. If "void" is used no user value is stored on the graph
  *                 and calls to @c graph_value(g) will generate a compile error.
- * @tparam Sourced Is a source vertex id stored on the edge? If false, calls to @c source_id(g,uv)
- *                 and @c source(g,uv) will generate a compile error.
  * @tparam VId     Vertex id type
  * @tparam Traits  Defines the types for vertex and edge containers.
 */
-template <class VV, class GV, class VId, bool Sourced, bool Bidirectional, class Traits>
-class dynamic_edge_value<void, VV, GV, VId, Sourced, Bidirectional, Traits> {};
+template <class VV, class GV, class VId, bool Bidirectional, class Traits>
+class dynamic_edge_value<void, VV, GV, VId, Bidirectional, Traits> {};
 
 
 /**
  * @ingroup graph_containers
- * @brief The edge class for a @c dynamic_graph.
+ * @brief The out-edge class for a @c dynamic_graph.
  * 
- * The edge is a composition of a target id, optional source id (@c Sourced) and optional edge value.
- * This implementation supports a source id and edge value, where additional specializations exist
- * for different combinations. The real functionality for properties is implemented in the 
- * @c dynamic_edge_target, @c dynamic_edge_source and @c dynamic_edge_value base classes.
+ * The out-edge stores a target id and an optional edge value. It does NOT store a source id —
+ * that role belongs to @c dynamic_in_edge (via @c dynamic_edge_source). The functionality for
+ * properties is implemented in the @c dynamic_edge_target and @c dynamic_edge_value base classes.
  *
- * The following combinations of EV and Sourced are supported in @c dynamic_out_edge specializations.
- * The only difference between them are the values taken by the constructors to match the 
- * inclusion/exclusion of the source Id and/or value properties.
- *   *  < @c EV not void, @c Sourced=true >  (this implementation)
- *   *  < @c EV not void, @c Sourced=false > 
- *   *  < @c EV is  void, @c Sourced=true >
- *   *  < @c EV is  void, @c Sourced=false >
+ * Two specializations exist keyed on @c EV:
+ *   *  < @c EV not void >  (this implementation — stores target_id and edge value)
+ *   *  < @c EV is  void >  (stores target_id only)
  *
  * @tparam EV      The edge value type. If "void" is used no user value is stored on the edge and 
  *                 calls to @c edge_value(g,uv) will generate a compile error.
@@ -428,155 +386,22 @@ class dynamic_edge_value<void, VV, GV, VId, Sourced, Bidirectional, Traits> {};
  *                 and calls to @c vertex_value(g,u) will generate a compile error.
  * @tparam GV      The graph value type. If "void" is used no user value is stored on the graph
  *                 and calls to @c graph_value(g) will generate a compile error.
- * @tparam Sourced Is a source vertex id stored on the edge? If false, calls to @c source_id(g,uv)
- *                 and @c source(g,uv) will generate a compile error.
- * @tparam VId     Vertex id type
- * @tparam Traits  Defines the types for vertex and edge containers.
-*/
-template <class EV, class VV, class GV, class VId, bool Sourced, bool Bidirectional, class Traits>
-class dynamic_out_edge
-      : public dynamic_edge_target<EV, VV, GV, VId, Sourced, Bidirectional, Traits>
-      , public dynamic_edge_source<EV, VV, GV, VId, Sourced, Bidirectional, Traits>
-      , public dynamic_edge_value<EV, VV, GV, VId, Sourced, Bidirectional, Traits> {
-public:
-  using base_target_type = dynamic_edge_target<EV, VV, GV, VId, Sourced, Bidirectional, Traits>;
-  using base_source_type = dynamic_edge_source<EV, VV, GV, VId, Sourced, Bidirectional, Traits>;
-  using base_value_type  = dynamic_edge_value<EV, VV, GV, VId, Sourced, Bidirectional, Traits>;
-
-  using vertex_id_type = VId;
-  using value_type     = EV;
-  using graph_type     = dynamic_graph<EV, VV, GV, VId, Sourced, Bidirectional, Traits>;
-  using vertex_type    = dynamic_vertex<EV, VV, GV, VId, Sourced, Bidirectional, Traits>;
-  using edge_type      = dynamic_out_edge<EV, VV, GV, VId, Sourced, Bidirectional, Traits>;
-
-public:
-  constexpr dynamic_out_edge(vertex_id_type uid, vertex_id_type vid) : base_target_type(vid), base_source_type(uid) {}
-  constexpr dynamic_out_edge(vertex_id_type uid, vertex_id_type vid, const value_type& val)
-        : base_target_type(vid), base_source_type(uid), base_value_type(val) {}
-  constexpr dynamic_out_edge(vertex_id_type uid, vertex_id_type vid, value_type&& val)
-        : base_target_type(vid), base_source_type(uid), base_value_type(move(val)) {}
-
-  constexpr dynamic_out_edge()                    = default;
-  constexpr dynamic_out_edge(const dynamic_out_edge&) = default;
-  constexpr dynamic_out_edge(dynamic_out_edge&&)      = default;
-  constexpr ~dynamic_out_edge()                   = default;
-
-  constexpr dynamic_out_edge& operator=(const dynamic_out_edge&) = default;
-  constexpr dynamic_out_edge& operator=(dynamic_out_edge&&)      = default;
-
-  // Comparison operators for ordered/unordered set containers
-  // Compare by (source_id, target_id) - edge value is intentionally excluded
-  constexpr auto operator<=>(const dynamic_out_edge& rhs) const noexcept {
-    if (auto cmp = base_source_type::source_id() <=> rhs.base_source_type::source_id(); cmp != 0)
-      return cmp;
-    return base_target_type::target_id() <=> rhs.base_target_type::target_id();
-  }
-  constexpr bool operator==(const dynamic_out_edge& rhs) const noexcept {
-    return base_source_type::source_id() == rhs.base_source_type::source_id() &&
-           base_target_type::target_id() == rhs.base_target_type::target_id();
-  }
-};
-
-/**
- * @ingroup graph_containers
- * @brief The edge class for a @c dynamic_graph.
- * 
- * The edge is a composition of a target id, optional source id (@c Sourced) and optional edge value.
- * This implementation supports a source id and edge value, where additional specializations exist
- * for different combinations. The real functionality for properties is implemented in the 
- * @c dynamic_edge_target, @c dynamic_edge_source and @c dynamic_edge_value base classes.
- *
- * This is a specialization definition for @c EV=void and @c Sourced=true.
- * 
- * @tparam EV      [void] A value type is not defined for the edge. Calling @c edge_value(g,uv)
- *                 will generate a compile error.
- * @tparam VV      The vertex value type. If "void" is used no user value is stored on the vertex
- *                 and calls to @c vertex_value(g,u) will generate a compile error.
- * @tparam GV      The graph value type. If "void" is used no user value is stored on the graph
- *                 and calls to @c graph_value(g) will generate a compile error.
- * @tparam Sourced [true] Source id is stored on the edge. Use of @c source_id(g,uv) and
- *                 @c source(g,uv) will return a value without error.
- * @tparam VId     Vertex id type
- * @tparam Traits  Defines the types for vertex and edge containers.
-*/
-template <class VV, class GV, class VId, bool Bidirectional, class Traits>
-class dynamic_out_edge<void, VV, GV, VId, true, Bidirectional, Traits>
-      : public dynamic_edge_target<void, VV, GV, VId, true, Bidirectional, Traits>
-      , public dynamic_edge_source<void, VV, GV, VId, true, Bidirectional, Traits>
-      , public dynamic_edge_value<void, VV, GV, VId, true, Bidirectional, Traits> {
-public:
-  using base_target_type = dynamic_edge_target<void, VV, GV, VId, true, Bidirectional, Traits>;
-  using base_source_type = dynamic_edge_source<void, VV, GV, VId, true, Bidirectional, Traits>;
-  using base_value_type  = dynamic_edge_value<void, VV, GV, VId, true, Bidirectional, Traits>;
-
-  using vertex_id_type = VId;
-  using value_type     = void;
-  using graph_type     = dynamic_graph<void, VV, GV, VId, true, Bidirectional, Traits>;
-  using vertex_type    = dynamic_vertex<void, VV, GV, VId, true, Bidirectional, Traits>;
-  using edge_type      = dynamic_out_edge<void, VV, GV, VId, true, Bidirectional, Traits>;
-
-public:
-  constexpr dynamic_out_edge(vertex_id_type src_id, vertex_id_type tgt_id)
-        : base_target_type(tgt_id), base_source_type(src_id) {}
-
-  constexpr dynamic_out_edge()                    = default;
-  constexpr dynamic_out_edge(const dynamic_out_edge&) = default;
-  constexpr dynamic_out_edge(dynamic_out_edge&&)      = default;
-  constexpr ~dynamic_out_edge()                   = default;
-
-  constexpr dynamic_out_edge& operator=(const dynamic_out_edge&) = default;
-  constexpr dynamic_out_edge& operator=(dynamic_out_edge&&)      = default;
-
-  // Comparison operators for ordered/unordered set containers
-  // Compare by (source_id, target_id)
-  constexpr auto operator<=>(const dynamic_out_edge& rhs) const noexcept {
-    if (auto cmp = base_source_type::source_id() <=> rhs.base_source_type::source_id(); cmp != 0)
-      return cmp;
-    return base_target_type::target_id() <=> rhs.base_target_type::target_id();
-  }
-  constexpr bool operator==(const dynamic_out_edge& rhs) const noexcept {
-    return base_source_type::source_id() == rhs.base_source_type::source_id() &&
-           base_target_type::target_id() == rhs.base_target_type::target_id();
-  }
-};
-
-
-/**
- * @ingroup graph_containers
- * @brief The edge class for a @c dynamic_graph.
- * 
- * The edge is a composition of a target id, optional source id (@c Sourced) and optional edge value.
- * This implementation supports a source id and edge value, where additional specializations exist
- * for different combinations. The real functionality for properties is implemented in the 
- * @c dynamic_edge_target, @c dynamic_edge_source and @c dynamic_edge_value base classes.
- *
- * This is a specialization definition for @c EV!=void and @c Sourced=false.
- * 
- * @tparam EV      The edge value type. If "void" is used no user value is stored on the edge.
- * @tparam VV      The vertex value type. If "void" is used no user value is stored on the vertex
- *                 and calls to @c vertex_value(g,u) will generate a compile error.
- * @tparam GV      The graph value type. If "void" is used no user value is stored on the graph
- *                 and calls to @c graph_value(g) will generate a compile error.
- * @tparam Sourced [false] Source id is not stored on the edge. Use of @c source_id(g,uv) or 
- *                 @c source(g,uv) will generate a compile error.
  * @tparam VId     Vertex id type
  * @tparam Traits  Defines the types for vertex and edge containers.
 */
 template <class EV, class VV, class GV, class VId, bool Bidirectional, class Traits>
-class dynamic_out_edge<EV, VV, GV, VId, false, Bidirectional, Traits>
-      : public dynamic_edge_target<EV, VV, GV, VId, false, Bidirectional, Traits>
-      , public dynamic_edge_source<EV, VV, GV, VId, false, Bidirectional, Traits>
-      , public dynamic_edge_value<EV, VV, GV, VId, false, Bidirectional, Traits> {
+class dynamic_out_edge
+      : public dynamic_edge_target<EV, VV, GV, VId, Bidirectional, Traits>
+      , public dynamic_edge_value<EV, VV, GV, VId, Bidirectional, Traits> {
 public:
-  using base_target_type = dynamic_edge_target<EV, VV, GV, VId, false, Bidirectional, Traits>;
-  using base_source_type = dynamic_edge_source<EV, VV, GV, VId, false, Bidirectional, Traits>;
-  using base_value_type  = dynamic_edge_value<EV, VV, GV, VId, false, Bidirectional, Traits>;
+  using base_target_type = dynamic_edge_target<EV, VV, GV, VId, Bidirectional, Traits>;
+  using base_value_type  = dynamic_edge_value<EV, VV, GV, VId, Bidirectional, Traits>;
 
   using vertex_id_type = VId;
   using value_type     = EV;
-  using graph_type     = dynamic_graph<EV, VV, GV, VId, false, Bidirectional, Traits>;
-  using vertex_type    = dynamic_vertex<EV, VV, GV, VId, false, Bidirectional, Traits>;
-  using edge_type      = dynamic_out_edge<EV, VV, GV, VId, false, Bidirectional, Traits>;
+  using graph_type     = dynamic_graph<EV, VV, GV, VId, Bidirectional, Traits>;
+  using vertex_type    = dynamic_vertex<EV, VV, GV, VId, Bidirectional, Traits>;
+  using edge_type      = dynamic_out_edge<EV, VV, GV, VId, Bidirectional, Traits>;
 
 public:
   constexpr dynamic_out_edge(vertex_id_type targ_id) : base_target_type(targ_id) {}
@@ -585,16 +410,16 @@ public:
   constexpr dynamic_out_edge(vertex_id_type targ_id, value_type&& val)
         : base_target_type(targ_id), base_value_type(std::move(val)) {}
 
-  constexpr dynamic_out_edge()                    = default;
+  constexpr dynamic_out_edge()                        = default;
   constexpr dynamic_out_edge(const dynamic_out_edge&) = default;
   constexpr dynamic_out_edge(dynamic_out_edge&&)      = default;
-  constexpr ~dynamic_out_edge()                   = default;
+  constexpr ~dynamic_out_edge()                       = default;
 
   constexpr dynamic_out_edge& operator=(const dynamic_out_edge&) = default;
   constexpr dynamic_out_edge& operator=(dynamic_out_edge&&)      = default;
 
   // Comparison operators for ordered/unordered set containers
-  // Compare by target_id only (source_id not stored when Sourced=false)
+  // Compare by target_id only — edge value is intentionally excluded
   constexpr auto operator<=>(const dynamic_out_edge& rhs) const noexcept {
     return base_target_type::target_id() <=> rhs.base_target_type::target_id();
   }
@@ -605,14 +430,9 @@ public:
 
 /**
  * @ingroup graph_containers
- * @brief The edge class for a @c dynamic_graph.
+ * @brief The out-edge class for a @c dynamic_graph (EV=void specialization).
  * 
- * The edge is a composition of a target id, optional source id (@c Sourced) and optional edge value.
- * This implementation supports a source id and edge value, where additional specializations exist
- * for different combinations. The real functionality for properties is implemented in the 
- * @c dynamic_edge_target, @c dynamic_edge_source and @c dynamic_edge_value base classes.
- *
- * This is a specialization definition for @c EV=void and @c Sourced=false.
+ * Stores target_id only — no edge value.
  * 
  * @tparam EV      [void] A value type is not defined for the edge. Calling @c edge_value(g,uv)
  *                 will generate a compile error.
@@ -620,40 +440,36 @@ public:
  *                 and calls to @c vertex_value(g,u) will generate a compile error.
  * @tparam GV      The graph value type. If "void" is used no user value is stored on the graph
  *                 and calls to @c graph_value(g) will generate a compile error.
- * @tparam Sourced [false] Source id is not stored on the edge. Use of @c source_id(g,uv) or 
- *                 @c source(g,uv) will generate a compile error.
  * @tparam VId     Vertex id type
  * @tparam Traits  Defines the types for vertex and edge containers.
 */
 template <class VV, class GV, class VId, bool Bidirectional, class Traits>
-class dynamic_out_edge<void, VV, GV, VId, false, Bidirectional, Traits>
-      : public dynamic_edge_target<void, VV, GV, VId, false, Bidirectional, Traits>
-      , public dynamic_edge_source<void, VV, GV, VId, false, Bidirectional, Traits>
-      , public dynamic_edge_value<void, VV, GV, VId, false, Bidirectional, Traits> {
+class dynamic_out_edge<void, VV, GV, VId, Bidirectional, Traits>
+      : public dynamic_edge_target<void, VV, GV, VId, Bidirectional, Traits>
+      , public dynamic_edge_value<void, VV, GV, VId, Bidirectional, Traits> {
 public:
-  using base_target_type = dynamic_edge_target<void, VV, GV, VId, false, Bidirectional, Traits>;
-  using base_source_type = dynamic_edge_source<void, VV, GV, VId, false, Bidirectional, Traits>;
-  using base_value_type  = dynamic_edge_value<void, VV, GV, VId, false, Bidirectional, Traits>;
+  using base_target_type = dynamic_edge_target<void, VV, GV, VId, Bidirectional, Traits>;
+  using base_value_type  = dynamic_edge_value<void, VV, GV, VId, Bidirectional, Traits>;
 
   using vertex_id_type = VId;
   using value_type     = void;
-  using graph_type     = dynamic_graph<void, VV, GV, VId, false, Bidirectional, Traits>;
-  using vertex_type    = dynamic_vertex<void, VV, GV, VId, false, Bidirectional, Traits>;
-  using edge_type      = dynamic_out_edge<void, VV, GV, VId, false, Bidirectional, Traits>;
+  using graph_type     = dynamic_graph<void, VV, GV, VId, Bidirectional, Traits>;
+  using vertex_type    = dynamic_vertex<void, VV, GV, VId, Bidirectional, Traits>;
+  using edge_type      = dynamic_out_edge<void, VV, GV, VId, Bidirectional, Traits>;
 
 public:
   constexpr dynamic_out_edge(vertex_id_type vid) : base_target_type(vid) {}
 
-  constexpr dynamic_out_edge()                    = default;
+  constexpr dynamic_out_edge()                        = default;
   constexpr dynamic_out_edge(const dynamic_out_edge&) = default;
   constexpr dynamic_out_edge(dynamic_out_edge&&)      = default;
-  constexpr ~dynamic_out_edge()                   = default;
+  constexpr ~dynamic_out_edge()                       = default;
 
   constexpr dynamic_out_edge& operator=(const dynamic_out_edge&) = default;
   constexpr dynamic_out_edge& operator=(dynamic_out_edge&&)      = default;
 
   // Comparison operators for ordered/unordered set containers
-  // Compare by target_id only (source_id not stored when Sourced=false)
+  // Compare by target_id only
   constexpr auto operator<=>(const dynamic_out_edge& rhs) const noexcept {
     return base_target_type::target_id() <=> rhs.base_target_type::target_id();
   }
@@ -662,57 +478,11 @@ public:
   }
 };
 
-/// @deprecated Use @c dynamic_out_edge instead. Removed in Phase 4.
-template <class EV, class VV, class GV, class VId, bool Sourced, bool Bidirectional, class Traits>
-using dynamic_edge = dynamic_out_edge<EV, VV, GV, VId, Sourced, Bidirectional, Traits>;
-
-//--------------------------------------------------------------------------------------------------
-// dynamic_in_edge_source — temporary base for dynamic_in_edge (Phase 1).
-// Phase 4a will repurpose the existing dynamic_edge_source and remove this class.
-//
-
-/**
- * @ingroup graph_containers
- * @brief Temporary unconditional source-id base for @c dynamic_in_edge.
- *
- * Mirrors the @c Sourced=true side of @c dynamic_edge_source without touching live code.
- * Will be deleted in Phase 4a once @c dynamic_edge_source loses its @c Sourced parameter.
- *
- * @tparam EV           Edge value type.
- * @tparam VV           Vertex value type.
- * @tparam GV           Graph value type.
- * @tparam VId          Vertex id type.
- * @tparam Bidirectional Whether the graph is bidirectional.
- * @tparam Traits       Traits struct.
- */
-template <class EV, class VV, class GV, class VId, bool Bidirectional, class Traits>
-class dynamic_in_edge_source {
-public:
-  using vertex_id_type = VId;
-
-public:
-  constexpr dynamic_in_edge_source(vertex_id_type src_id) noexcept : source_id_(src_id) {}
-
-  constexpr dynamic_in_edge_source()                              = default;
-  constexpr dynamic_in_edge_source(const dynamic_in_edge_source&) = default;
-  constexpr dynamic_in_edge_source(dynamic_in_edge_source&&)      = default;
-  constexpr ~dynamic_in_edge_source()                             = default;
-
-  constexpr dynamic_in_edge_source& operator=(const dynamic_in_edge_source&) = default;
-  constexpr dynamic_in_edge_source& operator=(dynamic_in_edge_source&&)      = default;
-
-  constexpr vertex_id_type  source_id() const noexcept { return source_id_; }
-  constexpr vertex_id_type& source_id() noexcept { return source_id_; }
-
-private:
-  vertex_id_type source_id_ = vertex_id_type();
-};
-
 //--------------------------------------------------------------------------------------------------
 // dynamic_in_edge — the in-edge class for bidirectional dynamic_graph.
 //
-// Structurally mirrors dynamic_out_edge<..., Sourced=false, ...> but stores source_id instead of
-// target_id. Two specializations keyed on EV (as with dynamic_out_edge).
+// Stores source_id (via dynamic_edge_source) and an optional edge value (via dynamic_edge_value).
+// Two specializations keyed on EV (as with dynamic_out_edge).
 //
 
 /**
@@ -731,11 +501,11 @@ private:
  */
 template <class EV, class VV, class GV, class VId, bool Bidirectional, class Traits>
 class dynamic_in_edge
-      : public dynamic_in_edge_source<EV, VV, GV, VId, Bidirectional, Traits>
-      , public dynamic_edge_value<EV, VV, GV, VId, /*Sourced=*/true, Bidirectional, Traits> {
+      : public dynamic_edge_source<EV, VV, GV, VId, Bidirectional, Traits>
+      , public dynamic_edge_value<EV, VV, GV, VId, Bidirectional, Traits> {
 public:
-  using base_source_type = dynamic_in_edge_source<EV, VV, GV, VId, Bidirectional, Traits>;
-  using base_value_type  = dynamic_edge_value<EV, VV, GV, VId, true, Bidirectional, Traits>;
+  using base_source_type = dynamic_edge_source<EV, VV, GV, VId, Bidirectional, Traits>;
+  using base_value_type  = dynamic_edge_value<EV, VV, GV, VId, Bidirectional, Traits>;
 
   using vertex_id_type = VId;
   using value_type     = EV;
@@ -747,10 +517,10 @@ public:
   constexpr dynamic_in_edge(vertex_id_type src_id, value_type&& val)
         : base_source_type(src_id), base_value_type(std::move(val)) {}
 
-  constexpr dynamic_in_edge()                     = default;
+  constexpr dynamic_in_edge()                       = default;
   constexpr dynamic_in_edge(const dynamic_in_edge&) = default;
   constexpr dynamic_in_edge(dynamic_in_edge&&)      = default;
-  constexpr ~dynamic_in_edge()                    = default;
+  constexpr ~dynamic_in_edge()                      = default;
 
   constexpr dynamic_in_edge& operator=(const dynamic_in_edge&) = default;
   constexpr dynamic_in_edge& operator=(dynamic_in_edge&&)      = default;
@@ -778,9 +548,9 @@ public:
  */
 template <class VV, class GV, class VId, bool Bidirectional, class Traits>
 class dynamic_in_edge<void, VV, GV, VId, Bidirectional, Traits>
-      : public dynamic_in_edge_source<void, VV, GV, VId, Bidirectional, Traits> {
+      : public dynamic_edge_source<void, VV, GV, VId, Bidirectional, Traits> {
 public:
-  using base_source_type = dynamic_in_edge_source<void, VV, GV, VId, Bidirectional, Traits>;
+  using base_source_type = dynamic_edge_source<void, VV, GV, VId, Bidirectional, Traits>;
 
   using vertex_id_type = VId;
   using value_type     = void;
@@ -788,10 +558,10 @@ public:
 public:
   constexpr dynamic_in_edge(vertex_id_type src_id) : base_source_type(src_id) {}
 
-  constexpr dynamic_in_edge()                     = default;
+  constexpr dynamic_in_edge()                       = default;
   constexpr dynamic_in_edge(const dynamic_in_edge&) = default;
   constexpr dynamic_in_edge(dynamic_in_edge&&)      = default;
-  constexpr ~dynamic_in_edge()                    = default;
+  constexpr ~dynamic_in_edge()                      = default;
 
   constexpr dynamic_in_edge& operator=(const dynamic_in_edge&) = default;
   constexpr dynamic_in_edge& operator=(dynamic_in_edge&&)      = default;
@@ -2404,29 +2174,14 @@ public: // Construction/Destruction/Assignment
 namespace std {
 
 /**
- * @brief Hash specialization for dynamic_out_edge with Sourced = true
+ * @brief Hash specialization for dynamic_out_edge.
  * 
- * Hashes based on source_id and target_id only (edge value excluded, works for any EV)
+ * Hashes based on target_id only (out-edges no longer store source_id). Works for any EV.
  */
 template <class EV, class VV, class GV, class VId, bool Bidirectional, class Traits>
-struct hash<graph::container::dynamic_out_edge<EV, VV, GV, VId, true, Bidirectional, Traits>> {
+struct hash<graph::container::dynamic_out_edge<EV, VV, GV, VId, Bidirectional, Traits>> {
   [[nodiscard]] size_t
-  operator()(const graph::container::dynamic_out_edge<EV, VV, GV, VId, true, Bidirectional, Traits>& edge) const noexcept {
-    size_t h1 = std::hash<VId>{}(edge.source_id());
-    size_t h2 = std::hash<VId>{}(edge.target_id());
-    return h1 ^ (h2 << 1);
-  }
-};
-
-/**
- * @brief Hash specialization for dynamic_out_edge with Sourced = false
- * 
- * Hashes based on target_id only (no source_id available, works for any EV)
- */
-template <class EV, class VV, class GV, class VId, bool Bidirectional, class Traits>
-struct hash<graph::container::dynamic_out_edge<EV, VV, GV, VId, false, Bidirectional, Traits>> {
-  [[nodiscard]] size_t
-  operator()(const graph::container::dynamic_out_edge<EV, VV, GV, VId, false, Bidirectional, Traits>& edge) const noexcept {
+  operator()(const graph::container::dynamic_out_edge<EV, VV, GV, VId, Bidirectional, Traits>& edge) const noexcept {
     return std::hash<VId>{}(edge.target_id());
   }
 };
