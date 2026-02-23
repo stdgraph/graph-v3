@@ -3,7 +3,7 @@
 > **Strategy source:** [dynamic_edge_refactor_strategy.md](dynamic_edge_refactor_strategy.md)
 >
 > This plan is designed for safe, incremental, agent-driven implementation.
-> Each phase is a self-contained commit that leaves the full test suite green.
+> Each phase is self-contained and has explicit build/test gates.
 
 ---
 
@@ -13,14 +13,17 @@
 the `bool Sourced` template parameter from the entire class hierarchy, and support both
 uniform and non-uniform bidirectional edge configurations.
 
-**Key invariant:** The full test suite (`ctest`) must pass after every phase and every
-sub-step marked "Verify." No phase may be merged until its verification step succeeds.
+**Key invariant:** Every phase must meet its defined verification gate before merge.
+Where a phase temporarily allows test breakage (Phase 4), that exception is explicit and
+the next phase must restore full green status.
 
 **Files of interest (reference):**
 - Core header: `include/graph/container/dynamic_graph.hpp` (2221 lines)
 - Traits: 27 files in `include/graph/container/traits/`
 - Test infra: `tests/common/graph_test_types.hpp` (460 lines)
 - Container tests: ~48 files in `tests/container/dynamic_graph/`
+- Edge comparison tests: `tests/container/dynamic_graph/test_dynamic_edge_comparison.cpp` (450 lines)
+  — directly instantiates all 4 `dynamic_edge` specializations with explicit `Sourced=true/false`
 - CPO tests: 26 files in `tests/adj_list/cpo/`
 - Concept tests: `tests/adj_list/concepts/test_bidirectional_concepts.cpp`
 
@@ -94,34 +97,29 @@ struct hash<graph::container::dynamic_in_edge<EV, VV, GV, VId, Bidirectional, Tr
 };
 ```
 
-### Step 1.3 — Add detection-idiom aliases in `dynamic_graph_base`
+### Step 1.3 — Add shared detection-idiom helpers and derived aliases
 
-**Location:** Near the top of `dynamic_graph_base` (after line ~956), before any member
-that uses `edge_type`.
+**Location:** Add helpers in a shared scope (e.g., `graph::container::detail` in
+`dynamic_graph.hpp`), then consume them in both `dynamic_graph_base` and
+`dynamic_vertex_bidir_base`.
 
-Add these derived aliases:
+Add shared helpers (preferred names are illustrative):
 
 ```cpp
-// Detection helpers
-template <class T, class = void>
-struct has_in_edge_type : std::false_type {};
-template <class T>
-struct has_in_edge_type<T, std::void_t<typename T::in_edge_type>> : std::true_type {};
+template <class Default, template <class...> class Op, class... Args>
+using detected_or_t = /* detection-idiom type */;
 
-template <class T, class = void>
-struct has_in_edges_type : std::false_type {};
 template <class T>
-struct has_in_edges_type<T, std::void_t<typename T::in_edges_type>> : std::true_type {};
+using detect_in_edge_type = typename T::in_edge_type;
+
+template <class T>
+using detect_in_edges_type = typename T::in_edges_type;
 
 // Derived aliases
 using edge_type     = typename Traits::edge_type;
 using out_edge_type = edge_type;
-using in_edge_type  = std::conditional_t<has_in_edge_type<Traits>::value,
-                                         typename Traits::in_edge_type,
-                                         edge_type>;
-using in_edges_type = std::conditional_t<has_in_edges_type<Traits>::value,
-                                         typename Traits::in_edges_type,
-                                         typename Traits::edges_type>;
+using in_edge_type  = detail::detected_or_t<edge_type, detail::detect_in_edge_type, Traits>;
+using in_edges_type = detail::detected_or_t<typename Traits::edges_type, detail::detect_in_edges_type, Traits>;
 ```
 
 **Important:** `edge_type` is already used in `dynamic_graph_base` (it comes from `Traits::edge_type`). The new aliases (`out_edge_type`, `in_edge_type`, `in_edges_type`) are added alongside it. Existing code that uses `edge_type` is unchanged.
@@ -132,10 +130,12 @@ In `dynamic_graph_base`, add static assertions:
 
 ```cpp
 // Verify alias consistency
-static_assert(!has_in_edge_type<Traits>::value || has_in_edges_type<Traits>::value || 
-              std::same_as<in_edge_type, edge_type>,
+static_assert(std::same_as<in_edge_type, edge_type> ||
+              !std::same_as<in_edges_type, typename Traits::edges_type>,
               "Non-uniform traits must also define in_edges_type when in_edge_type differs from edge_type");
 ```
+
+Also add positive assertions for default uniform behavior when aliases are absent.
 
 ### Step 1.5 — Verify
 
@@ -146,6 +146,12 @@ static_assert(!has_in_edge_type<Traits>::value || has_in_edges_type<Traits>::val
 ### Step 1.6 — Commit
 
 Message: `feat: add dynamic_in_edge class and detection-idiom aliases (Phase 1)`
+
+### Phase 1 Gate (must pass)
+
+- Build: `cmake --build build/linux-gcc-debug`
+- Tests: `ctest --test-dir build/linux-gcc-debug`
+- Audit: no runtime behavior changes; additive-only diff in `dynamic_graph.hpp`
 
 ### Doc notes for Phase 1
 - `dynamic_in_edge` structurally mirrors `dynamic_out_edge` will mirror later; at this point `dynamic_edge` is still the live out-edge class.
@@ -170,15 +176,14 @@ using edges_type = typename Traits::edges_type;   // used for in_edges storage
 **Change to:**
 ```cpp
 // Use graph-derived in_edges_type (falls back to edges_type for standard traits)
-using in_edges_type_t = std::conditional_t<
-    has_in_edges_type<Traits>::value,
-    typename Traits::in_edges_type,
-    typename Traits::edges_type>;
+using in_edges_type_t = detail::detected_or_t<typename Traits::edges_type,
+                        detail::detect_in_edges_type,
+                        Traits>;
 using edges_type = in_edges_type_t;  // rename kept for backward compat of internal member
 ```
 
-**Key insight:** For ALL existing traits (27 files), `has_in_edges_type` is `false`, so
-`in_edges_type_t == Traits::edges_type`. Behavior is identical to current. The return
+**Key insight:** For all existing standard traits (27 files), `detect_in_edges_type` is absent,
+so `in_edges_type_t` falls back to `Traits::edges_type`. Behavior is identical to current. The return
 type of `in_edges()` is `edges_type&`, which still resolves to the same type.
 
 ### Step 2.2 — Update `load_edges` bidirectional branches
@@ -259,6 +264,12 @@ emplace_edge(rev, e.source_id, make_in_edge(e.source_id, e.target_id, e.value));
 
 Message: `feat: wire in_edge_type into bidir vertex base and load_edges (Phase 2)`
 
+### Phase 2 Gate (must pass)
+
+- Build: `cmake --build build/linux-gcc-debug`
+- Tests: `ctest --test-dir build/linux-gcc-debug`
+- Audit: `load_edges` reverse insertion uses `make_in_edge(...)` in all 3 insertion paths
+
 ### Doc notes for Phase 2
 - The `make_in_edge` helper is a temporary bridge. It will be removed in Phase 4d when
   `Sourced` is eliminated and all constructors are standardized.
@@ -335,6 +346,12 @@ directly. If any do, update them. The deprecated alias provides a safety net.
 
 Message: `refactor: rename dynamic_edge → dynamic_out_edge with deprecated alias (Phase 3)`
 
+### Phase 3 Gate (must pass)
+
+- Build: `cmake --build build/linux-gcc-debug`
+- Tests: `ctest --test-dir build/linux-gcc-debug`
+- Audit: `grep -rn "\\bdynamic_edge\\b" include/ tests/ --include="*.hpp" --include="*.cpp"` only shows allowed transition references (deprecated alias + intended transitional uses)
+
 ---
 
 ## Phase 4 — Remove `Sourced` template parameter
@@ -363,14 +380,25 @@ Message: `refactor: rename dynamic_edge → dynamic_out_edge with deprecated ali
 - Remove `bool Sourced` from all template params.
 - **Delete** the 2 `Sourced=true` specializations (lines ~421–466 and ~488–509) which took
   `(source_id, target_id)` constructors.
-- Keep the 2 `Sourced=false` specializations (lines ~534–575 and ~600–627), but remove
-  `Sourced` from their parameter lists:
+- **Promote** the 2 `Sourced=false` specializations (lines ~534–575 and ~600–627) to become
+  the new primary template and `EV=void` specialization. Remove `Sourced` from their
+  parameter lists:
   - `dynamic_out_edge<EV, VV, GV, VId, Bidirectional, Traits>` — `(target_id)`, `(target_id, val)`.
   - `dynamic_out_edge<void, VV, GV, VId, Bidirectional, Traits>` — `(target_id)`.
+- **CRITICAL: Remove `dynamic_edge_source` from `dynamic_out_edge`'s base class list.**
+  After 4a.2 removes the empty `Sourced=false` specialization, `dynamic_edge_source`
+  unconditionally stores `source_id_`. Out-edges must NOT inherit this — they only need
+  `dynamic_edge_target`. Replace the inheritance chain:
+  - Before: `dynamic_out_edge : dynamic_edge_source<..., false, ...>, dynamic_edge_value<...>`
+  - After:  `dynamic_out_edge : dynamic_edge_target<...>, dynamic_edge_value<...>`
+  (This mirrors how `dynamic_in_edge` inherits `dynamic_edge_source` + `dynamic_edge_value`
+  but not `dynamic_edge_target`.)
 
 **4a.5 — Update `dynamic_in_edge` to use repurposed `dynamic_edge_source`:**
 - Change `dynamic_in_edge`'s base from `dynamic_in_edge_source` to the now-Sourced-free
   `dynamic_edge_source`.
+- Also update `dynamic_in_edge`'s `dynamic_edge_value` base class reference — remove
+  `Sourced` from its template arguments (it was passed as `Sourced=true` as a pass-through).
 - **Delete** the temporary `dynamic_in_edge_source` class from Phase 1.
 
 **4a.6 — Update forward declarations** (line ~91):
@@ -396,6 +424,9 @@ Message: `refactor: rename dynamic_edge → dynamic_out_edge with deprecated ali
 **4b.2 — `dynamic_vertex_base`** (line ~701):
 - Remove `bool Sourced` from template params.
 - Update base class reference to `dynamic_vertex_bidir_base<..., Bidirectional, Traits>` (6 params).
+- Update the `edge_type` and `edges_type` aliases defined inside `dynamic_vertex_base`
+  (lines ~721–722) — these reference `dynamic_out_edge` and must have `Sourced` removed
+  from their template arguments.
 
 **4b.3 — `dynamic_vertex`** — both specializations (lines ~836, ~906):
 - Remove `bool Sourced`.
@@ -405,11 +436,26 @@ Message: `refactor: rename dynamic_edge → dynamic_out_edge with deprecated ali
 - Remove `bool Sourced` from template params.
 - Remove `static constexpr bool sourced = Sourced;`.
 - Update all internal `edge_type`, `vertex_type` references to 6-param forms.
+- **Audit `edge_allocator_type`** (line ~974): currently derived from `edges_type`. In
+  non-uniform bidirectional mode, `in_edges_type` may use a different element type
+  (`dynamic_in_edge` vs `dynamic_out_edge`). Add an `in_edge_allocator_type` alias
+  derived from `in_edges_type` for in-edge container allocation. If both types have
+  identical layout (same size/alignment), a single allocator suffices, but add a
+  `static_assert` verifying this.
 
 **4b.5 — `dynamic_graph`** — both specializations (lines ~1930, ~2088):
 - Remove `bool Sourced` from template params.
 - Update base class references.
 - Update forward declaration defaults (line ~97): remove `bool Sourced = false`.
+
+**4b.6 — Update `edge_value` friend function** (lines ~1809–1830 in `dynamic_graph_base`):
+- This direction-aware friend function dispatches differently for out-edges vs in-edges.
+- Remove `Sourced` from template params in the function signature.
+- Verify it works for both `dynamic_out_edge` and `dynamic_in_edge`:
+  - For out-edges: accesses value via `dynamic_edge_value` base (unchanged).
+  - For in-edges: same mechanism — `dynamic_in_edge` also inherits `dynamic_edge_value`.
+- If the function uses `Sourced` in any `if constexpr` branch, replace with a
+  type-based check (e.g., `is_same_v<Edge, in_edge_type>`).
 
 **Do NOT compile yet — traits still pass Sourced. Continue to 4c.**
 
@@ -439,7 +485,16 @@ uov, uod, uol, uofl, uos, uous
 
 ### Step 4d — Update `load_edges` and remove `make_in_edge`
 
-**4d.1 — Simplify out-edge construction.** Remove `if constexpr (Sourced)` branches entirely.
+**4d.1 — Simplify out-edge construction.** Each of the 3 insertion paths currently has an
+`if constexpr (Sourced)` guard. With `Sourced` removed:
+- The `Sourced=true` branch (which passed `(source_id, target_id)` to out-edge constructors)
+  is deleted — `dynamic_out_edge` no longer accepts `source_id`.
+- The `Sourced=false` branch (which passed `(target_id)` only) is **kept** and promoted to
+  the unconditional path — it was already correct for the new `dynamic_out_edge` API.
+
+**There are 18 `emplace_edge` calls across the 3 paths** (associative, sequential-forward,
+fallback). Each path has both `Sourced=true` and `Sourced=false` branches. Audit all 18.
+
 Out-edge construction is now always:
 ```cpp
 if constexpr (is_void_v<EV>) {
@@ -487,25 +542,40 @@ Remove `Traits::sourced`.
   specialization is deleted (it hashed `source_id() ^ target_id()`).
 - `hash<dynamic_in_edge<...>>` already has no `Sourced` parameter (added in Phase 1).
 
-### Step 4g — Compile (non-test code only)
+### Step 4g — Compile (library code only — exclude tests)
 
+There is no library-only CMake target, so use target-level builds to verify headers compile:
 ```bash
-cmake --build build/linux-gcc-debug --target graph3  # or header-only check
+# Build only the example targets (they exercise the full header but not the test code):
+cmake --build build/linux-gcc-debug --target basic_usage dijkstra_clrs_example mst_usage_example
 ```
 
-**Expected:** Compilation succeeds for the library. Tests will NOT compile yet (they
-still reference `Sourced`). That's Phase 5.
+If examples also reference `Sourced`, create a minimal `phase4_smoke.cpp` translation unit
+that includes `<graph/container/dynamic_graph.hpp>` and instantiates one `dynamic_graph`
+with default traits. Build that single target to verify header correctness.
+
+**Expected:** Compilation succeeds for library header consumers. Tests will NOT compile yet
+(they still reference `Sourced`). That's Phase 5.
 
 ### Step 4h — Commit
 
 Message: `refactor: remove Sourced template parameter from entire class hierarchy (Phase 4)`
 
+### Phase 4 Gate (explicit exception)
+
+- Build: example targets (or Phase 4g smoke-test TU) must compile
+- Tests: may fail due to expected test API drift — this is expected and resolved in Phase 5
+- Audit: `grep -rn "Sourced" include/ --include="*.hpp" --include="*.cpp"` returns zero code references
+
 ### Doc notes for Phase 4
 - `dynamic_edge_source` is now the unconditional source-id base (no empty specialization).
 - `dynamic_out_edge` has 2 specializations (keyed on `EV`), not 4.
+- `dynamic_out_edge` no longer inherits `dynamic_edge_source` — only `dynamic_edge_target` + `dynamic_edge_value`.
+- `dynamic_in_edge` inherits `dynamic_edge_source` + `dynamic_edge_value` (no `dynamic_edge_target`).
 - `make_in_edge` bridge from Phase 2 is removed.
 - Deprecated `dynamic_edge` alias is removed.
 - All traits are now 5-param: `<EV, VV, GV, VId, Bidirectional>`.
+- `edge_allocator_type` verified compatible with both `edges_type` and `in_edges_type`.
 
 ---
 
@@ -526,7 +596,7 @@ struct vov_tag {
 };
 ```
 
-Change to (add `Bidirectional`, remove `Sourced`):
+Change to (replace `Sourced` with `Bidirectional`):
 ```cpp
 struct vov_tag {
   static constexpr const char* name = "vov";
@@ -534,6 +604,12 @@ struct vov_tag {
   using traits = graph::container::vov_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 ```
+
+**Note:** `Sourced` occupied position 5 in the old signature; `Bidirectional` takes the
+same position. Callers passing `true`/`false` for `Sourced` must be audited — the boolean
+now means `Bidirectional`, which has different semantics. The `sourced_*` aliases in 5.1.2
+below are the primary callers and are deleted. Any other callers passing a 5th argument
+must be updated to pass the correct `Bidirectional` value.
 
 **5.1.2 — Replace `sourced_*` aliases with `bidir_*` aliases:**
 
@@ -570,6 +646,16 @@ For each test file in `tests/container/dynamic_graph/`:
 2. **Remove tests that assert `G::sourced == true/false`** (search for `sourced`).
 3. **Update remaining type aliases** — remove `Sourced` from any explicit `dynamic_graph<...>` instantiations.
 4. **Keep all non-sourced test logic unchanged** — it should compile with the updated `graph_test_types.hpp`.
+
+**Special attention: `test_dynamic_edge_comparison.cpp`** (~450 lines):
+- This file directly instantiates all 4 `dynamic_edge` specializations with explicit
+  `Sourced=true` and `Sourced=false` template arguments.
+- **Rename** `dynamic_edge` → `dynamic_out_edge` in all type aliases.
+- **Remove** the `Sourced` template argument from all instantiations.
+- **Delete** tests for `Sourced=true` specializations (they test `source_id()` on out-edges,
+  which no longer exists).
+- **Add** `dynamic_in_edge` test cases for `operator<=>`, `operator==`, and `std::hash`
+  that mirror the deleted `Sourced=true` tests but use `source_id()` on in-edges.
 
 **Approach:** For each file:
 ```bash
@@ -642,6 +728,11 @@ Add test sections that verify uniform and non-uniform produce identical CPO resu
 - Verify `source_id`, `target_id`, `edge_value`, `in_edges`, `in_degree` produce identical results.
 - Add to `tests/adj_list/cpo/CMakeLists.txt`.
 
+**5.4.5 — Centralize non-uniform test traits:**
+- Put reusable non-uniform traits in common test infra (`tests/common/graph_test_types.hpp` or
+  `tests/common/graph_fixtures.hpp`) instead of file-local duplication.
+- Reuse the same type in container-native tests, CPO tests, and concept tests.
+
 ### Step 5.5 — Update concept tests
 
 **File:** `tests/adj_list/concepts/test_bidirectional_concepts.cpp`
@@ -681,6 +772,12 @@ Both should return zero matches (excluding comments/documentation).
 ### Step 5.9 — Commit
 
 Message: `test: update all tests for Sourced removal and add bidir uniform/non-uniform coverage (Phase 5)`
+
+### Phase 5 Gate (must pass, full green restoration)
+
+- Build: `cmake --build build/linux-gcc-debug`
+- Tests: `ctest --test-dir build/linux-gcc-debug` (no failures)
+- Audit: zero `Sourced` code references under `include/` and `tests/`
 
 ### Doc notes for Phase 5
 - `graph_test_types.hpp` tag templates now take `Bidirectional` instead of `Sourced`.
@@ -739,6 +836,20 @@ grep -rn "dynamic_in_edge_source" include/ --include="*.hpp"  # temp class shoul
 
 Message: `docs: cleanup Doxygen, update user docs, archive strategy (Phase 6)`
 
+### Documentation Deliverables Checklist
+
+- API signatures updated in docs for `dynamic_graph` and traits (no `Sourced` parameter).
+- Migration note: map old `dynamic_edge<..., Sourced=...>` usage to `dynamic_out_edge` / `dynamic_in_edge`.
+- Clarify uniform bidirectional semantics: in-edge container stores `dynamic_out_edge` where raw `target_id_` encodes source.
+- Clarify CPO dispatch expectations for `source_id` (Tier 4 for out-edges; Tier 1 or Tier 4 for in-edges depending on mode).
+- Update examples showing both default uniform mode and custom non-uniform traits.
+
+### Phase 6 Gate (must pass)
+
+- Build: `cmake --build build/linux-gcc-debug` and `cmake --build build/linux-clang-debug`
+- Tests: `ctest --test-dir build/linux-gcc-debug` and `ctest --test-dir build/linux-clang-debug`
+- Audit: no transitional symbols (`dynamic_in_edge_source`, deprecated aliases)
+
 ---
 
 ## Risk Mitigations Summary
@@ -752,6 +863,7 @@ Message: `docs: cleanup Doxygen, update user docs, archive strategy (Phase 6)`
 | Detection-idiom fallback incorrect | Compile-time `static_assert` in Phase 1.4 | 1 |
 | Non-uniform traits missing `in_edges_type` | `static_assert` catches inconsistent traits | 1 |
 | Phase 4 is large and risky | Sub-steps 4a–4g; compile at 4g before touching tests | 4 |
+| No library-only CMake target | Phase 4g uses example targets or a smoke-test TU as proxy for header-only compilation check | 4g |
 | Two bidir modes increase test matrix | Non-uniform tests limited to vov/vol representatives | 5 |
 
 ---
