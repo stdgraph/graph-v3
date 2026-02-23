@@ -55,31 +55,31 @@ using adj_list::in_edge_tag;
 //   #include <graph/container/traits/mofl_graph_traits.hpp>  // map + forward_list
 //
 
-template <class EV, class VV, class GV, class VId, bool Sourced, bool Bidirectional>
+template <class EV, class VV, class GV, class VId, bool Bidirectional>
 struct vofl_graph_traits;
 
-template <class EV, class VV, class GV, class VId, bool Sourced, bool Bidirectional>
+template <class EV, class VV, class GV, class VId, bool Bidirectional>
 struct vol_graph_traits;
 
-template <class EV, class VV, class GV, class VId, bool Sourced, bool Bidirectional>
+template <class EV, class VV, class GV, class VId, bool Bidirectional>
 struct vov_graph_traits;
 
-template <class EV, class VV, class GV, class VId, bool Sourced, bool Bidirectional>
+template <class EV, class VV, class GV, class VId, bool Bidirectional>
 struct vod_graph_traits;
 
-template <class EV, class VV, class GV, class VId, bool Sourced, bool Bidirectional>
+template <class EV, class VV, class GV, class VId, bool Bidirectional>
 struct dofl_graph_traits;
 
-template <class EV, class VV, class GV, class VId, bool Sourced, bool Bidirectional>
+template <class EV, class VV, class GV, class VId, bool Bidirectional>
 struct dol_graph_traits;
 
-template <class EV, class VV, class GV, class VId, bool Sourced, bool Bidirectional>
+template <class EV, class VV, class GV, class VId, bool Bidirectional>
 struct dov_graph_traits;
 
-template <class EV, class VV, class GV, class VId, bool Sourced, bool Bidirectional>
+template <class EV, class VV, class GV, class VId, bool Bidirectional>
 struct dod_graph_traits;
 
-template <class EV, class VV, class GV, class VId, bool Sourced, bool Bidirectional>
+template <class EV, class VV, class GV, class VId, bool Bidirectional>
 struct mofl_graph_traits;
 
 
