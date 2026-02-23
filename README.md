@@ -50,11 +50,23 @@ int main() {
   std::vector<double>   distance(graph::num_vertices(g));
   std::vector<uint32_t> predecessor(graph::num_vertices(g));
 
-  graph::dijkstra_shortest_paths(g, uint32_t(0), distance, predecessor);
+  graph::init_shortest_paths(distance, predecessor);
+  graph::dijkstra_shortest_paths(g, uint32_t(0), distance, predecessor,
+        [](const auto& g, const auto& uv) { return graph::edge_value(g, uv); });
 
   for (size_t v = 0; v < distance.size(); ++v)
     std::cout << "0 -> " << v << " : " << distance[v] << "\n";
 }
+```
+
+Output:
+
+```
+0 -> 0 : 0
+0 -> 1 : 8
+0 -> 2 : 5
+0 -> 3 : 9
+0 -> 4 : 16
 ```
 
 <!--
