@@ -68,7 +68,7 @@ int main() {
   // Example 4: Prim's algorithm with validation
   std::cout << "\n=== Prim's Algorithm Example ===\n\n";
 
-  using Graph = container::dynamic_graph<int, void, void, uint32_t, false, false, container::vov_graph_traits<int>>;
+  using Graph = container::dynamic_graph<int, void, void, uint32_t, false, container::vov_graph_traits<int>>;
 
   // Create undirected weighted graph
   Graph g({{0, 1, 4}, {1, 0, 4}, {1, 2, 8}, {2, 1, 8}, {2, 0, 11}, {0, 2, 11}, {0, 2, 2}, {2, 0, 2}});
