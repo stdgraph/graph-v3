@@ -33,7 +33,6 @@
 ## Quick Example — Dijkstra Shortest Paths
 
 ```cpp
-// (simplified — see examples/dijkstra_clrs_example.cpp for the full version)
 #include "graph/graph.hpp"
 #include "graph/algorithm/dijkstra_shortest_paths.hpp"
 #include <vector>
