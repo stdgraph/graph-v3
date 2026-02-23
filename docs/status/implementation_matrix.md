@@ -136,7 +136,7 @@ Naming convention: `{vertex}o{edge}_graph_traits.hpp`
 
 | Namespace | Purpose |
 |-----------|---------|
-| `graph::` | Root — re-exports `adj_list` types/CPOs for convenience |
+| `graph::` | Root — common edge list CPOs, re-exports `adj_list` types/CPOs for convenience |
 | `graph::adj_list::` | Adjacency list CPOs, descriptors, concepts, traits |
 | `graph::edge_list::` | Edge list concepts, traits, descriptors |
 | `graph::views::` | Graph views (vertexlist, edgelist, neighbors, BFS, DFS, etc.) |
