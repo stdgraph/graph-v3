@@ -910,4 +910,7 @@ Message: `docs: cleanup Doxygen, update user docs, archive strategy (Phase 6)`
 | 6.1 | Remove deprecated `dynamic_edge` alias | COMPLETE | alias absent; stale comment in edge_descriptor.hpp fixed |
 | 6.2 | Update Doxygen comments in dynamic_graph.hpp | COMPLETE | 4 stale Sourced/dynamic_edge refs fixed |
 | 6.3 | Update user-facing documentation | COMPLETE | migration-from-v2.md: table row, code example, trailing sentence |
-| 6 | Cleanup + documentation | IN PROGRESS | |
+| 6.4 | Archive strategy documents | COMPLETE | incoming_edges_design/plan + dynamic_edge_refactor_strategy → archive/ |
+| 6.5 | Final verification | COMPLETE | 4337/4337 pass; Sourced/dynamic_edge audit clean |
+| 6.6 | Commit Phase 6 | COMPLETE | see below |
+| 6 | Cleanup + documentation | COMPLETE | |
