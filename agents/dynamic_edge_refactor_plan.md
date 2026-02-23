@@ -909,4 +909,5 @@ Message: `docs: cleanup Doxygen, update user docs, archive strategy (Phase 6)`
 | 5.9 | Commit Phase 5 | COMPLETE | 880ae00 |
 | 6.1 | Remove deprecated `dynamic_edge` alias | COMPLETE | alias absent; stale comment in edge_descriptor.hpp fixed |
 | 6.2 | Update Doxygen comments in dynamic_graph.hpp | COMPLETE | 4 stale Sourced/dynamic_edge refs fixed |
+| 6.3 | Update user-facing documentation | COMPLETE | migration-from-v2.md: table row, code example, trailing sentence |
 | 6 | Cleanup + documentation | IN PROGRESS | |

@@ -139,7 +139,7 @@ support on top of the standard `adjacency_list` interface. Two containers satisf
 
 | Container | How to enable |
 |-----------|---------------|
-| `dynamic_graph` | Set `Sourced = true` and `Bidirectional = true` (5th and 6th template parameters) |
+| `dynamic_graph` | Set `Bidirectional = true` (5th template parameter; `Sourced` was removed in v3) |
 | `undirected_adjacency_list` | Always satisfied — every edge is its own reverse |
 
 #### Enabling bidirectional on `dynamic_graph`
@@ -150,8 +150,8 @@ support on top of the standard `adjacency_list` interface. Two containers satisf
 
 using namespace graph::container;
 
-// EV=void, VV=void, GV=void, VId=uint32_t, Sourced=true, Bidirectional=true
-using BiDiGraph = dynamic_graph<void, void, void, uint32_t, true, true,
+// EV=void, VV=void, GV=void, VId=uint32_t, Bidirectional=true
+using BiDiGraph = dynamic_graph<void, void, void, uint32_t, true,
                                 vov_graph_traits<void, void, void, uint32_t, true>>;
 
 BiDiGraph g({{0, 1}, {0, 2}, {1, 3}, {2, 3}});
@@ -159,7 +159,7 @@ BiDiGraph g({{0, 1}, {0, 2}, {1, 3}, {2, 3}});
 
 When `Bidirectional = true`, each vertex automatically maintains an **incoming-edge list**
 alongside its outgoing-edge list. Adding an edge `u → v` atomically inserts an in-edge
-record at `v`. `Sourced` must also be `true`.
+record at `v`.
 
 #### Incoming-edge CPOs
 
