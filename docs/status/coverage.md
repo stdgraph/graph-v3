@@ -1,8 +1,8 @@
 # Code Coverage Report
 
-> **Generated:** 2026-02-22 | **Compiler:** GCC 15.1.0 | **Preset:** `linux-gcc-coverage`
-> **Tests:** 4405 passed, 0 failed (100% pass rate)
-> **Overall line coverage:** 96.0% (3613 / 3764 lines)
+> **Generated:** 2026-02-23 | **Compiler:** GCC 15.1.0 | **Preset:** `linux-gcc-coverage`
+> **Tests:** 4343 passed, 0 failed (100% pass rate)
+> **Overall line coverage:** 96.3% (3624 / 3764 lines)
 > **Overall function coverage:** 91.8% (29030 / 31639 functions)
 
 ---
@@ -12,7 +12,7 @@
 | Category | Lines Hit | Lines Total | Line Coverage |
 |----------|-----------|-------------|---------------|
 | Adjacency list infrastructure | 375 | 375 | **100.0%** |
-| Algorithms | 784 | 833 | **94.1%** |
+| Algorithms | 795 | 833 | **95.4%** |
 | Containers | 938 | 1000 | **93.8%** |
 | Detail / CPOs | 24 | 24 | **100.0%** |
 | Edge list | 15 | 16 | **93.8%** |
@@ -45,7 +45,7 @@ All adjacency list descriptor and CPO support headers reach **100% line coverage
 | `breadth_first_search.hpp` | 29 / 29 | 100.0% | 12 / 12 | 100.0% |
 | `connected_components.hpp` | 168 / 182 | 92.3% | 18 / 18 | 100.0% |
 | `depth_first_search.hpp` | 38 / 38 | 100.0% | 5 / 5 | 100.0% |
-| `dijkstra_shortest_paths.hpp` | 54 / 65 | 83.1% | 32 / 36 | 88.9% |
+| `dijkstra_shortest_paths.hpp` | 65 / 65 | 100.0% | 36 / 36 | 100.0% |
 | `jaccard.hpp` | 24 / 24 | 100.0% | 5 / 5 | 100.0% |
 | `label_propagation.hpp` | 66 / 69 | 95.7% | 3 / 3 | 100.0% |
 | `mis.hpp` | 25 / 28 | 89.3% | 1 / 1 | 100.0% |
@@ -97,7 +97,6 @@ Files below 90% line coverage, ranked by gap size:
 | File | Line % | Lines Missed | Notes |
 |------|--------|--------------|-------|
 | `graph_info.hpp` | 0.0% | 2 | Metadata-only header; no executable paths exercised |
-| `dijkstra_shortest_paths.hpp` | 83.1% | 11 | Some overload / error-path branches not reached |
 | `bellman_ford_shortest_paths.hpp` | 85.7% | 9 | Negative-cycle detection path not fully exercised |
 | `compressed_graph.hpp` | 88.8% | 25 | Some construction / accessor overloads untested |
 | `mis.hpp` | 89.3% | 3 | Some branches not fully exercised |
