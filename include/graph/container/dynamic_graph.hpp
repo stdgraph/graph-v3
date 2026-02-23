@@ -1308,26 +1308,18 @@ public: // Load operations
         // We need to ensure both source and target vertices exist
         (void)vertices_[e.target_id]; // ensure target vertex exists
         auto& vertex_edges = vertices_[e.source_id].edges();
-        if constexpr (Sourced) {
-          if constexpr (is_void_v<EV>) {
-            if constexpr (Bidirectional) {
-              auto& rev = vertices_[e.target_id].in_edges();
-              emplace_edge(rev, e.source_id, make_in_edge(e.source_id, e.target_id));
-            }
-            emplace_edge(vertex_edges, e.target_id, edge_type(e.source_id, e.target_id));
-          } else {
-            if constexpr (Bidirectional) {
-              auto& rev = vertices_[e.target_id].in_edges();
-              emplace_edge(rev, e.source_id, make_in_edge(e.source_id, e.target_id, e.value)); // copy
-            }
-            emplace_edge(vertex_edges, e.target_id, edge_type(e.source_id, e.target_id, std::move(e.value)));
+        if constexpr (is_void_v<EV>) {
+          if constexpr (Bidirectional) {
+            auto& rev = vertices_[e.target_id].in_edges();
+            emplace_edge(rev, e.source_id, in_edge_type(e.source_id));
           }
+          emplace_edge(vertex_edges, e.target_id, edge_type(e.target_id));
         } else {
-          if constexpr (is_void_v<EV>) {
-            emplace_edge(vertex_edges, e.target_id, edge_type(e.target_id));
-          } else {
-            emplace_edge(vertex_edges, e.target_id, edge_type(e.target_id, std::move(e.value)));
+          if constexpr (Bidirectional) {
+            auto& rev = vertices_[e.target_id].in_edges();
+            emplace_edge(rev, e.source_id, in_edge_type(e.source_id, e.value)); // copy
           }
+          emplace_edge(vertex_edges, e.target_id, edge_type(e.target_id, std::move(e.value)));
         }
         edge_count_ += 1;
       }
@@ -1403,26 +1395,18 @@ public: // Load operations
             if (static_cast<size_t>(e.target_id) >= vertices_.size())
               throw std::runtime_error("target id exceeds the number of vertices in load_edges");
             auto& vertex_edges = vertices_[static_cast<size_t>(e.source_id)].edges();
-            if constexpr (Sourced) {
-              if constexpr (is_void_v<EV>) {
-                if constexpr (Bidirectional) {
-                  auto& rev = vertices_[static_cast<size_t>(e.target_id)].in_edges();
-                  emplace_edge(rev, e.source_id, make_in_edge(e.source_id, e.target_id));
-                }
-                emplace_edge(vertex_edges, e.target_id, edge_type(e.source_id, e.target_id));
-              } else {
-                if constexpr (Bidirectional) {
-                  auto& rev = vertices_[static_cast<size_t>(e.target_id)].in_edges();
-                  emplace_edge(rev, e.source_id, make_in_edge(e.source_id, e.target_id, e.value)); // copy
-                }
-                emplace_edge(vertex_edges, e.target_id, edge_type(e.source_id, e.target_id, std::move(e.value)));
+            if constexpr (is_void_v<EV>) {
+              if constexpr (Bidirectional) {
+                auto& rev = vertices_[static_cast<size_t>(e.target_id)].in_edges();
+                emplace_edge(rev, e.source_id, in_edge_type(e.source_id));
               }
+              emplace_edge(vertex_edges, e.target_id, edge_type(e.target_id));
             } else {
-              if constexpr (is_void_v<EV>) {
-                emplace_edge(vertex_edges, e.target_id, edge_type(e.target_id));
-              } else {
-                emplace_edge(vertex_edges, e.target_id, edge_type(e.target_id, std::move(e.value)));
+              if constexpr (Bidirectional) {
+                auto& rev = vertices_[static_cast<size_t>(e.target_id)].in_edges();
+                emplace_edge(rev, e.source_id, in_edge_type(e.source_id, e.value)); // copy
               }
+              emplace_edge(vertex_edges, e.target_id, edge_type(e.target_id, std::move(e.value)));
             }
             edge_count_ += 1;
           }
@@ -1441,26 +1425,18 @@ public: // Load operations
         if (static_cast<size_t>(e.target_id) >= vertices_.size())
           throw std::runtime_error("target id exceeds the number of vertices in load_edges");
         auto& vertex_edges = vertices_[static_cast<size_t>(e.source_id)].edges();
-        if constexpr (Sourced) {
-          if constexpr (is_void_v<EV>) {
-            if constexpr (Bidirectional) {
-              auto& rev = vertices_[static_cast<size_t>(e.target_id)].in_edges();
-              emplace_edge(rev, e.source_id, make_in_edge(e.source_id, e.target_id));
-            }
-            emplace_edge(vertex_edges, e.target_id, edge_type(e.source_id, e.target_id));
-          } else {
-            if constexpr (Bidirectional) {
-              auto& rev = vertices_[static_cast<size_t>(e.target_id)].in_edges();
-              emplace_edge(rev, e.source_id, make_in_edge(e.source_id, e.target_id, e.value)); // copy
-            }
-            emplace_edge(vertex_edges, e.target_id, edge_type(e.source_id, e.target_id, std::move(e.value)));
+        if constexpr (is_void_v<EV>) {
+          if constexpr (Bidirectional) {
+            auto& rev = vertices_[static_cast<size_t>(e.target_id)].in_edges();
+            emplace_edge(rev, e.source_id, in_edge_type(e.source_id));
           }
+          emplace_edge(vertex_edges, e.target_id, edge_type(e.target_id));
         } else {
-          if constexpr (is_void_v<EV>) {
-            emplace_edge(vertex_edges, e.target_id, edge_type(e.target_id));
-          } else {
-            emplace_edge(vertex_edges, e.target_id, edge_type(e.target_id, std::move(e.value)));
+          if constexpr (Bidirectional) {
+            auto& rev = vertices_[static_cast<size_t>(e.target_id)].in_edges();
+            emplace_edge(rev, e.source_id, in_edge_type(e.source_id, e.value)); // copy
           }
+          emplace_edge(vertex_edges, e.target_id, edge_type(e.target_id, std::move(e.value)));
         }
         edge_count_ += 1;
       }
@@ -1469,29 +1445,6 @@ public: // Load operations
 
   // ---------------------------------------------------------------------------
   // (Removed deprecated legacy parameter order bridge overload)
-
-private:
-  // load_edges in-edge construction bridge (Phase 2 — removed in Phase 4d).
-  // Dispatches based on constructibility:
-  //   legacy path: in_edge_type == edge_type, takes (source_id, target_id [,val])
-  //   post-Phase-4 path: in_edge_type == dynamic_in_edge, takes (source_id [,val])
-  template <class InEdge = in_edge_type>
-  static constexpr auto make_in_edge(vertex_id_type source_id, vertex_id_type target_id) {
-    if constexpr (std::constructible_from<InEdge, vertex_id_type, vertex_id_type>) {
-      return InEdge(source_id, target_id);
-    } else {
-      return InEdge(source_id);
-    }
-  }
-
-  template <class InEdge = in_edge_type, class Val>
-  static constexpr auto make_in_edge(vertex_id_type source_id, vertex_id_type target_id, Val&& val) {
-    if constexpr (std::constructible_from<InEdge, vertex_id_type, vertex_id_type, Val&&>) {
-      return InEdge(source_id, target_id, std::forward<Val>(val));
-    } else {
-      return InEdge(source_id, std::forward<Val>(val));
-    }
-  }
 
   constexpr void terminate_partitions() {
     // Partitions are only meaningful for sequential containers with numeric IDs
