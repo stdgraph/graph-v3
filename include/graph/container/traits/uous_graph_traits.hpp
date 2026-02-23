@@ -7,7 +7,7 @@ namespace graph::container {
 
 // Forward declarations
 template <class EV, class VV, class GV, class VId, bool Sourced, bool Bidirectional, class Traits>
-class dynamic_edge;
+class dynamic_out_edge;
 
 template <class EV, class VV, class GV, class VId, bool Sourced, bool Bidirectional, class Traits>
 class dynamic_vertex;
@@ -28,7 +28,7 @@ class dynamic_graph;
 //  - O(1) average edge insertion, lookup, and deletion
 //  - Forward iterators only for both vertices and edges
 //  - Unlike sequential containers, vertices must be explicitly created
-//  - Requires operator== and std::hash on both VId and dynamic_edge (implemented in dynamic_graph.hpp)
+//  - Requires operator== and std::hash on both VId and dynamic_out_edge (implemented in dynamic_graph.hpp)
 //
 //  Compared to mous_graph_traits:
 //  - mous: O(log n) vertex operations, sorted vertex order, bidirectional vertex iterators
@@ -45,7 +45,7 @@ struct uous_graph_traits {
   static constexpr bool sourced       = Sourced;
   static constexpr bool bidirectional = Bidirectional;
 
-  using edge_type   = dynamic_edge<EV, VV, GV, VId, Sourced, Bidirectional, uous_graph_traits>;
+  using edge_type   = dynamic_out_edge<EV, VV, GV, VId, Sourced, Bidirectional, uous_graph_traits>;
   using vertex_type = dynamic_vertex<EV, VV, GV, VId, Sourced, Bidirectional, uous_graph_traits>;
   using graph_type  = dynamic_graph<EV, VV, GV, VId, Sourced, Bidirectional, uous_graph_traits>;
 

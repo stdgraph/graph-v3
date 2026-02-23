@@ -8,7 +8,7 @@ namespace graph::container {
 
 // Forward declarations
 template <class EV, class VV, class GV, class VId, bool Sourced, bool Bidirectional, class Traits>
-class dynamic_edge;
+class dynamic_out_edge;
 
 template <class EV, class VV, class GV, class VId, bool Sourced, bool Bidirectional, class Traits>
 class dynamic_vertex;
@@ -36,7 +36,7 @@ struct mod_graph_traits {
   static constexpr bool sourced       = Sourced;
   static constexpr bool bidirectional = Bidirectional;
 
-  using edge_type   = dynamic_edge<EV, VV, GV, VId, Sourced, Bidirectional, mod_graph_traits>;
+  using edge_type   = dynamic_out_edge<EV, VV, GV, VId, Sourced, Bidirectional, mod_graph_traits>;
   using vertex_type = dynamic_vertex<EV, VV, GV, VId, Sourced, Bidirectional, mod_graph_traits>;
   using graph_type  = dynamic_graph<EV, VV, GV, VId, Sourced, Bidirectional, mod_graph_traits>;
 
