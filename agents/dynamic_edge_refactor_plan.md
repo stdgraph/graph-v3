@@ -905,5 +905,6 @@ Message: `docs: cleanup Doxygen, update user docs, archive strategy (Phase 6)`
 | 5.5 | Update concept tests | COMPLETE | 8 STATIC_REQUIREs for dynamic_graph; 4337/4337 pass (2026-02-23) |
 | 5.6 | Update algorithm test types | COMPLETE | no changes needed; file does not reference `Sourced` |
 | 5.7 | Update examples/benchmarks | COMPLETE | no changes needed in examples/; transpose + reverse_traversal fixed |
-| 5.8 | Full test suite verification | COMPLETE | 4309/4309 pass (2026-02-23) |
+| 5.8 | Full test suite verification | COMPLETE | 4337/4337 pass (2026-02-23) |
+| 5.9 | Commit Phase 5 | COMPLETE | 880ae00 |
 | 6 | Cleanup + documentation | NOT STARTED | |
