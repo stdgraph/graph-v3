@@ -912,5 +912,5 @@ Message: `docs: cleanup Doxygen, update user docs, archive strategy (Phase 6)`
 | 6.3 | Update user-facing documentation | COMPLETE | migration-from-v2.md: table row, code example, trailing sentence |
 | 6.4 | Archive strategy documents | COMPLETE | incoming_edges_design/plan + dynamic_edge_refactor_strategy → archive/ |
 | 6.5 | Final verification | COMPLETE | 4337/4337 pass; Sourced/dynamic_edge audit clean |
-| 6.6 | Commit Phase 6 | COMPLETE | see below |
+| 6.6 | Commit Phase 6 | COMPLETE | 42e6414 |
 | 6 | Cleanup + documentation | COMPLETE | |
