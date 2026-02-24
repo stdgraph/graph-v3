@@ -786,48 +786,411 @@ namespace _cpo_impls {
 } // namespace _cpo_impls
 
 // =============================================================================
-// edges(g, u) - Public CPO instance and type aliases
+// out_edges(g, u) - Public CPO instance and type aliases
 // =============================================================================
 
 inline namespace _cpo_instances {
   /**
      * @brief CPO for getting outgoing edges from a vertex
      * 
-     * Usage: auto vertex_edges = graph::edges(my_graph, vertex_descriptor);
+     * Usage: auto vertex_edges = graph::out_edges(my_graph, vertex_descriptor);
      * 
      * Returns: edge_descriptor_view
      */
-  inline constexpr _cpo_impls::_edges::_fn edges{};
+  inline constexpr _cpo_impls::_edges::_fn out_edges{};
+
+  /// @brief Alias for out_edges — provided for convenience.
+  inline constexpr auto& edges = out_edges;
 } // namespace _cpo_instances
 
 /**
- * @brief Range type returned by edges(g, u)
+ * @brief Range type returned by out_edges(g, u)
  * 
  * This is always edge_descriptor_view<EdgeIter, VertexIter> where EdgeIter
  * is the iterator type of the underlying edge container and VertexIter is
  * the iterator type of the vertex container.
  */
 template <typename G>
-using vertex_edge_range_t = decltype(edges(std::declval<G&>(), std::declval<vertex_t<G>>()));
+using out_edge_range_t = decltype(out_edges(std::declval<G&>(), std::declval<vertex_t<G>>()));
 
 /**
- * @brief Iterator type for traversing edges from a vertex
+ * @brief Iterator type for traversing outgoing edges from a vertex
  * 
- * Iterator over the edge_descriptor_view returned by edges(g, u).
+ * Iterator over the edge_descriptor_view returned by out_edges(g, u).
  */
 template <typename G>
-using vertex_edge_iterator_t = std::ranges::iterator_t<vertex_edge_range_t<G>>;
+using out_edge_iterator_t = std::ranges::iterator_t<out_edge_range_t<G>>;
 
 /**
- * @brief Edge descriptor type for graph G
+ * @brief Outgoing edge descriptor type for graph G
  * 
  * This is the value_type of the edge range - an edge_descriptor<EdgeIter, VertexIter>
  * that wraps an edge and maintains its source vertex.
  */
 template <typename G>
-using edge_t = std::ranges::range_value_t<vertex_edge_range_t<G>>;
+using out_edge_t = std::ranges::range_value_t<out_edge_range_t<G>>;
+
+/// @brief Alias for out_edge_range_t — provided for convenience.
+template <typename G>
+using vertex_edge_range_t = out_edge_range_t<G>;
+
+/// @brief Alias for out_edge_iterator_t — provided for convenience.
+template <typename G>
+using vertex_edge_iterator_t = out_edge_iterator_t<G>;
+
+/// @brief Alias for out_edge_t — provided for convenience.
+template <typename G>
+using edge_t = out_edge_t<G>;
 
 namespace _cpo_impls {} // namespace _cpo_impls
+
+// =============================================================================
+// in_edges(g, u) and in_edges(g, uid) CPO
+// =============================================================================
+
+namespace _cpo_impls {
+
+  namespace _in_edges {
+    // Use the public CPO instances (already declared above)
+    using _cpo_instances::find_vertex;
+
+    // --- (g, u) overload: vertex descriptor ---
+    enum class _St_u { _none, _vertex_member, _adl };
+
+    // Check for u.inner_value(g).in_edges() member function
+    template <typename G, typename U>
+    concept _has_vertex_member_u = is_vertex_descriptor_v<std::remove_cvref_t<U>> && std::ranges::forward_range<G> &&
+                                   requires(G& g, const U& u) {
+                                     { u.inner_value(g) };
+                                     { u.inner_value(g).in_edges() } -> std::ranges::forward_range;
+                                   };
+
+    // Check for ADL in_edges(g, u)
+    template <typename G, typename U>
+    concept _has_adl_u = requires(G& g, const U& u) {
+      { in_edges(g, u) } -> std::ranges::forward_range;
+    };
+
+    // NOTE: No _edge_value_pattern tier — in_edges has no implicit default.
+    // A graph MUST explicitly provide in_edges() via member or ADL.
+
+    template <typename G, typename U>
+    [[nodiscard]] consteval _Choice_t<_St_u> _Choose_u() noexcept {
+      if constexpr (_has_vertex_member_u<G, U>) {
+        return {_St_u::_vertex_member, noexcept(std::declval<const U&>().inner_value(std::declval<G&>()).in_edges())};
+      } else if constexpr (_has_adl_u<G, U>) {
+        return {_St_u::_adl, noexcept(in_edges(std::declval<G&>(), std::declval<const U&>()))};
+      } else {
+        return {_St_u::_none, false};
+      }
+    }
+
+    // --- (g, uid) overload: vertex ID ---
+    enum class _St_uid { _none, _adl, _default };
+
+    // Check for ADL in_edges(g, uid) - vertex ID
+    template <typename G, typename VId>
+    concept _has_adl_uid = requires(G& g, const VId& uid) {
+      { in_edges(g, uid) } -> std::ranges::forward_range;
+    };
+
+    // Check if we can use default: find_vertex + in_edges(g, u)
+    // Accepts both vertex_member and ADL tiers for the vertex descriptor overload
+    template <typename G, typename VId>
+    concept _has_default_uid =
+          requires(G& g, const VId& uid) {
+            { find_vertex(g, uid) } -> std::input_iterator;
+            requires vertex_descriptor_type<decltype(*find_vertex(g, uid))>;
+          } && (_has_vertex_member_u<G, decltype(*find_vertex(std::declval<G&>(), std::declval<const VId&>()))> ||
+                _has_adl_u<G, decltype(*find_vertex(std::declval<G&>(), std::declval<const VId&>()))>);
+
+    template <typename G, typename VId>
+    [[nodiscard]] consteval _Choice_t<_St_uid> _Choose_uid() noexcept {
+      if constexpr (_has_adl_uid<G, VId>) {
+        return {_St_uid::_adl, noexcept(in_edges(std::declval<G&>(), std::declval<const VId&>()))};
+      } else if constexpr (_has_default_uid<G, VId>) {
+        return {_St_uid::_default, false};
+      } else {
+        return {_St_uid::_none, false};
+      }
+    }
+
+    // Helper to wrap result in edge_descriptor_view with in_edge_tag.
+    // Unlike _edges::_wrap_if_needed (which defaults to out_edge_tag),
+    // this always produces in-edge-tagged descriptors.
+    template <typename Result, typename U>
+    [[nodiscard]] constexpr auto _wrap_in_edge(Result&& result, const U& source_vertex) noexcept {
+      using ResultType = std::remove_cvref_t<Result>;
+      if constexpr (is_edge_descriptor_view_v<ResultType>) {
+        // Already an edge_descriptor_view — trust the caller's tag
+        return std::forward<Result>(result);
+      } else {
+        // Wrap raw range/container in edge_descriptor_view<..., in_edge_tag>
+        using edge_iter_t   = std::ranges::iterator_t<Result>;
+        using vertex_iter_t = typename std::remove_cvref_t<U>::iterator_type;
+        return edge_descriptor_view<edge_iter_t, vertex_iter_t, in_edge_tag>(
+              std::forward<Result>(result), source_vertex);
+      }
+    }
+
+    class _fn {
+    private:
+      template <typename G, typename U>
+      static constexpr _Choice_t<_St_u> _Choice_u = _Choose_u<std::remove_cvref_t<G>, std::remove_cvref_t<U>>();
+
+      template <typename G, typename VId>
+      static constexpr _Choice_t<_St_uid> _Choice_uid = _Choose_uid<std::remove_cvref_t<G>, std::remove_cvref_t<VId>>();
+
+    public:
+      /**
+       * @brief Get range of incoming edges to a vertex (by descriptor)
+       *
+       * Resolution order:
+       * 1. If u.inner_value(g).in_edges() exists -> use it (wrap if needed)
+       * 2. If ADL in_edges(g, u) exists -> use it (wrap if needed)
+       */
+      template <typename G, vertex_descriptor_type U>
+      [[nodiscard]] constexpr auto operator()(G&& g, const U& u) const
+            noexcept(_Choice_u<std::remove_cvref_t<G>, std::remove_cvref_t<U>>._No_throw)
+      requires(_Choice_u<std::remove_cvref_t<G>, std::remove_cvref_t<U>>._Strategy != _St_u::_none)
+      {
+        using _G = std::remove_cvref_t<G>;
+        using _U = std::remove_cvref_t<U>;
+        if constexpr (_Choice_u<_G, _U>._Strategy == _St_u::_vertex_member) {
+          return _wrap_in_edge(u.inner_value(g).in_edges(), u);
+        } else if constexpr (_Choice_u<_G, _U>._Strategy == _St_u::_adl) {
+          return _wrap_in_edge(in_edges(g, u), u);
+        }
+      }
+
+      /**
+       * @brief Get range of incoming edges to a vertex (by ID)
+       *
+       * Resolution order:
+       * 1. ADL in_edges(g, uid) (highest priority)
+       * 2. in_edges(g, *find_vertex(g, uid)) (default)
+       */
+      template <typename G, typename VId>
+      requires(!vertex_descriptor_type<VId>)
+      [[nodiscard]] constexpr auto operator()(G&& g, const VId& uid) const
+            noexcept(_Choice_uid<std::remove_cvref_t<G>, std::remove_cvref_t<VId>>._No_throw)
+      requires(_Choice_uid<std::remove_cvref_t<G>, std::remove_cvref_t<VId>>._Strategy != _St_uid::_none)
+      {
+        using _G   = std::remove_cvref_t<G>;
+        using _VId = std::remove_cvref_t<VId>;
+
+        if constexpr (_Choice_uid<_G, _VId>._Strategy == _St_uid::_adl) {
+          auto result = [&g, &uid]() {
+            if constexpr (requires { typename _G::vertex_id_type; }) {
+              return in_edges(g, static_cast<typename _G::vertex_id_type>(uid));
+            } else {
+              return in_edges(g, static_cast<vertex_id_t<_G>>(uid));
+            }
+          }();
+          auto v = *find_vertex(g, static_cast<vertex_id_t<_G>>(uid));
+          return _wrap_in_edge(std::move(result), v);
+        } else if constexpr (_Choice_uid<_G, _VId>._Strategy == _St_uid::_default) {
+          auto v = *find_vertex(std::forward<G>(g), static_cast<vertex_id_t<_G>>(uid));
+          return (*this)(std::forward<G>(g), v);
+        }
+      }
+    };
+  } // namespace _in_edges
+
+} // namespace _cpo_impls
+
+// =============================================================================
+// in_edges(g, u) - Public CPO instance and type aliases
+// =============================================================================
+
+inline namespace _cpo_instances {
+  /**
+   * @brief CPO for getting incoming edges to a vertex
+   *
+   * Usage: auto in_edge_range = graph::in_edges(my_graph, vertex_descriptor);
+   *        auto in_edge_range = graph::in_edges(my_graph, vertex_id);
+   *
+   * Returns: edge_descriptor_view
+   */
+  inline constexpr _cpo_impls::_in_edges::_fn in_edges{};
+} // namespace _cpo_instances
+
+/**
+ * @brief Range type returned by in_edges(g, u)
+ */
+template <typename G>
+using in_edge_range_t = decltype(in_edges(std::declval<G&>(), std::declval<vertex_t<G>>()));
+
+/**
+ * @brief Iterator type for traversing incoming edges to a vertex
+ */
+template <typename G>
+using in_edge_iterator_t = std::ranges::iterator_t<in_edge_range_t<G>>;
+
+/**
+ * @brief Incoming edge descriptor type for graph G
+ */
+template <typename G>
+using in_edge_t = std::ranges::range_value_t<in_edge_range_t<G>>;
+
+// =============================================================================
+// in_degree(g, u) and in_degree(g, uid) CPO
+// =============================================================================
+
+namespace _cpo_impls {
+
+  namespace _in_degree {
+    // Strategy enum for in_degree(g, u) - vertex descriptor version
+    enum class _St_u { _none, _member, _adl, _default };
+
+    // Check for g.in_degree(u) member function - vertex descriptor
+    template <typename G, typename U>
+    concept _has_member_u = requires(G& g, const U& u) {
+      { g.in_degree(u) } -> std::integral;
+    };
+
+    // Check for ADL in_degree(g, u) - vertex descriptor
+    template <typename G, typename U>
+    concept _has_adl_u = requires(G& g, const U& u) {
+      { in_degree(g, u) } -> std::integral;
+    };
+
+    // Check if we can use default: count in_edges via size() or distance()
+    template <typename G, typename U>
+    concept _has_default_u = requires(G& g, const U& u) {
+      { in_edges(g, u) } -> std::ranges::forward_range;
+    };
+
+    template <typename G, typename U>
+    [[nodiscard]] consteval _Choice_t<_St_u> _Choose_u() noexcept {
+      if constexpr (_has_member_u<G, U>) {
+        return {_St_u::_member, noexcept(std::declval<G&>().in_degree(std::declval<const U&>()))};
+      } else if constexpr (_has_adl_u<G, U>) {
+        return {_St_u::_adl, noexcept(in_degree(std::declval<G&>(), std::declval<const U&>()))};
+      } else if constexpr (_has_default_u<G, U>) {
+        return {_St_u::_default, true};
+      } else {
+        return {_St_u::_none, false};
+      }
+    }
+
+    // Strategy enum for in_degree(g, uid) - vertex ID version
+    enum class _St_uid { _none, _member, _adl, _default };
+
+    // Check for g.in_degree(uid) member function - vertex ID
+    template <typename G, typename VId>
+    concept _has_member_uid = requires(G& g, const VId& uid) {
+      { g.in_degree(uid) } -> std::integral;
+    };
+
+    // Check for ADL in_degree(g, uid) - vertex ID
+    template <typename G, typename VId>
+    concept _has_adl_uid = requires(G& g, const VId& uid) {
+      { in_degree(g, uid) } -> std::integral;
+    };
+
+    // Check if we can use default: in_degree(g, *find_vertex(g, uid))
+    template <typename G, typename VId>
+    concept _has_default_uid = requires(G& g, const VId& uid) {
+      { find_vertex(g, uid) } -> std::input_iterator;
+      requires vertex_descriptor_type<decltype(*find_vertex(g, uid))>;
+      requires _has_default_u<G, decltype(*find_vertex(g, uid))>;
+    };
+
+    template <typename G, typename VId>
+    [[nodiscard]] consteval _Choice_t<_St_uid> _Choose_uid() noexcept {
+      if constexpr (_has_member_uid<G, VId>) {
+        return {_St_uid::_member, noexcept(std::declval<G&>().in_degree(std::declval<const VId&>()))};
+      } else if constexpr (_has_adl_uid<G, VId>) {
+        return {_St_uid::_adl, noexcept(in_degree(std::declval<G&>(), std::declval<const VId&>()))};
+      } else if constexpr (_has_default_uid<G, VId>) {
+        return {_St_uid::_default, false};
+      } else {
+        return {_St_uid::_none, false};
+      }
+    }
+
+    class _fn {
+    private:
+      template <typename G, typename U>
+      static constexpr _Choice_t<_St_u> _Choice_u = _Choose_u<std::remove_cvref_t<G>, std::remove_cvref_t<U>>();
+
+      template <typename G, typename VId>
+      static constexpr _Choice_t<_St_uid> _Choice_uid = _Choose_uid<std::remove_cvref_t<G>, std::remove_cvref_t<VId>>();
+
+    public:
+      // in_degree(g, u) - vertex descriptor version
+      template <typename G, vertex_descriptor_type U>
+      [[nodiscard]] constexpr auto operator()(G&& g, const U& u) const noexcept(_Choice_u<G, U>._No_throw)
+      requires(_Choice_u<std::remove_cvref_t<G>, std::remove_cvref_t<U>>._Strategy != _St_u::_none)
+      {
+        using _G = std::remove_cvref_t<G>;
+        using _U = std::remove_cvref_t<U>;
+
+        if constexpr (_Choice_u<_G, _U>._Strategy == _St_u::_member) {
+          return g.in_degree(u);
+        } else if constexpr (_Choice_u<_G, _U>._Strategy == _St_u::_adl) {
+          return in_degree(g, u);
+        } else if constexpr (_Choice_u<_G, _U>._Strategy == _St_u::_default) {
+          auto edge_range = in_edges(std::forward<G>(g), u);
+          if constexpr (std::ranges::sized_range<decltype(edge_range)>) {
+            return std::ranges::size(edge_range);
+          } else {
+            return std::ranges::distance(edge_range);
+          }
+        }
+      }
+
+      // in_degree(g, uid) - vertex ID version
+      template <typename G, typename VId>
+      requires(!vertex_descriptor_type<VId>)
+      [[nodiscard]] constexpr auto operator()(G&& g, const VId& uid) const noexcept(_Choice_uid<G, VId>._No_throw)
+      requires(_Choice_uid<std::remove_cvref_t<G>, std::remove_cvref_t<VId>>._Strategy != _St_uid::_none)
+      {
+        using _G   = std::remove_cvref_t<G>;
+        using _VId = std::remove_cvref_t<VId>;
+
+        if constexpr (_Choice_uid<_G, _VId>._Strategy == _St_uid::_member) {
+          if constexpr (requires { typename _G::vertex_id_type; }) {
+            return g.in_degree(static_cast<typename _G::vertex_id_type>(uid));
+          } else {
+            return g.in_degree(uid);
+          }
+        } else if constexpr (_Choice_uid<_G, _VId>._Strategy == _St_uid::_adl) {
+          if constexpr (requires { typename _G::vertex_id_type; }) {
+            return in_degree(g, static_cast<typename _G::vertex_id_type>(uid));
+          } else {
+            return in_degree(g, uid);
+          }
+        } else if constexpr (_Choice_uid<_G, _VId>._Strategy == _St_uid::_default) {
+          auto v = *find_vertex(std::forward<G>(g), static_cast<vertex_id_t<_G>>(uid));
+          return (*this)(std::forward<G>(g), v);
+        }
+      }
+    };
+  } // namespace _in_degree
+} // namespace _cpo_impls
+
+// =============================================================================
+// in_degree(g, u) - Public CPO instance
+// =============================================================================
+
+inline namespace _cpo_instances {
+  /**
+   * @brief CPO for getting the in-degree (number of incoming edges) of a vertex
+   *
+   * Usage:
+   *   auto deg = graph::in_degree(my_graph, vertex_descriptor);
+   *   auto deg = graph::in_degree(my_graph, vertex_id);
+   *
+   * Returns: Number of incoming edges to the vertex (integral type)
+   */
+  inline constexpr _cpo_impls::_in_degree::_fn in_degree{};
+} // namespace _cpo_instances
+
+// Outgoing aliases (out_edges, out_degree, find_out_edge) and type aliases are
+// declared later in this file, after all referenced CPO instances exist.
+// Search for "Outgoing aliases" below.
 
 namespace _cpo_impls {
 
@@ -1585,20 +1948,23 @@ namespace _cpo_impls {
 } // namespace _cpo_impls
 
 // =============================================================================
-// degree(g, u) and degree(g, uid) - Public CPO instances
+// out_degree(g, u) and out_degree(g, uid) - Public CPO instances
 // =============================================================================
 
 inline namespace _cpo_instances {
   /**
-     * @brief CPO for getting the degree (number of outgoing edges) of a vertex
+     * @brief CPO for getting the out-degree (number of outgoing edges) of a vertex
      * 
      * Usage: 
-     *   auto deg = graph::degree(my_graph, vertex_descriptor);
-     *   auto deg = graph::degree(my_graph, vertex_id);
+     *   auto deg = graph::out_degree(my_graph, vertex_descriptor);
+     *   auto deg = graph::out_degree(my_graph, vertex_id);
      * 
      * Returns: Number of outgoing edges from the vertex (integral type)
      */
-  inline constexpr _cpo_impls::_degree::_fn degree{};
+  inline constexpr _cpo_impls::_degree::_fn out_degree{};
+
+  /// @brief Alias for out_degree — provided for convenience.
+  inline constexpr auto& degree = out_degree;
 } // namespace _cpo_instances
 
 namespace _cpo_impls {
@@ -1831,21 +2197,454 @@ namespace _cpo_impls {
 } // namespace _cpo_impls
 
 // =============================================================================
-// find_vertex_edge(g, u, v/vid) and find_vertex_edge(g, uid, vid) - Public CPO instances
+// find_out_edge(g, u, v/vid) and find_out_edge(g, uid, vid) - Public CPO instances
 // =============================================================================
 
 inline namespace _cpo_instances {
   /**
-     * @brief CPO for finding an edge from source vertex u to target vertex v
+     * @brief CPO for finding an outgoing edge from source vertex u to target vertex v
      * 
      * Usage: 
-     *   auto e = graph::find_vertex_edge(my_graph, u_descriptor, v_descriptor);
-     *   auto e = graph::find_vertex_edge(my_graph, u_descriptor, target_id);
-     *   auto e = graph::find_vertex_edge(my_graph, source_id, target_id);
+     *   auto e = graph::find_out_edge(my_graph, u_descriptor, v_descriptor);
+     *   auto e = graph::find_out_edge(my_graph, u_descriptor, target_id);
+     *   auto e = graph::find_out_edge(my_graph, source_id, target_id);
      * 
      * Returns: Edge descriptor if found, or end iterator/sentinel if not found
      */
-  inline constexpr _cpo_impls::_find_vertex_edge::_fn find_vertex_edge{};
+  inline constexpr _cpo_impls::_find_vertex_edge::_fn find_out_edge{};
+
+  /// @brief Alias for find_out_edge — provided for convenience.
+  inline constexpr auto& find_vertex_edge = find_out_edge;
+} // namespace _cpo_instances
+
+// =============================================================================
+// find_in_edge(g, u, v), find_in_edge(g, u, vid), find_in_edge(g, uid, vid) CPO
+// =============================================================================
+//
+// Default tier strategy: "find incoming edge to u from v" is equivalent to
+// "find outgoing edge from v to u". We delegate to find_vertex_edge(g, v, u)
+// which correctly accesses v's outgoing edges.
+// This avoids issues with edge_descriptor_view wrapping for incoming edges,
+// where target_id/source_id would access the wrong underlying container.
+// =============================================================================
+
+namespace _cpo_impls {
+
+  namespace _find_in_edge {
+    using _cpo_instances::edges;
+    using _cpo_instances::find_vertex;
+    using _cpo_instances::find_vertex_edge;
+    using graph::target_id;
+
+    // --- (g, u, v) overload: both descriptors ---
+    enum class _St_uu { _none, _member, _adl, _default };
+
+    template <typename G, typename U, typename V>
+    concept _has_member_uu = requires(G& g, const U& u, const V& v) {
+      { g.find_in_edge(u, v) };
+    };
+
+    template <typename G, typename U, typename V>
+    concept _has_adl_uu = requires(G& g, const U& u, const V& v) {
+      { find_in_edge(g, u, v) };
+    };
+
+    // Default: find outgoing edge from v to u via find_vertex_edge(g, v, u)
+    template <typename G, typename U, typename V>
+    concept _has_default_uu = requires(G& g, const U& u, const V& v) {
+      { find_vertex_edge(g, v, u) };
+    };
+
+    template <typename G, typename U, typename V>
+    [[nodiscard]] consteval _Choice_t<_St_uu> _Choose_uu() noexcept {
+      if constexpr (_has_member_uu<G, U, V>) {
+        return {_St_uu::_member,
+                noexcept(std::declval<G&>().find_in_edge(std::declval<const U&>(), std::declval<const V&>()))};
+      } else if constexpr (_has_adl_uu<G, U, V>) {
+        return {_St_uu::_adl,
+                noexcept(find_in_edge(std::declval<G&>(), std::declval<const U&>(), std::declval<const V&>()))};
+      } else if constexpr (_has_default_uu<G, U, V>) {
+        return {_St_uu::_default, false};
+      } else {
+        return {_St_uu::_none, false};
+      }
+    }
+
+    // --- (g, u, vid) overload: descriptor + source ID ---
+    enum class _St_uid { _none, _member, _adl, _default };
+
+    template <typename G, typename U, typename VId>
+    concept _has_member_uid = requires(G& g, const U& u, const VId& vid) {
+      { g.find_in_edge(u, vid) };
+    };
+
+    template <typename G, typename U, typename VId>
+    concept _has_adl_uid = requires(G& g, const U& u, const VId& vid) {
+      { find_in_edge(g, u, vid) };
+    };
+
+    // Default: find outgoing edge from vid's vertex to u
+    // Resolve vid → vertex descriptor, then find_vertex_edge(g, v, u)
+    template <typename G, typename U, typename VId>
+    concept _has_default_uid = requires(G& g, const U& u, const VId& vid) {
+      { find_vertex(g, vid) } -> std::input_iterator;
+      requires vertex_descriptor_type<decltype(*find_vertex(g, vid))>;
+      { edges(g, *find_vertex(g, vid)) } -> std::ranges::input_range;
+      { target_id(g, *std::ranges::begin(edges(g, *find_vertex(g, vid)))) };
+      { vertex_id(g, u) };
+    };
+
+    template <typename G, typename U, typename VId>
+    [[nodiscard]] consteval _Choice_t<_St_uid> _Choose_uid() noexcept {
+      if constexpr (_has_member_uid<G, U, VId>) {
+        return {_St_uid::_member,
+                noexcept(std::declval<G&>().find_in_edge(std::declval<const U&>(), std::declval<const VId&>()))};
+      } else if constexpr (_has_adl_uid<G, U, VId>) {
+        return {_St_uid::_adl,
+                noexcept(find_in_edge(std::declval<G&>(), std::declval<const U&>(), std::declval<const VId&>()))};
+      } else if constexpr (_has_default_uid<G, U, VId>) {
+        return {_St_uid::_default, false};
+      } else {
+        return {_St_uid::_none, false};
+      }
+    }
+
+    // --- (g, uid, vid) overload: both IDs ---
+    enum class _St_uidvid { _none, _member, _adl, _default };
+
+    template <typename G, typename UId, typename VId>
+    concept _has_member_uidvid = requires(G& g, const UId& uid, const VId& vid) {
+      { g.find_in_edge(uid, vid) };
+    };
+
+    template <typename G, typename UId, typename VId>
+    concept _has_adl_uidvid = requires(G& g, const UId& uid, const VId& vid) {
+      { find_in_edge(g, uid, vid) };
+    };
+
+    // Default: delegate to find_vertex_edge(g, vid, uid) — swap source and target
+    template <typename G, typename UId, typename VId>
+    concept _has_default_uidvid = requires(G& g, const UId& uid, const VId& vid) {
+      { find_vertex_edge(g, vid, uid) };
+    };
+
+    template <typename G, typename UId, typename VId>
+    [[nodiscard]] consteval _Choice_t<_St_uidvid> _Choose_uidvid() noexcept {
+      if constexpr (_has_member_uidvid<G, UId, VId>) {
+        return {_St_uidvid::_member,
+                noexcept(std::declval<G&>().find_in_edge(std::declval<const UId&>(), std::declval<const VId&>()))};
+      } else if constexpr (_has_adl_uidvid<G, UId, VId>) {
+        return {_St_uidvid::_adl,
+                noexcept(find_in_edge(std::declval<G&>(), std::declval<const UId&>(), std::declval<const VId&>()))};
+      } else if constexpr (_has_default_uidvid<G, UId, VId>) {
+        return {_St_uidvid::_default, false};
+      } else {
+        return {_St_uidvid::_none, false};
+      }
+    }
+
+    class _fn {
+    private:
+      template <typename G, typename U, typename V>
+      static constexpr _Choice_t<_St_uu> _Choice_uu =
+            _Choose_uu<std::remove_cvref_t<G>, std::remove_cvref_t<U>, std::remove_cvref_t<V>>();
+
+      template <typename G, typename U, typename VId>
+      static constexpr _Choice_t<_St_uid> _Choice_uid =
+            _Choose_uid<std::remove_cvref_t<G>, std::remove_cvref_t<U>, std::remove_cvref_t<VId>>();
+
+      template <typename G, typename UId, typename VId>
+      static constexpr _Choice_t<_St_uidvid> _Choice_uidvid =
+            _Choose_uidvid<std::remove_cvref_t<G>, std::remove_cvref_t<UId>, std::remove_cvref_t<VId>>();
+
+    public:
+      // find_in_edge(g, u, v) - both vertex descriptors
+      template <typename G, vertex_descriptor_type U, vertex_descriptor_type V>
+      [[nodiscard]] constexpr auto operator()(G&& g, const U& u, const V& v) const
+            noexcept(_Choice_uu<G, U, V>._No_throw)
+      requires(_Choice_uu<std::remove_cvref_t<G>, std::remove_cvref_t<U>, std::remove_cvref_t<V>>._Strategy !=
+               _St_uu::_none)
+      {
+        using _G = std::remove_cvref_t<G>;
+        using _U = std::remove_cvref_t<U>;
+        using _V = std::remove_cvref_t<V>;
+
+        if constexpr (_Choice_uu<_G, _U, _V>._Strategy == _St_uu::_member) {
+          return g.find_in_edge(u, v);
+        } else if constexpr (_Choice_uu<_G, _U, _V>._Strategy == _St_uu::_adl) {
+          return find_in_edge(g, u, v);
+        } else if constexpr (_Choice_uu<_G, _U, _V>._Strategy == _St_uu::_default) {
+          // "find incoming to u from v" = "find outgoing from v to u"
+          return find_vertex_edge(std::forward<G>(g), v, u);
+        }
+      }
+
+      // find_in_edge(g, u, vid) - target descriptor + source ID
+      template <typename G, vertex_descriptor_type U, typename VId>
+      requires(!vertex_descriptor_type<VId>)
+      [[nodiscard]] constexpr auto operator()(G&& g, const U& u, const VId& vid) const
+            noexcept(_Choice_uid<G, U, VId>._No_throw)
+      requires(_Choice_uid<std::remove_cvref_t<G>, std::remove_cvref_t<U>, std::remove_cvref_t<VId>>._Strategy !=
+               _St_uid::_none)
+      {
+        using _G   = std::remove_cvref_t<G>;
+        using _U   = std::remove_cvref_t<U>;
+        using _VId = std::remove_cvref_t<VId>;
+
+        if constexpr (_Choice_uid<_G, _U, _VId>._Strategy == _St_uid::_member) {
+          return g.find_in_edge(u, vid);
+        } else if constexpr (_Choice_uid<_G, _U, _VId>._Strategy == _St_uid::_adl) {
+          return find_in_edge(g, u, vid);
+        } else if constexpr (_Choice_uid<_G, _U, _VId>._Strategy == _St_uid::_default) {
+          // "find incoming to u from vid" = "find outgoing from vid's vertex to u"
+          auto v         = *find_vertex(std::forward<G>(g), static_cast<vertex_id_t<_G>>(vid));
+          auto target_uid = vertex_id(std::forward<G>(g), u);
+          auto edge_range = edges(std::forward<G>(g), v);
+          auto it         = std::ranges::find_if(edge_range, [&](const auto& e) {
+            return static_cast<vertex_id_t<_G>>(target_id(std::forward<G>(g), e)) ==
+                   static_cast<vertex_id_t<_G>>(target_uid);
+          });
+          return *it;
+        }
+      }
+
+      // find_in_edge(g, uid, vid) - both vertex IDs
+      template <typename G, typename UId, typename VId>
+      requires(!vertex_descriptor_type<UId>) &&
+              (!vertex_descriptor_type<VId>)
+              [[nodiscard]] constexpr auto operator()(G&& g, const UId& uid, const VId& vid) const
+              noexcept(_Choice_uidvid<G, UId, VId>._No_throw)
+              requires(
+                    _Choice_uidvid<std::remove_cvref_t<G>, std::remove_cvref_t<UId>, std::remove_cvref_t<VId>>._Strategy !=
+                    _St_uidvid::_none)
+      {
+        using _G   = std::remove_cvref_t<G>;
+        using _UId = std::remove_cvref_t<UId>;
+        using _VId = std::remove_cvref_t<VId>;
+
+        if constexpr (_Choice_uidvid<_G, _UId, _VId>._Strategy == _St_uidvid::_member) {
+          if constexpr (requires { typename _G::vertex_id_type; }) {
+            return g.find_in_edge(static_cast<typename _G::vertex_id_type>(uid),
+                                  static_cast<typename _G::vertex_id_type>(vid));
+          } else {
+            return g.find_in_edge(uid, vid);
+          }
+        } else if constexpr (_Choice_uidvid<_G, _UId, _VId>._Strategy == _St_uidvid::_adl) {
+          if constexpr (requires { typename _G::vertex_id_type; }) {
+            return find_in_edge(g, static_cast<typename _G::vertex_id_type>(uid),
+                                static_cast<typename _G::vertex_id_type>(vid));
+          } else {
+            return find_in_edge(g, uid, vid);
+          }
+        } else if constexpr (_Choice_uidvid<_G, _UId, _VId>._Strategy == _St_uidvid::_default) {
+          // "find incoming to uid from vid" = "find outgoing from vid to uid"
+          return find_vertex_edge(std::forward<G>(g), vid, uid);
+        }
+      }
+    };
+  } // namespace _find_in_edge
+
+} // namespace _cpo_impls
+
+// =============================================================================
+// find_in_edge - Public CPO instance
+// =============================================================================
+
+inline namespace _cpo_instances {
+  /**
+   * @brief CPO for finding an incoming edge to vertex u from source vertex v
+   *
+   * Usage:
+   *   auto e = graph::find_in_edge(my_graph, u_descriptor, v_descriptor);
+   *   auto e = graph::find_in_edge(my_graph, u_descriptor, source_id);
+   *   auto e = graph::find_in_edge(my_graph, target_id, source_id);
+   *
+   * Returns: Edge descriptor (from source's outgoing edge list) if found
+   */
+  inline constexpr _cpo_impls::_find_in_edge::_fn find_in_edge{};
+} // namespace _cpo_instances
+
+// =============================================================================
+// contains_in_edge(g, u, v) and contains_in_edge(g, uid, vid) CPO
+// =============================================================================
+//
+// Default: "does incoming edge to u from v exist?" = "does edge from v to u exist?"
+// Iterate edges(g, v) and check if target_id matches vertex_id(g, u).
+// =============================================================================
+
+namespace _cpo_impls {
+
+  namespace _contains_in_edge {
+    using _cpo_instances::edges;
+    using _cpo_instances::find_vertex;
+    using graph::target_id;
+
+    // --- (g, u, v) overload: both descriptors ---
+    enum class _St_uv { _none, _member, _adl, _default };
+
+    template <typename G, typename U, typename V>
+    concept _has_member_uv = requires(G& g, const U& u, const V& v) {
+      { g.contains_in_edge(u, v) } -> std::convertible_to<bool>;
+    };
+
+    template <typename G, typename U, typename V>
+    concept _has_adl_uv = requires(G& g, const U& u, const V& v) {
+      { contains_in_edge(g, u, v) } -> std::convertible_to<bool>;
+    };
+
+    // Default: iterate edges(g, v) and match target_id against vertex_id(g, u)
+    template <typename G, typename U, typename V>
+    concept _has_default_uv = requires(G& g, const U& u, const V& v) {
+      { edges(g, v) } -> std::ranges::input_range;
+      { target_id(g, *std::ranges::begin(edges(g, v))) };
+      { vertex_id(g, u) };
+    };
+
+    template <typename G, typename U, typename V>
+    [[nodiscard]] consteval _Choice_t<_St_uv> _Choose_uv() noexcept {
+      if constexpr (_has_member_uv<G, U, V>) {
+        return {_St_uv::_member,
+                noexcept(std::declval<G&>().contains_in_edge(std::declval<const U&>(), std::declval<const V&>()))};
+      } else if constexpr (_has_adl_uv<G, U, V>) {
+        return {_St_uv::_adl,
+                noexcept(contains_in_edge(std::declval<G&>(), std::declval<const U&>(), std::declval<const V&>()))};
+      } else if constexpr (_has_default_uv<G, U, V>) {
+        return {_St_uv::_default, false};
+      } else {
+        return {_St_uv::_none, false};
+      }
+    }
+
+    // --- (g, uid, vid) overload: both IDs ---
+    enum class _St_uidvid { _none, _member, _adl, _default };
+
+    template <typename G, typename UId, typename VId>
+    concept _has_member_uidvid = requires(G& g, const UId& uid, const VId& vid) {
+      { g.contains_in_edge(uid, vid) } -> std::convertible_to<bool>;
+    };
+
+    template <typename G, typename UId, typename VId>
+    concept _has_adl_uidvid = requires(G& g, const UId& uid, const VId& vid) {
+      { contains_in_edge(g, uid, vid) } -> std::convertible_to<bool>;
+    };
+
+    // Default: find_vertex(g, vid), then iterate edges(g, v) and compare target_id against uid
+    template <typename G, typename UId, typename VId>
+    concept _has_default_uidvid = requires(G& g, const UId& uid, const VId& vid) {
+      { find_vertex(g, vid) } -> std::input_iterator;
+      requires vertex_descriptor_type<decltype(*find_vertex(g, vid))>;
+      { edges(g, *find_vertex(g, vid)) } -> std::ranges::input_range;
+      { target_id(g, *std::ranges::begin(edges(g, *find_vertex(g, vid)))) };
+    };
+
+    template <typename G, typename UId, typename VId>
+    [[nodiscard]] consteval _Choice_t<_St_uidvid> _Choose_uidvid() noexcept {
+      if constexpr (_has_member_uidvid<G, UId, VId>) {
+        return {_St_uidvid::_member,
+                noexcept(std::declval<G&>().contains_in_edge(std::declval<const UId&>(), std::declval<const VId&>()))};
+      } else if constexpr (_has_adl_uidvid<G, UId, VId>) {
+        return {_St_uidvid::_adl,
+                noexcept(contains_in_edge(std::declval<G&>(), std::declval<const UId&>(), std::declval<const VId&>()))};
+      } else if constexpr (_has_default_uidvid<G, UId, VId>) {
+        return {_St_uidvid::_default, false};
+      } else {
+        return {_St_uidvid::_none, false};
+      }
+    }
+
+    template <typename G, typename U, typename V>
+    inline constexpr _Choice_t<_St_uv> _Choice_uv = _Choose_uv<G, U, V>();
+
+    template <typename G, typename UId, typename VId>
+    inline constexpr _Choice_t<_St_uidvid> _Choice_uidvid = _Choose_uidvid<G, UId, VId>();
+
+    struct _fn {
+      // contains_in_edge(g, u, v) - both vertex descriptors
+      template <typename G, vertex_descriptor_type U, vertex_descriptor_type V>
+      [[nodiscard]] constexpr bool operator()(G&& g, const U& u, const V& v) const
+            noexcept(_Choice_uv<G, U, V>._No_throw)
+      requires(_Choice_uv<std::remove_cvref_t<G>, std::remove_cvref_t<U>, std::remove_cvref_t<V>>._Strategy !=
+               _St_uv::_none)
+      {
+        using _G = std::remove_cvref_t<G>;
+        using _U = std::remove_cvref_t<U>;
+        using _V = std::remove_cvref_t<V>;
+
+        if constexpr (_Choice_uv<_G, _U, _V>._Strategy == _St_uv::_member) {
+          return g.contains_in_edge(u, v);
+        } else if constexpr (_Choice_uv<_G, _U, _V>._Strategy == _St_uv::_adl) {
+          return contains_in_edge(g, u, v);
+        } else if constexpr (_Choice_uv<_G, _U, _V>._Strategy == _St_uv::_default) {
+          // "contains incoming to u from v" = "edge from v to u exists"
+          auto target_uid = vertex_id(std::forward<G>(g), u);
+          auto edge_range = edges(std::forward<G>(g), v);
+          auto it         = std::ranges::find_if(edge_range, [&](const auto& e) {
+            return static_cast<vertex_id_t<_G>>(target_id(std::forward<G>(g), e)) ==
+                   static_cast<vertex_id_t<_G>>(target_uid);
+          });
+          return it != std::ranges::end(edge_range);
+        }
+      }
+
+      // contains_in_edge(g, uid, vid) - both vertex IDs
+      template <typename G, typename UId, typename VId>
+      requires(!vertex_descriptor_type<UId>) &&
+              (!vertex_descriptor_type<VId>)
+              [[nodiscard]] constexpr bool operator()(G&& g, const UId& uid, const VId& vid) const
+              noexcept(_Choice_uidvid<G, UId, VId>._No_throw)
+              requires(
+                    _Choice_uidvid<std::remove_cvref_t<G>, std::remove_cvref_t<UId>, std::remove_cvref_t<VId>>._Strategy !=
+                    _St_uidvid::_none)
+      {
+        using _G   = std::remove_cvref_t<G>;
+        using _UId = std::remove_cvref_t<UId>;
+        using _VId = std::remove_cvref_t<VId>;
+
+        if constexpr (_Choice_uidvid<_G, _UId, _VId>._Strategy == _St_uidvid::_member) {
+          if constexpr (requires { typename _G::vertex_id_type; }) {
+            return g.contains_in_edge(static_cast<typename _G::vertex_id_type>(uid),
+                                      static_cast<typename _G::vertex_id_type>(vid));
+          } else {
+            return g.contains_in_edge(uid, vid);
+          }
+        } else if constexpr (_Choice_uidvid<_G, _UId, _VId>._Strategy == _St_uidvid::_adl) {
+          if constexpr (requires { typename _G::vertex_id_type; }) {
+            return contains_in_edge(g, static_cast<typename _G::vertex_id_type>(uid),
+                                    static_cast<typename _G::vertex_id_type>(vid));
+          } else {
+            return contains_in_edge(g, uid, vid);
+          }
+        } else if constexpr (_Choice_uidvid<_G, _UId, _VId>._Strategy == _St_uidvid::_default) {
+          // "contains incoming to uid from vid" = "edge from vid to uid exists"
+          auto v          = *find_vertex(std::forward<G>(g), static_cast<vertex_id_t<_G>>(vid));
+          auto edge_range = edges(std::forward<G>(g), v);
+          auto it         = std::ranges::find_if(edge_range, [&](const auto& e) {
+            return static_cast<vertex_id_t<_G>>(target_id(std::forward<G>(g), e)) ==
+                   static_cast<vertex_id_t<_G>>(uid);
+          });
+          return it != std::ranges::end(edge_range);
+        }
+      }
+    };
+  } // namespace _contains_in_edge
+
+} // namespace _cpo_impls
+
+// =============================================================================
+// contains_in_edge - Public CPO instance
+// =============================================================================
+
+inline namespace _cpo_instances {
+  /**
+   * @brief CPO for checking if an incoming edge exists to vertex u from source vertex v
+   *
+   * Usage:
+   *   bool exists = graph::contains_in_edge(my_graph, u_descriptor, v_descriptor);
+   *   bool exists = graph::contains_in_edge(my_graph, target_id, source_id);
+   *
+   * Returns: true if incoming edge exists, false otherwise
+   */
+  inline constexpr _cpo_impls::_contains_in_edge::_fn contains_in_edge{};
 } // namespace _cpo_instances
 
 namespace _cpo_impls {
@@ -2017,12 +2816,13 @@ inline namespace _cpo_instances {
      * @brief CPO for checking if an edge exists from source vertex u to target vertex v
      * 
      * Usage: 
-     *   bool exists = graph::contains_edge(my_graph, u_descriptor, v_descriptor);
-     *   bool exists = graph::contains_edge(my_graph, source_id, target_id);
+     *   bool exists = graph::contains_out_edge(my_graph, u_descriptor, v_descriptor);
+     *   bool exists = graph::contains_out_edge(my_graph, source_id, target_id);
      * 
      * Returns: true if edge exists, false otherwise
      */
-  inline constexpr _cpo_impls::_contains_edge::_fn contains_edge{};
+  inline constexpr _cpo_impls::_contains_edge::_fn contains_out_edge{};
+  inline constexpr auto&                           contains_edge = contains_out_edge;
 } // namespace _cpo_instances
 
 namespace _cpo_impls {
@@ -2118,7 +2918,7 @@ namespace _cpo_impls {
 } // namespace _cpo_impls
 
 // =============================================================================
-// has_edge(g) - Public CPO instance
+// has_edges(g) - Public CPO instance
 // =============================================================================
 
 inline namespace _cpo_instances {
@@ -2126,11 +2926,11 @@ inline namespace _cpo_instances {
      * @brief CPO for checking if the graph has any edges
      * 
      * Usage: 
-     *   bool has_edges = graph::has_edge(my_graph);
+     *   bool result = graph::has_edges(my_graph);
      * 
      * Returns: true if graph has at least one edge, false otherwise
      */
-  inline constexpr _cpo_impls::_has_edge::_fn has_edge{};
+  inline constexpr _cpo_impls::_has_edge::_fn has_edges{};
 } // namespace _cpo_instances
 
 namespace _cpo_impls {

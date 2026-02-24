@@ -42,7 +42,7 @@ size_t count_vertices(const G& g) {
   return count;
 }
 
-// Generic has_edge function
+// Generic has_edges function
 template <typename G, typename VId>
 bool has_edge_generic(const G& g, const VId& uid, const VId& vid) {
   for (auto&& u : vertices(g)) {

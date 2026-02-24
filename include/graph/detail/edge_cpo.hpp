@@ -334,7 +334,19 @@ namespace _cpo_impls {
         } else if constexpr (_Choice<_G, _E>._Strategy == _St::_adl) {
           return source_id(g, uv);
         } else if constexpr (_Choice<_G, _E>._Strategy == _St::_adj_list_descriptor) {
-          return uv.source_id();
+          if constexpr (_E::is_in_edge) {
+            // For in-edge descriptors: navigate the in_edges container if available.
+            // If the vertex data doesn't expose .in_edges(), fall back to the
+            // no-arg source_id() (returns the owning / queried vertex ID).
+            auto&& vd = uv.source().underlying_value(std::forward<G>(g));
+            if constexpr (requires { vd.in_edges(); }) {
+              return uv.source_id(vd);
+            } else {
+              return uv.source_id();
+            }
+          } else {
+            return uv.source_id();
+          }
         } else if constexpr (_Choice<_G, _E>._Strategy == _St::_edge_list_descriptor) {
           return uv.source_id();
         } else if constexpr (_Choice<_G, _E>._Strategy == _St::_edge_info_member) {

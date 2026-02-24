@@ -2339,59 +2339,59 @@ TEST_CASE("contains_edge(g, u, v) with high degree vertex", "[contains_edge][api
 }
 
 // =============================================================================
-// has_edge(g) CPO Tests
+// has_edges(g) CPO Tests
 // =============================================================================
 
-TEST_CASE("has_edge(g) with graph containing edges", "[has_edge][api]") {
+TEST_CASE("has_edges(g) with graph containing edges", "[has_edges][api]") {
   using Graph                                  = compressed_graph<int, int, void>;
   vector<copyable_edge_t<int, int>> edges_data = {{0, 1, 10}, {1, 2, 20}, {2, 3, 30}};
 
   Graph g;
   g.load_edges(edges_data);
 
-  REQUIRE(has_edge(g) == true);
+  REQUIRE(has_edges(g) == true);
 }
 
-TEST_CASE("has_edge(g) with empty graph", "[has_edge][api]") {
+TEST_CASE("has_edges(g) with empty graph", "[has_edges][api]") {
   using Graph = compressed_graph<int, int, void>;
 
   Graph g;
   // No edges loaded
 
-  REQUIRE(has_edge(g) == false);
+  REQUIRE(has_edges(g) == false);
 }
 
-TEST_CASE("has_edge(g) with graph with vertices but no edges", "[has_edge][api]") {
+TEST_CASE("has_edges(g) with graph with vertices but no edges", "[has_edges][api]") {
   using Graph                                  = compressed_graph<int, int, void>;
   vector<copyable_edge_t<int, int>> edges_data = {};
 
   Graph g;
   g.load_edges(edges_data);
 
-  REQUIRE(has_edge(g) == false);
+  REQUIRE(has_edges(g) == false);
 }
 
-TEST_CASE("has_edge(g) with single edge", "[has_edge][api]") {
+TEST_CASE("has_edges(g) with single edge", "[has_edges][api]") {
   using Graph                                  = compressed_graph<int, int, void>;
   vector<copyable_edge_t<int, int>> edges_data = {{0, 1, 10}};
 
   Graph g;
   g.load_edges(edges_data);
 
-  REQUIRE(has_edge(g) == true);
+  REQUIRE(has_edges(g) == true);
 }
 
-TEST_CASE("has_edge(g) with self-loop", "[has_edge][api]") {
+TEST_CASE("has_edges(g) with self-loop", "[has_edges][api]") {
   using Graph                                  = compressed_graph<int, int, void>;
   vector<copyable_edge_t<int, int>> edges_data = {{0, 0, 10}};
 
   Graph g;
   g.load_edges(edges_data);
 
-  REQUIRE(has_edge(g) == true);
+  REQUIRE(has_edges(g) == true);
 }
 
-TEST_CASE("has_edge(g) with const graph", "[has_edge][api]") {
+TEST_CASE("has_edges(g) with const graph", "[has_edges][api]") {
   using Graph                                  = compressed_graph<int, int, void>;
   vector<copyable_edge_t<int, int>> edges_data = {{0, 1, 10}};
 
@@ -2399,29 +2399,29 @@ TEST_CASE("has_edge(g) with const graph", "[has_edge][api]") {
   temp_g.load_edges(edges_data);
   const Graph g = std::move(temp_g);
 
-  REQUIRE(has_edge(g) == true);
+  REQUIRE(has_edges(g) == true);
 }
 
-TEST_CASE("has_edge(g) with const empty graph", "[has_edge][api]") {
+TEST_CASE("has_edges(g) with const empty graph", "[has_edges][api]") {
   using Graph = compressed_graph<int, int, void>;
 
   Graph       temp_g;
   const Graph g = std::move(temp_g);
 
-  REQUIRE(has_edge(g) == false);
+  REQUIRE(has_edges(g) == false);
 }
 
-TEST_CASE("has_edge(g) with void vertex values", "[has_edge][api]") {
+TEST_CASE("has_edges(g) with void vertex values", "[has_edges][api]") {
   using Graph                                  = compressed_graph<int, void, void>;
   vector<copyable_edge_t<int, int>> edges_data = {{0, 1, 10}, {1, 2, 20}};
 
   Graph g;
   g.load_edges(edges_data);
 
-  REQUIRE(has_edge(g) == true);
+  REQUIRE(has_edges(g) == true);
 }
 
-TEST_CASE("has_edge(g) with string values", "[has_edge][api]") {
+TEST_CASE("has_edges(g) with string values", "[has_edges][api]") {
   using Graph                                          = compressed_graph<string, string, void>;
   vector<copyable_edge_t<int, string>>   edges_data    = {{0, 1, "edge01"}};
   vector<copyable_vertex_t<int, string>> vertex_values = {{0, "v0"}, {1, "v1"}};
@@ -2430,22 +2430,22 @@ TEST_CASE("has_edge(g) with string values", "[has_edge][api]") {
   g.load_edges(edges_data);
   g.load_vertices(vertex_values);
 
-  REQUIRE(has_edge(g) == true);
+  REQUIRE(has_edges(g) == true);
 }
 
-TEST_CASE("has_edge(g) return type is bool", "[has_edge][api]") {
+TEST_CASE("has_edges(g) return type is bool", "[has_edges][api]") {
   using Graph                                  = compressed_graph<int, int, void>;
   vector<copyable_edge_t<int, int>> edges_data = {{0, 1, 10}};
 
   Graph g;
   g.load_edges(edges_data);
 
-  auto result = has_edge(g);
+  auto result = has_edges(g);
   REQUIRE(std::is_same_v<decltype(result), bool>);
   REQUIRE(result == true);
 }
 
-TEST_CASE("has_edge(g) with many edges", "[has_edge][api]") {
+TEST_CASE("has_edges(g) with many edges", "[has_edges][api]") {
   using Graph                                  = compressed_graph<int, int, void>;
   vector<copyable_edge_t<int, int>> edges_data = {{0, 1, 1}, {0, 2, 1}, {1, 2, 1}, {1, 3, 1},
                                                   {2, 3, 1}, {3, 4, 1}, {4, 0, 1}};
@@ -2453,10 +2453,10 @@ TEST_CASE("has_edge(g) with many edges", "[has_edge][api]") {
   Graph g;
   g.load_edges(edges_data);
 
-  REQUIRE(has_edge(g) == true);
+  REQUIRE(has_edges(g) == true);
 }
 
-TEST_CASE("has_edge(g) with disconnected components", "[has_edge][api]") {
+TEST_CASE("has_edges(g) with disconnected components", "[has_edges][api]") {
   using Graph                                  = compressed_graph<int, int, void>;
   vector<copyable_edge_t<int, int>> edges_data = {
         {0, 1, 10}, {2, 3, 20} // Two separate components
@@ -2465,10 +2465,10 @@ TEST_CASE("has_edge(g) with disconnected components", "[has_edge][api]") {
   Graph g;
   g.load_edges(edges_data);
 
-  REQUIRE(has_edge(g) == true);
+  REQUIRE(has_edges(g) == true);
 }
 
-TEST_CASE("has_edge(g) with isolated vertex at beginning", "[has_edge][api]") {
+TEST_CASE("has_edges(g) with isolated vertex at beginning", "[has_edges][api]") {
   using Graph = compressed_graph<int, int, void>;
   // Vertex 0 has no edges, but vertex 1 does
   vector<copyable_edge_t<int, int>> edges_data = {{1, 2, 10}};
@@ -2476,10 +2476,10 @@ TEST_CASE("has_edge(g) with isolated vertex at beginning", "[has_edge][api]") {
   Graph g;
   g.load_edges(edges_data);
 
-  REQUIRE(has_edge(g) == true);
+  REQUIRE(has_edges(g) == true);
 }
 
-TEST_CASE("has_edge(g) with complete graph", "[has_edge][api]") {
+TEST_CASE("has_edges(g) with complete graph", "[has_edges][api]") {
   using Graph = compressed_graph<int, int, void>;
   // Complete graph on 3 vertices
   vector<copyable_edge_t<int, int>> edges_data = {{0, 1, 1}, {0, 2, 1}, {1, 0, 1}, {1, 2, 1}, {2, 0, 1}, {2, 1, 1}};
@@ -2487,47 +2487,47 @@ TEST_CASE("has_edge(g) with complete graph", "[has_edge][api]") {
   Graph g;
   g.load_edges(edges_data);
 
-  REQUIRE(has_edge(g) == true);
+  REQUIRE(has_edges(g) == true);
 }
 
-TEST_CASE("has_edge(g) with bidirectional edges", "[has_edge][api]") {
+TEST_CASE("has_edges(g) with bidirectional edges", "[has_edges][api]") {
   using Graph                                  = compressed_graph<int, int, void>;
   vector<copyable_edge_t<int, int>> edges_data = {{0, 1, 10}, {1, 0, 20}};
 
   Graph g;
   g.load_edges(edges_data);
 
-  REQUIRE(has_edge(g) == true);
+  REQUIRE(has_edges(g) == true);
 }
 
-TEST_CASE("has_edge(g) with linear chain", "[has_edge][api]") {
+TEST_CASE("has_edges(g) with linear chain", "[has_edges][api]") {
   using Graph                                  = compressed_graph<int, int, void>;
   vector<copyable_edge_t<int, int>> edges_data = {{0, 1, 10}, {1, 2, 20}, {2, 3, 30}};
 
   Graph g;
   g.load_edges(edges_data);
 
-  REQUIRE(has_edge(g) == true);
+  REQUIRE(has_edges(g) == true);
 }
 
-TEST_CASE("has_edge(g) with star graph", "[has_edge][api]") {
+TEST_CASE("has_edges(g) with star graph", "[has_edges][api]") {
   using Graph                                  = compressed_graph<int, int, void>;
   vector<copyable_edge_t<int, int>> edges_data = {{0, 1, 10}, {0, 2, 20}, {0, 3, 30}};
 
   Graph g;
   g.load_edges(edges_data);
 
-  REQUIRE(has_edge(g) == true);
+  REQUIRE(has_edges(g) == true);
 }
 
-TEST_CASE("has_edge(g) with cycle", "[has_edge][api]") {
+TEST_CASE("has_edges(g) with cycle", "[has_edges][api]") {
   using Graph                                  = compressed_graph<int, int, void>;
   vector<copyable_edge_t<int, int>> edges_data = {{0, 1, 10}, {1, 2, 20}, {2, 0, 30}};
 
   Graph g;
   g.load_edges(edges_data);
 
-  REQUIRE(has_edge(g) == true);
+  REQUIRE(has_edges(g) == true);
 }
 
 // =============================================================================

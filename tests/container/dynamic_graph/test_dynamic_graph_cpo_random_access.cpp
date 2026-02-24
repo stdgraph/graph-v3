@@ -297,11 +297,11 @@ TEMPLATE_TEST_CASE("random_access CPO num_edges(g)",
 }
 
 //==================================================================================================
-// 6. has_edge(g) CPO Tests
+// 6. has_edges(g) CPO Tests
 //==================================================================================================
 
-TEMPLATE_TEST_CASE("random_access CPO has_edge(g)",
-                   "[dynamic_graph][cpo][has_edge]",
+TEMPLATE_TEST_CASE("random_access CPO has_edges(g)",
+                   "[dynamic_graph][cpo][has_edges]",
                    vov_tag,
                    vod_tag,
                    dov_tag,
@@ -313,20 +313,20 @@ TEMPLATE_TEST_CASE("random_access CPO has_edge(g)",
 
   SECTION("empty graph") {
     Graph_void g;
-    REQUIRE(!has_edge(g));
+    REQUIRE(!has_edges(g));
   }
 
   SECTION("with edges") {
     Graph_void g({{0, 1}});
-    REQUIRE(has_edge(g));
+    REQUIRE(has_edges(g));
   }
 
   SECTION("matches num_edges") {
     Graph_void g1;
     Graph_void g2({{0, 1}});
 
-    REQUIRE(has_edge(g1) == (num_edges(g1) > 0));
-    REQUIRE(has_edge(g2) == (num_edges(g2) > 0));
+    REQUIRE(has_edges(g1) == (num_edges(g1) > 0));
+    REQUIRE(has_edges(g2) == (num_edges(g2) > 0));
   }
 }
 
@@ -663,6 +663,7 @@ TEMPLATE_TEST_CASE("random_access CPO edges(g, uid)",
                    vol_tag,
                    dol_tag) {
   using Types      = graph_test_types<TestType>;
+  using Graph_int_ev = typename Types::int_ev;
   using Graph_void = typename Types::void_type;
 
   SECTION("with vertex ID") {
@@ -2799,11 +2800,11 @@ TEMPLATE_TEST_CASE("random_access CPO source_id(g, uv)",
                    vol_tag,
                    dol_tag) {
   using Types              = graph_test_types<TestType>;
-  using Graph_sourced_void = typename Types::sourced_void;
-  using Graph_sourced_int  = typename Types::sourced_int;
+  using Graph_void   = typename Types::void_type;
+  using Graph_int_ev = typename Types::int_ev;
 
   SECTION("basic usage") {
-    Graph_sourced_void g({{0, 1}, {1, 2}, {0, 2}});
+    Graph_void g({{0, 1}, {1, 2}, {0, 2}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2812,7 +2813,7 @@ TEMPLATE_TEST_CASE("random_access CPO source_id(g, uv)",
   }
 
   SECTION("different sources") {
-    Graph_sourced_void g({{0, 1}, {1, 2}, {2, 3}});
+    Graph_void g({{0, 1}, {1, 2}, {2, 3}});
 
     for (size_t i = 0; i < 3; ++i) {
       auto u = *find_vertex(g, i);
@@ -2823,7 +2824,7 @@ TEMPLATE_TEST_CASE("random_access CPO source_id(g, uv)",
   }
 
   SECTION("const correctness") {
-    const Graph_sourced_void g({{0, 1}, {1, 2}});
+    const Graph_void g({{0, 1}, {1, 2}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2832,7 +2833,7 @@ TEMPLATE_TEST_CASE("random_access CPO source_id(g, uv)",
   }
 
   SECTION("with edge values") {
-    Graph_sourced_int g({{0, 1, 10}, {1, 2, 20}});
+    Graph_int_ev g({{0, 1, 10}, {1, 2, 20}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2842,7 +2843,7 @@ TEMPLATE_TEST_CASE("random_access CPO source_id(g, uv)",
   }
 
   SECTION("with self-loop") {
-    Graph_sourced_void g({{0, 0}, {0, 1}});
+    Graph_void g({{0, 0}, {0, 1}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2851,7 +2852,7 @@ TEMPLATE_TEST_CASE("random_access CPO source_id(g, uv)",
   }
 
   SECTION("with parallel edges") {
-    Graph_sourced_int g;
+    Graph_int_ev g;
     g.resize_vertices(3);
 
     std::vector<copyable_edge_t<uint32_t, int>> edge_data = {{0, 1, 10}, {0, 1, 20}, {0, 1, 30}};
@@ -2864,7 +2865,7 @@ TEMPLATE_TEST_CASE("random_access CPO source_id(g, uv)",
   }
 
   SECTION("large graph") {
-    Graph_sourced_void g;
+    Graph_void g;
     g.resize_vertices(100);
 
     std::vector<copyable_edge_t<uint32_t, void>> edge_data;
@@ -2880,7 +2881,7 @@ TEMPLATE_TEST_CASE("random_access CPO source_id(g, uv)",
   }
 
   SECTION("multiple edges from same source") {
-    Graph_sourced_void g({{0, 1}, {0, 2}, {0, 3}});
+    Graph_void g({{0, 1}, {0, 2}, {0, 3}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2889,7 +2890,7 @@ TEMPLATE_TEST_CASE("random_access CPO source_id(g, uv)",
   }
 
   SECTION("star graph") {
-    Graph_sourced_void g;
+    Graph_void g;
     g.resize_vertices(6);
 
     std::vector<copyable_edge_t<uint32_t, void>> edge_data;
@@ -2905,7 +2906,7 @@ TEMPLATE_TEST_CASE("random_access CPO source_id(g, uv)",
   }
 
   SECTION("chain graph") {
-    Graph_sourced_void g({{0, 1}, {1, 2}, {2, 3}});
+    Graph_void g({{0, 1}, {1, 2}, {2, 3}});
 
     for (size_t i = 0; i < 3; ++i) {
       auto u = *find_vertex(g, i);
@@ -2916,7 +2917,7 @@ TEMPLATE_TEST_CASE("random_access CPO source_id(g, uv)",
   }
 
   SECTION("cycle graph") {
-    Graph_sourced_void g({{0, 1}, {1, 2}, {2, 3}, {3, 0}});
+    Graph_void g({{0, 1}, {1, 2}, {2, 3}, {3, 0}});
 
     for (size_t i = 0; i < 4; ++i) {
       auto u = *find_vertex(g, i);
@@ -2927,7 +2928,7 @@ TEMPLATE_TEST_CASE("random_access CPO source_id(g, uv)",
   }
 
   SECTION("consistency with source(g, uv)") {
-    Graph_sourced_void g({{0, 1}, {1, 2}, {2, 3}});
+    Graph_void g({{0, 1}, {1, 2}, {2, 3}});
 
     for (auto u : vertices(g)) {
       for (auto uv : edges(g, u)) {
@@ -2938,7 +2939,7 @@ TEMPLATE_TEST_CASE("random_access CPO source_id(g, uv)",
   }
 
   SECTION("self-loops") {
-    Graph_sourced_void g({{0, 0}, {1, 1}});
+    Graph_void g({{0, 0}, {1, 1}});
 
     // Self-loops: source and target are the same
     auto u0 = *find_vertex(g, 0);
@@ -2968,11 +2969,12 @@ TEMPLATE_TEST_CASE("random_access CPO source(g, uv)",
                    vol_tag,
                    dol_tag) {
   using Types              = graph_test_types<TestType>;
-  using Graph_sourced_void = typename Types::sourced_void;
-  using Graph_sourced_int  = typename Types::sourced_int;
+  using Graph_void   = typename Types::void_type;
+  using Graph_int_ev = typename Types::int_ev;
+  using Graph_all    = typename Types::all_int;
 
   SECTION("basic usage") {
-    Graph_sourced_void g({{0, 1}, {1, 2}});
+    Graph_void g({{0, 1}, {1, 2}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2982,7 +2984,7 @@ TEMPLATE_TEST_CASE("random_access CPO source(g, uv)",
   }
 
   SECTION("consistency with source_id") {
-    Graph_sourced_void g({{0, 1}, {1, 2}, {2, 3}});
+    Graph_void g({{0, 1}, {1, 2}, {2, 3}});
 
     for (auto u : vertices(g)) {
       for (auto uv : edges(g, u)) {
@@ -2993,7 +2995,7 @@ TEMPLATE_TEST_CASE("random_access CPO source(g, uv)",
   }
 
   SECTION("const correctness") {
-    const Graph_sourced_void g({{0, 1}, {1, 2}});
+    const Graph_void g({{0, 1}, {1, 2}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -3003,7 +3005,7 @@ TEMPLATE_TEST_CASE("random_access CPO source(g, uv)",
   }
 
   SECTION("with edge values") {
-    Graph_sourced_int g({{0, 1, 100}, {1, 2, 200}});
+    Graph_int_ev g({{0, 1, 100}, {1, 2, 200}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -3014,7 +3016,7 @@ TEMPLATE_TEST_CASE("random_access CPO source(g, uv)",
   }
 
   SECTION("with self-loop") {
-    Graph_sourced_void g({{0, 0}, {0, 1}});
+    Graph_void g({{0, 0}, {0, 1}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -3024,7 +3026,7 @@ TEMPLATE_TEST_CASE("random_access CPO source(g, uv)",
   }
 
   SECTION("different sources") {
-    Graph_sourced_void g({{0, 1}, {1, 2}, {2, 3}, {3, 4}});
+    Graph_void g({{0, 1}, {1, 2}, {2, 3}, {3, 4}});
 
     for (size_t i = 0; i < 4; ++i) {
       auto u = *find_vertex(g, i);
@@ -3036,7 +3038,7 @@ TEMPLATE_TEST_CASE("random_access CPO source(g, uv)",
   }
 
   SECTION("large graph") {
-    Graph_sourced_void g;
+    Graph_void g;
     g.resize_vertices(100);
 
     std::vector<copyable_edge_t<uint32_t, void>> edge_data;
@@ -3053,7 +3055,7 @@ TEMPLATE_TEST_CASE("random_access CPO source(g, uv)",
   }
 
   SECTION("returns valid descriptor") {
-    Graph_sourced_void g({{0, 1}, {1, 2}});
+    Graph_void g({{0, 1}, {1, 2}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -3064,10 +3066,9 @@ TEMPLATE_TEST_CASE("random_access CPO source(g, uv)",
   }
 
   SECTION("with vertex values") {
-    // Use sourced_all which has VV=int and Sourced=true
-    using Graph_sourced_all = typename Types::sourced_all;
+    // Use all_int which has EV=int, VV=int, GV=int
 
-    Graph_sourced_all g({{0, 1, 10}, {1, 2, 20}});
+    Graph_all g({{0, 1, 10}, {1, 2, 20}});
 
     int val = 100;
     for (auto u : vertices(g)) {
@@ -3083,7 +3084,7 @@ TEMPLATE_TEST_CASE("random_access CPO source(g, uv)",
   }
 
   SECTION("parallel edges") {
-    Graph_sourced_int g;
+    Graph_int_ev g;
     g.resize_vertices(2);
 
     std::vector<copyable_edge_t<uint32_t, int>> edge_data = {{0, 1, 10}, {0, 1, 20}, {0, 1, 30}};
@@ -3097,7 +3098,7 @@ TEMPLATE_TEST_CASE("random_access CPO source(g, uv)",
   }
 
   SECTION("chain graph") {
-    Graph_sourced_void g({{0, 1}, {1, 2}, {2, 3}});
+    Graph_void g({{0, 1}, {1, 2}, {2, 3}});
 
     for (size_t i = 0; i < 3; ++i) {
       auto u = *find_vertex(g, i);
@@ -3109,7 +3110,7 @@ TEMPLATE_TEST_CASE("random_access CPO source(g, uv)",
   }
 
   SECTION("star graph") {
-    Graph_sourced_void g;
+    Graph_void g;
     g.resize_vertices(6);
 
     std::vector<copyable_edge_t<uint32_t, void>> edge_data;
@@ -3126,7 +3127,7 @@ TEMPLATE_TEST_CASE("random_access CPO source(g, uv)",
   }
 
   SECTION("can traverse from source to target") {
-    Graph_sourced_void g({{0, 1}, {1, 2}});
+    Graph_void g({{0, 1}, {1, 2}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -3139,7 +3140,7 @@ TEMPLATE_TEST_CASE("random_access CPO source(g, uv)",
   }
 
   SECTION("accumulate values from edges") {
-    Graph_sourced_int g({{0, 1, 10}, {0, 2, 20}, {1, 2, 30}});
+    Graph_int_ev g({{0, 1, 10}, {0, 2, 20}, {1, 2, 30}});
 
     int sum = 0;
     for (auto u : vertices(g)) {
@@ -3152,7 +3153,7 @@ TEMPLATE_TEST_CASE("random_access CPO source(g, uv)",
   }
 
   SECTION("self-loops") {
-    Graph_sourced_void g({{0, 0}, {1, 1}});
+    Graph_void g({{0, 0}, {1, 1}});
 
     // For self-loops, source and target should be the same vertex
     auto u0 = *find_vertex(g, 0);
@@ -3191,7 +3192,7 @@ TEMPLATE_TEST_CASE("random_access CPO integration",
 
     REQUIRE(num_vertices(g) == 3);
     REQUIRE(num_edges(g) == 2);
-    REQUIRE(has_edge(g));
+    REQUIRE(has_edges(g));
   }
 
   SECTION("empty graph properties") {
@@ -3199,7 +3200,7 @@ TEMPLATE_TEST_CASE("random_access CPO integration",
 
     REQUIRE(num_vertices(g) == 0);
     REQUIRE(num_edges(g) == 0);
-    REQUIRE(!has_edge(g));
+    REQUIRE(!has_edges(g));
   }
 
   SECTION("find vertex by id") {

@@ -127,14 +127,17 @@
 #include <graph/adj_list/adjacency_list_concepts.hpp>
 #include <graph/views/view_concepts.hpp>
 #include <graph/views/search_base.hpp>
+#include <graph/views/edge_accessor.hpp>
 
 namespace graph::views {
 
 // Forward declarations
-template <adj_list::index_adjacency_list G, class VVF = void, class Alloc = std::allocator<bool>>
+template <adj_list::index_adjacency_list G, class VVF = void, class Alloc = std::allocator<bool>,
+          class Accessor = out_edge_accessor>
 class vertices_dfs_view;
 
-template <adj_list::index_adjacency_list G, class EVF = void, class Alloc = std::allocator<bool>>
+template <adj_list::index_adjacency_list G, class EVF = void, class Alloc = std::allocator<bool>,
+          class Accessor = out_edge_accessor>
 class edges_dfs_view;
 
 namespace dfs_detail {
@@ -170,12 +173,12 @@ namespace dfs_detail {
    * reachable edge once.  Space: O(V) — stack ≤ V entries, visited
    * tracker = V bits.
    */
-  template <class G, class Alloc>
+  template <class G, class Alloc, class Accessor = out_edge_accessor>
   struct dfs_state {
     using graph_type         = G;
     using vertex_type        = adj_list::vertex_t<G>;
     using vertex_id_type     = adj_list::vertex_id_t<G>;
-    using edge_iterator_type = adj_list::vertex_edge_iterator_t<G>;
+    using edge_iterator_type = std::ranges::iterator_t<typename Accessor::template edge_range_t<G>>;
     using allocator_type     = Alloc;
     using entry_type         = stack_entry<vertex_type, edge_iterator_type>;
     using stack_alloc        = typename std::allocator_traits<Alloc>::template rebind_alloc<entry_type>;
@@ -188,7 +191,7 @@ namespace dfs_detail {
 
     dfs_state(G& g, vertex_type seed_vertex, std::size_t num_vertices, Alloc alloc = {})
           : stack_(std::vector<entry_type, stack_alloc>(alloc)), visited_(num_vertices, alloc) {
-      auto edge_range = adj_list::edges(g, seed_vertex);
+      auto edge_range = Accessor{}.edges(g, seed_vertex);
       stack_.push({seed_vertex, std::ranges::begin(edge_range), std::ranges::end(edge_range)});
       visited_.mark_visited(adj_list::vertex_id(g, seed_vertex));
       // Note: count_ is not incremented here. It's incremented in advance() when
@@ -214,18 +217,18 @@ namespace dfs_detail {
  * @see vertices_dfs_view<G,VVF,Alloc> — with value function
  * @see edges_dfs_view                 — edge-oriented DFS
  */
-template <adj_list::index_adjacency_list G, class Alloc>
-class vertices_dfs_view<G, void, Alloc> : public std::ranges::view_interface<vertices_dfs_view<G, void, Alloc>> {
+template <adj_list::index_adjacency_list G, class Alloc, class Accessor>
+class vertices_dfs_view<G, void, Alloc, Accessor> : public std::ranges::view_interface<vertices_dfs_view<G, void, Alloc, Accessor>> {
 public:
   using graph_type     = G;
   using vertex_type    = adj_list::vertex_t<G>;
   using vertex_id_type = adj_list::vertex_id_t<G>;
-  using edge_type      = adj_list::edge_t<G>;
+  using edge_type      = typename Accessor::template edge_t<G>;
   using allocator_type = Alloc;
   using info_type      = vertex_info<void, vertex_type, void>;
 
 private:
-  using state_type = dfs_detail::dfs_state<G, Alloc>;
+  using state_type = dfs_detail::dfs_state<G, Alloc, Accessor>;
 
 public:
   /**
@@ -296,15 +299,15 @@ public:
           auto edge = *top.edge_iter;
           ++top.edge_iter;
 
-          // Get target vertex descriptor using CPO
-          auto target_v   = adj_list::target(*g_, edge);
+          // Get target vertex descriptor using accessor
+          auto target_v   = Accessor{}.neighbor(*g_, edge);
           auto target_vid = adj_list::vertex_id(*g_, target_v);
 
           if (!state_->visited_.is_visited(target_vid)) {
             state_->visited_.mark_visited(target_vid);
 
             // Push target vertex with its edge range
-            auto edge_range = adj_list::edges(*g_, target_v);
+            auto edge_range = Accessor{}.edges(*g_, target_v);
             state_->stack_.push({target_v, std::ranges::begin(edge_range), std::ranges::end(edge_range)});
             ++state_->depth_;
             ++state_->count_;
@@ -386,19 +389,19 @@ private:
  * @see vertices_dfs_view<G,void,Alloc> — without value function
  * @see edges_dfs_view                  — edge-oriented DFS
  */
-template <adj_list::index_adjacency_list G, class VVF, class Alloc>
-class vertices_dfs_view : public std::ranges::view_interface<vertices_dfs_view<G, VVF, Alloc>> {
+template <adj_list::index_adjacency_list G, class VVF, class Alloc, class Accessor>
+class vertices_dfs_view : public std::ranges::view_interface<vertices_dfs_view<G, VVF, Alloc, Accessor>> {
 public:
   using graph_type        = G;
   using vertex_type       = adj_list::vertex_t<G>;
   using vertex_id_type    = adj_list::vertex_id_t<G>;
-  using edge_type         = adj_list::edge_t<G>;
+  using edge_type         = typename Accessor::template edge_t<G>;
   using allocator_type    = Alloc;
   using value_result_type = std::invoke_result_t<VVF, const G&, vertex_type>;
   using info_type         = vertex_info<void, vertex_type, value_result_type>;
 
 private:
-  using state_type = dfs_detail::dfs_state<G, Alloc>;
+  using state_type = dfs_detail::dfs_state<G, Alloc, Accessor>;
 
 public:
   /**
@@ -470,15 +473,15 @@ public:
           auto edge = *top.edge_iter;
           ++top.edge_iter;
 
-          // Get target vertex descriptor using CPO
-          auto target_v   = adj_list::target(*g_, edge);
+          // Get target vertex descriptor using accessor
+          auto target_v   = Accessor{}.neighbor(*g_, edge);
           auto target_vid = adj_list::vertex_id(*g_, target_v);
 
           if (!state_->visited_.is_visited(target_vid)) {
             state_->visited_.mark_visited(target_vid);
 
             // Push target vertex with its edge range
-            auto edge_range = adj_list::edges(*g_, target_v);
+            auto edge_range = Accessor{}.edges(*g_, target_v);
             state_->stack_.push({target_v, std::ranges::begin(edge_range), std::ranges::end(edge_range)});
             ++state_->depth_;
             ++state_->count_;
@@ -749,18 +752,18 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
  * @see edges_dfs_view<G,EVF,Alloc> — with value function
  * @see vertices_dfs_view           — vertex-oriented DFS
  */
-template <adj_list::index_adjacency_list G, class Alloc>
-class edges_dfs_view<G, void, Alloc> : public std::ranges::view_interface<edges_dfs_view<G, void, Alloc>> {
+template <adj_list::index_adjacency_list G, class Alloc, class Accessor>
+class edges_dfs_view<G, void, Alloc, Accessor> : public std::ranges::view_interface<edges_dfs_view<G, void, Alloc, Accessor>> {
 public:
   using graph_type     = G;
   using vertex_type    = adj_list::vertex_t<G>;
   using vertex_id_type = adj_list::vertex_id_t<G>;
-  using edge_type      = adj_list::edge_t<G>;
+  using edge_type      = typename Accessor::template edge_t<G>;
   using allocator_type = Alloc;
   using info_type      = edge_info<void, false, edge_type, void>;
 
 private:
-  using state_type = dfs_detail::dfs_state<G, Alloc>;
+  using state_type = dfs_detail::dfs_state<G, Alloc, Accessor>;
 
 public:
   /**
@@ -833,15 +836,15 @@ public:
           auto edge = *top.edge_iter;
           ++top.edge_iter;
 
-          // Get target vertex descriptor using CPO
-          auto target_v   = adj_list::target(*g_, edge);
+          // Get target vertex descriptor using accessor
+          auto target_v   = Accessor{}.neighbor(*g_, edge);
           auto target_vid = adj_list::vertex_id(*g_, target_v);
 
           if (!state_->visited_.is_visited(target_vid)) {
             state_->visited_.mark_visited(target_vid);
 
             // Push target vertex with its edge range
-            auto edge_range = adj_list::edges(*g_, target_v);
+            auto edge_range = Accessor{}.edges(*g_, target_v);
             state_->stack_.push({target_v, std::ranges::begin(edge_range), std::ranges::end(edge_range)});
             ++state_->depth_;
             ++state_->count_;
@@ -924,19 +927,19 @@ private:
  * @see edges_dfs_view<G,void,Alloc> — without value function
  * @see vertices_dfs_view            — vertex-oriented DFS
  */
-template <adj_list::index_adjacency_list G, class EVF, class Alloc>
-class edges_dfs_view : public std::ranges::view_interface<edges_dfs_view<G, EVF, Alloc>> {
+template <adj_list::index_adjacency_list G, class EVF, class Alloc, class Accessor>
+class edges_dfs_view : public std::ranges::view_interface<edges_dfs_view<G, EVF, Alloc, Accessor>> {
 public:
   using graph_type        = G;
   using vertex_type       = adj_list::vertex_t<G>;
   using vertex_id_type    = adj_list::vertex_id_t<G>;
-  using edge_type         = adj_list::edge_t<G>;
+  using edge_type         = typename Accessor::template edge_t<G>;
   using allocator_type    = Alloc;
   using value_result_type = std::invoke_result_t<EVF, const G&, edge_type>;
   using info_type         = edge_info<void, false, edge_type, value_result_type>;
 
 private:
-  using state_type = dfs_detail::dfs_state<G, Alloc>;
+  using state_type = dfs_detail::dfs_state<G, Alloc, Accessor>;
 
 public:
   /**
@@ -1007,13 +1010,13 @@ public:
           auto edge = *top.edge_iter;
           ++top.edge_iter;
 
-          auto target_v   = adj_list::target(*g_, edge);
+          auto target_v   = Accessor{}.neighbor(*g_, edge);
           auto target_vid = adj_list::vertex_id(*g_, target_v);
 
           if (!state_->visited_.is_visited(target_vid)) {
             state_->visited_.mark_visited(target_vid);
 
-            auto edge_range = adj_list::edges(*g_, target_v);
+            auto edge_range = Accessor{}.edges(*g_, target_v);
             state_->stack_.push({target_v, std::ranges::begin(edge_range), std::ranges::end(edge_range)});
             ++state_->depth_;
             ++state_->count_;
@@ -1260,6 +1263,70 @@ template <adj_list::index_adjacency_list G, class EVF, class Alloc>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>
 [[nodiscard]] auto edges_dfs(G& g, adj_list::vertex_t<G> seed_vertex, EVF&& evf, Alloc alloc) {
   return edges_dfs_view<G, std::decay_t<EVF>, Alloc>(g, seed_vertex, std::forward<EVF>(evf), alloc);
+}
+
+//=============================================================================
+// Accessor-parameterized factory functions
+//=============================================================================
+// Usage: vertices_dfs<in_edge_accessor>(g, seed)
+//        edges_dfs<in_edge_accessor>(g, seed)
+
+/// DFS vertex traversal with explicit Accessor, from vertex ID.
+template <class Accessor, adj_list::index_adjacency_list G>
+[[nodiscard]] auto vertices_dfs(G& g, adj_list::vertex_id_t<G> seed) {
+  return vertices_dfs_view<G, void, std::allocator<bool>, Accessor>(g, seed, std::allocator<bool>{});
+}
+
+/// DFS vertex traversal with explicit Accessor, from vertex descriptor.
+template <class Accessor, adj_list::index_adjacency_list G>
+[[nodiscard]] auto vertices_dfs(G& g, adj_list::vertex_t<G> seed_vertex) {
+  return vertices_dfs_view<G, void, std::allocator<bool>, Accessor>(g, seed_vertex, std::allocator<bool>{});
+}
+
+/// DFS vertex traversal with explicit Accessor and value function, from vertex ID.
+template <class Accessor, adj_list::index_adjacency_list G, class VVF>
+requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
+[[nodiscard]] auto vertices_dfs(G& g, adj_list::vertex_id_t<G> seed, VVF&& vvf) {
+  return vertices_dfs_view<G, std::decay_t<VVF>, std::allocator<bool>, Accessor>(g, seed, std::forward<VVF>(vvf),
+                                                                                  std::allocator<bool>{});
+}
+
+/// DFS vertex traversal with explicit Accessor and value function, from vertex descriptor.
+template <class Accessor, adj_list::index_adjacency_list G, class VVF>
+requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
+[[nodiscard]] auto vertices_dfs(G& g, adj_list::vertex_t<G> seed_vertex, VVF&& vvf) {
+  return vertices_dfs_view<G, std::decay_t<VVF>, std::allocator<bool>, Accessor>(g, seed_vertex,
+                                                                                  std::forward<VVF>(vvf),
+                                                                                  std::allocator<bool>{});
+}
+
+/// DFS edge traversal with explicit Accessor, from vertex ID.
+template <class Accessor, adj_list::index_adjacency_list G>
+[[nodiscard]] auto edges_dfs(G& g, adj_list::vertex_id_t<G> seed) {
+  return edges_dfs_view<G, void, std::allocator<bool>, Accessor>(g, seed, std::allocator<bool>{});
+}
+
+/// DFS edge traversal with explicit Accessor, from vertex descriptor.
+template <class Accessor, adj_list::index_adjacency_list G>
+[[nodiscard]] auto edges_dfs(G& g, adj_list::vertex_t<G> seed_vertex) {
+  return edges_dfs_view<G, void, std::allocator<bool>, Accessor>(g, seed_vertex, std::allocator<bool>{});
+}
+
+/// DFS edge traversal with explicit Accessor and value function, from vertex ID.
+template <class Accessor, adj_list::index_adjacency_list G, class EVF>
+requires edge_value_function<EVF, G, typename Accessor::template edge_t<G>>
+[[nodiscard]] auto edges_dfs(G& g, adj_list::vertex_id_t<G> seed, EVF&& evf) {
+  return edges_dfs_view<G, std::decay_t<EVF>, std::allocator<bool>, Accessor>(g, seed, std::forward<EVF>(evf),
+                                                                               std::allocator<bool>{});
+}
+
+/// DFS edge traversal with explicit Accessor and value function, from vertex descriptor.
+template <class Accessor, adj_list::index_adjacency_list G, class EVF>
+requires edge_value_function<EVF, G, typename Accessor::template edge_t<G>>
+[[nodiscard]] auto edges_dfs(G& g, adj_list::vertex_t<G> seed_vertex, EVF&& evf) {
+  return edges_dfs_view<G, std::decay_t<EVF>, std::allocator<bool>, Accessor>(g, seed_vertex,
+                                                                               std::forward<EVF>(evf),
+                                                                               std::allocator<bool>{});
 }
 
 } // namespace graph::views

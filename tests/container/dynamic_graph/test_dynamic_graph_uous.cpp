@@ -54,13 +54,7 @@ using uous_str_void_int_void =
 using uous_str_int_int_int =
       dynamic_graph<int, int, int, std::string, false, uous_graph_traits<int, int, int, std::string, false>>;
 
-using uous_sourced =
-      dynamic_graph<void, void, void, uint32_t, true, uous_graph_traits<void, void, void, uint32_t, true>>;
-using uous_int_sourced =
-      dynamic_graph<int, void, void, uint32_t, true, uous_graph_traits<int, void, void, uint32_t, true>>;
 
-using uous_str_sourced =
-      dynamic_graph<void, void, void, std::string, true, uous_graph_traits<void, void, void, std::string, true>>;
 
 // Edge and vertex data types for loading
 using edge_void  = copyable_edge_t<uint32_t, void>;
@@ -105,13 +99,6 @@ TEST_CASE("uous traits verification", "[dynamic_graph][uous][traits]") {
     REQUIRE(true);
   }
 
-  SECTION("sourced flag is preserved") {
-    using traits_unsourced = uous_graph_traits<void, void, void, uint32_t, false>;
-    using traits_sourced   = uous_graph_traits<void, void, void, uint32_t, true>;
-    static_assert(traits_unsourced::sourced == false);
-    static_assert(traits_sourced::sourced == true);
-    REQUIRE(true);
-  }
 
   SECTION("vertex_id_type for uint32_t") {
     using traits = uous_graph_traits<void, void, void, uint32_t, false>;
@@ -247,22 +234,6 @@ TEST_CASE("uous construction with string vertex IDs", "[dynamic_graph][uous][con
   }
 }
 
-TEST_CASE("uous construction sourced", "[dynamic_graph][uous][construction][sourced]") {
-  SECTION("sourced edge construction with uint32_t IDs") {
-    uous_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-
-  SECTION("sourced with edge value construction") {
-    uous_int_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-
-  SECTION("sourced edge construction with string IDs") {
-    uous_str_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-}
 
 //==================================================================================================
 // 4. Basic Properties Tests
@@ -412,19 +383,6 @@ TEST_CASE("uous edge deduplication", "[dynamic_graph][uous][unordered_set][dedup
     REQUIRE(count_all_edges(g) == 1);
   }
 
-  SECTION("sourced edges - deduplication by (source_id, target_id)") {
-    uous_sourced           g;
-    std::vector<edge_void> ee = {
-          {0, 1},
-          {0, 1}, // Duplicates
-          {1, 0},
-          {1, 0} // Different direction, also duplicates
-    };
-    g.load_edges(ee, std::identity{});
-
-    // Should have exactly 2 unique edges (0->1 and 1->0)
-    REQUIRE(count_all_edges(g) == 2);
-  }
 }
 
 //==================================================================================================
@@ -451,22 +409,6 @@ TEST_CASE("uous edges are unordered by target_id", "[dynamic_graph][uous][unorde
     REQUIRE(target_ids == std::vector<uint32_t>{1, 2, 3, 5, 8});
   }
 
-  SECTION("sourced edges unordered by target_id") {
-    uous_sourced           g;
-    std::vector<edge_void> ee = {{0, 7}, {0, 3}, {0, 9}, {0, 1}};
-    g.load_edges(ee, std::identity{});
-
-    auto it = g.try_find_vertex(0);
-    REQUIRE(it != g.end());
-
-    std::vector<uint32_t> target_ids;
-    for (const auto& edge : it->second.edges()) {
-      target_ids.push_back(edge.target_id());
-    }
-    std::ranges::sort(target_ids);
-
-    REQUIRE(target_ids == std::vector<uint32_t>{1, 3, 7, 9});
-  }
 }
 
 //==================================================================================================
@@ -496,11 +438,6 @@ TEST_CASE("uous initializer_list construction string IDs", "[dynamic_graph][uous
     REQUIRE(g.size() == 5);
   }
 
-  SECTION("sourced edges with string IDs") {
-    using G = uous_str_sourced;
-    G g({{"alice", "bob"}, {"bob", "charlie"}});
-    REQUIRE(g.size() == 3);
-  }
 
   SECTION("string deduplication") {
     using G = uous_str_void_void_void;
@@ -1016,12 +953,9 @@ TEST_CASE("uous template instantiation", "[dynamic_graph][uous][compilation]") {
   [[maybe_unused]] uous_int_int_void       g4;
   [[maybe_unused]] uous_void_void_int      g5;
   [[maybe_unused]] uous_int_int_int        g6;
-  [[maybe_unused]] uous_sourced            g7;
-  [[maybe_unused]] uous_int_sourced        g8;
   [[maybe_unused]] uous_str_void_void_void g9;
   [[maybe_unused]] uous_str_int_void_void  g10;
   [[maybe_unused]] uous_str_int_int_int    g11;
-  [[maybe_unused]] uous_str_sourced        g12;
 
   REQUIRE(true);
 }
@@ -1097,40 +1031,3 @@ TEST_CASE("uous edge forward iteration only", "[dynamic_graph][uous][unordered_s
 // 20. Sourced Edge Tests
 //==================================================================================================
 
-TEST_CASE("uous sourced edges", "[dynamic_graph][uous][sourced]") {
-  SECTION("source_id access") {
-    uous_sourced g({{0, 1}, {0, 2}, {1, 0}});
-
-    auto it0 = g.try_find_vertex(0);
-    REQUIRE(it0 != g.end());
-    for (const auto& edge : it0->second.edges()) {
-      REQUIRE(edge.source_id() == 0);
-    }
-
-    auto it1 = g.try_find_vertex(1);
-    REQUIRE(it1 != g.end());
-    for (const auto& edge : it1->second.edges()) {
-      REQUIRE(edge.source_id() == 1);
-    }
-  }
-
-  SECTION("sourced edge with values") {
-    uous_int_sourced      g;
-    std::vector<edge_int> ee = {{0, 1, 100}, {1, 0, 200}};
-    g.load_edges(ee, std::identity{});
-
-    auto it0 = g.try_find_vertex(0);
-    REQUIRE(it0 != g.end());
-    auto e0 = it0->second.edges().begin();
-    REQUIRE(e0->source_id() == 0);
-    REQUIRE(e0->target_id() == 1);
-    REQUIRE(e0->value() == 100);
-
-    auto it1 = g.try_find_vertex(1);
-    REQUIRE(it1 != g.end());
-    auto e1 = it1->second.edges().begin();
-    REQUIRE(e1->source_id() == 1);
-    REQUIRE(e1->target_id() == 0);
-    REQUIRE(e1->value() == 200);
-  }
-}

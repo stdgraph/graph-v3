@@ -282,3 +282,98 @@ TEST_CASE("dijkstra_shortest_paths - vertex id visitor", "[algorithm][dijkstra_s
   REQUIRE(distance[0] == 0);
   REQUIRE(distance[1] == clrs_dijkstra_results::distances_from_0[1]);
 }
+
+// =============================================================================
+// Error / Exception Condition Tests
+// =============================================================================
+
+TEST_CASE("dijkstra_shortest_paths - distances too small throws", "[algorithm][dijkstra_shortest_paths][error]") {
+  using Graph = vov_weighted;
+
+  auto                            g = clrs_dijkstra_graph<Graph>(); // 5 vertices
+  std::vector<int>                distances(2);                     // too small
+  std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
+  init_shortest_paths(distances, predecessor);
+
+  CHECK_THROWS_AS(dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distances, predecessor,
+                                          [](const auto& g, const auto& uv) { return edge_value(g, uv); }),
+                  std::out_of_range);
+}
+
+TEST_CASE("dijkstra_shortest_paths - predecessor too small throws", "[algorithm][dijkstra_shortest_paths][error]") {
+  using Graph = vov_weighted;
+
+  auto                            g = clrs_dijkstra_graph<Graph>(); // 5 vertices
+  std::vector<int>                distances(num_vertices(g));
+  std::vector<vertex_id_t<Graph>> predecessor(2); // too small
+  init_shortest_paths(distances, predecessor);
+
+  CHECK_THROWS_AS(dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distances, predecessor,
+                                          [](const auto& g, const auto& uv) { return edge_value(g, uv); }),
+                  std::out_of_range);
+}
+
+TEST_CASE("dijkstra_shortest_paths - source vertex out of range throws", "[algorithm][dijkstra_shortest_paths][error]") {
+  using Graph = vov_weighted;
+
+  auto                            g = path_graph_4_weighted<Graph>(); // 4 vertices (ids 0-3)
+  std::vector<int>                distances(num_vertices(g));
+  std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
+  init_shortest_paths(distances, predecessor);
+
+  CHECK_THROWS_AS(dijkstra_shortest_paths(g, vertex_id_t<Graph>(99), distances, predecessor,
+                                          [](const auto& g, const auto& uv) { return edge_value(g, uv); }),
+                  std::out_of_range);
+}
+
+TEST_CASE("dijkstra_shortest_paths - negative edge weight throws", "[algorithm][dijkstra_shortest_paths][error]") {
+  using Graph = vov_weighted; // int edge values (signed)
+
+  auto                            g = path_graph_4_weighted<Graph>(); // 0->1->2->3
+  std::vector<int>                distances(num_vertices(g));
+  std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
+  init_shortest_paths(distances, predecessor);
+
+  // Weight function that always returns a negative value triggers the signed-weight guard
+  CHECK_THROWS_AS(dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distances, predecessor,
+                                          [](const auto&, const auto&) { return -1; }),
+                  std::out_of_range);
+}
+
+TEST_CASE("dijkstra_shortest_paths - infinite weight edge triggers logic_error", "[algorithm][dijkstra_shortest_paths][error]") {
+  using Graph         = vov_weighted;
+  using distance_type = int;
+
+  // When the edge weight equals the infinity sentinel, combine(0, INF) = INF which is
+  // NOT strictly less than INF, so relax_target returns false for an undiscovered vertex.
+  // The algorithm treats this as an internal invariant violation and throws std::logic_error.
+  auto                            g = path_graph_4_weighted<Graph>(); // 0->1->2->3
+  std::vector<distance_type>      distances(num_vertices(g));
+  std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
+  init_shortest_paths(distances, predecessor);
+
+  const auto INF = shortest_path_infinite_distance<distance_type>();
+  CHECK_THROWS_AS(dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distances, predecessor,
+                                          [INF](const auto&, const auto&) { return INF; }),
+                  std::logic_error);
+}
+
+TEST_CASE("dijkstra_shortest_paths - on_edge_not_relaxed visitor callback", "[algorithm][dijkstra_shortest_paths][visitor]") {
+  using Graph = vov_weighted;
+
+  // The CLRS graph has multiple paths to the same vertex; revisiting an already-optimal
+  // vertex triggers on_edge_not_relaxed (e.g. z->s, t->y, x->z are not relaxed).
+  auto                            g = clrs_dijkstra_graph<Graph>();
+  std::vector<int>                distances(num_vertices(g));
+  std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
+  init_shortest_paths(distances, predecessor);
+
+  CountingVisitor visitor;
+  dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distances, predecessor,
+                          [](const auto& g, const auto& uv) { return edge_value(g, uv); }, visitor);
+
+  CHECK(visitor.edges_not_relaxed > 0);
+  REQUIRE(distances[0] == 0);
+  REQUIRE(distances[1] == clrs_dijkstra_results::distances_from_0[1]); // t: 8
+  REQUIRE(distances[3] == clrs_dijkstra_results::distances_from_0[3]); // y: 5
+}

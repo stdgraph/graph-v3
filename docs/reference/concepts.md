@@ -16,13 +16,14 @@ Header: `<graph/adj_list/adjacency_list_concepts.hpp>`
 
 ```
 edge<G, E>
-└── vertex_edge_range<R, G>
+└── out_edge_range<R, G>
     └── vertex<G, V>
         └── vertex_range<R, G>
             └── index_vertex_range<G>
                 └── adjacency_list<G>
                     └── index_adjacency_list<G>
-                        └── ordered_vertex_edges<G>
+                        ├── ordered_vertex_edges<G>
+                        └── bidirectional_adjacency_list<G>
 ```
 
 ### `edge<G, E>`
@@ -36,13 +37,13 @@ concept edge = requires(G& g, E& e) {
 };
 ```
 
-### `vertex_edge_range<R, G>`
+### `out_edge_range<R, G>`
 
-A forward range of edges adjacent to a vertex.
+A forward range of outgoing edges adjacent to a vertex.
 
 ```cpp
 template <class R, class G>
-concept vertex_edge_range =
+concept out_edge_range =
     std::ranges::forward_range<R> &&
     edge<G, std::ranges::range_value_t<R>>;
 ```
@@ -54,7 +55,7 @@ A vertex exposes an edge range via the `edges` CPO.
 ```cpp
 template <class G, class V = void>
 concept vertex = requires(G& g, V& u) {
-    { edges(g, u) } -> vertex_edge_range<G>;
+    { edges(g, u) } -> out_edge_range<G>;
 };
 ```
 
@@ -126,6 +127,35 @@ concept ordered_vertex_edges =
         { find_vertex_edge(g, u, vid) } -> /* valid iterator */;
     };
 ```
+
+### `bidirectional_adjacency_list<G>`
+
+An adjacency list that also provides incoming-edge iteration.
+
+```cpp
+template <class G>
+concept bidirectional_adjacency_list =
+    index_adjacency_list<G> &&
+    requires(G& g, vertex_t<G>& u) {
+        { in_edges(g, u) } -> std::ranges::forward_range;
+        { in_degree(g, u) } -> std::integral;
+    };
+```
+
+| Requirement | Expression |
+|-------------|-----------|
+| Incoming edge range | `in_edges(g, u)` returns a `forward_range` of in-edge descriptors |
+| In-degree query | `in_degree(g, u)` returns an integral count |
+| Find incoming edge | `find_in_edge(g, uid, vid)` returns an in-edge iterator |
+| Contains check | `contains_in_edge(g, uid, vid)` returns `bool` |
+
+**Satisfied by:**
+- `dynamic_graph<..., Bidirectional=true, ...>`
+- `undirected_adjacency_list` (incoming = outgoing for undirected graphs)
+
+This concept is required by algorithms that need reverse traversal, such as
+Kosaraju's SCC algorithm, and by the `in_edge_accessor` policy used for
+reverse BFS/DFS/topological-sort views.
 
 ---
 

@@ -53,13 +53,7 @@ using mofl_str_void_int_void =
 using mofl_str_int_int_int =
       dynamic_graph<int, int, int, std::string, false, mofl_graph_traits<int, int, int, std::string, false>>;
 
-using mofl_sourced =
-      dynamic_graph<void, void, void, uint32_t, true, mofl_graph_traits<void, void, void, uint32_t, true>>;
-using mofl_int_sourced =
-      dynamic_graph<int, void, void, uint32_t, true, mofl_graph_traits<int, void, void, uint32_t, true>>;
 
-using mofl_str_sourced =
-      dynamic_graph<void, void, void, std::string, true, mofl_graph_traits<void, void, void, std::string, true>>;
 
 //==================================================================================================
 // 1. Traits Verification Tests
@@ -91,13 +85,6 @@ TEST_CASE("mofl traits verification", "[dynamic_graph][mofl][traits]") {
     REQUIRE(true);
   }
 
-  SECTION("sourced flag is preserved") {
-    using traits_unsourced = mofl_graph_traits<void, void, void, uint32_t, false>;
-    using traits_sourced   = mofl_graph_traits<void, void, void, uint32_t, true>;
-    static_assert(traits_unsourced::sourced == false);
-    static_assert(traits_sourced::sourced == true);
-    REQUIRE(true);
-  }
 
   SECTION("vertex_id_type for uint32_t") {
     using traits = mofl_graph_traits<void, void, void, uint32_t, false>;
@@ -234,22 +221,6 @@ TEST_CASE("mofl construction with string vertex IDs", "[dynamic_graph][mofl][con
   }
 }
 
-TEST_CASE("mofl construction sourced", "[dynamic_graph][mofl][construction][sourced]") {
-  SECTION("sourced edge construction with uint32_t IDs") {
-    mofl_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-
-  SECTION("sourced with edge value construction") {
-    mofl_int_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-
-  SECTION("sourced edge construction with string IDs") {
-    mofl_str_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-}
 
 //==================================================================================================
 // 4. Basic Properties Tests
@@ -302,15 +273,9 @@ TEST_CASE("mofl type aliases", "[dynamic_graph][mofl][types]") {
   SECTION("graph type aliases are correct") {
     using G = mofl_int_int_int;
     static_assert(std::same_as<typename G::value_type, int>); // GV
-    static_assert(G::sourced == false);
     REQUIRE(true);
   }
 
-  SECTION("sourced graph type aliases are correct") {
-    using G = mofl_sourced;
-    static_assert(G::sourced == true);
-    REQUIRE(true);
-  }
 
   SECTION("string key graph type aliases are correct") {
     using G      = mofl_str_int_int_int;
@@ -433,11 +398,6 @@ TEST_CASE("mofl initializer_list construction string IDs", "[dynamic_graph][mofl
     REQUIRE(g.size() == 5);
   }
 
-  SECTION("sourced edges with string IDs") {
-    using G = mofl_str_sourced;
-    G g({{"alice", "bob"}, {"bob", "charlie"}});
-    REQUIRE(g.size() == 3);
-  }
 }
 
 //==================================================================================================
@@ -645,12 +605,9 @@ TEST_CASE("mofl template instantiation", "[dynamic_graph][mofl][compilation]") {
   [[maybe_unused]] mofl_int_int_void       g4;
   [[maybe_unused]] mofl_void_void_int      g5;
   [[maybe_unused]] mofl_int_int_int        g6;
-  [[maybe_unused]] mofl_sourced            g7;
-  [[maybe_unused]] mofl_int_sourced        g8;
   [[maybe_unused]] mofl_str_void_void_void g9;
   [[maybe_unused]] mofl_str_int_void_void  g10;
   [[maybe_unused]] mofl_str_int_int_int    g11;
-  [[maybe_unused]] mofl_str_sourced        g12;
 
   REQUIRE(true);
 }

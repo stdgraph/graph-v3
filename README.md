@@ -4,7 +4,7 @@
 
 # graph-v3
 
-**A modern C++20 graph library — header-only, descriptor-based, works with your containers.**
+**A modern C++20 graph library — header-only, descriptor-based, works with your graphs.**
 
 </td>
 </tr></table>
@@ -13,7 +13,7 @@
 
 [![C++ Standard](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.cppreference.com/w/cpp/20)
 [![License](https://img.shields.io/badge/license-BSL--1.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-4261%20passing-brightgreen.svg)](docs/status/metrics.md)
+[![Tests](https://img.shields.io/badge/tests-4405%20passing-brightgreen.svg)](docs/status/metrics.md)
 
 ---
 
@@ -23,16 +23,16 @@
 - **Works with your containers** — `std::vector<std::vector<int>>` or `std::map<int, std::vector<int>>` are valid graphs out of the box
 - **13 algorithms** — Dijkstra, Bellman-Ford, BFS, DFS, topological sort, connected components, articulation points, biconnected components, MST, triangle counting, MIS, label propagation, Jaccard coefficient
 - **7 lazy views** — vertexlist, edgelist, incidence, neighbors, BFS, DFS, topological sort — all composable with range adaptors
+- **Bidirectional edge access** — `in_edges`, `in_degree`, reverse BFS/DFS/topological sort via `in_edge_accessor`
 - **Customization Point Objects (CPOs)** — adapt existing data structures without modifying them
 - **3 containers, 27 trait combinations** — `dynamic_graph`, `compressed_graph`, `undirected_adjacency_list` with mix-and-match vertex/edge storage
-- **4261 tests passing** — comprehensive Catch2 test suite
+- **4405 tests passing** — comprehensive Catch2 test suite
 
 ---
 
 ## Quick Example — Dijkstra Shortest Paths
 
 ```cpp
-// (simplified — see examples/dijkstra_clrs_example.cpp for the full version)
 #include "graph/graph.hpp"
 #include "graph/algorithm/dijkstra_shortest_paths.hpp"
 #include <vector>
@@ -50,11 +50,23 @@ int main() {
   std::vector<double>   distance(graph::num_vertices(g));
   std::vector<uint32_t> predecessor(graph::num_vertices(g));
 
-  graph::dijkstra_shortest_paths(g, uint32_t(0), distance, predecessor);
+  graph::init_shortest_paths(distance, predecessor);
+  graph::dijkstra_shortest_paths(g, uint32_t(0), distance, predecessor,
+        [](const auto& g, const auto& uv) { return graph::edge_value(g, uv); });
 
   for (size_t v = 0; v < distance.size(); ++v)
     std::cout << "0 -> " << v << " : " << distance[v] << "\n";
 }
+```
+
+Output:
+
+```
+0 -> 0 : 0
+0 -> 1 : 8
+0 -> 2 : 5
+0 -> 3 : 9
+0 -> 4 : 16
 ```
 
 <!--
@@ -181,4 +193,4 @@ Distributed under the [Boost Software License 1.0](LICENSE).
 ---
 
 <!-- Status counts pinned to docs/status/metrics.md -->
-**Status:** 4261 / 4261 tests passing · 13 algorithms · 7 views · 3 containers · 27 trait combinations · C++20 · BSL-1.0
+**Status:** 4405 / 4405 tests passing · 13 algorithms · 7 views · 3 containers · 27 trait combinations · C++20 · BSL-1.0

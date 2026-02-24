@@ -33,6 +33,7 @@ template <class EV     = void,       // edge value type
           class GV     = void,       // graph value type
           class VId    = uint32_t,   // vertex id type
           bool Sourced = false,      // store source_id on edges?
+          bool Bidirectional = false, // maintain incoming-edge lists?
           class Traits = vofl_graph_traits<EV, VV, GV, VId, Sourced>>
 class dynamic_graph;
 }
@@ -42,6 +43,12 @@ class dynamic_graph;
 determined entirely by the **Traits** parameter, which names the concrete
 `vertices_type` and `edges_type` (e.g., `std::vector<vertex_type>` and
 `std::forward_list<edge_type>`).
+
+When **`Bidirectional`** is `true`, each vertex maintains an additional
+incoming-edge list, enabling the `in_edges`, `in_degree`, `find_in_edge`, and
+`contains_in_edge` CPOs in O(1) / O(in-degree). This is required by the
+`bidirectional_adjacency_list` concept and enables reverse traversal via
+`in_edge_accessor`.
 
 ### Properties
 
@@ -80,7 +87,7 @@ Complexity depends on the vertex container, the edge container, or neither.
 |-----------|------------|
 | `num_vertices(g)` | O(1) |
 | `num_edges(g)` | O(1) |
-| `has_edge(g)` | O(1) |
+| `has_edges(g)` | O(1) |
 
 ### Template parameters
 
@@ -91,6 +98,7 @@ Complexity depends on the vertex container, the edge container, or neither.
 | `GV` | `void` | Graph value type (`void` → no graph value) |
 | `VId` | `uint32_t` | Vertex ID type (integral for indexed traits, any ordered/hashable type for map-based traits) |
 | `Sourced` | `false` | When `true`, each edge stores a source vertex ID. This does not affect the ability to use `source_id(g,uv)`. |
+| `Bidirectional` | `false` | When `true`, each vertex maintains an incoming-edge list, enabling `in_edges(g,u)`, `in_degree(g,u)`, `find_in_edge(g,...)`, and `contains_in_edge(g,...)`. Satisfies `bidirectional_adjacency_list<G>`. |
 | `Traits` | `vofl_graph_traits<…>` | Trait struct that defines the vertex and edge container types |
 
 ### Quick usage

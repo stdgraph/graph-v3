@@ -49,13 +49,8 @@ using vous_string_string_string =
                     std::string,
                     std::string,
                     uint32_t,
-                    false,
-                    vous_graph_traits<std::string, std::string, std::string, uint32_t, false>>;
+                    false, vous_graph_traits<std::string, std::string, std::string, uint32_t, false>>;
 
-using vous_sourced =
-      dynamic_graph<void, void, void, uint32_t, true, vous_graph_traits<void, void, void, uint32_t, true>>;
-using vous_int_sourced =
-      dynamic_graph<int, void, void, uint32_t, true, vous_graph_traits<int, void, void, uint32_t, true>>;
 
 // Edge and vertex data types for loading
 using edge_void  = copyable_edge_t<uint32_t, void>;
@@ -296,34 +291,6 @@ TEST_CASE("vous value access", "[vous][values]") {
 // 6. Sourced Edge Tests
 //==================================================================================================
 
-TEST_CASE("vous sourced edges", "[vous][sourced]") {
-  SECTION("source_id access") {
-    vous_sourced           g;
-    std::vector<edge_void> ee = {{0, 1}, {1, 2}, {0, 2}};
-    g.load_edges(ee, std::identity{});
-
-    auto& v0 = g[0];
-    for (auto& e : v0.edges()) {
-      REQUIRE(e.source_id() == 0);
-    }
-
-    auto& v1 = g[1];
-    for (auto& e : v1.edges()) {
-      REQUIRE(e.source_id() == 1);
-    }
-  }
-
-  SECTION("sourced edge deduplication") {
-    vous_int_sourced g;
-    // Multiple edges from 0 to 1 with different values
-    std::vector<edge_int> ee = {{0, 1, 100}, {0, 1, 200}, {0, 1, 300}};
-    g.load_edges(ee, std::identity{});
-
-    auto& v0 = g[0];
-    // unordered_set deduplicates by (source_id, target_id) pair
-    REQUIRE(std::ranges::distance(v0.edges()) == 1);
-  }
-}
 
 //==================================================================================================
 // 7. Unordered Set Specific Behavior

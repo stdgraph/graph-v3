@@ -397,17 +397,17 @@ TEMPLATE_TEST_CASE("edge_map CPO num_edges(g)", "[dynamic_graph][cpo][num_edges]
 }
 
 //==================================================================================================
-// 6. has_edge(g) CPO Tests
+// 6. has_edges(g) CPO Tests
 //==================================================================================================
 
-TEMPLATE_TEST_CASE("edge_map CPO has_edge(g)", "[dynamic_graph][cpo][has_edge][edge_map]", vom_tag, mom_tag, voum_tag) {
+TEMPLATE_TEST_CASE("edge_map CPO has_edges(g)", "[dynamic_graph][cpo][has_edges][edge_map]", vom_tag, mom_tag, voum_tag) {
   using Types        = graph_test_types<TestType>;
   using Graph_void   = typename Types::void_type;
   using Graph_int_ev = typename Types::int_ev;
 
   SECTION("empty graph") {
     Graph_void g;
-    REQUIRE(has_edge(g) == false);
+    REQUIRE(has_edges(g) == false);
   }
 
   SECTION("graph with edges") {
@@ -420,7 +420,7 @@ TEMPLATE_TEST_CASE("edge_map CPO has_edge(g)", "[dynamic_graph][cpo][has_edge][e
       g.load_edges(edgelist);
     }
 
-    REQUIRE(has_edge(g) == true);
+    REQUIRE(has_edges(g) == true);
   }
 
   SECTION("const correctness") {
@@ -434,7 +434,7 @@ TEMPLATE_TEST_CASE("edge_map CPO has_edge(g)", "[dynamic_graph][cpo][has_edge][e
     }
 
     const auto& cg = g;
-    REQUIRE(has_edge(cg) == true);
+    REQUIRE(has_edges(cg) == true);
   }
 
   SECTION("with edge values") {
@@ -447,7 +447,7 @@ TEMPLATE_TEST_CASE("edge_map CPO has_edge(g)", "[dynamic_graph][cpo][has_edge][e
       g.load_edges(edgelist);
     }
 
-    REQUIRE(has_edge(g) == true);
+    REQUIRE(has_edges(g) == true);
   }
 }
 
@@ -1160,16 +1160,16 @@ TEMPLATE_TEST_CASE("edge_map CPO graph_value(g)", "[dynamic_graph][cpo][graph_va
 }
 
 //==================================================================================================
-// 16. source_id(g, uv) CPO Tests (Sourced=true)
+// 16. source_id(g, uv) CPO Tests
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("edge_map CPO source_id(g, uv)", "[dynamic_graph][cpo][source_id][edge_map]", vom_tag, mom_tag, voum_tag) {
-  using Types             = graph_test_types<TestType>;
-  using Graph_sourced     = typename Types::sourced_void;
-  using Graph_sourced_int = typename Types::sourced_int;
+  using Types        = graph_test_types<TestType>;
+  using Graph_void   = typename Types::void_type;
+  using Graph_int_ev = typename Types::int_ev;
 
   SECTION("basic source IDs") {
-    Graph_sourced          g;
+    Graph_void          g;
     std::vector<edge_void> edgelist{{0, 1}, {0, 2}};
     if constexpr (is_map_based_v<TestType>) {
       g.load_edges(edgelist);
@@ -1185,7 +1185,7 @@ TEMPLATE_TEST_CASE("edge_map CPO source_id(g, uv)", "[dynamic_graph][cpo][source
   }
 
   SECTION("different sources") {
-    Graph_sourced          g;
+    Graph_void          g;
     std::vector<edge_void> edgelist{{0, 1}, {1, 2}};
     if constexpr (is_map_based_v<TestType>) {
       g.load_edges(edgelist);
@@ -1203,7 +1203,7 @@ TEMPLATE_TEST_CASE("edge_map CPO source_id(g, uv)", "[dynamic_graph][cpo][source
   }
 
   SECTION("const correctness") {
-    Graph_sourced          g;
+    Graph_void          g;
     std::vector<edge_void> edgelist{{0, 1}};
     if constexpr (is_map_based_v<TestType>) {
       g.load_edges(edgelist);
@@ -1220,7 +1220,7 @@ TEMPLATE_TEST_CASE("edge_map CPO source_id(g, uv)", "[dynamic_graph][cpo][source
   }
 
   SECTION("with edge values") {
-    Graph_sourced_int     g;
+    Graph_int_ev     g;
     std::vector<edge_int> edgelist{{0, 1, 10}};
     if constexpr (is_map_based_v<TestType>) {
       g.load_edges(edgelist);
@@ -1237,16 +1237,16 @@ TEMPLATE_TEST_CASE("edge_map CPO source_id(g, uv)", "[dynamic_graph][cpo][source
 }
 
 //==================================================================================================
-// 17. source(g, uv) CPO Tests (Sourced=true)
+// 17. source(g, uv) CPO Tests
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("edge_map CPO source(g, uv)", "[dynamic_graph][cpo][source][edge_map]", vom_tag, mom_tag, voum_tag) {
   using Types             = graph_test_types<TestType>;
-  using Graph_sourced     = typename Types::sourced_void;
-  using Graph_sourced_int = typename Types::sourced_int;
+  using Graph_void   = typename Types::void_type;
+  using Graph_int_ev = typename Types::int_ev;
 
   SECTION("basic usage") {
-    Graph_sourced          g;
+    Graph_void          g;
     std::vector<edge_void> edgelist{{0, 1}, {0, 2}};
     if constexpr (is_map_based_v<TestType>) {
       g.load_edges(edgelist);
@@ -1263,7 +1263,7 @@ TEMPLATE_TEST_CASE("edge_map CPO source(g, uv)", "[dynamic_graph][cpo][source][e
   }
 
   SECTION("consistency with source_id") {
-    Graph_sourced          g;
+    Graph_void          g;
     std::vector<edge_void> edgelist{{0, 1}, {1, 2}};
     if constexpr (is_map_based_v<TestType>) {
       g.load_edges(edgelist);
@@ -1281,7 +1281,7 @@ TEMPLATE_TEST_CASE("edge_map CPO source(g, uv)", "[dynamic_graph][cpo][source][e
   }
 
   SECTION("const correctness") {
-    Graph_sourced          g;
+    Graph_void          g;
     std::vector<edge_void> edgelist{{0, 1}};
     if constexpr (is_map_based_v<TestType>) {
       g.load_edges(edgelist);
@@ -1299,7 +1299,7 @@ TEMPLATE_TEST_CASE("edge_map CPO source(g, uv)", "[dynamic_graph][cpo][source][e
   }
 
   SECTION("with edge values") {
-    Graph_sourced_int     g;
+    Graph_int_ev     g;
     std::vector<edge_int> edgelist{{0, 1, 10}};
     if constexpr (is_map_based_v<TestType>) {
       g.load_edges(edgelist);

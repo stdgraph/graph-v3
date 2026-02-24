@@ -26,7 +26,7 @@ All concepts are in `graph::adj_list`, re-exported to `graph`.
 
 | Concept | Parameters | Description |
 |---------|------------|-------------|
-| `vertex_edge_range<R, G>` | Range `R`, graph `G` | `forward_range<R>` whose values satisfy `edge<G, …>` |
+| `out_edge_range<R, G>` | Range `R`, graph `G` | `forward_range<R>` whose values satisfy `edge<G, …>` |
 
 ### Vertex Concepts
 
@@ -40,9 +40,10 @@ All concepts are in `graph::adj_list`, re-exported to `graph`.
 
 | Concept | Parameters | Description |
 |---------|------------|-------------|
-| `adjacency_list<G>` | Graph `G` | `vertices(g)` → `vertex_range`, `edges(g,u)` → `vertex_edge_range` |
+| `adjacency_list<G>` | Graph `G` | `vertices(g)` → `vertex_range`, `edges(g,u)` → `out_edge_range` |
 | `index_adjacency_list<G>` | Graph `G` | `adjacency_list<G>` + `index_vertex_range<G>` (random-access vertices, integral IDs) |
 | `ordered_vertex_edges<G>` | Graph `G` | `adjacency_list<G>` + edge ranges sorted by `target_id` |
+| `bidirectional_adjacency_list<G>` | Graph `G` | `index_adjacency_list<G>` + `in_edges(g,u)` and `in_degree(g,u)` |
 
 > **Note:** All current algorithms require `index_adjacency_list<G>`. The more
 > general `adjacency_list<G>` supports associative vertex containers and may be
@@ -91,9 +92,21 @@ All follow the `_t<G>` naming convention.
 
 | Alias | Definition |
 |-------|------------|
-| `vertex_edge_range_t<G>` | `decltype(edges(g, u))` |
-| `vertex_edge_iterator_t<G>` | `std::ranges::iterator_t<vertex_edge_range_t<G>>` |
-| `edge_t<G>` | `std::ranges::range_value_t<vertex_edge_range_t<G>>` |
+| `out_edge_range_t<G>` | `decltype(out_edges(g, u))` |
+| `out_edge_iterator_t<G>` | `std::ranges::iterator_t<out_edge_range_t<G>>` |
+| `out_edge_t<G>` | `std::ranges::range_value_t<out_edge_range_t<G>>` |
+
+> **Convenience aliases:** `vertex_edge_range_t<G>`, `vertex_edge_iterator_t<G>`, and `edge_t<G>` remain available as aliases for the above.
+
+### Incoming Edge Types (Bidirectional)
+
+Available on graphs satisfying `bidirectional_adjacency_list<G>`.
+
+| Alias | Definition |
+|-------|------------|
+| `in_edge_range_t<G>` | `decltype(in_edges(g, u))` |
+| `in_edge_iterator_t<G>` | `std::ranges::iterator_t<in_edge_range_t<G>>` |
+| `in_edge_t<G>` | `std::ranges::range_value_t<in_edge_range_t<G>>` |
 
 ### Value Types (Optional)
 
@@ -127,7 +140,7 @@ pattern. See [CPO Reference](cpo-reference.md) for full resolution order.
 | `num_vertices(g)` | integral | O(1) | `size(vertices(g))` |
 | `num_vertices(g, pid)` | integral | O(1) | `size(vertices(g))` |
 | `num_edges(g)` | integral | O(V + E) | Sum of `distance(edges(g, u))` over all vertices |
-| `has_edge(g)` | bool | O(V) | First vertex with non-empty edge range |
+| `has_edges(g)` | bool | O(V) | First vertex with non-empty edge range |
 | `num_partitions(g)` | integral | O(1) | `1` |
 
 ### Vertex Functions
@@ -157,6 +170,20 @@ pattern. See [CPO Reference](cpo-reference.md) for full resolution order.
 | `find_vertex_edge(g, u, vid)` | `vertex_edge_iterator_t<G>` | O(degree) | Linear search through `edges(g, u)` |
 | `find_vertex_edge(g, uid, vid)` | `vertex_edge_iterator_t<G>` | O(degree) | `find_vertex_edge(g, *find_vertex(g, uid), vid)` |
 | `contains_edge(g, uid, vid)` | bool | O(degree) | `find_vertex_edge(g, uid, vid) != end(edges(g, uid))` |
+
+### Incoming Edge Functions (Bidirectional)
+
+Available on graphs satisfying `bidirectional_adjacency_list<G>`.
+
+| Function | Return Type | Default Complexity | Default Implementation |
+|----------|-------------|-------------------|------------------------|
+| `in_edges(g, u)` | `in_edge_range_t<G>` | O(1) | From container’s incoming-edge list |
+| `in_edges(g, uid)` | `in_edge_range_t<G>` | O(1) | `in_edges(g, *find_vertex(g, uid))` |
+| `in_degree(g, u)` | integral | O(1) | `size(in_edges(g, u))` |
+| `in_degree(g, uid)` | integral | O(1) | `in_degree(g, *find_vertex(g, uid))` |
+| `find_in_edge(g, u, vid)` | `in_edge_iterator_t<G>` | O(in-degree) | Linear search through `in_edges(g, u)` |
+| `find_in_edge(g, uid, vid)` | `in_edge_iterator_t<G>` | O(in-degree) | `find_in_edge(g, *find_vertex(g, uid), vid)` |
+| `contains_in_edge(g, uid, vid)` | bool | O(in-degree) | `find_in_edge(g, uid, vid) != end(in_edges(g, uid))` |
 
 ---
 

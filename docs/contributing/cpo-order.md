@@ -23,12 +23,12 @@ The following order should be followed for implementing CPOs and their correspon
 
 | # | CPO Function | Type Aliases | Description |
 |---|--------------|--------------|-------------|
-| 4 | `edges(g, u)` | `vertex_edge_range_t<G>`<br>`vertex_edge_iterator_t<G>`<br>`edge_descriptor_t<G>`<br>`edge_t<G>` | Get outgoing edges from vertex (MUST return `edge_descriptor_view`) |
+| 4 | `out_edges(g, u)` | `out_edge_range_t<G>`<br>`out_edge_iterator_t<G>`<br>`edge_descriptor_t<G>`<br>`out_edge_t<G>` | Get outgoing edges from vertex (MUST return `edge_descriptor_view`). Aliases: `edges(g, u)`, `vertex_edge_range_t`, `vertex_edge_iterator_t`, `edge_t`. |
 | 5 | `num_edges(g)` | - | Count total edges in graph |
 
-**IMPORTANT:** `edges(g, u)` MUST always return an `edge_descriptor_view`:
+**IMPORTANT:** `out_edges(g, u)` MUST always return an `edge_descriptor_view`:
 - If `g.edges(u)` exists, it must return `edge_descriptor_view`
-- If ADL `edges(g, u)` exists, it must return `edge_descriptor_view`
+- If ADL `out_edges(g, u)` exists, it must return `edge_descriptor_view`
 - Otherwise, if the vertex descriptor's inner value follows edge value patterns, return `edge_descriptor_view(u.inner_value(), u)`
 
 ### 3. Edge Target/Source Access
@@ -44,8 +44,8 @@ The following order should be followed for implementing CPOs and their correspon
 
 | # | CPO Function | Type Aliases | Description |
 |---|--------------|--------------|-------------|
-| 10 | `find_vertex_edge(g, u, vid)` | - | Find edge from u to vid |
-| 11 | `contains_edge(g, uid, vid)` | - | Check if edge exists |
+| 10 | `find_out_edge(g, u, vid)` | - | Find edge from u to vid. Alias: `find_vertex_edge(g, u, vid)`. |
+| 11 | `contains_out_edge(g, uid, vid)` | - | Check if outgoing edge exists. Alias: `contains_edge(g, uid, vid)`. |
 
 ### 5. Partition Support
 
@@ -58,7 +58,7 @@ The following order should be followed for implementing CPOs and their correspon
 | # | CPO Function | Type Aliases | Description |
 |---|--------------|--------------|-------------|
 | 13 | `num_vertices(g)` | - | Count vertices in graph |
-| 14 | `degree(g, u)` | - | Get degree of vertex |
+| 14 | `out_degree(g, u)` | - | Get out-degree of vertex. Alias: `degree(g, u)`. |
 
 ### 7. Value Access
 
@@ -73,7 +73,7 @@ The following order should be followed for implementing CPOs and their correspon
 | # | CPO Function | Type Aliases | Description |
 |---|--------------|--------------|-------------|
 | 18 | `num_partitions(g)` | - | Get number of partitions (optional) |
-| 19 | `has_edge(g)` | - | Check if graph has any edges |
+| 19 | `has_edges(g)` | - | Check if graph has any edges |
 
 ## Implementation Priority
 
@@ -92,7 +92,7 @@ The following order should be followed for implementing CPOs and their correspon
     4. `u.vertex_id()` - Descriptor default (lowest priority)
   - Where `u` is a `vertex_descriptor<Iter>` and `u.inner_value(g)` extracts the actual vertex data from the graph
 - `find_vertex(g, uid)`
-- `edges(g, u)` + type aliases
+- `out_edges(g, u)` + type aliases
 - `target_id(g, uv)`
 
 ### Phase 2: Query Functions (High Priority)
@@ -100,12 +100,12 @@ The following order should be followed for implementing CPOs and their correspon
 - `num_vertices(g)`
 - `num_edges(g)`
 - `target(g, uv)`
-- `degree(g, u)`
+- `out_degree(g, u)`
 
 ### Phase 3: Edge Queries (Medium Priority)
 **Required for advanced graph operations**
-- `find_vertex_edge(g, u, vid)`
-- `contains_edge(g, uid, vid)`
+- `find_out_edge(g, u, vid)`
+- `contains_out_edge(g, uid, vid)`
 
 ### Phase 4: Optional Features (Low Priority)
 **For specialized graph types**
@@ -113,7 +113,7 @@ The following order should be followed for implementing CPOs and their correspon
 - `source(g, uv)` - For sourced edges
 - `partition_id(g, u)` - For multipartite graphs
 - `num_partitions(g)` - For multipartite graphs
-- `has_edge(g)` - Convenience function
+- `has_edges(g)` - Convenience function
 
 ### Phase 5: Value Access (Optional)
 **For graphs with user-defined values**
@@ -134,11 +134,16 @@ using vertex_t = range_value_t<vertex_range_t<G>>;  // vertex_descriptor<Iter>
 // After vertex_id CPO
 using vertex_id_t = decltype(vertex_id(declval<G&&>(), declval<vertex_t<G>>()));
 
-// After edges CPO
-using vertex_edge_range_t = decltype(edges(declval<G&&>(), declval<vertex_t<G>>()));
-using vertex_edge_iterator_t = iterator_t<vertex_edge_range_t<G>>;
-using edge_descriptor_t = range_value_t<vertex_edge_range_t<G>>;
-using edge_t = range_value_t<vertex_edge_range_t<G>>;  // edge_descriptor<EdgeIter, VertexIter>
+// After out_edges CPO (primary names)
+using out_edge_range_t = decltype(out_edges(declval<G&&>(), declval<vertex_t<G>>()));
+using out_edge_iterator_t = iterator_t<out_edge_range_t<G>>;
+using edge_descriptor_t = range_value_t<out_edge_range_t<G>>;
+using out_edge_t = range_value_t<out_edge_range_t<G>>;  // edge_descriptor<EdgeIter, VertexIter>
+
+// Convenience aliases (old names)
+using vertex_edge_range_t = out_edge_range_t<G>;
+using vertex_edge_iterator_t = out_edge_iterator_t<G>;
+using edge_t = out_edge_t<G>;
 
 // After partition_id CPO (optional)
 using partition_id_t = decltype(partition_id(declval<G>(), declval<vertex_t<G>>()));
@@ -147,7 +152,7 @@ using partition_id_t = decltype(partition_id(declval<G>(), declval<vertex_t<G>>(
 using vertex_value_t = decltype(vertex_value(declval<G&&>(), declval<vertex_t<G>>()));
 
 // After edge_value CPO (optional)
-using edge_value_t = decltype(edge_value(declval<G&&>(), declval<edge_t<G>>()));
+using edge_value_t = decltype(edge_value(declval<G&&>(), declval<out_edge_t<G>>()));
 
 // After graph_value CPO (optional)
 using graph_value_t = decltype(graph_value(declval<G&&>()));
@@ -156,5 +161,5 @@ using graph_value_t = decltype(graph_value(declval<G&&>()));
 ## Notes
 
 - CPOs marked as "optional" may not be needed for all graph types
-- Convenience overloads (e.g., `edges(g, uid)`, `degree(g, uid)`) can be added after core implementations
+- Convenience aliases (`edges(g, u)` → `out_edges(g, u)`, `degree(g, u)` → `out_degree(g, u)`, `find_vertex_edge` → `find_out_edge`) can be used interchangeably with the primary names
 - The order optimizes for dependency resolution (earlier CPOs are used by later ones)

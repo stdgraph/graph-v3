@@ -21,7 +21,7 @@ public:
 
   virtual size_t                           num_vertices() const                       = 0;
   virtual size_t                           num_edges() const                          = 0;
-  virtual bool                             has_edge(const VId& u, const VId& v) const = 0;
+  virtual bool                             has_edges(const VId& u, const VId& v) const = 0;
   virtual std::vector<VId>                 get_vertex_ids() const                     = 0;
   virtual std::vector<std::pair<VId, VId>> get_edges() const                          = 0;
 };
@@ -51,7 +51,7 @@ public:
     return count;
   }
 
-  bool has_edge(const VId& uid, const VId& vid) const override {
+  bool has_edges(const VId& uid, const VId& vid) const override {
     for (auto&& u : vertices(graph_)) {
       if (vertex_id(graph_, u) == uid) {
         for (auto&& e : edges(graph_, u)) {
@@ -129,20 +129,20 @@ TEST_CASE("graph_view wraps graph with edges", "[6.3.5][type-erasure][edges]") {
 
   REQUIRE(view->num_vertices() == 3);
   REQUIRE(view->num_edges() == 3);
-  REQUIRE(view->has_edge(0, 1));
-  REQUIRE(view->has_edge(1, 2));
-  REQUIRE(view->has_edge(0, 2));
-  REQUIRE_FALSE(view->has_edge(2, 0));
+  REQUIRE(view->has_edges(0, 1));
+  REQUIRE(view->has_edges(1, 2));
+  REQUIRE(view->has_edges(0, 2));
+  REQUIRE_FALSE(view->has_edges(2, 0));
 }
 
-TEST_CASE("graph_view has_edge on non-existent edge", "[6.3.5][type-erasure][has-edge]") {
+TEST_CASE("graph_view has_edges on non-existent edge", "[6.3.5][type-erasure][has-edge]") {
   vov_void g({{0, 1}});
 
   auto view = make_graph_view(g);
 
-  REQUIRE(view->has_edge(0, 1));
-  REQUIRE_FALSE(view->has_edge(1, 0));
-  REQUIRE_FALSE(view->has_edge(0, 2));
+  REQUIRE(view->has_edges(0, 1));
+  REQUIRE_FALSE(view->has_edges(1, 0));
+  REQUIRE_FALSE(view->has_edges(0, 2));
 }
 
 TEST_CASE("graph_view get_vertex_ids returns all vertices", "[6.3.5][type-erasure][vertices]") {
@@ -176,7 +176,7 @@ TEST_CASE("graph_view with self-loop", "[6.3.5][type-erasure][self-loop]") {
 
   REQUIRE(view->num_vertices() == 1);
   REQUIRE(view->num_edges() == 1);
-  REQUIRE(view->has_edge(0, 0));
+  REQUIRE(view->has_edges(0, 0));
 }
 
 TEST_CASE("graph_view wraps mos graph", "[6.3.5][type-erasure][mos]") {
@@ -186,9 +186,9 @@ TEST_CASE("graph_view wraps mos graph", "[6.3.5][type-erasure][mos]") {
 
   REQUIRE(view->num_vertices() == 3);
   REQUIRE(view->num_edges() == 2);
-  REQUIRE(view->has_edge(10, 20));
-  REQUIRE(view->has_edge(20, 30));
-  REQUIRE_FALSE(view->has_edge(10, 30));
+  REQUIRE(view->has_edges(10, 20));
+  REQUIRE(view->has_edges(20, 30));
+  REQUIRE_FALSE(view->has_edges(10, 30));
 }
 
 TEST_CASE("graph_view wraps dofl graph", "[6.3.5][type-erasure][dofl]") {
@@ -254,9 +254,9 @@ TEST_CASE("graph_view handles cycle", "[6.3.5][type-erasure][cycle]") {
 
   REQUIRE(view->num_vertices() == 3);
   REQUIRE(view->num_edges() == 3);
-  REQUIRE(view->has_edge(0, 1));
-  REQUIRE(view->has_edge(1, 2));
-  REQUIRE(view->has_edge(2, 0));
+  REQUIRE(view->has_edges(0, 1));
+  REQUIRE(view->has_edges(1, 2));
+  REQUIRE(view->has_edges(2, 0));
 }
 
 TEST_CASE("graph_view with disconnected components", "[6.3.5][type-erasure][disconnected]") {
@@ -266,10 +266,10 @@ TEST_CASE("graph_view with disconnected components", "[6.3.5][type-erasure][disc
 
   REQUIRE(view->num_vertices() == 4);
   REQUIRE(view->num_edges() == 2);
-  REQUIRE(view->has_edge(0, 1));
-  REQUIRE(view->has_edge(2, 3));
-  REQUIRE_FALSE(view->has_edge(0, 2));
-  REQUIRE_FALSE(view->has_edge(1, 3));
+  REQUIRE(view->has_edges(0, 1));
+  REQUIRE(view->has_edges(2, 3));
+  REQUIRE_FALSE(view->has_edges(0, 2));
+  REQUIRE_FALSE(view->has_edges(1, 3));
 }
 
 TEST_CASE("graph_view polymorphic function call", "[6.3.5][type-erasure][function]") {
@@ -325,8 +325,8 @@ TEST_CASE("graph_view multiple self-loops", "[6.3.5][type-erasure][multi-self-lo
 
   REQUIRE(view->num_vertices() == 2);
   REQUIRE(view->num_edges() == 2);
-  REQUIRE(view->has_edge(0, 0));
-  REQUIRE(view->has_edge(1, 1));
+  REQUIRE(view->has_edges(0, 0));
+  REQUIRE(view->has_edges(1, 1));
 }
 
 TEST_CASE("graph_view with star topology", "[6.3.5][type-erasure][star]") {
@@ -336,8 +336,8 @@ TEST_CASE("graph_view with star topology", "[6.3.5][type-erasure][star]") {
 
   REQUIRE(view->num_vertices() == 5);
   REQUIRE(view->num_edges() == 4);
-  REQUIRE(view->has_edge(0, 1));
-  REQUIRE(view->has_edge(0, 2));
-  REQUIRE(view->has_edge(0, 3));
-  REQUIRE(view->has_edge(0, 4));
+  REQUIRE(view->has_edges(0, 1));
+  REQUIRE(view->has_edges(0, 2));
+  REQUIRE(view->has_edges(0, 3));
+  REQUIRE(view->has_edges(0, 4));
 }

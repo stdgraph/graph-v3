@@ -64,15 +64,11 @@ using mous_string =
       dynamic_graph<void, void, void, std::string, false, mous_graph_traits<void, void, void, std::string, false>>;
 using mos_string_ev =
       dynamic_graph<int, void, void, std::string, false, mos_graph_traits<int, void, void, std::string, false>>;
-using mos_string_sourced =
-      dynamic_graph<void, void, void, std::string, true, mos_graph_traits<void, void, void, std::string, true>>;
 
 // Double ID graphs
 using mos_double  = dynamic_graph<void, void, void, double, false, mos_graph_traits<void, void, void, double, false>>;
 using mous_double = dynamic_graph<void, void, void, double, false, mous_graph_traits<void, void, void, double, false>>;
 using mos_double_ev = dynamic_graph<int, void, void, double, false, mos_graph_traits<int, void, void, double, false>>;
-using mos_double_sourced =
-      dynamic_graph<void, void, void, double, true, mos_graph_traits<void, void, void, double, true>>;
 
 // PersonId (compound type) graphs
 using mos_person =
@@ -240,22 +236,6 @@ TEST_CASE("string ID edge cases - long strings", "[nonintegral][string][performa
   }
 }
 
-TEST_CASE("string ID - sourced edges", "[nonintegral][string][sourced]") {
-  SECTION("sourced graph with string IDs") {
-    mos_string_sourced g({{"alice", "bob"}, {"bob", "charlie"}});
-    REQUIRE(g.size() == 3);
-
-    auto alice = find_vertex(g, "alice");
-    REQUIRE(alice != vertices(g).end());
-
-    auto edge_rng = edges(g, *alice);
-    auto edge     = *std::ranges::begin(edge_rng);
-
-    // Verify source_id returns the correct string
-    REQUIRE(source_id(g, edge) == "alice");
-    REQUIRE(target_id(g, edge) == "bob");
-  }
-}
 
 //==================================================================================================
 // PART 2: Double/Floating-Point Vertex IDs
@@ -436,18 +416,6 @@ TEST_CASE("double ID - unordered_map", "[nonintegral][double][unordered]") {
   }
 }
 
-TEST_CASE("double ID - sourced edges", "[nonintegral][double][sourced]") {
-  SECTION("source_id returns double") {
-    mos_double_sourced g({{1.0, 2.0}, {2.0, 3.0}});
-
-    auto v        = find_vertex(g, 1.0);
-    auto edge_rng = edges(g, *v);
-    auto edge     = *std::ranges::begin(edge_rng);
-
-    REQUIRE(source_id(g, edge) == 1.0);
-    REQUIRE(target_id(g, edge) == 2.0);
-  }
-}
 
 //==================================================================================================
 // PART 3: Compound/Custom Type Vertex IDs (PersonId)

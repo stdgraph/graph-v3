@@ -78,26 +78,22 @@ using vov_string  = dynamic_graph<std::string,
                                   void,
                                   void,
                                   uint64_t,
-                                  false,
-                                  vov_graph_traits<std::string, void, void, uint64_t, false>>;
+                                  false, vov_graph_traits<std::string, void, void, uint64_t, false>>;
 using vofl_string = dynamic_graph<std::string,
                                   void,
                                   void,
                                   uint64_t,
-                                  false,
-                                  vofl_graph_traits<std::string, void, void, uint64_t, false>>;
+                                  false, vofl_graph_traits<std::string, void, void, uint64_t, false>>;
 using mos_string  = dynamic_graph<std::string,
                                   void,
                                   void,
                                   std::string,
-                                  false,
-                                  mos_graph_traits<std::string, void, void, std::string, false>>;
+                                  false, mos_graph_traits<std::string, void, void, std::string, false>>;
 using mol_string  = dynamic_graph<std::string,
                                   void,
                                   void,
                                   std::string,
-                                  false,
-                                  mol_graph_traits<std::string, void, void, std::string, false>>;
+                                  false, mol_graph_traits<std::string, void, void, std::string, false>>;
 
 //==================================================================================================
 // Helper: Count all edges

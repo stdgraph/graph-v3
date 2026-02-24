@@ -5,6 +5,7 @@ add_executable(graph3_adj_list_tests
     concepts/test_vertex_concepts.cpp
     concepts/test_adjacency_list_edge_concepts.cpp
     concepts/test_adjacency_list_vertex_concepts.cpp
+    concepts/test_bidirectional_concepts.cpp
     
     # Descriptors
     descriptors/test_vertex_descriptor.cpp
@@ -24,9 +25,12 @@ add_executable(graph3_adj_list_tests
     cpo/test_num_vertices_cpo.cpp
     cpo/test_num_edges_cpo.cpp
     cpo/test_degree_cpo.cpp
+    cpo/test_in_edges_cpo.cpp
+    cpo/test_find_in_edge_cpo.cpp
+    cpo/test_contains_in_edge_cpo.cpp
     cpo/test_find_vertex_edge_cpo.cpp
     cpo/test_contains_edge_cpo.cpp
-    cpo/test_has_edge_cpo.cpp
+    cpo/test_has_edges_cpo.cpp
     cpo/test_vertex_value_cpo.cpp
     cpo/test_edge_value_cpo.cpp
     cpo/test_edge_value_cpo_value_method.cpp
@@ -35,9 +39,11 @@ add_executable(graph3_adj_list_tests
     cpo/test_num_partitions_cpo.cpp
     cpo/test_vertices_pid_cpo.cpp
     cpo/test_num_vertices_pid_cpo.cpp
+    cpo/test_bidir_cpo_consistency.cpp
     
     # Traits
     traits/test_type_aliases.cpp
+    traits/test_incoming_edge_traits.cpp
     traits/test_adjacency_list_traits.cpp
 )
 

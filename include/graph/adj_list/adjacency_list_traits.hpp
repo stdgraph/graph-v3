@@ -168,6 +168,116 @@ template <typename G, typename V>
 inline constexpr bool has_contains_edge_v = has_contains_edge<G, V>;
 
 // =============================================================================
+// In-Degree Trait
+// =============================================================================
+
+namespace detail {
+  // Helper to detect if in_degree(g, u) is valid for a vertex descriptor
+  template <typename G>
+  concept has_in_degree_impl = requires(G& g, vertex_t<G>& u) {
+    { in_degree(g, u) } -> std::integral;
+  };
+} // namespace detail
+
+/**
+ * @brief Trait to check if a graph supports in_degree operations
+ * 
+ * A graph has in_degree support if in_degree(g, u) is valid with a vertex descriptor.
+ * 
+ * @tparam G Graph type
+ */
+template <typename G>
+concept has_in_degree = detail::has_in_degree_impl<G>;
+
+// Convenience variable template
+template <typename G>
+inline constexpr bool has_in_degree_v = has_in_degree<G>;
+
+// =============================================================================
+// Find In-Edge Trait
+// =============================================================================
+
+namespace detail {
+  // Helper to detect if find_in_edge(g, u, v) is valid with vertex descriptors
+  template <typename G>
+  concept has_find_in_edge_uu_impl = requires(G& g, vertex_t<G> u, vertex_t<G> v) {
+    { find_in_edge(g, u, v) };
+  };
+
+  // Helper to detect if find_in_edge(g, u, vid) is valid with descriptor + id
+  template <typename G>
+  concept has_find_in_edge_uid_impl = requires(G& g, vertex_t<G> u, vertex_id_t<G> vid) {
+    { find_in_edge(g, u, vid) };
+  };
+
+  // Helper to detect if find_in_edge(g, uid, vid) is valid with vertex IDs
+  template <typename G>
+  concept has_find_in_edge_uidvid_impl = requires(G& g, vertex_id_t<G> uid, vertex_id_t<G> vid) {
+    { find_in_edge(g, uid, vid) };
+  };
+} // namespace detail
+
+/**
+ * @brief Trait to check if a graph supports find_in_edge operations
+ * 
+ * A graph has find_in_edge support if all three overloads are valid:
+ * - find_in_edge(g, u, v) where u, v are vertex descriptors
+ * - find_in_edge(g, u, vid) where u is a descriptor and vid is a vertex ID
+ * - find_in_edge(g, uid, vid) where both are vertex IDs
+ * 
+ * @tparam G Graph type
+ */
+template <typename G>
+concept has_find_in_edge =
+      detail::has_find_in_edge_uu_impl<G> && detail::has_find_in_edge_uid_impl<G> &&
+      detail::has_find_in_edge_uidvid_impl<G>;
+
+// Convenience variable template
+template <typename G>
+inline constexpr bool has_find_in_edge_v = has_find_in_edge<G>;
+
+// =============================================================================
+// Contains In-Edge Trait
+// =============================================================================
+
+namespace detail {
+  // Helper to detect if contains_in_edge(g, u, v) is valid
+  template <typename G, typename V>
+  concept has_contains_in_edge_uv_impl = requires(G& g, V u, V v) {
+    { contains_in_edge(g, u, v) } -> std::same_as<bool>;
+  };
+
+  // Helper to detect if contains_in_edge(g, uid, vid) is valid with vertex IDs
+  template <typename G, typename V>
+  concept has_contains_in_edge_uidvid_impl =
+        std::same_as<std::remove_cvref_t<V>, vertex_id_t<G>> && requires(G& g, V uid, V vid) {
+          { contains_in_edge(g, uid, vid) } -> std::same_as<bool>;
+        };
+} // namespace detail
+
+/**
+ * @brief Trait to check if a graph supports contains_in_edge operations
+ * 
+ * A graph has contains_in_edge support with vertex type V if both overloads are valid:
+ * - contains_in_edge(g, u, v) where u, v are of type V
+ * - contains_in_edge(g, uid, vid) if V is vertex_id_t<G>
+ * 
+ * Requirements:
+ * - Both overloads must return bool
+ * 
+ * @tparam G Graph type
+ * @tparam V Vertex or vertex ID type
+ */
+template <typename G, typename V>
+concept has_contains_in_edge =
+      detail::has_contains_in_edge_uv_impl<G, V> &&
+      (std::same_as<std::remove_cvref_t<V>, vertex_t<G>> || detail::has_contains_in_edge_uidvid_impl<G, V>);
+
+// Convenience variable template
+template <typename G, typename V>
+inline constexpr bool has_contains_in_edge_v = has_contains_in_edge<G, V>;
+
+// =============================================================================
 // Combined Trait Queries
 // =============================================================================
 

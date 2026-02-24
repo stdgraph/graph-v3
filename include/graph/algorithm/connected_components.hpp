@@ -33,6 +33,7 @@ namespace graph {
 
 // Using declarations for new namespace structure
 using adj_list::index_adjacency_list;
+using adj_list::index_bidirectional_adjacency_list;
 using adj_list::adjacency_list;
 using adj_list::vertex_id_t;
 using adj_list::edge_t;
@@ -210,6 +211,132 @@ void kosaraju(G&&        g,        // graph
         }
       }
       ++cid; // Move to next SCC
+    }
+  }
+}
+
+//=============================================================================
+// kosaraju (bidirectional) - Single-graph SCC using in_edges
+//=============================================================================
+
+/**
+ * @brief Finds strongly connected components using in_edges (no transpose needed).
+ * 
+ * When the graph satisfies `index_bidirectional_adjacency_list`, the second DFS
+ * pass can traverse incoming edges directly instead of requiring a separate
+ * transpose graph.  This eliminates the O(V + E) cost of constructing and
+ * storing the transpose.
+ * 
+ * @par Complexity Analysis
+ * 
+ * | Case | Time | Space |
+ * |------|------|-------|
+ * | All cases | O(V + E) | O(V) |
+ * 
+ * Same asymptotic cost as the two-graph overload, but with lower constant
+ * factor due to avoided transpose construction.
+ * 
+ * @par Container Requirements
+ * 
+ * - Requires: `index_bidirectional_adjacency_list<G>` (in_edges + index vertices)
+ * - Requires: `random_access_range<Component>`
+ * - Works with: All bidirectional `dynamic_graph` container combinations
+ * 
+ * @tparam G Graph type (must satisfy index_bidirectional_adjacency_list concept)
+ * @tparam Component Random access range for component IDs
+ * 
+ * @param g The directed bidirectional graph to analyze
+ * @param component Output: component[v] = component ID for vertex v
+ * 
+ * @pre `component.size() >= num_vertices(g)`
+ * 
+ * @post `component[v]` contains the SCC ID for vertex v
+ * @post Component IDs are assigned 0, 1, 2, ..., num_components-1
+ * @post Vertices in the same SCC have the same component ID
+ * 
+ * @par Example
+ * @code
+ * // Create bidirectional directed graph: 0->1->2->0 (cycle), 2->3
+ * using Traits = container::vov_graph_traits<int, void, void, size_t, false, true>;
+ * container::dynamic_graph<Traits> g({{0,1}, {1,2}, {2,0}, {2,3}});
+ * 
+ * std::vector<size_t> component(num_vertices(g));
+ * kosaraju(g, component);  // No transpose needed!
+ * @endcode
+ * 
+ * @see kosaraju(G&&, GT&&, Component&) For non-bidirectional graphs
+ */
+template <index_bidirectional_adjacency_list G,
+          random_access_range                Component>
+void kosaraju(G&&        g,        // bidirectional graph
+              Component& component // out: strongly connected component assignment
+) {
+  size_t            N(num_vertices(g));
+  std::vector<bool> visited(N, false);
+  using CT = typename std::decay<decltype(*component.begin())>::type;
+  std::fill(component.begin(), component.end(), std::numeric_limits<CT>::max());
+  std::vector<vertex_id_t<G>> order;
+
+  auto& g_ref = g;
+
+  // First pass: iterative DFS to compute finish times (same as two-graph version)
+  auto dfs_finish_order = [&](vertex_id_t<G> start) {
+    std::stack<std::pair<vertex_id_t<G>, bool>> stack;
+    stack.push({start, false});
+    visited[start] = true;
+
+    while (!stack.empty()) {
+      auto [uid, children_visited] = stack.top();
+      stack.pop();
+
+      if (children_visited) {
+        order.push_back(uid);
+      } else {
+        stack.push({uid, true});
+
+        auto uid_vertex = *find_vertex(g_ref, uid);
+        for (auto&& [vid, e] : views::incidence(g_ref, uid_vertex)) {
+          if (!visited[vid]) {
+            visited[vid] = true;
+            stack.push({vid, false});
+          }
+        }
+      }
+    }
+  };
+
+  for (auto&& vinfo : views::vertexlist(g_ref)) {
+    auto uid = vertex_id(g_ref, vinfo.vertex);
+    if (!visited[uid]) {
+      dfs_finish_order(uid);
+    }
+  }
+
+  // Second pass: DFS on reverse edges (via in_edges) in reverse finish order.
+  // Each DFS tree corresponds to exactly one SCC.
+  size_t                    cid = 0;
+  std::ranges::reverse_view reverse{order};
+  for (auto& uid : reverse) {
+    if (component[uid] == std::numeric_limits<CT>::max()) {
+      // Manual iterative DFS using in_edges + source_id
+      std::stack<vertex_id_t<G>> dfs_stack;
+      dfs_stack.push(uid);
+      component[uid] = cid;
+
+      while (!dfs_stack.empty()) {
+        auto current = dfs_stack.top();
+        dfs_stack.pop();
+
+        auto v = *adj_list::find_vertex(g_ref, current);
+        for (auto&& ie : adj_list::in_edges(g_ref, v)) {
+          auto src = adj_list::source_id(g_ref, ie);
+          if (component[src] == std::numeric_limits<CT>::max()) {
+            component[src] = cid;
+            dfs_stack.push(src);
+          }
+        }
+      }
+      ++cid;
     }
   }
 }

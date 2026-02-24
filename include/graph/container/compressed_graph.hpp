@@ -1326,7 +1326,7 @@ public: // Friend functions
    * @param g The graph (forwarding reference)
    * @return true if the graph has at least one edge, false otherwise
    * @note Complexity: O(1) - direct size check
-   * @note This is the ADL customization point for the has_edge(g) CPO
+   * @note This is the ADL customization point for the has_edges(g) CPO
   */
   template <typename G>
   requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>

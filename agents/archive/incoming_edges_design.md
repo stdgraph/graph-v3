@@ -33,36 +33,35 @@ preserving full backward compatibility with existing code.
 
 ## 3. Naming Convention
 
-### 3.1 Existing names (no rename required)
+### 3.1 Primary outgoing names
 
-The current names remain as-is and **continue to mean "outgoing edges"**:
+The explicit directional names are the **primary** CPO definitions:
 
-| Current Name | Stays | Meaning |
-|---|---|---|
-| `edges(g, u)` | Yes | Outgoing edges from vertex `u` |
-| `degree(g, u)` | Yes | Out-degree of `u` |
-| `target_id(g, uv)` | Yes | Target vertex of edge `uv` |
-| `source_id(g, uv)` | Yes | Source vertex of edge `uv` |
-| `target(g, uv)` | Yes | Target vertex descriptor |
-| `source(g, uv)` | Yes | Source vertex descriptor |
-| `num_edges(g)` | Yes | Total edge count (direction-agnostic) |
-| `find_vertex_edge(g, u, v)` | Yes | Find outgoing edge from `u` to `v` |
-| `contains_edge(g, u, v)` | Yes | Check outgoing edge from `u` to `v` |
-| `has_edge(g)` | Yes | Check whether graph has at least one edge |
-| `edge_value(g, uv)` | Yes | Edge property (direction-agnostic) |
-
-### 3.2 New outgoing aliases (optional clarity)
-
-For code that wants to be explicit, introduce **aliases** that forward to the
-existing CPOs. These are convenience only — not required:
-
-| New Alias | Forwards To |
+| Primary Name | Meaning |
 |---|---|
-| `out_edges(g, u)` | `edges(g, u)` |
-| `out_degree(g, u)` | `degree(g, u)` |
-| `find_out_edge(g, u, v)` | `find_vertex_edge(g, u, v)` |
+| `out_edges(g, u)` | Outgoing edges from vertex `u` |
+| `out_degree(g, u)` | Out-degree of `u` |
+| `target_id(g, uv)` | Target vertex of edge `uv` |
+| `source_id(g, uv)` | Source vertex of edge `uv` |
+| `target(g, uv)` | Target vertex descriptor |
+| `source(g, uv)` | Source vertex descriptor |
+| `num_edges(g)` | Total edge count (direction-agnostic) |
+| `find_out_edge(g, u, v)` | Find outgoing edge from `u` to `v` |
+| `contains_edge(g, u, v)` | Check outgoing edge from `u` to `v` |
+| `has_edge(g)` | Check whether graph has at least one edge |
+| `edge_value(g, uv)` | Edge property (direction-agnostic) |
 
-These are defined as inline constexpr CPO aliases or thin wrapper functions in
+### 3.2 Convenience aliases (shorter names)
+
+For code that prefers brevity, **aliases** forward to the primary CPOs:
+
+| Alias | Forwards To |
+|---|---|
+| `edges(g, u)` | `out_edges(g, u)` |
+| `degree(g, u)` | `out_degree(g, u)` |
+| `find_vertex_edge(g, u, v)` | `find_out_edge(g, u, v)` |
+
+These are defined as inline constexpr CPO aliases in
 `graph::adj_list` and re-exported to `graph::`.
 
 > **Design decision (2026-02-21):** These aliases are **retained**. See
@@ -115,7 +114,7 @@ For the `(g, uid)` overload:
 | 1 | `_adl` | ADL `in_edges(g, uid)` |
 | 2 | `_default` | `in_edges(g, *find_vertex(g, uid))` |
 
-**Return type:** `in_vertex_edge_range_t<G>` — i.e. the exact range type returned by
+**Return type:** `in_edge_range_t<G>` — i.e. the exact range type returned by
 `in_edges(g, u)` after CPO resolution. This may be an `edge_descriptor_view`, but
 custom member/ADL implementations may return a different valid range type.
 
@@ -131,23 +130,26 @@ custom member/ADL implementations may return a different valid range type.
 | 2 | `_adl` | ADL `in_degree(g, u)` |
 | 3 | `_default` | `size(in_edges(g, u))` or `distance(in_edges(g, u))` |
 
-### 4.3 `out_edges` / `out_degree` / `find_out_edge` (aliases)
+### 4.3 `edges` / `degree` / `find_vertex_edge` (convenience aliases)
 
 **File:** `include/graph/adj_list/detail/graph_cpo.hpp`
 
+> **Note:** `out_edges`, `out_degree`, and `find_out_edge` are the primary
+> CPO instances. The shorter names are convenience aliases.
+
 ```cpp
-inline constexpr auto& out_edges      = edges;
-inline constexpr auto& out_degree     = degree;
-inline constexpr auto& find_out_edge  = find_vertex_edge;
+inline constexpr auto& edges            = out_edges;
+inline constexpr auto& degree           = out_degree;
+inline constexpr auto& find_vertex_edge = find_out_edge;
 ```
 
 ### 4.4 `find_in_edge`, `contains_in_edge`
 
-These mirror `find_vertex_edge` (`find_out_edge`) / `contains_edge` but operate
+These mirror `find_out_edge` / `contains_edge` but operate
 on the reverse adjacency structure. Implementation follows the same
 member → ADL → default cascade pattern.
 
-`find_in_edge` has three overloads mirroring `find_vertex_edge`:
+`find_in_edge` has three overloads mirroring `find_out_edge`:
 - `find_in_edge(g, u, v)` — both vertex descriptors
 - `find_in_edge(g, u, vid)` — descriptor + vertex ID
 - `find_in_edge(g, uid, vid)` — both vertex IDs
@@ -173,21 +175,29 @@ matches `source_id(g, ie)` against the target vertex (the in-neighbor). The defa
 
 | Alias | Definition |
 |---|---|
-| `in_vertex_edge_range_t<G>` | `decltype(in_edges(g, vertex_t<G>))` |
-| `in_vertex_edge_iterator_t<G>` | `ranges::iterator_t<in_vertex_edge_range_t<G>>` |
-| `in_edge_t<G>` | `ranges::range_value_t<in_vertex_edge_range_t<G>>` |
+| `in_edge_range_t<G>` | `decltype(in_edges(g, vertex_t<G>))` |
+| `in_edge_iterator_t<G>` | `ranges::iterator_t<in_edge_range_t<G>>` |
+| `in_edge_t<G>` | `ranges::range_value_t<in_edge_range_t<G>>` |
 
 `in_edge_t<G>` is **independently deduced** from the `in_edges()` return range.
-It is commonly the same type as `edge_t<G>` but this is not required. See
+It is commonly the same type as `out_edge_t<G>` but this is not required. See
 Design Principle 5 and Appendix C for rationale.
 
-Also add outgoing aliases for explicitness:
+The outgoing type aliases are the primary definitions:
+
+| Primary Alias | Definition |
+|---|---|
+| `out_edge_range_t<G>` | `decltype(out_edges(g, vertex_t<G>))` |
+| `out_edge_iterator_t<G>` | `ranges::iterator_t<out_edge_range_t<G>>` |
+| `out_edge_t<G>` | `ranges::range_value_t<out_edge_range_t<G>>` |
+
+Convenience aliases:
 
 | Alias | Definition |
 |---|---|
-| `out_vertex_edge_range_t<G>` | Same as `vertex_edge_range_t<G>` |
-| `out_vertex_edge_iterator_t<G>` | Same as `vertex_edge_iterator_t<G>` |
-| `out_edge_t<G>` | Same as `edge_t<G>` |
+| `vertex_edge_range_t<G>` | Same as `out_edge_range_t<G>` |
+| `vertex_edge_iterator_t<G>` | Same as `out_edge_iterator_t<G>` |
+| `edge_t<G>` | Same as `out_edge_t<G>` |
 
 ---
 
@@ -195,11 +205,11 @@ Also add outgoing aliases for explicitness:
 
 **File:** `include/graph/adj_list/adjacency_list_concepts.hpp`
 
-### 6.1 `in_vertex_edge_range<R, G>`
+### 6.1 `in_edge_range<R, G>`
 
 ```cpp
 template <class R, class G>
-concept in_vertex_edge_range =
+concept in_edge_range =
     std::ranges::forward_range<R>;
 ```
 
@@ -210,7 +220,7 @@ not satisfy the full `edge<G, E>` concept. The minimum requirement is that
 `source_id(g, ie)` can extract the neighbor vertex ID (see §6.2).
 
 When `in_edge_t<G>` and `edge_t<G>` are the same type, the range will naturally
-model `vertex_edge_range` as well.
+model `out_edge_range` as well.
 
 ### 6.2 `bidirectional_adjacency_list<G>`
 
@@ -219,7 +229,7 @@ template <class G>
 concept bidirectional_adjacency_list =
     adjacency_list<G> &&
     requires(G& g, vertex_t<G> u, in_edge_t<G> ie) {
-      { in_edges(g, u) } -> in_vertex_edge_range<G>;
+      { in_edges(g, u) } -> in_edge_range<G>;
       { source_id(g, ie) } -> std::convertible_to<vertex_id_t<G>>;
       // Note: no edge_value() requirement on incoming edges
     };
@@ -549,7 +559,7 @@ using adj_list::find_in_edge;
 using adj_list::contains_in_edge;
 
 // New concepts
-using adj_list::in_vertex_edge_range;
+using adj_list::in_edge_range;
 using adj_list::bidirectional_adjacency_list;
 using adj_list::index_bidirectional_adjacency_list;
 
@@ -558,11 +568,11 @@ using adj_list::has_in_degree;
 using adj_list::has_in_degree_v;
 
 // New type aliases
-using adj_list::in_vertex_edge_range_t;
-using adj_list::in_vertex_edge_iterator_t;
+using adj_list::in_edge_range_t;
+using adj_list::in_edge_iterator_t;
 using adj_list::in_edge_t;
-using adj_list::out_vertex_edge_range_t;
-using adj_list::out_vertex_edge_iterator_t;
+using adj_list::out_edge_range_t;
+using adj_list::out_edge_iterator_t;
 using adj_list::out_edge_t;
 ```
 
@@ -586,9 +596,9 @@ using adj_list::out_edge_t;
 | `docs/user-guide/views.md` | Add `in_incidence` and `in_neighbors` views; add `out_incidence`/`out_neighbors` aliases |
 | `docs/user-guide/algorithms.md` | Note which algorithms benefit from bidirectional access |
 | `docs/user-guide/containers.md` | Document bidirectional dynamic_graph and compressed_graph |
-| `docs/reference/concepts.md` | Add `bidirectional_adjacency_list`, `in_vertex_edge_range` |
+| `docs/reference/concepts.md` | Add `bidirectional_adjacency_list`, `in_edge_range` |
 | `docs/reference/cpo-reference.md` | Add `in_edges`, `in_degree`, `out_edges`, `out_degree`, `find_in_edge`, `contains_in_edge` |
-| `docs/reference/type-aliases.md` | Add `in_vertex_edge_range_t`, `in_edge_t`, etc. |
+| `docs/reference/type-aliases.md` | Add `in_edge_range_t`, `in_edge_t`, etc. |
 | `docs/reference/adjacency-list-interface.md` | Add incoming edge section |
 | `docs/contributing/cpo-implementation.md` | Add `in_edges` as an example of the CPO pattern |
 | `README.md` | Update feature highlights with bidirectional support |
@@ -608,7 +618,7 @@ using adj_list::out_edge_t;
 1. Implement `in_edges` CPO in `graph_cpo.hpp` (mirror `edges` CPO)
 2. Implement `in_degree` CPO (mirror `degree` CPO)
 3. Add `out_edges` / `out_degree` aliases
-4. Define `in_vertex_edge_range_t`, `in_edge_t`, etc.
+4. Define `in_edge_range_t`, `in_edge_t`, etc.
 5. Define `bidirectional_adjacency_list` concept
 6. Add `has_in_degree` trait
 7. Update `graph.hpp` re-exports
@@ -707,9 +717,9 @@ Additional phase-specific gates:
 | Category | New | Modified | Deleted |
 |---|---|---|---|
 | **CPOs** | `in_edges`, `in_degree`, `out_edges` (alias), `out_degree` (alias), `find_out_edge` (alias), `find_in_edge`, `contains_in_edge` | — | — |
-| **Concepts** | `in_vertex_edge_range`, `bidirectional_adjacency_list`, `index_bidirectional_adjacency_list` | — | — |
+| **Concepts** | `in_edge_range`, `bidirectional_adjacency_list`, `index_bidirectional_adjacency_list` | — | — |
 | **Traits** | `has_in_degree`, `has_in_degree_v`, `has_find_in_edge`, `has_contains_in_edge` | — | — |
-| **Type Aliases** | `in_vertex_edge_range_t`, `in_vertex_edge_iterator_t`, `in_edge_t`, `out_vertex_edge_range_t`, `out_vertex_edge_iterator_t`, `out_edge_t` | — | — |
+| **Type Aliases** | `in_edge_range_t`, `in_edge_iterator_t`, `in_edge_t`, `out_edge_range_t`, `out_edge_iterator_t`, `out_edge_t` | — | — |
 | **Views** | `in_incidence.hpp`, `in_neighbors.hpp` | `bfs.hpp`, `dfs.hpp`, `topological_sort.hpp` (add `EdgeAccessor` param), `adaptors.hpp` (add pipe closures) | — |
 | **Traversal policies** | `out_edges_accessor`, `in_edges_accessor` | — | — |
 | **Containers** | — | `dynamic_graph.hpp` (add `Bidirectional`), `compressed_graph.hpp` (add CSC), `undirected_adjacency_list.hpp` (add `in_edges` friend) | — |
@@ -746,7 +756,7 @@ Several graph libraries (Boost.Graph, NetworkX, LEDA) distinguish `out_edges` /
 documented and all algorithms depend on it). Renaming `edges()` to `out_edges()` would:
 
 - Break every existing user's code
-- Require renaming `vertex_edge_range_t` → `out_vertex_edge_range_t` across 50+ files
+- Require renaming `vertex_edge_range_t` → `out_edge_range_t` across 50+ files
 - Create churn in all 14 algorithms
 
 Instead we keep `edges()` as the primary outgoing CPO (matching the "default is outgoing"
@@ -759,7 +769,7 @@ directionality.
 
 ```cpp
 template <class G> using edge_t    = ranges::range_value_t<vertex_edge_range_t<G>>;    // from edges(g,u)
-template <class G> using in_edge_t = ranges::range_value_t<in_vertex_edge_range_t<G>>; // from in_edges(g,u)
+template <class G> using in_edge_t = ranges::range_value_t<in_edge_range_t<G>>; // from in_edges(g,u)
 ```
 
 They are commonly the same type, but this is **not required**. Scenarios where

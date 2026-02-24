@@ -40,12 +40,8 @@ using dol_string_string_string =
                     std::string,
                     std::string,
                     uint32_t,
-                    false,
-                    dol_graph_traits<std::string, std::string, std::string, uint32_t, false>>;
+                    false, dol_graph_traits<std::string, std::string, std::string, uint32_t, false>>;
 
-using dol_sourced = dynamic_graph<void, void, void, uint32_t, true, dol_graph_traits<void, void, void, uint32_t, true>>;
-using dol_int_sourced =
-      dynamic_graph<int, void, void, uint32_t, true, dol_graph_traits<int, void, void, uint32_t, true>>;
 
 //==================================================================================================
 // 1. Construction Tests
@@ -133,17 +129,6 @@ TEST_CASE("dol copy and move construction", "[dol][construction]") {
   }
 }
 
-TEST_CASE("dol sourced construction", "[dol][construction][sourced]") {
-  SECTION("sourced edge construction") {
-    dol_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-
-  SECTION("sourced with edge value construction") {
-    dol_int_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-}
 
 //==================================================================================================
 // 2. Basic Properties Tests
@@ -284,13 +269,8 @@ TEST_CASE("dol_graph_traits", "[dol][traits]") {
     STATIC_REQUIRE(std::is_same_v<traits::vertex_value_type, std::string>);
     STATIC_REQUIRE(std::is_same_v<traits::graph_value_type, void>);
     STATIC_REQUIRE(std::is_same_v<traits::vertex_id_type, uint32_t>);
-    STATIC_REQUIRE(traits::sourced == false);
   }
 
-  SECTION("sourced = true") {
-    using traits = dol_graph_traits<int, std::string, void, uint32_t, true>;
-    STATIC_REQUIRE(traits::sourced == true);
-  }
 
   SECTION("vertex_id_type variations") {
     using traits_u64 = dol_graph_traits<void, void, void, uint64_t, false>;
@@ -415,22 +395,19 @@ TEST_CASE("dol value types", "[dol][value_types]") {
   }
 
   SECTION("with string edge value type") {
-    using graph_t = dynamic_graph<std::string, void, void, uint32_t, false,
-                                  dol_graph_traits<std::string, void, void, uint32_t, false>>;
+    using graph_t = dynamic_graph<std::string, void, void, uint32_t, false, dol_graph_traits<std::string, void, void, uint32_t, false>>;
     graph_t g;
     REQUIRE(g.size() == 0);
   }
 
   SECTION("with string vertex value type") {
-    using graph_t = dynamic_graph<void, std::string, void, uint32_t, false,
-                                  dol_graph_traits<void, std::string, void, uint32_t, false>>;
+    using graph_t = dynamic_graph<void, std::string, void, uint32_t, false, dol_graph_traits<void, std::string, void, uint32_t, false>>;
     graph_t g;
     REQUIRE(g.size() == 0);
   }
 
   SECTION("with string graph value type") {
-    using graph_t = dynamic_graph<void, void, std::string, uint32_t, false,
-                                  dol_graph_traits<void, void, std::string, uint32_t, false>>;
+    using graph_t = dynamic_graph<void, void, std::string, uint32_t, false, dol_graph_traits<void, void, std::string, uint32_t, false>>;
     graph_t g(std::string("test"));
     REQUIRE(g.graph_value() == "test");
   }
@@ -483,41 +460,6 @@ TEST_CASE("dol vertex ID types", "[dol][vertex_id]") {
 // 9. Sourced Edge Tests
 //==================================================================================================
 
-TEST_CASE("dol sourced edges", "[dol][sourced]") {
-  SECTION("sourced=false by default") {
-    dol_void_void_void g;
-    using traits = dol_graph_traits<void, void, void, uint32_t, false>;
-    STATIC_REQUIRE(traits::sourced == false);
-  }
-
-  SECTION("sourced=true explicit") {
-    dol_sourced g;
-    using traits = dol_graph_traits<void, void, void, uint32_t, true>;
-    STATIC_REQUIRE(traits::sourced == true);
-  }
-
-  SECTION("sourced with void values") {
-    dol_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-
-  SECTION("sourced with int edge value") {
-    dol_int_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-
-  SECTION("sourced copy construction") {
-    dol_sourced g1;
-    dol_sourced g2 = g1;
-    REQUIRE(g2.size() == 0);
-  }
-
-  SECTION("sourced move construction") {
-    dol_sourced g1;
-    dol_sourced g2 = std::move(g1);
-    REQUIRE(g2.size() == 0);
-  }
-}
 
 //==================================================================================================
 // 10. Const Correctness Tests
@@ -615,8 +557,6 @@ TEST_CASE("dol various template instantiations compile", "[dol][compilation]") {
   [[maybe_unused]] dol_void_void_int        g5;
   [[maybe_unused]] dol_int_int_int          g6;
   [[maybe_unused]] dol_string_string_string g7;
-  [[maybe_unused]] dol_sourced              g8;
-  [[maybe_unused]] dol_int_sourced          g9;
 
   REQUIRE(true); // Just ensuring compilation
 }
@@ -840,22 +780,6 @@ TEST_CASE("dol initializer_list constructor with all value types", "[dol][constr
   }
 }
 
-TEST_CASE("dol initializer_list constructor with sourced edges", "[dol][construction][initializer_list][sourced]") {
-  using G = dol_sourced;
-
-  SECTION("construct sourced graph with initializer list") {
-    G g({{0, 1}, {1, 2}, {2, 0}});
-    REQUIRE(g.size() == 3);
-
-    // Verify sourced edges have source_id
-    auto& v0     = g[0];
-    auto  edges0 = v0.edges();
-    REQUIRE(std::ranges::distance(edges0) == 1);
-    auto e0 = edges0.begin();
-    REQUIRE(e0->source_id() == 0);
-    REQUIRE(e0->target_id() == 1);
-  }
-}
 
 TEST_CASE("dol initializer_list complex graph patterns", "[dol][construction][initializer_list]") {
   using G = dol_int_void_void;
@@ -945,8 +869,7 @@ TEST_CASE("dol load_vertices", "[dynamic_graph][dol][load_vertices]") {
   }
 
   SECTION("load with custom projection from struct") {
-    using G2           = dynamic_graph<int, std::string, void, uint32_t, false,
-                                       dol_graph_traits<int, std::string, void, uint32_t, false>>;
+    using G2           = dynamic_graph<int, std::string, void, uint32_t, false, dol_graph_traits<int, std::string, void, uint32_t, false>>;
     using vertex_data2 = copyable_vertex_t<uint32_t, std::string>;
 
     struct Person {
@@ -1080,8 +1003,7 @@ TEST_CASE("dol load_edges", "[dynamic_graph][dol][load_edges]") {
   }
 
   SECTION("load with custom projection from struct") {
-    using G3           = dynamic_graph<std::string, int, void, uint32_t, false,
-                                       dol_graph_traits<std::string, int, void, uint32_t, false>>;
+    using G3           = dynamic_graph<std::string, int, void, uint32_t, false, dol_graph_traits<std::string, int, void, uint32_t, false>>;
     using vertex_data3 = copyable_vertex_t<uint32_t, int>;
     using edge_data3   = copyable_edge_t<uint32_t, std::string>;
 

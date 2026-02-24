@@ -25,7 +25,7 @@ using graph::adj_list::find_vertex;
 using graph::adj_list::vertex_id;
 using graph::adj_list::num_edges;
 using graph::adj_list::num_vertices;
-using graph::adj_list::has_edge;
+using graph::adj_list::has_edges;
 using graph::adj_list::graph_value;
 using graph::adj_list::edges;
 using graph::adj_list::target;
@@ -147,15 +147,15 @@ TEST_CASE("num_edges CPO", "[undirected_adjacency_list][cpo][num_edges]") {
   REQUIRE(num_edges(g) == 2);
 }
 
-TEST_CASE("has_edge CPO", "[undirected_adjacency_list][cpo][has_edge]") {
+TEST_CASE("has_edges CPO", "[undirected_adjacency_list][cpo][has_edges]") {
   IntGraph g(0);
   g.create_vertex();
   g.create_vertex();
 
-  REQUIRE_FALSE(has_edge(g));
+  REQUIRE_FALSE(has_edges(g));
 
   g.create_edge(0, 1, 100);
-  REQUIRE(has_edge(g));
+  REQUIRE(has_edges(g));
 }
 
 TEST_CASE("graph_value CPO", "[undirected_adjacency_list][cpo][graph_value]") {
@@ -579,7 +579,7 @@ TEST_CASE("CPO with empty graph", "[undirected_adjacency_list][cpo][empty]") {
 
   SECTION("num_edges on empty graph") { REQUIRE(num_edges(g) == 0); }
 
-  SECTION("has_edge on empty graph") { REQUIRE_FALSE(has_edge(g)); }
+  SECTION("has_edges on empty graph") { REQUIRE_FALSE(has_edges(g)); }
 
   SECTION("find_vertex on empty graph returns end") {
     auto it = find_vertex(g, 0u);
@@ -600,7 +600,7 @@ TEST_CASE("CPO const correctness", "[undirected_adjacency_list][cpo][const]") {
   SECTION("all read CPOs work on const graph") {
     REQUIRE(num_vertices(cg) == 2);
     REQUIRE(num_edges(cg) == 1);
-    REQUIRE(has_edge(cg));
+    REQUIRE(has_edges(cg));
 
     auto verts = vertices(cg);
     REQUIRE(std::distance(verts.begin(), verts.end()) == 2);

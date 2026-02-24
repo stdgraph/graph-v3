@@ -158,14 +158,14 @@ concept ordered_vertex_edges = requires(G& g, vertex_id_t<G> u) {
 template <typename G>
 struct is_sparse_vertex_container : std::false_type {};
 
-template <typename EV, typename VV, typename GV, typename VId, bool Sourced, typename Traits>
-struct is_sparse_vertex_container<container::dynamic_graph<EV, VV, GV, VId, Sourced, Traits>>
-      : std::bool_constant<std::same_as<Traits, container::mov_graph_traits<EV, VV, GV, VId, Sourced>> ||
-                           std::same_as<Traits, container::mod_graph_traits<EV, VV, GV, VId, Sourced>> ||
-                           std::same_as<Traits, container::mol_graph_traits<EV, VV, GV, VId, Sourced>> ||
-                           std::same_as<Traits, container::uov_graph_traits<EV, VV, GV, VId, Sourced>> ||
-                           std::same_as<Traits, container::uod_graph_traits<EV, VV, GV, VId, Sourced>> ||
-                           std::same_as<Traits, container::uol_graph_traits<EV, VV, GV, VId, Sourced>>> {};
+template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional, typename Traits>
+struct is_sparse_vertex_container<container::dynamic_graph<EV, VV, GV, VId, Bidirectional, Traits>>
+      : std::bool_constant<std::same_as<Traits, container::mov_graph_traits<EV, VV, GV, VId, Bidirectional>> ||
+                           std::same_as<Traits, container::mod_graph_traits<EV, VV, GV, VId, Bidirectional>> ||
+                           std::same_as<Traits, container::mol_graph_traits<EV, VV, GV, VId, Bidirectional>> ||
+                           std::same_as<Traits, container::uov_graph_traits<EV, VV, GV, VId, Bidirectional>> ||
+                           std::same_as<Traits, container::uod_graph_traits<EV, VV, GV, VId, Bidirectional>> ||
+                           std::same_as<Traits, container::uol_graph_traits<EV, VV, GV, VId, Bidirectional>>> {};
 
 template <typename G>
 inline constexpr bool is_sparse_vertex_container_v = is_sparse_vertex_container<G>::value;

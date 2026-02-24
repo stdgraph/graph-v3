@@ -20,11 +20,12 @@ namespace graph::adj_list {
  * 
  * @tparam EdgeIter Iterator type of the underlying edge container
  * @tparam VertexIter Iterator type of the vertex container
+ * @tparam EdgeDirection Direction tag: out_edge_tag (default) or in_edge_tag
  */
-template <edge_iterator EdgeIter, vertex_iterator VertexIter>
-class edge_descriptor_view : public std::ranges::view_interface<edge_descriptor_view<EdgeIter, VertexIter>> {
+template <edge_iterator EdgeIter, vertex_iterator VertexIter, class EdgeDirection = out_edge_tag>
+class edge_descriptor_view : public std::ranges::view_interface<edge_descriptor_view<EdgeIter, VertexIter, EdgeDirection>> {
 public:
-  using edge_desc         = edge_descriptor<EdgeIter, VertexIter>;
+  using edge_desc         = edge_descriptor<EdgeIter, VertexIter, EdgeDirection>;
   using vertex_desc       = vertex_descriptor<VertexIter>;
   using edge_storage_type = typename edge_desc::edge_storage_type;
 
@@ -181,6 +182,6 @@ edge_descriptor_view(Range&&, VertexDesc)
 } // namespace graph::adj_list
 
 // Enable borrowed_range for edge_descriptor_view to allow std::ranges operations on temporaries
-template <typename EdgeIter, typename VertexIter>
-inline constexpr bool std::ranges::enable_borrowed_range<graph::adj_list::edge_descriptor_view<EdgeIter, VertexIter>> =
+template <typename EdgeIter, typename VertexIter, typename EdgeDirection>
+inline constexpr bool std::ranges::enable_borrowed_range<graph::adj_list::edge_descriptor_view<EdgeIter, VertexIter, EdgeDirection>> =
       true;

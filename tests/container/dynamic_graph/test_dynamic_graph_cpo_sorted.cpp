@@ -266,29 +266,29 @@ TEMPLATE_TEST_CASE("sorted CPO num_edges(g)", "[dynamic_graph][cpo][num_edges]",
 }
 
 //==================================================================================================
-// 6. has_edge(g) CPO Tests
+// 6. has_edges(g) CPO Tests
 //==================================================================================================
 
-TEMPLATE_TEST_CASE("sorted CPO has_edge(g)", "[dynamic_graph][cpo][has_edge]", vos_tag, dos_tag) {
+TEMPLATE_TEST_CASE("sorted CPO has_edges(g)", "[dynamic_graph][cpo][has_edges]", vos_tag, dos_tag) {
   using Types      = graph_test_types<TestType>;
   using Graph_void = typename Types::void_type;
 
   SECTION("empty graph") {
     Graph_void g;
-    REQUIRE(!has_edge(g));
+    REQUIRE(!has_edges(g));
   }
 
   SECTION("with edges") {
     Graph_void g({{0, 1}});
-    REQUIRE(has_edge(g));
+    REQUIRE(has_edges(g));
   }
 
   SECTION("matches num_edges") {
     Graph_void g1;
     Graph_void g2({{0, 1}});
 
-    REQUIRE(has_edge(g1) == (num_edges(g1) > 0));
-    REQUIRE(has_edge(g2) == (num_edges(g2) > 0));
+    REQUIRE(has_edges(g1) == (num_edges(g1) > 0));
+    REQUIRE(has_edges(g2) == (num_edges(g2) > 0));
   }
 }
 
@@ -597,6 +597,7 @@ TEMPLATE_TEST_CASE("sorted CPO edges(g, u)", "[dynamic_graph][cpo][edges]", vos_
 
 TEMPLATE_TEST_CASE("sorted CPO edges(g, uid)", "[dynamic_graph][cpo][edges]", vos_tag, dos_tag) {
   using Types      = graph_test_types<TestType>;
+  using Graph_int_ev = typename Types::int_ev;
   using Graph_void = typename Types::void_type;
 
   SECTION("with vertex ID") {
@@ -2624,11 +2625,11 @@ TEMPLATE_TEST_CASE("sorted CPO num_vertices(g, pid)",
 
 TEMPLATE_TEST_CASE("sorted CPO source_id(g, uv)", "[dynamic_graph][cpo][source_id]", vos_tag, dos_tag) {
   using Types              = graph_test_types<TestType>;
-  using Graph_sourced_void = typename Types::sourced_void;
-  using Graph_sourced_int  = typename Types::sourced_int;
+  using Graph_void   = typename Types::void_type;
+  using Graph_int_ev = typename Types::int_ev;
 
   SECTION("basic usage") {
-    Graph_sourced_void g({{0, 1}, {1, 2}, {0, 2}});
+    Graph_void g({{0, 1}, {1, 2}, {0, 2}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2637,7 +2638,7 @@ TEMPLATE_TEST_CASE("sorted CPO source_id(g, uv)", "[dynamic_graph][cpo][source_i
   }
 
   SECTION("different sources") {
-    Graph_sourced_void g({{0, 1}, {1, 2}, {2, 3}});
+    Graph_void g({{0, 1}, {1, 2}, {2, 3}});
 
     for (size_t i = 0; i < 3; ++i) {
       auto u = *find_vertex(g, i);
@@ -2648,7 +2649,7 @@ TEMPLATE_TEST_CASE("sorted CPO source_id(g, uv)", "[dynamic_graph][cpo][source_i
   }
 
   SECTION("const correctness") {
-    const Graph_sourced_void g({{0, 1}, {1, 2}});
+    const Graph_void g({{0, 1}, {1, 2}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2657,7 +2658,7 @@ TEMPLATE_TEST_CASE("sorted CPO source_id(g, uv)", "[dynamic_graph][cpo][source_i
   }
 
   SECTION("with edge values") {
-    Graph_sourced_int g({{0, 1, 10}, {1, 2, 20}});
+    Graph_int_ev g({{0, 1, 10}, {1, 2, 20}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2667,7 +2668,7 @@ TEMPLATE_TEST_CASE("sorted CPO source_id(g, uv)", "[dynamic_graph][cpo][source_i
   }
 
   SECTION("with self-loop") {
-    Graph_sourced_void g({{0, 0}, {0, 1}});
+    Graph_void g({{0, 0}, {0, 1}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2676,7 +2677,7 @@ TEMPLATE_TEST_CASE("sorted CPO source_id(g, uv)", "[dynamic_graph][cpo][source_i
   }
 
   SECTION("with parallel edges") {
-    Graph_sourced_int g;
+    Graph_int_ev g;
     g.resize_vertices(3);
 
     std::vector<copyable_edge_t<uint32_t, int>> edge_data = {{0, 1, 10}, {0, 1, 20}, {0, 1, 30}};
@@ -2689,7 +2690,7 @@ TEMPLATE_TEST_CASE("sorted CPO source_id(g, uv)", "[dynamic_graph][cpo][source_i
   }
 
   SECTION("large graph") {
-    Graph_sourced_void g;
+    Graph_void g;
     g.resize_vertices(100);
 
     std::vector<copyable_edge_t<uint32_t, void>> edge_data;
@@ -2705,7 +2706,7 @@ TEMPLATE_TEST_CASE("sorted CPO source_id(g, uv)", "[dynamic_graph][cpo][source_i
   }
 
   SECTION("multiple edges from same source") {
-    Graph_sourced_void g({{0, 1}, {0, 2}, {0, 3}});
+    Graph_void g({{0, 1}, {0, 2}, {0, 3}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2714,7 +2715,7 @@ TEMPLATE_TEST_CASE("sorted CPO source_id(g, uv)", "[dynamic_graph][cpo][source_i
   }
 
   SECTION("star graph") {
-    Graph_sourced_void g;
+    Graph_void g;
     g.resize_vertices(6);
 
     std::vector<copyable_edge_t<uint32_t, void>> edge_data;
@@ -2730,7 +2731,7 @@ TEMPLATE_TEST_CASE("sorted CPO source_id(g, uv)", "[dynamic_graph][cpo][source_i
   }
 
   SECTION("chain graph") {
-    Graph_sourced_void g({{0, 1}, {1, 2}, {2, 3}});
+    Graph_void g({{0, 1}, {1, 2}, {2, 3}});
 
     for (size_t i = 0; i < 3; ++i) {
       auto u = *find_vertex(g, i);
@@ -2741,7 +2742,7 @@ TEMPLATE_TEST_CASE("sorted CPO source_id(g, uv)", "[dynamic_graph][cpo][source_i
   }
 
   SECTION("cycle graph") {
-    Graph_sourced_void g({{0, 1}, {1, 2}, {2, 3}, {3, 0}});
+    Graph_void g({{0, 1}, {1, 2}, {2, 3}, {3, 0}});
 
     for (size_t i = 0; i < 4; ++i) {
       auto u = *find_vertex(g, i);
@@ -2752,7 +2753,7 @@ TEMPLATE_TEST_CASE("sorted CPO source_id(g, uv)", "[dynamic_graph][cpo][source_i
   }
 
   SECTION("consistency with source(g, uv)") {
-    Graph_sourced_void g({{0, 1}, {1, 2}, {2, 3}});
+    Graph_void g({{0, 1}, {1, 2}, {2, 3}});
 
     for (auto u : vertices(g)) {
       for (auto uv : edges(g, u)) {
@@ -2763,7 +2764,7 @@ TEMPLATE_TEST_CASE("sorted CPO source_id(g, uv)", "[dynamic_graph][cpo][source_i
   }
 
   SECTION("self-loops") {
-    Graph_sourced_void g({{0, 0}, {1, 1}});
+    Graph_void g({{0, 0}, {1, 1}});
 
     // Self-loops: source and target are the same
     auto u0 = *find_vertex(g, 0);
@@ -2786,11 +2787,12 @@ TEMPLATE_TEST_CASE("sorted CPO source_id(g, uv)", "[dynamic_graph][cpo][source_i
 
 TEMPLATE_TEST_CASE("sorted CPO source(g, uv)", "[dynamic_graph][cpo][source]", vos_tag, dos_tag) {
   using Types              = graph_test_types<TestType>;
-  using Graph_sourced_void = typename Types::sourced_void;
-  using Graph_sourced_int  = typename Types::sourced_int;
+  using Graph_void   = typename Types::void_type;
+  using Graph_int_ev = typename Types::int_ev;
+  using Graph_all    = typename Types::all_int;
 
   SECTION("basic usage") {
-    Graph_sourced_void g({{0, 1}, {1, 2}});
+    Graph_void g({{0, 1}, {1, 2}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2800,7 +2802,7 @@ TEMPLATE_TEST_CASE("sorted CPO source(g, uv)", "[dynamic_graph][cpo][source]", v
   }
 
   SECTION("consistency with source_id") {
-    Graph_sourced_void g({{0, 1}, {1, 2}, {2, 3}});
+    Graph_void g({{0, 1}, {1, 2}, {2, 3}});
 
     for (auto u : vertices(g)) {
       for (auto uv : edges(g, u)) {
@@ -2811,7 +2813,7 @@ TEMPLATE_TEST_CASE("sorted CPO source(g, uv)", "[dynamic_graph][cpo][source]", v
   }
 
   SECTION("const correctness") {
-    const Graph_sourced_void g({{0, 1}, {1, 2}});
+    const Graph_void g({{0, 1}, {1, 2}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2821,7 +2823,7 @@ TEMPLATE_TEST_CASE("sorted CPO source(g, uv)", "[dynamic_graph][cpo][source]", v
   }
 
   SECTION("with edge values") {
-    Graph_sourced_int g({{0, 1, 100}, {1, 2, 200}});
+    Graph_int_ev g({{0, 1, 100}, {1, 2, 200}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2832,7 +2834,7 @@ TEMPLATE_TEST_CASE("sorted CPO source(g, uv)", "[dynamic_graph][cpo][source]", v
   }
 
   SECTION("with self-loop") {
-    Graph_sourced_void g({{0, 0}, {0, 1}});
+    Graph_void g({{0, 0}, {0, 1}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2842,7 +2844,7 @@ TEMPLATE_TEST_CASE("sorted CPO source(g, uv)", "[dynamic_graph][cpo][source]", v
   }
 
   SECTION("different sources") {
-    Graph_sourced_void g({{0, 1}, {1, 2}, {2, 3}, {3, 4}});
+    Graph_void g({{0, 1}, {1, 2}, {2, 3}, {3, 4}});
 
     for (size_t i = 0; i < 4; ++i) {
       auto u = *find_vertex(g, i);
@@ -2854,7 +2856,7 @@ TEMPLATE_TEST_CASE("sorted CPO source(g, uv)", "[dynamic_graph][cpo][source]", v
   }
 
   SECTION("large graph") {
-    Graph_sourced_void g;
+    Graph_void g;
     g.resize_vertices(100);
 
     std::vector<copyable_edge_t<uint32_t, void>> edge_data;
@@ -2871,7 +2873,7 @@ TEMPLATE_TEST_CASE("sorted CPO source(g, uv)", "[dynamic_graph][cpo][source]", v
   }
 
   SECTION("returns valid descriptor") {
-    Graph_sourced_void g({{0, 1}, {1, 2}});
+    Graph_void g({{0, 1}, {1, 2}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2882,10 +2884,9 @@ TEMPLATE_TEST_CASE("sorted CPO source(g, uv)", "[dynamic_graph][cpo][source]", v
   }
 
   SECTION("with vertex values") {
-    // Use sourced_all which has VV=int and Sourced=true
-    using Graph_sourced_all = typename Types::sourced_all;
+    // Use all_int which has EV=int, VV=int, GV=int
 
-    Graph_sourced_all g({{0, 1, 10}, {1, 2, 20}});
+    Graph_all g({{0, 1, 10}, {1, 2, 20}});
 
     int val = 100;
     for (auto u : vertices(g)) {
@@ -2901,7 +2902,7 @@ TEMPLATE_TEST_CASE("sorted CPO source(g, uv)", "[dynamic_graph][cpo][source]", v
   }
 
   SECTION("parallel edges") {
-    Graph_sourced_int g;
+    Graph_int_ev g;
     g.resize_vertices(2);
 
     std::vector<copyable_edge_t<uint32_t, int>> edge_data = {{0, 1, 10}, {0, 1, 20}, {0, 1, 30}};
@@ -2915,7 +2916,7 @@ TEMPLATE_TEST_CASE("sorted CPO source(g, uv)", "[dynamic_graph][cpo][source]", v
   }
 
   SECTION("chain graph") {
-    Graph_sourced_void g({{0, 1}, {1, 2}, {2, 3}});
+    Graph_void g({{0, 1}, {1, 2}, {2, 3}});
 
     for (size_t i = 0; i < 3; ++i) {
       auto u = *find_vertex(g, i);
@@ -2927,7 +2928,7 @@ TEMPLATE_TEST_CASE("sorted CPO source(g, uv)", "[dynamic_graph][cpo][source]", v
   }
 
   SECTION("star graph") {
-    Graph_sourced_void g;
+    Graph_void g;
     g.resize_vertices(6);
 
     std::vector<copyable_edge_t<uint32_t, void>> edge_data;
@@ -2944,7 +2945,7 @@ TEMPLATE_TEST_CASE("sorted CPO source(g, uv)", "[dynamic_graph][cpo][source]", v
   }
 
   SECTION("can traverse from source to target") {
-    Graph_sourced_void g({{0, 1}, {1, 2}});
+    Graph_void g({{0, 1}, {1, 2}});
 
     auto u0 = *find_vertex(g, 0);
     for (auto uv : edges(g, u0)) {
@@ -2957,7 +2958,7 @@ TEMPLATE_TEST_CASE("sorted CPO source(g, uv)", "[dynamic_graph][cpo][source]", v
   }
 
   SECTION("accumulate values from edges") {
-    Graph_sourced_int g({{0, 1, 10}, {0, 2, 20}, {1, 2, 30}});
+    Graph_int_ev g({{0, 1, 10}, {0, 2, 20}, {1, 2, 30}});
 
     int sum = 0;
     for (auto u : vertices(g)) {
@@ -2970,7 +2971,7 @@ TEMPLATE_TEST_CASE("sorted CPO source(g, uv)", "[dynamic_graph][cpo][source]", v
   }
 
   SECTION("self-loops") {
-    Graph_sourced_void g({{0, 0}, {1, 1}});
+    Graph_void g({{0, 0}, {1, 1}});
 
     // For self-loops, source and target should be the same vertex
     auto u0 = *find_vertex(g, 0);
@@ -3002,7 +3003,7 @@ TEMPLATE_TEST_CASE("sorted CPO integration", "[dynamic_graph][cpo][integration]"
 
     REQUIRE(num_vertices(g) == 3);
     REQUIRE(num_edges(g) == 2);
-    REQUIRE(has_edge(g));
+    REQUIRE(has_edges(g));
   }
 
   SECTION("empty graph properties") {
@@ -3010,7 +3011,7 @@ TEMPLATE_TEST_CASE("sorted CPO integration", "[dynamic_graph][cpo][integration]"
 
     REQUIRE(num_vertices(g) == 0);
     REQUIRE(num_edges(g) == 0);
-    REQUIRE(!has_edge(g));
+    REQUIRE(!has_edges(g));
   }
 
   SECTION("find vertex by id") {

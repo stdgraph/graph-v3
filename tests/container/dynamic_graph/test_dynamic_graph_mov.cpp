@@ -60,12 +60,7 @@ using mov_str_void_int_void =
 using mov_str_int_int_int =
       dynamic_graph<int, int, int, std::string, false, mov_graph_traits<int, int, int, std::string, false>>;
 
-using mov_sourced = dynamic_graph<void, void, void, uint32_t, true, mov_graph_traits<void, void, void, uint32_t, true>>;
-using mov_int_sourced =
-      dynamic_graph<int, void, void, uint32_t, true, mov_graph_traits<int, void, void, uint32_t, true>>;
 
-using mov_str_sourced =
-      dynamic_graph<void, void, void, std::string, true, mov_graph_traits<void, void, void, std::string, true>>;
 
 //==================================================================================================
 // 1. Traits Verification Tests
@@ -98,13 +93,6 @@ TEST_CASE("mov traits verification", "[dynamic_graph][mov][traits]") {
     REQUIRE(true);
   }
 
-  SECTION("sourced flag is preserved") {
-    using traits_unsourced = mov_graph_traits<void, void, void, uint32_t, false>;
-    using traits_sourced   = mov_graph_traits<void, void, void, uint32_t, true>;
-    static_assert(traits_unsourced::sourced == false);
-    static_assert(traits_sourced::sourced == true);
-    REQUIRE(true);
-  }
 
   SECTION("vertex_id_type for uint32_t") {
     using traits = mov_graph_traits<void, void, void, uint32_t, false>;
@@ -248,22 +236,6 @@ TEST_CASE("mov construction with string vertex IDs", "[dynamic_graph][mov][const
   }
 }
 
-TEST_CASE("mov construction sourced", "[dynamic_graph][mov][construction][sourced]") {
-  SECTION("sourced edge construction with uint32_t IDs") {
-    mov_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-
-  SECTION("sourced with edge value construction") {
-    mov_int_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-
-  SECTION("sourced edge construction with string IDs") {
-    mov_str_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-}
 
 //==================================================================================================
 // 4. Basic Properties Tests
@@ -316,15 +288,9 @@ TEST_CASE("mov type aliases", "[dynamic_graph][mov][types]") {
   SECTION("graph type aliases are correct") {
     using G = mov_int_int_int;
     static_assert(std::same_as<typename G::value_type, int>); // GV
-    static_assert(G::sourced == false);
     REQUIRE(true);
   }
 
-  SECTION("sourced graph type aliases are correct") {
-    using G = mov_sourced;
-    static_assert(G::sourced == true);
-    REQUIRE(true);
-  }
 
   SECTION("string key graph type aliases are correct") {
     using G      = mov_str_int_int_int;
@@ -447,11 +413,6 @@ TEST_CASE("mov initializer_list construction string IDs", "[dynamic_graph][mov][
     REQUIRE(g.size() == 5);
   }
 
-  SECTION("sourced edges with string IDs") {
-    using G = mov_str_sourced;
-    G g({{"alice", "bob"}, {"bob", "charlie"}});
-    REQUIRE(g.size() == 3);
-  }
 }
 
 //==================================================================================================
@@ -672,12 +633,9 @@ TEST_CASE("mov template instantiation", "[dynamic_graph][mov][compilation]") {
   [[maybe_unused]] mov_int_int_void       g4;
   [[maybe_unused]] mov_void_void_int      g5;
   [[maybe_unused]] mov_int_int_int        g6;
-  [[maybe_unused]] mov_sourced            g7;
-  [[maybe_unused]] mov_int_sourced        g8;
   [[maybe_unused]] mov_str_void_void_void g9;
   [[maybe_unused]] mov_str_int_void_void  g10;
   [[maybe_unused]] mov_str_int_int_int    g11;
-  [[maybe_unused]] mov_str_sourced        g12;
 
   REQUIRE(true);
 }

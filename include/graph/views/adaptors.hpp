@@ -54,7 +54,7 @@ using adj_list::num_edges;
 using adj_list::degree;
 using adj_list::find_vertex_edge;
 using adj_list::contains_edge;
-using adj_list::has_edge;
+using adj_list::has_edges;
 using adj_list::vertex_value;
 using adj_list::edge_value;
 using adj_list::graph_value;
@@ -112,7 +112,7 @@ struct vertexlist_adaptor_fn {
 };
 
 //=============================================================================
-// incidence adaptor
+// incidence adaptor (outgoing — default)
 //=============================================================================
 
 template <class UID, class EVF = void>
@@ -161,8 +161,56 @@ struct incidence_adaptor_fn {
   }
 };
 
+// Alias: out_incidence_adaptor_fn == incidence_adaptor_fn
+using out_incidence_adaptor_fn = incidence_adaptor_fn;
+
 //=============================================================================
-// neighbors adaptor
+// in_incidence adaptor (incoming)
+//=============================================================================
+
+template <class UID, class EVF = void>
+struct in_incidence_adaptor_closure {
+  UID                                                                           uid;
+  [[no_unique_address]] std::conditional_t<std::is_void_v<EVF>, monostate, EVF> evf;
+
+  template <adj_list::index_bidirectional_adjacency_list G>
+  friend auto operator|(G&& g, in_incidence_adaptor_closure adaptor) {
+    auto u = *adj_list::find_vertex(g, std::move(adaptor.uid));
+    if constexpr (std::is_void_v<EVF>) {
+      return graph::views::in_incidence(std::forward<G>(g), u);
+    } else {
+      return graph::views::in_incidence(std::forward<G>(g), u, std::move(adaptor.evf));
+    }
+  }
+};
+
+struct in_incidence_adaptor_fn {
+  template <class UID>
+  auto operator()(UID&& uid) const {
+    return in_incidence_adaptor_closure<std::decay_t<UID>, void>{std::forward<UID>(uid), monostate{}};
+  }
+
+  template <class UID, class EVF>
+  auto operator()(UID&& uid, EVF&& evf) const {
+    return in_incidence_adaptor_closure<std::decay_t<UID>, std::decay_t<EVF>>{std::forward<UID>(uid),
+                                                                              std::forward<EVF>(evf)};
+  }
+
+  template <class G, class UID>
+  requires adj_list::index_bidirectional_adjacency_list<std::remove_cvref_t<G>>
+  auto operator()(G&& g, UID&& uid) const {
+    return graph::views::in_incidence(std::forward<G>(g), adj_list::vertex_id_t<std::remove_cvref_t<G>>(std::forward<UID>(uid)));
+  }
+
+  template <class G, class UID, class EVF>
+  requires adj_list::index_bidirectional_adjacency_list<std::remove_cvref_t<G>>
+  auto operator()(G&& g, UID&& uid, EVF&& evf) const {
+    return graph::views::in_incidence(std::forward<G>(g), adj_list::vertex_id_t<std::remove_cvref_t<G>>(std::forward<UID>(uid)), std::forward<EVF>(evf));
+  }
+};
+
+//=============================================================================
+// neighbors adaptor (outgoing — default)
 //=============================================================================
 
 template <class UID, class VVF = void>
@@ -207,6 +255,53 @@ struct neighbors_adaptor_fn {
   requires adj_list::index_adjacency_list<std::remove_cvref_t<G>>
   auto operator()(G&& g, UID&& uid, VVF&& vvf) const {
     return graph::views::neighbors(std::forward<G>(g), adj_list::vertex_id_t<std::remove_cvref_t<G>>(std::forward<UID>(uid)), std::forward<VVF>(vvf));
+  }
+};
+
+// Alias: out_neighbors_adaptor_fn == neighbors_adaptor_fn
+using out_neighbors_adaptor_fn = neighbors_adaptor_fn;
+
+//=============================================================================
+// in_neighbors adaptor (incoming)
+//=============================================================================
+
+template <class UID, class VVF = void>
+struct in_neighbors_adaptor_closure {
+  UID                                                                           uid;
+  [[no_unique_address]] std::conditional_t<std::is_void_v<VVF>, monostate, VVF> vvf;
+
+  template <adj_list::index_bidirectional_adjacency_list G>
+  friend auto operator|(G&& g, in_neighbors_adaptor_closure adaptor) {
+    if constexpr (std::is_void_v<VVF>) {
+      return graph::views::in_neighbors(std::forward<G>(g), std::move(adaptor.uid));
+    } else {
+      return graph::views::in_neighbors(std::forward<G>(g), std::move(adaptor.uid), std::move(adaptor.vvf));
+    }
+  }
+};
+
+struct in_neighbors_adaptor_fn {
+  template <class UID>
+  auto operator()(UID&& uid) const {
+    return in_neighbors_adaptor_closure<std::decay_t<UID>, void>{std::forward<UID>(uid), monostate{}};
+  }
+
+  template <class UID, class VVF>
+  auto operator()(UID&& uid, VVF&& vvf) const {
+    return in_neighbors_adaptor_closure<std::decay_t<UID>, std::decay_t<VVF>>{std::forward<UID>(uid),
+                                                                              std::forward<VVF>(vvf)};
+  }
+
+  template <class G, class UID>
+  requires adj_list::index_bidirectional_adjacency_list<std::remove_cvref_t<G>>
+  auto operator()(G&& g, UID&& uid) const {
+    return graph::views::in_neighbors(std::forward<G>(g), adj_list::vertex_id_t<std::remove_cvref_t<G>>(std::forward<UID>(uid)));
+  }
+
+  template <class G, class UID, class VVF>
+  requires adj_list::index_bidirectional_adjacency_list<std::remove_cvref_t<G>>
+  auto operator()(G&& g, UID&& uid, VVF&& vvf) const {
+    return graph::views::in_neighbors(std::forward<G>(g), adj_list::vertex_id_t<std::remove_cvref_t<G>>(std::forward<UID>(uid)), std::forward<VVF>(vvf));
   }
 };
 
@@ -290,7 +385,7 @@ struct basic_vertexlist_adaptor_fn {
 };
 
 //=============================================================================
-// basic_incidence adaptor
+// basic_incidence adaptor (outgoing — default)
 //=============================================================================
 
 template <class UID, class EVF = void>
@@ -333,8 +428,55 @@ struct basic_incidence_adaptor_fn {
   }
 };
 
+// Alias: basic_out_incidence_adaptor_fn == basic_incidence_adaptor_fn
+using basic_out_incidence_adaptor_fn = basic_incidence_adaptor_fn;
+
 //=============================================================================
-// basic_neighbors adaptor
+// basic_in_incidence adaptor (incoming)
+//=============================================================================
+
+template <class UID, class EVF = void>
+struct basic_in_incidence_adaptor_closure {
+  UID                                                                           uid;
+  [[no_unique_address]] std::conditional_t<std::is_void_v<EVF>, monostate, EVF> evf;
+
+  template <adj_list::index_bidirectional_adjacency_list G>
+  friend auto operator|(G&& g, basic_in_incidence_adaptor_closure adaptor) {
+    if constexpr (std::is_void_v<EVF>) {
+      return graph::views::basic_in_incidence(std::forward<G>(g), std::move(adaptor.uid));
+    } else {
+      return graph::views::basic_in_incidence(std::forward<G>(g), std::move(adaptor.uid), std::move(adaptor.evf));
+    }
+  }
+};
+
+struct basic_in_incidence_adaptor_fn {
+  template <class UID>
+  auto operator()(UID&& uid) const {
+    return basic_in_incidence_adaptor_closure<std::decay_t<UID>, void>{std::forward<UID>(uid), monostate{}};
+  }
+
+  template <class UID, class EVF>
+  auto operator()(UID&& uid, EVF&& evf) const {
+    return basic_in_incidence_adaptor_closure<std::decay_t<UID>, std::decay_t<EVF>>{std::forward<UID>(uid),
+                                                                                     std::forward<EVF>(evf)};
+  }
+
+  template <class G, class UID>
+  requires adj_list::index_bidirectional_adjacency_list<std::remove_cvref_t<G>>
+  auto operator()(G&& g, UID&& uid) const {
+    return graph::views::basic_in_incidence(std::forward<G>(g), adj_list::vertex_id_t<std::remove_cvref_t<G>>(std::forward<UID>(uid)));
+  }
+
+  template <class G, class UID, class EVF>
+  requires adj_list::index_bidirectional_adjacency_list<std::remove_cvref_t<G>>
+  auto operator()(G&& g, UID&& uid, EVF&& evf) const {
+    return graph::views::basic_in_incidence(std::forward<G>(g), adj_list::vertex_id_t<std::remove_cvref_t<G>>(std::forward<UID>(uid)), std::forward<EVF>(evf));
+  }
+};
+
+//=============================================================================
+// basic_neighbors adaptor (outgoing — default)
 //=============================================================================
 
 template <class UID, class VVF = void>
@@ -374,6 +516,53 @@ struct basic_neighbors_adaptor_fn {
   requires adj_list::index_adjacency_list<std::remove_cvref_t<G>>
   auto operator()(G&& g, UID&& uid, VVF&& vvf) const {
     return graph::views::basic_neighbors(std::forward<G>(g), adj_list::vertex_id_t<std::remove_cvref_t<G>>(std::forward<UID>(uid)), std::forward<VVF>(vvf));
+  }
+};
+
+// Alias: basic_out_neighbors_adaptor_fn == basic_neighbors_adaptor_fn
+using basic_out_neighbors_adaptor_fn = basic_neighbors_adaptor_fn;
+
+//=============================================================================
+// basic_in_neighbors adaptor (incoming)
+//=============================================================================
+
+template <class UID, class VVF = void>
+struct basic_in_neighbors_adaptor_closure {
+  UID                                                                           uid;
+  [[no_unique_address]] std::conditional_t<std::is_void_v<VVF>, monostate, VVF> vvf;
+
+  template <adj_list::index_bidirectional_adjacency_list G>
+  friend auto operator|(G&& g, basic_in_neighbors_adaptor_closure adaptor) {
+    if constexpr (std::is_void_v<VVF>) {
+      return graph::views::basic_in_neighbors(std::forward<G>(g), std::move(adaptor.uid));
+    } else {
+      return graph::views::basic_in_neighbors(std::forward<G>(g), std::move(adaptor.uid), std::move(adaptor.vvf));
+    }
+  }
+};
+
+struct basic_in_neighbors_adaptor_fn {
+  template <class UID>
+  auto operator()(UID&& uid) const {
+    return basic_in_neighbors_adaptor_closure<std::decay_t<UID>, void>{std::forward<UID>(uid), monostate{}};
+  }
+
+  template <class UID, class VVF>
+  auto operator()(UID&& uid, VVF&& vvf) const {
+    return basic_in_neighbors_adaptor_closure<std::decay_t<UID>, std::decay_t<VVF>>{std::forward<UID>(uid),
+                                                                                     std::forward<VVF>(vvf)};
+  }
+
+  template <class G, class UID>
+  requires adj_list::index_bidirectional_adjacency_list<std::remove_cvref_t<G>>
+  auto operator()(G&& g, UID&& uid) const {
+    return graph::views::basic_in_neighbors(std::forward<G>(g), adj_list::vertex_id_t<std::remove_cvref_t<G>>(std::forward<UID>(uid)));
+  }
+
+  template <class G, class UID, class VVF>
+  requires adj_list::index_bidirectional_adjacency_list<std::remove_cvref_t<G>>
+  auto operator()(G&& g, UID&& uid, VVF&& vvf) const {
+    return graph::views::basic_in_neighbors(std::forward<G>(g), adj_list::vertex_id_t<std::remove_cvref_t<G>>(std::forward<UID>(uid)), std::forward<VVF>(vvf));
   }
 };
 
@@ -788,17 +977,37 @@ struct edges_topological_sort_adaptor_fn {
 //=============================================================================
 
 namespace graph::views::adaptors {
-// Basic views
-inline constexpr vertexlist_adaptor_fn vertexlist{};
-inline constexpr incidence_adaptor_fn  incidence{};
-inline constexpr neighbors_adaptor_fn  neighbors{};
-inline constexpr edgelist_adaptor_fn   edgelist{};
+// Full views — outgoing primary
+inline constexpr out_incidence_adaptor_fn       out_incidence{};
+inline constexpr out_neighbors_adaptor_fn       out_neighbors{};
 
-// Basic views (simplified bindings)
-inline constexpr basic_vertexlist_adaptor_fn basic_vertexlist{};
-inline constexpr basic_incidence_adaptor_fn  basic_incidence{};
-inline constexpr basic_neighbors_adaptor_fn  basic_neighbors{};
-inline constexpr basic_edgelist_adaptor_fn   basic_edgelist{};
+// Full views — incoming
+inline constexpr in_incidence_adaptor_fn        in_incidence{};
+inline constexpr in_neighbors_adaptor_fn        in_neighbors{};
+
+// Full views — short aliases (outgoing by default)
+inline constexpr auto& incidence = out_incidence;
+inline constexpr auto& neighbors = out_neighbors;
+
+// Other full views (no direction variant)
+inline constexpr vertexlist_adaptor_fn          vertexlist{};
+inline constexpr edgelist_adaptor_fn            edgelist{};
+
+// Basic views — outgoing primary
+inline constexpr basic_out_incidence_adaptor_fn basic_out_incidence{};
+inline constexpr basic_out_neighbors_adaptor_fn basic_out_neighbors{};
+
+// Basic views — incoming
+inline constexpr basic_in_incidence_adaptor_fn  basic_in_incidence{};
+inline constexpr basic_in_neighbors_adaptor_fn  basic_in_neighbors{};
+
+// Basic views — short aliases (outgoing by default)
+inline constexpr auto& basic_incidence = basic_out_incidence;
+inline constexpr auto& basic_neighbors = basic_out_neighbors;
+
+// Other basic views (no direction variant)
+inline constexpr basic_vertexlist_adaptor_fn    basic_vertexlist{};
+inline constexpr basic_edgelist_adaptor_fn      basic_edgelist{};
 
 // Search views
 inline constexpr vertices_dfs_adaptor_fn vertices_dfs{};

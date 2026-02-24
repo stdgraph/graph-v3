@@ -7,6 +7,7 @@
 #include <graph/views/adaptors.hpp>
 #include <ranges>
 #include <algorithm>
+#include <set>
 #include <vector>
 
 using namespace graph;
@@ -1172,4 +1173,173 @@ TEST_CASE("basic_edgelist adaptor - direct call compatibility", "[adaptors][basi
   auto count2 = std::ranges::distance(view2);
   REQUIRE(count1 == count2);
   REQUIRE(count1 == 3);
+}
+
+//=============================================================================
+// Incoming-edge adaptor tests (Phase 6)
+// Use undirected_adjacency_list as bidirectional graph
+//=============================================================================
+
+#include <graph/container/undirected_adjacency_list.hpp>
+
+using graph::container::undirected_adjacency_list;
+using BiGraph = undirected_adjacency_list<int, int, int>;
+
+// Triangle graph: 0--1 (w=100), 0--2 (w=200), 1--2 (w=300)
+static BiGraph make_bi_graph() {
+  BiGraph g(0);
+  g.create_vertex(10); // 0
+  g.create_vertex(20); // 1
+  g.create_vertex(30); // 2
+  g.create_edge(0, 1, 100);
+  g.create_edge(0, 2, 200);
+  g.create_edge(1, 2, 300);
+  return g;
+}
+
+// -- out_incidence pipe --
+
+TEST_CASE("pipe: g | out_incidence(uid)", "[adaptors][out_incidence]") {
+  auto bg   = make_bi_graph();
+  auto view = bg | out_incidence(0u);
+  REQUIRE(size(view) == 2); // vertex 0 has 2 edges
+
+  // Also verify it matches the free-function factory
+  auto ref = graph::views::out_incidence(bg, 0u);
+  REQUIRE(size(ref) == size(view));
+}
+
+TEST_CASE("pipe: g | out_incidence(uid, evf)", "[adaptors][out_incidence]") {
+  auto bg  = make_bi_graph();
+  auto evf = [](const auto& g, auto e) { return adj_list::edge_value(g, e); };
+  auto view = bg | out_incidence(0u, evf);
+  REQUIRE(size(view) == 2);
+
+  std::set<int> values;
+  for (auto [tid, e, val] : view) {
+    values.insert(val);
+  }
+  REQUIRE(values == std::set<int>{100, 200});
+}
+
+// -- in_incidence pipe --
+
+TEST_CASE("pipe: g | in_incidence(uid)", "[adaptors][in_incidence]") {
+  auto bg   = make_bi_graph();
+  auto view = bg | in_incidence(0u);
+  REQUIRE(size(view) == 2); // undirected: in_degree == degree
+
+  // Must match the free-function factory
+  auto ref = graph::views::in_incidence(bg, 0u);
+  REQUIRE(size(ref) == size(view));
+}
+
+TEST_CASE("pipe: g | in_incidence(uid, evf)", "[adaptors][in_incidence]") {
+  auto bg  = make_bi_graph();
+  auto evf = [](const auto& g, auto e) { return adj_list::edge_value(g, e); };
+  auto view = bg | in_incidence(0u, evf);
+  REQUIRE(size(view) == 2);
+
+  std::set<int> values;
+  for (auto [tid, e, val] : view) {
+    values.insert(val);
+  }
+  REQUIRE(values == std::set<int>{100, 200});
+}
+
+// -- basic_in_incidence pipe --
+
+TEST_CASE("pipe: g | basic_in_incidence(uid)", "[adaptors][basic_in_incidence]") {
+  auto bg   = make_bi_graph();
+  auto view = bg | basic_in_incidence(0u);
+  REQUIRE(size(view) == 2);
+}
+
+TEST_CASE("pipe: g | basic_in_incidence(uid, evf)", "[adaptors][basic_in_incidence]") {
+  auto bg  = make_bi_graph();
+  auto evf = [](const auto& g, auto e) { return adj_list::edge_value(g, e); };
+  auto view = bg | basic_in_incidence(0u, evf);
+  REQUIRE(size(view) == 2);
+}
+
+// -- out_neighbors pipe --
+
+TEST_CASE("pipe: g | out_neighbors(uid)", "[adaptors][out_neighbors]") {
+  auto bg   = make_bi_graph();
+  auto view = bg | out_neighbors(0u);
+  REQUIRE(size(view) == 2);
+
+  auto ref = graph::views::out_neighbors(bg, 0u);
+  REQUIRE(size(ref) == size(view));
+}
+
+// -- in_neighbors pipe --
+
+TEST_CASE("pipe: g | in_neighbors(uid)", "[adaptors][in_neighbors]") {
+  auto bg   = make_bi_graph();
+  auto view = bg | in_neighbors(0u);
+  REQUIRE(size(view) == 2);
+
+  auto ref = graph::views::in_neighbors(bg, 0u);
+  REQUIRE(size(ref) == size(view));
+}
+
+TEST_CASE("pipe: g | in_neighbors(uid, vvf)", "[adaptors][in_neighbors]") {
+  auto bg  = make_bi_graph();
+  auto vvf = [](const auto&, auto v) { return static_cast<int>(v.vertex_id()); };
+  auto view = bg | in_neighbors(0u, vvf);
+  REQUIRE(size(view) == 2);
+}
+
+// -- basic_in_neighbors pipe --
+
+TEST_CASE("pipe: g | basic_in_neighbors(uid)", "[adaptors][basic_in_neighbors]") {
+  auto bg   = make_bi_graph();
+  auto view = bg | basic_in_neighbors(0u);
+  REQUIRE(size(view) == 2);
+}
+
+TEST_CASE("pipe: g | basic_in_neighbors(uid, vvf)", "[adaptors][basic_in_neighbors]") {
+  auto bg  = make_bi_graph();
+  auto vvf = [](const auto&, auto v) { return static_cast<int>(v.vertex_id()); };
+  auto view = bg | basic_in_neighbors(0u, vvf);
+  REQUIRE(size(view) == 2);
+}
+
+// -- basic_out_incidence / basic_out_neighbors pipe --
+
+TEST_CASE("pipe: g | basic_out_incidence(uid)", "[adaptors][basic_out_incidence]") {
+  auto bg   = make_bi_graph();
+  auto view = bg | basic_out_incidence(0u);
+  REQUIRE(size(view) == 2);
+}
+
+TEST_CASE("pipe: g | basic_out_neighbors(uid)", "[adaptors][basic_out_neighbors]") {
+  auto bg   = make_bi_graph();
+  auto view = bg | basic_out_neighbors(0u);
+  REQUIRE(size(view) == 2);
+}
+
+// -- Alias verification --
+
+TEST_CASE("pipe: incidence/neighbors aliases point to out_* objects", "[adaptors][aliases]") {
+  // The short names must be references to the out_* objects
+  REQUIRE(&incidence       == &out_incidence);
+  REQUIRE(&neighbors       == &out_neighbors);
+  REQUIRE(&basic_incidence == &basic_out_incidence);
+  REQUIRE(&basic_neighbors == &basic_out_neighbors);
+}
+
+// -- Direct call for incoming adaptors --
+
+TEST_CASE("in_incidence adaptor - direct call", "[adaptors][in_incidence]") {
+  auto bg = make_bi_graph();
+  auto view = in_incidence(bg, 0u);
+  REQUIRE(size(view) == 2);
+}
+
+TEST_CASE("in_neighbors adaptor - direct call", "[adaptors][in_neighbors]") {
+  auto bg = make_bi_graph();
+  auto view = in_neighbors(bg, 0u);
+  REQUIRE(size(view) == 2);
 }

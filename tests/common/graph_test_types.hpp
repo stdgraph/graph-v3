@@ -4,7 +4,7 @@
  * 
  * This header provides a tag-based type generation system that allows Catch2's
  * TEMPLATE_TEST_CASE to test multiple container types (vov, vod, dov, dod, vol, dol) with
- * multiple value configurations (void, int, string, sourced) in a single test file.
+ * multiple value configurations (void, int, string, bidirectional) in a single test file.
  * 
  * Usage:
  *   TEMPLATE_TEST_CASE("test name", "[tags]", vov_tag, vod_tag, dov_tag, dod_tag, vol_tag, dol_tag) {
@@ -54,6 +54,7 @@
 #include <graph/container/traits/mom_graph_traits.hpp>
 // Edge unordered_map containers (hash-based, deduplicated by target_id)
 #include <graph/container/traits/voum_graph_traits.hpp>
+#include <list>    // for vol_bidir_graph_traits::in_edges_type
 #include <string>
 namespace graph::test {
 
@@ -67,8 +68,8 @@ namespace graph::test {
 struct vov_tag {
   static constexpr const char* name = "vov";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::vov_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::vov_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 /**
@@ -77,8 +78,8 @@ struct vov_tag {
 struct vod_tag {
   static constexpr const char* name = "vod";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::vod_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::vod_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 /**
@@ -87,8 +88,8 @@ struct vod_tag {
 struct dov_tag {
   static constexpr const char* name = "dov";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::dov_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::dov_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 /**
@@ -97,8 +98,8 @@ struct dov_tag {
 struct dod_tag {
   static constexpr const char* name = "dod";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::dod_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::dod_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 /**
@@ -107,8 +108,8 @@ struct dod_tag {
 struct vol_tag {
   static constexpr const char* name = "vol";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::vol_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::vol_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 /**
@@ -117,8 +118,8 @@ struct vol_tag {
 struct dol_tag {
   static constexpr const char* name = "dol";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::dol_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::dol_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 // =============================================================================
@@ -132,8 +133,8 @@ struct dol_tag {
 struct vofl_tag {
   static constexpr const char* name = "vofl";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::vofl_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::vofl_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 /**
@@ -143,8 +144,8 @@ struct vofl_tag {
 struct dofl_tag {
   static constexpr const char* name = "dofl";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::dofl_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::dofl_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 /**
@@ -154,8 +155,8 @@ struct dofl_tag {
 struct mofl_tag {
   static constexpr const char* name = "mofl";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::mofl_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::mofl_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 // =============================================================================
@@ -169,8 +170,8 @@ struct mofl_tag {
 struct vos_tag {
   static constexpr const char* name = "vos";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::vos_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::vos_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 /**
@@ -180,8 +181,8 @@ struct vos_tag {
 struct dos_tag {
   static constexpr const char* name = "dos";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::dos_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::dos_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 /**
@@ -191,8 +192,8 @@ struct dos_tag {
 struct mos_tag {
   static constexpr const char* name = "mos";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::mos_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::mos_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 /**
@@ -202,8 +203,8 @@ struct mos_tag {
 struct uos_tag {
   static constexpr const char* name = "uos";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::uos_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::uos_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 // =============================================================================
@@ -217,8 +218,8 @@ struct uos_tag {
 struct vous_tag {
   static constexpr const char* name = "vous";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::vous_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::vous_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 /**
@@ -228,8 +229,8 @@ struct vous_tag {
 struct dous_tag {
   static constexpr const char* name = "dous";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::dous_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::dous_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 /**
@@ -239,8 +240,8 @@ struct dous_tag {
 struct mous_tag {
   static constexpr const char* name = "mous";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::mous_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::mous_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 /**
@@ -250,8 +251,8 @@ struct mous_tag {
 struct uous_tag {
   static constexpr const char* name = "uous";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::uous_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::uous_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 // =============================================================================
@@ -266,8 +267,8 @@ struct uous_tag {
 struct mol_tag {
   static constexpr const char* name = "mol";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::mol_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::mol_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 /**
@@ -277,8 +278,8 @@ struct mol_tag {
 struct mov_tag {
   static constexpr const char* name = "mov";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::mov_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::mov_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 /**
@@ -288,8 +289,8 @@ struct mov_tag {
 struct mod_tag {
   static constexpr const char* name = "mod";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::mod_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::mod_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 // =============================================================================
@@ -304,8 +305,8 @@ struct mod_tag {
 struct uol_tag {
   static constexpr const char* name = "uol";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::uol_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::uol_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 /**
@@ -315,8 +316,8 @@ struct uol_tag {
 struct uov_tag {
   static constexpr const char* name = "uov";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::uov_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::uov_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 /**
@@ -326,8 +327,8 @@ struct uov_tag {
 struct uod_tag {
   static constexpr const char* name = "uod";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::uod_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::uod_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 /**
@@ -338,8 +339,8 @@ struct uod_tag {
 struct uofl_tag {
   static constexpr const char* name = "uofl";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::uofl_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::uofl_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 // =============================================================================
@@ -354,8 +355,8 @@ struct uofl_tag {
 struct vom_tag {
   static constexpr const char* name = "vom";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::vom_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::vom_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 /**
@@ -365,8 +366,8 @@ struct vom_tag {
 struct mom_tag {
   static constexpr const char* name = "mom";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::mom_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::mom_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 /**
@@ -376,8 +377,8 @@ struct mom_tag {
 struct voum_tag {
   static constexpr const char* name = "voum";
 
-  template <typename EV, typename VV, typename GV, typename VId, bool Sourced>
-  using traits = graph::container::voum_graph_traits<EV, VV, GV, VId, Sourced>;
+  template <typename EV, typename VV, typename GV, typename VId, bool Bidirectional = false>
+  using traits = graph::container::voum_graph_traits<EV, VV, GV, VId, Bidirectional>;
 };
 
 // =============================================================================
@@ -387,23 +388,23 @@ struct voum_tag {
 /**
  * @brief Generates all standard graph type configurations from a container tag
  * 
- * @tparam Tag One of vov_tag, vod_tag, dov_tag, dod_tag
+ * @tparam Tag One of vov_tag, vod_tag, dov_tag, dod_tag, etc.
  * 
  * Provides the 8 standard type aliases:
- * - void_type:     EV=void, VV=void, GV=void, Sourced=false
- * - int_ev:        EV=int,  VV=void, GV=void, Sourced=false
- * - int_vv:        EV=void, VV=int,  GV=void, Sourced=false
- * - all_int:       EV=int,  VV=int,  GV=int,  Sourced=false
- * - string_type:   EV/VV/GV=string,           Sourced=false
- * - sourced_void:  EV=void, VV=void, GV=void, Sourced=true
- * - sourced_int:   EV=int,  VV=void, GV=void, Sourced=true
- * - sourced_all:   EV=int,  VV=int,  GV=int,  Sourced=true
+ * - void_type:   EV=void, VV=void, GV=void, Bidirectional=false
+ * - int_ev:      EV=int,  VV=void, GV=void, Bidirectional=false
+ * - int_vv:      EV=void, VV=int,  GV=void, Bidirectional=false
+ * - all_int:     EV=int,  VV=int,  GV=int,  Bidirectional=false
+ * - string_type: EV/VV/GV=string,           Bidirectional=false
+ * - bidir_void:  EV=void, VV=void, GV=void, Bidirectional=true
+ * - bidir_int:   EV=int,  VV=void, GV=void, Bidirectional=true
+ * - bidir_all:   EV=int,  VV=int,  GV=int,  Bidirectional=true
  */
 template <typename Tag>
 struct graph_test_types {
   using VId = uint32_t;
 
-  // Non-sourced configurations
+  // Non-bidirectional configurations
   using void_type = graph::container::
         dynamic_graph<void, void, void, VId, false, typename Tag::template traits<void, void, void, VId, false>>;
 
@@ -424,14 +425,14 @@ struct graph_test_types {
         false,
         typename Tag::template traits<std::string, std::string, std::string, VId, false>>;
 
-  // Sourced configurations (for source_id/source CPO tests)
-  using sourced_void = graph::container::
+  // Bidirectional configurations (for in_edges/source_id CPO tests)
+  using bidir_void = graph::container::
         dynamic_graph<void, void, void, VId, true, typename Tag::template traits<void, void, void, VId, true>>;
 
-  using sourced_int = graph::container::
+  using bidir_int = graph::container::
         dynamic_graph<int, void, void, VId, true, typename Tag::template traits<int, void, void, VId, true>>;
 
-  using sourced_all = graph::container::
+  using bidir_all = graph::container::
         dynamic_graph<int, int, int, VId, true, typename Tag::template traits<int, int, int, VId, true>>;
 
   // Container name for test output
@@ -450,6 +451,70 @@ constexpr const char* container_name() {
 // =============================================================================
 // Convenience aliases for Catch2 TEMPLATE_TEST_CASE
 // =============================================================================
+
+// =============================================================================
+// Non-uniform bidirectional traits
+//
+// These traits define in_edge_type = dynamic_in_edge so that source_id(g, ie)
+// is resolved via the native edge member CPO tier (Tier 1) rather than the
+// descriptor-based Tier 4. This is required to satisfy the
+// bidirectional_adjacency_list concept, which requires source_id(g, ie) to
+// compile for in_edge_t<G>.
+// =============================================================================
+
+/**
+ * @brief Non-uniform bidir traits: vector<vertex> + vector<out_edge> + vector<in_edge>
+ *
+ * Uses dynamic_in_edge for in_edges_type so that source_id(g, ie) dispatches
+ * to dynamic_in_edge::source_id() (Tier 1), not the descriptor-based Tier 4.
+ */
+template <class EV = void, class VV = void, class GV = void, class VId = uint32_t>
+struct vov_bidir_graph_traits {
+  using edge_value_type   = EV;
+  using vertex_value_type = VV;
+  using graph_value_type  = GV;
+  using vertex_id_type    = VId;
+  static constexpr bool bidirectional = true;
+
+  using edge_type    = graph::container::dynamic_out_edge<EV, VV, GV, VId, true, vov_bidir_graph_traits>;
+  using in_edge_type = graph::container::dynamic_in_edge<EV, VV, GV, VId, true, vov_bidir_graph_traits>;
+  using vertex_type  = graph::container::dynamic_vertex<EV, VV, GV, VId, true, vov_bidir_graph_traits>;
+  using graph_type   = graph::container::dynamic_graph<EV, VV, GV, VId, true, vov_bidir_graph_traits>;
+
+  using edges_type    = std::vector<edge_type>;
+  using in_edges_type = std::vector<in_edge_type>;
+  using vertices_type = std::vector<vertex_type>;
+};
+
+/**
+ * @brief Non-uniform bidir traits: vector<vertex> + list<out_edge> + list<in_edge>
+ *
+ * List-based edges for tests that need non-random-access edge containers.
+ */
+template <class EV = void, class VV = void, class GV = void, class VId = uint32_t>
+struct vol_bidir_graph_traits {
+  using edge_value_type   = EV;
+  using vertex_value_type = VV;
+  using graph_value_type  = GV;
+  using vertex_id_type    = VId;
+  static constexpr bool bidirectional = true;
+
+  using edge_type    = graph::container::dynamic_out_edge<EV, VV, GV, VId, true, vol_bidir_graph_traits>;
+  using in_edge_type = graph::container::dynamic_in_edge<EV, VV, GV, VId, true, vol_bidir_graph_traits>;
+  using vertex_type  = graph::container::dynamic_vertex<EV, VV, GV, VId, true, vol_bidir_graph_traits>;
+  using graph_type   = graph::container::dynamic_graph<EV, VV, GV, VId, true, vol_bidir_graph_traits>;
+
+  using edges_type    = std::list<edge_type>;
+  using in_edges_type = std::list<in_edge_type>;
+  using vertices_type = std::vector<vertex_type>;
+};
+
+// Convenience type aliases
+using bidir_nu_vov_void = graph::container::dynamic_graph<void, void, void, uint32_t, true, vov_bidir_graph_traits<>>;
+using bidir_nu_vov_int  = graph::container::dynamic_graph<int,  void, void, uint32_t, true, vov_bidir_graph_traits<int>>;
+using bidir_nu_vov_all  = graph::container::dynamic_graph<int,  int,  int,  uint32_t, true, vov_bidir_graph_traits<int, int, int>>;
+using bidir_nu_vol_void = graph::container::dynamic_graph<void, void, void, uint32_t, true, vol_bidir_graph_traits<>>;
+using bidir_nu_vol_int  = graph::container::dynamic_graph<int,  void, void, uint32_t, true, vol_bidir_graph_traits<int>>;
 
 // Random-access containers (support num_edges(g,u), sized_range edges)
 using random_access_container_tags = std::tuple<vov_tag, vod_tag, dov_tag, dod_tag>;

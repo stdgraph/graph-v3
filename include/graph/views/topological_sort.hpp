@@ -161,14 +161,17 @@
 #include <graph/adj_list/adjacency_list_concepts.hpp>
 #include <graph/views/view_concepts.hpp>
 #include <graph/views/search_base.hpp>
+#include <graph/views/edge_accessor.hpp>
 
 namespace graph::views {
 
 // Forward declarations
-template <adj_list::index_adjacency_list G, class VVF = void, class Alloc = std::allocator<bool>>
+template <adj_list::index_adjacency_list G, class VVF = void, class Alloc = std::allocator<bool>,
+          class Accessor = out_edge_accessor>
 class vertices_topological_sort_view;
 
-template <adj_list::index_adjacency_list G, class EVF = void, class Alloc = std::allocator<bool>>
+template <adj_list::index_adjacency_list G, class EVF = void, class Alloc = std::allocator<bool>,
+          class Accessor = out_edge_accessor>
 class edges_topological_sort_view;
 
 namespace topo_detail {
@@ -187,7 +190,7 @@ namespace topo_detail {
    * @par Complexity
    * Time: O(V + E).  Space: O(V) (O(2V) with cycle detection).
    */
-  template <class G, class Alloc>
+  template <class G, class Alloc, class Accessor = out_edge_accessor>
   struct topo_state {
     using graph_type     = G;
     using vertex_type    = adj_list::vertex_t<G>;
@@ -239,8 +242,8 @@ namespace topo_detail {
       }
 
       // Visit all children
-      for (auto edge : adj_list::edges(g, v)) {
-        auto target_v   = adj_list::target(g, edge);
+      for (auto edge : Accessor{}.edges(g, v)) {
+        auto target_v   = Accessor{}.neighbor(g, edge);
         auto target_vid = adj_list::vertex_id(g, target_v);
 
         if (detect_cycles && rec_stack_[target_vid]) {
@@ -284,9 +287,9 @@ namespace topo_detail {
  * @see vertices_topological_sort_view<G,VVF,Alloc> — with value function
  * @see edges_topological_sort_view                 — edge-oriented variant
  */
-template <adj_list::index_adjacency_list G, class Alloc>
-class vertices_topological_sort_view<G, void, Alloc>
-      : public std::ranges::view_interface<vertices_topological_sort_view<G, void, Alloc>> {
+template <adj_list::index_adjacency_list G, class Alloc, class Accessor>
+class vertices_topological_sort_view<G, void, Alloc, Accessor>
+      : public std::ranges::view_interface<vertices_topological_sort_view<G, void, Alloc, Accessor>> {
 public:
   using graph_type     = G;
   using vertex_type    = adj_list::vertex_t<G>;
@@ -295,7 +298,7 @@ public:
   using info_type      = vertex_info<void, vertex_type, void>;
 
 private:
-  using state_type = topo_detail::topo_state<G, Alloc>;
+  using state_type = topo_detail::topo_state<G, Alloc, Accessor>;
 
 public:
   /**
@@ -407,9 +410,9 @@ private:
  * @see vertices_topological_sort_view<G,void,Alloc> — without value function
  * @see edges_topological_sort_view                  — edge-oriented variant
  */
-template <adj_list::index_adjacency_list G, class VVF, class Alloc>
+template <adj_list::index_adjacency_list G, class VVF, class Alloc, class Accessor>
 class vertices_topological_sort_view
-      : public std::ranges::view_interface<vertices_topological_sort_view<G, VVF, Alloc>> {
+      : public std::ranges::view_interface<vertices_topological_sort_view<G, VVF, Alloc, Accessor>> {
 public:
   using graph_type        = G;
   using vertex_type       = adj_list::vertex_t<G>;
@@ -419,7 +422,7 @@ public:
   using info_type         = vertex_info<void, vertex_type, value_result_type>;
 
 private:
-  using state_type = topo_detail::topo_state<G, Alloc>;
+  using state_type = topo_detail::topo_state<G, Alloc, Accessor>;
 
 public:
   /**
@@ -544,18 +547,19 @@ vertices_topological_sort_view(G&, VVF, Alloc) -> vertices_topological_sort_view
  * @see edges_topological_sort_view<G,EVF,Alloc> — with value function
  * @see vertices_topological_sort_view           — vertex-oriented variant
  */
-template <adj_list::index_adjacency_list G, class Alloc>
-class edges_topological_sort_view<G, void, Alloc>
-      : public std::ranges::view_interface<edges_topological_sort_view<G, void, Alloc>> {
+template <adj_list::index_adjacency_list G, class Alloc, class Accessor>
+class edges_topological_sort_view<G, void, Alloc, Accessor>
+      : public std::ranges::view_interface<edges_topological_sort_view<G, void, Alloc, Accessor>> {
 public:
   using graph_type     = G;
   using vertex_type    = adj_list::vertex_t<G>;
-  using edge_type      = adj_list::edge_t<G>;
+  using edge_type      = typename Accessor::template edge_t<G>;
   using allocator_type = Alloc;
   using info_type      = edge_info<void, false, edge_type, void>;
 
 private:
-  using state_type = topo_detail::topo_state<G, Alloc>;
+  using state_type     = topo_detail::topo_state<G, Alloc, Accessor>;
+  using edge_iter_type = std::ranges::iterator_t<typename Accessor::template edge_range_t<G>>;
 
 public:
   /**
@@ -578,7 +582,7 @@ public:
           : g_(g), state_(std::move(state)), vertex_index_(v_idx) {
       if (!at_end()) {
         auto v          = state_->post_order_[vertex_index_];
-        auto edge_range = adj_list::edges(*g_, v);
+        auto edge_range = Accessor{}.edges(*g_, v);
         edge_it_        = std::ranges::begin(edge_range);
         edge_end_       = std::ranges::end(edge_range);
         skip_to_first_edge(); // Position without incrementing count_
@@ -622,7 +626,7 @@ public:
         ++vertex_index_;
         if (vertex_index_ < state_->post_order_.size()) {
           auto v          = state_->post_order_[vertex_index_];
-          auto edge_range = adj_list::edges(*g_, v);
+          auto edge_range = Accessor{}.edges(*g_, v);
           edge_it_        = std::ranges::begin(edge_range);
           edge_end_       = std::ranges::end(edge_range);
         }
@@ -642,18 +646,18 @@ public:
         ++vertex_index_;
         if (vertex_index_ < state_->post_order_.size()) {
           auto v          = state_->post_order_[vertex_index_];
-          auto edge_range = adj_list::edges(*g_, v);
+          auto edge_range = Accessor{}.edges(*g_, v);
           edge_it_        = std::ranges::begin(edge_range);
           edge_end_       = std::ranges::end(edge_range);
         }
       }
     }
 
-    G*                                  g_ = nullptr;
-    std::shared_ptr<state_type>         state_;
-    std::size_t                         vertex_index_ = 0;
-    adj_list::vertex_edge_iterator_t<G> edge_it_{};
-    adj_list::vertex_edge_iterator_t<G> edge_end_{};
+    G*                          g_ = nullptr;
+    std::shared_ptr<state_type> state_;
+    std::size_t                 vertex_index_ = 0;
+    edge_iter_type              edge_it_{};
+    edge_iter_type              edge_end_{};
   };
 
   struct sentinel {
@@ -708,18 +712,19 @@ private:
  * @see edges_topological_sort_view<G,void,Alloc> — without value function
  * @see vertices_topological_sort_view            — vertex-oriented variant
  */
-template <adj_list::index_adjacency_list G, class EVF, class Alloc>
-class edges_topological_sort_view : public std::ranges::view_interface<edges_topological_sort_view<G, EVF, Alloc>> {
+template <adj_list::index_adjacency_list G, class EVF, class Alloc, class Accessor>
+class edges_topological_sort_view : public std::ranges::view_interface<edges_topological_sort_view<G, EVF, Alloc, Accessor>> {
 public:
   using graph_type        = G;
   using vertex_type       = adj_list::vertex_t<G>;
-  using edge_type         = adj_list::edge_t<G>;
+  using edge_type         = typename Accessor::template edge_t<G>;
   using allocator_type    = Alloc;
   using value_result_type = std::invoke_result_t<EVF, const G&, edge_type>;
   using info_type         = edge_info<void, false, edge_type, value_result_type>;
 
 private:
-  using state_type = topo_detail::topo_state<G, Alloc>;
+  using state_type     = topo_detail::topo_state<G, Alloc, Accessor>;
+  using edge_iter_type = std::ranges::iterator_t<typename Accessor::template edge_range_t<G>>;
 
 public:
   /**
@@ -741,7 +746,7 @@ public:
           : g_(g), state_(std::move(state)), vertex_index_(v_idx), evf_(evf) {
       if (!at_end()) {
         auto v          = state_->post_order_[vertex_index_];
-        auto edge_range = adj_list::edges(*g_, v);
+        auto edge_range = Accessor{}.edges(*g_, v);
         edge_it_        = std::ranges::begin(edge_range);
         edge_end_       = std::ranges::end(edge_range);
         skip_to_first_edge(); // Position without incrementing count_
@@ -787,7 +792,7 @@ public:
         ++vertex_index_;
         if (vertex_index_ < state_->post_order_.size()) {
           auto v          = state_->post_order_[vertex_index_];
-          auto edge_range = adj_list::edges(*g_, v);
+          auto edge_range = Accessor{}.edges(*g_, v);
           edge_it_        = std::ranges::begin(edge_range);
           edge_end_       = std::ranges::end(edge_range);
         }
@@ -805,19 +810,19 @@ public:
         ++vertex_index_;
         if (vertex_index_ < state_->post_order_.size()) {
           auto v          = state_->post_order_[vertex_index_];
-          auto edge_range = adj_list::edges(*g_, v);
+          auto edge_range = Accessor{}.edges(*g_, v);
           edge_it_        = std::ranges::begin(edge_range);
           edge_end_       = std::ranges::end(edge_range);
         }
       }
     }
 
-    G*                                  g_ = nullptr;
-    std::shared_ptr<state_type>         state_;
-    std::size_t                         vertex_index_ = 0;
-    adj_list::vertex_edge_iterator_t<G> edge_it_{};
-    adj_list::vertex_edge_iterator_t<G> edge_end_{};
-    EVF*                                evf_ = nullptr;
+    G*                          g_ = nullptr;
+    std::shared_ptr<state_type> state_;
+    std::size_t                 vertex_index_ = 0;
+    edge_iter_type              edge_it_{};
+    edge_iter_type              edge_end_{};
+    EVF*                        evf_ = nullptr;
   };
 
   struct sentinel {
@@ -1190,6 +1195,112 @@ requires edge_value_function<EVF, G, adj_list::edge_t<G>>
   using view_type = edges_topological_sort_view<G, std::decay_t<EVF>, Alloc>;
 
   auto state = std::make_shared<topo_detail::topo_state<G, Alloc>>(g, alloc, true);
+
+  if (state->has_cycle()) {
+    return tl::unexpected(state->cycle_vertex().value());
+  }
+
+  return view_type(g, std::forward<EVF>(evf), std::move(state));
+}
+
+//=============================================================================
+// Accessor-parameterized factory functions
+//=============================================================================
+// Usage: vertices_topological_sort<in_edge_accessor>(g)
+//        edges_topological_sort<in_edge_accessor>(g)
+
+/// Topological vertex traversal with explicit Accessor.
+template <class Accessor, adj_list::index_adjacency_list G>
+[[nodiscard]] auto vertices_topological_sort(G& g) {
+  return vertices_topological_sort_view<G, void, std::allocator<bool>, Accessor>(g, std::allocator<bool>{});
+}
+
+/// Topological vertex traversal with explicit Accessor and value function.
+template <class Accessor, adj_list::index_adjacency_list G, class VVF>
+requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
+[[nodiscard]] auto vertices_topological_sort(G& g, VVF&& vvf) {
+  return vertices_topological_sort_view<G, std::decay_t<VVF>, std::allocator<bool>, Accessor>(
+        g, std::forward<VVF>(vvf), std::allocator<bool>{});
+}
+
+/// Topological edge traversal with explicit Accessor.
+template <class Accessor, adj_list::index_adjacency_list G>
+[[nodiscard]] auto edges_topological_sort(G& g) {
+  return edges_topological_sort_view<G, void, std::allocator<bool>, Accessor>(g, std::allocator<bool>{});
+}
+
+/// Topological edge traversal with explicit Accessor and value function.
+template <class Accessor, adj_list::index_adjacency_list G, class EVF>
+requires edge_value_function<EVF, G, typename Accessor::template edge_t<G>>
+[[nodiscard]] auto edges_topological_sort(G& g, EVF&& evf) {
+  return edges_topological_sort_view<G, std::decay_t<EVF>, std::allocator<bool>, Accessor>(
+        g, std::forward<EVF>(evf), std::allocator<bool>{});
+}
+
+//=============================================================================
+// Accessor-parameterized safe factory functions
+//=============================================================================
+
+/// Topological vertex traversal with explicit Accessor and cycle detection.
+template <class Accessor, adj_list::index_adjacency_list G>
+[[nodiscard]] auto vertices_topological_sort_safe(G& g)
+      -> tl::expected<vertices_topological_sort_view<G, void, std::allocator<bool>, Accessor>, adj_list::vertex_t<G>> {
+  using view_type = vertices_topological_sort_view<G, void, std::allocator<bool>, Accessor>;
+
+  auto state =
+        std::make_shared<topo_detail::topo_state<G, std::allocator<bool>, Accessor>>(g, std::allocator<bool>{}, true);
+
+  if (state->has_cycle()) {
+    return tl::unexpected(state->cycle_vertex().value());
+  }
+
+  return view_type(g, std::move(state));
+}
+
+/// Topological vertex traversal with explicit Accessor, value function, and cycle detection.
+template <class Accessor, adj_list::index_adjacency_list G, class VVF>
+requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
+[[nodiscard]] auto vertices_topological_sort_safe(G& g, VVF&& vvf)
+      -> tl::expected<vertices_topological_sort_view<G, std::decay_t<VVF>, std::allocator<bool>, Accessor>,
+                      adj_list::vertex_t<G>> {
+  using view_type = vertices_topological_sort_view<G, std::decay_t<VVF>, std::allocator<bool>, Accessor>;
+
+  auto state =
+        std::make_shared<topo_detail::topo_state<G, std::allocator<bool>, Accessor>>(g, std::allocator<bool>{}, true);
+
+  if (state->has_cycle()) {
+    return tl::unexpected(state->cycle_vertex().value());
+  }
+
+  return view_type(g, std::forward<VVF>(vvf), std::move(state));
+}
+
+/// Topological edge traversal with explicit Accessor and cycle detection.
+template <class Accessor, adj_list::index_adjacency_list G>
+[[nodiscard]] auto edges_topological_sort_safe(G& g)
+      -> tl::expected<edges_topological_sort_view<G, void, std::allocator<bool>, Accessor>, adj_list::vertex_t<G>> {
+  using view_type = edges_topological_sort_view<G, void, std::allocator<bool>, Accessor>;
+
+  auto state =
+        std::make_shared<topo_detail::topo_state<G, std::allocator<bool>, Accessor>>(g, std::allocator<bool>{}, true);
+
+  if (state->has_cycle()) {
+    return tl::unexpected(state->cycle_vertex().value());
+  }
+
+  return view_type(g, std::move(state));
+}
+
+/// Topological edge traversal with explicit Accessor, value function, and cycle detection.
+template <class Accessor, adj_list::index_adjacency_list G, class EVF>
+requires edge_value_function<EVF, G, typename Accessor::template edge_t<G>>
+[[nodiscard]] auto edges_topological_sort_safe(G& g, EVF&& evf)
+      -> tl::expected<edges_topological_sort_view<G, std::decay_t<EVF>, std::allocator<bool>, Accessor>,
+                      adj_list::vertex_t<G>> {
+  using view_type = edges_topological_sort_view<G, std::decay_t<EVF>, std::allocator<bool>, Accessor>;
+
+  auto state =
+        std::make_shared<topo_detail::topo_state<G, std::allocator<bool>, Accessor>>(g, std::allocator<bool>{}, true);
 
   if (state->has_cycle()) {
     return tl::unexpected(state->cycle_vertex().value());

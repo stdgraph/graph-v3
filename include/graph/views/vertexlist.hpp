@@ -85,9 +85,33 @@
  * @section supported_graphs Supported Graph Properties
  *
  * - Requires: @c adjacency_list concept
- *   (subrange overloads require @c index_adjacency_list)
  * - Works with all @c dynamic_graph container combinations
  * - Works with directed and undirected graphs
+ *
+ * @subsection index_adjacency_list_requirement Subrange Overloads Require @c index_adjacency_list
+ *
+ * The subrange factory overloads — @c vertexlist(g,first_u,last_u),
+ * @c vertexlist(g,first_u,last_u,vvf), @c basic_vertexlist(g,first_uid,last_uid),
+ * and @c basic_vertexlist(g,first_uid,last_uid,vvf) — require
+ * @c index_adjacency_list rather than plain @c adjacency_list because:
+ *
+ * 1. **O(1) @c size()** — The view's @c size() member is computed at construction
+ *    as `vertex_id(g,last_u) - vertex_id(g,first_u)` (descriptor overloads) or
+ *    `last_uid - first_uid` (id overloads).  Subtraction on @c vertex_id_t<G>
+ *    requires an @c std::integral vertex ID type.  @c index_adjacency_list
+ *    enforces this via @c index_vertex_range.
+ *
+ * 2. **O(1) @c find_vertex()** — The id-based @c basic_vertexlist overloads call
+ *    @c find_vertex(g, first_uid) and @c find_vertex(g, last_uid) to convert IDs
+ *    back to descriptors.  On random-access containers (e.g. @c vector, @c deque)
+ *    this is O(1); on map-based containers it is O(log N) or O(1) amortised but
+ *    the result is not a contiguous-range iterator.  @c index_adjacency_list
+ *    ensures the underlying container supports random-access iteration, keeping
+ *    construction O(1).
+ *
+ * Relaxing to `adjacency_list<G> && std::integral<vertex_id_t<G>>` would allow
+ * non-random-access containers (e.g. @c map-vertex graphs) at the cost of
+ * making @c find_vertex O(log N).  The current stricter constraint is intentional.
  *
  * @section exception_safety Exception Safety
  *

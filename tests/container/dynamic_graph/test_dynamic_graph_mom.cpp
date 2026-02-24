@@ -53,13 +53,7 @@ using mos_str_void_int_void =
 using mos_str_int_int_int =
       dynamic_graph<int, int, int, std::string, false, mom_graph_traits<int, int, int, std::string, false>>;
 
-using mos_sourced =
-      dynamic_graph<void, void, void, uint32_t, true, mom_graph_traits<void, void, void, uint32_t, true>>;
-using mos_int_sourced =
-      dynamic_graph<int, void, void, uint32_t, true, mom_graph_traits<int, void, void, uint32_t, true>>;
 
-using mos_str_sourced =
-      dynamic_graph<void, void, void, std::string, true, mom_graph_traits<void, void, void, std::string, true>>;
 
 // Edge and vertex data types for loading
 using edge_void  = copyable_edge_t<uint32_t, void>;
@@ -104,13 +98,6 @@ TEST_CASE("mom traits verification", "[dynamic_graph][mom][traits]") {
     REQUIRE(true);
   }
 
-  SECTION("sourced flag is preserved") {
-    using traits_unsourced = mom_graph_traits<void, void, void, uint32_t, false>;
-    using traits_sourced   = mom_graph_traits<void, void, void, uint32_t, true>;
-    static_assert(traits_unsourced::sourced == false);
-    static_assert(traits_sourced::sourced == true);
-    REQUIRE(true);
-  }
 
   SECTION("vertex_id_type for uint32_t") {
     using traits = mom_graph_traits<void, void, void, uint32_t, false>;
@@ -245,22 +232,6 @@ TEST_CASE("mom construction with string vertex IDs", "[dynamic_graph][mom][const
   }
 }
 
-TEST_CASE("mom construction sourced", "[dynamic_graph][mom][construction][sourced]") {
-  SECTION("sourced edge construction with uint32_t IDs") {
-    mos_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-
-  SECTION("sourced with edge value construction") {
-    mos_int_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-
-  SECTION("sourced edge construction with string IDs") {
-    mos_str_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-}
 
 //==================================================================================================
 // 4. Basic Properties Tests
@@ -410,19 +381,6 @@ TEST_CASE("mom edge deduplication", "[dynamic_graph][mom][set][deduplication]") 
     REQUIRE(count_all_edges(g) == 1);
   }
 
-  SECTION("sourced edges - deduplication by (source_id, target_id)") {
-    mos_sourced            g;
-    std::vector<edge_void> ee = {
-          {0, 1},
-          {0, 1}, // Duplicates
-          {1, 0},
-          {1, 0} // Different direction, also duplicates
-    };
-    g.load_edges(ee, std::identity{});
-
-    // Should have exactly 2 unique edges (0->1 and 1->0)
-    REQUIRE(count_all_edges(g) == 2);
-  }
 }
 
 //==================================================================================================
@@ -448,21 +406,6 @@ TEST_CASE("mom edges are sorted by target_id", "[dynamic_graph][mom][set][sorted
     REQUIRE(target_ids == std::vector<uint32_t>{1, 2, 3, 5, 8});
   }
 
-  SECTION("sourced edges sorted by target_id") {
-    mos_sourced            g;
-    std::vector<edge_void> ee = {{0, 7}, {0, 3}, {0, 9}, {0, 1}};
-    g.load_edges(ee, std::identity{});
-
-    auto it = g.try_find_vertex(0);
-    REQUIRE(it != g.end());
-
-    std::vector<uint32_t> target_ids;
-    for (const auto& edge : it->second.edges()) {
-      target_ids.push_back(edge.second.target_id());
-    }
-
-    REQUIRE(target_ids == std::vector<uint32_t>{1, 3, 7, 9});
-  }
 }
 
 //==================================================================================================
@@ -492,11 +435,6 @@ TEST_CASE("mom initializer_list construction string IDs", "[dynamic_graph][mom][
     REQUIRE(g.size() == 5);
   }
 
-  SECTION("sourced edges with string IDs") {
-    using G = mos_str_sourced;
-    G g({{"alice", "bob"}, {"bob", "charlie"}});
-    REQUIRE(g.size() == 3);
-  }
 
   SECTION("string deduplication") {
     using G = mos_str_void_void_void;
@@ -1012,12 +950,9 @@ TEST_CASE("mom template instantiation", "[dynamic_graph][mom][compilation]") {
   [[maybe_unused]] mos_int_int_void       g4;
   [[maybe_unused]] mos_void_void_int      g5;
   [[maybe_unused]] mos_int_int_int        g6;
-  [[maybe_unused]] mos_sourced            g7;
-  [[maybe_unused]] mos_int_sourced        g8;
   [[maybe_unused]] mos_str_void_void_void g9;
   [[maybe_unused]] mos_str_int_void_void  g10;
   [[maybe_unused]] mos_str_int_int_int    g11;
-  [[maybe_unused]] mos_str_sourced        g12;
 
   REQUIRE(true);
 }
@@ -1090,40 +1025,3 @@ TEST_CASE("mom edge bidirectional iteration", "[dynamic_graph][mom][set][iterati
 // 20. Sourced Edge Tests
 //==================================================================================================
 
-TEST_CASE("mom sourced edges", "[dynamic_graph][mom][sourced]") {
-  SECTION("source_id access") {
-    mos_sourced g({{0, 1}, {0, 2}, {1, 0}});
-
-    auto it0 = g.try_find_vertex(0);
-    REQUIRE(it0 != g.end());
-    for (const auto& edge : it0->second.edges()) {
-      REQUIRE(edge.second.source_id() == 0);
-    }
-
-    auto it1 = g.try_find_vertex(1);
-    REQUIRE(it1 != g.end());
-    for (const auto& edge : it1->second.edges()) {
-      REQUIRE(edge.second.source_id() == 1);
-    }
-  }
-
-  SECTION("sourced edge with values") {
-    mos_int_sourced       g;
-    std::vector<edge_int> ee = {{0, 1, 100}, {1, 0, 200}};
-    g.load_edges(ee, std::identity{});
-
-    auto it0 = g.try_find_vertex(0);
-    REQUIRE(it0 != g.end());
-    auto e0 = it0->second.edges().begin();
-    REQUIRE(e0->second.source_id() == 0);
-    REQUIRE(e0->second.target_id() == 1);
-    REQUIRE(e0->second.value() == 100);
-
-    auto it1 = g.try_find_vertex(1);
-    REQUIRE(it1 != g.end());
-    auto e1 = it1->second.edges().begin();
-    REQUIRE(e1->second.source_id() == 1);
-    REQUIRE(e1->second.target_id() == 0);
-    REQUIRE(e1->second.value() == 200);
-  }
-}

@@ -58,12 +58,7 @@ using uol_str_void_int_void =
 using uol_str_int_int_int =
       dynamic_graph<int, int, int, std::string, false, uol_graph_traits<int, int, int, std::string, false>>;
 
-using uol_sourced = dynamic_graph<void, void, void, uint32_t, true, uol_graph_traits<void, void, void, uint32_t, true>>;
-using uol_int_sourced =
-      dynamic_graph<int, void, void, uint32_t, true, uol_graph_traits<int, void, void, uint32_t, true>>;
 
-using uol_str_sourced =
-      dynamic_graph<void, void, void, std::string, true, uol_graph_traits<void, void, void, std::string, true>>;
 
 //==================================================================================================
 // 1. Traits Verification Tests
@@ -103,13 +98,6 @@ TEST_CASE("uol traits verification", "[dynamic_graph][uol][traits]") {
     REQUIRE(true);
   }
 
-  SECTION("sourced flag is preserved") {
-    using traits_unsourced = uol_graph_traits<void, void, void, uint32_t, false>;
-    using traits_sourced   = uol_graph_traits<void, void, void, uint32_t, true>;
-    static_assert(traits_unsourced::sourced == false);
-    static_assert(traits_sourced::sourced == true);
-    REQUIRE(true);
-  }
 
   SECTION("vertex_id_type for uint32_t") {
     using traits = uol_graph_traits<void, void, void, uint32_t, false>;
@@ -243,22 +231,6 @@ TEST_CASE("uol construction with string vertex IDs", "[dynamic_graph][uol][const
   }
 }
 
-TEST_CASE("uol construction sourced", "[dynamic_graph][uol][construction][sourced]") {
-  SECTION("sourced edge construction with uint32_t IDs") {
-    uol_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-
-  SECTION("sourced with edge value construction") {
-    uol_int_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-
-  SECTION("sourced edge construction with string IDs") {
-    uol_str_sourced g;
-    REQUIRE(g.size() == 0);
-  }
-}
 
 //==================================================================================================
 // 4. Basic Properties Tests
@@ -311,15 +283,9 @@ TEST_CASE("uol type aliases", "[dynamic_graph][uol][types]") {
   SECTION("graph type aliases are correct") {
     using G = uol_int_int_int;
     static_assert(std::same_as<typename G::value_type, int>); // GV
-    static_assert(G::sourced == false);
     REQUIRE(true);
   }
 
-  SECTION("sourced graph type aliases are correct") {
-    using G = uol_sourced;
-    static_assert(G::sourced == true);
-    REQUIRE(true);
-  }
 
   SECTION("string key graph type aliases are correct") {
     using G      = uol_str_int_int_int;
@@ -442,11 +408,6 @@ TEST_CASE("uol initializer_list construction string IDs", "[dynamic_graph][uol][
     REQUIRE(g.size() == 5);
   }
 
-  SECTION("sourced edges with string IDs") {
-    using G = uol_str_sourced;
-    G g({{"alice", "bob"}, {"bob", "charlie"}});
-    REQUIRE(g.size() == 3);
-  }
 }
 
 //==================================================================================================
@@ -674,12 +635,9 @@ TEST_CASE("uol template instantiation", "[dynamic_graph][uol][compilation]") {
   [[maybe_unused]] uol_int_int_void       g4;
   [[maybe_unused]] uol_void_void_int      g5;
   [[maybe_unused]] uol_int_int_int        g6;
-  [[maybe_unused]] uol_sourced            g7;
-  [[maybe_unused]] uol_int_sourced        g8;
   [[maybe_unused]] uol_str_void_void_void g9;
   [[maybe_unused]] uol_str_int_void_void  g10;
   [[maybe_unused]] uol_str_int_int_int    g11;
-  [[maybe_unused]] uol_str_sourced        g12;
 
   REQUIRE(true);
 }

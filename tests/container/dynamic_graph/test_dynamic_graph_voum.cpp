@@ -45,13 +45,8 @@ using voum_string_string_string =
                     std::string,
                     std::string,
                     uint32_t,
-                    false,
-                    voum_graph_traits<std::string, std::string, std::string, uint32_t, false>>;
+                    false, voum_graph_traits<std::string, std::string, std::string, uint32_t, false>>;
 
-using voum_sourced =
-      dynamic_graph<void, void, void, uint32_t, true, voum_graph_traits<void, void, void, uint32_t, true>>;
-using voum_int_sourced =
-      dynamic_graph<int, void, void, uint32_t, true, voum_graph_traits<int, void, void, uint32_t, true>>;
 
 // Edge and vertex data types for loading
 using edge_void  = copyable_edge_t<uint32_t, void>;
@@ -218,19 +213,6 @@ TEST_CASE("voum edge deduplication", "[voum][unordered_map][deduplication]") {
     REQUIRE(v0.edges().begin()->second.value() == 100);
   }
 
-  SECTION("sourced edges - deduplication by (source_id, target_id)") {
-    voum_sourced           g;
-    std::vector<edge_void> ee = {
-          {0, 1},
-          {0, 1}, // Duplicates
-          {1, 0},
-          {1, 0} // Different direction, also duplicates
-    };
-    g.load_edges(ee, std::identity{});
-
-    // Should have exactly 2 unique edges (0->1 and 1->0)
-    REQUIRE(count_all_edges(g) == 2);
-  }
 }
 
 //==================================================================================================
@@ -253,19 +235,6 @@ TEST_CASE("voum edges are unordered", "[voum][unordered_map][unordered]") {
     REQUIRE(target_ids == std::set<uint32_t>{1, 2, 3, 5, 8});
   }
 
-  SECTION("sourced edges - all target_ids present") {
-    voum_sourced           g;
-    std::vector<edge_void> ee = {{0, 7}, {0, 3}, {0, 9}, {0, 1}};
-    g.load_edges(ee, std::identity{});
-
-    auto&              v0 = g[0];
-    std::set<uint32_t> target_ids;
-    for (const auto& edge : v0.edges()) {
-      target_ids.insert(edge.second.target_id());
-    }
-
-    REQUIRE(target_ids == std::set<uint32_t>{1, 3, 7, 9});
-  }
 }
 
 //==================================================================================================
@@ -415,41 +384,6 @@ TEST_CASE("voum edge values", "[voum][edge][value]") {
 // 9. Sourced Edge Tests
 //==================================================================================================
 
-TEST_CASE("voum sourced edges", "[voum][sourced]") {
-  SECTION("source_id access") {
-    voum_sourced g({{0, 1}, {0, 2}, {1, 0}});
-
-    auto& v0 = g[0];
-    for (const auto& edge : v0.edges()) {
-      REQUIRE(edge.second.source_id() == 0);
-    }
-
-    auto& v1 = g[1];
-    for (const auto& edge : v1.edges()) {
-      REQUIRE(edge.second.source_id() == 1);
-    }
-  }
-
-  SECTION("sourced edge with values") {
-    voum_int_sourced      g;
-    std::vector<edge_int> ee = {{0, 1, 100}, {1, 0, 200}};
-    g.load_edges(ee, std::identity{});
-
-    // Verify edges from vertex 0
-    auto&                             v0 = g[0];
-    auto                              it0 = v0.edges().begin();
-    REQUIRE(it0->second.source_id() == 0);
-    REQUIRE(it0->second.target_id() == 1);
-    REQUIRE(it0->second.value() == 100);
-
-    // Verify edges from vertex 1
-    auto& v1  = g[1];
-    auto  it1 = v1.edges().begin();
-    REQUIRE(it1->second.source_id() == 1);
-    REQUIRE(it1->second.target_id() == 0);
-    REQUIRE(it1->second.value() == 200);
-  }
-}
 
 //==================================================================================================
 // 10. Self-Loop Tests
@@ -667,13 +601,6 @@ TEST_CASE("voum type traits", "[voum][traits]") {
     static_assert(requires { typename edges_t::hasher; });
   }
 
-  SECTION("sourced trait") {
-    using traits_unsourced = voum_graph_traits<void, void, void, uint32_t, false>;
-    using traits_sourced   = voum_graph_traits<void, void, void, uint32_t, true>;
-
-    static_assert(traits_unsourced::sourced == false);
-    static_assert(traits_sourced::sourced == true);
-  }
 }
 
 //==================================================================================================
