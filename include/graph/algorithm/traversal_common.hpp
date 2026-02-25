@@ -30,6 +30,26 @@
 namespace graph {
 
 //
+// vertex_id_store_t<G> — efficient storage type for vertex IDs in algorithm internals
+//
+
+/**
+ * @brief Efficient storage type for vertex IDs in algorithm-internal containers.
+ *
+ * For integral IDs (vector-based graphs): same as vertex_id_t<G> (zero overhead).
+ * For non-trivial IDs (e.g., std::string from map-based graphs): reference_wrapper
+ * to the stable key in the graph's map node (8 bytes, trivially copyable).
+ *
+ * @note Requires: the graph must not be mutated while values of this type are alive.
+ * This is already an implicit precondition for all traversal algorithms.
+ */
+template <typename G>
+using vertex_id_store_t = std::conditional_t<
+    std::is_reference_v<adj_list::raw_vertex_id_t<G>>,
+    std::reference_wrapper<std::remove_reference_t<adj_list::raw_vertex_id_t<G>>>,
+    adj_list::vertex_id_t<G>>;
+
+//
 // Edge weight function concepts
 //
 // Note on std::remove_reference_t<G>:
