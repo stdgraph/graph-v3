@@ -94,8 +94,19 @@ public:
      * 
      * Only available when EdgeDirection is in_edge_tag.
      */
+  /**
+     * @brief Get the source vertex ID by navigating the edge container (in-edge only)
+     * @param vertex_data The vertex/edge data structure passed from the CPO
+     * @return The source vertex identifier extracted from the native in-edge
+     * 
+     * For in-edge descriptors, source_id() (no args) returns the owning vertex ID
+     * which is actually the target. This overload navigates the in_edges container
+     * to retrieve the native edge's source_id — the actual source vertex.
+     * 
+     * Only available when EdgeDirection is in_edge_tag.
+     */
   template <typename VertexData>
-  [[nodiscard]] constexpr decltype(auto) source_id(const VertexData& vertex_data) const noexcept
+  [[nodiscard]] constexpr auto source_id(const VertexData& vertex_data) const noexcept
   requires(is_in_edge) {
     const auto& edge_container = [&]() -> decltype(auto) {
       if constexpr (requires { vertex_data.in_edges(); }) {
@@ -107,7 +118,7 @@ public:
         if constexpr (requires { vertex_data.second.in_edges(); }) {
           return vertex_data.second.in_edges();
         } else {
-          return (vertex_data.second);  // parenthesized: return const& to the container
+          return vertex_data.second;
         }
       } else {
         return vertex_data;
@@ -128,7 +139,7 @@ public:
     } else if constexpr (requires { edge_val.source_id(); }) {
       return edge_val.source_id();
     } else if constexpr (requires { edge_val.first; }) {
-      return (edge_val.first);  // parenthesized for reference semantics
+      return edge_val.first;
     } else if constexpr (requires { std::get<0>(edge_val); }) {
       return std::get<0>(edge_val);
     } else {
@@ -147,7 +158,7 @@ public:
      * Only available when EdgeDirection is in_edge_tag.
      */
   template <typename VertexData>
-  [[nodiscard]] constexpr decltype(auto) target_id(const VertexData& /*vertex_data*/) const noexcept
+  [[nodiscard]] constexpr auto target_id(const VertexData& /*vertex_data*/) const noexcept
   requires(is_in_edge) {
     return source_.vertex_id();
   }
@@ -162,7 +173,7 @@ public:
      * Only available when EdgeDirection is out_edge_tag.
      */
   template <typename VertexData>
-  [[nodiscard]] constexpr decltype(auto) target_id(const VertexData& vertex_data) const noexcept
+  [[nodiscard]] constexpr auto target_id(const VertexData& vertex_data) const noexcept
   requires(is_out_edge) {
     using edge_value_type = typename std::iterator_traits<EdgeIter>::value_type;
 
