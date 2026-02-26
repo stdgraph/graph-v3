@@ -631,15 +631,15 @@ After all phases are complete:
 
 | Phase | Step | Description | Status |
 |-------|------|-------------|--------|
-| **0** | 0.1 | Protect `vertex_id_t<G>` in `graph_cpo.hpp`, add `raw_vertex_id_t<G>` | not-started |
-| **0** | 0.2 | Protect `vertex_id_t<G>` in `edge_list.hpp` | not-started |
-| **0** | 0.3 | Add `vertex_id_store_t<G>` in `traversal_common.hpp` | not-started |
-| **0** | 0.4 | Phase 0 gate — full matrix build | not-started |
-| **1** | 1.1 | Audit temporary descriptor usage (read-only) | not-started |
-| **1** | 1.2 | `vertex_descriptor::vertex_id()` → `decltype(auto)` | not-started |
-| **1** | 1.3 | `edge_descriptor::source_id()` and `target_id()` → `decltype(auto)` | not-started |
-| **1** | 1.4 | Verify `raw_vertex_id_t<G>` resolves correctly (static_assert) | not-started |
-| **1** | 1.5 | Phase 1 gate — full matrix + ASan | not-started |
+| **0** | 0.1 | Protect `vertex_id_t<G>` in `graph_cpo.hpp`, add `raw_vertex_id_t<G>` | **completed** |
+| **0** | 0.2 | Protect `vertex_id_t<G>` in `edge_list.hpp` | **completed** |
+| **0** | 0.3 | Add `vertex_id_store_t<G>` in `traversal_common.hpp` | **completed** |
+| **0** | 0.4 | Phase 0 gate — full matrix build | **completed** |
+| **1** | 1.1 | Audit temporary descriptor usage (read-only) | **completed** |
+| **1** | 1.2 | `vertex_descriptor::vertex_id()` → `decltype(auto)` | **completed** |
+| **1** | 1.3 | `edge_descriptor::source_id()` and `target_id()` → `decltype(auto)` | **completed** |
+| **1** | 1.4 | Verify `raw_vertex_id_t<G>` resolves correctly (static_assert) | **completed** |
+| **1** | 1.5 | Phase 1 gate — full matrix + ASan | **completed** |
 | **2** | 2.1 | Update `adjacency_list_traits.hpp` concepts to `const&` | not-started |
 | **2** | 2.2 | Update `adjacency_list_concepts.hpp` concepts to `const&` | not-started |
 | **2** | 2.3 | Phase 2 gate — full matrix build | not-started |

@@ -66,44 +66,22 @@ public:
 
   /**
      * @brief Get the source vertex ID
-     * @return The vertex ID of the source vertex
+     * @return The vertex ID of the source vertex (by value for integral, const& for map keys)
      * 
      * Extracts the ID from the stored source vertex descriptor.
-     * 
-     * @note Current implementation returns by value (auto) which is suitable for
-     * integral vertex IDs. When non-trivial vertex ID types (e.g., std::string)
-     * are supported, this method should:
-     * 1. Change return type to decltype(auto) for reference semantics
-     * 2. This delegates to vertex_descriptor::vertex_id() which will also need updating
-     * See descriptor.md "Lambda Reference Binding Issues" section for details.
+     * Returns decltype(auto) to propagate reference semantics from vertex_descriptor::vertex_id().
      */
-  [[nodiscard]] constexpr auto source_id() const noexcept { return source_.vertex_id(); }
+  [[nodiscard]] constexpr decltype(auto) source_id() const noexcept { return source_.vertex_id(); }
 
   /**
      * @brief Get the target vertex ID from the edge data
      * @param vertex_data The vertex/edge data structure passed from the CPO
      * @return The target vertex identifier extracted from the edge
      * 
-     * For random access iterators, uses the stored index to access the container.
-     * For forward/bidirectional iterators, dereferences the stored iterator.
-     * 
-     * The vertex_data parameter varies by graph structure:
-     * - vov-style: vertex object with .edges() method
-     * - map-based: std::pair<VId, vertex_type> where .second is the vertex
-     * - raw adjacency: the edge container directly
-     * 
-     * Edge data extraction:
-     * - Simple integral types: returns the value directly as target ID
-     * - Pair-like types: returns .first as target ID
-     * - Tuple-like types: returns std::get<0> as target ID
-     * 
-     * @note Current implementation returns by value (auto) which is suitable for
-     * integral vertex IDs. When non-trivial vertex ID types (e.g., std::string)
-     * are supported, this method should:
-     * 1. Change return type to decltype(auto) for reference semantics
-     * 2. Replace lambda-based extraction with direct if constexpr branches
-     * 3. Wrap return expressions in parentheses: return (edge_val.first);
-     * See descriptor.md "Lambda Reference Binding Issues" section for details.
+     * Returns decltype(auto) for reference semantics on non-trivial ID types.
+     * Pair-like .first branches are parenthesized to return const& to the stable
+     * key rather than copying. std::get<0> and native .target_id() calls already
+     * return appropriate types.
      */
   /**
      * @brief Get the source vertex ID by navigating the edge container (in-edge only)
@@ -117,7 +95,7 @@ public:
      * Only available when EdgeDirection is in_edge_tag.
      */
   template <typename VertexData>
-  [[nodiscard]] constexpr auto source_id(const VertexData& vertex_data) const noexcept
+  [[nodiscard]] constexpr decltype(auto) source_id(const VertexData& vertex_data) const noexcept
   requires(is_in_edge) {
     const auto& edge_container = [&]() -> decltype(auto) {
       if constexpr (requires { vertex_data.in_edges(); }) {
@@ -129,7 +107,7 @@ public:
         if constexpr (requires { vertex_data.second.in_edges(); }) {
           return vertex_data.second.in_edges();
         } else {
-          return vertex_data.second;
+          return (vertex_data.second);  // parenthesized: return const& to the container
         }
       } else {
         return vertex_data;
@@ -150,7 +128,7 @@ public:
     } else if constexpr (requires { edge_val.source_id(); }) {
       return edge_val.source_id();
     } else if constexpr (requires { edge_val.first; }) {
-      return edge_val.first;
+      return (edge_val.first);  // parenthesized for reference semantics
     } else if constexpr (requires { std::get<0>(edge_val); }) {
       return std::get<0>(edge_val);
     } else {
@@ -169,7 +147,7 @@ public:
      * Only available when EdgeDirection is in_edge_tag.
      */
   template <typename VertexData>
-  [[nodiscard]] constexpr auto target_id(const VertexData& /*vertex_data*/) const noexcept
+  [[nodiscard]] constexpr decltype(auto) target_id(const VertexData& /*vertex_data*/) const noexcept
   requires(is_in_edge) {
     return source_.vertex_id();
   }
@@ -184,7 +162,7 @@ public:
      * Only available when EdgeDirection is out_edge_tag.
      */
   template <typename VertexData>
-  [[nodiscard]] constexpr auto target_id(const VertexData& vertex_data) const noexcept
+  [[nodiscard]] constexpr decltype(auto) target_id(const VertexData& vertex_data) const noexcept
   requires(is_out_edge) {
     using edge_value_type = typename std::iterator_traits<EdgeIter>::value_type;
 
@@ -206,7 +184,7 @@ public:
         if constexpr (requires { vertex_data.second.edges(); }) {
           return vertex_data.second.edges();
         } else {
-          return vertex_data.second;
+          return (vertex_data.second);  // parenthesized: return const& to the container
         }
       } else {
         return vertex_data;
@@ -234,8 +212,8 @@ public:
       // Edge object with target_id() member (e.g., dynamic_out_edge)
       return edge_val.target_id();
     } else if constexpr (requires { edge_val.first; }) {
-      // Pair-like: .first is the target ID
-      return edge_val.first;
+      // Pair-like: .first is the target ID — parenthesized for reference semantics
+      return (edge_val.first);
     } else if constexpr (requires { std::get<0>(edge_val); }) {
       // Tuple-like: first element is the target ID
       return std::get<0>(edge_val);
