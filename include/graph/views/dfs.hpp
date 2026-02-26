@@ -343,7 +343,7 @@ public:
         : g_(&g), state_(std::make_shared<state_type>(g, seed_vertex, adj_list::num_vertices(g), alloc)) {}
 
   /// Construct from vertex ID (delegates to vertex descriptor constructor)
-  vertices_dfs_view(G& g, vertex_id_type seed, Alloc alloc = {})
+  vertices_dfs_view(G& g, const vertex_id_type& seed, Alloc alloc = {})
         : vertices_dfs_view(g, *adj_list::find_vertex(g, seed), alloc) {}
 
   [[nodiscard]] iterator begin() { return iterator(g_, state_); }
@@ -519,7 +519,7 @@ public:
         , state_(std::make_shared<state_type>(g, seed_vertex, adj_list::num_vertices(g), alloc)) {}
 
   /// Construct from vertex ID (delegates to vertex descriptor constructor)
-  vertices_dfs_view(G& g, vertex_id_type seed, VVF vvf, Alloc alloc = {})
+  vertices_dfs_view(G& g, const vertex_id_type& seed, VVF vvf, Alloc alloc = {})
         : vertices_dfs_view(g, *adj_list::find_vertex(g, seed), std::move(vvf), alloc) {}
 
   [[nodiscard]] iterator begin() { return iterator(g_, state_, &vvf_); }
@@ -546,13 +546,13 @@ private:
 
 // Deduction guides for vertex_id
 template <adj_list::index_adjacency_list G, class Alloc = std::allocator<bool>>
-vertices_dfs_view(G&, adj_list::vertex_id_t<G>, Alloc) -> vertices_dfs_view<G, void, Alloc>;
+vertices_dfs_view(G&, const adj_list::vertex_id_t<G>&, Alloc) -> vertices_dfs_view<G, void, Alloc>;
 
 template <adj_list::index_adjacency_list G>
-vertices_dfs_view(G&, adj_list::vertex_id_t<G>) -> vertices_dfs_view<G, void, std::allocator<bool>>;
+vertices_dfs_view(G&, const adj_list::vertex_id_t<G>&) -> vertices_dfs_view<G, void, std::allocator<bool>>;
 
 template <adj_list::index_adjacency_list G, class VVF, class Alloc = std::allocator<bool>>
-vertices_dfs_view(G&, adj_list::vertex_id_t<G>, VVF, Alloc) -> vertices_dfs_view<G, VVF, Alloc>;
+vertices_dfs_view(G&, const adj_list::vertex_id_t<G>&, VVF, Alloc) -> vertices_dfs_view<G, VVF, Alloc>;
 
 // Deduction guides for vertex descriptor
 template <adj_list::index_adjacency_list G, class Alloc = std::allocator<bool>>
@@ -580,7 +580,7 @@ vertices_dfs_view(G&, adj_list::vertex_t<G>, VVF, Alloc) -> vertices_dfs_view<G,
  * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G>
-[[nodiscard]] auto vertices_dfs(G& g, adj_list::vertex_id_t<G> seed) {
+[[nodiscard]] auto vertices_dfs(G& g, const adj_list::vertex_id_t<G>& seed) {
   return vertices_dfs_view<G, void, std::allocator<bool>>(g, seed, std::allocator<bool>{});
 }
 
@@ -624,7 +624,7 @@ template <adj_list::index_adjacency_list G>
  */
 template <adj_list::index_adjacency_list G, class VVF>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
-[[nodiscard]] auto vertices_dfs(G& g, adj_list::vertex_id_t<G> seed, VVF&& vvf) {
+[[nodiscard]] auto vertices_dfs(G& g, const adj_list::vertex_id_t<G>& seed, VVF&& vvf) {
   return vertices_dfs_view<G, std::decay_t<VVF>, std::allocator<bool>>(g, seed, std::forward<VVF>(vvf),
                                                                        std::allocator<bool>{});
 }
@@ -664,7 +664,7 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
  */
 template <adj_list::index_adjacency_list G, class Alloc>
 requires(!vertex_value_function<Alloc, G, adj_list::vertex_t<G>>)
-[[nodiscard]] auto vertices_dfs(G& g, adj_list::vertex_id_t<G> seed, Alloc alloc) {
+[[nodiscard]] auto vertices_dfs(G& g, const adj_list::vertex_id_t<G>& seed, Alloc alloc) {
   return vertices_dfs_view<G, void, Alloc>(g, seed, alloc);
 }
 
@@ -705,7 +705,7 @@ requires(!vertex_value_function<Alloc, G, adj_list::vertex_t<G>>)
  */
 template <adj_list::index_adjacency_list G, class VVF, class Alloc>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
-[[nodiscard]] auto vertices_dfs(G& g, adj_list::vertex_id_t<G> seed, VVF&& vvf, Alloc alloc) {
+[[nodiscard]] auto vertices_dfs(G& g, const adj_list::vertex_id_t<G>& seed, VVF&& vvf, Alloc alloc) {
   return vertices_dfs_view<G, std::decay_t<VVF>, Alloc>(g, seed, std::forward<VVF>(vvf), alloc);
 }
 
@@ -881,7 +881,7 @@ public:
         : g_(&g), state_(std::make_shared<state_type>(g, seed_vertex, adj_list::num_vertices(g), alloc)) {}
 
   /// Construct from vertex ID (delegates to vertex descriptor constructor)
-  edges_dfs_view(G& g, vertex_id_type seed, Alloc alloc = {})
+  edges_dfs_view(G& g, const vertex_id_type& seed, Alloc alloc = {})
         : edges_dfs_view(g, *adj_list::find_vertex(g, seed), alloc) {}
 
   [[nodiscard]] iterator begin() { return iterator(g_, state_); }
@@ -1053,7 +1053,7 @@ public:
         , state_(std::make_shared<state_type>(g, seed_vertex, adj_list::num_vertices(g), alloc)) {}
 
   /// Construct from vertex ID (delegates to vertex descriptor constructor)
-  edges_dfs_view(G& g, vertex_id_type seed, EVF evf, Alloc alloc = {})
+  edges_dfs_view(G& g, const vertex_id_type& seed, EVF evf, Alloc alloc = {})
         : edges_dfs_view(g, *adj_list::find_vertex(g, seed), std::move(evf), alloc) {}
 
   [[nodiscard]] iterator begin() { return iterator(g_, state_, &evf_); }
@@ -1080,13 +1080,13 @@ private:
 
 // Deduction guides for edges_dfs_view - vertex_id
 template <adj_list::index_adjacency_list G, class Alloc = std::allocator<bool>>
-edges_dfs_view(G&, adj_list::vertex_id_t<G>, Alloc) -> edges_dfs_view<G, void, Alloc>;
+edges_dfs_view(G&, const adj_list::vertex_id_t<G>&, Alloc) -> edges_dfs_view<G, void, Alloc>;
 
 template <adj_list::index_adjacency_list G>
-edges_dfs_view(G&, adj_list::vertex_id_t<G>) -> edges_dfs_view<G, void, std::allocator<bool>>;
+edges_dfs_view(G&, const adj_list::vertex_id_t<G>&) -> edges_dfs_view<G, void, std::allocator<bool>>;
 
 template <adj_list::index_adjacency_list G, class EVF, class Alloc = std::allocator<bool>>
-edges_dfs_view(G&, adj_list::vertex_id_t<G>, EVF, Alloc) -> edges_dfs_view<G, EVF, Alloc>;
+edges_dfs_view(G&, const adj_list::vertex_id_t<G>&, EVF, Alloc) -> edges_dfs_view<G, EVF, Alloc>;
 
 // Deduction guides for edges_dfs_view - vertex descriptor
 template <adj_list::index_adjacency_list G, class Alloc = std::allocator<bool>>
@@ -1118,7 +1118,7 @@ edges_dfs_view(G&, adj_list::vertex_t<G>, EVF, Alloc) -> edges_dfs_view<G, EVF, 
  * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G>
-[[nodiscard]] auto edges_dfs(G& g, adj_list::vertex_id_t<G> seed) {
+[[nodiscard]] auto edges_dfs(G& g, const adj_list::vertex_id_t<G>& seed) {
   return edges_dfs_view<G, void, std::allocator<bool>>(g, seed, std::allocator<bool>{});
 }
 
@@ -1158,7 +1158,7 @@ template <adj_list::index_adjacency_list G>
  */
 template <adj_list::index_adjacency_list G, class EVF>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>
-[[nodiscard]] auto edges_dfs(G& g, adj_list::vertex_id_t<G> seed, EVF&& evf) {
+[[nodiscard]] auto edges_dfs(G& g, const adj_list::vertex_id_t<G>& seed, EVF&& evf) {
   return edges_dfs_view<G, std::decay_t<EVF>, std::allocator<bool>>(g, seed, std::forward<EVF>(evf),
                                                                     std::allocator<bool>{});
 }
@@ -1198,7 +1198,7 @@ requires edge_value_function<EVF, G, adj_list::edge_t<G>>
  */
 template <adj_list::index_adjacency_list G, class Alloc>
 requires(!edge_value_function<Alloc, G, adj_list::edge_t<G>>)
-[[nodiscard]] auto edges_dfs(G& g, adj_list::vertex_id_t<G> seed, Alloc alloc) {
+[[nodiscard]] auto edges_dfs(G& g, const adj_list::vertex_id_t<G>& seed, Alloc alloc) {
   return edges_dfs_view<G, void, Alloc>(g, seed, alloc);
 }
 
@@ -1239,7 +1239,7 @@ requires(!edge_value_function<Alloc, G, adj_list::edge_t<G>>)
  */
 template <adj_list::index_adjacency_list G, class EVF, class Alloc>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>
-[[nodiscard]] auto edges_dfs(G& g, adj_list::vertex_id_t<G> seed, EVF&& evf, Alloc alloc) {
+[[nodiscard]] auto edges_dfs(G& g, const adj_list::vertex_id_t<G>& seed, EVF&& evf, Alloc alloc) {
   return edges_dfs_view<G, std::decay_t<EVF>, Alloc>(g, seed, std::forward<EVF>(evf), alloc);
 }
 
@@ -1273,7 +1273,7 @@ requires edge_value_function<EVF, G, adj_list::edge_t<G>>
 
 /// DFS vertex traversal with explicit Accessor, from vertex ID.
 template <class Accessor, adj_list::index_adjacency_list G>
-[[nodiscard]] auto vertices_dfs(G& g, adj_list::vertex_id_t<G> seed) {
+[[nodiscard]] auto vertices_dfs(G& g, const adj_list::vertex_id_t<G>& seed) {
   return vertices_dfs_view<G, void, std::allocator<bool>, Accessor>(g, seed, std::allocator<bool>{});
 }
 
@@ -1286,7 +1286,7 @@ template <class Accessor, adj_list::index_adjacency_list G>
 /// DFS vertex traversal with explicit Accessor and value function, from vertex ID.
 template <class Accessor, adj_list::index_adjacency_list G, class VVF>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
-[[nodiscard]] auto vertices_dfs(G& g, adj_list::vertex_id_t<G> seed, VVF&& vvf) {
+[[nodiscard]] auto vertices_dfs(G& g, const adj_list::vertex_id_t<G>& seed, VVF&& vvf) {
   return vertices_dfs_view<G, std::decay_t<VVF>, std::allocator<bool>, Accessor>(g, seed, std::forward<VVF>(vvf),
                                                                                   std::allocator<bool>{});
 }
@@ -1302,7 +1302,7 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
 
 /// DFS edge traversal with explicit Accessor, from vertex ID.
 template <class Accessor, adj_list::index_adjacency_list G>
-[[nodiscard]] auto edges_dfs(G& g, adj_list::vertex_id_t<G> seed) {
+[[nodiscard]] auto edges_dfs(G& g, const adj_list::vertex_id_t<G>& seed) {
   return edges_dfs_view<G, void, std::allocator<bool>, Accessor>(g, seed, std::allocator<bool>{});
 }
 
@@ -1315,7 +1315,7 @@ template <class Accessor, adj_list::index_adjacency_list G>
 /// DFS edge traversal with explicit Accessor and value function, from vertex ID.
 template <class Accessor, adj_list::index_adjacency_list G, class EVF>
 requires edge_value_function<EVF, G, typename Accessor::template edge_t<G>>
-[[nodiscard]] auto edges_dfs(G& g, adj_list::vertex_id_t<G> seed, EVF&& evf) {
+[[nodiscard]] auto edges_dfs(G& g, const adj_list::vertex_id_t<G>& seed, EVF&& evf) {
   return edges_dfs_view<G, std::decay_t<EVF>, std::allocator<bool>, Accessor>(g, seed, std::forward<EVF>(evf),
                                                                                std::allocator<bool>{});
 }

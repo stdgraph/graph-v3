@@ -73,7 +73,7 @@ Three overloads cover different use cases:
 bool topological_sort(const G& g, OutputIterator result);
 
 // Single-source topological sort
-bool topological_sort(const G& g, vertex_id_t<G> source, OutputIterator result);
+bool topological_sort(const G& g, const vertex_id_t<G>& source, OutputIterator result);
 
 // Multi-source topological sort
 bool topological_sort(const G& g, const Sources& sources, OutputIterator result);

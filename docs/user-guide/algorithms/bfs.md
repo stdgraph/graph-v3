@@ -66,7 +66,7 @@ void breadth_first_search(G&& g, const Sources& sources,
     Visitor&& visitor = empty_visitor());
 
 // Single-source BFS
-void breadth_first_search(G&& g, vertex_id_t<G> source,
+void breadth_first_search(G&& g, const vertex_id_t<G>& source,
     Visitor&& visitor = empty_visitor());
 ```
 

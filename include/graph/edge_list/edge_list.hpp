@@ -140,6 +140,11 @@ namespace edge_list {
   using vertex_id_t = std::remove_cvref_t<decltype(graph::source_id(std::declval<edge_range_t<EL>&>(),
                                                                     std::declval<edge_t<edge_range_t<EL>>>()))>;
 
+  /// Raw return type of source_id(el, uv), preserving reference-ness.
+  template <basic_sourced_edgelist EL> // For exposition only
+  using raw_vertex_id_t = decltype(graph::source_id(std::declval<edge_range_t<EL>&>(),
+                                                    std::declval<edge_t<edge_range_t<EL>>>()));
+
 
   // template aliases can't be distinguished with concepts :(
   //

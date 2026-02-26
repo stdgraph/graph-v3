@@ -77,7 +77,7 @@ constexpr void dijkstra_shortest_paths(G&& g, const Sources& sources,
     Combine&& combine = plus<>{});
 
 // Single-source, distances + predecessors
-constexpr void dijkstra_shortest_paths(G&& g, vertex_id_t<G> source,
+constexpr void dijkstra_shortest_paths(G&& g, const vertex_id_t<G>& source,
     Distances& distances, Predecessors& predecessors,
     WF&& weight = /* default returns 1 */,
     Visitor&& visitor = empty_visitor(),
@@ -93,7 +93,7 @@ constexpr void dijkstra_shortest_distances(G&& g, const Sources& sources,
     Combine&& combine = plus<>{});
 
 // Single-source, distances only
-constexpr void dijkstra_shortest_distances(G&& g, vertex_id_t<G> source,
+constexpr void dijkstra_shortest_distances(G&& g, const vertex_id_t<G>& source,
     Distances& distances,
     WF&& weight = /* default returns 1 */,
     Visitor&& visitor = empty_visitor(),

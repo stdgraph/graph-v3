@@ -45,16 +45,18 @@ public:
 
   /**
      * @brief Get the vertex ID
-     * @return For random access: the index. For bidirectional: the key from the pair
+     * @return For random access: the index (by value). For bidirectional: const& to the key.
      * 
-     * @note Current implementation returns by value (auto) which is suitable for
-     * integral vertex IDs. When non-trivial vertex ID types (e.g., std::string)
-     * are supported, this method should:
-     * 1. Change return type to decltype(auto) for reference semantics
-     * 2. Wrap return expressions in parentheses: return (storage_);
-     * See descriptor.md "Lambda Reference Binding Issues" section for details.
+     * Returns decltype(auto) so that map-based graphs return a const reference
+     * to the stable key stored in the map node, avoiding copies of non-trivial
+     * ID types like std::string.
+     * 
+     * For random-access iterators, `return storage_;` (non-parenthesized) ensures
+     * decltype deduces the value type (size_t) — safe even on temporaries.
+     * For bidirectional iterators, std::get<0> returns a reference to the map key,
+     * which is stable as long as the container is alive.
      */
-  [[nodiscard]] constexpr auto vertex_id() const noexcept {
+  [[nodiscard]] constexpr decltype(auto) vertex_id() const noexcept {
     if constexpr (std::random_access_iterator<VertexIter>) {
       return storage_;
     } else {

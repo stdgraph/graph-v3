@@ -67,7 +67,7 @@ remaining unmarked vertices in order.
 
 ```cpp
 size_t maximal_independent_set(G&& g, OutputIterator mis,
-    vertex_id_t<G> seed = 0);
+    const vertex_id_t<G>& seed = 0);
 ```
 
 **Returns** the number of vertices in the MIS. Selected vertex IDs are written

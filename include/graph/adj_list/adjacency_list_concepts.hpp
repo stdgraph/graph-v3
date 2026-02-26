@@ -100,7 +100,7 @@ concept out_edge_range = std::ranges::forward_range<R> && edge<G, std::ranges::r
  * @tparam V Vertex type (must be vertex_descriptor)
  */
 template <class G, class V>
-concept vertex = is_vertex_descriptor_v<std::remove_cvref_t<V>> && requires(G& g, const V& u, vertex_id_t<G> uid) {
+concept vertex = is_vertex_descriptor_v<std::remove_cvref_t<V>> && requires(G& g, const V& u, const vertex_id_t<G>& uid) {
   vertex_id(g, u);
   find_vertex(g, uid);
 };

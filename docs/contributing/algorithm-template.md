@@ -94,11 +94,11 @@ template <adjacency_list      G,
           class WF = function<range_value_t<Distance>(edge_t<G>)>>
 requires /* ... constraints ... */
 void algorithm_name(
-      G&&            g,           // graph
-      vertex_id_t<G> source,      // starting vertex
-      Distance&      distance,    // out: distances
-      Predecessor&   predecessor, // out: predecessors
-      WF&&           weight)      // edge weight function
+      G&&                   g,           // graph
+      const vertex_id_t<G>& source,      // starting vertex
+      Distance&             distance,    // out: distances
+      Predecessor&          predecessor, // out: predecessors
+      WF&&                  weight)      // edge weight function
 ```
 
 ---

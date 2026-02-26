@@ -398,7 +398,7 @@ template <adj_list::adjacency_list G>
  * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G>
-[[nodiscard]] constexpr auto neighbors(G& g, adj_list::vertex_id_t<G> uid) noexcept {
+[[nodiscard]] constexpr auto neighbors(G& g, const adj_list::vertex_id_t<G>& uid) noexcept {
   auto u = *adj_list::find_vertex(g, uid);
   return neighbors(g, u);
 }
@@ -452,7 +452,7 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
  */
 template <adj_list::index_adjacency_list G, class VVF>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
-[[nodiscard]] constexpr auto neighbors(G& g, adj_list::vertex_id_t<G> uid, VVF&& vvf) {
+[[nodiscard]] constexpr auto neighbors(G& g, const adj_list::vertex_id_t<G>& uid, VVF&& vvf) {
   auto u = *adj_list::find_vertex(g, uid);
   return neighbors(g, u, std::forward<VVF>(vvf));
 }
@@ -722,7 +722,7 @@ basic_neighbors_view(G&, adj_list::vertex_t<G>, VVF) -> basic_neighbors_view<G, 
  * @post The graph is not modified.
  */
 template <adj_list::adjacency_list G>
-[[nodiscard]] constexpr auto basic_neighbors(G& g, adj_list::vertex_id_t<G> uid) {
+[[nodiscard]] constexpr auto basic_neighbors(G& g, const adj_list::vertex_id_t<G>& uid) {
   auto u = *adj_list::find_vertex(g, uid);
   return basic_neighbors_view<G, void>(g, u);
 }
@@ -748,7 +748,7 @@ template <adj_list::adjacency_list G>
  */
 template <adj_list::adjacency_list G, class VVF>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
-[[nodiscard]] constexpr auto basic_neighbors(G& g, adj_list::vertex_id_t<G> uid, VVF&& vvf) {
+[[nodiscard]] constexpr auto basic_neighbors(G& g, const adj_list::vertex_id_t<G>& uid, VVF&& vvf) {
   auto u = *adj_list::find_vertex(g, uid);
   return basic_neighbors_view<G, std::decay_t<VVF>>(g, u, std::forward<VVF>(vvf));
 }
@@ -772,7 +772,7 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
 
 /// @brief Create an outgoing neighbors view from vertex id.
 template <adj_list::index_adjacency_list G>
-[[nodiscard]] constexpr auto out_neighbors(G& g, adj_list::vertex_id_t<G> uid) {
+[[nodiscard]] constexpr auto out_neighbors(G& g, const adj_list::vertex_id_t<G>& uid) {
   auto u = *adj_list::find_vertex(g, uid);
   return out_neighbors(g, u);
 }
@@ -780,14 +780,14 @@ template <adj_list::index_adjacency_list G>
 /// @brief Create an outgoing neighbors view with VVF from vertex id.
 template <adj_list::index_adjacency_list G, class VVF>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
-[[nodiscard]] constexpr auto out_neighbors(G& g, adj_list::vertex_id_t<G> uid, VVF&& vvf) {
+[[nodiscard]] constexpr auto out_neighbors(G& g, const adj_list::vertex_id_t<G>& uid, VVF&& vvf) {
   auto u = *adj_list::find_vertex(g, uid);
   return out_neighbors(g, u, std::forward<VVF>(vvf));
 }
 
 /// @brief Create a basic outgoing neighbors view (target id only).
 template <adj_list::adjacency_list G>
-[[nodiscard]] constexpr auto basic_out_neighbors(G& g, adj_list::vertex_id_t<G> uid) {
+[[nodiscard]] constexpr auto basic_out_neighbors(G& g, const adj_list::vertex_id_t<G>& uid) {
   auto u = *adj_list::find_vertex(g, uid);
   return basic_neighbors_view<G, void, out_edge_accessor>(g, u);
 }
@@ -795,7 +795,7 @@ template <adj_list::adjacency_list G>
 /// @brief Create a basic outgoing neighbors view with VVF.
 template <adj_list::adjacency_list G, class VVF>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
-[[nodiscard]] constexpr auto basic_out_neighbors(G& g, adj_list::vertex_id_t<G> uid, VVF&& vvf) {
+[[nodiscard]] constexpr auto basic_out_neighbors(G& g, const adj_list::vertex_id_t<G>& uid, VVF&& vvf) {
   auto u = *adj_list::find_vertex(g, uid);
   return basic_neighbors_view<G, std::decay_t<VVF>, out_edge_accessor>(g, u, std::forward<VVF>(vvf));
 }
@@ -819,7 +819,7 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
 
 /// @brief Create an incoming neighbors view from vertex id.
 template <adj_list::index_bidirectional_adjacency_list G>
-[[nodiscard]] constexpr auto in_neighbors(G& g, adj_list::vertex_id_t<G> uid) {
+[[nodiscard]] constexpr auto in_neighbors(G& g, const adj_list::vertex_id_t<G>& uid) {
   auto u = *adj_list::find_vertex(g, uid);
   return in_neighbors(g, u);
 }
@@ -827,14 +827,14 @@ template <adj_list::index_bidirectional_adjacency_list G>
 /// @brief Create an incoming neighbors view with VVF from vertex id.
 template <adj_list::index_bidirectional_adjacency_list G, class VVF>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
-[[nodiscard]] constexpr auto in_neighbors(G& g, adj_list::vertex_id_t<G> uid, VVF&& vvf) {
+[[nodiscard]] constexpr auto in_neighbors(G& g, const adj_list::vertex_id_t<G>& uid, VVF&& vvf) {
   auto u = *adj_list::find_vertex(g, uid);
   return in_neighbors(g, u, std::forward<VVF>(vvf));
 }
 
 /// @brief Create a basic incoming neighbors view (source id only).
 template <adj_list::index_bidirectional_adjacency_list G>
-[[nodiscard]] constexpr auto basic_in_neighbors(G& g, adj_list::vertex_id_t<G> uid) {
+[[nodiscard]] constexpr auto basic_in_neighbors(G& g, const adj_list::vertex_id_t<G>& uid) {
   auto u = *adj_list::find_vertex(g, uid);
   return basic_neighbors_view<G, void, in_edge_accessor>(g, u);
 }
@@ -842,7 +842,7 @@ template <adj_list::index_bidirectional_adjacency_list G>
 /// @brief Create a basic incoming neighbors view with VVF.
 template <adj_list::index_bidirectional_adjacency_list G, class VVF>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
-[[nodiscard]] constexpr auto basic_in_neighbors(G& g, adj_list::vertex_id_t<G> uid, VVF&& vvf) {
+[[nodiscard]] constexpr auto basic_in_neighbors(G& g, const adj_list::vertex_id_t<G>& uid, VVF&& vvf) {
   auto u = *adj_list::find_vertex(g, uid);
   return basic_neighbors_view<G, std::decay_t<VVF>, in_edge_accessor>(g, u, std::forward<VVF>(vvf));
 }

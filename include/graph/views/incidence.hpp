@@ -411,7 +411,7 @@ requires edge_value_function<EVF, G, adj_list::edge_t<G>>
  * @post The graph is not modified.
  */
 template <adj_list::index_adjacency_list G>
-[[nodiscard]] constexpr auto incidence(G& g, adj_list::vertex_id_t<G> uid) {
+[[nodiscard]] constexpr auto incidence(G& g, const adj_list::vertex_id_t<G>& uid) {
   auto u = *adj_list::find_vertex(g, uid);
   return incidence(g, u);
 }
@@ -440,7 +440,7 @@ template <adj_list::index_adjacency_list G>
  */
 template <adj_list::index_adjacency_list G, class EVF>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>
-[[nodiscard]] constexpr auto incidence(G& g, adj_list::vertex_id_t<G> uid, EVF&& evf) {
+[[nodiscard]] constexpr auto incidence(G& g, const adj_list::vertex_id_t<G>& uid, EVF&& evf) {
   auto u = *adj_list::find_vertex(g, uid);
   return incidence(g, u, std::forward<EVF>(evf));
 }
@@ -704,7 +704,7 @@ basic_incidence_view(G&, adj_list::vertex_t<G>, EVF) -> basic_incidence_view<G, 
  * @post The graph is not modified.
  */
 template <adj_list::adjacency_list G>
-[[nodiscard]] constexpr auto basic_incidence(G& g, adj_list::vertex_id_t<G> uid) {
+[[nodiscard]] constexpr auto basic_incidence(G& g, const adj_list::vertex_id_t<G>& uid) {
   auto u = *adj_list::find_vertex(g, uid);
   return basic_incidence_view<G, void>(g, u);
 }
@@ -730,7 +730,7 @@ template <adj_list::adjacency_list G>
  */
 template <adj_list::adjacency_list G, class EVF>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>
-[[nodiscard]] constexpr auto basic_incidence(G& g, adj_list::vertex_id_t<G> uid, EVF&& evf) {
+[[nodiscard]] constexpr auto basic_incidence(G& g, const adj_list::vertex_id_t<G>& uid, EVF&& evf) {
   auto u = *adj_list::find_vertex(g, uid);
   return basic_incidence_view<G, std::decay_t<EVF>>(g, u, std::forward<EVF>(evf));
 }
@@ -754,7 +754,7 @@ requires edge_value_function<EVF, G, adj_list::edge_t<G>>
 
 /// @brief Create an outgoing incidence view from vertex id.
 template <adj_list::index_adjacency_list G>
-[[nodiscard]] constexpr auto out_incidence(G& g, adj_list::vertex_id_t<G> uid) {
+[[nodiscard]] constexpr auto out_incidence(G& g, const adj_list::vertex_id_t<G>& uid) {
   auto u = *adj_list::find_vertex(g, uid);
   return out_incidence(g, u);
 }
@@ -762,14 +762,14 @@ template <adj_list::index_adjacency_list G>
 /// @brief Create an outgoing incidence view with EVF from vertex id.
 template <adj_list::index_adjacency_list G, class EVF>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>
-[[nodiscard]] constexpr auto out_incidence(G& g, adj_list::vertex_id_t<G> uid, EVF&& evf) {
+[[nodiscard]] constexpr auto out_incidence(G& g, const adj_list::vertex_id_t<G>& uid, EVF&& evf) {
   auto u = *adj_list::find_vertex(g, uid);
   return out_incidence(g, u, std::forward<EVF>(evf));
 }
 
 /// @brief Create a basic outgoing incidence view (target id only).
 template <adj_list::adjacency_list G>
-[[nodiscard]] constexpr auto basic_out_incidence(G& g, adj_list::vertex_id_t<G> uid) {
+[[nodiscard]] constexpr auto basic_out_incidence(G& g, const adj_list::vertex_id_t<G>& uid) {
   auto u = *adj_list::find_vertex(g, uid);
   return basic_incidence_view<G, void, out_edge_accessor>(g, u);
 }
@@ -777,7 +777,7 @@ template <adj_list::adjacency_list G>
 /// @brief Create a basic outgoing incidence view with EVF.
 template <adj_list::adjacency_list G, class EVF>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>
-[[nodiscard]] constexpr auto basic_out_incidence(G& g, adj_list::vertex_id_t<G> uid, EVF&& evf) {
+[[nodiscard]] constexpr auto basic_out_incidence(G& g, const adj_list::vertex_id_t<G>& uid, EVF&& evf) {
   auto u = *adj_list::find_vertex(g, uid);
   return basic_incidence_view<G, std::decay_t<EVF>, out_edge_accessor>(g, u, std::forward<EVF>(evf));
 }
@@ -801,7 +801,7 @@ requires edge_value_function<EVF, G, adj_list::in_edge_t<G>>
 
 /// @brief Create an incoming incidence view from vertex id.
 template <adj_list::index_bidirectional_adjacency_list G>
-[[nodiscard]] constexpr auto in_incidence(G& g, adj_list::vertex_id_t<G> uid) {
+[[nodiscard]] constexpr auto in_incidence(G& g, const adj_list::vertex_id_t<G>& uid) {
   auto u = *adj_list::find_vertex(g, uid);
   return in_incidence(g, u);
 }
@@ -809,14 +809,14 @@ template <adj_list::index_bidirectional_adjacency_list G>
 /// @brief Create an incoming incidence view with EVF from vertex id.
 template <adj_list::index_bidirectional_adjacency_list G, class EVF>
 requires edge_value_function<EVF, G, adj_list::in_edge_t<G>>
-[[nodiscard]] constexpr auto in_incidence(G& g, adj_list::vertex_id_t<G> uid, EVF&& evf) {
+[[nodiscard]] constexpr auto in_incidence(G& g, const adj_list::vertex_id_t<G>& uid, EVF&& evf) {
   auto u = *adj_list::find_vertex(g, uid);
   return in_incidence(g, u, std::forward<EVF>(evf));
 }
 
 /// @brief Create a basic incoming incidence view (source id only).
 template <adj_list::index_bidirectional_adjacency_list G>
-[[nodiscard]] constexpr auto basic_in_incidence(G& g, adj_list::vertex_id_t<G> uid) {
+[[nodiscard]] constexpr auto basic_in_incidence(G& g, const adj_list::vertex_id_t<G>& uid) {
   auto u = *adj_list::find_vertex(g, uid);
   return basic_incidence_view<G, void, in_edge_accessor>(g, u);
 }
@@ -824,7 +824,7 @@ template <adj_list::index_bidirectional_adjacency_list G>
 /// @brief Create a basic incoming incidence view with EVF.
 template <adj_list::index_bidirectional_adjacency_list G, class EVF>
 requires edge_value_function<EVF, G, adj_list::in_edge_t<G>>
-[[nodiscard]] constexpr auto basic_in_incidence(G& g, adj_list::vertex_id_t<G> uid, EVF&& evf) {
+[[nodiscard]] constexpr auto basic_in_incidence(G& g, const adj_list::vertex_id_t<G>& uid, EVF&& evf) {
   auto u = *adj_list::find_vertex(g, uid);
   return basic_incidence_view<G, std::decay_t<EVF>, in_edge_accessor>(g, u, std::forward<EVF>(evf));
 }

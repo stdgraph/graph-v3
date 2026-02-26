@@ -835,7 +835,7 @@ template <index_adjacency_list G,
 auto prim(G&&            g,           // graph
           Predecessor&   predecessor, // out: predecessor[uid] of uid in tree
           Weight&        weight,      // out: edge value weight[uid] from tree edge uid to predecessor[uid]
-          vertex_id_t<G> seed = 0     // seed vtx
+          const vertex_id_t<G>& seed = 0     // seed vtx
 ) {
   // Default weight function: use edge_value CPO
   auto weight_fn = [](const auto& g, const edge_t<G>& uv) -> range_value_t<Weight> { return edge_value(g, uv); };

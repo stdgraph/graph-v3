@@ -388,13 +388,24 @@ inline namespace _cpo_instances {
 /**
  * @brief Vertex ID type for graph G
  * 
- * The type of the unique identifier returned by vertex_id(g, u).
+ * The type of the unique identifier returned by vertex_id(g, u), with references stripped.
  * - For random-access containers (vector, deque): size_t (index)
- * - For associative containers (map): key type
+ * - For associative containers (map): key type (e.g. std::string)
  * - For bidirectional containers: iterator-based ID
  */
 template <typename G>
-using vertex_id_t = decltype(vertex_id(std::declval<G&>(), std::declval<vertex_t<G>>()));
+using vertex_id_t = std::remove_cvref_t<
+    decltype(vertex_id(std::declval<G&>(), std::declval<vertex_t<G>>()))>;
+
+/**
+ * @brief Raw return type of vertex_id(g, u), preserving reference-ness.
+ *
+ * For vector-based graphs this is a prvalue (e.g. size_t).
+ * For map-based graphs this is an lvalue reference to the stable key (e.g. const std::string&).
+ * Used primarily by vertex_id_store_t to select the optimal internal storage strategy.
+ */
+template <typename G>
+using raw_vertex_id_t = decltype(vertex_id(std::declval<G&>(), std::declval<vertex_t<G>>()));
 
 namespace _cpo_impls {
 

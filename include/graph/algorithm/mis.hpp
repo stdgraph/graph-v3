@@ -145,9 +145,9 @@ using adj_list::num_vertices;
 
 template <index_adjacency_list G, class Iter>
 requires output_iterator<Iter, vertex_id_t<G>>
-size_t maximal_independent_set(G&&            g,       // graph
-                               Iter           mis,     // out: maximal independent set
-                               vertex_id_t<G> seed = 0 // seed vtx
+size_t maximal_independent_set(G&&                      g,       // graph
+                               Iter                     mis,     // out: maximal independent set
+                               const vertex_id_t<G>&    seed = 0 // seed vtx
 ) {
   size_t N = num_vertices(g);
   if (N == 0) {
