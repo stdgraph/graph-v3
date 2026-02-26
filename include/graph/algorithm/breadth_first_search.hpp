@@ -210,7 +210,9 @@ requires std::convertible_to<std::ranges::range_value_t<Sources>, vertex_id_t<G>
 void breadth_first_search(G&&            g, // graph
                           const Sources& sources,
                           Visitor&&      visitor = empty_visitor()) {
-  using id_type = vertex_id_t<G>;
+  using id_type = vertex_id_store_t<G>;
+  static_assert(std::is_same_v<id_type, vertex_id_t<G>>,
+                "vertex_id_store_t<G> should equal vertex_id_t<G> for index_adjacency_list");
 
   // Initialize BFS data structures
   std::queue<id_type> Q;                               // FIFO queue for level-order traversal

@@ -651,22 +651,22 @@ After all phases are complete:
 | **3** | 3.6 | `topological_sort.hpp` (view) — check and update | **completed** (no changes needed) |
 | **3** | 3.7 | `vertexlist.hpp` and `edgelist.hpp` — check and update | **completed** (no changes needed) |
 | **3** | 3.8 | Phase 3 gate — full matrix + benchmarks | **completed** |
-| **4a** | 4a.1 | `dijkstra_shortest_paths.hpp` — signatures + lambdas | not-started |
-| **4a** | 4a.2 | `bellman_ford_shortest_paths.hpp` — signatures + lambdas | not-started |
-| **4a** | 4a.3 | `breadth_first_search.hpp` — signature | not-started |
-| **4a** | 4a.4 | `depth_first_search.hpp` — verify (no change expected) | not-started |
-| **4a** | 4a.5 | `topological_sort.hpp` — signature | not-started |
-| **4a** | 4a.6 | `mis.hpp` — signature (evaluate default arg) | not-started |
-| **4a** | 4a.7 | `connected_components.hpp` — signatures + lambdas | not-started |
-| **4a** | 4a.8 | `label_propagation.hpp` — signatures | not-started |
-| **4a** | 4a.9 | Remaining algorithms (`mst`, `jaccard`, `tc`, `articulation_points`, `biconnected_components`) | not-started |
-| **4a** | 4a.10 | Phase 4a gate — full matrix build | not-started |
-| **4b** | 4b.1 | `dijkstra_shortest_paths.hpp` — `id_type` + static_assert | not-started |
-| **4b** | 4b.2 | `bellman_ford_shortest_paths.hpp` — `id_type` + static_assert | not-started |
-| **4b** | 4b.3 | `breadth_first_search.hpp` — `id_type` + static_assert | not-started |
-| **4b** | 4b.4 | `depth_first_search.hpp` — `id_type` + static_assert | not-started |
-| **4b** | 4b.5 | Remaining algorithms — `id_type` + static_assert | not-started |
-| **4b** | 4b.6 | Phase 4b gate — full matrix + ASan | not-started |
+| **4a** | 4a.1 | `dijkstra_shortest_paths.hpp` — signatures + lambdas | **completed** |
+| **4a** | 4a.2 | `bellman_ford_shortest_paths.hpp` — signatures + lambdas | **completed** |
+| **4a** | 4a.3 | `breadth_first_search.hpp` — signature | **completed** |
+| **4a** | 4a.4 | `depth_first_search.hpp` — verify (no change expected) | **completed** |
+| **4a** | 4a.5 | `topological_sort.hpp` — signature | **completed** |
+| **4a** | 4a.6 | `mis.hpp` — signature (evaluate default arg) | **completed** |
+| **4a** | 4a.7 | `connected_components.hpp` — signatures + lambdas | **completed** |
+| **4a** | 4a.8 | `label_propagation.hpp` — signatures | **completed** |
+| **4a** | 4a.9 | Remaining algorithms (`mst`, `jaccard`, `tc`, `articulation_points`, `biconnected_components`) | **completed** |
+| **4a** | 4a.10 | Phase 4a gate — full matrix build | **completed** |
+| **4b** | 4b.1 | `dijkstra_shortest_paths.hpp` — `id_type` + static_assert | **completed** |
+| **4b** | 4b.2 | `bellman_ford_shortest_paths.hpp` — `id_type` + static_assert | **completed** |
+| **4b** | 4b.3 | `breadth_first_search.hpp` — `id_type` + static_assert | **completed** |
+| **4b** | 4b.4 | `depth_first_search.hpp` — `id_type` + static_assert | **completed** |
+| **4b** | 4b.5 | Remaining algorithms — `id_type` + static_assert | **completed** |
+| **4b** | 4b.6 | Phase 4b gate — full matrix + ASan | **completed** |
 | **5** | 5.1 | Review and update `adaptors.hpp` | not-started |
 | **5** | 5.2 | Phase 5 gate — full matrix build | not-started |
 | **6** | 6.1 | Update examples | not-started |

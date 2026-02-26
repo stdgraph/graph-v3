@@ -129,6 +129,7 @@
 
 #include "graph/graph.hpp"
 #include "graph/algorithm/depth_first_search.hpp"
+#include "graph/algorithm/traversal_common.hpp"
 #include "graph/views/incidence.hpp"
 
 #include <vector>
@@ -169,7 +170,9 @@ namespace detail {
                                   std::vector<vertex_id_t<G>>& finish_order,
                                   bool&                        has_cycle) {
 
-    using id_type = vertex_id_t<G>;
+    using id_type = vertex_id_store_t<G>;
+    static_assert(std::is_same_v<id_type, vertex_id_t<G>>,
+                  "vertex_id_store_t<G> should equal vertex_id_t<G> for index_adjacency_list");
     using namespace graph::views;
     using inc_range_t    = decltype(basic_incidence(g, source));
     using inc_iterator_t = std::ranges::iterator_t<inc_range_t>;
@@ -334,7 +337,9 @@ template <index_adjacency_list G, std::ranges::input_range Sources, class Output
 requires std::convertible_to<std::ranges::range_value_t<Sources>, vertex_id_t<G>> &&
          std::output_iterator<OutputIterator, vertex_id_t<G>>
 bool topological_sort(const G& g, const Sources& sources, OutputIterator result) {
-  using id_type = vertex_id_t<G>;
+  using id_type = vertex_id_store_t<G>;
+  static_assert(std::is_same_v<id_type, vertex_id_t<G>>,
+                "vertex_id_store_t<G> should equal vertex_id_t<G> for index_adjacency_list");
 
   // Vertex color states for DFS
   enum class Color : uint8_t {
@@ -544,7 +549,9 @@ bool topological_sort(const G& g, const vertex_id_t<G>& source, OutputIterator r
 template <index_adjacency_list G, class OutputIterator>
 requires std::output_iterator<OutputIterator, vertex_id_t<G>>
 bool topological_sort(const G& g, OutputIterator result) {
-  using id_type = vertex_id_t<G>;
+  using id_type = vertex_id_store_t<G>;
+  static_assert(std::is_same_v<id_type, vertex_id_t<G>>,
+                "vertex_id_store_t<G> should equal vertex_id_t<G> for index_adjacency_list");
 
   // Vertex color states for DFS
   enum class Color : uint8_t {

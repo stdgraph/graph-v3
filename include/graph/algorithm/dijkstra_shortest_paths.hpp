@@ -147,7 +147,9 @@ constexpr void dijkstra_shortest_paths(
       Visitor&&      visitor = empty_visitor(),
       Compare&&      compare = less<range_value_t<Distances>>(),
       Combine&&      combine = plus<range_value_t<Distances>>()) {
-  using id_type       = vertex_id_t<G>;
+  using id_type       = vertex_id_store_t<G>;
+  static_assert(std::is_same_v<id_type, vertex_id_t<G>>,
+                "vertex_id_store_t<G> should equal vertex_id_t<G> for index_adjacency_list");
   using distance_type = range_value_t<Distances>;
   using weight_type   = invoke_result_t<WF, const std::remove_reference_t<G>&, edge_t<G>>;
 

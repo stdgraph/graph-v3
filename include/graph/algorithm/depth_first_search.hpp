@@ -242,7 +242,9 @@ template <index_adjacency_list G, class Visitor = empty_visitor>
 void depth_first_search(G&&                   g,      // graph
                         const vertex_id_t<G>& source, // starting vertex_id
                         Visitor&&             visitor = empty_visitor()) {
-  using id_type = vertex_id_t<G>;
+  using id_type = vertex_id_store_t<G>;
+  static_assert(std::is_same_v<id_type, vertex_id_t<G>>,
+                "vertex_id_store_t<G> should equal vertex_id_t<G> for index_adjacency_list");
 
   // Vertex color states for DFS
   enum class Color : uint8_t {
