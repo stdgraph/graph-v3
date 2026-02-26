@@ -109,12 +109,12 @@ lightest edge crossing the cut between tree and non-tree vertices.
 ```cpp
 // Simple: uses default weight function from edge values
 auto prim(G&& g, Predecessors& predecessors, Weights& weights,
-    vertex_id_t<G> seed = 0);
+    const vertex_id_t<G>& seed = 0);
 
 // Full: custom comparator, initial distance, and weight function
 auto prim(G&& g, Predecessors& predecessors, Weights& weights,
     Compare compare, range_value_t<Weights> init_dist,
-    WF weight_fn, vertex_id_t<G> seed = 0);
+    WF weight_fn, const vertex_id_t<G>& seed = 0);
 ```
 
 **Returns** the total MST weight.

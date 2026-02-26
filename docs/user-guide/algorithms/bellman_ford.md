@@ -75,7 +75,7 @@ bellman_ford_shortest_paths(G&& g, const Sources& sources,
 
 // Single-source, distances + predecessors
 [[nodiscard]] constexpr optional<vertex_id_t<G>>
-bellman_ford_shortest_paths(G&& g, vertex_id_t<G> source,
+bellman_ford_shortest_paths(G&& g, const vertex_id_t<G>& source,
     Distances& distances, Predecessors& predecessors,
     WF&& weight,
     Visitor&& visitor = empty_visitor(),
@@ -93,7 +93,7 @@ bellman_ford_shortest_distances(G&& g, const Sources& sources,
 
 // Single-source, distances only
 [[nodiscard]] constexpr optional<vertex_id_t<G>>
-bellman_ford_shortest_distances(G&& g, vertex_id_t<G> source,
+bellman_ford_shortest_distances(G&& g, const vertex_id_t<G>& source,
     Distances& distances,
     WF&& weight,
     Visitor&& visitor = empty_visitor(),

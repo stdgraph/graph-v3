@@ -87,8 +87,8 @@ requires forward_range<vertex_range_t<G>> &&                           //
          convertible_to<vertex_id_t<G>, range_value_t<Predecessor>> && //
          edge_weight_function<G, WF>
 void dijkstra_clrs(
-      G&&            g,           // graph
-      vertex_id_t<G> seed,        // starting vertex_id
+      G&&                   g,           // graph
+      const vertex_id_t<G>& seed,        // starting vertex_id
       Distance&      distance,    // out: distance[uid] of uid from seed
       Predecessor&   predecessor, // out: predecessor[uid] of uid in path
       WF&&           weight = [](const auto&,
