@@ -667,8 +667,8 @@ After all phases are complete:
 | **4b** | 4b.4 | `depth_first_search.hpp` — `id_type` + static_assert | **completed** |
 | **4b** | 4b.5 | Remaining algorithms — `id_type` + static_assert | **completed** |
 | **4b** | 4b.6 | Phase 4b gate — full matrix + ASan | **completed** |
-| **5** | 5.1 | Review and update `adaptors.hpp` | not-started |
-| **5** | 5.2 | Phase 5 gate — full matrix build | not-started |
+| **5** | 5.1 | Review and update `adaptors.hpp` | **completed** (no changes needed) |
+| **5** | 5.2 | Phase 5 gate — full matrix build | **completed** |
 | **6** | 6.1 | Update examples | not-started |
 | **6** | 6.2 | Update user-guide documentation | not-started |
 | **6** | 6.3 | Phase 6 gate — full matrix build | not-started |
