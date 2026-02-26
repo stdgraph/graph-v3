@@ -151,7 +151,7 @@ void kosaraju(G&&        g,        // graph
 
   // Helper: iterative DFS to compute finish times (post-order)
   // This creates reverse topological ordering for SCC discovery
-  auto dfs_finish_order = [&](vertex_id_t<G> start) {
+  auto dfs_finish_order = [&](const vertex_id_t<G>& start) {
     std::stack<std::pair<vertex_id_t<G>, bool>> stack; // (vertex, children_visited)
     stack.push({start, false});
     visited[start] = true;
@@ -280,7 +280,7 @@ void kosaraju(G&&        g,        // bidirectional graph
   auto& g_ref = g;
 
   // First pass: iterative DFS to compute finish times (same as two-graph version)
-  auto dfs_finish_order = [&](vertex_id_t<G> start) {
+  auto dfs_finish_order = [&](const vertex_id_t<G>& start) {
     std::stack<std::pair<vertex_id_t<G>, bool>> stack;
     stack.push({start, false});
     visited[start] = true;

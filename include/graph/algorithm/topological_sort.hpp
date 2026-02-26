@@ -164,7 +164,7 @@ namespace detail {
  */
   template <index_adjacency_list G, typename Color>
   void topological_sort_dfs_visit(const G&                     g,
-                                  vertex_id_t<G>               source,
+                                  const vertex_id_t<G>&        source,
                                   std::vector<Color>&          color,
                                   std::vector<vertex_id_t<G>>& finish_order,
                                   bool&                        has_cycle) {
@@ -457,7 +457,7 @@ bool topological_sort(const G& g, const Sources& sources, OutputIterator result)
  */
 template <index_adjacency_list G, class OutputIterator>
 requires std::output_iterator<OutputIterator, vertex_id_t<G>>
-bool topological_sort(const G& g, vertex_id_t<G> source, OutputIterator result) {
+bool topological_sort(const G& g, const vertex_id_t<G>& source, OutputIterator result) {
   // Delegate to multi-source version with single source
   std::array<vertex_id_t<G>, 1> sources = {source};
   return topological_sort(g, sources, result);

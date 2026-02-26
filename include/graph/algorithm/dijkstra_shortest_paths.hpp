@@ -153,7 +153,7 @@ constexpr void dijkstra_shortest_paths(
 
   // relaxing the target is the function of reducing the distance from the source to the target
   auto relax_target = [&g, &predecessor, &distances, &compare, &combine] //
-        (const edge_t<G>& e, vertex_id_t<G> uid, const weight_type& w_e) -> bool {
+        (const edge_t<G>& e, const vertex_id_t<G>& uid, const weight_type& w_e) -> bool {
     const id_type       vid = target_id(g, e);
     const distance_type d_u = distances[static_cast<size_t>(uid)];
     const distance_type d_v = distances[static_cast<size_t>(vid)];
@@ -309,10 +309,10 @@ requires is_arithmetic_v<range_value_t<Distances>> && //
          convertible_to<vertex_id_t<G>, range_value_t<Predecessors>> &&
          basic_edge_weight_function<G, WF, range_value_t<Distances>, Compare, Combine>
 constexpr void dijkstra_shortest_paths(
-      G&&            g,
-      vertex_id_t<G> source,
-      Distances&     distances,
-      Predecessors&  predecessor,
+      G&&                      g,
+      const vertex_id_t<G>&    source,
+      Distances&               distances,
+      Predecessors&            predecessor,
       WF&&           weight  = [](const auto&,
                        const edge_t<G>& uv) { return range_value_t<Distances>(1); }, // default weight(g, uv) -> 1
       Visitor&&      visitor = empty_visitor(),
@@ -396,9 +396,9 @@ requires is_arithmetic_v<range_value_t<Distances>> && //
          sized_range<Distances> &&                    //
          basic_edge_weight_function<G, WF, range_value_t<Distances>, Compare, Combine>
 constexpr void dijkstra_shortest_distances(
-      G&&            g,
-      vertex_id_t<G> source,
-      Distances&     distances,
+      G&&                      g,
+      const vertex_id_t<G>&    source,
+      Distances&               distances,
       WF&&           weight  = [](const auto&,
                        const edge_t<G>& uv) { return range_value_t<Distances>(1); }, // default weight(g, uv) -> 1
       Visitor&&      visitor = empty_visitor(),

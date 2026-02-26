@@ -333,9 +333,9 @@ void breadth_first_search(G&&            g, // graph
  * @see views::vertices_bfs BFS view for range-based traversal
  */
 template <index_adjacency_list G, class Visitor = empty_visitor>
-void breadth_first_search(G&&            g,      // graph
-                          vertex_id_t<G> source, // starting vertex_id
-                          Visitor&&      visitor = empty_visitor()) {
+void breadth_first_search(G&&                      g,      // graph
+                          const vertex_id_t<G>&    source, // starting vertex_id
+                          Visitor&&                visitor = empty_visitor()) {
   // Wrap single source in array and delegate to multi-source version
   std::array<vertex_id_t<G>, 1> sources{source};
   breadth_first_search(std::forward<G>(g), sources, std::forward<Visitor>(visitor));
