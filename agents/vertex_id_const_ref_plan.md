@@ -640,9 +640,9 @@ After all phases are complete:
 | **1** | 1.3 | `edge_descriptor::source_id()` and `target_id()` → `decltype(auto)` | **completed** |
 | **1** | 1.4 | Verify `raw_vertex_id_t<G>` resolves correctly (static_assert) | **completed** |
 | **1** | 1.5 | Phase 1 gate — full matrix + ASan | **completed** |
-| **2** | 2.1 | Update `adjacency_list_traits.hpp` concepts to `const&` | not-started |
-| **2** | 2.2 | Update `adjacency_list_concepts.hpp` concepts to `const&` | not-started |
-| **2** | 2.3 | Phase 2 gate — full matrix build | not-started |
+| **2** | 2.1 | Update `adjacency_list_traits.hpp` concepts to `const&` | **completed** |
+| **2** | 2.2 | Update `adjacency_list_concepts.hpp` concepts to `const&` | **completed** |
+| **2** | 2.3 | Phase 2 gate — full matrix build | **completed** |
 | **3** | 3.1 | `incidence.hpp` — factory functions and constructors | not-started |
 | **3** | 3.2 | `neighbors.hpp` — factory functions and constructors | not-started |
 | **3** | 3.3 | `bfs.hpp` — factory functions and constructors | not-started |

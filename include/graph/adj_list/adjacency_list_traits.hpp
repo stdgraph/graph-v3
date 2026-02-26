@@ -29,7 +29,7 @@ namespace detail {
 
   // Helper to detect if degree(g, uid) is valid
   template <typename G>
-  concept has_degree_uid_impl = requires(G& g, vertex_id_t<G> uid) {
+  concept has_degree_uid_impl = requires(G& g, const vertex_id_t<G>& uid) {
     { degree(g, uid) } -> std::integral;
   };
 } // namespace detail
@@ -59,7 +59,7 @@ inline constexpr bool has_degree_v = has_degree<G>;
 namespace detail {
   // Helper to detect if find_vertex(g, uid) is valid and returns correct type
   template <typename G>
-  concept has_find_vertex_impl = requires(G& g, vertex_id_t<G> uid) {
+  concept has_find_vertex_impl = requires(G& g, const vertex_id_t<G>& uid) {
     { find_vertex(g, uid) } -> std::same_as<vertex_t<G>>;
   };
 } // namespace detail
@@ -94,13 +94,13 @@ namespace detail {
 
   // Helper to detect if find_vertex_edge(g, u, vid) is valid
   template <typename G>
-  concept has_find_vertex_edge_uvid_impl = requires(G& g, vertex_t<G> u, vertex_id_t<G> vid) {
+  concept has_find_vertex_edge_uvid_impl = requires(G& g, vertex_t<G> u, const vertex_id_t<G>& vid) {
     { find_vertex_edge(g, u, vid) } -> std::same_as<edge_t<G>>;
   };
 
   // Helper to detect if find_vertex_edge(g, uid, vid) is valid
   template <typename G>
-  concept has_find_vertex_edge_uidvid_impl = requires(G& g, vertex_id_t<G> uid, vertex_id_t<G> vid) {
+  concept has_find_vertex_edge_uidvid_impl = requires(G& g, const vertex_id_t<G>& uid, const vertex_id_t<G>& vid) {
     { find_vertex_edge(g, uid, vid) } -> std::same_as<edge_t<G>>;
   };
 } // namespace detail
@@ -206,13 +206,13 @@ namespace detail {
 
   // Helper to detect if find_in_edge(g, u, vid) is valid with descriptor + id
   template <typename G>
-  concept has_find_in_edge_uid_impl = requires(G& g, vertex_t<G> u, vertex_id_t<G> vid) {
+  concept has_find_in_edge_uid_impl = requires(G& g, vertex_t<G> u, const vertex_id_t<G>& vid) {
     { find_in_edge(g, u, vid) };
   };
 
   // Helper to detect if find_in_edge(g, uid, vid) is valid with vertex IDs
   template <typename G>
-  concept has_find_in_edge_uidvid_impl = requires(G& g, vertex_id_t<G> uid, vertex_id_t<G> vid) {
+  concept has_find_in_edge_uidvid_impl = requires(G& g, const vertex_id_t<G>& uid, const vertex_id_t<G>& vid) {
     { find_in_edge(g, uid, vid) };
   };
 } // namespace detail
