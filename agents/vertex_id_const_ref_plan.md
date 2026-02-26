@@ -643,14 +643,14 @@ After all phases are complete:
 | **2** | 2.1 | Update `adjacency_list_traits.hpp` concepts to `const&` | **completed** |
 | **2** | 2.2 | Update `adjacency_list_concepts.hpp` concepts to `const&` | **completed** |
 | **2** | 2.3 | Phase 2 gate — full matrix build | **completed** |
-| **3** | 3.1 | `incidence.hpp` — factory functions and constructors | not-started |
-| **3** | 3.2 | `neighbors.hpp` — factory functions and constructors | not-started |
-| **3** | 3.3 | `bfs.hpp` — factory functions and constructors | not-started |
-| **3** | 3.4 | `dfs.hpp` — factory functions and constructors | not-started |
-| **3** | 3.5 | `transpose.hpp` — friend functions | not-started |
-| **3** | 3.6 | `topological_sort.hpp` (view) — check and update | not-started |
-| **3** | 3.7 | `vertexlist.hpp` and `edgelist.hpp` — check and update | not-started |
-| **3** | 3.8 | Phase 3 gate — full matrix + benchmarks | not-started |
+| **3** | 3.1 | `incidence.hpp` — factory functions and constructors | **completed** |
+| **3** | 3.2 | `neighbors.hpp` — factory functions and constructors | **completed** |
+| **3** | 3.3 | `bfs.hpp` — factory functions and constructors | **completed** |
+| **3** | 3.4 | `dfs.hpp` — factory functions and constructors | **completed** |
+| **3** | 3.5 | `transpose.hpp` — friend functions | **completed** |
+| **3** | 3.6 | `topological_sort.hpp` (view) — check and update | **completed** (no changes needed) |
+| **3** | 3.7 | `vertexlist.hpp` and `edgelist.hpp` — check and update | **completed** (no changes needed) |
+| **3** | 3.8 | Phase 3 gate — full matrix + benchmarks | **completed** |
 | **4a** | 4a.1 | `dijkstra_shortest_paths.hpp` — signatures + lambdas | not-started |
 | **4a** | 4a.2 | `bellman_ford_shortest_paths.hpp` — signatures + lambdas | not-started |
 | **4a** | 4a.3 | `breadth_first_search.hpp` — signature | not-started |

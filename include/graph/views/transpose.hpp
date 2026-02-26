@@ -93,10 +93,10 @@ public:
 
   friend constexpr auto num_vertices(const transpose_view& tv) { return adj_list::num_vertices(*tv.g_); }
 
-  friend constexpr auto find_vertex(transpose_view& tv, adj_list::vertex_id_t<G> uid) {
+  friend constexpr auto find_vertex(transpose_view& tv, const adj_list::vertex_id_t<G>& uid) {
     return adj_list::find_vertex(*tv.g_, uid);
   }
-  friend constexpr auto find_vertex(const transpose_view& tv, adj_list::vertex_id_t<G> uid) {
+  friend constexpr auto find_vertex(const transpose_view& tv, const adj_list::vertex_id_t<G>& uid) {
     return adj_list::find_vertex(*tv.g_, uid);
   }
 
