@@ -103,8 +103,9 @@ using mol_string  = dynamic_graph<std::string,
 // For vector-based graphs (integral VId): raw_vertex_id_t is NOT a reference
 static_assert(!std::is_reference_v<graph::adj_list::raw_vertex_id_t<vov_void>>,
               "raw_vertex_id_t for vector-based graphs should be a value type (not a reference)");
-static_assert(std::is_same_v<graph::adj_list::vertex_id_t<vov_void>, uint64_t>,
-              "vertex_id_t for vector-based graphs should be uint64_t");
+static_assert(sizeof(graph::adj_list::vertex_id_t<vov_void>) == sizeof(uint64_t) &&
+                  std::is_unsigned_v<graph::adj_list::vertex_id_t<vov_void>>,
+              "vertex_id_t for vector-based graphs should be a 64-bit unsigned integral type");
 
 // For map-based graphs (string VId): raw_vertex_id_t IS a reference to the stable key
 static_assert(std::is_reference_v<graph::adj_list::raw_vertex_id_t<mos_void>>,
@@ -113,8 +114,9 @@ static_assert(std::is_same_v<graph::adj_list::vertex_id_t<mos_void>, std::string
               "vertex_id_t for map-based graphs should be std::string (value type)");
 
 // vertex_id_store_t: value for integral, reference_wrapper for map-based
-static_assert(std::is_same_v<graph::vertex_id_store_t<vov_void>, uint64_t>,
-              "vertex_id_store_t for vector-based graphs should be uint64_t");
+static_assert(sizeof(graph::vertex_id_store_t<vov_void>) == sizeof(uint64_t) &&
+                  std::is_unsigned_v<graph::vertex_id_store_t<vov_void>>,
+              "vertex_id_store_t for vector-based graphs should be a 64-bit unsigned integral type");
 static_assert(std::is_same_v<graph::vertex_id_store_t<mos_void>,
                              std::reference_wrapper<const std::string>>,
               "vertex_id_store_t for map-based graphs should be reference_wrapper<const string>");
