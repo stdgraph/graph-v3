@@ -65,8 +65,8 @@ element types automatically — no overrides needed:
 | `pair<T, T>` | `.first` | `.second` | — |
 | `tuple<T, T>` | `get<0>` | `get<1>` | — |
 | `tuple<T, T, EV, ...>` | `get<0>` | `get<1>` | `get<2>` |
-| `edge_info<VId, true, void, void>` | `.source_id` | `.target_id` | — |
-| `edge_info<VId, true, void, EV>` | `.source_id` | `.target_id` | `.value` |
+| `edge_data<VId, true, void, void>` | `.source_id` | `.target_id` | — |
+| `edge_data<VId, true, void, EV>` | `.source_id` | `.target_id` | `.value` |
 | `edge_list::edge_descriptor<VId, void>` | `.source_id()` | `.target_id()` | — |
 | `edge_list::edge_descriptor<VId, EV>` | `.source_id()` | `.target_id()` | `.value()` |
 
@@ -195,7 +195,7 @@ int count_self_loops(EL&& el) {
 }
 ```
 
-This single function works with `pair`, `tuple`, `edge_info`, and
+This single function works with `pair`, `tuple`, `edge_data`, and
 `edge_list::edge_descriptor` — all transparently.
 
 ### Constructing a graph from an edge list

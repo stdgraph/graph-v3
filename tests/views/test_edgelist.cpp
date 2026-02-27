@@ -690,11 +690,11 @@ TEST_CASE("edgelist - edge_list with 3-tuples (weighted)", "[edgelist][edge_list
 }
 
 // =============================================================================
-// Test 19: edge_list with edge_info
+// Test 19: edge_list with edge_data
 // =============================================================================
 
-TEST_CASE("edgelist - edge_list with edge_info", "[edgelist][edge_list]") {
-  using EdgeType = edge_info<int, true, void, void>;
+TEST_CASE("edgelist - edge_list with edge_data", "[edgelist][edge_list]") {
+  using EdgeType = edge_data<int, true, void, void>;
   using EdgeList = std::vector<EdgeType>;
 
   EdgeList el = {EdgeType{10, 20}, EdgeType{20, 30}, EdgeType{30, 40}};
@@ -727,11 +727,11 @@ TEST_CASE("edgelist - edge_list with edge_info", "[edgelist][edge_list]") {
 }
 
 // =============================================================================
-// Test 20: edge_list with edge_info (with value)
+// Test 20: edge_list with edge_data (with value)
 // =============================================================================
 
-TEST_CASE("edgelist - edge_list with edge_info with value", "[edgelist][edge_list]") {
-  using EdgeType = edge_info<int, true, void, double>;
+TEST_CASE("edgelist - edge_list with edge_data with value", "[edgelist][edge_list]") {
+  using EdgeType = edge_data<int, true, void, double>;
   using EdgeList = std::vector<EdgeType>;
 
   EdgeList el = {EdgeType{1, 2, 0.5}, EdgeType{2, 3, 1.5}, EdgeType{3, 1, 2.5}};

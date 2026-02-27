@@ -23,7 +23,7 @@
 #include <graph/container/traits/mos_graph_traits.hpp>
 #include <graph/container/traits/dofl_graph_traits.hpp>
 #include <graph/container/traits/dov_graph_traits.hpp>
-#include <graph/graph_info.hpp>
+#include <graph/graph_data.hpp>
 #include <vector>
 #include <string>
 #include <algorithm>

@@ -23,7 +23,7 @@ The library does not have algorithms defined yet. They will be implemented after
 **Issues to Review:**
 - Views are in `graph::views::` but most CPOs are in `graph::adj_list::` - is this consistent?
 - Should views be `graph::views::` or `graph::adj_list::views::`?
-- Types from `graph_info.hpp` are in `graph::` - should they be in a dedicated namespace?
+- Types from `graph_data.hpp` are in `graph::` - should they be in a dedicated namespace?
 - What symbols should be imported into `graph::` namespace vs staying in subnamespaces?
 - Are descriptor types appropriately placed in `graph::adj_list::`?
 

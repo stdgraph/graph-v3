@@ -84,7 +84,7 @@ graph.hpp
 ├── adj_list/vertex_descriptor_view.hpp
 ├── adj_list/edge_descriptor.hpp
 ├── adj_list/edge_descriptor_view.hpp
-├── graph_info.hpp
+├── graph_data.hpp
 ├── edge_list/edge_list_traits.hpp
 ├── edge_list/edge_list_descriptor.hpp
 ├── edge_list/edge_list.hpp
@@ -259,7 +259,7 @@ Container implementations are mature, well-documented, and fully conformant with
 
 **Design Pattern:**
 - Views constrained on `adj_list::adjacency_list` or `adj_list::index_adjacency_list` concepts
-- Return `vertex_info`, `edge_info`, `neighbor_info` structs for structured bindings
+- Return `vertex_data`, `edge_data`, `neighbor_data` structs for structured bindings
 - Support optional value functions (VVF, EVF)
 - Range adaptor closures for pipe syntax
 
@@ -268,7 +268,7 @@ Container implementations are mature, well-documented, and fully conformant with
 | Issue | Severity | Description |
 |-------|----------|-------------|
 | Views use `adj_list::` concepts | Medium | Views constrained on `adj_list::adjacency_list` - what about edge_list views? |
-| Naming inconsistency | Low | `vertexlist` (no underscore) vs `vertex_info` (with underscore in type name) |
+| Naming inconsistency | Low | `vertexlist` (no underscore) vs `vertex_data` (with underscore in type name) |
 | Value function limitation | Low | Capturing lambdas break view chaining (documented in headers, C++20 limitation) |
 | No edge_list-specific views | Medium | Views designed for adjacency lists; edge_list would need separate implementation |
 
@@ -841,7 +841,7 @@ The graph library is well-designed and mature. The core architecture (descriptor
 
 3. **Fixed circular dependency in `edge_list.hpp`**
    - Removed `#include "../graph.hpp"` from edge_list.hpp
-   - Replaced with minimal includes: `detail/edge_cpo.hpp`, `graph_info.hpp`
+   - Replaced with minimal includes: `detail/edge_cpo.hpp`, `graph_data.hpp`
    - Eliminates circular dependency: graph.hpp → views/edgelist.hpp → edge_list/edge_list.hpp → graph.hpp
    - Edge list now uses shared CPOs from `graph::` namespace
 

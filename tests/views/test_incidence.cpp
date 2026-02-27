@@ -65,7 +65,7 @@ TEST_CASE("incidence - vertex with single edge", "[incidence][single]") {
     REQUIRE(it != ilist.end());
 
     auto ei = *it;
-    // edge_info<void, false, edge_t<G>, void> has just an 'edge' member
+    // edge_data<void, false, edge_t<G>, void> has just an 'edge' member
     // For vov graph, edge_t<G> is an edge_descriptor
     auto target = target_id(g, ei.edge);
     REQUIRE(target == 1);
@@ -336,34 +336,34 @@ TEST_CASE("incidence - iterator properties", "[incidence][iterator]") {
 }
 
 // =============================================================================
-// Test 9: edge_info Type Verification
+// Test 9: edge_data Type Verification
 // =============================================================================
 
-TEST_CASE("incidence - edge_info type verification", "[incidence][types]") {
+TEST_CASE("incidence - edge_data type verification", "[incidence][types]") {
   using Graph    = std::vector<std::vector<int>>;
   using EdgeType = edge_t<Graph>;
 
-  SECTION("no value function - edge_info<vertex_id_t<Graph>, false, edge_t, void>") {
+  SECTION("no value function - edge_data<vertex_id_t<Graph>, false, edge_t, void>") {
     using ViewType = incidence_view<Graph, void>;
     using InfoType = typename ViewType::info_type;
 
-    STATIC_REQUIRE(std::is_same_v<InfoType, edge_info<vertex_id_t<Graph>, false, EdgeType, void>>);
+    STATIC_REQUIRE(std::is_same_v<InfoType, edge_data<vertex_id_t<Graph>, false, EdgeType, void>>);
 
-    // Verify edge_info members
+    // Verify edge_data members
     STATIC_REQUIRE(std::is_same_v<typename InfoType::source_id_type, void>);
     STATIC_REQUIRE(std::is_same_v<typename InfoType::target_id_type, vertex_id_t<Graph>>);
     STATIC_REQUIRE(std::is_same_v<typename InfoType::edge_type, EdgeType>);
     STATIC_REQUIRE(std::is_same_v<typename InfoType::value_type, void>);
   }
 
-  SECTION("with value function - edge_info<vertex_id_t<Graph>, false, edge_t, int>") {
+  SECTION("with value function - edge_data<vertex_id_t<Graph>, false, edge_t, int>") {
     using VVF      = int (*)(const Graph&, EdgeType);
     using ViewType = incidence_view<Graph, VVF>;
     using InfoType = typename ViewType::info_type;
 
-    STATIC_REQUIRE(std::is_same_v<InfoType, edge_info<vertex_id_t<Graph>, false, EdgeType, int>>);
+    STATIC_REQUIRE(std::is_same_v<InfoType, edge_data<vertex_id_t<Graph>, false, EdgeType, int>>);
 
-    // Verify edge_info members
+    // Verify edge_data members
     STATIC_REQUIRE(std::is_same_v<typename InfoType::source_id_type, void>);
     STATIC_REQUIRE(std::is_same_v<typename InfoType::target_id_type, vertex_id_t<Graph>>);
     STATIC_REQUIRE(std::is_same_v<typename InfoType::edge_type, EdgeType>);

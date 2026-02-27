@@ -86,7 +86,7 @@ All adjacency list descriptor and CPO support headers reach **100% line coverage
 |------|-------------------|--------|-------------------|--------|
 | `detail/edge_cpo.hpp` | 24 / 24 | 100.0% | 500 / 500 | 100.0% |
 | `edge_list/edge_list_descriptor.hpp` | 15 / 16 | 93.8% | 21 / 21 | 100.0% |
-| `graph_info.hpp` | 0 / 2 | 0.0% | 0 / 2 | 0.0% |
+| `graph_data.hpp` | 0 / 2 | 0.0% | 0 / 2 | 0.0% |
 
 ---
 
@@ -96,7 +96,7 @@ Files below 90% line coverage, ranked by gap size:
 
 | File | Line % | Lines Missed | Notes |
 |------|--------|--------------|-------|
-| `graph_info.hpp` | 0.0% | 2 | Metadata-only header; no executable paths exercised |
+| `graph_data.hpp` | 0.0% | 2 | Metadata-only header; no executable paths exercised |
 | `bellman_ford_shortest_paths.hpp` | 85.7% | 9 | Negative-cycle detection path not fully exercised |
 | `compressed_graph.hpp` | 88.8% | 25 | Some construction / accessor overloads untested |
 | `mis.hpp` | 89.3% | 3 | Some branches not fully exercised |

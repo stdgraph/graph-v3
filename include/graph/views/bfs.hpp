@@ -6,7 +6,7 @@
  *
  * Provides lazy, single-pass views that traverse a graph in breadth-first
  * order starting from a seed vertex.  @c vertices_bfs yields per-vertex
- * @c vertex_info and @c edges_bfs yields per-edge @c edge_info.  An optional
+ * @c vertex_data and @c edges_bfs yields per-edge @c edge_data.  An optional
  * value function computes a per-element value included in the structured
  * binding.
  *
@@ -123,7 +123,7 @@
 #include <memory>
 #include <queue>
 #include <vector>
-#include <graph/graph_info.hpp>
+#include <graph/graph_data.hpp>
 #include <graph/adj_list/detail/graph_cpo.hpp>
 #include <graph/adj_list/adjacency_list_concepts.hpp>
 #include <graph/views/view_concepts.hpp>
@@ -235,7 +235,7 @@ namespace bfs_detail {
  * @brief BFS vertex view without value function.
  *
  * Traverses vertices reachable from a seed in breadth-first order,
- * yielding @c vertex_info{v} per vertex via structured bindings.
+ * yielding @c vertex_data{v} per vertex via structured bindings.
  *
  * @code
  *   for (auto [v] : vertices_bfs(g, seed)) { ... }
@@ -255,14 +255,14 @@ public:
   using vertex_id_type = adj_list::vertex_id_t<G>;
   using edge_type      = typename Accessor::template edge_t<G>;
   using allocator_type = Alloc;
-  using info_type      = vertex_info<void, vertex_type, void>;
+  using info_type      = vertex_data<void, vertex_type, void>;
 
 private:
   using state_type = bfs_detail::bfs_state<G, Alloc>;
 
 public:
   /**
-     * @brief Input iterator yielding @c vertex_info{v}.
+     * @brief Input iterator yielding @c vertex_data{v}.
      *
      * Single-pass: all copies share state via @c shared_ptr, so advancing
      * one iterator advances them all.
@@ -385,7 +385,7 @@ private:
  * @brief BFS vertex view with a vertex value function.
  *
  * Traverses vertices reachable from a seed in breadth-first order,
- * yielding @c vertex_info{v, val} per vertex via structured bindings.
+ * yielding @c vertex_data{v, val} per vertex via structured bindings.
  *
  * @code
  *   auto vvf = [](const auto& g, auto v) { return vertex_id(g, v); };
@@ -408,14 +408,14 @@ public:
   using edge_type         = typename Accessor::template edge_t<G>;
   using allocator_type    = Alloc;
   using value_result_type = std::invoke_result_t<VVF, const G&, vertex_type>;
-  using info_type         = vertex_info<void, vertex_type, value_result_type>;
+  using info_type         = vertex_data<void, vertex_type, value_result_type>;
 
 private:
   using state_type = bfs_detail::bfs_state<G, Alloc>;
 
 public:
   /**
-     * @brief Input iterator yielding @c vertex_info{v, val}.
+     * @brief Input iterator yielding @c vertex_data{v, val}.
      *
      * Single-pass: all copies share state via @c shared_ptr.
      */
@@ -558,7 +558,7 @@ vertices_bfs_view(G&, adj_list::vertex_t<G>, VVF, Alloc) -> vertices_bfs_view<G,
  * @tparam G  Graph type satisfying @c index_adjacency_list.
  * @param  g     The graph to traverse.
  * @param  seed  Starting vertex ID.
- * @return A @c vertices_bfs_view whose iterators yield @c vertex_info{v}.
+ * @return A @c vertices_bfs_view whose iterators yield @c vertex_data{v}.
  */
 template <adj_list::index_adjacency_list G>
 [[nodiscard]] auto vertices_bfs(G& g, const adj_list::vertex_id_t<G>& seed) {
@@ -571,7 +571,7 @@ template <adj_list::index_adjacency_list G>
  * @tparam G  Graph type satisfying @c index_adjacency_list.
  * @param  g            The graph to traverse.
  * @param  seed_vertex  Starting vertex descriptor.
- * @return A @c vertices_bfs_view whose iterators yield @c vertex_info{v}.
+ * @return A @c vertices_bfs_view whose iterators yield @c vertex_data{v}.
  */
 template <adj_list::index_adjacency_list G>
 [[nodiscard]] auto vertices_bfs(G& g, adj_list::vertex_t<G> seed_vertex) {
@@ -586,7 +586,7 @@ template <adj_list::index_adjacency_list G>
  * @param  g     The graph to traverse.
  * @param  seed  Starting vertex ID.
  * @param  vvf   Value function invoked per vertex.
- * @return A @c vertices_bfs_view whose iterators yield @c vertex_info{v, val}.
+ * @return A @c vertices_bfs_view whose iterators yield @c vertex_data{v, val}.
  */
 template <adj_list::index_adjacency_list G, class VVF>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
@@ -603,7 +603,7 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
  * @param  g            The graph to traverse.
  * @param  seed_vertex  Starting vertex descriptor.
  * @param  vvf          Value function invoked per vertex.
- * @return A @c vertices_bfs_view whose iterators yield @c vertex_info{v, val}.
+ * @return A @c vertices_bfs_view whose iterators yield @c vertex_data{v, val}.
  */
 template <adj_list::index_adjacency_list G, class VVF>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
@@ -620,7 +620,7 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
  * @param  g      The graph to traverse.
  * @param  seed   Starting vertex ID.
  * @param  alloc  Allocator instance.
- * @return A @c vertices_bfs_view whose iterators yield @c vertex_info{v}.
+ * @return A @c vertices_bfs_view whose iterators yield @c vertex_data{v}.
  */
 template <adj_list::index_adjacency_list G, class Alloc>
 requires(!vertex_value_function<Alloc, G, adj_list::vertex_t<G>>)
@@ -636,7 +636,7 @@ requires(!vertex_value_function<Alloc, G, adj_list::vertex_t<G>>)
  * @param  g            The graph to traverse.
  * @param  seed_vertex  Starting vertex descriptor.
  * @param  alloc        Allocator instance.
- * @return A @c vertices_bfs_view whose iterators yield @c vertex_info{v}.
+ * @return A @c vertices_bfs_view whose iterators yield @c vertex_data{v}.
  */
 template <adj_list::index_adjacency_list G, class Alloc>
 requires(!vertex_value_function<Alloc, G, adj_list::vertex_t<G>>)
@@ -654,7 +654,7 @@ requires(!vertex_value_function<Alloc, G, adj_list::vertex_t<G>>)
  * @param  seed   Starting vertex ID.
  * @param  vvf    Value function invoked per vertex.
  * @param  alloc  Allocator instance.
- * @return A @c vertices_bfs_view whose iterators yield @c vertex_info{v, val}.
+ * @return A @c vertices_bfs_view whose iterators yield @c vertex_data{v, val}.
  */
 template <adj_list::index_adjacency_list G, class VVF, class Alloc>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
@@ -672,7 +672,7 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
  * @param  seed_vertex  Starting vertex descriptor.
  * @param  vvf          Value function invoked per vertex.
  * @param  alloc        Allocator instance.
- * @return A @c vertices_bfs_view whose iterators yield @c vertex_info{v, val}.
+ * @return A @c vertices_bfs_view whose iterators yield @c vertex_data{v, val}.
  */
 template <adj_list::index_adjacency_list G, class VVF, class Alloc>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
@@ -688,7 +688,7 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
  * @brief BFS edge view without value function.
  *
  * Traverses tree edges reachable from a seed in breadth-first order,
- * yielding @c edge_info{uv} per edge via structured bindings.  The
+ * yielding @c edge_data{uv} per edge via structured bindings.  The
  * seed vertex itself has no incoming tree edge, so it is skipped.
  *
  * @code
@@ -709,14 +709,14 @@ public:
   using vertex_id_type = adj_list::vertex_id_t<G>;
   using edge_type      = typename Accessor::template edge_t<G>;
   using allocator_type = Alloc;
-  using info_type      = edge_info<void, false, edge_type, void>;
+  using info_type      = edge_data<void, false, edge_type, void>;
 
 private:
   using state_type = bfs_detail::bfs_edge_state<G, Alloc, Accessor>;
 
 public:
   /**
-     * @brief Input iterator yielding @c edge_info{uv}.
+     * @brief Input iterator yielding @c edge_data{uv}.
      *
      * Advances to the first tree edge on construction (the seed vertex
      * has no incoming tree edge).  Single-pass: all copies share state.
@@ -872,7 +872,7 @@ private:
  * @brief BFS edge view with an edge value function.
  *
  * Traverses tree edges reachable from a seed in breadth-first order,
- * yielding @c edge_info{uv, val} per edge via structured bindings.
+ * yielding @c edge_data{uv, val} per edge via structured bindings.
  *
  * @code
  *   auto evf = [](const auto& g, auto uv) { return target_id(g, uv); };
@@ -895,14 +895,14 @@ public:
   using edge_type         = typename Accessor::template edge_t<G>;
   using allocator_type    = Alloc;
   using value_result_type = std::invoke_result_t<EVF, const G&, edge_type>;
-  using info_type         = edge_info<void, false, edge_type, value_result_type>;
+  using info_type         = edge_data<void, false, edge_type, value_result_type>;
 
 private:
   using state_type = bfs_detail::bfs_edge_state<G, Alloc, Accessor>;
 
 public:
   /**
-     * @brief Input iterator yielding @c edge_info{uv, val}.
+     * @brief Input iterator yielding @c edge_data{uv, val}.
      *
      * Single-pass: all copies share state via @c shared_ptr.
      */
@@ -1078,7 +1078,7 @@ edges_bfs_view(G&, adj_list::vertex_t<G>, EVF, Alloc) -> edges_bfs_view<G, EVF, 
  * @tparam G  Graph type satisfying @c index_adjacency_list.
  * @param  g     The graph to traverse.
  * @param  seed  Starting vertex ID.
- * @return An @c edges_bfs_view whose iterators yield @c edge_info{uv}.
+ * @return An @c edges_bfs_view whose iterators yield @c edge_data{uv}.
  */
 template <adj_list::index_adjacency_list G>
 [[nodiscard]] auto edges_bfs(G& g, const adj_list::vertex_id_t<G>& seed) {
@@ -1091,7 +1091,7 @@ template <adj_list::index_adjacency_list G>
  * @tparam G  Graph type satisfying @c index_adjacency_list.
  * @param  g            The graph to traverse.
  * @param  seed_vertex  Starting vertex descriptor.
- * @return An @c edges_bfs_view whose iterators yield @c edge_info{uv}.
+ * @return An @c edges_bfs_view whose iterators yield @c edge_data{uv}.
  */
 template <adj_list::index_adjacency_list G>
 [[nodiscard]] auto edges_bfs(G& g, adj_list::vertex_t<G> seed_vertex) {
@@ -1106,7 +1106,7 @@ template <adj_list::index_adjacency_list G>
  * @param  g     The graph to traverse.
  * @param  seed  Starting vertex ID.
  * @param  evf   Value function invoked per edge.
- * @return An @c edges_bfs_view whose iterators yield @c edge_info{uv, val}.
+ * @return An @c edges_bfs_view whose iterators yield @c edge_data{uv, val}.
  */
 template <adj_list::index_adjacency_list G, class EVF>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>> && (!std::is_same_v<std::decay_t<EVF>, std::allocator<bool>>)
@@ -1122,7 +1122,7 @@ requires edge_value_function<EVF, G, adj_list::edge_t<G>> && (!std::is_same_v<st
  * @param  g            The graph to traverse.
  * @param  seed_vertex  Starting vertex descriptor.
  * @param  evf          Value function invoked per edge.
- * @return An @c edges_bfs_view whose iterators yield @c edge_info{uv, val}.
+ * @return An @c edges_bfs_view whose iterators yield @c edge_data{uv, val}.
  */
 template <adj_list::index_adjacency_list G, class EVF>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>> && (!std::is_same_v<std::decay_t<EVF>, std::allocator<bool>>)
@@ -1138,7 +1138,7 @@ requires edge_value_function<EVF, G, adj_list::edge_t<G>> && (!std::is_same_v<st
  * @param  g      The graph to traverse.
  * @param  seed   Starting vertex ID.
  * @param  alloc  Allocator instance.
- * @return An @c edges_bfs_view whose iterators yield @c edge_info{uv}.
+ * @return An @c edges_bfs_view whose iterators yield @c edge_data{uv}.
  */
 template <adj_list::index_adjacency_list G, class Alloc>
 requires(!edge_value_function<Alloc, G, adj_list::edge_t<G>>)
@@ -1154,7 +1154,7 @@ requires(!edge_value_function<Alloc, G, adj_list::edge_t<G>>)
  * @param  g            The graph to traverse.
  * @param  seed_vertex  Starting vertex descriptor.
  * @param  alloc        Allocator instance.
- * @return An @c edges_bfs_view whose iterators yield @c edge_info{uv}.
+ * @return An @c edges_bfs_view whose iterators yield @c edge_data{uv}.
  */
 template <adj_list::index_adjacency_list G, class Alloc>
 requires(!edge_value_function<Alloc, G, adj_list::edge_t<G>>)
@@ -1172,7 +1172,7 @@ requires(!edge_value_function<Alloc, G, adj_list::edge_t<G>>)
  * @param  seed   Starting vertex ID.
  * @param  evf    Value function invoked per edge.
  * @param  alloc  Allocator instance.
- * @return An @c edges_bfs_view whose iterators yield @c edge_info{uv, val}.
+ * @return An @c edges_bfs_view whose iterators yield @c edge_data{uv, val}.
  */
 template <adj_list::index_adjacency_list G, class EVF, class Alloc>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>
@@ -1190,7 +1190,7 @@ requires edge_value_function<EVF, G, adj_list::edge_t<G>>
  * @param  seed_vertex  Starting vertex descriptor.
  * @param  evf          Value function invoked per edge.
  * @param  alloc        Allocator instance.
- * @return An @c edges_bfs_view whose iterators yield @c edge_info{uv, val}.
+ * @return An @c edges_bfs_view whose iterators yield @c edge_data{uv, val}.
  */
 template <adj_list::index_adjacency_list G, class EVF, class Alloc>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>

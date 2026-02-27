@@ -279,10 +279,10 @@ Mirrors `incidence_view` from `include/graph/views/incidence.hpp`.
 
 | Class | Yields | Description |
 |---|---|---|
-| `in_incidence_view<G, void>` | `edge_info{sid, uv}` | Iterates incoming edges to a vertex, yielding **source_id** + edge descriptor |
-| `in_incidence_view<G, EVF>` | `edge_info{sid, uv, val}` | Same, with value function |
-| `basic_in_incidence_view<G, void>` | `edge_info{sid}` | Source ID only |
-| `basic_in_incidence_view<G, EVF>` | `edge_info{sid, val}` | Source ID + value function |
+| `in_incidence_view<G, void>` | `edge_data{sid, uv}` | Iterates incoming edges to a vertex, yielding **source_id** + edge descriptor |
+| `in_incidence_view<G, EVF>` | `edge_data{sid, uv, val}` | Same, with value function |
+| `basic_in_incidence_view<G, void>` | `edge_data{sid}` | Source ID only |
+| `basic_in_incidence_view<G, EVF>` | `edge_data{sid, val}` | Source ID + value function |
 
 **Factory functions:**
 ```cpp
@@ -312,10 +312,10 @@ Mirrors `neighbors_view` from `include/graph/views/neighbors.hpp`.
 
 | Class | Yields | Description |
 |---|---|---|
-| `in_neighbors_view<G, void>` | `neighbor_info{sid, n}` | Iterates source vertices of incoming edges |
-| `in_neighbors_view<G, VVF>` | `neighbor_info{sid, n, val}` | Same, with vertex value function |
-| `basic_in_neighbors_view<G, void>` | `neighbor_info{sid}` | Source ID only |
-| `basic_in_neighbors_view<G, VVF>` | `neighbor_info{sid, val}` | Source ID + value function |
+| `in_neighbors_view<G, void>` | `neighbor_data{sid, n}` | Iterates source vertices of incoming edges |
+| `in_neighbors_view<G, VVF>` | `neighbor_data{sid, n, val}` | Same, with vertex value function |
+| `basic_in_neighbors_view<G, void>` | `neighbor_data{sid}` | Source ID only |
+| `basic_in_neighbors_view<G, VVF>` | `neighbor_data{sid, val}` | Source ID + value function |
 
 ### 8.3 Outgoing aliases (optional)
 

@@ -31,7 +31,7 @@
 #include <graph/adj_list/edge_descriptor_view.hpp>
 
 // Graph information and utilities (shared between adj_list and edge_list)
-#include <graph/graph_info.hpp>
+#include <graph/graph_data.hpp>
 
 // Edge list interface
 #include <graph/edge_list/edge_list_traits.hpp>

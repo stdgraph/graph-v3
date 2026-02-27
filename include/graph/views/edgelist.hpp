@@ -6,7 +6,7 @@
  *
  * Provides lazy, range-based views that flatten the two-level adjacency-list
  * structure into a single range of edges.  Each iteration step yields an
- * @c edge_info whose fields are exposed via structured bindings, including
+ * @c edge_data whose fields are exposed via structured bindings, including
  * both source and target vertex IDs.  An optional edge value function (EVF)
  * computes a per-edge value that is included in the binding.
  *
@@ -115,7 +115,7 @@
 #include <ranges>
 #include <type_traits>
 #include <functional>
-#include <graph/graph_info.hpp>
+#include <graph/graph_data.hpp>
 #include <graph/adj_list/detail/graph_cpo.hpp>
 #include <graph/adj_list/adjacency_list_concepts.hpp>
 #include <graph/edge_list/edge_list.hpp>
@@ -155,7 +155,7 @@ class basic_edgelist_view;
  * @brief Edgelist view without value function.
  *
  * Flattens the adjacency-list structure into a single range of edges,
- * yielding @c edge_info{sid,tid,uv} per edge via structured bindings.
+ * yielding @c edge_data{sid,tid,uv} per edge via structured bindings.
  *
  * @code
  *   for (auto [sid, tid, uv] : edgelist(g)) { ... }
@@ -174,13 +174,13 @@ public:
   using vertex_id_type  = adj_list::vertex_id_t<G>;
   using edge_range_type = adj_list::vertex_edge_range_t<G>;
   using edge_type       = adj_list::edge_t<G>;
-  using info_type       = edge_info<vertex_id_type, true, edge_type, void>;
+  using info_type       = edge_data<vertex_id_type, true, edge_type, void>;
 
   /**
-     * @brief Forward iterator yielding @c edge_info{sid, tid, uv}.
+     * @brief Forward iterator yielding @c edge_data{sid, tid, uv}.
      *
      * Walks every vertex in order; for each vertex, walks its outgoing edges.
-     * @c operator*() returns an @c edge_info with @c source_id, @c target_id
+     * @c operator*() returns an @c edge_data with @c source_id, @c target_id
      * and the edge descriptor.
      */
   class iterator {
@@ -298,7 +298,7 @@ private:
  * @brief Edgelist view with an edge value function.
  *
  * Flattens the adjacency-list structure into a single range of edges,
- * yielding @c edge_info{sid,tid,uv,val} per edge via structured bindings.
+ * yielding @c edge_data{sid,tid,uv,val} per edge via structured bindings.
  *
  * @code
  *   auto evf = [](const auto& g, auto uv) { return target_id(g, uv); };
@@ -320,14 +320,14 @@ public:
   using edge_range_type   = adj_list::vertex_edge_range_t<G>;
   using edge_type         = adj_list::edge_t<G>;
   using value_type_result = std::invoke_result_t<EVF, const G&, edge_type>;
-  using info_type         = edge_info<vertex_id_type, true, edge_type, value_type_result>;
+  using info_type         = edge_data<vertex_id_type, true, edge_type, value_type_result>;
 
   /**
-     * @brief Forward iterator yielding @c edge_info{sid, tid, uv, val}.
+     * @brief Forward iterator yielding @c edge_data{sid, tid, uv, val}.
      *
      * Walks every vertex in order; for each vertex, walks its outgoing edges.
      * @c operator*() invokes the edge value function and returns an
-     * @c edge_info with @c source_id, @c target_id, the edge descriptor
+     * @c edge_data with @c source_id, @c target_id, the edge descriptor
      * and the computed value.
      */
   class iterator {
@@ -450,7 +450,7 @@ private:
  *
  * @tparam G  Graph type satisfying @c adjacency_list
  * @param  g  The graph to iterate over.  Must outlive the returned view.
- * @return @c edgelist_view yielding @c edge_info{sid, tid, uv} per edge.
+ * @return @c edgelist_view yielding @c edge_data{sid, tid, uv} per edge.
  *
  * @post The graph is not modified.
  */
@@ -472,7 +472,7 @@ template <adj_list::adjacency_list G>
  * @param  g   The graph to iterate over.  Must outlive the returned view.
  * @param  evf Value function invoked once per edge.
  *             Use a stateless lambda for @c std::views chaining support.
- * @return @c edgelist_view yielding @c edge_info{sid, tid, uv, val} per edge.
+ * @return @c edgelist_view yielding @c edge_data{sid, tid, uv, val} per edge.
  *
  * @post The graph is not modified.
  */
@@ -510,9 +510,9 @@ public:
   using vertex_id_type  = adj_list::vertex_id_t<G>;
   using edge_range_type = adj_list::vertex_edge_range_t<G>;
   using edge_type       = adj_list::edge_t<G>;
-  using info_type       = edge_info<vertex_id_type, true, void, void>;
+  using info_type       = edge_data<vertex_id_type, true, void, void>;
 
-  /// @brief Forward iterator yielding @c edge_info{sid, tid} — source/target ids only.
+  /// @brief Forward iterator yielding @c edge_data{sid, tid} — source/target ids only.
   class iterator {
   public:
     using iterator_category = std::forward_iterator_tag;
@@ -636,9 +636,9 @@ public:
   using edge_range_type   = adj_list::vertex_edge_range_t<G>;
   using edge_type         = adj_list::edge_t<G>;
   using value_type_result = std::invoke_result_t<EVF, const G&, edge_type>;
-  using info_type         = edge_info<vertex_id_type, true, void, value_type_result>;
+  using info_type         = edge_data<vertex_id_type, true, void, value_type_result>;
 
-  /// @brief Forward iterator yielding @c edge_info{sid, tid, val} — ids + computed value.
+  /// @brief Forward iterator yielding @c edge_data{sid, tid, val} — ids + computed value.
   class iterator {
   public:
     using iterator_category = std::forward_iterator_tag;
@@ -767,7 +767,7 @@ basic_edgelist_view(G&, EVF) -> basic_edgelist_view<G, EVF>;
  *
  * @tparam G  Graph type satisfying @c adjacency_list
  * @param  g  The graph to iterate over.  Must outlive the returned view.
- * @return @c basic_edgelist_view yielding @c edge_info{sid, tid} per edge.
+ * @return @c basic_edgelist_view yielding @c edge_data{sid, tid} per edge.
  *
  * @post The graph is not modified.
  */
@@ -790,7 +790,7 @@ template <adj_list::adjacency_list G>
  * @param  g   The graph to iterate over.  Must outlive the returned view.
  * @param  evf Value function invoked once per edge.
  *             Use a stateless lambda for @c std::views chaining support.
- * @return @c basic_edgelist_view yielding @c edge_info{sid, tid, val} per edge.
+ * @return @c basic_edgelist_view yielding @c edge_data{sid, tid, val} per edge.
  *
  * @post The graph is not modified.
  */
@@ -812,7 +812,7 @@ class edge_list_edgelist_view;
  * @brief Edgelist view wrapping a native @c edge_list data structure (no value function).
  *
  * Unlike the adjacency-list overloads above, this view iterates directly over
- * an @c edge_list range, yielding @c edge_info{sid,tid,uv} per edge.
+ * an @c edge_list range, yielding @c edge_data{sid,tid,uv} per edge.
  *
  * @code
  *   for (auto [sid, tid, uv] : edgelist(el)) { ... }
@@ -829,10 +829,10 @@ public:
   using edge_list_type = EL;
   using edge_type      = edge_list::edge_t<EL>;
   using vertex_id_type = edge_list::vertex_id_t<EL>;
-  using info_type      = edge_info<vertex_id_type, true, edge_type, void>;
+  using info_type      = edge_data<vertex_id_type, true, edge_type, void>;
 
   /**
-     * @brief Forward iterator yielding @c edge_info{sid, tid, uv} from the edge list.
+     * @brief Forward iterator yielding @c edge_data{sid, tid, uv} from the edge list.
      */
   class iterator {
   public:
@@ -894,7 +894,7 @@ private:
  * @brief Edgelist view wrapping a native @c edge_list with a value function.
  *
  * Iterates directly over an @c edge_list range, yielding
- * @c edge_info{sid,tid,uv,val} per edge.
+ * @c edge_data{sid,tid,uv,val} per edge.
  *
  * @code
  *   auto evf = [](auto& el, auto& e) { return graph::edge_value(el, e); };
@@ -914,10 +914,10 @@ public:
   using edge_type         = edge_list::edge_t<EL>;
   using vertex_id_type    = edge_list::vertex_id_t<EL>;
   using value_type_result = std::invoke_result_t<EVF, EL&, edge_type>;
-  using info_type         = edge_info<vertex_id_type, true, edge_type, value_type_result>;
+  using info_type         = edge_data<vertex_id_type, true, edge_type, value_type_result>;
 
   /**
-     * @brief Forward iterator yielding @c edge_info{sid, tid, uv, val} from the edge list.
+     * @brief Forward iterator yielding @c edge_data{sid, tid, uv, val} from the edge list.
      */
   class iterator {
   public:
@@ -992,7 +992,7 @@ private:
  *
  * @tparam EL Edge list type satisfying @c basic_sourced_edgelist
  * @param  el The edge list to iterate over.  Must outlive the returned view.
- * @return @c edge_list_edgelist_view yielding @c edge_info{sid, tid, uv} per edge.
+ * @return @c edge_list_edgelist_view yielding @c edge_data{sid, tid, uv} per edge.
  *
  * @post The edge list is not modified.
  */
@@ -1014,7 +1014,7 @@ requires(!adj_list::adjacency_list<EL>) // Disambiguation: prefer adjacency_list
  * @tparam EVF Edge value function — @c invocable<EL&, edge_t<EL>>
  * @param  el  The edge list to iterate over.  Must outlive the returned view.
  * @param  evf Value function invoked once per edge.
- * @return @c edge_list_edgelist_view yielding @c edge_info{sid, tid, uv, val} per edge.
+ * @return @c edge_list_edgelist_view yielding @c edge_data{sid, tid, uv, val} per edge.
  *
  * @post The edge list is not modified.
  */

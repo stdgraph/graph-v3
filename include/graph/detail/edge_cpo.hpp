@@ -39,7 +39,7 @@ namespace _cpo_impls {
       _adl_descriptor,
       _adj_list_descriptor,  // Tier 4: adj_list::edge_descriptor
       _edge_list_descriptor, // Tier 5: edge_list::edge_descriptor
-      _edge_info_member,     // Tier 6: edge_info data member
+      _edge_data_member,     // Tier 6: edge_data data member
       _tuple_like            // Tier 7: tuple/pair
     };
 
@@ -77,10 +77,10 @@ namespace _cpo_impls {
             { uv.target_id() };
           };
 
-    // Tier 6: Check for edge_info-style direct data member access
+    // Tier 6: Check for edge_data-style direct data member access
     // Must NOT be a descriptor type (to avoid ambiguity with method calls)
     template <typename UV>
-    concept _has_edge_info_member =
+    concept _has_edge_data_member =
           !adj_list::is_edge_descriptor_v<std::remove_cvref_t<UV>> &&
           !edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> && requires(const UV& uv) {
             uv.target_id; // data member, not method
@@ -89,11 +89,11 @@ namespace _cpo_impls {
           };
 
     // Tier 7: Check for tuple-like edge (pair, tuple)
-    // Must NOT be any descriptor type or have edge_info members
+    // Must NOT be any descriptor type or have edge_data members
     template <typename UV>
     concept _is_tuple_like_edge =
           !adj_list::is_edge_descriptor_v<std::remove_cvref_t<UV>> &&
-          !edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> && !_has_edge_info_member<UV> &&
+          !edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> && !_has_edge_data_member<UV> &&
           requires { std::tuple_size<std::remove_cvref_t<UV>>::value; } && requires(const UV& uv) {
             { std::get<0>(uv) };
             { std::get<1>(uv) };
@@ -110,8 +110,8 @@ namespace _cpo_impls {
         return {_St::_adj_list_descriptor, false};
       } else if constexpr (_has_edge_list_descriptor<E>) {
         return {_St::_edge_list_descriptor, noexcept(std::declval<const E&>().target_id())};
-      } else if constexpr (_has_edge_info_member<E>) {
-        return {_St::_edge_info_member, noexcept(std::declval<const E&>().target_id)};
+      } else if constexpr (_has_edge_data_member<E>) {
+        return {_St::_edge_data_member, noexcept(std::declval<const E&>().target_id)};
       } else if constexpr (_is_tuple_like_edge<E>) {
         return {_St::_tuple_like, noexcept(std::get<1>(std::declval<const E&>()))};
       } else {
@@ -133,19 +133,19 @@ namespace _cpo_impls {
              * 2. target_id(g, uv) - ADL with edge_descriptor
              * 3. uv.target_id(uv.source().underlying_value(g)) - adj_list::edge_descriptor (Tier 4)
              * 4. uv.target_id() - edge_list::edge_descriptor member (Tier 5)
-             * 5. uv.target_id - edge_info data member (Tier 6)
+             * 5. uv.target_id - edge_data data member (Tier 6)
              * 6. std::get<1>(uv) - tuple-like edge (Tier 7, lowest priority)
              * 
              * Where:
              * - uv must be edge_t<G> (the edge descriptor type for graph G) for tiers 1-4
-             * - For tiers 5-7, uv can be edge_list descriptors, edge_info structs, or tuple-like types
+             * - For tiers 5-7, uv can be edge_list descriptors, edge_data structs, or tuple-like types
              * - The native edge member function is called if the underlying edge type has target_id()
              * - ADL allows customization by providing a free function
              * 
              * Tiers 4-7 support:
              * - adj_list edge descriptors (existing adjacency list edges)
              * - edge_list descriptors (new edge list support)
-             * - edge_info structs with direct data members
+             * - edge_data structs with direct data members
              * - tuple/pair representations (source, target, [value])
              * 
              * Edge data extraction (tier 4 default implementation):
@@ -180,7 +180,7 @@ namespace _cpo_impls {
           return uv.target_id(uv.source().underlying_value(g));
         } else if constexpr (_Choice<_G, _E>._Strategy == _St::_edge_list_descriptor) {
           return uv.target_id();
-        } else if constexpr (_Choice<_G, _E>._Strategy == _St::_edge_info_member) {
+        } else if constexpr (_Choice<_G, _E>._Strategy == _St::_edge_data_member) {
           return uv.target_id;
         } else if constexpr (_Choice<_G, _E>._Strategy == _St::_tuple_like) {
           return std::get<1>(uv);
@@ -201,7 +201,7 @@ namespace _cpo_impls {
       _adl,
       _adj_list_descriptor,  // Tier 4: adj_list::edge_descriptor
       _edge_list_descriptor, // Tier 5: edge_list::edge_descriptor
-      _edge_info_member,     // Tier 6: edge_info data member
+      _edge_data_member,     // Tier 6: edge_data data member
       _tuple_like            // Tier 7: tuple/pair
     };
 
@@ -240,10 +240,10 @@ namespace _cpo_impls {
             { uv.source_id() };
           };
 
-    // Tier 6: Check for edge_info-style direct data member access
+    // Tier 6: Check for edge_data-style direct data member access
     // Must NOT be a descriptor type (to avoid ambiguity with method calls)
     template <typename UV>
-    concept _has_edge_info_member =
+    concept _has_edge_data_member =
           !adj_list::is_edge_descriptor_v<std::remove_cvref_t<UV>> &&
           !edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> && requires(const UV& uv) {
             uv.source_id; // data member, not method
@@ -252,11 +252,11 @@ namespace _cpo_impls {
           };
 
     // Tier 7: Check for tuple-like edge (pair, tuple)
-    // Must NOT be any descriptor type or have edge_info members
+    // Must NOT be any descriptor type or have edge_data members
     template <typename UV>
     concept _is_tuple_like_edge =
           !adj_list::is_edge_descriptor_v<std::remove_cvref_t<UV>> &&
-          !edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> && !_has_edge_info_member<UV> &&
+          !edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> && !_has_edge_data_member<UV> &&
           requires { std::tuple_size<std::remove_cvref_t<UV>>::value; } && requires(const UV& uv) {
             { std::get<0>(uv) };
             { std::get<1>(uv) };
@@ -274,8 +274,8 @@ namespace _cpo_impls {
         return {_St::_adj_list_descriptor, noexcept(std::declval<const E&>().source_id())};
       } else if constexpr (_has_edge_list_descriptor<E>) {
         return {_St::_edge_list_descriptor, noexcept(std::declval<const E&>().source_id())};
-      } else if constexpr (_has_edge_info_member<E>) {
-        return {_St::_edge_info_member, noexcept(std::declval<const E&>().source_id)};
+      } else if constexpr (_has_edge_data_member<E>) {
+        return {_St::_edge_data_member, noexcept(std::declval<const E&>().source_id)};
       } else if constexpr (_is_tuple_like_edge<E>) {
         return {_St::_tuple_like, noexcept(std::get<0>(std::declval<const E&>()))};
       } else {
@@ -298,7 +298,7 @@ namespace _cpo_impls {
              * 3. source_id(g, uv) - ADL
              * 4. uv.source_id() - adj_list::edge_descriptor member (Tier 4)
              * 5. uv.source_id() - edge_list::edge_descriptor member (Tier 5)
-             * 6. uv.source_id - edge_info data member (Tier 6)
+             * 6. uv.source_id - edge_data data member (Tier 6)
              * 7. std::get<0>(uv) - tuple-like edge (Tier 7, lowest priority)
              * 
              * Where:
@@ -310,7 +310,7 @@ namespace _cpo_impls {
              * Tiers 4-7 support:
              * - adj_list edge descriptors (existing adjacency list edges)
              * - edge_list descriptors (new edge list support)
-             * - edge_info structs with direct data members
+             * - edge_data structs with direct data members
              * - tuple/pair representations (source, target, [value])
              * 
              * @tparam G Graph type
@@ -349,7 +349,7 @@ namespace _cpo_impls {
           }
         } else if constexpr (_Choice<_G, _E>._Strategy == _St::_edge_list_descriptor) {
           return uv.source_id();
-        } else if constexpr (_Choice<_G, _E>._Strategy == _St::_edge_info_member) {
+        } else if constexpr (_Choice<_G, _E>._Strategy == _St::_edge_data_member) {
           return uv.source_id;
         } else if constexpr (_Choice<_G, _E>._Strategy == _St::_tuple_like) {
           return std::get<0>(uv);
@@ -370,7 +370,7 @@ namespace _cpo_impls {
       _value_fn,
       _adj_list_descriptor,  // Tier 4: adj_list::edge_descriptor
       _edge_list_descriptor, // Tier 5: edge_list::edge_descriptor
-      _edge_info_member,     // Tier 6: edge_info data member
+      _edge_data_member,     // Tier 6: edge_data data member
       _tuple_like            // Tier 7: tuple (3+ elements)
     };
 
@@ -413,10 +413,10 @@ namespace _cpo_impls {
             { uv.value() };
           };
 
-    // Tier 6: Check for edge_info-style direct data member access
+    // Tier 6: Check for edge_data-style direct data member access
     // Must NOT be a descriptor type (to avoid ambiguity with method calls)
     template <typename UV>
-    concept _has_edge_info_member =
+    concept _has_edge_data_member =
           !adj_list::is_edge_descriptor_v<std::remove_cvref_t<UV>> &&
           !edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> && requires(const UV& uv) {
             uv.value; // data member, not method
@@ -425,12 +425,12 @@ namespace _cpo_impls {
           };
 
     // Tier 7: Check for tuple-like edge (pair, tuple)
-    // Must NOT be any descriptor type or have edge_info members
+    // Must NOT be any descriptor type or have edge_data members
     // Note: For edge values, this would be std::get<2> (third element)
     template <typename UV>
     concept _is_tuple_like_edge =
           !adj_list::is_edge_descriptor_v<std::remove_cvref_t<UV>> &&
-          !edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> && !_has_edge_info_member<UV> && requires {
+          !edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> && !_has_edge_data_member<UV> && requires {
             std::tuple_size<std::remove_cvref_t<UV>>::value;
             requires std::tuple_size<std::remove_cvref_t<UV>>::value >= 3;
           } && requires(const UV& uv) {
@@ -452,8 +452,8 @@ namespace _cpo_impls {
         return {_St::_adj_list_descriptor, false};
       } else if constexpr (_has_edge_list_descriptor<E>) {
         return {_St::_edge_list_descriptor, noexcept(std::declval<const E&>().value())};
-      } else if constexpr (_has_edge_info_member<E>) {
-        return {_St::_edge_info_member, noexcept(std::declval<const E&>().value)};
+      } else if constexpr (_has_edge_data_member<E>) {
+        return {_St::_edge_data_member, noexcept(std::declval<const E&>().value)};
       } else if constexpr (_is_tuple_like_edge<E>) {
         return {_St::_tuple_like, noexcept(std::get<2>(std::declval<const E&>()))};
       } else {
@@ -476,17 +476,17 @@ namespace _cpo_impls {
              * 3. uv.value() - Member function on edge
              * 4. uv.inner_value(edges) - adj_list::edge_descriptor (Tier 4)
              * 5. uv.value() - edge_list::edge_descriptor member (Tier 5)
-             * 6. uv.value - edge_info data member (Tier 6)
+             * 6. uv.value - edge_data data member (Tier 6)
              * 7. std::get<2>(uv) - tuple-like edge (Tier 7, lowest priority)
              * 
              * Where:
              * - uv must be edge_t<G> (the edge descriptor type for graph G) for tiers 1-4
-             * - For tiers 5-7, uv can be edge_list descriptors, edge_info structs, or tuple-like types
+             * - For tiers 5-7, uv can be edge_list descriptors, edge_data structs, or tuple-like types
              * 
              * Tiers 4-7 support:
              * - adj_list edge descriptors (existing adjacency list edges)
              * - edge_list descriptors (new edge list support)
-             * - edge_info structs with direct data members
+             * - edge_data structs with direct data members
              * - tuple/triple representations (source, target, value)
              * 
              * The tier 4 default implementation:
@@ -533,7 +533,7 @@ namespace _cpo_impls {
           return std::forward<E>(uv).inner_value(std::forward<E>(uv).source().underlying_value(std::forward<G>(g)));
         } else if constexpr (_Choice<_G, _E>._Strategy == _St::_edge_list_descriptor) {
           return uv.value();
-        } else if constexpr (_Choice<_G, _E>._Strategy == _St::_edge_info_member) {
+        } else if constexpr (_Choice<_G, _E>._Strategy == _St::_edge_data_member) {
           return uv.value;
         } else if constexpr (_Choice<_G, _E>._Strategy == _St::_tuple_like) {
           return std::get<2>(uv);

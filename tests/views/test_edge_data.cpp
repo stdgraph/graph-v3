@@ -1,5 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
-#include <graph/graph_info.hpp>
+#include <graph/graph_data.hpp>
 #include <type_traits>
 
 using namespace graph;
@@ -14,9 +14,9 @@ struct mock_value {
   double weight;
 };
 
-TEST_CASE("edge_info: all 16 specializations compile", "[edge_info]") {
+TEST_CASE("edge_data: all 16 specializations compile", "[edge_data]") {
   SECTION("VId, Sourced=true, E, EV all present") {
-    edge_info<int, true, mock_edge_descriptor, mock_value> ei{1, 2, mock_edge_descriptor{0, 1}, mock_value{10.5}};
+    edge_data<int, true, mock_edge_descriptor, mock_value> ei{1, 2, mock_edge_descriptor{0, 1}, mock_value{10.5}};
     REQUIRE(ei.source_id == 1);
     REQUIRE(ei.target_id == 2);
     REQUIRE(ei.edge.src_id == 0);
@@ -25,7 +25,7 @@ TEST_CASE("edge_info: all 16 specializations compile", "[edge_info]") {
   }
 
   SECTION("VId, Sourced=true, E present; EV=void") {
-    edge_info<int, true, mock_edge_descriptor, void> ei{2, 3, mock_edge_descriptor{1, 2}};
+    edge_data<int, true, mock_edge_descriptor, void> ei{2, 3, mock_edge_descriptor{1, 2}};
     REQUIRE(ei.source_id == 2);
     REQUIRE(ei.target_id == 3);
     REQUIRE(ei.edge.src_id == 1);
@@ -34,7 +34,7 @@ TEST_CASE("edge_info: all 16 specializations compile", "[edge_info]") {
   }
 
   SECTION("VId, Sourced=true, EV present; E=void") {
-    edge_info<int, true, void, mock_value> ei{3, 4, mock_value{20.0}};
+    edge_data<int, true, void, mock_value> ei{3, 4, mock_value{20.0}};
     REQUIRE(ei.source_id == 3);
     REQUIRE(ei.target_id == 4);
     REQUIRE(ei.value.weight == 20.0);
@@ -42,7 +42,7 @@ TEST_CASE("edge_info: all 16 specializations compile", "[edge_info]") {
   }
 
   SECTION("VId, Sourced=true; E=void, EV=void") {
-    edge_info<int, true, void, void> ei{4, 5};
+    edge_data<int, true, void, void> ei{4, 5};
     REQUIRE(ei.source_id == 4);
     REQUIRE(ei.target_id == 5);
     STATIC_REQUIRE(std::is_void_v<decltype(ei)::edge_type>);
@@ -50,7 +50,7 @@ TEST_CASE("edge_info: all 16 specializations compile", "[edge_info]") {
   }
 
   SECTION("VId, Sourced=false, E, EV all present") {
-    edge_info<int, false, mock_edge_descriptor, mock_value> ei{5, mock_edge_descriptor{2, 3}, mock_value{15.5}};
+    edge_data<int, false, mock_edge_descriptor, mock_value> ei{5, mock_edge_descriptor{2, 3}, mock_value{15.5}};
     REQUIRE(ei.target_id == 5);
     REQUIRE(ei.edge.src_id == 2);
     REQUIRE(ei.edge.tgt_id == 3);
@@ -58,7 +58,7 @@ TEST_CASE("edge_info: all 16 specializations compile", "[edge_info]") {
   }
 
   SECTION("VId, Sourced=false, E present; EV=void") {
-    edge_info<int, false, mock_edge_descriptor, void> ei{6, mock_edge_descriptor{3, 4}};
+    edge_data<int, false, mock_edge_descriptor, void> ei{6, mock_edge_descriptor{3, 4}};
     REQUIRE(ei.target_id == 6);
     REQUIRE(ei.edge.src_id == 3);
     REQUIRE(ei.edge.tgt_id == 4);
@@ -66,21 +66,21 @@ TEST_CASE("edge_info: all 16 specializations compile", "[edge_info]") {
   }
 
   SECTION("VId, Sourced=false, EV present; E=void") {
-    edge_info<int, false, void, mock_value> ei{7, mock_value{25.0}};
+    edge_data<int, false, void, mock_value> ei{7, mock_value{25.0}};
     REQUIRE(ei.target_id == 7);
     REQUIRE(ei.value.weight == 25.0);
     STATIC_REQUIRE(std::is_void_v<decltype(ei)::edge_type>);
   }
 
   SECTION("VId, Sourced=false; E=void, EV=void") {
-    edge_info<int, false, void, void> ei{8};
+    edge_data<int, false, void, void> ei{8};
     REQUIRE(ei.target_id == 8);
     STATIC_REQUIRE(std::is_void_v<decltype(ei)::edge_type>);
     STATIC_REQUIRE(std::is_void_v<decltype(ei)::value_type>);
   }
 
   SECTION("VId=void, Sourced=true; E, EV present (descriptor-based)") {
-    edge_info<void, true, mock_edge_descriptor, mock_value> ei{mock_edge_descriptor{4, 5}, mock_value{30.0}};
+    edge_data<void, true, mock_edge_descriptor, mock_value> ei{mock_edge_descriptor{4, 5}, mock_value{30.0}};
     REQUIRE(ei.edge.src_id == 4);
     REQUIRE(ei.edge.tgt_id == 5);
     REQUIRE(ei.value.weight == 30.0);
@@ -89,7 +89,7 @@ TEST_CASE("edge_info: all 16 specializations compile", "[edge_info]") {
   }
 
   SECTION("VId=void, Sourced=true, EV=void; E present") {
-    edge_info<void, true, mock_edge_descriptor, void> ei{mock_edge_descriptor{5, 6}};
+    edge_data<void, true, mock_edge_descriptor, void> ei{mock_edge_descriptor{5, 6}};
     REQUIRE(ei.edge.src_id == 5);
     REQUIRE(ei.edge.tgt_id == 6);
     STATIC_REQUIRE(std::is_void_v<decltype(ei)::source_id_type>);
@@ -98,7 +98,7 @@ TEST_CASE("edge_info: all 16 specializations compile", "[edge_info]") {
   }
 
   SECTION("VId=void, Sourced=true, E=void; EV present") {
-    edge_info<void, true, void, mock_value> ei{mock_value{35.0}};
+    edge_data<void, true, void, mock_value> ei{mock_value{35.0}};
     REQUIRE(ei.value.weight == 35.0);
     STATIC_REQUIRE(std::is_void_v<decltype(ei)::source_id_type>);
     STATIC_REQUIRE(std::is_void_v<decltype(ei)::target_id_type>);
@@ -106,7 +106,7 @@ TEST_CASE("edge_info: all 16 specializations compile", "[edge_info]") {
   }
 
   SECTION("VId=void, Sourced=true; E=void, EV=void (empty)") {
-    edge_info<void, true, void, void> ei{};
+    edge_data<void, true, void, void> ei{};
     STATIC_REQUIRE(std::is_void_v<decltype(ei)::source_id_type>);
     STATIC_REQUIRE(std::is_void_v<decltype(ei)::target_id_type>);
     STATIC_REQUIRE(std::is_void_v<decltype(ei)::edge_type>);
@@ -114,7 +114,7 @@ TEST_CASE("edge_info: all 16 specializations compile", "[edge_info]") {
   }
 
   SECTION("VId=void, Sourced=false; E, EV present (descriptor-based)") {
-    edge_info<void, false, mock_edge_descriptor, mock_value> ei{mock_edge_descriptor{6, 7}, mock_value{40.0}};
+    edge_data<void, false, mock_edge_descriptor, mock_value> ei{mock_edge_descriptor{6, 7}, mock_value{40.0}};
     REQUIRE(ei.edge.src_id == 6);
     REQUIRE(ei.edge.tgt_id == 7);
     REQUIRE(ei.value.weight == 40.0);
@@ -123,7 +123,7 @@ TEST_CASE("edge_info: all 16 specializations compile", "[edge_info]") {
   }
 
   SECTION("VId=void, Sourced=false, EV=void; E present") {
-    edge_info<void, false, mock_edge_descriptor, void> ei{mock_edge_descriptor{7, 8}};
+    edge_data<void, false, mock_edge_descriptor, void> ei{mock_edge_descriptor{7, 8}};
     REQUIRE(ei.edge.src_id == 7);
     REQUIRE(ei.edge.tgt_id == 8);
     STATIC_REQUIRE(std::is_void_v<decltype(ei)::source_id_type>);
@@ -132,7 +132,7 @@ TEST_CASE("edge_info: all 16 specializations compile", "[edge_info]") {
   }
 
   SECTION("VId=void, Sourced=false, E=void; EV present") {
-    edge_info<void, false, void, mock_value> ei{mock_value{45.0}};
+    edge_data<void, false, void, mock_value> ei{mock_value{45.0}};
     REQUIRE(ei.value.weight == 45.0);
     STATIC_REQUIRE(std::is_void_v<decltype(ei)::source_id_type>);
     STATIC_REQUIRE(std::is_void_v<decltype(ei)::target_id_type>);
@@ -140,7 +140,7 @@ TEST_CASE("edge_info: all 16 specializations compile", "[edge_info]") {
   }
 
   SECTION("VId=void, Sourced=false; E=void, EV=void (empty)") {
-    edge_info<void, false, void, void> ei{};
+    edge_data<void, false, void, void> ei{};
     STATIC_REQUIRE(std::is_void_v<decltype(ei)::source_id_type>);
     STATIC_REQUIRE(std::is_void_v<decltype(ei)::target_id_type>);
     STATIC_REQUIRE(std::is_void_v<decltype(ei)::edge_type>);
@@ -148,9 +148,9 @@ TEST_CASE("edge_info: all 16 specializations compile", "[edge_info]") {
   }
 }
 
-TEST_CASE("edge_info: structured bindings work correctly", "[edge_info]") {
+TEST_CASE("edge_data: structured bindings work correctly", "[edge_data]") {
   SECTION("Sourced=true, all four members") {
-    edge_info<int, true, mock_edge_descriptor, mock_value> ei{1, 2, mock_edge_descriptor{0, 1}, mock_value{10.5}};
+    edge_data<int, true, mock_edge_descriptor, mock_value> ei{1, 2, mock_edge_descriptor{0, 1}, mock_value{10.5}};
     auto [sid, tid, e, val] = ei;
     REQUIRE(sid == 1);
     REQUIRE(tid == 2);
@@ -160,7 +160,7 @@ TEST_CASE("edge_info: structured bindings work correctly", "[edge_info]") {
   }
 
   SECTION("Sourced=false, three members") {
-    edge_info<int, false, mock_edge_descriptor, mock_value> ei{5, mock_edge_descriptor{2, 3}, mock_value{15.5}};
+    edge_data<int, false, mock_edge_descriptor, mock_value> ei{5, mock_edge_descriptor{2, 3}, mock_value{15.5}};
     auto [tid, e, val] = ei;
     REQUIRE(tid == 5);
     REQUIRE(e.src_id == 2);
@@ -169,7 +169,7 @@ TEST_CASE("edge_info: structured bindings work correctly", "[edge_info]") {
   }
 
   SECTION("Three members: source_id, target_id and edge") {
-    edge_info<int, true, mock_edge_descriptor, void> ei{2, 3, mock_edge_descriptor{1, 2}};
+    edge_data<int, true, mock_edge_descriptor, void> ei{2, 3, mock_edge_descriptor{1, 2}};
     auto [sid, tid, e] = ei;
     REQUIRE(sid == 2);
     REQUIRE(tid == 3);
@@ -178,21 +178,21 @@ TEST_CASE("edge_info: structured bindings work correctly", "[edge_info]") {
   }
 
   SECTION("Two members: target_id and value") {
-    edge_info<int, false, void, mock_value> ei{7, mock_value{25.0}};
+    edge_data<int, false, void, mock_value> ei{7, mock_value{25.0}};
     auto [tid, val] = ei;
     REQUIRE(tid == 7);
     REQUIRE(val.weight == 25.0);
   }
 
   SECTION("Two members: source_id and target_id only") {
-    edge_info<int, true, void, void> ei{4, 5};
+    edge_data<int, true, void, void> ei{4, 5};
     auto [sid, tid] = ei;
     REQUIRE(sid == 4);
     REQUIRE(tid == 5);
   }
 
   SECTION("Descriptor-based: edge and value") {
-    edge_info<void, false, mock_edge_descriptor, mock_value> ei{mock_edge_descriptor{6, 7}, mock_value{40.0}};
+    edge_data<void, false, mock_edge_descriptor, mock_value> ei{mock_edge_descriptor{6, 7}, mock_value{40.0}};
     auto [e, val] = ei;
     REQUIRE(e.src_id == 6);
     REQUIRE(e.tgt_id == 7);
@@ -200,23 +200,23 @@ TEST_CASE("edge_info: structured bindings work correctly", "[edge_info]") {
   }
 
   SECTION("Descriptor-based: edge only") {
-    edge_info<void, true, mock_edge_descriptor, void> ei{mock_edge_descriptor{5, 6}};
+    edge_data<void, true, mock_edge_descriptor, void> ei{mock_edge_descriptor{5, 6}};
     auto [e] = ei;
     REQUIRE(e.src_id == 5);
     REQUIRE(e.tgt_id == 6);
   }
 
   SECTION("Descriptor-based: value only") {
-    edge_info<void, false, void, mock_value> ei{mock_value{45.0}};
+    edge_data<void, false, void, mock_value> ei{mock_value{45.0}};
     auto [val] = ei;
     REQUIRE(val.weight == 45.0);
   }
 }
 
-TEST_CASE("edge_info: sizeof verifies physical absence of void members", "[edge_info]") {
+TEST_CASE("edge_data: sizeof verifies physical absence of void members", "[edge_data]") {
   SECTION("Full struct vs VId=void reduces size") {
-    using full_t  = edge_info<int, true, mock_edge_descriptor, mock_value>;
-    using no_id_t = edge_info<void, true, mock_edge_descriptor, mock_value>;
+    using full_t  = edge_data<int, true, mock_edge_descriptor, mock_value>;
+    using no_id_t = edge_data<void, true, mock_edge_descriptor, mock_value>;
 
     // No source_id/target_id members should be smaller or equal (padding may prevent strict reduction)
     REQUIRE(sizeof(no_id_t) <= sizeof(full_t));
@@ -225,18 +225,18 @@ TEST_CASE("edge_info: sizeof verifies physical absence of void members", "[edge_
   }
 
   SECTION("IDs only struct (Sourced=true)") {
-    using ids_only_t = edge_info<int, true, void, void>;
+    using ids_only_t = edge_data<int, true, void, void>;
     REQUIRE(sizeof(ids_only_t) == 2 * sizeof(int)); // source_id + target_id
   }
 
   SECTION("target_id only struct (Sourced=false)") {
-    using id_only_t = edge_info<size_t, false, void, void>;
+    using id_only_t = edge_data<size_t, false, void, void>;
     REQUIRE(sizeof(id_only_t) == sizeof(size_t)); // Only target_id
   }
 
   SECTION("Empty structs") {
-    using empty_sourced_t   = edge_info<void, true, void, void>;
-    using empty_unsourced_t = edge_info<void, false, void, void>;
+    using empty_sourced_t   = edge_data<void, true, void, void>;
+    using empty_unsourced_t = edge_data<void, false, void, void>;
 
     // Empty struct has size 1 in C++ (must be distinct)
     REQUIRE(sizeof(empty_sourced_t) >= 1);
@@ -244,9 +244,9 @@ TEST_CASE("edge_info: sizeof verifies physical absence of void members", "[edge_
   }
 }
 
-TEST_CASE("edge_info: Sourced parameter affects member presence", "[edge_info]") {
+TEST_CASE("edge_data: Sourced parameter affects member presence", "[edge_data]") {
   SECTION("Sourced=true has source_id and target_id") {
-    edge_info<int, true, void, void> ei{42, 99};
+    edge_data<int, true, void, void> ei{42, 99};
     REQUIRE(ei.source_id == 42);
     REQUIRE(ei.target_id == 99);
     STATIC_REQUIRE(std::is_same_v<decltype(ei.source_id), int>);
@@ -254,16 +254,16 @@ TEST_CASE("edge_info: Sourced parameter affects member presence", "[edge_info]")
   }
 
   SECTION("Sourced=false has only target_id") {
-    edge_info<int, false, void, void> ei{99};
+    edge_data<int, false, void, void> ei{99};
     REQUIRE(ei.target_id == 99);
     STATIC_REQUIRE(std::is_same_v<decltype(ei.target_id), int>);
   }
 }
 
-TEST_CASE("edge_info: copyable and movable", "[edge_info]") {
+TEST_CASE("edge_data: copyable and movable", "[edge_data]") {
   SECTION("Copy construction - Sourced=true") {
-    edge_info<int, true, mock_edge_descriptor, mock_value> ei1{1, 2, mock_edge_descriptor{0, 1}, mock_value{10.5}};
-    edge_info<int, true, mock_edge_descriptor, mock_value> ei2 = ei1;
+    edge_data<int, true, mock_edge_descriptor, mock_value> ei1{1, 2, mock_edge_descriptor{0, 1}, mock_value{10.5}};
+    edge_data<int, true, mock_edge_descriptor, mock_value> ei2 = ei1;
     REQUIRE(ei2.source_id == ei1.source_id);
     REQUIRE(ei2.target_id == ei1.target_id);
     REQUIRE(ei2.edge.src_id == ei1.edge.src_id);
@@ -271,18 +271,18 @@ TEST_CASE("edge_info: copyable and movable", "[edge_info]") {
   }
 
   SECTION("Move construction - Sourced=false") {
-    edge_info<int, false, mock_edge_descriptor, mock_value> ei1{5, mock_edge_descriptor{2, 3}, mock_value{15.5}};
-    edge_info<int, false, mock_edge_descriptor, mock_value> ei2 = std::move(ei1);
+    edge_data<int, false, mock_edge_descriptor, mock_value> ei1{5, mock_edge_descriptor{2, 3}, mock_value{15.5}};
+    edge_data<int, false, mock_edge_descriptor, mock_value> ei2 = std::move(ei1);
     REQUIRE(ei2.target_id == 5);
     REQUIRE(ei2.edge.src_id == 2);
     REQUIRE(ei2.value.weight == 15.5);
   }
 }
 
-TEST_CASE("edge_info: descriptor-based pattern primary use cases", "[edge_info]") {
-  SECTION("Incidence view pattern: edge_info<void, true, edge_descriptor, EV>") {
+TEST_CASE("edge_data: descriptor-based pattern primary use cases", "[edge_data]") {
+  SECTION("Incidence view pattern: edge_data<void, true, edge_descriptor, EV>") {
     // Primary pattern for incidence views (sourced iteration)
-    edge_info<void, true, mock_edge_descriptor, double> ei{mock_edge_descriptor{10, 20}, 3.14};
+    edge_data<void, true, mock_edge_descriptor, double> ei{mock_edge_descriptor{10, 20}, 3.14};
 
     auto [e, val] = ei;
     REQUIRE(e.src_id == 10);
@@ -296,9 +296,9 @@ TEST_CASE("edge_info: descriptor-based pattern primary use cases", "[edge_info]"
     STATIC_REQUIRE(std::is_same_v<decltype(ei)::value_type, double>);
   }
 
-  SECTION("Edgelist view pattern: edge_info<void, false, edge_descriptor, EV>") {
+  SECTION("Edgelist view pattern: edge_data<void, false, edge_descriptor, EV>") {
     // Primary pattern for edgelist views (unsourced iteration)
-    edge_info<void, false, mock_edge_descriptor, std::string> ei{mock_edge_descriptor{5, 8}, std::string("road")};
+    edge_data<void, false, mock_edge_descriptor, std::string> ei{mock_edge_descriptor{5, 8}, std::string("road")};
 
     auto [e, val] = ei;
     REQUIRE(e.src_id == 5);
@@ -313,7 +313,7 @@ TEST_CASE("edge_info: descriptor-based pattern primary use cases", "[edge_info]"
   }
 
   SECTION("Descriptor without value function") {
-    edge_info<void, true, mock_edge_descriptor, void> ei{mock_edge_descriptor{15, 25}};
+    edge_data<void, true, mock_edge_descriptor, void> ei{mock_edge_descriptor{15, 25}};
 
     auto [e] = ei;
     REQUIRE(e.src_id == 15);
@@ -327,9 +327,9 @@ TEST_CASE("edge_info: descriptor-based pattern primary use cases", "[edge_info]"
   }
 }
 
-TEST_CASE("edge_info: external data pattern use case", "[edge_info]") {
+TEST_CASE("edge_data: external data pattern use case", "[edge_data]") {
   SECTION("Sourced external data: source_id, target_id and value") {
-    edge_info<size_t, true, void, double> ei{100, 200, 12.34};
+    edge_data<size_t, true, void, double> ei{100, 200, 12.34};
 
     auto [sid, tid, val] = ei;
     REQUIRE(sid == 100);
@@ -344,7 +344,7 @@ TEST_CASE("edge_info: external data pattern use case", "[edge_info]") {
   }
 
   SECTION("Unsourced external data: target_id and value") {
-    edge_info<int, false, void, std::string> ei{42, std::string("highway")};
+    edge_data<int, false, void, std::string> ei{42, std::string("highway")};
 
     auto [tid, val] = ei;
     REQUIRE(tid == 42);
@@ -358,9 +358,9 @@ TEST_CASE("edge_info: external data pattern use case", "[edge_info]") {
   }
 }
 
-TEST_CASE("edge_info: type traits are correct", "[edge_info]") {
+TEST_CASE("edge_data: type traits are correct", "[edge_data]") {
   SECTION("All type aliases match - Sourced=true") {
-    using ei_t = edge_info<int, true, mock_edge_descriptor, mock_value>;
+    using ei_t = edge_data<int, true, mock_edge_descriptor, mock_value>;
     STATIC_REQUIRE(std::is_same_v<ei_t::source_id_type, int>);
     STATIC_REQUIRE(std::is_same_v<ei_t::target_id_type, int>);
     STATIC_REQUIRE(std::is_same_v<ei_t::edge_type, mock_edge_descriptor>);
@@ -368,7 +368,7 @@ TEST_CASE("edge_info: type traits are correct", "[edge_info]") {
   }
 
   SECTION("All type aliases match - Sourced=false") {
-    using ei_t = edge_info<size_t, false, mock_edge_descriptor, mock_value>;
+    using ei_t = edge_data<size_t, false, mock_edge_descriptor, mock_value>;
     STATIC_REQUIRE(std::is_void_v<ei_t::source_id_type>);
     STATIC_REQUIRE(std::is_same_v<ei_t::target_id_type, size_t>);
     STATIC_REQUIRE(std::is_same_v<ei_t::edge_type, mock_edge_descriptor>);
@@ -376,7 +376,7 @@ TEST_CASE("edge_info: type traits are correct", "[edge_info]") {
   }
 
   SECTION("Void type aliases when void") {
-    using ei_t = edge_info<void, true, void, mock_value>;
+    using ei_t = edge_data<void, true, void, mock_value>;
     STATIC_REQUIRE(std::is_void_v<ei_t::source_id_type>);
     STATIC_REQUIRE(std::is_void_v<ei_t::target_id_type>);
     STATIC_REQUIRE(std::is_void_v<ei_t::edge_type>);
@@ -384,10 +384,10 @@ TEST_CASE("edge_info: type traits are correct", "[edge_info]") {
   }
 }
 
-TEST_CASE("edge_info: copyable_edge_t alias works", "[edge_info]") {
+TEST_CASE("edge_data: copyable_edge_t alias works", "[edge_data]") {
   SECTION("copyable_edge_t alias (Sourced=true)") {
     using alias_t    = copyable_edge_t<int, double>;
-    using explicit_t = edge_info<int, true, void, double>;
+    using explicit_t = edge_data<int, true, void, double>;
 
     STATIC_REQUIRE(std::is_same_v<alias_t, explicit_t>);
   }

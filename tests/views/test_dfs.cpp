@@ -368,10 +368,10 @@ TEST_CASE("vertices_dfs - range concepts", "[dfs][vertices][concepts]") {
 }
 
 // =============================================================================
-// Test 10: vertex_info Type Verification
+// Test 10: vertex_data Type Verification
 // =============================================================================
 
-TEST_CASE("vertices_dfs - vertex_info type verification", "[dfs][vertices][types]") {
+TEST_CASE("vertices_dfs - vertex_data type verification", "[dfs][vertices][types]") {
   using Graph      = std::vector<std::vector<int>>;
   using VertexType = vertex_t<Graph>;
 
@@ -379,7 +379,7 @@ TEST_CASE("vertices_dfs - vertex_info type verification", "[dfs][vertices][types
     using ViewType = vertices_dfs_view<Graph, void, std::allocator<bool>>;
     using InfoType = typename ViewType::info_type;
 
-    STATIC_REQUIRE(std::is_same_v<InfoType, vertex_info<void, VertexType, void>>);
+    STATIC_REQUIRE(std::is_same_v<InfoType, vertex_data<void, VertexType, void>>);
   }
 
   SECTION("with value function") {
@@ -387,7 +387,7 @@ TEST_CASE("vertices_dfs - vertex_info type verification", "[dfs][vertices][types
     using ViewType = vertices_dfs_view<Graph, VVF, std::allocator<bool>>;
     using InfoType = typename ViewType::info_type;
 
-    STATIC_REQUIRE(std::is_same_v<InfoType, vertex_info<void, VertexType, int>>);
+    STATIC_REQUIRE(std::is_same_v<InfoType, vertex_data<void, VertexType, int>>);
   }
 }
 
@@ -781,10 +781,10 @@ TEST_CASE("edges_dfs - range concepts", "[dfs][edges][concepts]") {
 }
 
 // =============================================================================
-// Test 24: edges_dfs edge_info Type Verification
+// Test 24: edges_dfs edge_data Type Verification
 // =============================================================================
 
-TEST_CASE("edges_dfs - edge_info type verification", "[dfs][edges][types]") {
+TEST_CASE("edges_dfs - edge_data type verification", "[dfs][edges][types]") {
   using Graph    = std::vector<std::vector<int>>;
   using EdgeType = edge_t<Graph>;
 
@@ -792,7 +792,7 @@ TEST_CASE("edges_dfs - edge_info type verification", "[dfs][edges][types]") {
     using ViewType = edges_dfs_view<Graph, void, std::allocator<bool>>;
     using InfoType = typename ViewType::info_type;
 
-    STATIC_REQUIRE(std::is_same_v<InfoType, edge_info<void, false, EdgeType, void>>);
+    STATIC_REQUIRE(std::is_same_v<InfoType, edge_data<void, false, EdgeType, void>>);
   }
 
   SECTION("with value function") {
@@ -800,7 +800,7 @@ TEST_CASE("edges_dfs - edge_info type verification", "[dfs][edges][types]") {
     using ViewType = edges_dfs_view<Graph, EVF, std::allocator<bool>>;
     using InfoType = typename ViewType::info_type;
 
-    STATIC_REQUIRE(std::is_same_v<InfoType, edge_info<void, false, EdgeType, int>>);
+    STATIC_REQUIRE(std::is_same_v<InfoType, edge_data<void, false, EdgeType, int>>);
   }
 }
 

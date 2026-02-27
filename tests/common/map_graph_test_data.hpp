@@ -17,7 +17,7 @@
 #ifndef MAP_GRAPH_TEST_DATA_HPP
 #define MAP_GRAPH_TEST_DATA_HPP
 
-#include <graph/graph_info.hpp>
+#include <graph/graph_data.hpp>
 #include <graph/container/dynamic_graph.hpp>
 #include <vector>
 #include <array>

@@ -550,9 +550,9 @@ auto kruskal(IELR&&    e,      // graph
              OELR&&    t,      // tree
              CompareOp compare // edge value comparator
 ) {
-  using edge_info = range_value_t<IELR>;
-  using VId       = remove_const_t<typename edge_info::source_id_type>;
-  using EV        = typename edge_info::value_type;
+  using edge_data = range_value_t<IELR>;
+  using VId       = remove_const_t<typename edge_data::source_id_type>;
+  using EV        = typename edge_data::value_type;
 
   // Handle empty input
   if (std::ranges::empty(e)) {
@@ -698,9 +698,9 @@ auto inplace_kruskal(IELR&&    e,      // graph
                      OELR&&    t,      // tree
                      CompareOp compare // edge value comparator
 ) {
-  using edge_info = range_value_t<IELR>;
-  using VId       = remove_const_t<typename edge_info::source_id_type>;
-  using EV        = typename edge_info::value_type;
+  using edge_data = range_value_t<IELR>;
+  using VId       = remove_const_t<typename edge_data::source_id_type>;
+  using EV        = typename edge_data::value_type;
 
   // Handle empty input
   if (std::ranges::empty(e)) {

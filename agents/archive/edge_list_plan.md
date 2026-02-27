@@ -17,10 +17,10 @@ executed by an agent and includes specific tasks, files to modify, and tests to 
 | Step | Description | Status | Commit |
 |------|-------------|--------|--------|
 | 1.1 | Add `is_edge_list_descriptor_v` trait | ✅ Complete | 4997cb3 |
-| 1.2 | Add `_has_edge_info_member` concept to `source_id` CPO | ✅ Complete | |
+| 1.2 | Add `_has_edge_data_member` concept to `source_id` CPO | ✅ Complete | |
 | 1.3 | Add `_is_tuple_like_edge` concept to `source_id` CPO | ✅ Complete | |
-| 1.3a | Add `_has_edge_info_member` and `_is_tuple_like_edge` to `target_id` CPO | ✅ Complete | |
-| 1.3b | Add `_has_edge_info_member` and `_is_tuple_like_edge` to `edge_value` CPO | ✅ Complete | |
+| 1.3a | Add `_has_edge_data_member` and `_is_tuple_like_edge` to `target_id` CPO | ✅ Complete | |
+| 1.3b | Add `_has_edge_data_member` and `_is_tuple_like_edge` to `edge_value` CPO | ✅ Complete | |
 | 1.4 | Extend `source_id` CPO with tiers 5-7 | ✅ Complete | |
 | 1.5 | Create tests for `source_id` CPO extensions | ✅ Complete | |
 | 2.1 | Extend `target_id` CPO with tiers 5-7 | ✅ Complete | |
@@ -93,9 +93,9 @@ inline constexpr bool is_edge_list_descriptor_v = is_edge_list_descriptor<T>::va
 
 ---
 
-### Step 1.2: Add `_has_edge_info_member` Concept
+### Step 1.2: Add `_has_edge_data_member` Concept
 
-**Goal**: Add concept to detect edge_info-style data member access (Tier 6).
+**Goal**: Add concept to detect edge_data-style data member access (Tier 6).
 
 **Files to modify**:
 - `include/graph/adj_list/detail/graph_cpo.hpp`
@@ -103,14 +103,14 @@ inline constexpr bool is_edge_list_descriptor_v = is_edge_list_descriptor<T>::va
 **Tasks**:
 1. Locate `namespace _source_id` in `graph_cpo.hpp`
 2. Add include for `edge_list_traits.hpp` at top of file
-3. Add `_has_edge_info_member` concept after existing concepts
+3. Add `_has_edge_data_member` concept after existing concepts
 
 **Code to add** (inside `namespace _source_id`):
 ```cpp
-// Tier 6: Check for edge_info-style direct data member access
+// Tier 6: Check for edge_data-style direct data member access
 // Must NOT be a descriptor type (to avoid ambiguity with method calls)
 template<typename UV>
-concept _has_edge_info_member = 
+concept _has_edge_data_member = 
     !is_edge_descriptor_v<std::remove_cvref_t<UV>> &&
     !edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> &&
     requires(const UV& uv) {
@@ -123,7 +123,7 @@ concept _has_edge_info_member =
 
 **Tests**: Created in Step 1.5
 
-**Commit message**: `Add _has_edge_info_member concept to source_id CPO`
+**Commit message**: `Add _has_edge_data_member concept to source_id CPO`
 
 ---
 
@@ -136,17 +136,17 @@ concept _has_edge_info_member =
 
 **Tasks**:
 1. Locate `namespace _source_id` in `graph_cpo.hpp`
-2. Add `_is_tuple_like_edge` concept after `_has_edge_info_member`
+2. Add `_is_tuple_like_edge` concept after `_has_edge_data_member`
 
 **Code to add** (inside `namespace _source_id`):
 ```cpp
 // Tier 7: Check for tuple-like edge (pair, tuple)
-// Must NOT be any descriptor type or have edge_info members
+// Must NOT be any descriptor type or have edge_data members
 template<typename UV>
 concept _is_tuple_like_edge = 
     !is_edge_descriptor_v<std::remove_cvref_t<UV>> &&
     !edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> &&
-    !_has_edge_info_member<UV> &&
+    !_has_edge_data_member<UV> &&
     requires {
         std::tuple_size<std::remove_cvref_t<UV>>::value;
     } &&
@@ -171,7 +171,7 @@ concept _is_tuple_like_edge =
 
 **Tasks**:
 1. Locate `namespace _target_id` in `graph_cpo.hpp`
-2. Add `_has_edge_info_member` concept (checks `uv.target_id` data member)
+2. Add `_has_edge_data_member` concept (checks `uv.target_id` data member)
 3. Add `_is_tuple_like_edge` concept (same as source_id)
 
 **Status**: ✅ Complete (implemented alongside source_id concepts)
@@ -187,12 +187,12 @@ concept _is_tuple_like_edge =
 
 **Tasks**:
 1. Locate `namespace _edge_value` in `graph_cpo.hpp`
-2. Add `_has_edge_info_member` concept (checks `uv.value` data member)
+2. Add `_has_edge_data_member` concept (checks `uv.value` data member)
 3. Add `_is_tuple_like_edge` concept (checks for `std::get<2>` since edge value is third element)
 
 **Status**: ✅ Complete (implemented alongside source_id concepts)
 
-**Commit message** (for 1.2, 1.3, 1.3a, 1.3b combined): `Add edge_info and tuple-like concepts to all three CPOs`
+**Commit message** (for 1.2, 1.3, 1.3a, 1.3b combined): `Add edge_data and tuple-like concepts to all three CPOs`
 
 ---
 
@@ -205,7 +205,7 @@ concept _is_tuple_like_edge =
 
 **Tasks**:
 1. Rename `_descriptor` to `_adj_list_descriptor` in `_St` enum
-2. Add new enum values: `_edge_list_descriptor`, `_edge_info_member`, `_tuple_like`
+2. Add new enum values: `_edge_list_descriptor`, `_edge_data_member`, `_tuple_like`
 3. Update `_Choose()` function to check new tiers in order
 4. Update `_fn::operator()` to handle new strategies
 5. Ensure noexcept propagation for new tiers
@@ -219,7 +219,7 @@ enum class _St {
     _adl, 
     _adj_list_descriptor,      // RENAMED from _descriptor
     _edge_list_descriptor,     // NEW
-    _edge_info_member,         // NEW
+    _edge_data_member,         // NEW
     _tuple_like                // NEW
 };
 ```
@@ -229,8 +229,8 @@ enum class _St {
 } else if constexpr (_has_edge_list_descriptor<UV>) {
     return {_St::_edge_list_descriptor,
             noexcept(std::declval<const UV&>().source_id())};
-} else if constexpr (_has_edge_info_member<UV>) {
-    return {_St::_edge_info_member,
+} else if constexpr (_has_edge_data_member<UV>) {
+    return {_St::_edge_data_member,
             noexcept(std::declval<const UV&>().source_id)};
 } else if constexpr (_is_tuple_like_edge<UV>) {
     return {_St::_tuple_like,
@@ -241,7 +241,7 @@ enum class _St {
 ```cpp
 } else if constexpr (_Choice<_G, _UV>._Strategy == _St::_edge_list_descriptor) {
     return uv.source_id();
-} else if constexpr (_Choice<_G, _UV>._Strategy == _St::_edge_info_member) {
+} else if constexpr (_Choice<_G, _UV>._Strategy == _St::_edge_data_member) {
     return uv.source_id;
 } else if constexpr (_Choice<_G, _UV>._Strategy == _St::_tuple_like) {
     return std::get<0>(uv);
@@ -269,9 +269,9 @@ enum class _St {
 
 **Test cases to implement**:
 ```cpp
-// Test Tier 6: edge_info data member
-TEST_CASE("source_id with edge_info", "[cpo][source_id]") {
-    using EI = graph::edge_info<int, true, void, void>;
+// Test Tier 6: edge_data data member
+TEST_CASE("source_id with edge_data", "[cpo][source_id]") {
+    using EI = graph::edge_data<int, true, void, void>;
     EI ei{1, 2};
     std::vector<EI> el{ei};
     
@@ -340,7 +340,7 @@ add_test(NAME test_edge_list_cpo COMMAND test_edge_list_cpo)
 4. Update `_Choose()` and `operator()` functions
 
 **Key differences from `source_id`**:
-- `_has_edge_info_member` checks `uv.target_id` instead of `uv.source_id`
+- `_has_edge_data_member` checks `uv.target_id` instead of `uv.source_id`
 - Tuple tier uses `std::get<1>(uv)` instead of `std::get<0>(uv)`
 
 **Commit message**: `Extend target_id CPO with tiers 5-7 for edge_list support`
@@ -378,7 +378,7 @@ add_test(NAME test_edge_list_cpo COMMAND test_edge_list_cpo)
 4. Update `_Choose()` and `operator()` functions
 
 **Key differences**:
-- `_has_edge_info_member` checks `uv.value` instead of `uv.source_id`
+- `_has_edge_data_member` checks `uv.value` instead of `uv.source_id`
 - Tuple tier uses `std::get<2>(uv)` for the edge value
 - Not all edge types have values (pair<T,T> does not)
 
@@ -388,15 +388,15 @@ add_test(NAME test_edge_list_cpo COMMAND test_edge_list_cpo)
 
 ### Step 3.2: Create Tests for `edge_value` CPO Extensions
 
-**Goal**: Test edge_value with edge_info and tuple types.
+**Goal**: Test edge_value with edge_data and tuple types.
 
 **Files to modify**:
 - `tests/edge_list/test_edge_list_cpo.cpp`
 
 **Tasks**:
-1. Add test cases for `edge_value` with `edge_info<VId,true,void,EV>`
+1. Add test cases for `edge_value` with `edge_data<VId,true,void,EV>`
 2. Add test cases for `edge_value` with `tuple<T,T,EV>`
-3. Verify types without values (pair, edge_info without EV) don't satisfy edge_value
+3. Verify types without values (pair, edge_data without EV) don't satisfy edge_value
 
 **Commit message**: `Add tests for edge_value CPO tiers 5-7`
 
@@ -651,7 +651,7 @@ concept basic_sourced_edgelist =
 
 **Status**: ✅ COMPLETE (2026-01-31) - Tests already created in Step 5.1
 - test_edge_list_concepts.cpp covers all required test cases
-- Includes concept satisfaction tests for pairs, tuples, edge_info, edge_descriptor
+- Includes concept satisfaction tests for pairs, tuples, edge_data, edge_descriptor
 - Tests with string vertex IDs to verify non-integral support
 - Type alias validation tests
 - Runtime behavior tests with CPOs
@@ -669,7 +669,7 @@ concept basic_sourced_edgelist =
 - `tests/edge_list/test_edge_list_concepts.cpp` (NEW)
 
 **Tasks**:
-1. Test concept satisfaction with pair, tuple, edge_info
+1. Test concept satisfaction with pair, tuple, edge_data
 2. Test concept satisfaction with edge_list::edge_descriptor
 3. Verify adjacency_list does NOT satisfy basic_sourced_edgelist
 
@@ -680,7 +680,7 @@ TEST_CASE("basic_sourced_edgelist concept", "[edge_list][concepts]") {
     
     static_assert(basic_sourced_edgelist<std::vector<std::pair<int,int>>>);
     static_assert(basic_sourced_edgelist<std::vector<std::tuple<int,int,double>>>);
-    static_assert(basic_sourced_edgelist<std::vector<graph::edge_info<int,true,void,void>>>);
+    static_assert(basic_sourced_edgelist<std::vector<graph::edge_data<int,true,void,void>>>);
     static_assert(basic_sourced_edgelist<std::vector<edge_descriptor<int,void>>>);
     
     // Should NOT satisfy (nested range = adjacency list pattern)
@@ -751,8 +751,8 @@ TEST_CASE("Algorithm works with different edge sources", "[integration]") {
     std::vector<std::pair<int,int>> pairs{{1,2}, {3,3}, {4,4}};
     REQUIRE(count_self_loops(pairs) == 2);
     
-    // With edge_info
-    using EI = graph::edge_info<int, true, void, void>;
+    // With edge_data
+    using EI = graph::edge_data<int, true, void, void>;
     std::vector<EI> infos{{1,2}, {5,5}};
     REQUIRE(count_self_loops(infos) == 1);
     
@@ -768,7 +768,7 @@ TEST_CASE("Algorithm works with different edge sources", "[integration]") {
 **Status**: ✅ COMPLETE (2026-01-31)
 - Created test_edge_list_integration.cpp with 16 comprehensive test cases
 - Implemented generic algorithms (count_self_loops, sum_edge_values) that work with ANY edge type
-- Verified all edge types work: pairs, tuples, edge_info, edge_list::edge_descriptor
+- Verified all edge types work: pairs, tuples, edge_data, edge_list::edge_descriptor
 - Tested string vertex IDs (non-integral types)
 - Verified multiple edge types can coexist in same compilation unit
 - All 32 assertions passing

@@ -22,12 +22,12 @@ public:
 };
 
 //
-// vertex_info
+// vertex_data
 // for(auto&& [uid, u]        : vertexlist(g))
 // for(auto&& [uid, u, value] : vertexlist(g, [](vertex_t<G> u) { return ...; } )
 //
 template <class VId, class V, class VV>
-struct vertex_info {
+struct vertex_data {
   using id_type     = VId; // e.g. vertex_id_t<G>
   using vertex_type = V;   // e.g. vertex_t<G> (vertex descriptor)
   using value_type  = VV;  // e.g. vertex_value_t<G>
@@ -39,7 +39,7 @@ struct vertex_info {
 
 // Specializations with VId present
 template <class VId, class V>
-struct vertex_info<VId, V, void> {
+struct vertex_data<VId, V, void> {
   using id_type     = VId;
   using vertex_type = V;
   using value_type  = void;
@@ -48,7 +48,7 @@ struct vertex_info<VId, V, void> {
   vertex_type vertex;
 };
 template <class VId, class VV>
-struct vertex_info<VId, void, VV> {
+struct vertex_data<VId, void, VV> {
   using id_type     = VId;
   using vertex_type = void;
   using value_type  = VV;
@@ -57,7 +57,7 @@ struct vertex_info<VId, void, VV> {
   value_type value;
 };
 template <class VId>
-struct vertex_info<VId, void, void> {
+struct vertex_data<VId, void, void> {
   using id_type     = VId;
   using vertex_type = void;
   using value_type  = void;
@@ -67,7 +67,7 @@ struct vertex_info<VId, void, void> {
 
 // Specializations with VId=void (descriptor-based pattern)
 template <class V, class VV>
-struct vertex_info<void, V, VV> {
+struct vertex_data<void, V, VV> {
   using id_type     = void;
   using vertex_type = V;
   using value_type  = VV;
@@ -76,7 +76,7 @@ struct vertex_info<void, V, VV> {
   value_type  value;
 };
 template <class V>
-struct vertex_info<void, V, void> {
+struct vertex_data<void, V, void> {
   using id_type     = void;
   using vertex_type = V;
   using value_type  = void;
@@ -84,7 +84,7 @@ struct vertex_info<void, V, void> {
   vertex_type vertex;
 };
 template <class VV>
-struct vertex_info<void, void, VV> {
+struct vertex_data<void, void, VV> {
   using id_type     = void;
   using vertex_type = void;
   using value_type  = VV;
@@ -92,17 +92,17 @@ struct vertex_info<void, void, VV> {
   value_type value;
 };
 template <>
-struct vertex_info<void, void, void> {
+struct vertex_data<void, void, void> {
   using id_type     = void;
   using vertex_type = void;
   using value_type  = void;
 };
 
 template <class VId, class VV>
-using copyable_vertex_t = vertex_info<VId, void, VV>; // {id, value}
+using copyable_vertex_t = vertex_data<VId, void, VV>; // {id, value}
 
 //
-// edge_info
+// edge_data
 //
 // for(auto&& [target_id, uv]        : incidence(g,u))
 // for(auto&& [target_id, uv, value] : incidence(g,u, [](edge_t<G> uv) { return ...; })
@@ -111,7 +111,7 @@ using copyable_vertex_t = vertex_info<VId, void, VV>; // {id, value}
 // for(auto&& [source_id, target_id, uv, value] : incidence(g,u, [](edge_t<G> uv) { return ...; })
 //
 template <class VId, bool Sourced, class E, class EV>
-struct edge_info {
+struct edge_data {
   using source_id_type = VId; // e.g. vertex_id_t<G> when Sourced==true, or void
   using target_id_type = VId; // e.g. vertex_id_t<G>
   using edge_type      = E;   // e.g. edge_t<G> (edge descriptor) or void
@@ -125,7 +125,7 @@ struct edge_info {
 
 // Sourced=true specializations with VId present
 template <class VId, class E>
-struct edge_info<VId, true, E, void> {
+struct edge_data<VId, true, E, void> {
   using source_id_type = VId;
   using target_id_type = VId;
   using edge_type      = E;
@@ -136,7 +136,7 @@ struct edge_info<VId, true, E, void> {
   edge_type      edge;
 };
 template <class VId>
-struct edge_info<VId, true, void, void> {
+struct edge_data<VId, true, void, void> {
   using source_id_type = VId;
   using target_id_type = VId;
   using edge_type      = void;
@@ -146,7 +146,7 @@ struct edge_info<VId, true, void, void> {
   target_id_type target_id;
 };
 template <class VId, class EV>
-struct edge_info<VId, true, void, EV> {
+struct edge_data<VId, true, void, EV> {
   using source_id_type = VId;
   using target_id_type = VId;
   using edge_type      = void;
@@ -159,7 +159,7 @@ struct edge_info<VId, true, void, EV> {
 
 // Sourced=false specializations with VId present
 template <class VId, class E, class EV>
-struct edge_info<VId, false, E, EV> {
+struct edge_data<VId, false, E, EV> {
   using source_id_type = void;
   using target_id_type = VId;
   using edge_type      = E;
@@ -170,7 +170,7 @@ struct edge_info<VId, false, E, EV> {
   value_type     value;
 };
 template <class VId, class E>
-struct edge_info<VId, false, E, void> {
+struct edge_data<VId, false, E, void> {
   using source_id_type = void;
   using target_id_type = VId;
   using edge_type      = E;
@@ -181,7 +181,7 @@ struct edge_info<VId, false, E, void> {
 };
 
 template <class VId, class EV>
-struct edge_info<VId, false, void, EV> {
+struct edge_data<VId, false, void, EV> {
   using source_id_type = void;
   using target_id_type = VId;
   using edge_type      = void;
@@ -191,7 +191,7 @@ struct edge_info<VId, false, void, EV> {
   value_type     value;
 };
 template <class VId>
-struct edge_info<VId, false, void, void> {
+struct edge_data<VId, false, void, void> {
   using source_id_type = void;
   using target_id_type = VId;
   using edge_type      = void;
@@ -202,7 +202,7 @@ struct edge_info<VId, false, void, void> {
 
 // Sourced=true specializations with VId=void (descriptor-based pattern)
 template <class E, class EV>
-struct edge_info<void, true, E, EV> {
+struct edge_data<void, true, E, EV> {
   using source_id_type = void;
   using target_id_type = void;
   using edge_type      = E;
@@ -212,7 +212,7 @@ struct edge_info<void, true, E, EV> {
   value_type value;
 };
 template <class E>
-struct edge_info<void, true, E, void> {
+struct edge_data<void, true, E, void> {
   using source_id_type = void;
   using target_id_type = void;
   using edge_type      = E;
@@ -221,7 +221,7 @@ struct edge_info<void, true, E, void> {
   edge_type edge;
 };
 template <class EV>
-struct edge_info<void, true, void, EV> {
+struct edge_data<void, true, void, EV> {
   using source_id_type = void;
   using target_id_type = void;
   using edge_type      = void;
@@ -230,7 +230,7 @@ struct edge_info<void, true, void, EV> {
   value_type value;
 };
 template <>
-struct edge_info<void, true, void, void> {
+struct edge_data<void, true, void, void> {
   using source_id_type = void;
   using target_id_type = void;
   using edge_type      = void;
@@ -239,7 +239,7 @@ struct edge_info<void, true, void, void> {
 
 // Sourced=false specializations with VId=void (descriptor-based pattern)
 template <class E, class EV>
-struct edge_info<void, false, E, EV> {
+struct edge_data<void, false, E, EV> {
   using source_id_type = void;
   using target_id_type = void;
   using edge_type      = E;
@@ -249,7 +249,7 @@ struct edge_info<void, false, E, EV> {
   value_type value;
 };
 template <class E>
-struct edge_info<void, false, E, void> {
+struct edge_data<void, false, E, void> {
   using source_id_type = void;
   using target_id_type = void;
   using edge_type      = E;
@@ -258,7 +258,7 @@ struct edge_info<void, false, E, void> {
   edge_type edge;
 };
 template <class EV>
-struct edge_info<void, false, void, EV> {
+struct edge_data<void, false, void, EV> {
   using source_id_type = void;
   using target_id_type = void;
   using edge_type      = void;
@@ -267,7 +267,7 @@ struct edge_info<void, false, void, EV> {
   value_type value;
 };
 template <>
-struct edge_info<void, false, void, void> {
+struct edge_data<void, false, void, void> {
   using source_id_type = void;
   using target_id_type = void;
   using edge_type      = void;
@@ -280,7 +280,7 @@ struct edge_info<void, false, void, void> {
 // for(auto&& [vid,uv]       : edges_view(g, u) )
 //
 //template <class VId, class E, class EV>
-//using targeted_edge = edge_info<VId, false, E, EV>; // {target_id, edge, [, value]}
+//using targeted_edge = edge_data<VId, false, E, EV>; // {target_id, edge, [, value]}
 
 //
 // sourced_edge
@@ -288,7 +288,7 @@ struct edge_info<void, false, void, void> {
 // for(auto&& [uid,vid,uv]       : sourced_edges_view(g, u) )
 //
 //template <class VId, class V, class E, class EV>
-//using sourced_edge = edge_info<VId, true, E, EV>; // {source_id, target_id, edge, [, value]}
+//using sourced_edge = edge_data<VId, true, E, EV>; // {source_id, target_id, edge, [, value]}
 
 //
 // edgelist_edge
@@ -296,19 +296,19 @@ struct edge_info<void, false, void, void> {
 // for(auto&& [uid,vid,uv]       : edges_view(g) )
 //
 template <class VId, class E, class EV>
-using edgelist_edge = edge_info<VId, true, E, EV>; // {source_id, target_id [, edge] [, value]}
+using edgelist_edge = edge_data<VId, true, E, EV>; // {source_id, target_id [, edge] [, value]}
 
 //
 // copyable_edge_t
 //
 template <class VId, class EV = void>
-using copyable_edge_t = edge_info<VId, true, void, EV>; // {source_id, target_id [, value]}
+using copyable_edge_t = edge_data<VId, true, void, EV>; // {source_id, target_id [, value]}
 
 //
-// neighbor_info (for adjacency)
+// neighbor_data (for adjacency)
 //
 template <class VId, bool Sourced, class V, class VV>
-struct neighbor_info {
+struct neighbor_data {
   using source_id_type = VId; // e.g. vertex_id_t<G> when Sourced==true, or void
   using target_id_type = VId; // e.g. vertex_id_t<G>
   using vertex_type    = V;   // e.g. vertex_t<G> (vertex descriptor) or void
@@ -322,7 +322,7 @@ struct neighbor_info {
 
 // Sourced=false specializations with VId present
 template <class VId, class V, class VV>
-struct neighbor_info<VId, false, V, VV> {
+struct neighbor_data<VId, false, V, VV> {
   using source_id_type = void;
   using target_id_type = VId;
   using vertex_type    = V;
@@ -334,7 +334,7 @@ struct neighbor_info<VId, false, V, VV> {
 };
 
 template <class VId, class V>
-struct neighbor_info<VId, false, V, void> {
+struct neighbor_data<VId, false, V, void> {
   using source_id_type = void;
   using target_id_type = VId;
   using vertex_type    = V;
@@ -345,7 +345,7 @@ struct neighbor_info<VId, false, V, void> {
 };
 
 template <class VId, class VV>
-struct neighbor_info<VId, false, void, VV> {
+struct neighbor_data<VId, false, void, VV> {
   using source_id_type = void;
   using target_id_type = VId;
   using vertex_type    = void;
@@ -356,7 +356,7 @@ struct neighbor_info<VId, false, void, VV> {
 };
 
 template <class VId>
-struct neighbor_info<VId, false, void, void> {
+struct neighbor_data<VId, false, void, void> {
   using source_id_type = void;
   using target_id_type = VId;
   using vertex_type    = void;
@@ -367,7 +367,7 @@ struct neighbor_info<VId, false, void, void> {
 
 // Sourced=true specializations with VId present
 template <class VId, class V>
-struct neighbor_info<VId, true, V, void> {
+struct neighbor_data<VId, true, V, void> {
   using source_id_type = VId;
   using target_id_type = VId;
   using vertex_type    = V;
@@ -379,7 +379,7 @@ struct neighbor_info<VId, true, V, void> {
 };
 
 template <class VId, class VV>
-struct neighbor_info<VId, true, void, VV> {
+struct neighbor_data<VId, true, void, VV> {
   using source_id_type = VId;
   using target_id_type = VId;
   using vertex_type    = void;
@@ -391,7 +391,7 @@ struct neighbor_info<VId, true, void, VV> {
 };
 
 template <class VId>
-struct neighbor_info<VId, true, void, void> {
+struct neighbor_data<VId, true, void, void> {
   using source_id_type = VId;
   using target_id_type = VId;
   using vertex_type    = void;
@@ -403,7 +403,7 @@ struct neighbor_info<VId, true, void, void> {
 
 // Sourced=false specializations with VId=void (descriptor-based pattern)
 template <class V, class VV>
-struct neighbor_info<void, false, V, VV> {
+struct neighbor_data<void, false, V, VV> {
   using source_id_type = void;
   using target_id_type = void;
   using vertex_type    = V;
@@ -414,7 +414,7 @@ struct neighbor_info<void, false, V, VV> {
 };
 
 template <class V>
-struct neighbor_info<void, false, V, void> {
+struct neighbor_data<void, false, V, void> {
   using source_id_type = void;
   using target_id_type = void;
   using vertex_type    = V;
@@ -424,7 +424,7 @@ struct neighbor_info<void, false, V, void> {
 };
 
 template <class VV>
-struct neighbor_info<void, false, void, VV> {
+struct neighbor_data<void, false, void, VV> {
   using source_id_type = void;
   using target_id_type = void;
   using vertex_type    = void;
@@ -434,7 +434,7 @@ struct neighbor_info<void, false, void, VV> {
 };
 
 template <>
-struct neighbor_info<void, false, void, void> {
+struct neighbor_data<void, false, void, void> {
   using source_id_type = void;
   using target_id_type = void;
   using vertex_type    = void;
@@ -443,7 +443,7 @@ struct neighbor_info<void, false, void, void> {
 
 // Sourced=true specializations with VId=void (descriptor-based pattern)
 template <class V, class VV>
-struct neighbor_info<void, true, V, VV> {
+struct neighbor_data<void, true, V, VV> {
   using source_id_type = void;
   using target_id_type = void;
   using vertex_type    = V;
@@ -454,7 +454,7 @@ struct neighbor_info<void, true, V, VV> {
 };
 
 template <class V>
-struct neighbor_info<void, true, V, void> {
+struct neighbor_data<void, true, V, void> {
   using source_id_type = void;
   using target_id_type = void;
   using vertex_type    = V;
@@ -464,7 +464,7 @@ struct neighbor_info<void, true, V, void> {
 };
 
 template <class VV>
-struct neighbor_info<void, true, void, VV> {
+struct neighbor_data<void, true, void, VV> {
   using source_id_type = void;
   using target_id_type = void;
   using vertex_type    = void;
@@ -474,7 +474,7 @@ struct neighbor_info<void, true, void, VV> {
 };
 
 template <>
-struct neighbor_info<void, true, void, void> {
+struct neighbor_data<void, true, void, void> {
   using source_id_type = void;
   using target_id_type = void;
   using vertex_type    = void;
@@ -485,7 +485,7 @@ struct neighbor_info<void, true, void, void> {
 // copyable_edge_t
 //
 template <class VId, class VV>                                  // For exposition only
-using copyable_neighbor_t = neighbor_info<VId, true, void, VV>; // {source_id, target_id [, value]}
+using copyable_neighbor_t = neighbor_data<VId, true, void, VV>; // {source_id, target_id [, value]}
 
 //
 // view concepts
@@ -505,8 +505,8 @@ concept copyable_neighbor = std::convertible_to<T, copyable_neighbor_t<VId, EV>>
 template <class T>
 inline constexpr bool is_sourced_v = false;
 template <class VId, class V, class VV>
-inline constexpr bool is_sourced_v<edge_info<VId, true, V, VV>> = true;
+inline constexpr bool is_sourced_v<edge_data<VId, true, V, VV>> = true;
 template <class VId, class V, class VV>
-inline constexpr bool is_sourced_v<neighbor_info<VId, true, V, VV>> = true;
+inline constexpr bool is_sourced_v<neighbor_data<VId, true, V, VV>> = true;
 
 } // namespace graph

@@ -11,7 +11,7 @@ graph-v3/
 ├── include/graph/                     # Public headers (header-only library)
 │   ├── graph.hpp                      # Main include — pulls in CPOs and core types
 │   ├── graph_concepts.hpp             # Graph concepts (adjacency_list, etc.)
-│   ├── graph_info.hpp                 # Graph introspection utilities
+│   ├── graph_data.hpp                 # Graph introspection utilities
 │   ├── algorithms.hpp                 # Convenience include for all algorithms
 │   ├── views.hpp                      # Convenience include for all views
 │   ├── adj_list/                      # Adjacency list descriptor system

@@ -408,7 +408,7 @@ TEST_CASE("edgelist - return type verification", "[edgelist][return_type]") {
 
   Graph g = {{1, 2}, {0}, {}};
 
-  SECTION("edgelist(g) returns edge_info<VId, true, E, void>") {
+  SECTION("edgelist(g) returns edge_data<VId, true, E, void>") {
     auto      el = edgelist(g);
     using ActualInfo = decltype(*el.begin());
     STATIC_REQUIRE(std::is_same_v<typename ActualInfo::source_id_type, VertexIdType>);
@@ -417,7 +417,7 @@ TEST_CASE("edgelist - return type verification", "[edgelist][return_type]") {
     STATIC_REQUIRE(std::is_void_v<typename ActualInfo::value_type>);
   }
 
-  SECTION("edgelist(g, evf) returns edge_info<VId, true, E, EV>") {
+  SECTION("edgelist(g, evf) returns edge_data<VId, true, E, EV>") {
     auto el = edgelist(g, [](const auto&, auto) { return 42; });
     using ActualInfo = decltype(*el.begin());
     STATIC_REQUIRE(std::is_same_v<typename ActualInfo::source_id_type, VertexIdType>);
@@ -426,7 +426,7 @@ TEST_CASE("edgelist - return type verification", "[edgelist][return_type]") {
     STATIC_REQUIRE(std::is_same_v<typename ActualInfo::value_type, int>);
   }
 
-  SECTION("basic_edgelist(g) returns edge_info<VId, true, void, void>") {
+  SECTION("basic_edgelist(g) returns edge_data<VId, true, void, void>") {
     auto      el = basic_edgelist(g);
     using ActualInfo = decltype(*el.begin());
     STATIC_REQUIRE(std::is_same_v<typename ActualInfo::source_id_type, VertexIdType>);
@@ -435,7 +435,7 @@ TEST_CASE("edgelist - return type verification", "[edgelist][return_type]") {
     STATIC_REQUIRE(std::is_void_v<typename ActualInfo::value_type>);
   }
 
-  SECTION("basic_edgelist(g, evf) returns edge_info<VId, true, void, EV>") {
+  SECTION("basic_edgelist(g, evf) returns edge_data<VId, true, void, EV>") {
     auto el = basic_edgelist(g, [](const auto&, auto) { return 42; });
     using ActualInfo = decltype(*el.begin());
     STATIC_REQUIRE(std::is_same_v<typename ActualInfo::source_id_type, VertexIdType>);

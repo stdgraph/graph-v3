@@ -65,7 +65,7 @@ TEST_CASE("neighbors - vertex with single neighbor", "[neighbors][single]") {
     REQUIRE(it != nlist.end());
 
     auto ni = *it;
-    // neighbor_info<vertex_id_type, false, vertex_t<G>, void> has 'target_id' and 'target' members
+    // neighbor_data<vertex_id_type, false, vertex_t<G>, void> has 'target_id' and 'target' members
     REQUIRE(ni.target_id == 1);
 
     ++it;
@@ -333,35 +333,35 @@ TEST_CASE("neighbors - iterator properties", "[neighbors][iterator]") {
 }
 
 // =============================================================================
-// Test 9: neighbor_info Type Verification
+// Test 9: neighbor_data Type Verification
 // =============================================================================
 
-TEST_CASE("neighbors - neighbor_info type verification", "[neighbors][types]") {
+TEST_CASE("neighbors - neighbor_data type verification", "[neighbors][types]") {
   using Graph        = std::vector<std::vector<int>>;
   using VertexType   = vertex_t<Graph>;
   using VertexIdType = vertex_id_t<Graph>;
 
-  SECTION("no value function - neighbor_info<vertex_id_t, false, vertex_t, void>") {
+  SECTION("no value function - neighbor_data<vertex_id_t, false, vertex_t, void>") {
     using ViewType = neighbors_view<Graph, void>;
     using InfoType = typename ViewType::info_type;
 
-    STATIC_REQUIRE(std::is_same_v<InfoType, neighbor_info<VertexIdType, false, VertexType, void>>);
+    STATIC_REQUIRE(std::is_same_v<InfoType, neighbor_data<VertexIdType, false, VertexType, void>>);
 
-    // Verify neighbor_info members
+    // Verify neighbor_data members
     STATIC_REQUIRE(std::is_same_v<typename InfoType::source_id_type, void>);
     STATIC_REQUIRE(std::is_same_v<typename InfoType::target_id_type, VertexIdType>);
     STATIC_REQUIRE(std::is_same_v<typename InfoType::vertex_type, VertexType>);
     STATIC_REQUIRE(std::is_same_v<typename InfoType::value_type, void>);
   }
 
-  SECTION("with value function - neighbor_info<vertex_id_t, false, vertex_t, int>") {
+  SECTION("with value function - neighbor_data<vertex_id_t, false, vertex_t, int>") {
     using VVF      = int (*)(const Graph&, VertexType);
     using ViewType = neighbors_view<Graph, VVF>;
     using InfoType = typename ViewType::info_type;
 
-    STATIC_REQUIRE(std::is_same_v<InfoType, neighbor_info<VertexIdType, false, VertexType, int>>);
+    STATIC_REQUIRE(std::is_same_v<InfoType, neighbor_data<VertexIdType, false, VertexType, int>>);
 
-    // Verify neighbor_info members
+    // Verify neighbor_data members
     STATIC_REQUIRE(std::is_same_v<typename InfoType::source_id_type, void>);
     STATIC_REQUIRE(std::is_same_v<typename InfoType::target_id_type, VertexIdType>);
     STATIC_REQUIRE(std::is_same_v<typename InfoType::vertex_type, VertexType>);

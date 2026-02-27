@@ -222,7 +222,7 @@ Before moving files or rewriting content, establish the current source-of-truth 
 |------|--------|---------|
 | 3.1 | Write `docs/getting-started.md` | Installation, CMake integration, first graph, first algorithm |
 | 3.2 | Write `docs/user-guide/adjacency-lists.md` | Adjacency list ADT overview: range-of-ranges model, concepts (`adjacency_list`, `index_adjacency_list`), CPOs (`vertices`, `edges`, `target_id`, etc.), how descriptor views work |
-| 3.3 | Write `docs/user-guide/edge-lists.md` | Edge list ADT overview: flat sourced-edge model, concepts (`basic_sourced_edgelist`, `basic_sourced_index_edgelist`, `has_edge_value`), CPOs (`source_id`, `target_id`, `edge_value`), supported edge patterns (pair, tuple, edge_info, edge_descriptor), non-integral vertex IDs |
+| 3.3 | Write `docs/user-guide/edge-lists.md` | Edge list ADT overview: flat sourced-edge model, concepts (`basic_sourced_edgelist`, `basic_sourced_index_edgelist`, `has_edge_value`), CPOs (`source_id`, `target_id`, `edge_value`), supported edge patterns (pair, tuple, edge_data, edge_descriptor), non-integral vertex IDs |
 | 3.4 | Write `docs/user-guide/containers.md` | All 3 graph containers with equal coverage, container selection guide, full container matrix (see below) |
 | 3.5 | Move + update `docs/views.md` → `docs/user-guide/views.md` | Keep content, add navigation links |
 | 3.6 | Write `docs/user-guide/algorithms.md` | Only implemented algorithms; clear "planned" section |

@@ -11,7 +11,7 @@
 #include <format>
 #include <iostream>
 #include "graph/detail/graph_using.hpp"
-#include "graph/graph_info.hpp"
+#include "graph/graph_data.hpp"
 #include "graph/graph.hpp"
 #include "graph/adj_list/descriptor_traits.hpp"
 #include "graph/adj_list/vertex_descriptor_view.hpp"
@@ -1668,7 +1668,7 @@ public: // Construction/Destruction
                              const Alloc&   alloc               = Alloc())
         : base_type(erng, vrng, eprojection, vprojection, partition_start_ids, alloc) {}
 
-  // initializer list using edge_info<VId,true,void,EV>
+  // initializer list using edge_data<VId,true,void,EV>
   constexpr compressed_graph(const std::initializer_list<copyable_edge_t<VId, EV>>& ilist, const Alloc& alloc = Alloc())
         : base_type(ilist, alloc) {}
 };

@@ -12,7 +12,7 @@
 #include <graph/container/traits/mos_graph_traits.hpp>
 #include <graph/container/traits/dofl_graph_traits.hpp>
 #include <graph/container/traits/dol_graph_traits.hpp>
-#include <graph/graph_info.hpp>
+#include <graph/graph_data.hpp>
 #include <vector>
 #include <string>
 #include <algorithm>
@@ -1489,16 +1489,16 @@ TEST_CASE("transform - create edge descriptors with values (dofl)", "[stl][6.2.4
   };
 
   auto                  v = *vertices(g).begin();
-  std::vector<EdgeInfo> edge_infos;
-  std::ranges::transform(edges(g, v), std::back_inserter(edge_infos),
+  std::vector<EdgeInfo> edge_datas;
+  std::ranges::transform(edges(g, v), std::back_inserter(edge_datas),
                          [&g](auto&& e) { return EdgeInfo{static_cast<size_t>(target_id(g, e)), edge_value(g, e)}; });
 
-  std::ranges::sort(edge_infos, {}, &EdgeInfo::target);
-  REQUIRE(edge_infos.size() == 2);
-  REQUIRE(edge_infos[0].target == size_t(1));
-  REQUIRE(edge_infos[0].value == 100);
-  REQUIRE(edge_infos[1].target == size_t(2));
-  REQUIRE(edge_infos[1].value == 200);
+  std::ranges::sort(edge_datas, {}, &EdgeInfo::target);
+  REQUIRE(edge_datas.size() == 2);
+  REQUIRE(edge_datas[0].target == size_t(1));
+  REQUIRE(edge_datas[0].value == 100);
+  REQUIRE(edge_datas[1].target == size_t(2));
+  REQUIRE(edge_datas[1].value == 200);
 }
 
 TEST_CASE("transform - vertex values with conditional (vov)", "[stl][6.2.4][transform]") {

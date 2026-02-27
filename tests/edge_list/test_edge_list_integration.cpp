@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <graph/edge_list/edge_list.hpp>
 #include <graph/edge_list/edge_list_descriptor.hpp>
-#include <graph/graph_info.hpp>
+#include <graph/graph_data.hpp>
 #include <vector>
 #include <tuple>
 
@@ -53,14 +53,14 @@ TEST_CASE("Generic algorithm works with std::tuple (3-element)", "[integration][
   REQUIRE(count_self_loops(tuples) == 1);
 }
 
-TEST_CASE("Generic algorithm works with edge_info (no value)", "[integration][algorithm]") {
-  using EI = edge_info<int, true, void, void>;
+TEST_CASE("Generic algorithm works with edge_data (no value)", "[integration][algorithm]") {
+  using EI = edge_data<int, true, void, void>;
   std::vector<EI> infos{{1, 2}, {5, 5}, {7, 8}};
   REQUIRE(count_self_loops(infos) == 1);
 }
 
-TEST_CASE("Generic algorithm works with edge_info (with value)", "[integration][algorithm]") {
-  using EI = edge_info<int, true, void, double>;
+TEST_CASE("Generic algorithm works with edge_data (with value)", "[integration][algorithm]") {
+  using EI = edge_data<int, true, void, double>;
   std::vector<EI> infos{{1, 2, 10.0}, {3, 3, 20.0}, {4, 4, 30.0}};
   REQUIRE(count_self_loops(infos) == 2);
 }
@@ -99,8 +99,8 @@ TEST_CASE("sum_edge_values works with 3-tuples", "[integration][edge_value]") {
   REQUIRE(sum_edge_values(tuples) == 7.0);
 }
 
-TEST_CASE("sum_edge_values works with edge_info", "[integration][edge_value]") {
-  using EI = edge_info<int, true, void, int>;
+TEST_CASE("sum_edge_values works with edge_data", "[integration][edge_value]") {
+  using EI = edge_data<int, true, void, int>;
   std::vector<EI> infos{{1, 2, 10}, {2, 3, 20}, {3, 4, 30}};
   REQUIRE(sum_edge_values(infos) == 60);
 }
@@ -127,8 +127,8 @@ TEST_CASE("Different edge types work together in same compilation unit", "[integ
   // Tuples
   std::vector<std::tuple<int, int, double>> tuples{{4, 4, 1.0}, {5, 6, 2.0}};
 
-  // edge_info
-  using EI = edge_info<int, true, void, void>;
+  // edge_data
+  using EI = edge_data<int, true, void, void>;
   std::vector<EI> infos{{7, 8}, {9, 9}};
 
   // edge_descriptors
@@ -175,7 +175,7 @@ TEST_CASE("All edge types satisfy basic_sourced_edgelist", "[integration][concep
   STATIC_REQUIRE(edge_list::basic_sourced_edgelist<std::vector<std::pair<int, int>>>);
   STATIC_REQUIRE(edge_list::basic_sourced_edgelist<std::vector<std::tuple<int, int>>>);
   STATIC_REQUIRE(edge_list::basic_sourced_edgelist<std::vector<std::tuple<int, int, double>>>);
-  STATIC_REQUIRE(edge_list::basic_sourced_edgelist<std::vector<edge_info<int, true, void, void>>>);
+  STATIC_REQUIRE(edge_list::basic_sourced_edgelist<std::vector<edge_data<int, true, void, void>>>);
   STATIC_REQUIRE(edge_list::basic_sourced_edgelist<std::vector<edge_list::edge_descriptor<int, void>>>);
 }
 
@@ -188,8 +188,8 @@ TEST_CASE("Valued edge types satisfy has_edge_value", "[integration][concepts]")
   STATIC_REQUIRE(!edge_list::has_edge_value<std::vector<std::pair<int, int>>>);
   STATIC_REQUIRE(!edge_list::has_edge_value<std::vector<std::tuple<int, int>>>);
   STATIC_REQUIRE(edge_list::has_edge_value<std::vector<std::tuple<int, int, double>>>);
-  STATIC_REQUIRE(!edge_list::has_edge_value<std::vector<edge_info<int, true, void, void>>>);
-  STATIC_REQUIRE(edge_list::has_edge_value<std::vector<edge_info<int, true, void, double>>>);
+  STATIC_REQUIRE(!edge_list::has_edge_value<std::vector<edge_data<int, true, void, void>>>);
+  STATIC_REQUIRE(edge_list::has_edge_value<std::vector<edge_data<int, true, void, double>>>);
   STATIC_REQUIRE(!edge_list::has_edge_value<std::vector<edge_list::edge_descriptor<int, void>>>);
   STATIC_REQUIRE(edge_list::has_edge_value<std::vector<edge_list::edge_descriptor<int, double>>>);
 }

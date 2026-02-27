@@ -31,8 +31,8 @@ A final phase updates adaptors (pipe syntax), benchmarks, examples, and document
 
 ### Step 1.1: Add `basic_vertexlist_view` class (void and VVF specializations)
 - Add to `include/graph/views/vertexlist.hpp`
-- `basic_vertexlist_view<G, void>` returns `vertex_info<VId, void, void>` (id only)
-- `basic_vertexlist_view<G, VVF>` returns `vertex_info<VId, void, VV>` (id + value)
+- `basic_vertexlist_view<G, void>` returns `vertex_data<VId, void, void>` (id only)
+- `basic_vertexlist_view<G, VVF>` returns `vertex_data<VId, void, VV>` (id + value)
 - Include deduction guides
 - **Build & run existing tests** — no breakage expected (additive only)
 
@@ -56,8 +56,8 @@ A final phase updates adaptors (pipe syntax), benchmarks, examples, and document
 - **Build & run all view tests**
 
 ### Step 1.6: Verify `vertexlist` return types match goal
-- Existing `vertexlist(g)` already returns `vertex_info<VId, V, void>` — verify
-- Existing `vertexlist(g, vvf)` already returns `vertex_info<VId, V, VV>` — verify
+- Existing `vertexlist(g)` already returns `vertex_data<VId, V, void>` — verify
+- Existing `vertexlist(g, vvf)` already returns `vertex_data<VId, V, VV>` — verify
 - If adjustments needed, make them and update existing test structured bindings
 - **Build & run all tests**
 
@@ -76,8 +76,8 @@ A final phase updates adaptors (pipe syntax), benchmarks, examples, and document
 
 ### Step 2.1: Add `basic_incidence_view` class (void and EVF specializations)
 - Add to `include/graph/views/incidence.hpp`
-- `basic_incidence_view<G, void>` takes `uid`, returns `edge_info<VId, false, void, void>` (target id only)
-- `basic_incidence_view<G, EVF>` takes `uid`, returns `edge_info<VId, false, void, EV>` (target id + value)
+- `basic_incidence_view<G, void>` takes `uid`, returns `edge_data<VId, false, void, void>` (target id only)
+- `basic_incidence_view<G, EVF>` takes `uid`, returns `edge_data<VId, false, void, EV>` (target id + value)
 - Include deduction guides
 - **Build & run existing tests**
 
@@ -86,7 +86,7 @@ A final phase updates adaptors (pipe syntax), benchmarks, examples, and document
 - **Build & run existing tests**
 
 ### Step 2.3: Refactor existing `incidence(g, uid)` overloads
-- Current `incidence(g, uid)` returns `edge_info<VId, false, E, void>` — it resolves uid to a descriptor
+- Current `incidence(g, uid)` returns `edge_data<VId, false, E, void>` — it resolves uid to a descriptor
   internally and delegates to the descriptor-based view
 - **Remove** `incidence(g, uid)` and `incidence(g, uid, evf)` factory functions
 - Callers must switch to either `incidence(g, u)` (descriptor) or `basic_incidence(g, uid)` (id)
@@ -121,8 +121,8 @@ A final phase updates adaptors (pipe syntax), benchmarks, examples, and document
 - **Build & run benchmarks**
 
 ### Step 2.8: Verify `incidence(g, u)` return types match goal
-- `incidence(g, u)` should return `edge_info<VId, false, E, void>` — verify
-- `incidence(g, u, evf)` should return `edge_info<VId, false, E, EV>` — verify
+- `incidence(g, u)` should return `edge_data<VId, false, E, void>` — verify
+- `incidence(g, u, evf)` should return `edge_data<VId, false, E, EV>` — verify
 - **Build & run all tests**
 
 ### Step 2.9: Commit Phase 2
@@ -134,8 +134,8 @@ A final phase updates adaptors (pipe syntax), benchmarks, examples, and document
 
 ### Step 3.1: Add `basic_neighbors_view` class (void and VVF specializations)
 - Add to `include/graph/views/neighbors.hpp`
-- `basic_neighbors_view<G, void>` takes `uid`, returns `neighbor_info<VId, false, void, void>` (target id only)
-- `basic_neighbors_view<G, VVF>` takes `uid`, returns `neighbor_info<VId, false, void, VV>` (target id + value)
+- `basic_neighbors_view<G, void>` takes `uid`, returns `neighbor_data<VId, false, void, void>` (target id only)
+- `basic_neighbors_view<G, VVF>` takes `uid`, returns `neighbor_data<VId, false, void, VV>` (target id + value)
 - Include deduction guides
 - **Build & run existing tests**
 
@@ -163,8 +163,8 @@ A final phase updates adaptors (pipe syntax), benchmarks, examples, and document
 - **Build & run benchmarks**
 
 ### Step 3.7: Verify `neighbors(g, u)` return types match goal
-- `neighbors(g, u)` should return `neighbor_info<VId, false, V, void>` — verify
-- `neighbors(g, u, vvf)` should return `neighbor_info<VId, false, V, VV>` — verify
+- `neighbors(g, u)` should return `neighbor_data<VId, false, V, void>` — verify
+- `neighbors(g, u, vvf)` should return `neighbor_data<VId, false, V, VV>` — verify
 - **Build & run all tests**
 
 ### Step 3.8: Commit Phase 3
@@ -176,8 +176,8 @@ A final phase updates adaptors (pipe syntax), benchmarks, examples, and document
 
 ### Step 4.1: Add `basic_edgelist_view` class (void and EVF specializations)
 - Add to `include/graph/views/edgelist.hpp`
-- `basic_edgelist_view<G, void>` returns `edge_info<VId, true, void, void>` (source_id + target_id only)
-- `basic_edgelist_view<G, EVF>` returns `edge_info<VId, true, void, EV>` (ids + value)
+- `basic_edgelist_view<G, void>` returns `edge_data<VId, true, void, void>` (source_id + target_id only)
+- `basic_edgelist_view<G, EVF>` returns `edge_data<VId, true, void, EV>` (ids + value)
 - Include deduction guides
 - **Build & run existing tests**
 
@@ -191,8 +191,8 @@ A final phase updates adaptors (pipe syntax), benchmarks, examples, and document
 - **Build & run all view tests**
 
 ### Step 4.4: Verify `edgelist(g)` return types match goal
-- `edgelist(g)` should return `edge_info<VId, true, E, void>` — already does; verify
-- `edgelist(g, evf)` should return `edge_info<VId, true, E, EV>` — already does; verify
+- `edgelist(g)` should return `edge_data<VId, true, E, void>` — already does; verify
+- `edgelist(g, evf)` should return `edge_data<VId, true, E, EV>` — already does; verify
 - **Build & run all tests**
 
 ### Step 4.5: Update algorithm callers to use `basic_edgelist` where appropriate

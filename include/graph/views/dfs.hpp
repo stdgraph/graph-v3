@@ -6,7 +6,7 @@
  *
  * Provides lazy, single-pass views that traverse a graph in depth-first
  * order starting from a seed vertex.  @c vertices_dfs yields per-vertex
- * @c vertex_info and @c edges_dfs yields per-edge @c edge_info.  An
+ * @c vertex_data and @c edges_dfs yields per-edge @c edge_data.  An
  * optional value function computes a per-element value included in the
  * structured binding.
  *
@@ -122,7 +122,7 @@
 #include <memory>
 #include <stack>
 #include <vector>
-#include <graph/graph_info.hpp>
+#include <graph/graph_data.hpp>
 #include <graph/adj_list/detail/graph_cpo.hpp>
 #include <graph/adj_list/adjacency_list_concepts.hpp>
 #include <graph/views/view_concepts.hpp>
@@ -205,7 +205,7 @@ namespace dfs_detail {
  * @brief DFS vertex view without value function.
  *
  * Traverses vertices reachable from a seed in depth-first order,
- * yielding @c vertex_info{v} per vertex via structured bindings.
+ * yielding @c vertex_data{v} per vertex via structured bindings.
  *
  * @code
  *   for (auto [v] : vertices_dfs(g, seed)) { ... }
@@ -225,14 +225,14 @@ public:
   using vertex_id_type = adj_list::vertex_id_t<G>;
   using edge_type      = typename Accessor::template edge_t<G>;
   using allocator_type = Alloc;
-  using info_type      = vertex_info<void, vertex_type, void>;
+  using info_type      = vertex_data<void, vertex_type, void>;
 
 private:
   using state_type = dfs_detail::dfs_state<G, Alloc, Accessor>;
 
 public:
   /**
-     * @brief Input iterator yielding @c vertex_info{v}.
+     * @brief Input iterator yielding @c vertex_data{v}.
      *
      * Single-pass: all copies share state via @c shared_ptr, so advancing
      * one iterator advances them all.
@@ -375,7 +375,7 @@ private:
  * @brief DFS vertex view with a vertex value function.
  *
  * Traverses vertices reachable from a seed in depth-first order,
- * yielding @c vertex_info{v, val} per vertex via structured bindings.
+ * yielding @c vertex_data{v, val} per vertex via structured bindings.
  *
  * @code
  *   auto vvf = [](const auto& g, auto v) { return vertex_id(g, v); };
@@ -398,14 +398,14 @@ public:
   using edge_type         = typename Accessor::template edge_t<G>;
   using allocator_type    = Alloc;
   using value_result_type = std::invoke_result_t<VVF, const G&, vertex_type>;
-  using info_type         = vertex_info<void, vertex_type, value_result_type>;
+  using info_type         = vertex_data<void, vertex_type, value_result_type>;
 
 private:
   using state_type = dfs_detail::dfs_state<G, Alloc, Accessor>;
 
 public:
   /**
-     * @brief Input iterator yielding @c vertex_info{v, val}.
+     * @brief Input iterator yielding @c vertex_data{v, val}.
      *
      * Single-pass: all copies share state via @c shared_ptr.
      */
@@ -574,7 +574,7 @@ vertices_dfs_view(G&, adj_list::vertex_t<G>, VVF, Alloc) -> vertices_dfs_view<G,
  * @tparam G  Graph type satisfying @c index_adjacency_list
  * @param  g    The graph to traverse.  Must outlive the returned view.
  * @param  seed Starting vertex id.
- * @return @c vertices_dfs_view yielding @c vertex_info{v} per reachable vertex.
+ * @return @c vertices_dfs_view yielding @c vertex_data{v} per reachable vertex.
  *
  * @pre  @c seed is a valid vertex id in @c g.
  * @post The graph is not modified.
@@ -594,7 +594,7 @@ template <adj_list::index_adjacency_list G>
  * @tparam G  Graph type satisfying @c index_adjacency_list
  * @param  g           The graph to traverse.
  * @param  seed_vertex Starting vertex descriptor.
- * @return @c vertices_dfs_view yielding @c vertex_info{v} per reachable vertex.
+ * @return @c vertices_dfs_view yielding @c vertex_data{v} per reachable vertex.
  *
  * @pre  @c seed_vertex is a valid vertex descriptor in @c g.
  * @post The graph is not modified.
@@ -617,7 +617,7 @@ template <adj_list::index_adjacency_list G>
  * @param  g    The graph to traverse.
  * @param  seed Starting vertex id.
  * @param  vvf  Value function invoked once per vertex.
- * @return @c vertices_dfs_view yielding @c vertex_info{v, val} per reachable vertex.
+ * @return @c vertices_dfs_view yielding @c vertex_data{v, val} per reachable vertex.
  *
  * @pre  @c seed is a valid vertex id in @c g.
  * @post The graph is not modified.
@@ -637,7 +637,7 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
  * @param  g           The graph to traverse.
  * @param  seed_vertex Starting vertex descriptor.
  * @param  vvf         Value function invoked once per vertex.
- * @return @c vertices_dfs_view yielding @c vertex_info{v, val} per reachable vertex.
+ * @return @c vertices_dfs_view yielding @c vertex_data{v, val} per reachable vertex.
  *
  * @pre  @c seed_vertex is a valid vertex descriptor in @c g.
  * @post The graph is not modified.
@@ -657,7 +657,7 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
  * @param  g     The graph to traverse.
  * @param  seed  Starting vertex id.
  * @param  alloc Allocator instance.
- * @return @c vertices_dfs_view yielding @c vertex_info{v} per reachable vertex.
+ * @return @c vertices_dfs_view yielding @c vertex_data{v} per reachable vertex.
  *
  * @pre  @c seed is a valid vertex id in @c g.
  * @post The graph is not modified.
@@ -676,7 +676,7 @@ requires(!vertex_value_function<Alloc, G, adj_list::vertex_t<G>>)
  * @param  g           The graph to traverse.
  * @param  seed_vertex Starting vertex descriptor.
  * @param  alloc       Allocator instance.
- * @return @c vertices_dfs_view yielding @c vertex_info{v} per reachable vertex.
+ * @return @c vertices_dfs_view yielding @c vertex_data{v} per reachable vertex.
  *
  * @pre  @c seed_vertex is a valid vertex descriptor in @c g.
  * @post The graph is not modified.
@@ -698,7 +698,7 @@ requires(!vertex_value_function<Alloc, G, adj_list::vertex_t<G>>)
  * @param  seed  Starting vertex id.
  * @param  vvf   Value function invoked once per vertex.
  * @param  alloc Allocator instance.
- * @return @c vertices_dfs_view yielding @c vertex_info{v, val} per reachable vertex.
+ * @return @c vertices_dfs_view yielding @c vertex_data{v, val} per reachable vertex.
  *
  * @pre  @c seed is a valid vertex id in @c g.
  * @post The graph is not modified.
@@ -720,7 +720,7 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
  * @param  seed_vertex Starting vertex descriptor.
  * @param  vvf         Value function invoked once per vertex.
  * @param  alloc       Allocator instance.
- * @return @c vertices_dfs_view yielding @c vertex_info{v, val} per reachable vertex.
+ * @return @c vertices_dfs_view yielding @c vertex_data{v, val} per reachable vertex.
  *
  * @pre  @c seed_vertex is a valid vertex descriptor in @c g.
  * @post The graph is not modified.
@@ -739,7 +739,7 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
  * @brief DFS edge view without value function.
  *
  * Traverses tree edges reachable from a seed in depth-first order,
- * yielding @c edge_info{uv} per edge via structured bindings.  The
+ * yielding @c edge_data{uv} per edge via structured bindings.  The
  * seed vertex itself has no incoming tree edge, so it is skipped.
  *
  * @code
@@ -760,14 +760,14 @@ public:
   using vertex_id_type = adj_list::vertex_id_t<G>;
   using edge_type      = typename Accessor::template edge_t<G>;
   using allocator_type = Alloc;
-  using info_type      = edge_info<void, false, edge_type, void>;
+  using info_type      = edge_data<void, false, edge_type, void>;
 
 private:
   using state_type = dfs_detail::dfs_state<G, Alloc, Accessor>;
 
 public:
   /**
-     * @brief Input iterator yielding @c edge_info{uv}.
+     * @brief Input iterator yielding @c edge_data{uv}.
      *
      * Advances to the first tree edge on construction (the seed vertex
      * has no incoming tree edge).  Single-pass: all copies share state.
@@ -913,7 +913,7 @@ private:
  * @brief DFS edge view with an edge value function.
  *
  * Traverses tree edges reachable from a seed in depth-first order,
- * yielding @c edge_info{uv, val} per edge via structured bindings.
+ * yielding @c edge_data{uv, val} per edge via structured bindings.
  *
  * @code
  *   auto evf = [](const auto& g, auto uv) { return target_id(g, uv); };
@@ -936,14 +936,14 @@ public:
   using edge_type         = typename Accessor::template edge_t<G>;
   using allocator_type    = Alloc;
   using value_result_type = std::invoke_result_t<EVF, const G&, edge_type>;
-  using info_type         = edge_info<void, false, edge_type, value_result_type>;
+  using info_type         = edge_data<void, false, edge_type, value_result_type>;
 
 private:
   using state_type = dfs_detail::dfs_state<G, Alloc, Accessor>;
 
 public:
   /**
-     * @brief Input iterator yielding @c edge_info{uv, val}.
+     * @brief Input iterator yielding @c edge_data{uv, val}.
      *
      * Single-pass: all copies share state via @c shared_ptr.
      */
@@ -1112,7 +1112,7 @@ edges_dfs_view(G&, adj_list::vertex_t<G>, EVF, Alloc) -> edges_dfs_view<G, EVF, 
  * @tparam G  Graph type satisfying @c index_adjacency_list
  * @param  g    The graph to traverse.  Must outlive the returned view.
  * @param  seed Starting vertex id.
- * @return @c edges_dfs_view yielding @c edge_info{uv} per reachable tree edge.
+ * @return @c edges_dfs_view yielding @c edge_data{uv} per reachable tree edge.
  *
  * @pre  @c seed is a valid vertex id in @c g.
  * @post The graph is not modified.
@@ -1128,7 +1128,7 @@ template <adj_list::index_adjacency_list G>
  * @tparam G  Graph type satisfying @c index_adjacency_list
  * @param  g           The graph to traverse.
  * @param  seed_vertex Starting vertex descriptor.
- * @return @c edges_dfs_view yielding @c edge_info{uv} per reachable tree edge.
+ * @return @c edges_dfs_view yielding @c edge_data{uv} per reachable tree edge.
  *
  * @pre  @c seed_vertex is a valid vertex descriptor in @c g.
  * @post The graph is not modified.
@@ -1151,7 +1151,7 @@ template <adj_list::index_adjacency_list G>
  * @param  g    The graph to traverse.
  * @param  seed Starting vertex id.
  * @param  evf  Value function invoked once per tree edge.
- * @return @c edges_dfs_view yielding @c edge_info{uv, val} per reachable tree edge.
+ * @return @c edges_dfs_view yielding @c edge_data{uv, val} per reachable tree edge.
  *
  * @pre  @c seed is a valid vertex id in @c g.
  * @post The graph is not modified.
@@ -1171,7 +1171,7 @@ requires edge_value_function<EVF, G, adj_list::edge_t<G>>
  * @param  g           The graph to traverse.
  * @param  seed_vertex Starting vertex descriptor.
  * @param  evf         Value function invoked once per tree edge.
- * @return @c edges_dfs_view yielding @c edge_info{uv, val} per reachable tree edge.
+ * @return @c edges_dfs_view yielding @c edge_data{uv, val} per reachable tree edge.
  *
  * @pre  @c seed_vertex is a valid vertex descriptor in @c g.
  * @post The graph is not modified.
@@ -1191,7 +1191,7 @@ requires edge_value_function<EVF, G, adj_list::edge_t<G>>
  * @param  g     The graph to traverse.
  * @param  seed  Starting vertex id.
  * @param  alloc Allocator instance.
- * @return @c edges_dfs_view yielding @c edge_info{uv} per reachable tree edge.
+ * @return @c edges_dfs_view yielding @c edge_data{uv} per reachable tree edge.
  *
  * @pre  @c seed is a valid vertex id in @c g.
  * @post The graph is not modified.
@@ -1210,7 +1210,7 @@ requires(!edge_value_function<Alloc, G, adj_list::edge_t<G>>)
  * @param  g           The graph to traverse.
  * @param  seed_vertex Starting vertex descriptor.
  * @param  alloc       Allocator instance.
- * @return @c edges_dfs_view yielding @c edge_info{uv} per reachable tree edge.
+ * @return @c edges_dfs_view yielding @c edge_data{uv} per reachable tree edge.
  *
  * @pre  @c seed_vertex is a valid vertex descriptor in @c g.
  * @post The graph is not modified.
@@ -1232,7 +1232,7 @@ requires(!edge_value_function<Alloc, G, adj_list::edge_t<G>>)
  * @param  seed  Starting vertex id.
  * @param  evf   Value function invoked once per tree edge.
  * @param  alloc Allocator instance.
- * @return @c edges_dfs_view yielding @c edge_info{uv, val} per reachable tree edge.
+ * @return @c edges_dfs_view yielding @c edge_data{uv, val} per reachable tree edge.
  *
  * @pre  @c seed is a valid vertex id in @c g.
  * @post The graph is not modified.
@@ -1254,7 +1254,7 @@ requires edge_value_function<EVF, G, adj_list::edge_t<G>>
  * @param  seed_vertex Starting vertex descriptor.
  * @param  evf         Value function invoked once per tree edge.
  * @param  alloc       Allocator instance.
- * @return @c edges_dfs_view yielding @c edge_info{uv, val} per reachable tree edge.
+ * @return @c edges_dfs_view yielding @c edge_data{uv, val} per reachable tree edge.
  *
  * @pre  @c seed_vertex is a valid vertex descriptor in @c g.
  * @post The graph is not modified.

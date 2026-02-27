@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <graph/edge_list/edge_list.hpp>
 #include <graph/edge_list/edge_list_descriptor.hpp>
-#include <graph/graph_info.hpp>
+#include <graph/graph_data.hpp>
 #include <vector>
 #include <tuple>
 
@@ -34,16 +34,16 @@ TEST_CASE("basic_sourced_edgelist concept with 3-tuples", "[edge_list][concepts]
   STATIC_REQUIRE(edge_list::has_edge_value<edge_list_type>);
 }
 
-TEST_CASE("basic_sourced_edgelist concept with edge_info (no value)", "[edge_list][concepts]") {
-  using edge_type      = graph::edge_info<int, true, void, void>;
+TEST_CASE("basic_sourced_edgelist concept with edge_data (no value)", "[edge_list][concepts]") {
+  using edge_type      = graph::edge_data<int, true, void, void>;
   using edge_list_type = std::vector<edge_type>;
   STATIC_REQUIRE(edge_list::basic_sourced_edgelist<edge_list_type>);
   STATIC_REQUIRE(edge_list::basic_sourced_index_edgelist<edge_list_type>);
   STATIC_REQUIRE(!edge_list::has_edge_value<edge_list_type>);
 }
 
-TEST_CASE("basic_sourced_edgelist concept with edge_info (with value)", "[edge_list][concepts]") {
-  using edge_type      = graph::edge_info<int, true, void, double>;
+TEST_CASE("basic_sourced_edgelist concept with edge_data (with value)", "[edge_list][concepts]") {
+  using edge_type      = graph::edge_data<int, true, void, double>;
   using edge_list_type = std::vector<edge_type>;
   STATIC_REQUIRE(edge_list::basic_sourced_edgelist<edge_list_type>);
   STATIC_REQUIRE(edge_list::basic_sourced_index_edgelist<edge_list_type>);

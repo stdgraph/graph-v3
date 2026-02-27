@@ -31,7 +31,7 @@ Successfully extracted shared edge CPO implementations (`source_id`, `target_id`
   3. ADL with descriptor
   4. adj_list::edge_descriptor member (Tier 4)
   5. edge_list::edge_descriptor member (Tier 5)
-  6. edge_info data member (Tier 6)
+  6. edge_data data member (Tier 6)
   7. Tuple-like edge (Tier 7, lowest priority)
 
 **CPO Signatures:**
@@ -47,7 +47,7 @@ namespace graph {
 - CPOs work identically for both adjacency lists and edge lists
 - Eliminates tight coupling between namespaces
 - Follows principle that identical-behavior CPOs should be in shared location
-- Supports multiple edge representations (descriptors, edge_info, tuples)
+- Supports multiple edge representations (descriptors, edge_data, tuples)
 
 ### 3. Updated `include/graph/adj_list/detail/graph_cpo.hpp`
 **Changes:**
@@ -150,7 +150,7 @@ Replaced all 8 references to `graph::adj_list::_cpo_instances` with `graph::`:
 - Test suite covers:
   - All CPO resolution paths (member, ADL, descriptor, default)
   - Both adjacency lists and edge lists
-  - Multiple edge representations (descriptors, edge_info, tuples)
+  - Multiple edge representations (descriptors, edge_data, tuples)
   - Integration tests for graph traversal
   - Const correctness
   - Empty graph edge cases
@@ -213,7 +213,7 @@ Each shared edge CPO uses the same resolution order:
 5. **edge_list descriptor** - `uv.target_id()` (on edge_list::edge_descriptor)
    - Built-in edge list support
 
-6. **edge_info member** - `uv.target_id` (data member)
+6. **edge_data member** - `uv.target_id` (data member)
    - Direct member access for simple structs
 
 7. **Tuple-like** - `std::get<N>(uv)`

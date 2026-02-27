@@ -39,7 +39,7 @@ These requirements apply to every graph-related component, including implementat
 | `VI` | `vertex_iterator_t<G>` | `ui`, `vi` | Vertex Iterator. `ui` is the source (or only) vertex iterator. `vi` is the target vertex iterator. |
 | | | `first`, `last` | `first` and `last` are the begin and end iterators of a vertex range. |
 | `VVF` | | `vvf` | Vertex Value Function: `vvf(g, u)` → vertex value. Graph passed as first parameter for stateless lambdas enabling `std::views` chaining. |
-| `VProj` | | `vproj` | Vertex info projection function: `vproj(u)` → `vertex_info<VId,VV>`. |
+| `VProj` | | `vproj` | Vertex info projection function: `vproj(u)` → `vertex_data<VId,VV>`. |
 
 ### Partition Types
 
@@ -58,7 +58,7 @@ These requirements apply to every graph-related component, including implementat
 | `ER` | `out_edge_range_t<G>` | | Edge Range for outgoing edges of a vertex. Alias: `vertex_edge_range_t<G>`. |
 | `EI` | `out_edge_iterator_t<G>` | `uvi`, `vwi` | Edge Iterator for an outgoing edge of a vertex. `uvi` is an iterator for an edge from vertices `u` to `v`. `vwi` is an iterator for an edge from vertices `v` to `w`. Alias: `vertex_edge_iterator_t<G>`. |
 | `EVF` | | `evf` | Edge Value Function: `evf(g, uv)` → edge value. Graph passed as first parameter for stateless lambdas enabling `std::views` chaining. |
-| `EProj` | | `eproj` | Edge info projection function: `eproj(uv)` → `edge_info<VId,Sourced,EV>`. |
+| `EProj` | | `eproj` | Edge info projection function: `eproj(uv)` → `edge_data<VId,Sourced,EV>`. |
 
 ## Parameterized Type Aliases
 Types use the `_t<G>` suffix to indicate they are parameterized by graph type `G`:

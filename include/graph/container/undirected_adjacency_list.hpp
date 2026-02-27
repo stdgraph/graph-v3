@@ -2,7 +2,7 @@
 //	Author: J. Phillip Ratzloff
 //
 #include "../adj_list/graph_utility.hpp"
-#include "../graph_info.hpp"
+#include "../graph_data.hpp"
 #include "../adj_list/vertex_descriptor_view.hpp"
 #include "../adj_list/edge_descriptor_view.hpp"
 #include "../adj_list/descriptor_traits.hpp"

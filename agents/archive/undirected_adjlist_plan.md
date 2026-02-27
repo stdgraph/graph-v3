@@ -67,9 +67,9 @@
 - Ready for Phase 5 (Documentation) and Phase 6 (Code Cleanup)
 
 **Constructor API Standardization (January 4, 2026):**
-- Updated constructors to use `vertex_info`/`edge_info` pattern matching `dynamic_graph` and `compressed_graph`
+- Updated constructors to use `vertex_data`/`edge_data` pattern matching `dynamic_graph` and `compressed_graph`
 - Changed from separate key/value projections to unified projections returning `copyable_vertex_t<VId, VV>` and `copyable_edge_t<VId, EV>`
-- Added `#include "../graph_info.hpp"` for info struct definitions
+- Added `#include "../graph_data.hpp"` for info struct definitions
 - All tests still passing (21/22) - no regressions
 
 **New Constructor Signature Pattern:**

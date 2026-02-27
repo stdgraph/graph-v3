@@ -33,8 +33,8 @@
  *
  * ### Vertex views
  * @code
- *   for (auto [v]      : vertices_topological_sort(g))           // vertex_info{v}
- *   for (auto [v, val] : vertices_topological_sort(g, vvf))      // vertex_info{v, val}
+ *   for (auto [v]      : vertices_topological_sort(g))           // vertex_data{v}
+ *   for (auto [v, val] : vertices_topological_sort(g, vvf))      // vertex_data{v, val}
  * @endcode
  *
  * | Element | Type                                     | Meaning             |
@@ -44,8 +44,8 @@
  *
  * ### Edge views
  * @code
- *   for (auto [uv]      : edges_topological_sort(g))             // edge_info{uv}
- *   for (auto [uv, val] : edges_topological_sort(g, evf))        // edge_info{uv, val}
+ *   for (auto [uv]      : edges_topological_sort(g))             // edge_data{uv}
+ *   for (auto [uv, val] : edges_topological_sort(g, evf))        // edge_data{uv, val}
  * @endcode
  *
  * | Element | Type                                     | Meaning             |
@@ -156,7 +156,7 @@
 #include <algorithm>
 #include <optional>
 #include <tl/expected.hpp>
-#include <graph/graph_info.hpp>
+#include <graph/graph_data.hpp>
 #include <graph/adj_list/detail/graph_cpo.hpp>
 #include <graph/adj_list/adjacency_list_concepts.hpp>
 #include <graph/views/view_concepts.hpp>
@@ -275,7 +275,7 @@ namespace topo_detail {
  * @brief Topological sort vertex view without value function.
  *
  * Iterates over all vertices in topological order, yielding
- * @c vertex_info{v} per vertex via structured bindings.
+ * @c vertex_data{v} per vertex via structured bindings.
  *
  * @code
  *   for (auto [v] : vertices_topological_sort(g)) { ... }
@@ -295,14 +295,14 @@ public:
   using vertex_type    = adj_list::vertex_t<G>;
   using vertex_id_type = adj_list::vertex_id_t<G>;
   using allocator_type = Alloc;
-  using info_type      = vertex_info<void, vertex_type, void>;
+  using info_type      = vertex_data<void, vertex_type, void>;
 
 private:
   using state_type = topo_detail::topo_state<G, Alloc, Accessor>;
 
 public:
   /**
-     * @brief Forward iterator yielding @c vertex_info{v}.
+     * @brief Forward iterator yielding @c vertex_data{v}.
      *
      * Iterates over the pre-computed post-order vector in reverse
      * (topological) order.  Supports multi-pass traversal.
@@ -396,7 +396,7 @@ private:
  * @brief Topological sort vertex view with a vertex value function.
  *
  * Iterates over all vertices in topological order, yielding
- * @c vertex_info{v, val} per vertex via structured bindings.
+ * @c vertex_data{v, val} per vertex via structured bindings.
  *
  * @code
  *   auto vvf = [](const auto& g, auto v) { return vertex_id(g, v); };
@@ -419,14 +419,14 @@ public:
   using vertex_id_type    = adj_list::vertex_id_t<G>;
   using allocator_type    = Alloc;
   using value_result_type = std::invoke_result_t<VVF, const G&, vertex_type>;
-  using info_type         = vertex_info<void, vertex_type, value_result_type>;
+  using info_type         = vertex_data<void, vertex_type, value_result_type>;
 
 private:
   using state_type = topo_detail::topo_state<G, Alloc, Accessor>;
 
 public:
   /**
-     * @brief Forward iterator yielding @c vertex_info{v, val}.
+     * @brief Forward iterator yielding @c vertex_data{v, val}.
      *
      * Multi-pass.  The value function is invoked on each dereference.
      */
@@ -534,7 +534,7 @@ vertices_topological_sort_view(G&, VVF, Alloc) -> vertices_topological_sort_view
  * @brief Topological sort edge view without value function.
  *
  * Iterates over all edges grouped by source vertex in topological order,
- * yielding @c edge_info{uv} per edge via structured bindings.  Vertices
+ * yielding @c edge_data{uv} per edge via structured bindings.  Vertices
  * with no outgoing edges are silently skipped.
  *
  * @code
@@ -555,7 +555,7 @@ public:
   using vertex_type    = adj_list::vertex_t<G>;
   using edge_type      = typename Accessor::template edge_t<G>;
   using allocator_type = Alloc;
-  using info_type      = edge_info<void, false, edge_type, void>;
+  using info_type      = edge_data<void, false, edge_type, void>;
 
 private:
   using state_type     = topo_detail::topo_state<G, Alloc, Accessor>;
@@ -563,7 +563,7 @@ private:
 
 public:
   /**
-     * @brief Forward iterator yielding @c edge_info{uv}.
+     * @brief Forward iterator yielding @c edge_data{uv}.
      *
      * Walks the adjacency-list edges of each source vertex in
      * topological order.  Multi-pass.
@@ -698,7 +698,7 @@ private:
  * @brief Topological sort edge view with an edge value function.
  *
  * Iterates over all edges grouped by source vertex in topological order,
- * yielding @c edge_info{uv, val} per edge via structured bindings.
+ * yielding @c edge_data{uv, val} per edge via structured bindings.
  *
  * @code
  *   auto evf = [](const auto& g, auto uv) { return target_id(g, uv); };
@@ -720,7 +720,7 @@ public:
   using edge_type         = typename Accessor::template edge_t<G>;
   using allocator_type    = Alloc;
   using value_result_type = std::invoke_result_t<EVF, const G&, edge_type>;
-  using info_type         = edge_info<void, false, edge_type, value_result_type>;
+  using info_type         = edge_data<void, false, edge_type, value_result_type>;
 
 private:
   using state_type     = topo_detail::topo_state<G, Alloc, Accessor>;
@@ -728,7 +728,7 @@ private:
 
 public:
   /**
-     * @brief Forward iterator yielding @c edge_info{uv, val}.
+     * @brief Forward iterator yielding @c edge_data{uv, val}.
      *
      * Multi-pass.  The value function is invoked on each dereference.
      */
@@ -881,7 +881,7 @@ edges_topological_sort_view(G&, EVF, Alloc) -> edges_topological_sort_view<G, EV
  *
  * @tparam G  Graph type satisfying @c index_adjacency_list.
  * @param  g  The graph to traverse.
- * @return A @c vertices_topological_sort_view whose iterators yield @c vertex_info{v}.
+ * @return A @c vertices_topological_sort_view whose iterators yield @c vertex_data{v}.
  */
 template <adj_list::index_adjacency_list G>
 [[nodiscard]] auto vertices_topological_sort(G& g) {
@@ -895,7 +895,7 @@ template <adj_list::index_adjacency_list G>
  * @tparam VVF  Vertex value function — @c invocable<const G&, vertex_t<G>>.
  * @param  g    The graph to traverse.
  * @param  vvf  Value function invoked per vertex.
- * @return A @c vertices_topological_sort_view whose iterators yield @c vertex_info{v, val}.
+ * @return A @c vertices_topological_sort_view whose iterators yield @c vertex_data{v, val}.
  */
 template <adj_list::index_adjacency_list G, class VVF>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
@@ -911,7 +911,7 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
  * @tparam Alloc  Allocator for the post-order vector and visited tracker.
  * @param  g      The graph to traverse.
  * @param  alloc  Allocator instance.
- * @return A @c vertices_topological_sort_view whose iterators yield @c vertex_info{v}.
+ * @return A @c vertices_topological_sort_view whose iterators yield @c vertex_data{v}.
  */
 template <adj_list::index_adjacency_list G, class Alloc>
 requires(!vertex_value_function<Alloc, G, adj_list::vertex_t<G>>)
@@ -928,7 +928,7 @@ requires(!vertex_value_function<Alloc, G, adj_list::vertex_t<G>>)
  * @param  g      The graph to traverse.
  * @param  vvf    Value function invoked per vertex.
  * @param  alloc  Allocator instance.
- * @return A @c vertices_topological_sort_view whose iterators yield @c vertex_info{v, val}.
+ * @return A @c vertices_topological_sort_view whose iterators yield @c vertex_data{v, val}.
  */
 template <adj_list::index_adjacency_list G, class VVF, class Alloc>
 requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
@@ -941,7 +941,7 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
  *
  * @tparam G  Graph type satisfying @c index_adjacency_list.
  * @param  g  The graph to traverse.
- * @return An @c edges_topological_sort_view whose iterators yield @c edge_info{uv}.
+ * @return An @c edges_topological_sort_view whose iterators yield @c edge_data{uv}.
  */
 template <adj_list::index_adjacency_list G>
 [[nodiscard]] auto edges_topological_sort(G& g) {
@@ -955,7 +955,7 @@ template <adj_list::index_adjacency_list G>
  * @tparam EVF  Edge value function — @c invocable<const G&, edge_t<G>>.
  * @param  g    The graph to traverse.
  * @param  evf  Value function invoked per edge.
- * @return An @c edges_topological_sort_view whose iterators yield @c edge_info{uv, val}.
+ * @return An @c edges_topological_sort_view whose iterators yield @c edge_data{uv, val}.
  */
 template <adj_list::index_adjacency_list G, class EVF>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>
@@ -971,7 +971,7 @@ requires edge_value_function<EVF, G, adj_list::edge_t<G>>
  * @tparam Alloc  Allocator for the post-order vector and visited tracker.
  * @param  g      The graph to traverse.
  * @param  alloc  Allocator instance.
- * @return An @c edges_topological_sort_view whose iterators yield @c edge_info{uv}.
+ * @return An @c edges_topological_sort_view whose iterators yield @c edge_data{uv}.
  */
 template <adj_list::index_adjacency_list G, class Alloc>
 requires(!edge_value_function<Alloc, G, adj_list::edge_t<G>>)
@@ -988,7 +988,7 @@ requires(!edge_value_function<Alloc, G, adj_list::edge_t<G>>)
  * @param  g      The graph to traverse.
  * @param  evf    Value function invoked per edge.
  * @param  alloc  Allocator instance.
- * @return An @c edges_topological_sort_view whose iterators yield @c edge_info{uv, val}.
+ * @return An @c edges_topological_sort_view whose iterators yield @c edge_data{uv, val}.
  */
 template <adj_list::index_adjacency_list G, class EVF, class Alloc>
 requires edge_value_function<EVF, G, adj_list::edge_t<G>>

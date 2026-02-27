@@ -18,7 +18,7 @@
 #include <graph/container/traits/mous_graph_traits.hpp>
 #include <graph/container/traits/vos_graph_traits.hpp>
 #include <graph/container/traits/vous_graph_traits.hpp>
-#include <graph/graph_info.hpp>
+#include <graph/graph_data.hpp>
 #include <graph/algorithm/traversal_common.hpp>
 #include <vector>
 #include <string>

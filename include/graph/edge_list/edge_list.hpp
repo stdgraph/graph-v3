@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../detail/edge_cpo.hpp"
-#include "../graph_info.hpp"
+#include "../graph_data.hpp"
 #include <ranges>
 #include <type_traits>
 
@@ -57,11 +57,11 @@
 //  tuple<T,T>
 //  tuple<T,T,EV,...>
 //
-//  edge_info<VId, true, void, void> : {source_id, target_id}
-//  edge_info<VId, true, void, EV>   : {source_id, target_id, EV}
+//  edge_data<VId, true, void, void> : {source_id, target_id}
+//  edge_data<VId, true, void, EV>   : {source_id, target_id, EV}
 //
-//  edge_info<VId, true, E&, void>   : {source_id, target_id, edge}
-//  edge_info<VId, true, E&, EV>     : {source_id, target_id, edge, EV}
+//  edge_data<VId, true, E&, void>   : {source_id, target_id, edge}
+//  edge_data<VId, true, E&, EV>     : {source_id, target_id, edge, EV}
 //
 // Naming conventions
 // -----------------------------------------------------------------------------

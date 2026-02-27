@@ -556,7 +556,7 @@ TEST_CASE("vertexlist - return type verification", "[vertexlist][return_type]") 
 
   Graph g = {{1}, {2}, {}};
 
-  SECTION("vertexlist(g) returns vertex_info<VId, V, void>") {
+  SECTION("vertexlist(g) returns vertex_data<VId, V, void>") {
     auto                     vlist = vertexlist(g);
     using ActualInfo               = decltype(*vlist.begin());
     STATIC_REQUIRE(std::is_same_v<typename ActualInfo::id_type, VertexIdType>);
@@ -564,7 +564,7 @@ TEST_CASE("vertexlist - return type verification", "[vertexlist][return_type]") 
     STATIC_REQUIRE(std::is_void_v<typename ActualInfo::value_type>);
   }
 
-  SECTION("vertexlist(g, vvf) returns vertex_info<VId, V, VV>") {
+  SECTION("vertexlist(g, vvf) returns vertex_data<VId, V, VV>") {
     auto vlist = vertexlist(g, [](const auto&, auto) { return 42; });
     using ActualInfo = decltype(*vlist.begin());
     STATIC_REQUIRE(std::is_same_v<typename ActualInfo::id_type, VertexIdType>);
@@ -572,7 +572,7 @@ TEST_CASE("vertexlist - return type verification", "[vertexlist][return_type]") 
     STATIC_REQUIRE(std::is_same_v<typename ActualInfo::value_type, int>);
   }
 
-  SECTION("basic_vertexlist(g) returns vertex_info<VId, void, void>") {
+  SECTION("basic_vertexlist(g) returns vertex_data<VId, void, void>") {
     auto                     vlist = basic_vertexlist(g);
     using ActualInfo               = decltype(*vlist.begin());
     STATIC_REQUIRE(std::is_same_v<typename ActualInfo::id_type, VertexIdType>);
@@ -580,7 +580,7 @@ TEST_CASE("vertexlist - return type verification", "[vertexlist][return_type]") 
     STATIC_REQUIRE(std::is_void_v<typename ActualInfo::value_type>);
   }
 
-  SECTION("basic_vertexlist(g, vvf) returns vertex_info<VId, void, VV>") {
+  SECTION("basic_vertexlist(g, vvf) returns vertex_data<VId, void, VV>") {
     auto vlist = basic_vertexlist(g, [](const auto&, auto) { return 42; });
     using ActualInfo = decltype(*vlist.begin());
     STATIC_REQUIRE(std::is_same_v<typename ActualInfo::id_type, VertexIdType>);

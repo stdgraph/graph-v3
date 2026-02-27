@@ -1,8 +1,8 @@
 add_executable(graph3_views_tests
     test_main.cpp
-    test_vertex_info.cpp
-    test_edge_info.cpp
-    test_neighbor_info.cpp
+    test_vertex_data.cpp
+    test_edge_data.cpp
+    test_neighbor_data.cpp
     test_search_base.cpp
     test_view_concepts.cpp
     test_vertexlist.cpp

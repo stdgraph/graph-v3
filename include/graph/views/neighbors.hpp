@@ -6,7 +6,7 @@
  *
  * Provides lazy, range-based views that iterate over every neighbor (target
  * vertex) reachable from a given source vertex via outgoing edges.  Each
- * iteration step yields a @c neighbor_info whose fields are exposed via
+ * iteration step yields a @c neighbor_data whose fields are exposed via
  * structured bindings.  An optional vertex value function (VVF) computes a
  * per-neighbor value that is included in the binding.
  *
@@ -115,7 +115,7 @@
 #include <ranges>
 #include <type_traits>
 #include <functional>
-#include <graph/graph_info.hpp>
+#include <graph/graph_data.hpp>
 #include <graph/adj_list/detail/graph_cpo.hpp>
 #include <graph/adj_list/adjacency_list_concepts.hpp>
 #include <graph/views/view_concepts.hpp>
@@ -134,7 +134,7 @@ class basic_neighbors_view;
  * @brief Neighbors view — standard variant without value function.
  *
  * Iterates over every neighbor of a source vertex, yielding
- * @c neighbor_info<vertex_id_type,false,vertex_t<G>,void> per step.
+ * @c neighbor_data<vertex_id_type,false,vertex_t<G>,void> per step.
  *
  * Structured binding: @c auto [tid, n] where
  * - @c tid — @c vertex_id_t<G> (target / neighbor vertex identifier)
@@ -163,10 +163,10 @@ public:
   using edge_range_type    = typename Accessor::template edge_range_t<G>;
   using edge_iterator_type = std::ranges::iterator_t<edge_range_type>;
   using edge_type          = typename Accessor::template edge_t<G>;
-  using info_type          = neighbor_info<vertex_id_type, false, vertex_type, void>;
+  using info_type          = neighbor_data<vertex_id_type, false, vertex_type, void>;
 
   /**
-   * @brief Forward iterator yielding @c neighbor_info{tid, n} per neighbor.
+   * @brief Forward iterator yielding @c neighbor_data{tid, n} per neighbor.
    *
    * Satisfies @c std::forward_iterator.  All operations are @c noexcept.
    */
@@ -239,7 +239,7 @@ private:
  * @brief Neighbors view — standard variant with value function.
  *
  * Iterates over every neighbor of a source vertex, yielding
- * @c neighbor_info<vertex_id_type,false,vertex_t<G>,VV> where @c VV =
+ * @c neighbor_data<vertex_id_type,false,vertex_t<G>,VV> where @c VV =
  * @c invoke_result_t<VVF,const G&,vertex_t<G>> .
  *
  * Structured binding: @c auto [tid, n, val] where
@@ -277,10 +277,10 @@ public:
   using edge_iterator_type = std::ranges::iterator_t<edge_range_type>;
   using edge_type          = typename Accessor::template edge_t<G>;
   using value_type_result  = std::invoke_result_t<VVF, const G&, vertex_type>;
-  using info_type          = neighbor_info<vertex_id_type, false, vertex_type, value_type_result>;
+  using info_type          = neighbor_data<vertex_id_type, false, vertex_type, value_type_result>;
 
   /**
-   * @brief Forward iterator yielding @c neighbor_info{tid, n, val} per neighbor.
+   * @brief Forward iterator yielding @c neighbor_data{tid, n, val} per neighbor.
    *
    * Satisfies @c std::forward_iterator.  @c operator*() may throw if VVF throws.
    */
@@ -369,7 +369,7 @@ neighbors_view(G&, adj_list::vertex_t<G>, VVF) -> neighbors_view<G, VVF, out_edg
  * @tparam G  Graph type satisfying @c adjacency_list
  * @param  g  The graph to iterate over.  Must outlive the returned view.
  * @param  u  The source vertex descriptor.
- * @return @c neighbors_view yielding @c neighbor_info{tid, n} per neighbor.
+ * @return @c neighbors_view yielding @c neighbor_data{tid, n} per neighbor.
  *
  * @pre  @c u is a valid vertex descriptor in @c g.
  * @post The graph is not modified.
@@ -392,7 +392,7 @@ template <adj_list::adjacency_list G>
  * @tparam G  Graph type satisfying @c index_adjacency_list
  * @param  g   The graph to iterate over.
  * @param  uid The source vertex id.
- * @return @c neighbors_view yielding @c neighbor_info{tid, n} per neighbor.
+ * @return @c neighbors_view yielding @c neighbor_data{tid, n} per neighbor.
  *
  * @pre  @c uid is a valid vertex id in @c g.
  * @post The graph is not modified.
@@ -417,7 +417,7 @@ template <adj_list::index_adjacency_list G>
  * @param  u   The source vertex descriptor.
  * @param  vvf Value function invoked once per neighbor.
  *             Use a stateless lambda for @c std::views chaining support.
- * @return @c neighbors_view yielding @c neighbor_info{tid, n, val} per neighbor.
+ * @return @c neighbors_view yielding @c neighbor_data{tid, n, val} per neighbor.
  *
  * @pre  @c u is a valid vertex descriptor in @c g.
  * @post The graph is not modified.
@@ -445,7 +445,7 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
  * @param  g   The graph to iterate over.
  * @param  uid The source vertex id.
  * @param  vvf Value function invoked once per neighbor.
- * @return @c neighbors_view yielding @c neighbor_info{tid, n, val} per neighbor.
+ * @return @c neighbors_view yielding @c neighbor_data{tid, n, val} per neighbor.
  *
  * @pre  @c uid is a valid vertex id in @c g.
  * @post The graph is not modified.
@@ -465,7 +465,7 @@ requires vertex_value_function<VVF, G, adj_list::vertex_t<G>>
  * @brief Basic neighbors view — simplified variant without value function.
  *
  * Iterates over every neighbor of a source vertex, yielding
- * @c neighbor_info<vertex_id_type,false,void,void>.  No target vertex
+ * @c neighbor_data<vertex_id_type,false,void,void>.  No target vertex
  * descriptor is materialised — only the target id is returned, making
  * this the lightest-weight neighbor iteration available.
  *
@@ -501,10 +501,10 @@ public:
   using edge_range_type    = typename Accessor::template edge_range_t<G>;
   using edge_iterator_type = std::ranges::iterator_t<edge_range_type>;
   using edge_type          = typename Accessor::template edge_t<G>;
-  using info_type          = neighbor_info<vertex_id_type, false, void, void>;
+  using info_type          = neighbor_data<vertex_id_type, false, void, void>;
 
   /**
-   * @brief Forward iterator yielding @c neighbor_info{tid} per neighbor.
+   * @brief Forward iterator yielding @c neighbor_data{tid} per neighbor.
    *
    * Satisfies @c std::forward_iterator.  All operations are @c noexcept.
    */
@@ -575,7 +575,7 @@ private:
  * @brief Basic neighbors view — simplified variant with value function.
  *
  * Iterates over every neighbor of a source vertex, yielding
- * @c neighbor_info<vertex_id_type,false,void,VV> where @c VV =
+ * @c neighbor_data<vertex_id_type,false,void,VV> where @c VV =
  * @c invoke_result_t<VVF,const G&,vertex_t<G>> .  No target vertex
  * descriptor is materialised.
  *
@@ -614,10 +614,10 @@ public:
   using edge_iterator_type = std::ranges::iterator_t<edge_range_type>;
   using edge_type          = typename Accessor::template edge_t<G>;
   using value_type_result  = std::invoke_result_t<VVF, const G&, vertex_type>;
-  using info_type          = neighbor_info<vertex_id_type, false, void, value_type_result>;
+  using info_type          = neighbor_data<vertex_id_type, false, void, value_type_result>;
 
   /**
-   * @brief Forward iterator yielding @c neighbor_info{tid, val} per neighbor.
+   * @brief Forward iterator yielding @c neighbor_data{tid, val} per neighbor.
    *
    * Satisfies @c std::forward_iterator.  @c operator*() may throw if VVF throws.
    */
@@ -716,7 +716,7 @@ basic_neighbors_view(G&, adj_list::vertex_t<G>, VVF) -> basic_neighbors_view<G, 
  * @tparam G  Graph type satisfying @c adjacency_list
  * @param  g   The graph to iterate over.  Must outlive the returned view.
  * @param  uid The source vertex id.
- * @return @c basic_neighbors_view yielding @c neighbor_info{tid} per neighbor.
+ * @return @c basic_neighbors_view yielding @c neighbor_data{tid} per neighbor.
  *
  * @pre  @c uid is a valid vertex id in @c g.
  * @post The graph is not modified.
@@ -741,7 +741,7 @@ template <adj_list::adjacency_list G>
  * @param  uid The source vertex id.
  * @param  vvf Value function invoked once per neighbor.
  *             Use a stateless lambda for @c std::views chaining support.
- * @return @c basic_neighbors_view yielding @c neighbor_info{tid, val} per neighbor.
+ * @return @c basic_neighbors_view yielding @c neighbor_data{tid, val} per neighbor.
  *
  * @pre  @c uid is a valid vertex id in @c g.
  * @post The graph is not modified.

@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <graph/container/undirected_adjacency_list.hpp>
-#include <graph/graph_info.hpp>
+#include <graph/graph_data.hpp>
 #include <vector>
 #include <algorithm>
 #include <set>
@@ -1307,9 +1307,9 @@ TEST_CASE("copy with graph value", "[undirected_adjacency_list][memory][copy]") 
 // =============================================================================
 
 TEST_CASE("edge range constructor basic", "[undirected_adjacency_list][construction][range]") {
-  // Use copyable_edge_t (edge_info) with source_id, target_id, value members
-  using edge_info_t                  = graph::copyable_edge_t<VKey, int>;
-  std::vector<edge_info_t> edge_list = {
+  // Use copyable_edge_t (edge_data) with source_id, target_id, value members
+  using edge_data_t                  = graph::copyable_edge_t<VKey, int>;
+  std::vector<edge_data_t> edge_list = {
         {0, 1, 100}, // source_id=0, target_id=1, value=100
         {1, 2, 200},
         {2, 3, 300} // Must be sorted by source_id for the constructor
@@ -1340,14 +1340,14 @@ TEST_CASE("edge range constructor basic", "[undirected_adjacency_list][construct
 }
 
 TEST_CASE("edge range constructor with projection", "[undirected_adjacency_list][construction][range]") {
-  // Simple edge pairs (source, target) - use projection to create edge_info
+  // Simple edge pairs (source, target) - use projection to create edge_data
   std::vector<std::pair<VKey, VKey>> edge_pairs = {
         {0, 1}, {1, 2}, {2, 3} // Must be sorted by source_id
   };
 
-  using edge_info_t = graph::copyable_edge_t<VKey, int>;
+  using edge_data_t = graph::copyable_edge_t<VKey, int>;
   undirected_adjacency_list<int, int, int> g(
-        edge_pairs, [](const auto& p) -> edge_info_t { return {p.first, p.second, 0}; }, // default edge value
+        edge_pairs, [](const auto& p) -> edge_data_t { return {p.first, p.second, 0}; }, // default edge value
         0                                                                                // graph value
   );
 
@@ -1357,8 +1357,8 @@ TEST_CASE("edge range constructor with projection", "[undirected_adjacency_list]
 
 TEST_CASE("edge range constructor sparse vertices", "[undirected_adjacency_list][construction][range]") {
   // Edge list with non-contiguous vertex ids (must be sorted by source_id)
-  using edge_info_t                  = graph::copyable_edge_t<VKey, int>;
-  std::vector<edge_info_t> edge_list = {
+  using edge_data_t                  = graph::copyable_edge_t<VKey, int>;
+  std::vector<edge_data_t> edge_list = {
         {0, 5, 100}, // vertices 1-4 will be created but empty
         {5, 10, 200} // vertices 6-9 will be created but empty
   };
@@ -1382,8 +1382,8 @@ TEST_CASE("edge range constructor sparse vertices", "[undirected_adjacency_list]
 }
 
 TEST_CASE("edge range constructor empty range", "[undirected_adjacency_list][construction][range]") {
-  using edge_info_t = graph::copyable_edge_t<VKey, int>;
-  std::vector<edge_info_t> empty_edges;
+  using edge_data_t = graph::copyable_edge_t<VKey, int>;
+  std::vector<edge_data_t> empty_edges;
 
   undirected_adjacency_list<int, int, int> g(empty_edges, std::identity{}, 99);
 

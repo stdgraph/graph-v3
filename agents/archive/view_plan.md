@@ -23,9 +23,9 @@ This plan implements graph views as described in D3129 and detailed in view_stra
 ## Progress Tracking
 
 ### Phase 0: Info Struct Refactoring ✅ (2026-01-31)
-- [x] **Step 0.1**: Refactor vertex_info (all members optional via void)
-- [x] **Step 0.2**: Refactor edge_info (all members optional via void)
-- [x] **Step 0.3**: Refactor neighbor_info (all members optional via void)
+- [x] **Step 0.1**: Refactor vertex_data (all members optional via void)
+- [x] **Step 0.2**: Refactor edge_data (all members optional via void)
+- [x] **Step 0.3**: Refactor neighbor_data (all members optional via void)
 
 ### Phase 1: Foundation
 - [x] **Step 1.1**: Create directory structure ✅ (2026-02-01)
@@ -87,14 +87,14 @@ This plan implements graph views as described in D3129 and detailed in view_stra
 **Test Results**: ✅ 27 test cases, 392 assertions, all passing
 
 **Implementation Summary**:
-- Added 20 new VId=void specializations (4 vertex_info, 8 edge_info, 8 neighbor_info)
-- Total specializations: 40 (8 vertex_info, 16 edge_info, 16 neighbor_info)
+- Added 20 new VId=void specializations (4 vertex_data, 8 edge_data, 8 neighbor_data)
+- Total specializations: 40 (8 vertex_data, 16 edge_data, 16 neighbor_data)
 - All void template parameters physically omit corresponding members
 - Comprehensive test suite created in `tests/views/`
 
 **Key Implementation Details Discovered**:
-1. **edge_info member naming**: Uses `source_id` and `target_id` (vertex IDs), NOT `edge_id`
-2. **neighbor_info member naming**: 
+1. **edge_data member naming**: Uses `source_id` and `target_id` (vertex IDs), NOT `edge_id`
+2. **neighbor_data member naming**: 
    - Uses `source_id` and `target_id` (vertex IDs), NOT `vertex_id`
    - Uses `target` member when VId is present
    - Uses `vertex` member when VId=void (descriptor-based pattern)
@@ -105,18 +105,18 @@ This plan implements graph views as described in D3129 and detailed in view_stra
 
 ---
 
-### Step 0.1: Refactor vertex_info ✅ COMPLETE
+### Step 0.1: Refactor vertex_data ✅ COMPLETE
 
-**Goal**: Make all members of vertex_info optional via void template parameters.
+**Goal**: Make all members of vertex_data optional via void template parameters.
 
 **Files to Modify**:
-- `include/graph/graph_info.hpp`
+- `include/graph/graph_data.hpp`
 
 **Implementation**:
 ```cpp
 // Primary template - all members present
 template <class VId, class V, class VV>
-struct vertex_info {
+struct vertex_data {
   using id_type     = VId;
   using vertex_type = V;
   using value_type  = VV;
@@ -129,7 +129,7 @@ struct vertex_info {
 // Specializations for void combinations (8 total: 2^3)
 // Example specialization: VId=void
 template <class V, class VV>
-struct vertex_info<void, V, VV> {
+struct vertex_data<void, V, VV> {
   using id_type     = void;
   using vertex_type = V;
   using value_type  = VV;
@@ -141,7 +141,7 @@ struct vertex_info<void, V, VV> {
 
 // Example specialization: VId=void, VV=void
 template <class V>
-struct vertex_info<void, V, void> {
+struct vertex_data<void, V, void> {
   using id_type     = void;
   using vertex_type = V;
   using value_type  = void;
@@ -155,11 +155,11 @@ struct vertex_info<void, V, void> {
 ```
 
 **Tests to Create**:
-- `tests/views/test_vertex_info.cpp`
+- `tests/views/test_vertex_data.cpp`
   - Test all 8 specializations compile
   - Test structured bindings for each variant
-  - Test `vertex_info<void, vertex_descriptor<...>, int>` pattern
-  - Test `vertex_info<size_t, void, int>` for external data
+  - Test `vertex_data<void, vertex_descriptor<...>, int>` pattern
+  - Test `vertex_data<size_t, void, int>` for external data
   - Test copyability and movability
 
 **Acceptance Criteria**:
@@ -173,31 +173,31 @@ struct vertex_info<void, V, void> {
 
 **Commit Message**:
 ```
-[views] Refactor vertex_info: all members optional via void
+[views] Refactor vertex_data: all members optional via void
 
 - VId, V, VV can all be void to suppress corresponding members
-- Primary pattern: vertex_info<void, vertex_descriptor, VV>
-- External data pattern: vertex_info<VId, void, VV>
+- Primary pattern: vertex_data<void, vertex_descriptor, VV>
+- External data pattern: vertex_data<VId, void, VV>
 - Add 8 specializations for void combinations
 - Tests cover all variants and structured bindings
 ```
 
 ---
 
-### Step 0.2: Refactor edge_info ✅ COMPLETE
+### Step 0.2: Refactor edge_data ✅ COMPLETE
 
-**Goal**: Make all members of edge_info optional via void template parameters.
+**Goal**: Make all members of edge_data optional via void template parameters.
 
 **Status**: ✅ COMPLETE
 
 **Files to Modify**:
-- `include/graph/graph_info.hpp`
+- `include/graph/graph_data.hpp`
 
 **Implementation**:
 ```cpp
 // Primary template - all members present
 template <class VId, bool Sourced, class E, class EV>
-struct edge_info {
+struct edge_data {
   using source_id_type = conditional_t<Sourced, VId, void>;
   using target_id_type = VId;
   using edge_type      = E;
@@ -211,7 +211,7 @@ struct edge_info {
 
 // Example specialization: VId=void (suppresses source_id/target_id)
 template <bool Sourced, class E, class EV>
-struct edge_info<void, Sourced, E, EV> {
+struct edge_data<void, Sourced, E, EV> {
   using source_id_type = void;
   using target_id_type = void;
   using edge_type      = E;
@@ -224,7 +224,7 @@ struct edge_info<void, Sourced, E, EV> {
 
 // Example specialization: VId=void, EV=void
 template <bool Sourced, class E>
-struct edge_info<void, Sourced, E, void> {
+struct edge_data<void, Sourced, E, void> {
   using source_id_type = void;
   using target_id_type = void;
   using edge_type      = E;
@@ -239,11 +239,11 @@ struct edge_info<void, Sourced, E, void> {
 ```
 
 **Tests to Create**:
-- `tests/views/test_edge_info.cpp`
+- `tests/views/test_edge_data.cpp`
   - Test all 16 specializations compile
   - Test structured bindings for each variant
-  - Test `edge_info<void, false, edge_descriptor<...>, EV>` pattern
-  - Test `edge_info<size_t, true, void, EV>` for external data
+  - Test `edge_data<void, false, edge_descriptor<...>, EV>` pattern
+  - Test `edge_data<size_t, true, void, EV>` for external data
   - Test Sourced=true vs Sourced=false behavior
   - Test copyability and movability
 
@@ -255,34 +255,34 @@ struct edge_info<void, Sourced, E, void> {
 
 **Commit Message**:
 ```
-[views] Refactor edge_info: all members optional via void
+[views] Refactor edge_data: all members optional via void
 
 - VId, E, EV can all be void to suppress corresponding members
 - Sourced bool controls source_id presence (when VId != void)
-- Primary pattern: edge_info<void, false, edge_descriptor, EV>
-- External data pattern: edge_info<VId, true, void, EV>
+- Primary pattern: edge_data<void, false, edge_descriptor, EV>
+- External data pattern: edge_data<VId, true, void, EV>
 - Add 16 specializations for Sourced × void combinations
 - Tests cover all variants and structured bindings
 ```
 
 ---
 
-### Step 0.3: Refactor neighbor_info ✅ COMPLETE
+### Step 0.3: Refactor neighbor_data ✅ COMPLETE
 
-**Goal**: Make all members of neighbor_info optional via void template parameters.
+**Goal**: Make all members of neighbor_data optional via void template parameters.
 
 **Status**: ✅ COMPLETE
 
 **Implementation Note**: The actual implementation uses `target` as the member name when VId is present, and `vertex` when VId=void. This differs from the original plan which assumed consistent naming.
 
 **Files to Modify**:
-- `include/graph/graph_info.hpp`
+- `include/graph/graph_data.hpp`
 
 **Implementation**:
 ```cpp
 // Primary template - all members present
 template <class VId, bool Sourced, class V, class VV>
-struct neighbor_info {
+struct neighbor_data {
   using source_id_type = conditional_t<Sourced, VId, void>;
   using target_id_type = VId;
   using vertex_type    = V;
@@ -297,7 +297,7 @@ struct neighbor_info {
 // Example specialization: VId=void (suppresses source_id/target_id)
 // ACTUAL IMPLEMENTATION: member named 'vertex' when VId=void
 template <bool Sourced, class V, class VV>
-struct neighbor_info<void, Sourced, V, VV> {
+struct neighbor_data<void, Sourced, V, VV> {
   using source_id_type = void;
   using target_id_type = void;
   using vertex_type    = V;
@@ -310,7 +310,7 @@ struct neighbor_info<void, Sourced, V, VV> {
 
 // Example specialization: VId=void, VV=void (primary pattern for neighbors)
 template <bool Sourced, class V>
-struct neighbor_info<void, Sourced, V, void> {
+struct neighbor_data<void, Sourced, V, void> {
   using source_id_type = void;
   using target_id_type = void;
   using vertex_type    = V;
@@ -325,11 +325,11 @@ struct neighbor_info<void, Sourced, V, void> {
 ```
 
 **Tests to Create**:
-- `tests/views/test_neighbor_info.cpp`
+- `tests/views/test_neighbor_data.cpp`
   - Test all 16 specializations compile
   - Test structured bindings for each variant
-  - Test `neighbor_info<void, false, vertex_descriptor<...>, VV>` pattern
-  - Test `neighbor_info<size_t, true, void, VV>` for external data
+  - Test `neighbor_data<void, false, vertex_descriptor<...>, VV>` pattern
+  - Test `neighbor_data<size_t, true, void, VV>` for external data
   - Test Sourced=true vs Sourced=false behavior
   - Test copyability and movability
 
@@ -341,12 +341,12 @@ struct neighbor_info<void, Sourced, V, void> {
 
 **Commit Message**:
 ```
-[views] Refactor neighbor_info: all members optional via void
+[views] Refactor neighbor_data: all members optional via void
 
 - VId, V, VV can all be void to suppress corresponding members
 - Sourced bool controls source_id presence (when VId != void)
-- Primary pattern: neighbor_info<void, false, vertex_descriptor, VV>
-- External data pattern: neighbor_info<VId, true, void, VV>
+- Primary pattern: neighbor_data<void, false, vertex_descriptor, VV>
+- External data pattern: neighbor_data<VId, true, void, VV>
 - Add 16 specializations for Sourced × void combinations
 - Tests cover all variants and structured bindings
 ```
@@ -371,9 +371,9 @@ struct neighbor_info<void, Sourced, V, void> {
 # tests/views/CMakeLists.txt
 add_executable(graph3_views_tests
     test_main.cpp
-    test_vertex_info.cpp
-    test_edge_info.cpp
-    test_neighbor_info.cpp
+    test_vertex_data.cpp
+    test_edge_data.cpp
+    test_neighbor_data.cpp
 )
 
 target_link_libraries(graph3_views_tests
@@ -570,7 +570,7 @@ concept search_view = requires(V& v, const V& cv) {
 **Implementation Summary**:
 - `vertexlist_view<G, void>` - No value function variant
 - `vertexlist_view<G, VVF>` - With value function variant  
-- Yields `vertex_info<void, vertex_t<G>, VV>` where VV is void or invoke result
+- Yields `vertex_data<void, vertex_t<G>, VV>` where VV is void or invoke result
 - Factory functions: `vertexlist(g)` and `vertexlist(g, vvf)`
 - Uses `adjacency_list` concept (not `index_adjacency_list`)
 - Constrained with `vertex_value_function` concept
@@ -584,7 +584,7 @@ concept search_view = requires(V& v, const V& cv) {
 - Deque-based graph support
 - Range concepts verified (input_range, forward_range, sized_range, view)
 - Iterator properties (pre/post increment, equality)
-- vertex_info type verification
+- vertex_data type verification
 - Const graph access
 - Weighted graph (pair edges)
 - std::ranges algorithms (distance, count_if)
@@ -596,7 +596,7 @@ concept search_view = requires(V& v, const V& cv) {
 ```
 [views] Phase 2.1: Implement vertexlist view
 
-- Yields vertex_info<void, vertex_descriptor, VV>
+- Yields vertex_data<void, vertex_descriptor, VV>
 - Value function receives vertex descriptor
 - Supports structured bindings: [v] and [v, val]
 - Tests cover iteration, value functions, const correctness
@@ -617,7 +617,7 @@ concept search_view = requires(V& v, const V& cv) {
 **Implementation Summary**:
 - `incidence_view<G, void>` - No value function variant
 - `incidence_view<G, EVF>` - With value function variant
-- Yields `edge_info<void, false, edge_t<G>, EV>` where EV is void or invoke result
+- Yields `edge_data<void, false, edge_t<G>, EV>` where EV is void or invoke result
 - Factory functions: `incidence(g, u)` and `incidence(g, u, evf)`
 - Uses `adjacency_list` concept
 - Constrained with `edge_value_function` concept
@@ -633,7 +633,7 @@ concept search_view = requires(V& v, const V& cv) {
 - Weighted graph (pair edges) with edge_value
 - Range concepts verified (input_range, forward_range, sized_range)
 - Iterator properties (pre/post increment, equality)
-- edge_info type verification
+- edge_data type verification
 - Deque-based graph support
 - All-vertices iteration pattern
 - **Map vertices + vector edges** (sparse vertex IDs)
@@ -644,7 +644,7 @@ concept search_view = requires(V& v, const V& cv) {
 ```
 [views] Phase 2.2: Implement incidence view
 
-- Yields edge_info<void, false, edge_descriptor, EV>
+- Yields edge_data<void, false, edge_descriptor, EV>
 - Edge descriptor contains source vertex descriptor
 - Value function receives edge descriptor
 - Supports structured bindings: [e] and [e, val]
@@ -665,7 +665,7 @@ concept search_view = requires(V& v, const V& cv) {
 **Implementation Summary**:
 - `neighbors_view<G, void>` - No value function variant
 - `neighbors_view<G, VVF>` - With value function variant
-- Yields `neighbor_info<void, false, vertex_t<G>, VV>` where VV is void or invoke result
+- Yields `neighbor_data<void, false, vertex_t<G>, VV>` where VV is void or invoke result
 - Factory functions: `neighbors(g, u)` and `neighbors(g, u, vvf)`
 - Uses `adjacency_list` concept
 - Constrained with `vertex_value_function` concept
@@ -681,7 +681,7 @@ concept search_view = requires(V& v, const V& cv) {
 - Weighted graph (pair edges)
 - Range concepts verified (input_range, forward_range, sized_range)
 - Iterator properties (pre/post increment, equality)
-- neighbor_info type verification
+- neighbor_data type verification
 - Deque-based graph support
 - All-vertices iteration pattern (vertexlist + neighbors)
 - **Map vertices + vector edges** (sparse vertex IDs)
@@ -692,7 +692,7 @@ concept search_view = requires(V& v, const V& cv) {
 ```
 [views] Phase 2.3: Implement neighbors view
 
-- Yields neighbor_info<void, false, vertex_descriptor, VV>
+- Yields neighbor_data<void, false, vertex_descriptor, VV>
 - Provides target vertex descriptors via target() CPO
 - Value function receives target vertex descriptor
 - Supports structured bindings: [v] and [v, val]
@@ -704,7 +704,7 @@ concept search_view = requires(V& v, const V& cv) {
 
 ### Step 2.4: Implement edgelist view for adjacency_list ✅ COMPLETED (2026-02-01)
 
-**Goal**: Implement edgelist view that flattens all edges from an adjacency_list, yielding `edge_info<void, false, edge_descriptor, EV>`.
+**Goal**: Implement edgelist view that flattens all edges from an adjacency_list, yielding `edge_data<void, false, edge_descriptor, EV>`.
 
 **Implementation Summary**:
 
@@ -745,7 +745,7 @@ Created `tests/views/test_edgelist.cpp`:
 ```
 [views] Implement edgelist view for adjacency_list
 
-- Yields edge_info<void, false, edge_descriptor, EV>
+- Yields edge_data<void, false, edge_descriptor, EV>
 - Flattens adjacency list structure
 - Edge descriptor contains source vertex descriptor
 - Value function receives edge descriptor
@@ -760,7 +760,7 @@ Created `tests/views/test_edgelist.cpp`:
 **Commit**: baeea27 "[views] Step 2.4.1: Implement edgelist view for edge_list"  
 **Test Results**: ✅ 26 test cases (11 new), 128 assertions, all passing
 
-**Goal**: Implement edgelist view that iterates over an edge_list data structure, yielding `edge_info<void, false, edge_descriptor, EV>`.
+**Goal**: Implement edgelist view that iterates over an edge_list data structure, yielding `edge_data<void, false, edge_descriptor, EV>`.
 
 **Files to Modify**:
 - `include/graph/views/edgelist.hpp` (add edge_list overloads)
@@ -786,7 +786,7 @@ public:
     public:
         using iterator_category = std::forward_iterator_tag;
         using difference_type   = std::ptrdiff_t;
-        using value_type        = edge_info<void, false, edge_list::edge_t<EL>, 
+        using value_type        = edge_data<void, false, edge_list::edge_t<EL>, 
                                            std::invoke_result_t<EVF, edge_list::edge_t<EL>>>;
         
         iterator(base_iter it, EVF* evf)
@@ -795,9 +795,9 @@ public:
         auto operator*() const {
             auto edesc = *current_;  // edge_list edge descriptor
             if constexpr (std::is_void_v<EVF>) {
-                return edge_info<void, false, edge_list::edge_t<EL>, void>{edesc};
+                return edge_data<void, false, edge_list::edge_t<EL>, void>{edesc};
             } else {
-                return edge_info<void, false, edge_list::edge_t<EL>, 
+                return edge_data<void, false, edge_list::edge_t<EL>, 
                                std::invoke_result_t<EVF, edge_list::edge_t<EL>>>{
                     edesc, (*evf_)(edesc)
                 };
@@ -866,14 +866,14 @@ auto edgelist(EL&& el, EVF&& evf) {
 - EVF signature is `EVF(EL&, edge)` not `EVF(edge)` since edge_list CPOs require edge_list reference
 - Disambiguate from adjacency_list via `requires (!adj_list::adjacency_list<EL>)`
 - Removed conflicting `namespace edgelist = edge_list;` alias from edge_list.hpp
-- Added 11 test cases covering pairs, tuples, edge_info, weighted, empty, concepts, iterators, string VIds, algorithms, deque
+- Added 11 test cases covering pairs, tuples, edge_data, weighted, empty, concepts, iterators, string VIds, algorithms, deque
 
 **Commit Message**:
 ```
 [views] Step 2.4.1: Implement edgelist view for edge_list
 
 - Add edge_list_edgelist_view<EL, void> and <EL, EVF> specializations
-- Wraps edge_list ranges, yields edge_info<void, false, edge, EV>
+- Wraps edge_list ranges, yields edge_data<void, false, edge, EV>
 - Factory functions: edgelist(el) and edgelist(el, evf)
 - EVF receives (EL&, edge) to support edge_list CPOs (source_id, target_id)
 - Disambiguate from adjacency_list via requires (!adjacency_list<EL>)
@@ -1021,7 +1021,7 @@ public:
     public:
         using iterator_category = std::forward_iterator_tag;
         using difference_type   = std::ptrdiff_t;
-        using value_type        = vertex_info<void, vertex_descriptor_t<G>, 
+        using value_type        = vertex_data<void, vertex_descriptor_t<G>, 
                                              std::invoke_result_t<VVF, vertex_descriptor_t<G>>>;
         
         iterator(G* g, std::shared_ptr<state_t> state, VVF* vvf, bool at_end)
@@ -1032,9 +1032,9 @@ public:
             auto vdesc = create_vertex_descriptor(*g_, vid);
             
             if constexpr (std::is_void_v<VVF>) {
-                return vertex_info<void, vertex_descriptor_t<G>, void>{vdesc};
+                return vertex_data<void, vertex_descriptor_t<G>, void>{vdesc};
             } else {
-                return vertex_info<void, vertex_descriptor_t<G>, 
+                return vertex_data<void, vertex_descriptor_t<G>, 
                                  std::invoke_result_t<VVF, vertex_descriptor_t<G>>>{
                     vdesc, (*vvf_)(vdesc)
                 };
@@ -1099,7 +1099,7 @@ auto vertices_dfs(G&& g, vertex_id_t<G> seed, VVF&& vvf = {}, Alloc alloc = {}) 
 ```
 [views] Implement DFS vertices view
 
-- Yields vertex_info<void, vertex_descriptor, VV>
+- Yields vertex_data<void, vertex_descriptor, VV>
 - Maintains visited set and DFS stack
 - Supports depth(), size(), cancel() accessors
 - Value function receives vertex descriptor
@@ -1110,7 +1110,7 @@ auto vertices_dfs(G&& g, vertex_id_t<G> seed, VVF&& vvf = {}, Alloc alloc = {}) 
 
 ### Step 3.2: Implement edges_dfs
 
-**Goal**: Implement DFS edge traversal yielding `edge_info<void, false, edge_descriptor, EV>`.
+**Goal**: Implement DFS edge traversal yielding `edge_data<void, false, edge_descriptor, EV>`.
 
 **Design Requirements**:
 - Accept both `vertex_id_t<G>` and `vertex_t<G>` (vertex descriptor) as seed parameter
@@ -1143,7 +1143,7 @@ auto vertices_dfs(G&& g, vertex_id_t<G> seed, VVF&& vvf = {}, Alloc alloc = {}) 
 ```
 [views] Implement DFS edges view
 
-- Yields edge_info<void, false, edge_descriptor, EV>
+- Yields edge_data<void, false, edge_descriptor, EV>
 - Tree edges visited in DFS order
 - Edge descriptor contains source vertex descriptor
 - Value function receives edge descriptor
@@ -1220,7 +1220,7 @@ auto vertices_dfs(G&& g, vertex_id_t<G> seed, VVF&& vvf = {}, Alloc alloc = {}) 
 ```
 [views] Implement BFS vertices view
 
-- Yields vertex_info<void, vertex_descriptor, VV>
+- Yields vertex_data<void, vertex_descriptor, VV>
 - Maintains visited set and BFS queue
 - Supports depth(), size(), cancel() accessors
 - Value function receives vertex descriptor
@@ -1256,7 +1256,7 @@ auto vertices_dfs(G&& g, vertex_id_t<G> seed, VVF&& vvf = {}, Alloc alloc = {}) 
 ```
 [views] Implement BFS edges view
 
-- Yields edge_info<void, false, edge_descriptor, EV>
+- Yields edge_data<void, false, edge_descriptor, EV>
 - Edges visited in BFS order
 - Tests verify edge traversal
 ```
@@ -1349,7 +1349,7 @@ Unlike DFS/BFS, topological sort is intentionally designed as a **whole-graph op
 ```
 [views] Implement topological sort vertices view
 
-- Yields vertex_info<void, vertex_descriptor, VV>
+- Yields vertex_data<void, vertex_descriptor, VV>
 - Uses reverse DFS post-order algorithm
 - Produces valid topological ordering
 - Processes entire graph (not seed-based)

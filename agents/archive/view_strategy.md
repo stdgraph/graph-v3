@@ -34,24 +34,24 @@ on iteration.
 ## 2. Info Structs
 
 Info structs are the value types yielded by view iterators. The existing implementation in 
-`graph_info.hpp` provides a solid foundation. The current design uses template specializations 
+`graph_data.hpp` provides a solid foundation. The current design uses template specializations 
 with `void` to conditionally include/exclude members.
 
-### 2.1 Current Implementation (graph_info.hpp)
+### 2.1 Current Implementation (graph_data.hpp)
 
 The codebase already has:
 
 ```cpp
 template <class VId, class V, class VV>
-struct vertex_info { source_id_type id; vertex_type vertex; value_type value; };
+struct vertex_data { source_id_type id; vertex_type vertex; value_type value; };
 // + specializations for void combinations
 
 template <class VId, bool Sourced, class E, class EV>  
-struct edge_info { source_id_type source_id; target_id_type target_id; edge_type edge; value_type value; };
+struct edge_data { source_id_type source_id; target_id_type target_id; edge_type edge; value_type value; };
 // + 8 specializations for Sourced × E × EV combinations
 
 template <class VId, bool Sourced, class V, class VV>
-struct neighbor_info { source_id_type source_id; target_id_type target_id; vertex_type target; value_type value; };
+struct neighbor_data { source_id_type source_id; target_id_type target_id; vertex_type target; value_type value; };
 // + 8 specializations for Sourced × V × VV combinations
 ```
 
@@ -62,17 +62,17 @@ struct neighbor_info { source_id_type source_id; target_id_type target_id; verte
 ```cpp
 // For search views that need depth information
 template <class VId, class V, class VV>
-struct search_vertex_info : vertex_info<VId, V, VV> {
+struct search_vertex_data : vertex_data<VId, V, VV> {
     std::size_t depth;  // Distance from search root
 };
 
 template <class VId, bool Sourced, class E, class EV>
-struct search_edge_info : edge_info<VId, Sourced, E, EV> {
+struct search_edge_data : edge_data<VId, Sourced, E, EV> {
     std::size_t depth;  // Distance from search root
 };
 
 template <class VId, bool Sourced, class V, class VV>
-struct search_neighbor_info : neighbor_info<VId, Sourced, V, VV> {
+struct search_neighbor_data : neighbor_data<VId, Sourced, V, VV> {
     std::size_t depth;  // Distance from search root
 };
 ```
@@ -96,14 +96,14 @@ struct search_neighbor_info : neighbor_info<VId, Sourced, V, VV> {
 ```cpp
 template<index_adjacency_list G, class VVF = void>
 auto vertexlist(G&& g, VVF&& vvf = {})
-    -> /* range of vertex_info<void, vertex_descriptor_t<G>, invoke_result_t<VVF, const G&, vertex_descriptor_t<G>>> */
+    -> /* range of vertex_data<void, vertex_descriptor_t<G>, invoke_result_t<VVF, const G&, vertex_descriptor_t<G>>> */
 ```
 
 **Parameters**:
 - `g`: The graph (lvalue or rvalue reference)
 - `vvf`: Optional vertex value function `VV vvf(const G&, vertex_descriptor_t<G>)` — graph passed as first parameter
 
-**Returns**: Range yielding `vertex_info<void, V, VV>` where:
+**Returns**: Range yielding `vertex_data<void, V, VV>` where:
 - `VId = void` (descriptor contains ID)
 - `V = vertex_descriptor_t<G>`
 - `VV = invoke_result_t<VVF, const G&, vertex_descriptor_t<G>>` (or `void` if no vvf)
@@ -120,7 +120,7 @@ class vertexlist_view : public std::ranges::view_interface<vertexlist_view<G, VV
         vertex_id_t<G> current_;
         VVF* vvf_;
         
-        auto operator*() const -> vertex_info<void, vertex_descriptor_t<G>, ...> {
+        auto operator*() const -> vertex_data<void, vertex_descriptor_t<G>, ...> {
             auto vdesc = vertex_descriptor<...>(current_);
             if constexpr (std::is_void_v<VVF>) {
                 return {vdesc};  // No value
@@ -144,7 +144,7 @@ class vertexlist_view : public std::ranges::view_interface<vertexlist_view<G, VV
 ```cpp
 template<adjacency_list G, class EVF = void>
 auto incidence(G&& g, vertex_id_t<G> uid, EVF&& evf = {})
-    -> /* range of edge_info<void, false, edge_descriptor_t<G>, invoke_result_t<EVF, edge_descriptor_t<G>>> */
+    -> /* range of edge_data<void, false, edge_descriptor_t<G>, invoke_result_t<EVF, edge_descriptor_t<G>>> */
 ```
 
 **Parameters**:
@@ -152,7 +152,7 @@ auto incidence(G&& g, vertex_id_t<G> uid, EVF&& evf = {})
 - `uid`: Source vertex ID
 - `evf`: Optional edge value function `EV evf(const G&, edge_descriptor_t<G>)` — graph passed as first parameter
 
-**Returns**: Range yielding `edge_info<void, false, E, EV>` where:
+**Returns**: Range yielding `edge_data<void, false, E, EV>` where:
 - `VId = void` (descriptor contains source/target IDs)
 - `Sourced = true` (edge descriptor contains source vertex descriptor)
 - `E = edge_descriptor_t<G>`
@@ -176,7 +176,7 @@ auto incidence(G&& g, vertex_id_t<G> uid, EVF&& evf = {})
 ```cpp
 template<adjacency_list G, class VVF = void>
 auto neighbors(G&& g, vertex_id_t<G> uid, VVF&& vvf = {})
-    -> /* range of neighbor_info<void, false, vertex_descriptor_t<G>, invoke_result_t<VVF, vertex_descriptor_t<G>>> */
+    -> /* range of neighbor_data<void, false, vertex_descriptor_t<G>, invoke_result_t<VVF, vertex_descriptor_t<G>>> */
 ```
 
 **Parameters**:
@@ -184,7 +184,7 @@ auto neighbors(G&& g, vertex_id_t<G> uid, VVF&& vvf = {})
 - `uid`: Source vertex ID  
 - `vvf`: Optional vertex value function applied to target vertex descriptors `VV vvf(const G&, vertex_descriptor_t<G>)` — graph passed as first parameter
 
-**Returns**: Range yielding `neighbor_info<void, false, V, VV>` where:
+**Returns**: Range yielding `neighbor_data<void, false, V, VV>` where:
 - `VId = void` (descriptor contains target ID)
 - `Sourced = false` (focus on target vertex, not edge source)
 - `V = vertex_descriptor_t<G>` (target vertex descriptor)
@@ -192,7 +192,7 @@ auto neighbors(G&& g, vertex_id_t<G> uid, VVF&& vvf = {})
 
 **Implementation Notes**:
 - Iterates over `edges(g, u)` internally to navigate adjacency
-- Yields neighbor_info containing target vertex descriptor
+- Yields neighbor_data containing target vertex descriptor
 - Value function receives target vertex descriptor (not source)
 
 **File Location**: `include/graph/views/neighbors.hpp`
@@ -207,14 +207,14 @@ auto neighbors(G&& g, vertex_id_t<G> uid, VVF&& vvf = {})
 ```cpp
 template<adjacency_list G, class EVF = void>
 auto edgelist(G&& g, EVF&& evf = {})
-    -> /* range of edge_info<void, false, edge_descriptor_t<G>, invoke_result_t<EVF, edge_descriptor_t<G>>> */
+    -> /* range of edge_data<void, false, edge_descriptor_t<G>, invoke_result_t<EVF, edge_descriptor_t<G>>> */
 ```
 
 **Parameters**:
 - `g`: The graph
 - `evf`: Optional edge value function `EV evf(edge_descriptor_t<G>)`
 
-**Returns**: Range yielding `edge_info<void, false, E, EV>` where:
+**Returns**: Range yielding `edge_data<void, false, E, EV>` where:
 - `VId = void` (descriptor contains IDs)
 - `Sourced = true` (always sourced)
 - `E = edge_descriptor_t<G>`
@@ -281,40 +281,40 @@ public:
 ```cpp
 template<index_adjacency_list G, class VVF = void, class Alloc = std::allocator<...>>
 auto vertices_dfs(G&& g, vertex_id_t<G> seed, VVF&& vvf = {}, Alloc alloc = {})
-    -> /* dfs_view yielding vertex_info */
+    -> /* dfs_view yielding vertex_data */
 
 // Vertex descriptor overload
 template<index_adjacency_list G, class VVF = void, class Alloc = std::allocator<...>>
 auto vertices_dfs(G&& g, vertex_t<G> seed_vertex, VVF&& vvf = {}, Alloc alloc = {})
-    -> /* dfs_view yielding vertex_info */
+    -> /* dfs_view yielding vertex_data */
 ```
 
-**Yields**: `vertex_info<void, V, VV>` in DFS order (VId=void; IDs accessible via descriptor)
+**Yields**: `vertex_data<void, V, VV>` in DFS order (VId=void; IDs accessible via descriptor)
 
 #### 4.2.2 edges_dfs
 
 ```cpp
 template<index_adjacency_list G, class EVF = void, class Alloc = std::allocator<...>>
 auto edges_dfs(G&& g, vertex_id_t<G> seed, EVF&& evf = {}, Alloc alloc = {})
-    -> /* dfs_view yielding edge_info */
+    -> /* dfs_view yielding edge_data */
 
 // Vertex descriptor overload
 template<index_adjacency_list G, class EVF = void, class Alloc = std::allocator<...>>
 auto edges_dfs(G&& g, vertex_t<G> seed_vertex, EVF&& evf = {}, Alloc alloc = {})
-    -> /* dfs_view yielding edge_info */
+    -> /* dfs_view yielding edge_data */
 ```
 
-**Yields**: `edge_info<void, false, E, EV>` (non-sourced) in DFS order (VId=void; IDs accessible via descriptor)
+**Yields**: `edge_data<void, false, E, EV>` (non-sourced) in DFS order (VId=void; IDs accessible via descriptor)
 
 #### 4.2.3 sourced_edges_dfs
 
 ```cpp
 template<index_adjacency_list G, class EVF = void, class Alloc = std::allocator<...>>
 auto sourced_edges_dfs(G&& g, vertex_id_t<G> seed, EVF&& evf = {}, Alloc alloc = {})
-    -> /* dfs_view yielding sourced edge_info */
+    -> /* dfs_view yielding sourced edge_data */
 ```
 
-**Yields**: `edge_info<void, false, E, EV>` in DFS order (VId=void; source/target IDs accessible via descriptor)
+**Yields**: `edge_data<void, false, E, EV>` in DFS order (VId=void; source/target IDs accessible via descriptor)
 
 **DFS Implementation Strategy**:
 ```cpp
@@ -352,40 +352,40 @@ class dfs_view : public std::ranges::view_interface<dfs_view<G, Kind, VF, Alloc>
 ```cpp
 template<index_adjacency_list G, class VVF = void, class Alloc = std::allocator<...>>
 auto vertices_bfs(G&& g, vertex_id_t<G> seed, VVF&& vvf = {}, Alloc alloc = {})
-    -> /* bfs_view yielding vertex_info */
+    -> /* bfs_view yielding vertex_data */
 
 // Vertex descriptor overload
 template<index_adjacency_list G, class VVF = void, class Alloc = std::allocator<...>>
 auto vertices_bfs(G&& g, vertex_t<G> seed_vertex, VVF&& vvf = {}, Alloc alloc = {})
-    -> /* bfs_view yielding vertex_info */
+    -> /* bfs_view yielding vertex_data */
 ```
 
-**Yields**: `vertex_info<void, V, VV>` in BFS order (VId=void; IDs accessible via descriptor)
+**Yields**: `vertex_data<void, V, VV>` in BFS order (VId=void; IDs accessible via descriptor)
 
 #### 4.3.2 edges_bfs
 
 ```cpp
 template<index_adjacency_list G, class EVF = void, class Alloc = std::allocator<...>>  
 auto edges_bfs(G&& g, vertex_id_t<G> seed, EVF&& evf = {}, Alloc alloc = {})
-    -> /* bfs_view yielding edge_info */
+    -> /* bfs_view yielding edge_data */
 
 // Vertex descriptor overload
 template<index_adjacency_list G, class EVF = void, class Alloc = std::allocator<...>>  
 auto edges_bfs(G&& g, vertex_t<G> seed_vertex, EVF&& evf = {}, Alloc alloc = {})
-    -> /* bfs_view yielding edge_info */
+    -> /* bfs_view yielding edge_data */
 ```
 
-**Yields**: `edge_info<void, false, E, EV>` (non-sourced) in BFS order (VId=void; IDs accessible via descriptor)
+**Yields**: `edge_data<void, false, E, EV>` (non-sourced) in BFS order (VId=void; IDs accessible via descriptor)
 
 #### 4.3.3 sourced_edges_bfs
 
 ```cpp
 template<index_adjacency_list G, class EVF = void, class Alloc = std::allocator<...>>
 auto sourced_edges_bfs(G&& g, vertex_id_t<G> seed, EVF&& evf = {}, Alloc alloc = {})
-    -> /* bfs_view yielding sourced edge_info */
+    -> /* bfs_view yielding sourced edge_data */
 ```
 
-**Yields**: `edge_info<void, false, E, EV>` (sourced) in BFS order (VId=void; IDs accessible via descriptor)
+**Yields**: `edge_data<void, false, E, EV>` (sourced) in BFS order (VId=void; IDs accessible via descriptor)
 
 **BFS Implementation**: Same as DFS but uses `std::queue` instead of `std::stack`.
 
@@ -402,30 +402,30 @@ auto sourced_edges_bfs(G&& g, vertex_id_t<G> seed, EVF&& evf = {}, Alloc alloc =
 ```cpp
 template<index_adjacency_list G, class VVF = void, class Alloc = std::allocator<...>>
 auto vertices_topological_sort(G&& g, VVF&& vvf = {}, Alloc alloc = {})
-    -> /* topological_view yielding vertex_info */
+    -> /* topological_view yielding vertex_data */
 ```
 
-**Yields**: `vertex_info<void, V, VV>` in topological order (VId=void; IDs accessible via descriptor)
+**Yields**: `vertex_data<void, V, VV>` in topological order (VId=void; IDs accessible via descriptor)
 
 #### 4.4.2 edges_topological_sort
 
 ```cpp
 template<index_adjacency_list G, class EVF = void, class Alloc = std::allocator<...>>
 auto edges_topological_sort(G&& g, EVF&& evf = {}, Alloc alloc = {})
-    -> /* topological_view yielding edge_info */
+    -> /* topological_view yielding edge_data */
 ```
 
-**Yields**: `edge_info<void, false, E, EV>` (non-sourced) in topological order (VId=void; IDs accessible via descriptor)
+**Yields**: `edge_data<void, false, E, EV>` (non-sourced) in topological order (VId=void; IDs accessible via descriptor)
 
 #### 4.4.3 sourced_edges_topological_sort
 
 ```cpp
 template<index_adjacency_list G, class EVF = void, class Alloc = std::allocator<...>>
 auto sourced_edges_topological_sort(G&& g, EVF&& evf = {}, Alloc alloc = {})
-    -> /* topological_view yielding sourced edge_info */
+    -> /* topological_view yielding sourced edge_data */
 ```
 
-**Yields**: `edge_info<void, false, E, EV>` in topological order (VId=void; source/target IDs accessible via descriptor)
+**Yields**: `edge_data<void, false, E, EV>` in topological order (VId=void; source/target IDs accessible via descriptor)
 
 **Implementation**: Uses reverse DFS post-order (Kahn's algorithm alternative available).
 
@@ -442,20 +442,20 @@ auto sourced_edges_topological_sort(G&& g, EVF&& evf = {}, Alloc alloc = {})
 **Commit**: 330c7d8 "[views] Phase 0: Info struct refactoring complete"
 
 **Tasks Completed**:
-1. ✅ Refactored vertex_info (4 specializations for VId × V × VV void combinations)
-2. ✅ Refactored edge_info (8 specializations for Sourced × VId × E × EV void combinations)
-3. ✅ Refactored neighbor_info (8 specializations for Sourced × VId × V × VV void combinations)
+1. ✅ Refactored vertex_data (4 specializations for VId × V × VV void combinations)
+2. ✅ Refactored edge_data (8 specializations for Sourced × VId × E × EV void combinations)
+3. ✅ Refactored neighbor_data (8 specializations for Sourced × VId × V × VV void combinations)
 4. ✅ Implemented all 20 new VId=void specializations
 5. ✅ Created comprehensive test suite (27 test cases, 392 assertions)
 
 **Key Discoveries**:
-- edge_info uses `source_id` and `target_id` (vertex IDs), not `edge_id`
-- neighbor_info uses `target` member when VId present, `vertex` when VId=void
+- edge_data uses `source_id` and `target_id` (vertex IDs), not `edge_id`
+- neighbor_data uses `target` member when VId present, `vertex` when VId=void
 - Sourced parameter controls presence of `source_id` member
 - sizeof tests account for struct padding
 
 **Files Modified**:
-- `include/graph/graph_info.hpp` - Added 20 new specializations
+- `include/graph/graph_data.hpp` - Added 20 new specializations
 - `tests/views/test_info_structs.cpp` - Created comprehensive test suite
 
 ---
@@ -468,7 +468,7 @@ auto sourced_edges_topological_sort(G&& g, EVF&& evf = {}, Alloc alloc = {})
    - `cancel_search` enum
    - `visited_tracker` template
    - Common search state management
-3. Verify/extend info structs in `graph_info.hpp` if needed
+3. Verify/extend info structs in `graph_data.hpp` if needed
 4. Create view concepts in `include/graph/views/view_concepts.hpp`
 
 **Files**:
@@ -713,16 +713,16 @@ tests/views/
 **Commit**: 330c7d8 "[views] Phase 0: Info struct refactoring complete"  
 **Test Results**: ✅ 27 test cases, 392 assertions, all passing
 
-The existing info structs in `graph_info.hpp` were designed for compatibility with the 
+The existing info structs in `graph_data.hpp` were designed for compatibility with the 
 reference-based graph-v2 model. They have been refactored to align with the descriptor-based 
 architecture of graph-v3.
 
-### 8.1 vertex_info Refactoring ✅ COMPLETE
+### 8.1 vertex_data Refactoring ✅ COMPLETE
 
 **Original Design** (graph-v2 compatible):
 ```cpp
 template <class VId, class V, class VV>
-struct vertex_info {
+struct vertex_data {
   id_type     id;      // vertex_id_t<G> - always required
   vertex_type vertex;  // vertex_t<G> - optional (void to omit)
   value_type  value;   // from vvf - optional (void to omit)
@@ -732,7 +732,7 @@ struct vertex_info {
 **Problem**: Separate `id` and `vertex` members are redundant with descriptors. A vertex 
 descriptor already contains the ID (accessible via `vertex_id()` or CPO `vertex_id(g, desc)`).
 
-**However**: The `{id, value}` combination (`vertex_info<VId, void, VV>`) remains useful for 
+**However**: The `{id, value}` combination (`vertex_data<VId, void, VV>`) remains useful for 
 external data scenarios, such as:
 - Providing vertex data to graph constructors before the graph exists
 - Exporting vertex data from one graph for use in another
@@ -742,7 +742,7 @@ external data scenarios, such as:
 **New Design** (all members optional via void):
 ```cpp
 template <class VId, class V, class VV>
-struct vertex_info {
+struct vertex_data {
   using id_type     = VId;  // vertex_id_t<G> - optional (void to omit)
   using vertex_type = V;    // vertex_t<G> or vertex_descriptor<...> - optional (void to omit)
   using value_type  = VV;   // from vvf - optional (void to omit)
@@ -770,48 +770,48 @@ for (auto&& [id, v, val] : vertexlist(g, vvf)) {
 }
 
 // With descriptor (VId=void, V=descriptor, VV present):
-vertex_info<void, vertex_descriptor<...>, int>  // only vertex and value members
+vertex_data<void, vertex_descriptor<...>, int>  // only vertex and value members
 for (auto&& [v, val] : vertexlist(g, vvf)) {
     auto id = v.vertex_id();  // extract ID from descriptor
 }
 
 // ID-only (VId present, V=void, VV=void):
-vertex_info<size_t, void, void>  // only id member
+vertex_data<size_t, void, void>  // only id member
 for (auto&& [id] : vertexlist(g)) {
     // Just the ID, no vertex reference or value
 }
 
 // Descriptor-only (VId=void, V=descriptor, VV=void):
-vertex_info<void, vertex_descriptor<...>, void>  // only vertex member
+vertex_data<void, vertex_descriptor<...>, void>  // only vertex member
 for (auto&& [v] : vertexlist(g)) {
     auto id = v.vertex_id();
 }
 ```
 
 **Structured Binding Patterns**:
-- `vertex_info<VId, V, VV>`: `auto&& [id, vertex, value]`
-- `vertex_info<VId, V, void>`: `auto&& [id, vertex]`
-- `vertex_info<VId, void, VV>`: `auto&& [id, value]`
-- `vertex_info<VId, void, void>`: `auto&& [id]`
-- `vertex_info<void, V, VV>`: `auto&& [vertex, value]`
-- `vertex_info<void, V, void>`: `auto&& [vertex]`
-- `vertex_info<void, void, VV>`: `auto&& [value]` (unlikely use case)
+- `vertex_data<VId, V, VV>`: `auto&& [id, vertex, value]`
+- `vertex_data<VId, V, void>`: `auto&& [id, vertex]`
+- `vertex_data<VId, void, VV>`: `auto&& [id, value]`
+- `vertex_data<VId, void, void>`: `auto&& [id]`
+- `vertex_data<void, V, VV>`: `auto&& [vertex, value]`
+- `vertex_data<void, V, void>`: `auto&& [vertex]`
+- `vertex_data<void, void, VV>`: `auto&& [value]` (unlikely use case)
 
 **Migration Helpers** (optional):
 ```cpp
 // Convenience accessor if users frequently need just the ID
 template <class V, class VV>
-constexpr auto id(const vertex_info<V, VV>& vi) {
+constexpr auto id(const vertex_data<V, VV>& vi) {
     return vi.vertex.vertex_id();
 }
 ```
 
-### 8.2 edge_info Refactoring ✅ COMPLETE
+### 8.2 edge_data Refactoring ✅ COMPLETE
 
 **Original Design** (graph-v2 compatible):
 ```cpp
 template <class VId, bool Sourced, class E, class EV>
-struct edge_info {
+struct edge_data {
   source_id_type source_id;  // VId when Sourced==true, void otherwise
   target_id_type target_id;  // VId - always required
   edge_type      edge;       // E - optional (void to omit)
@@ -826,7 +826,7 @@ edge descriptors. An edge descriptor already provides:
 - `target_id(container)` - the target vertex ID  
 - Access to the underlying edge data
 
-**However**: The `{source_id, target_id, value}` combination (`edge_info<VId, true, void, EV>`) 
+**However**: The `{source_id, target_id, value}` combination (`edge_data<VId, true, void, EV>`) 
 remains useful for external data scenarios, such as:
 - Providing edge data to graph constructors before the graph exists
 - Exporting edge lists from one graph for use in another
@@ -837,7 +837,7 @@ remains useful for external data scenarios, such as:
 **New Design** (all members optional via void):
 ```cpp
 template <class VId, bool Sourced, class E, class EV>
-struct edge_info {
+struct edge_data {
   using source_id_type = conditional_t<Sourced, VId, void>;  // optional based on Sourced
   using target_id_type = VId;    // optional (void to omit)
   using edge_type      = E;      // optional (void to omit)
@@ -869,14 +869,14 @@ for (auto&& [src, tgt, e, val] : sourced_edges(g, u, evf)) {
 }
 
 // With descriptor (VId=void, Sourced=true, E=descriptor, EV present):
-edge_info<void, false, edge_descriptor<...>, int>  // only edge and value members
+edge_data<void, false, edge_descriptor<...>, int>  // only edge and value members
 for (auto&& [e, val] : incidence(g, u, evf)) {
     auto src = e.source_id();       // extract from descriptor
     auto tgt = e.target_id(g);      // extract from descriptor
 }
 
 // IDs-only (VId present, Sourced=true, E=void, EV=void):
-edge_info<size_t, true, void, void>  // only source_id and target_id members
+edge_data<size_t, true, void, void>  // only source_id and target_id members
 for (auto&& [src, tgt] : incidence(g, u)) {
 }
 
@@ -903,12 +903,12 @@ edge descriptors in graph-v3 always carry their source vertex context. The disti
 between "sourced" and "non-sourced" edges is now a property of how the view is used, 
 not the info struct type.
 
-### 8.3 neighbor_info Refactoring ✅ COMPLETE
+### 8.3 neighbor_data Refactoring ✅ COMPLETE
 
 **Original Design** (graph-v2 compatible):
 ```cpp
 template <class VId, bool Sourced, class V, class VV>
-struct neighbor_info {
+struct neighbor_data {
   source_id_type source_id;  // VId when Sourced==true, void otherwise
   target_id_type target_id;  // VId - always required
   vertex_type    target;     // V (target vertex) - optional (void to omit)
@@ -919,17 +919,17 @@ struct neighbor_info {
 
 **Problem**: The `neighbors` view iterates over edges but yields target vertex info. 
 Internally, the view has an edge descriptor for navigation (it knows source and target), 
-and it creates a `neighbor_info` for the target edge. The user primarily cares about the 
+and it creates a `neighbor_data` for the target edge. The user primarily cares about the 
 target vertex, but the edge descriptor provides the necessary context for accessing it.
 
-**However**: Similar to vertex_info and edge_info, the `{source_id, target_id, value}` 
-combination (`neighbor_info<VId, true, void, VV>`) remains useful for external data 
+**However**: Similar to vertex_data and edge_data, the `{source_id, target_id, value}` 
+combination (`neighbor_data<VId, true, void, VV>`) remains useful for external data 
 scenarios where the graph isn't available.
 
 **New Design** (all members optional via void):
 ```cpp
 template <class VId, bool Sourced, class V, class VV>
-struct neighbor_info {
+struct neighbor_data {
   using source_id_type = conditional_t<Sourced, VId, void>;  // optional based on Sourced
   using target_id_type = VId;    // optional (void to omit)
   using vertex_type    = V;      // optional (void to omit) - typically vertex_descriptor<...>
@@ -956,7 +956,7 @@ This naming distinction exists in the codebase and is reflected in Phase 0 tests
 3. **Sourced bool** determines if source_id is present (when VId != void)
 4. **V = void** suppresses the `vertex` member (for ID-only neighbor iteration)
 5. **VV = void** suppresses the `value` member
-6. **Primary use case**: `neighbor_info<void, false, vertex_descriptor<...>, VV>` yields `{vertex, value}` for target vertex
+6. **Primary use case**: `neighbor_data<void, false, vertex_descriptor<...>, VV>` yields `{vertex, value}` for target vertex
 
 **Usage Comparison**:
 ```cpp
@@ -968,7 +968,7 @@ for (auto&& [src, tgt_id, tgt, val] : neighbors(g, u, vvf)) {
 }
 
 // With vertex descriptor (VId=void, Sourced=false, V=vertex_descriptor, VV present):
-neighbor_info<void, false, vertex_descriptor<...>, int>  // {vertex, value}
+neighbor_data<void, false, vertex_descriptor<...>, int>  // {vertex, value}
 for (auto&& [v, val] : neighbors(g, u, vvf)) {
     auto tgt_id = v.vertex_id();           // extract ID from descriptor
     auto& tgt_data = vertex_value(g, v);   // access underlying vertex data
@@ -976,20 +976,20 @@ for (auto&& [v, val] : neighbors(g, u, vvf)) {
 }
 
 // Without value function (VId=void, Sourced=false, V=vertex_descriptor, VV=void):
-neighbor_info<void, false, vertex_descriptor<...>, void>  // {vertex}
+neighbor_data<void, false, vertex_descriptor<...>, void>  // {vertex}
 for (auto&& [v] : neighbors(g, u)) {
     auto tgt_id = v.vertex_id();
     // Just the vertex descriptor, no value projection
 }
 
 // IDs-only for external data (VId present, Sourced=false, V=void, VV=void):
-neighbor_info<size_t, false, void, void>  // {target_id}
+neighbor_data<size_t, false, void, void>  // {target_id}
 for (auto&& [tgt_id] : neighbors(g, u)) {
     // Just target ID, no descriptor or value
 }
 
 // With IDs and value for external data (VId present, Sourced=true, V=void, VV present):
-neighbor_info<size_t, true, void, int>  // {source_id, target_id, value}
+neighbor_data<size_t, true, void, int>  // {source_id, target_id, value}
 for (auto&& [src, tgt, val] : neighbors(g, u, vvf)) {
     // Useful for exporting edges with values
 }
@@ -1000,34 +1000,34 @@ for (auto&& [src, tgt, val] : neighbors(g, u, vvf)) {
 - Vertex descriptor provides access to vertex ID and underlying data
 - VId present with V=void supports external data scenarios (export, serialization)
 - Sourced=true adds source_id when VId != void (for edge-like neighbor info)
-- Consistent with vertex_info and edge_info optional-members design
+- Consistent with vertex_data and edge_data optional-members design
 
 ### 8.4 Implementation Summary ✅ COMPLETE
 
 **Phase 0 was completed in three steps:**
 
-**Step 0.1: vertex_info Refactoring** ✅
+**Step 0.1: vertex_data Refactoring** ✅
 1. ✅ Made VId template parameter optional (void to suppress id member)
 2. ✅ Ensured all three members (id, vertex, value) can be conditionally present
 3. ✅ Updated specializations to handle all void combinations (4 specializations)
-4. ✅ Kept `copyable_vertex_t<VId, VV>` = `vertex_info<VId, void, VV>` alias
+4. ✅ Kept `copyable_vertex_t<VId, VV>` = `vertex_data<VId, void, VV>` alias
 5. ✅ Created comprehensive tests
 
-**Step 0.2: edge_info Refactoring** ✅
+**Step 0.2: edge_data Refactoring** ✅
 1. ✅ Made VId template parameter optional (void to suppress source_id/target_id members)
 2. ✅ Ensured all four members (source_id, target_id, edge, value) can be conditionally present
 3. ✅ Updated specializations to handle Sourced × void combinations (8 specializations)
-4. ✅ Kept `copyable_edge_t<VId, EV>` = `edge_info<VId, true, void, EV>` alias
+4. ✅ Kept `copyable_edge_t<VId, EV>` = `edge_data<VId, true, void, EV>` alias
 5. ✅ Kept `is_sourced_v` trait
 6. ✅ Created comprehensive tests
 
-**Step 0.3: neighbor_info Refactoring** ✅
+**Step 0.3: neighbor_data Refactoring** ✅
 1. ✅ Made VId template parameter optional (void to suppress source_id/target_id members)
 2. ✅ Ensured all four members (source_id, target_id, vertex, value) can be conditionally present
 3. ✅ Updated specializations to handle Sourced × void combinations (8 specializations)
 4. ✅ Implemented naming convention: `target` when VId present, `vertex` when VId=void
 5. ✅ Kept `copyable_neighbor_t` alias
-6. ✅ Kept `is_sourced_v` trait for neighbor_info
+6. ✅ Kept `is_sourced_v` trait for neighbor_data
 7. ✅ Created comprehensive tests
 
 ### 8.5 Summary of Info Struct Changes
@@ -1036,29 +1036,29 @@ for (auto&& [src, tgt, val] : neighbors(g, u, vvf)) {
 This provides maximum flexibility for different use cases:
 - **With descriptors**: VId can be void (descriptor contains ID)
 - **Without descriptors**: VId is required, V/E can be void for lightweight iteration
-- **Copyable types**: Use `copyable_vertex_t<VId, VV>` = `vertex_info<VId, void, VV>`
+- **Copyable types**: Use `copyable_vertex_t<VId, VV>` = `vertex_data<VId, void, VV>`
 
 | Struct | Template Parameters | Members (when not void) | Flexibility |
 |--------|---------------------|-------------------------|-------------|
-| `vertex_info` | `<VId, V, VV>` | `id`, `vertex`, `value` | All 3 can be void |
-| `edge_info` | `<VId, Sourced, E, EV>` | `source_id`, `target_id`, `edge`, `value` | VId, E, EV can be void |
-| `neighbor_info` | `<VId, Sourced, V, VV>` | `source_id`, `target_id`, `target`/`vertex`*, `value` | VId, V, VV can be void |
+| `vertex_data` | `<VId, V, VV>` | `id`, `vertex`, `value` | All 3 can be void |
+| `edge_data` | `<VId, Sourced, E, EV>` | `source_id`, `target_id`, `edge`, `value` | VId, E, EV can be void |
+| `neighbor_data` | `<VId, Sourced, V, VV>` | `source_id`, `target_id`, `target`/`vertex`*, `value` | VId, V, VV can be void |
 
-*`neighbor_info` uses `target` when VId present, `vertex` when VId=void (implementation detail)
+*`neighbor_data` uses `target` when VId present, `vertex` when VId=void (implementation detail)
 
 **Primary Usage Patterns**:
-- **vertex_info**: `vertex_info<void, vertex_descriptor<...>, VV>` → `{vertex, value}`
-- **edge_info**: `edge_info<void, false, edge_descriptor<...>, EV>` → `{edge, value}` (Sourced=false when VId=void; source accessible via descriptor)
-- **neighbor_info**: `neighbor_info<void, false, vertex_descriptor<...>, VV>` → `{vertex, value}` (Sourced=false; target vertex only)
+- **vertex_data**: `vertex_data<void, vertex_descriptor<...>, VV>` → `{vertex, value}`
+- **edge_data**: `edge_data<void, false, edge_descriptor<...>, EV>` → `{edge, value}` (Sourced=false when VId=void; source accessible via descriptor)
+- **neighbor_data**: `neighbor_data<void, false, vertex_descriptor<...>, VV>` → `{vertex, value}` (Sourced=false; target vertex only)
 
 **Specialization Impact**:
-- `vertex_info`: 8 specializations (2³ void combinations: VId, V, VV)
-- `edge_info`: 16 specializations (2 Sourced × 2³ void combinations: VId, E, EV)
-- `neighbor_info`: 16 specializations (2 Sourced × 2³ void combinations: VId, V, VV)
+- `vertex_data`: 8 specializations (2³ void combinations: VId, V, VV)
+- `edge_data`: 16 specializations (2 Sourced × 2³ void combinations: VId, E, EV)
+- `neighbor_data`: 16 specializations (2 Sourced × 2³ void combinations: VId, V, VV)
 - **Total**: 40 specializations (implementation can reduce with SFINAE or conditional members)
 
 **Implementation Status** (as of 2026-01-31):
-- ✅ **Phase 0 Complete**: All 40 specializations implemented in `graph_info.hpp`
+- ✅ **Phase 0 Complete**: All 40 specializations implemented in `graph_data.hpp`
 - ✅ **Tests**: 27 test cases, 392 assertions, all passing
 - ✅ **Commit**: 330c7d8 "[views] Phase 0: Info struct refactoring complete"
 
@@ -1107,7 +1107,7 @@ class edgelist_iterator {
     auto operator*() const {
         // Construct edge descriptor with source vertex descriptor
         auto edge_desc = edge_descriptor{current_edge_, current_source_};
-        return edge_info{edge_desc, ...};
+        return edge_data{edge_desc, ...};
     }
 };
 ```
@@ -1537,7 +1537,7 @@ auto& v = desc.underlying_value(const_container);  // const reference
 - Standard library containers (vector, stack, queue)
 
 ### Internal
-- `graph_info.hpp` - info structs
+- `graph_data.hpp` - info structs
 - `adjacency_list_concepts.hpp` - graph concepts
 - Graph CPOs (vertices, edges, vertex, target_id, etc.)
 

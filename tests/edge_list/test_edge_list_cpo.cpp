@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <graph/adj_list/detail/graph_cpo.hpp>
-#include <graph/graph_info.hpp>
+#include <graph/graph_data.hpp>
 #include <vector>
 #include <tuple>
 #include <utility>
@@ -9,11 +9,11 @@ using namespace graph;
 using namespace graph::adj_list::_cpo_instances;
 
 // =============================================================================
-// Tier 6 Tests: edge_info data member access
+// Tier 6 Tests: edge_data data member access
 // =============================================================================
 
-TEST_CASE("source_id with edge_info (bidirectional, no value)", "[cpo][source_id][tier6]") {
-  using EI = edge_info<int, true, void, void>;
+TEST_CASE("source_id with edge_data (bidirectional, no value)", "[cpo][source_id][tier6]") {
+  using EI = edge_data<int, true, void, void>;
   EI              ei{1, 2};
   std::vector<EI> el{ei};
 
@@ -21,8 +21,8 @@ TEST_CASE("source_id with edge_info (bidirectional, no value)", "[cpo][source_id
   REQUIRE(uid == 1);
 }
 
-TEST_CASE("source_id with edge_info (bidirectional, with value)", "[cpo][source_id][tier6]") {
-  using EI = edge_info<int, true, void, double>;
+TEST_CASE("source_id with edge_data (bidirectional, with value)", "[cpo][source_id][tier6]") {
+  using EI = edge_data<int, true, void, double>;
   EI              ei{3, 4, 1.5};
   std::vector<EI> el{ei};
 
@@ -30,8 +30,8 @@ TEST_CASE("source_id with edge_info (bidirectional, with value)", "[cpo][source_
   REQUIRE(uid == 3);
 }
 
-TEST_CASE("target_id with edge_info (bidirectional, no value)", "[cpo][target_id][tier6]") {
-  using EI = edge_info<int, true, void, void>;
+TEST_CASE("target_id with edge_data (bidirectional, no value)", "[cpo][target_id][tier6]") {
+  using EI = edge_data<int, true, void, void>;
   EI              ei{5, 6};
   std::vector<EI> el{ei};
 
@@ -39,8 +39,8 @@ TEST_CASE("target_id with edge_info (bidirectional, no value)", "[cpo][target_id
   REQUIRE(vid == 6);
 }
 
-TEST_CASE("target_id with edge_info (bidirectional, with value)", "[cpo][target_id][tier6]") {
-  using EI = edge_info<int, true, void, double>;
+TEST_CASE("target_id with edge_data (bidirectional, with value)", "[cpo][target_id][tier6]") {
+  using EI = edge_data<int, true, void, double>;
   EI              ei{7, 8, 2.5};
   std::vector<EI> el{ei};
 
@@ -48,8 +48,8 @@ TEST_CASE("target_id with edge_info (bidirectional, with value)", "[cpo][target_
   REQUIRE(vid == 8);
 }
 
-TEST_CASE("edge_value with edge_info (with value)", "[cpo][edge_value][tier6]") {
-  using EI = edge_info<int, true, void, double>;
+TEST_CASE("edge_value with edge_data (with value)", "[cpo][edge_value][tier6]") {
+  using EI = edge_data<int, true, void, double>;
   EI              ei{9, 10, 3.5};
   std::vector<EI> el{ei};
 
@@ -57,8 +57,8 @@ TEST_CASE("edge_value with edge_info (with value)", "[cpo][edge_value][tier6]") 
   REQUIRE(val == 3.5);
 }
 
-TEST_CASE("edge_value with edge_info (unidirectional, with value)", "[cpo][edge_value][tier6]") {
-  using EI = edge_info<int, false, void, double>;
+TEST_CASE("edge_value with edge_data (unidirectional, with value)", "[cpo][edge_value][tier6]") {
+  using EI = edge_data<int, false, void, double>;
   EI              ei{11, 4.5};
   std::vector<EI> el{ei};
 
@@ -222,8 +222,8 @@ TEST_CASE("edge_value prefers data member over tuple", "[cpo][edge_value][ambigu
 // Noexcept Tests: Verify noexcept propagation
 // =============================================================================
 
-TEST_CASE("source_id with edge_info is noexcept", "[cpo][source_id][noexcept]") {
-  using EI = edge_info<int, true, void, void>;
+TEST_CASE("source_id with edge_data is noexcept", "[cpo][source_id][noexcept]") {
+  using EI = edge_data<int, true, void, void>;
   EI              ei{40, 41};
   std::vector<EI> el{ei};
 
@@ -237,8 +237,8 @@ TEST_CASE("source_id with pair is noexcept", "[cpo][source_id][noexcept]") {
   STATIC_REQUIRE(noexcept(source_id(el, edge)));
 }
 
-TEST_CASE("target_id with edge_info is noexcept", "[cpo][target_id][noexcept]") {
-  using EI = edge_info<int, true, void, void>;
+TEST_CASE("target_id with edge_data is noexcept", "[cpo][target_id][noexcept]") {
+  using EI = edge_data<int, true, void, void>;
   EI              ei{44, 45};
   std::vector<EI> el{ei};
 
@@ -252,8 +252,8 @@ TEST_CASE("target_id with tuple is noexcept", "[cpo][target_id][noexcept]") {
   STATIC_REQUIRE(noexcept(target_id(el, edge)));
 }
 
-TEST_CASE("edge_value with edge_info is noexcept", "[cpo][edge_value][noexcept]") {
-  using EI = edge_info<int, true, void, double>;
+TEST_CASE("edge_value with edge_data is noexcept", "[cpo][edge_value][noexcept]") {
+  using EI = edge_data<int, true, void, double>;
   EI              ei{48, 49, 13.5};
   std::vector<EI> el{ei};
 

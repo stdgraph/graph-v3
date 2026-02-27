@@ -35,63 +35,63 @@ that have gone through peer review in the past.
 `vertexlist` view examples:
 | Usage | Return | Notes |
 |-------|--------|-------|
-| for(auto&&[uid,u]:vertexlist(g)) | vertex_info<VId,V,void> ||
-| for(auto&&[uid,u,vval]:vertexlist(g,vvf)) | vertex_info<VId,V,VV> || 
-| for(auto&&[uid,u]:vertexlist(g,first_u,last_u)) | vertex_info<VId,V,void> || 
-| for(auto&&[uid,u,vval]:vertexlist(g,first_u,last_u,vvf)) | vertex_info<VId,V,VV> || 
-| for(auto&&[uid,u]:vertexlist(g,vr)) | vertex_info<VId,V,void> || 
-| for(auto&&[uid,u,vval]:vertexlist(g,vr,vvf)) | vertex_info<VId,V,VV> || 
+| for(auto&&[uid,u]:vertexlist(g)) | vertex_data<VId,V,void> ||
+| for(auto&&[uid,u,vval]:vertexlist(g,vvf)) | vertex_data<VId,V,VV> || 
+| for(auto&&[uid,u]:vertexlist(g,first_u,last_u)) | vertex_data<VId,V,void> || 
+| for(auto&&[uid,u,vval]:vertexlist(g,first_u,last_u,vvf)) | vertex_data<VId,V,VV> || 
+| for(auto&&[uid,u]:vertexlist(g,vr)) | vertex_data<VId,V,void> || 
+| for(auto&&[uid,u,vval]:vertexlist(g,vr,vvf)) | vertex_data<VId,V,VV> || 
 
 `basic_vertexlist` view examples don't include the vertex descriptor in the return type:
 | Usage | Return | Notes |
 |-------|--------|-------|
-| for(auto&&[uid]:basic_vertexlist(g)) | vertex_info<VId,void,void> | | 
-| for(auto&&[uid,vval]:basic_vertexlist(g,vvf)) | vertex_info<VId,void,VV> | | 
-| for(auto&&[uid]:basic_vertexlist(g,first_uid,last_uid)) | vertex_info<VId,void,void> | | 
-| for(auto&&[uid,vval]:basic_vertexlist(g,first_uid,last_uid,vvf)) | vertex_info<VId,void,VV> | | 
-| for(auto&&[uid]:basic_vertexlist(g,vr)) | vertex_info<VId,void,void> | | 
-| for(auto&&[uid,vval]:basic_vertexlist(g,vr,vvf)) | vertex_info<VId,void,VV> | | 
+| for(auto&&[uid]:basic_vertexlist(g)) | vertex_data<VId,void,void> | | 
+| for(auto&&[uid,vval]:basic_vertexlist(g,vvf)) | vertex_data<VId,void,VV> | | 
+| for(auto&&[uid]:basic_vertexlist(g,first_uid,last_uid)) | vertex_data<VId,void,void> | | 
+| for(auto&&[uid,vval]:basic_vertexlist(g,first_uid,last_uid,vvf)) | vertex_data<VId,void,VV> | | 
+| for(auto&&[uid]:basic_vertexlist(g,vr)) | vertex_data<VId,void,void> | | 
+| for(auto&&[uid,vval]:basic_vertexlist(g,vr,vvf)) | vertex_data<VId,void,VV> | | 
 
 ## incidence view
 
 `incidence` view examples
 | Usage | Return | Notes |
 |-------|--------|-------|
-| for(auto&& [vid,uv]:incidence(g,u)) | edge_info<VId,false,E,void> | | 
-| for(auto&& [vid,uv,eval]:incidence(g,u,evf)) | edge_info<VId,false,E,EV> | | 
+| for(auto&& [vid,uv]:incidence(g,u)) | edge_data<VId,false,E,void> | | 
+| for(auto&& [vid,uv,eval]:incidence(g,u,evf)) | edge_data<VId,false,E,EV> | | 
 
 `basic_incidence` view examples
 | Usage | Return | Notes |
 |-------|--------|-------|
-| for(auto&& [vid]:basic_incidence(g,uid)) | edge_info<VId,false,void,void> | | 
-| for(auto&& [vid,eval]:basic_incidence(g,uid,evf)) | edge_info<VId,false,void,EV> | | 
+| for(auto&& [vid]:basic_incidence(g,uid)) | edge_data<VId,false,void,void> | | 
+| for(auto&& [vid,eval]:basic_incidence(g,uid,evf)) | edge_data<VId,false,void,EV> | | 
 
 ## neighbors view
 `neighbors` view examples
 | Usage | Return | Notes |
 |-------|--------|-------|
-| for(auto&&[vid,v]: neighbors(g,u)) | neighbor_info<VId,false,V,void> | | 
-| for(auto&&[vid,v,vval]: neighbors(g,u,vvf)) | neighbor_info<VId,false,V,VV> | | 
+| for(auto&&[vid,v]: neighbors(g,u)) | neighbor_data<VId,false,V,void> | | 
+| for(auto&&[vid,v,vval]: neighbors(g,u,vvf)) | neighbor_data<VId,false,V,VV> | | 
 
 `basic_neighbors` view examples
 | Usage | Return | Notes |
 |-------|--------|-------|
-| for(auto&&[vid]: basic_neighbors(g,uid)) | neighbor_info<VId,false,void,void> | | 
-| for(auto&&[vid,vval]:basic_neighbors(g,uid,vvf)) | neighbor_info<VId,false,void,VV> | | 
+| for(auto&&[vid]: basic_neighbors(g,uid)) | neighbor_data<VId,false,void,void> | | 
+| for(auto&&[vid,vval]:basic_neighbors(g,uid,vvf)) | neighbor_data<VId,false,void,VV> | | 
 
 ## edgelist view
 
 `edgelist` view examples
 | Usage | Return | Notes |
 |-------|--------|-------|
-| for(auto&&[uid,vid,uv]:edgelist(g)) | edge_info<VId,true,E,void> | | 
-| for(auto&&[uid,vid,uv,eval]:edgelist(g,evf)) | edge_info<VId,true,E,EV> | | 
+| for(auto&&[uid,vid,uv]:edgelist(g)) | edge_data<VId,true,E,void> | | 
+| for(auto&&[uid,vid,uv,eval]:edgelist(g,evf)) | edge_data<VId,true,E,EV> | | 
 
 `basic_edgelist` view examples don't include the edge descriptor in the return type.
 | Usage | Return | Notes |
 |-------|--------|-------|
-| for(auto&&[uid,vid]:basic_edgelist(g)) | edge_info<VId,true,void,void> | | 
-| for(auto&&[uid,vid,eval]:basic_edgelist(g,evf)) | edge_info<VId,true,void,EV> | | 
+| for(auto&&[uid,vid]:basic_edgelist(g)) | edge_data<VId,true,void,void> | | 
+| for(auto&&[uid,vid,eval]:basic_edgelist(g,evf)) | edge_data<VId,true,void,EV> | | 
 
 ---
 

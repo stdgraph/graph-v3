@@ -2,7 +2,7 @@
 
 Adjacency lists and edge lists are two abstract data structures used by graphs.
 While different, there are similarities because the edges in an adjacency list
-can be presented as a flat edge list. The structs in include/graph/graph_info.hpp
+can be presented as a flat edge list. The structs in include/graph/graph_data.hpp
 contain the core data structures that help tie the design together so that
 algorithms can use an edge list from a flat data structure (e.g. vector of structs)
 or from a range of ranges (e.g. adjacency list).
@@ -26,7 +26,7 @@ Tests for the existing code should be refactored with the new namespace and pass
 Reorganize the namespaces into the following structure:
 
 ```
-graph                                    # Root: algorithms, common types (vertex_info, edge_info, graph_error)
+graph                                    # Root: algorithms, common types (vertex_data, edge_data, graph_error)
 ├── graph::adj_list                      # Adjacency list concepts, types, CPOs, Descriptors
 │   └── graph::adj_list::views           # View factories for adjacency lists (TBD)
 ├── graph::edge_list                     # Edge list concepts, types, CPOs (TBD)
@@ -66,7 +66,7 @@ Algorithms remain in the `graph` namespace (not in `graph::adj_list`) because:
 **Contains:**
 - **Algorithms**: `dijkstra_shortest_paths`, `bellman_ford_shortest_paths`, `breadth_first_search`, 
   `depth_first_search`, `topological_sort`, `connected_components`, `transitive_closure`, etc.
-- **Common types**: `vertex_info<VId,V,VV>`, `edge_info<VId,Sourced,E,EV>`, 
+- **Common types**: `vertex_data<VId,V,VV>`, `edge_data<VId,Sourced,E,EV>`, 
   `copyable_vertex_t<VId,VV>`, `copyable_edge_t<VId,EV>`
 - **Exception types**: `graph_error`
 - **Utilities**: Functions that work across both adjacency lists and edge lists
@@ -173,7 +173,7 @@ This allows clear intent through the signature while avoiding name collisions.
 
 ### 2. Shared Types in Root Namespace
 
-The types in `graph_info.hpp` will stay in the `graph` root namespace because:
+The types in `graph_data.hpp` will stay in the `graph` root namespace because:
 - They're used by both adjacency list views and edge list structures
 - They're fundamental building blocks
 - Placing them in a sub-namespace would require qualification in too many places

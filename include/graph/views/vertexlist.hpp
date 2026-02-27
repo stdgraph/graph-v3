@@ -5,7 +5,7 @@
  * @section overview Overview
  *
  * Provides lazy, range-based views that iterate over every vertex in a graph.
- * Each iteration step yields a @c vertex_info whose fields are exposed via
+ * Each iteration step yields a @c vertex_data whose fields are exposed via
  * structured bindings.  An optional vertex value function (VVF) computes a
  * per-vertex value that is included in the binding.
  *
@@ -141,7 +141,7 @@
 #include <ranges>
 #include <type_traits>
 #include <functional>
-#include <graph/graph_info.hpp>
+#include <graph/graph_data.hpp>
 #include <graph/adj_list/detail/graph_cpo.hpp>
 #include <graph/adj_list/adjacency_list_concepts.hpp>
 #include <graph/views/view_concepts.hpp>
@@ -159,7 +159,7 @@ class basic_vertexlist_view;
  * @brief Vertexlist view — standard variant without value function.
  *
  * Iterates over every vertex in the graph, yielding
- * @c vertex_info<vertex_id_type,vertex_t<G>,void> per step.
+ * @c vertex_data<vertex_id_type,vertex_t<G>,void> per step.
  *
  * Structured binding: @c auto [uid, u] where
  * - @c uid — @c vertex_id_t<G> (vertex identifier)
@@ -182,10 +182,10 @@ public:
   using graph_type     = G;
   using vertex_type    = adj_list::vertex_t<G>;
   using vertex_id_type = adj_list::vertex_id_t<G>;
-  using info_type      = vertex_info<vertex_id_type, vertex_type, void>;
+  using info_type      = vertex_data<vertex_id_type, vertex_type, void>;
 
   /**
-   * @brief Forward iterator yielding @c vertex_info{uid, u} per vertex.
+   * @brief Forward iterator yielding @c vertex_data{uid, u} per vertex.
    *
    * Satisfies @c std::forward_iterator.  All operations are @c noexcept.
    */
@@ -253,7 +253,7 @@ private:
  * @brief Vertexlist view — standard variant with value function.
  *
  * Iterates over every vertex, yielding
- * @c vertex_info<vertex_id_type,vertex_t<G>,VV> where @c VV =
+ * @c vertex_data<vertex_id_type,vertex_t<G>,VV> where @c VV =
  * @c invoke_result_t<VVF,const G&,vertex_t<G>> .
  *
  * Structured binding: @c auto [uid, u, val] where
@@ -286,10 +286,10 @@ public:
   using vertex_type       = adj_list::vertex_t<G>;
   using vertex_id_type    = adj_list::vertex_id_t<G>;
   using value_type_result = std::invoke_result_t<VVF, const G&, vertex_type>;
-  using info_type         = vertex_info<vertex_id_type, vertex_type, value_type_result>;
+  using info_type         = vertex_data<vertex_id_type, vertex_type, value_type_result>;
 
   /**
-   * @brief Forward iterator yielding @c vertex_info{uid, u, val} per vertex.
+   * @brief Forward iterator yielding @c vertex_data{uid, u, val} per vertex.
    *
    * Satisfies @c std::forward_iterator.  @c operator*() may throw if VVF throws.
    */
@@ -377,7 +377,7 @@ vertexlist_view(G&, VVF) -> vertexlist_view<G, VVF>;
 /**
  * @brief Basic vertexlist view — simplified variant without value function.
  *
- * Iterates over every vertex, yielding @c vertex_info<vertex_id_type,void,void>.
+ * Iterates over every vertex, yielding @c vertex_data<vertex_id_type,void,void>.
  * No vertex descriptor is materialised — only the vertex id is returned,
  * making this the lightest-weight vertex iteration available.
  *
@@ -408,10 +408,10 @@ public:
   using graph_type     = G;
   using vertex_type    = adj_list::vertex_t<G>;
   using vertex_id_type = adj_list::vertex_id_t<G>;
-  using info_type      = vertex_info<vertex_id_type, void, void>;
+  using info_type      = vertex_data<vertex_id_type, void, void>;
 
   /**
-   * @brief Forward iterator yielding @c vertex_info{uid} per vertex.
+   * @brief Forward iterator yielding @c vertex_data{uid} per vertex.
    *
    * Satisfies @c std::forward_iterator.  All operations are @c noexcept.
    */
@@ -479,7 +479,7 @@ private:
  * @brief Basic vertexlist view — simplified variant with value function.
  *
  * Iterates over every vertex, yielding
- * @c vertex_info<vertex_id_type,void,VV> where @c VV =
+ * @c vertex_data<vertex_id_type,void,VV> where @c VV =
  * @c invoke_result_t<VVF,const G&,vertex_t<G>> .  No vertex descriptor is
  * materialised.
  *
@@ -513,10 +513,10 @@ public:
   using vertex_type       = adj_list::vertex_t<G>;
   using vertex_id_type    = adj_list::vertex_id_t<G>;
   using value_type_result = std::invoke_result_t<VVF, const G&, vertex_type>;
-  using info_type         = vertex_info<vertex_id_type, void, value_type_result>;
+  using info_type         = vertex_data<vertex_id_type, void, value_type_result>;
 
   /**
-   * @brief Forward iterator yielding @c vertex_info{uid, val} per vertex.
+   * @brief Forward iterator yielding @c vertex_data{uid, val} per vertex.
    *
    * Satisfies @c std::forward_iterator.  @c operator*() may throw if VVF throws.
    */
@@ -610,7 +610,7 @@ basic_vertexlist_view(G&, VVF) -> basic_vertexlist_view<G, VVF>;
  *
  * @tparam G  Graph type satisfying @c adjacency_list
  * @param  g  The graph to iterate over.  Must outlive the returned view.
- * @return @c vertexlist_view yielding @c vertex_info{uid, u} per vertex.
+ * @return @c vertexlist_view yielding @c vertex_data{uid, u} per vertex.
  *
  * @pre  None.
  * @post The graph is not modified.
@@ -633,7 +633,7 @@ template <adj_list::adjacency_list G>
  * @param  g   The graph to iterate over.  Must outlive the returned view.
  * @param  vvf Value function invoked once per vertex.
  *             Use a stateless lambda for @c std::views chaining support.
- * @return @c vertexlist_view yielding @c vertex_info{uid, u, val} per vertex.
+ * @return @c vertexlist_view yielding @c vertex_data{uid, u, val} per vertex.
  *
  * @pre  None.
  * @post The graph is not modified.
@@ -736,7 +736,7 @@ requires adj_list::vertex_range<VR, G> && vertex_value_function<VVF, G, adj_list
  *
  * @tparam G  Graph type satisfying @c adjacency_list
  * @param  g  The graph to iterate over.  Must outlive the returned view.
- * @return @c basic_vertexlist_view yielding @c vertex_info{uid} per vertex.
+ * @return @c basic_vertexlist_view yielding @c vertex_data{uid} per vertex.
  *
  * @pre  None.
  * @post The graph is not modified.
@@ -759,7 +759,7 @@ template <adj_list::adjacency_list G>
  * @param  g   The graph to iterate over.  Must outlive the returned view.
  * @param  vvf Value function invoked once per vertex.
  *             Use a stateless lambda for @c std::views chaining support.
- * @return @c basic_vertexlist_view yielding @c vertex_info{uid, val} per vertex.
+ * @return @c basic_vertexlist_view yielding @c vertex_data{uid, val} per vertex.
  *
  * @pre  None.
  * @post The graph is not modified.

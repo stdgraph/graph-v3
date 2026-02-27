@@ -1144,8 +1144,8 @@ base_undirected_adjacency_list<EV, VV, GV, VId, VContainer, Alloc>::base_undirec
   // Evaluate max vertex id needed
   vertex_id_type max_vtx_id = vrng.empty() ? vertex_id_type(0) : static_cast<vertex_id_type>(vrng.size() - 1);
   for (auto& e : erng) {
-    auto&& edge_info = eproj(e); // copyable_edge_t<VId, EV>
-    max_vtx_id       = max(max_vtx_id, max(edge_info.source_id, edge_info.target_id));
+    auto&& edge_data = eproj(e); // copyable_edge_t<VId, EV>
+    max_vtx_id       = max(max_vtx_id, max(edge_data.source_id, edge_data.target_id));
   }
 
   // add vertices
@@ -1163,19 +1163,19 @@ base_undirected_adjacency_list<EV, VV, GV, VId, VContainer, Alloc>::base_undirec
 
   // add edges
   if (!ranges::empty(erng)) {
-    auto&&         first_edge_info = eproj(*ranges::begin(erng)); // first edge
-    vertex_id_type tid             = first_edge_info.source_id;   // last in-vertex id
+    auto&&         first_edge_data = eproj(*ranges::begin(erng)); // first edge
+    vertex_id_type tid             = first_edge_data.source_id;   // last in-vertex id
     for (auto& edge_data : erng) {
-      auto&& edge_info = eproj(edge_data); // copyable_edge_t<VId, EV>
-      if (edge_info.source_id < tid)
+      auto&& ed = eproj(edge_data); // copyable_edge_t<VId, EV>
+      if (ed.source_id < tid)
         g.throw_unordered_edges();
 
       if constexpr (std::is_void_v<EV>) {
-        g.create_edge(edge_info.source_id, edge_info.target_id);
+        g.create_edge(ed.source_id, ed.target_id);
       } else {
-        g.create_edge(edge_info.source_id, edge_info.target_id, edge_info.value);
+        g.create_edge(ed.source_id, ed.target_id, ed.value);
       }
-      tid = edge_info.source_id;
+      tid = ed.source_id;
     }
   }
 }
@@ -1608,8 +1608,8 @@ undirected_adjacency_list<EV, VV, GV, VId, VContainer, Alloc>::undirected_adjace
   // Evaluate max vertex id needed
   vertex_id_type max_vtx_id = vrng.empty() ? vertex_id_type(0) : static_cast<vertex_id_type>(vrng.size() - 1);
   for (auto& e : erng) {
-    auto&& edge_info = eproj(e); // copyable_edge_t<VId, EV>
-    max_vtx_id       = max(max_vtx_id, max(edge_info.source_id, edge_info.target_id));
+    auto&& edge_data = eproj(e); // copyable_edge_t<VId, EV>
+    max_vtx_id       = max(max_vtx_id, max(edge_data.source_id, edge_data.target_id));
   }
 
   // add vertices
@@ -1624,20 +1624,20 @@ undirected_adjacency_list<EV, VV, GV, VId, VContainer, Alloc>::undirected_adjace
 
   // add edges
   if (!ranges::empty(erng)) {
-    auto&&         first_edge_info = eproj(*ranges::begin(erng)); // first edge
-    vertex_id_type tid             = first_edge_info.source_id;   // last in-vertex id
+    auto&&         first_edge_data = eproj(*ranges::begin(erng)); // first edge
+    vertex_id_type tid             = first_edge_data.source_id;   // last in-vertex id
     for (auto& edge_data : erng) {
-      auto&& edge_info = eproj(edge_data); // copyable_edge_t<VId, EV>
-      if (edge_info.source_id < tid)
+      auto&& ed = eproj(edge_data); // copyable_edge_t<VId, EV>
+      if (ed.source_id < tid)
         this->throw_unordered_edges();
 
       vertex_edge_iterator uv;
       if constexpr (std::is_void_v<EV>) {
-        uv = create_edge(edge_info.source_id, edge_info.target_id);
+        uv = create_edge(ed.source_id, ed.target_id);
       } else {
-        uv = create_edge(edge_info.source_id, edge_info.target_id, edge_info.value);
+        uv = create_edge(ed.source_id, ed.target_id, ed.value);
       }
-      tid = edge_info.source_id;
+      tid = ed.source_id;
     }
   }
 }

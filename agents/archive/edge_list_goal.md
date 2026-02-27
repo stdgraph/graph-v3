@@ -3,8 +3,8 @@
 The abstract edge list, a complement to the abstract adjacency list, needs to be implemented.
 
 An edge list is a range of edge values that have a target_id, source_id and optional edge_value.
-This can be represented by projecting values on into an `edge_info` data structure defined in 
-`graph_info.hpp`. This is an example, and other methods should be considered to implement it.
+This can be represented by projecting values on into an `edge_data` data structure defined in 
+`graph_data.hpp`. This is an example, and other methods should be considered to implement it.
 
 ## Edge Lists Types and Naming
 The term edge list has different forms.
@@ -35,6 +35,6 @@ layout, including the `edge_list/` subdirectory for the edge list implementation
 as a reference design. The implementation for this library may need to be different.
 
 ## Important Details
-`graph_info.hpp` contains common definitions of classes/structs that are shared between both the 
-adjacency list and edge list data structures. While `edge_info` is the primary shared type, others 
+`graph_data.hpp` contains common definitions of classes/structs that are shared between both the 
+adjacency list and edge list data structures. While `edge_data` is the primary shared type, others 
 could be added in the future.

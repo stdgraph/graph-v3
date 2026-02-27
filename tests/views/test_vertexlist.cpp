@@ -324,10 +324,10 @@ TEST_CASE("vertexlist - iterator properties", "[vertexlist][iterator]") {
 }
 
 // =============================================================================
-// Test 8: vertex_info Types
+// Test 8: vertex_data Types
 // =============================================================================
 
-TEST_CASE("vertexlist - vertex_info types", "[vertexlist][info]") {
+TEST_CASE("vertexlist - vertex_data types", "[vertexlist][info]") {
   using Graph        = std::vector<std::vector<int>>;
   using VertexType   = vertex_t<Graph>;
   using VertexIdType = vertex_id_t<Graph>;

@@ -347,7 +347,7 @@ TEST_CASE("incidence - return type verification", "[incidence][return_type]") {
   Graph g  = {{1, 2}, {0}, {}};
   auto  v0 = *find_vertex(g, std::size_t(0));
 
-  SECTION("incidence(g, u) returns edge_info<VId, false, E, void>") {
+  SECTION("incidence(g, u) returns edge_data<VId, false, E, void>") {
     auto      inc = incidence(g, v0);
     using ActualInfo = decltype(*inc.begin());
     STATIC_REQUIRE(std::is_same_v<typename ActualInfo::target_id_type, VertexIdType>);
@@ -355,7 +355,7 @@ TEST_CASE("incidence - return type verification", "[incidence][return_type]") {
     STATIC_REQUIRE(std::is_void_v<typename ActualInfo::value_type>);
   }
 
-  SECTION("incidence(g, u, evf) returns edge_info<VId, false, E, EV>") {
+  SECTION("incidence(g, u, evf) returns edge_data<VId, false, E, EV>") {
     auto inc = incidence(g, v0, [](const auto&, auto) { return 42; });
     using ActualInfo = decltype(*inc.begin());
     STATIC_REQUIRE(std::is_same_v<typename ActualInfo::target_id_type, VertexIdType>);
@@ -363,7 +363,7 @@ TEST_CASE("incidence - return type verification", "[incidence][return_type]") {
     STATIC_REQUIRE(std::is_same_v<typename ActualInfo::value_type, int>);
   }
 
-  SECTION("basic_incidence(g, uid) returns edge_info<VId, false, void, void>") {
+  SECTION("basic_incidence(g, uid) returns edge_data<VId, false, void, void>") {
     auto      inc = basic_incidence(g, std::size_t(0));
     using ActualInfo = decltype(*inc.begin());
     STATIC_REQUIRE(std::is_same_v<typename ActualInfo::target_id_type, VertexIdType>);
@@ -371,7 +371,7 @@ TEST_CASE("incidence - return type verification", "[incidence][return_type]") {
     STATIC_REQUIRE(std::is_void_v<typename ActualInfo::value_type>);
   }
 
-  SECTION("basic_incidence(g, uid, evf) returns edge_info<VId, false, void, EV>") {
+  SECTION("basic_incidence(g, uid, evf) returns edge_data<VId, false, void, EV>") {
     auto inc = basic_incidence(g, std::size_t(0), [](const auto&, auto) { return 42; });
     using ActualInfo = decltype(*inc.begin());
     STATIC_REQUIRE(std::is_same_v<typename ActualInfo::target_id_type, VertexIdType>);

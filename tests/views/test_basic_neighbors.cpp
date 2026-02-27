@@ -346,7 +346,7 @@ TEST_CASE("neighbors - return type verification", "[neighbors][return_type]") {
   Graph g  = {{1, 2}, {0}, {}};
   auto  v0 = *find_vertex(g, std::size_t(0));
 
-  SECTION("neighbors(g, u) returns neighbor_info<VId, false, V, void>") {
+  SECTION("neighbors(g, u) returns neighbor_data<VId, false, V, void>") {
     auto      nbrs = neighbors(g, v0);
     using ActualInfo = decltype(*nbrs.begin());
     STATIC_REQUIRE(std::is_same_v<typename ActualInfo::target_id_type, VertexIdType>);
@@ -354,7 +354,7 @@ TEST_CASE("neighbors - return type verification", "[neighbors][return_type]") {
     STATIC_REQUIRE(std::is_void_v<typename ActualInfo::value_type>);
   }
 
-  SECTION("neighbors(g, u, vvf) returns neighbor_info<VId, false, V, VV>") {
+  SECTION("neighbors(g, u, vvf) returns neighbor_data<VId, false, V, VV>") {
     auto nbrs = neighbors(g, v0, [](const auto&, auto) { return 42; });
     using ActualInfo = decltype(*nbrs.begin());
     STATIC_REQUIRE(std::is_same_v<typename ActualInfo::target_id_type, VertexIdType>);
@@ -362,7 +362,7 @@ TEST_CASE("neighbors - return type verification", "[neighbors][return_type]") {
     STATIC_REQUIRE(std::is_same_v<typename ActualInfo::value_type, int>);
   }
 
-  SECTION("basic_neighbors(g, uid) returns neighbor_info<VId, false, void, void>") {
+  SECTION("basic_neighbors(g, uid) returns neighbor_data<VId, false, void, void>") {
     auto      nbrs = basic_neighbors(g, std::size_t(0));
     using ActualInfo = decltype(*nbrs.begin());
     STATIC_REQUIRE(std::is_same_v<typename ActualInfo::target_id_type, VertexIdType>);
@@ -370,7 +370,7 @@ TEST_CASE("neighbors - return type verification", "[neighbors][return_type]") {
     STATIC_REQUIRE(std::is_void_v<typename ActualInfo::value_type>);
   }
 
-  SECTION("basic_neighbors(g, uid, vvf) returns neighbor_info<VId, false, void, VV>") {
+  SECTION("basic_neighbors(g, uid, vvf) returns neighbor_data<VId, false, void, VV>") {
     auto nbrs = basic_neighbors(g, std::size_t(0), [](const auto&, auto) { return 42; });
     using ActualInfo = decltype(*nbrs.begin());
     STATIC_REQUIRE(std::is_same_v<typename ActualInfo::target_id_type, VertexIdType>);

@@ -39,8 +39,8 @@ This unification enables algorithms to work with any edge source without special
    - Type aliases: `edge_range_t`, `edge_iterator_t`, `edge_t`, `edge_reference_t`, `edge_value_t`, `vertex_id_t`
    - Currently uses unqualified `source_id(uv)`, `target_id(uv)` - needs adjustment for unified CPOs
 
-2. **`include/graph/graph_info.hpp`** - Shared types:
-   - `edge_info<VId, Sourced, E, EV>` - Template specializations for edge projections
+2. **`include/graph/graph_data.hpp`** - Shared types:
+   - `edge_data<VId, Sourced, E, EV>` - Template specializations for edge projections
    - `edgelist_edge<VId, E, EV>` - Alias for sourced edge info
    - `copyable_edge_t<VId, EV>` - Lightweight copyable edge
 
@@ -99,7 +99,7 @@ The unified CPO approach extends the existing `adj_list` CPOs to handle edge_lis
 // Extended: source_id(g, uv) where uv can be:
 //   - adj_list::edge_descriptor (adjacency list edge)
 //   - edge_list::edge_descriptor (edge list descriptor)
-//   - edge_info (edge list value with source_id/target_id members)
+//   - edge_data (edge list value with source_id/target_id members)
 //   - tuple/pair (generic edge representation)
 //   - any type satisfying edge_list::basic_edge concept
 ```
@@ -113,7 +113,7 @@ The unified CPO approach extends the existing `adj_list` CPOs to handle edge_lis
 | 3 | ADL with graph | `source_id(g, uv)` exists | ADL-findable free function |
 | 4 | adj_list descriptor | `is_edge_descriptor_v` + `uv.source_id()` | adj_list edge descriptor method |
 | 5 | **edge_list descriptor** | `is_edge_list_descriptor_v` + `uv.source_id()` | edge_list descriptor method |
-| 6 | **Edge-only data member** | `uv.source_id` exists (not callable) | Direct member access (edge_info) |
+| 6 | **Edge-only data member** | `uv.source_id` exists (not callable) | Direct member access (edge_data) |
 | 7 | **Tuple/pair access** | `!is_*_descriptor_v` + `get<0>(uv)` | For tuple-like edge types |
 
 **Key Design Considerations**:
@@ -135,7 +135,7 @@ The unified CPO approach extends the existing `adj_list` CPOs to handle edge_lis
 
 5. **Mutual exclusivity guardrails**: Ensure tier 6 (data member) explicitly excludes any type that
     satisfies either descriptor trait or has a callable `source_id()`/`target_id()`. Likewise, tier 7
-    must exclude descriptor traits and edge_info-like types to avoid ambiguity.
+    must exclude descriptor traits and edge_data-like types to avoid ambiguity.
 
 #### 1.2 Extend `graph_cpo.hpp`
 
@@ -150,7 +150,7 @@ namespace _source_id {
         _adl, 
         _adj_list_descriptor,      // RENAMED: was _descriptor
         _edge_list_descriptor,     // NEW: for edge_list::edge_descriptor
-        _edge_info_member,         // NEW: for edge_info<VId, true, ...>
+        _edge_data_member,         // NEW: for edge_data<VId, true, ...>
         _tuple_like                // NEW: for pair/tuple
     };
     
@@ -169,10 +169,10 @@ namespace _source_id {
             { uv.source_id() };  // method call
         };
     
-    // NEW: Check for edge_info-style direct data member access
+    // NEW: Check for edge_data-style direct data member access
     // Must NOT be a descriptor type (to avoid ambiguity with method calls)
     template<typename UV>
-    concept _has_edge_info_member = 
+    concept _has_edge_data_member = 
         !is_edge_descriptor_v<std::remove_cvref_t<UV>> &&
         !edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> &&
         requires(const UV& uv) {
@@ -206,8 +206,8 @@ namespace _source_id {
             return {_St::_adj_list_descriptor, /*noexcept*/};
         } else if constexpr (_has_edge_list_descriptor<UV>) {       // NEW
             return {_St::_edge_list_descriptor, /*noexcept*/};
-        } else if constexpr (_has_edge_info_member<UV>) {           // NEW
-            return {_St::_edge_info_member, /*noexcept*/};
+        } else if constexpr (_has_edge_data_member<UV>) {           // NEW
+            return {_St::_edge_data_member, /*noexcept*/};
         } else if constexpr (_is_tuple_like_edge<UV>) {             // NEW
             return {_St::_tuple_like, /*noexcept*/};
         } else {
@@ -367,10 +367,10 @@ clean separation while maintaining consistent API.
 | Custom types (graph member or ADL) | 2-3 | `g.source_id(uv)` or ADL | `g.target_id(uv)` or ADL | `g.edge_value(uv)` or ADL |
 | `adj_list::edge_descriptor` (default) | 4 | `uv.source_id()` | `uv.target_id()` | `uv.value()` |
 | `edge_list::edge_descriptor<VId,EV>` | 5 | `uv.source_id()` | `uv.target_id()` | `uv.value()` |
-| `edge_info<VId,true,void,void>` | 6 | `uv.source_id` | `uv.target_id` | N/A |
-| `edge_info<VId,true,void,EV>` | 6 | `uv.source_id` | `uv.target_id` | `uv.value` |
-| `edge_info<VId,true,E&,void>` | 6 | `uv.source_id` | `uv.target_id` | N/A |
-| `edge_info<VId,true,E&,EV>` | 6 | `uv.source_id` | `uv.target_id` | `uv.value` |
+| `edge_data<VId,true,void,void>` | 6 | `uv.source_id` | `uv.target_id` | N/A |
+| `edge_data<VId,true,void,EV>` | 6 | `uv.source_id` | `uv.target_id` | `uv.value` |
+| `edge_data<VId,true,E&,void>` | 6 | `uv.source_id` | `uv.target_id` | N/A |
+| `edge_data<VId,true,E&,EV>` | 6 | `uv.source_id` | `uv.target_id` | `uv.value` |
 | `pair<T,T>` | 7 | `uv.first` | `uv.second` | N/A |
 | `tuple<T,T>` | 7 | `get<0>(uv)` | `get<1>(uv)` | N/A |
 | `tuple<T,T,EV>` | 7 | `get<0>(uv)` | `get<1>(uv)` | `get<2>(uv)` |
@@ -385,10 +385,10 @@ the underlying data structure's semantics.
 
 ```cpp
 namespace _source_id {
-    // Tier 6: edge_info-style data member access
+    // Tier 6: edge_data-style data member access
     // Excludes descriptor types to avoid ambiguity with method calls
     template<typename UV>
-    concept _has_edge_info_member = 
+    concept _has_edge_data_member = 
         !is_edge_descriptor_v<std::remove_cvref_t<UV>> &&
         !edge_list::is_edge_list_descriptor_v<std::remove_cvref_t<UV>> &&
         requires(const UV& uv) {
@@ -411,7 +411,7 @@ namespace _source_id {
     
     // In _fn::operator():
     // ... tiers 1-5 ...
-    // else if constexpr (_Choice<_G, _UV>._Strategy == _St::_edge_info_member) {
+    // else if constexpr (_Choice<_G, _UV>._Strategy == _St::_edge_data_member) {
     //     return uv.source_id;  // data member
     // } else if constexpr (_Choice<_G, _UV>._Strategy == _St::_tuple_like) {
     //     return std::get<0>(uv);
@@ -441,7 +441,7 @@ class edgelist_view : public std::ranges::view_interface<edgelist_view<G>> {
 public:
     class iterator {
         // Iterates through vertices, then through each vertex's edges
-        // Projects each edge to edge_info<VId, true, edge_t<G>, void>
+        // Projects each edge to edge_data<VId, true, edge_t<G>, void>
     };
     
     explicit edgelist_view(G& g) : g_(&g) {}
@@ -495,7 +495,7 @@ include/graph/
 ├── adj_list/
 │   └── detail/
 │       └── graph_cpo.hpp          # MODIFY: Extend CPOs for edge_list support
-├── graph_info.hpp                 # (existing) shared edge_info types
+├── graph_data.hpp                 # (existing) shared edge_data types
 └── graph.hpp                      # MODIFY: Update imports, remove edgelist.hpp ref
 ```
 
@@ -505,9 +505,9 @@ include/graph/
 
 ### Milestone 1: CPO Unification (Critical Path)
 1. [ ] Add type traits for edge_list types in descriptor_traits.hpp or new file
-2. [ ] Extend `source_id` CPO in `graph_cpo.hpp` to support edge_info and tuple types
-3. [ ] Extend `target_id` CPO in `graph_cpo.hpp` to support edge_info and tuple types
-4. [ ] Extend `edge_value` CPO in `graph_cpo.hpp` to support edge_info and tuple types
+2. [ ] Extend `source_id` CPO in `graph_cpo.hpp` to support edge_data and tuple types
+3. [ ] Extend `target_id` CPO in `graph_cpo.hpp` to support edge_data and tuple types
+4. [ ] Extend `edge_value` CPO in `graph_cpo.hpp` to support edge_data and tuple types
 
 ### Milestone 2: Edge List Descriptor
 5. [ ] Create `include/graph/edge_list/edge_list_descriptor.hpp`
@@ -522,7 +522,7 @@ include/graph/
 ### Milestone 4: Testing
 11. [ ] Create `tests/edge_list/test_edge_list_concepts.cpp`
 12. [ ] Create `tests/edge_list/test_edge_list_cpo.cpp`
-13. [ ] Test CPOs with standard types (pair, tuple, edge_info)
+13. [ ] Test CPOs with standard types (pair, tuple, edge_data)
 14. [ ] Test CPOs with custom edge types via ADL
 
 ### Milestone 5: Edgelist View (Future)
@@ -619,7 +619,7 @@ include/graph/
 1. **CPO Tests with Various Edge Types**:
    - `source_id(el, pair<int,int>)` → returns `uv.first`
    - `source_id(el, tuple<int,int,double>)` → returns `get<0>(uv)`
-   - `source_id(el, edge_info<int,true,void,void>)` → returns `uv.source_id`
+   - `source_id(el, edge_data<int,true,void,void>)` → returns `uv.source_id`
    - `source_id(g, edge_descriptor)` → returns via descriptor (existing)
     - Ambiguity guards:
       - Type with both `source_id()` method and `source_id` data member → picks method tier
@@ -629,12 +629,12 @@ include/graph/
 2. **Concept Satisfaction Tests**:
    ```cpp
    static_assert(edge_list::basic_sourced_edgelist<vector<pair<int,int>>>);
-   static_assert(edge_list::basic_sourced_edgelist<vector<edge_info<int,true,void,void>>>);
+   static_assert(edge_list::basic_sourced_edgelist<vector<edge_data<int,true,void,void>>>);
    static_assert(!edge_list::basic_sourced_edgelist<adjacency_list>); // fails range-of-non-range check
    ```
 
 3. **Descriptor Tests**:
-   - Construct edge_list::edge_descriptor from edge_info
+   - Construct edge_list::edge_descriptor from edge_data
    - Verify CPOs work with edge_list descriptors
    - Test equality, comparison, hashing
 
@@ -660,7 +660,7 @@ include/graph/
 - [graph_cpo_implementation.md](../docs/graph_cpo_implementation.md) - CPO patterns
 - [graph_cpo.hpp](../include/graph/adj_list/detail/graph_cpo.hpp) - Existing CPO implementations
 - [edge_list.hpp](../include/graph/edge_list/edge_list.hpp) - Current edge list concepts
-- [graph_info.hpp](../include/graph/graph_info.hpp) - Shared edge_info types
+- [graph_data.hpp](../include/graph/graph_data.hpp) - Shared edge_data types
 - `/mnt/d/dev_graph/graph-v2/include/graph/edgelist.hpp` - Reference implementation
 - `/mnt/d/dev_graph/graph-v2/include/graph/views/edgelist.hpp` - Reference view implementation
 
