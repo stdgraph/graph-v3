@@ -17,9 +17,9 @@
 - [Adjacency Lists](user-guide/adjacency-lists.md) — range-of-ranges model, concepts, CPOs
 - [Edge Lists](user-guide/edge-lists.md) — flat sourced-edge model, concepts, patterns
 - [Containers](user-guide/containers.md) — `dynamic_graph`, `compressed_graph`, `undirected_adjacency_list`, 27 trait combinations
-- [Views](user-guide/views.md) — lazy traversal views (BFS, DFS, topological sort, etc.)
+- [Views](user-guide/views.md) — lazy traversal views (breadth-first search, depth-first search, topological sort, etc.)
 - [Bidirectional Access](user-guide/bidirectional-access.md) — incoming edges, reverse traversal, `in_edge_accessor`
-- [Algorithms](user-guide/algorithms.md) — Dijkstra, Bellman-Ford, MST, connected components, and more
+- [Algorithms](user-guide/algorithms.md) — Dijkstra and Bellman-Ford shortest-paths, minimal spanning tree, connected components, and more
 
 ## Reference
 
@@ -45,6 +45,7 @@
 ## Other
 
 - [FAQ](FAQ.md) — common questions and answers
-- [Migration from v2](migration-from-v2.md) — what changed from graph-v2 and how to migrate
 - [Status & Metrics](status/metrics.md) — canonical counts and implementation matrix
 - [Code Coverage](status/coverage.md) — line and function coverage report (95.8% lines, 92.0% functions)
+- [C++ Standardization](standardization.md) — ISO C++ proposal papers (P3126–P3131, P3337) and participation
+- [Migration from v2](migration-from-v2.md) — what changed from graph-v2 and how to migrate

@@ -172,6 +172,7 @@ The full documentation hub is at [docs/index.md](docs/index.md).
 Quick links:
 
 - [Getting Started](docs/index.md#users)
+- [C++ Standardization](docs/standardization.md) — ISO C++ papers and proposal status
 - [Migration from graph-v2](docs/migration-from-v2.md)
 - [FAQ](docs/FAQ.md)
 - [Implementation Matrix](docs/status/implementation_matrix.md)
