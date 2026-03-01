@@ -46,8 +46,8 @@ add_executable(graph3_adj_list_tests
     traits/test_incoming_edge_traits.cpp
     traits/test_adjacency_list_traits.cpp
     
-    # Vertex Map & Mapped Concepts
-    test_vertex_map.cpp
+    # Vertex Property Map & Mapped Concepts
+    test_vertex_property_map.cpp
     test_mapped_concepts.cpp
 )
 

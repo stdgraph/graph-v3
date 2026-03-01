@@ -101,12 +101,12 @@ struct bfs_sparse_expected {
 
 template <typename Graph>
 Graph bfs_graph_sparse() {
-  return Graph({{10, 20}, {10, 30}, {20, 40}, {30, 40}, {40, 50}});
+  return Graph({{10, 20, 1}, {10, 30, 1}, {20, 40, 1}, {30, 40, 1}, {40, 50, 1}});
 }
 
 template <typename Graph>
 Graph bfs_graph_contiguous() {
-  return Graph({{0, 1}, {0, 2}, {1, 3}, {2, 3}, {3, 4}});
+  return Graph({{0, 1, 1}, {0, 2, 1}, {1, 3, 1}, {2, 3, 1}, {3, 4, 1}});
 }
 
 /**
@@ -147,7 +147,7 @@ struct dag_sparse_expected {
 
 template <typename Graph>
 Graph dag_graph_sparse() {
-  return Graph({{10, 20}, {10, 30}, {20, 40}, {30, 40}});
+  return Graph({{10, 20, 1}, {10, 30, 1}, {20, 40, 1}, {30, 40, 1}});
 }
 
 /**
@@ -177,7 +177,7 @@ struct disconnected_sparse_expected {
 
 template <typename Graph>
 Graph disconnected_graph_sparse() {
-  return Graph({{100, 200}, {300, 400}, {400, 500}});
+  return Graph({{100, 200, 1}, {300, 400, 1}, {400, 500, 1}});
 }
 
 /**

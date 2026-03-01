@@ -750,16 +750,16 @@ cd build/linux-gcc-asan && cmake --build . && ctest --output-on-failure
 | **0** | **0.1** | Verify baseline (all tests pass) | Complete |
 | **0** | **0.2** | Create `index/` directory, copy 14 algorithm files | Complete |
 | **0** | **0.3** | Commit snapshot | Complete |
-| **1** | **1.1** | Add `mapped_vertex_range` + composed concepts | Not Started |
-| **1** | **1.2** | Create `vertex_map.hpp` (type alias + helpers) | Not Started |
-| **1** | **1.3** | Add `is_null_range_v` trait | Not Started |
-| **1** | **1.4** | Create `map_graph_fixtures.hpp` | Not Started |
-| **1** | **1.5** | Create vertex_map unit tests | Not Started |
-| **1** | **1.6** | Create concept static_assert tests | Not Started |
-| **1** | **1.7** | Commit concepts + vertex_map infrastructure | Not Started |
-| **1** | **1.R** | Review gate: concept mutual exclusivity, vertex_map correctness | Not Started |
-| **2** | **2.1** | Generalize `breadth_first_search` | Not Started |
-| **2** | **2.2** | Review gate: BFS diff | Not Started |
+| **1** | **1.1** | Add `mapped_vertex_range` + composed concepts | Complete |
+| **1** | **1.2** | Create `vertex_map.hpp` (type alias + helpers) | Complete |
+| **1** | **1.3** | Add `is_null_range_v` trait | Complete |
+| **1** | **1.4** | Create `map_graph_fixtures.hpp` | Complete |
+| **1** | **1.5** | Create vertex_map unit tests | Complete |
+| **1** | **1.6** | Create concept static_assert tests | Complete |
+| **1** | **1.7** | Commit concepts + vertex_map infrastructure | Complete |
+| **1** | **1.R** | Review gate: concept mutual exclusivity, vertex_map correctness | Complete |
+| **2** | **2.1** | Generalize `breadth_first_search` | Complete |
+| **2** | **2.2** | Review gate: BFS diff | Complete |
 | **2** | **2.3** | Generalize `depth_first_search` | Not Started |
 | **2** | **2.4** | Review gate: DFS diff | Not Started |
 | **2** | **2.5** | Generalize `topological_sort` | Not Started |
@@ -769,8 +769,8 @@ cd build/linux-gcc-asan && cmake --build . && ctest --output-on-failure
 | **3** | **3.2** | Verify `_null_range_type` detection with `is_null_range_v` | Not Started |
 | **3** | **3.3** | Commit init_shortest_paths generalization | Not Started |
 | **3** | **3.R** | Review gate: init functions handle index/mapped/null correctly | Not Started |
-| **4** | **4.1** | Generalize `dijkstra_shortest_paths` | Not Started |
-| **4** | **4.2** | Review gate: Dijkstra diff | Not Started |
+| **4** | **4.1** | Generalize `dijkstra_shortest_paths` | Complete |
+| **4** | **4.2** | Review gate: Dijkstra diff | Complete |
 | **4** | **4.3** | Generalize `bellman_ford_shortest_paths` | Not Started |
 | **4** | **4.4** | Review gate: Bellman-Ford diff | Not Started |
 | **4** | **4.5** | Commit Dijkstra + Bellman-Ford | Not Started |
