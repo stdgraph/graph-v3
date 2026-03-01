@@ -1,6 +1,14 @@
+<table><tr>
+<td><img src="../assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # Graph CPO Implementation Order
 
-This document specifies the correct implementation order for CPOs in `graph_cpo.hpp`, matching the reference implementation structure.
+
+> This document specifies the correct implementation order for CPOs in `graph_cpo.hpp`, matching the reference implementation structure.
+
+</td>
+</tr></table>
 
 ## CPO Implementation Order
 

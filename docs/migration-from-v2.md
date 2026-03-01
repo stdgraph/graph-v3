@@ -1,4 +1,11 @@
+<table><tr>
+<td><img src="assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # Migrating from graph-v2 to graph-v3
+
+</td>
+</tr></table>
 
 > [← Back to Documentation Index](index.md)
 

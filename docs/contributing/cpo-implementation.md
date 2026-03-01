@@ -1,6 +1,13 @@
+<table><tr>
+<td><img src="../assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # CPO Implementation Guide
 
 > How Customization Point Objects work in graph-v3, how to implement new ones, and how to test them.
+
+</td>
+</tr></table>
 
 **References:**
 - [Adjacency List Interface](../reference/adjacency-list-interface.md) — GCI spec for adjacency lists
