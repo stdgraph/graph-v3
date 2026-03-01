@@ -1,7 +1,15 @@
+<table><tr>
+<td><img src="../assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # Bidirectional Edge Access
+
+</td>
+</tr></table>
 
 > [← Back to Documentation Index](../index.md) · [Views](views.md) · [Containers](containers.md)
 
+## Table of Contents
 - [Overview](#overview)
 - [Creating a Bidirectional Graph](#creating-a-bidirectional-graph)
 - [Incoming Edge CPOs](#incoming-edge-cpos)

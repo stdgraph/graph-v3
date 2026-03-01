@@ -1,9 +1,17 @@
+<table><tr>
+<td><img src="../assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # Algorithm Complexity Cheat Sheet
 
-> [← Back to Documentation Index](../index.md) · [User Guide: Algorithms](../user-guide/algorithms.md)
 
-Quick-reference for time complexity, space complexity, required concepts, and
+> Quick-reference for time complexity, space complexity, required concepts, and
 headers for every algorithm in graph-v3.
+
+</td>
+</tr></table>
+
+> [← Back to Documentation Index](../index.md) · [User Guide: Algorithms](../user-guide/algorithms.md)
 
 ---
 

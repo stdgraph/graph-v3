@@ -1,11 +1,19 @@
+<table><tr>
+<td><img src="../assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # Adjacency Lists
 
-> [← Back to Documentation Index](../index.md)
 
-An **adjacency list** is the primary graph abstraction in graph-v3.
+> An **adjacency list** is the primary graph abstraction in graph-v3.
 It models a graph as a *range of vertices*, where each vertex owns a *range of
 outgoing edges*. This "range-of-ranges" view maps directly to standard
 containers — a `std::vector<std::vector<int>>` is already a valid adjacency list.
+
+</td>
+</tr></table>
+
+> [← Back to Documentation Index](../index.md)
 
 ---
 

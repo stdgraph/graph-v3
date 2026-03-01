@@ -1,8 +1,13 @@
+<table><tr>
+<td><img src="../assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # Edge Value Type Concepts and Pattern Detection
 
-## Overview
-
 This document describes the concepts and type traits added to `descriptor.hpp` for detecting and categorizing edge value types used in graph descriptors.
+
+</td>
+</tr></table>
 
 ## Concepts
 

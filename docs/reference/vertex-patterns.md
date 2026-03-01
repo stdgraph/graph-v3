@@ -1,11 +1,19 @@
+<table><tr>
+<td><img src="../assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # Vertex Patterns Reference
 
-> [← Back to Documentation Index](../index.md) · [User Guide: Adjacency Lists](../user-guide/adjacency-lists.md)
 
-This page documents two complementary concept families for vertex types:
+> This page documents two complementary concept families for vertex types:
 **inner value patterns** (how vertex data is accessed) and
 **storage patterns** (how vertex IDs are stored/extracted). Both families live
 in `graph::adj_list::detail` and are re-exported via `<graph/graph.hpp>`.
+
+</td>
+</tr></table>
+
+> [← Back to Documentation Index](../index.md) · [User Guide: Adjacency Lists](../user-guide/adjacency-lists.md)
 
 ---
 

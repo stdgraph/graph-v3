@@ -1,6 +1,14 @@
+<table><tr>
+<td><img src="../assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # Implementation Matrix
 
 > **Purpose:** Single source of truth for what is implemented. Generated from the source tree.
+
+</td>
+</tr></table>
+
 > All user-facing documentation must reference this file rather than maintaining independent lists.
 
 ---

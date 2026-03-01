@@ -1,6 +1,14 @@
+<table><tr>
+<td><img src="../assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # CPO Reference
 
+</td>
+</tr></table>
+
 > [← Back to Documentation Index](../index.md) · [CPO Implementation Guide](../contributing/cpo-implementation.md)
+
 
 **Customization Point Objects (CPOs)** are the primary API for querying graph
 structure. Each CPO resolves at compile time via a three-step priority:

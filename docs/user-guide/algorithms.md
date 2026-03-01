@@ -1,7 +1,15 @@
+<table><tr>
+<td><img src="../assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # Algorithms
+
+</td>
+</tr></table>
 
 > [← Back to Documentation Index](../index.md)
 
+## Table of Contents
 - [Overview](#overview)
 - [Algorithm Catalog](#algorithm-catalog)
   - [By Category](#by-category)

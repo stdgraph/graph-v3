@@ -1,7 +1,13 @@
+<table><tr>
+<td><img src="../assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # Architecture Guide
 
 > How graph-v3 is structured, and the design principles behind it.
 
+</td>
+</tr></table>
 ---
 
 ## Directory Structure

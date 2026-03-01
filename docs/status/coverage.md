@@ -1,6 +1,14 @@
+<table><tr>
+<td><img src="../assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # Code Coverage Report
 
+</td>
+</tr></table>
+
 > **Generated:** 2026-02-23 | **Compiler:** GCC 15.1.0 | **Preset:** `linux-gcc-coverage`
+
 > **Tests:** 4343 passed, 0 failed (100% pass rate)
 > **Overall line coverage:** 96.3% (3624 / 3764 lines)
 > **Overall function coverage:** 91.8% (29030 / 31639 functions)

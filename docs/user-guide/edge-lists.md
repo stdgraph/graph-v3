@@ -1,11 +1,19 @@
+<table><tr>
+<td><img src="../assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # Edge Lists
 
-> [← Back to Documentation Index](../index.md)
 
-An **edge list** is a flat range of sourced edges — a simpler alternative to
+> An **edge list** is a flat range of sourced edges — a simpler alternative to
 the adjacency list when you only need to enumerate edges without fast per-vertex
 access. Any `std::ranges::input_range` whose elements expose `source_id` and
 `target_id` qualifies.
+
+</td>
+</tr></table>
+
+> [← Back to Documentation Index](../index.md)
 
 ---
 

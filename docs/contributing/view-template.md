@@ -1,7 +1,14 @@
+<table><tr>
+<td><img src="../assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # View Documentation Template
 
-This template provides a standardized format for documenting graph views in the graph-v3 library. Follow this structure to ensure consistency and completeness across all view documentation.
 
+> This template provides a standardized format for documenting graph views in the graph-v3 library. Follow this structure to ensure consistency and completeness across all view documentation.
+
+</td>
+</tr></table>
 ## View Name
 
 ### Brief Description

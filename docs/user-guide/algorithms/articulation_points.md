@@ -1,7 +1,15 @@
+<table><tr>
+<td><img src="../../assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # Articulation Points
+
+</td>
+</tr></table>
 
 > [← Back to Algorithm Catalog](../algorithms.md)
 
+## Table of Contents
 - [Overview](#overview)
 - [When to Use](#when-to-use)
 - [Include](#include)

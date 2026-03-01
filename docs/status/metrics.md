@@ -1,6 +1,14 @@
+<table><tr>
+<td><img src="../assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # Canonical Metrics
 
 > **Single source of truth for all user-facing counts.**
+
+</td>
+</tr></table>
+
 > All documentation (README, docs/index.md, etc.) must reference these values
 > rather than maintaining independent numbers. Re-run `ctest` and update when
 > the implementation surface changes.

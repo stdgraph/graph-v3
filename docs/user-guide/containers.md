@@ -1,9 +1,17 @@
+<table><tr>
+<td><img src="../assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # Graph Containers
 
-> [← Back to Documentation Index](../index.md)
 
-graph-v3 ships three purpose-built graph containers. Each satisfies the
+> graph-v3 ships three purpose-built graph containers. Each satisfies the
 adjacency list concepts so all CPOs, views, and algorithms work interchangeably.
+
+</td>
+</tr></table>
+
+> [← Back to Documentation Index](../index.md)
 
 | Container | Storage | Mutability | Best for |
 |-----------|---------|------------|----------|

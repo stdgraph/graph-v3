@@ -1,8 +1,16 @@
+<table><tr>
+<td><img src="../assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # Type Aliases Reference
+
+
+</td>
+</tr></table>
 
 > [← Back to Documentation Index](../index.md) · [CPO Reference](cpo-reference.md)
 
-All type aliases below are available in `namespace graph` after
+> All type aliases below are available in `namespace graph` after
 `#include <graph/graph.hpp>`. They are re-exported from
 `namespace graph::adj_list`.
 

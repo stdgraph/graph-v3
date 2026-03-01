@@ -1,6 +1,14 @@
+<table><tr>
+<td><img src="../assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # Coding Guidelines
 
-These requirements apply to every graph-related component, including implementations, views, algorithms, and the data model.
+
+> These requirements apply to every graph-related component, including implementations, views, algorithms, and the data model.
+
+</td>
+</tr></table>
 
 ## Core Architectural Commitments
 1. The interface MUST be able to adapt to existing graph data structures.

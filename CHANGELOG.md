@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+---
+
+## [0.5.0] - 2026-03-01 *(Initial Beta)*
+
 ### Added
 - **Bidirectional edge access** — `in_edges`, `in_degree`, `find_in_edge`, `contains_in_edge` CPOs
 - `bidirectional_adjacency_list` concept

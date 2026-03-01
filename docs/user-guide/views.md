@@ -1,7 +1,15 @@
+<table><tr>
+<td><img src="../assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # Graph Views Documentation
+
+</td>
+</tr></table>
 
 > [← Back to Documentation Index](../index.md)
 
+## Table of Contents
 - [Overview](#overview)
 - [Quick Start](#quick-start)
 - [Basic Views](#basic-views) — vertexlist, incidence, neighbors, edgelist

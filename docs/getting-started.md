@@ -1,9 +1,17 @@
+<table><tr>
+<td><img src="assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # Getting Started
 
-> [← Back to Documentation Index](index.md)
 
-This guide walks you through installing graph-v3, building your first graph,
+> This guide walks you through installing graph-v3, building your first graph,
 running an algorithm, and working with edge lists.
+
+</td>
+</tr></table>
+
+> [← Back to Documentation Index](index.md)
 
 ---
 

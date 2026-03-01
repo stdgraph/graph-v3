@@ -1,10 +1,10 @@
 <table><tr>
-<td><img src="docs/assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td><img src="docs/assets/logo_text.svg" width="400" alt="graph-v3 logo"></td>
 <td>
 
 # graph-v3
 
-**A modern C++20 graph library — header-only, descriptor-based, works with your graphs.**
+**A modern C++20 graph library — generic, header-only, works with your graphs**
 
 </td>
 </tr></table>
@@ -20,7 +20,8 @@
 ## Highlights
 
 - **Header-only** — drop into any CMake project; no compiled components
-- **Works with your containers** — `std::vector<std::vector<int>>` or `std::map<int, std::vector<int>>` are valid graphs out of the box
+- **Generic** - Enabled by the use of descriptors.
+- **Works with your graphs** — Bring your own graph. `std::vector<std::vector<int>>` and `std::map<int, std::list<std::pair<int,double>>>` are also valid graphs out of the box.
 - **13 algorithms** — Dijkstra, Bellman-Ford, BFS, DFS, topological sort, connected components, articulation points, biconnected components, MST, triangle counting, MIS, label propagation, Jaccard coefficient
 - **7 lazy views** — vertexlist, edgelist, incidence, neighbors, BFS, DFS, topological sort — all composable with range adaptors
 - **Bidirectional edge access** — `in_edges`, `in_degree`, reverse BFS/DFS/topological sort via `in_edge_accessor`
@@ -108,7 +109,7 @@ Both share a common descriptor system and customization-point interface.
 | Compiler | Version | Platform | Status |
 |----------|---------|----------|--------|
 | GCC      | 13 +    | Linux    | Tested |
-| Clang    | 10 +    | Linux, macOS | Tested |
+| Clang    | 18 +    | Linux, macOS | Tested |
 | MSVC     | 2022 +  | Windows  | Tested |
 
 Requires **CMake 3.20+** and a **C++20**-capable toolchain.
@@ -172,6 +173,7 @@ The full documentation hub is at [docs/index.md](docs/index.md).
 Quick links:
 
 - [Getting Started](docs/index.md#users)
+- [C++ Standardization](docs/standardization.md) — ISO C++ papers and proposal status
 - [Migration from graph-v2](docs/migration-from-v2.md)
 - [FAQ](docs/FAQ.md)
 - [Implementation Matrix](docs/status/implementation_matrix.md)

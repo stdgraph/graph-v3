@@ -1,10 +1,18 @@
+<table><tr>
+<td><img src="../assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # Concepts Reference
 
-> [← Back to Documentation Index](../index.md) · [CPO Reference](cpo-reference.md)
 
-All graph concepts live in `namespace graph::adj_list` (adjacency lists) or
+> All graph concepts live in `namespace graph::adj_list` (adjacency lists) or
 `namespace graph::edge_list` (edge lists) and are re-exported into
 `namespace graph` via `<graph/graph.hpp>`.
+
+</td>
+</tr></table>
+
+> [← Back to Documentation Index](../index.md) · [CPO Reference](cpo-reference.md)
 
 ---
 
