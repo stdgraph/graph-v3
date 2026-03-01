@@ -100,10 +100,11 @@ concept out_edge_range = std::ranges::forward_range<R> && edge<G, std::ranges::r
  * @tparam V Vertex type (must be vertex_descriptor)
  */
 template <class G, class V>
-concept vertex = is_vertex_descriptor_v<std::remove_cvref_t<V>> && requires(G& g, const V& u, const vertex_id_t<G>& uid) {
-  vertex_id(g, u);
-  find_vertex(g, uid);
-};
+concept vertex = is_vertex_descriptor_v<std::remove_cvref_t<V>> && //
+                 requires(G& g, const V& u, const vertex_id_t<G>& uid) {
+                   vertex_id(g, u);
+                   find_vertex(g, uid);
+                 };
 
 // =============================================================================
 // Vertex Range Concepts
@@ -147,11 +148,12 @@ concept vertex_range = std::ranges::forward_range<R> && std::ranges::sized_range
  * Requirements:
  * - The vertex ID type must be integral
  * - Must satisfy vertex_range
- * - The underlying iterator of the vertex_descriptor_view must be a random_access_iterator
+ * - The underlying container must be integral, allowing random access by index
  * 
- * Note: We check the underlying iterator type, not the view itself, because
- * vertex_descriptor_view is always a forward_range (synthesizes descriptors on-the-fly)
- * but the underlying container may still support random access.
+ * Note: We check the underlying iterator type via `vertex_range_t<G>::underlying_iterator`,
+ * not the view's own iterator, because vertex_descriptor_view always models forward_range
+ * (it synthesizes descriptors on-the-fly) while the underlying container may still support
+ * random access. `underlying_iterator` is exposed directly on vertex_descriptor_view.
  * 
  * Examples:
  * - vertex_descriptor_view over std::vector<T> (index-based)
@@ -163,11 +165,11 @@ concept vertex_range = std::ranges::forward_range<R> && std::ranges::sized_range
  * @tparam G Graph type
  */
 template <class G>
-concept index_vertex_range =
-      requires(G& g) {
-        { vertices(g) } -> vertex_range<G>;
-      } && std::integral<vertex_id_t<G>> &&
-      std::random_access_iterator<typename vertex_range_t<G>::vertex_desc::iterator_type>;
+concept index_vertex_range = std::integral<vertex_id_t<G>> &&                           //
+                             std::integral<typename vertex_range_t<G>::storage_type> && //
+                             requires(G& g) {
+                               { vertices(g) } -> vertex_range<G>;
+                             };
 
 // =============================================================================
 // Adjacency List Concepts
@@ -296,12 +298,10 @@ concept in_edge_range = std::ranges::forward_range<R> && edge<G, std::ranges::ra
  * @tparam G Graph type
  */
 template <class G>
-concept bidirectional_adjacency_list =
-      adjacency_list<G> &&
-      requires(G& g, vertex_t<G> u, in_edge_t<G> ie) {
-        { in_edges(g, u) } -> in_edge_range<G>;
-        { source_id(g, ie) } -> std::convertible_to<vertex_id_t<G>>;
-      };
+concept bidirectional_adjacency_list = adjacency_list<G> && requires(G& g, vertex_t<G> u, in_edge_t<G> ie) {
+  { in_edges(g, u) } -> in_edge_range<G>;
+  { source_id(g, ie) } -> std::convertible_to<vertex_id_t<G>>;
+};
 
 /**
  * @brief Concept for bidirectional graphs with index-based vertex access
@@ -316,9 +316,7 @@ concept bidirectional_adjacency_list =
  * @tparam G Graph type
  */
 template <class G>
-concept index_bidirectional_adjacency_list =
-      bidirectional_adjacency_list<G> && index_vertex_range<G>;
-
+concept index_bidirectional_adjacency_list = bidirectional_adjacency_list<G> && index_vertex_range<G>;
 
 
 } // namespace graph::adj_list

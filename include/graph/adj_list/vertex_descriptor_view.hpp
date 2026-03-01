@@ -23,8 +23,8 @@ namespace graph::adj_list {
 template <vertex_iterator VertexIter>
 class vertex_descriptor_view : public std::ranges::view_interface<vertex_descriptor_view<VertexIter>> {
 public:
-  using vertex_desc  = vertex_descriptor<VertexIter>;
-  using storage_type = typename vertex_desc::storage_type;
+  using vertex_desc          = vertex_descriptor<VertexIter>;
+  using storage_type         = typename vertex_desc::storage_type;
 
   /**
      * @brief Forward iterator that yields vertex_descriptor values
