@@ -1,4 +1,11 @@
+<table><tr>
+<td><img src="../assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # View Chaining — How It Works
+
+</td>
+</tr></table>
 
 ## Overview
 

@@ -1,9 +1,16 @@
+<table><tr>
+<td><img src="../assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # Edge List Interface Reference
 
-> [← Back to Documentation Index](../index.md) · [User Guide: Edge Lists](../user-guide/edge-lists.md)
-
-This is the formal **Graph Container Interface (GCI)** specification for edge
+> This is the formal **Graph Container Interface (GCI)** specification for edge
 lists, derived from P1709/D3130.
+
+</td>
+</tr></table>
+
+> [← Back to Documentation Index](../index.md) · [User Guide: Edge Lists](../user-guide/edge-lists.md)
 
 ---
 

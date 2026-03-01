@@ -1,7 +1,16 @@
+<table><tr>
+<td><img src="assets/logo.svg" width="120" alt="graph-v3 logo"></td>
+<td>
+
 # C++ Standardization
 
-graph-v3 is the reference implementation for a proposed graph library for the **ISO C++ Standard (C++26/C++29)**.
-The proposal is developed under the [WG21](https://isocpp.org/std/the-committee) umbrella and targets the Standard
+> graph-v3 is the reference implementation for a proposed graph library for the **ISO C++ Standard (C++29/C++32)**.
+
+</td>
+</tr></table>
+---
+
+graph-v3 is developed under the [WG21](https://isocpp.org/std/the-committee) umbrella and targets the Standard
 Library Evolution Working Group (LEWG).
 
 > The previous reference implementation is [graph-v2](https://github.com/stdgraph/graph-v2).
