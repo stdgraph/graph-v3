@@ -747,9 +747,9 @@ cd build/linux-gcc-asan && cmake --build . && ctest --output-on-failure
 
 | Phase | Sub-Phase | Description | Status |
 |-------|-----------|-------------|--------|
-| **0** | **0.1** | Verify baseline (all tests pass) | Not Started |
-| **0** | **0.2** | Create `index/` directory, copy 14 algorithm files | Not Started |
-| **0** | **0.3** | Commit snapshot | Not Started |
+| **0** | **0.1** | Verify baseline (all tests pass) | Complete |
+| **0** | **0.2** | Create `index/` directory, copy 14 algorithm files | Complete |
+| **0** | **0.3** | Commit snapshot | Complete |
 | **1** | **1.1** | Add `mapped_vertex_range` + composed concepts | Not Started |
 | **1** | **1.2** | Create `vertex_map.hpp` (type alias + helpers) | Not Started |
 | **1** | **1.3** | Add `is_null_range_v` trait | Not Started |

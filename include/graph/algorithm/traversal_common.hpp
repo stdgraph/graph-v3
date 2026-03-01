@@ -339,6 +339,17 @@ public:
 /// Global instance of the null range used when predecessor tracking is not needed
 inline static _null_range_type _null_predecessors;
 
+/**
+ * @brief Type trait to detect _null_range_type at compile time.
+ *
+ * Algorithms use `if constexpr (is_null_range_v<Predecessors>)` to skip
+ * predecessor tracking when the caller passes _null_predecessors.
+ *
+ * @tparam T The type to test
+ */
+template <class T>
+inline constexpr bool is_null_range_v = std::is_same_v<std::remove_cvref_t<T>, _null_range_type>;
+
 } // namespace graph
 
 #endif // GRAPH_TRAVERSAL_COMMON_HPP

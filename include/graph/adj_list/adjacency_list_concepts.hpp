@@ -9,6 +9,7 @@
 #pragma once
 
 #include <concepts>
+#include <functional>
 #include <ranges>
 #include "detail/graph_cpo.hpp"
 
@@ -317,6 +318,81 @@ concept bidirectional_adjacency_list = adjacency_list<G> && requires(G& g, verte
  */
 template <class G>
 concept index_bidirectional_adjacency_list = bidirectional_adjacency_list<G> && index_vertex_range<G>;
+
+// =============================================================================
+// Mapped (Key-Based) Graph Concepts
+// =============================================================================
+
+/**
+ * @brief Concept for graphs whose vertex IDs are hashable keys
+ * 
+ * A hashable_vertex_id graph has vertex IDs that can be used as keys in 
+ * std::unordered_map. This is required by algorithms that use unordered_map
+ * for internal vertex property storage.
+ * 
+ * @tparam G Graph type
+ */
+template <class G>
+concept hashable_vertex_id = requires(const vertex_id_t<G>& uid) {
+  { std::hash<vertex_id_t<G>>{}(uid) } -> std::convertible_to<size_t>;
+};
+
+/**
+ * @brief Concept for graphs with key-based (sparse) vertex access
+ * 
+ * A mapped_vertex_range is a vertex_range where vertices are addressed by
+ * sparse keys rather than dense integral indices. Lookup is via find_vertex(g, uid).
+ * 
+ * This is mutually exclusive with index_vertex_range: a graph satisfies exactly
+ * one of these two concepts (or neither, if it satisfies only vertex_range).
+ * 
+ * Requirements:
+ * - Must NOT satisfy index_vertex_range (mutually exclusive)
+ * - Vertex IDs must be hashable (for unordered_map-based property maps)
+ * - vertices(g) must return a forward range
+ * - find_vertex(g, uid) must be valid (key-based lookup)
+ * 
+ * Examples:
+ * - vertex_descriptor_view over std::map<K, V>
+ * - vertex_descriptor_view over std::unordered_map<K, V>
+ * 
+ * Note: std::vector-based and std::deque-based graphs do NOT satisfy this concept.
+ * 
+ * @tparam G Graph type
+ */
+template <class G>
+concept mapped_vertex_range =
+    !index_vertex_range<G> &&
+    hashable_vertex_id<G> &&
+    requires(G& g) {
+      { vertices(g) } -> std::ranges::forward_range;
+    } &&
+    requires(G& g, const vertex_id_t<G>& uid) {
+      find_vertex(g, uid);
+    };
+
+/**
+ * @brief Concept for graphs with map-based adjacency list structure
+ * 
+ * A mapped_adjacency_list combines the adjacency_list structure with
+ * key-based vertex access (mapped_vertex_range).
+ * 
+ * @tparam G Graph type
+ */
+template <class G>
+concept mapped_adjacency_list = adjacency_list<G> && mapped_vertex_range<G>;
+
+/**
+ * @brief Concept for bidirectional graphs with map-based vertex access
+ * 
+ * A mapped_bidirectional_adjacency_list combines bidirectional traversal
+ * with key-based vertex lookup.
+ * 
+ * @tparam G Graph type
+ */
+template <class G>
+concept mapped_bidirectional_adjacency_list =
+    bidirectional_adjacency_list<G> && mapped_vertex_range<G>;
 
 
 } // namespace graph::adj_list
