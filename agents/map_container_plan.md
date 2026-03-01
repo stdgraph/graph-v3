@@ -760,11 +760,11 @@ cd build/linux-gcc-asan && cmake --build . && ctest --output-on-failure
 | **1** | **1.R** | Review gate: concept mutual exclusivity, vertex_map correctness | Complete |
 | **2** | **2.1** | Generalize `breadth_first_search` | Complete |
 | **2** | **2.2** | Review gate: BFS diff | Complete |
-| **2** | **2.3** | Generalize `depth_first_search` | Not Started |
-| **2** | **2.4** | Review gate: DFS diff | Not Started |
-| **2** | **2.5** | Generalize `topological_sort` | Not Started |
-| **2** | **2.6** | Review gate: topological sort diff | Not Started |
-| **2** | **2.7** | Commit BFS, DFS, topological_sort | Not Started |
+| **2** | **2.3** | Generalize `depth_first_search` | Complete |
+| **2** | **2.4** | Review gate: DFS diff | Complete |
+| **2** | **2.5** | Generalize `topological_sort` | Complete |
+| **2** | **2.6** | Review gate: topological sort diff | Complete |
+| **2** | **2.7** | Commit BFS, DFS, topological_sort | Complete |
 | **3** | **3.1** | Add graph-parameterized `init_shortest_paths` overloads | Not Started |
 | **3** | **3.2** | Verify `_null_range_type` detection with `is_null_range_v` | Not Started |
 | **3** | **3.3** | Commit init_shortest_paths generalization | Not Started |

@@ -23,6 +23,7 @@
 #include <numeric>
 #include <graph/detail/graph_using.hpp>
 #include <graph/graph_concepts.hpp>
+#include <graph/adj_list/vertex_property_map.hpp>
 
 #ifndef GRAPH_TRAVERSAL_COMMON_HPP
 #  define GRAPH_TRAVERSAL_COMMON_HPP
@@ -349,6 +350,98 @@ inline static _null_range_type _null_predecessors;
  */
 template <class T>
 inline constexpr bool is_null_range_v = std::is_same_v<std::remove_cvref_t<T>, _null_range_type>;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Graph-parameterized init_shortest_paths overloads
+//
+// These overloads accept the graph as the first parameter, enabling correct
+// initialization for both index-based (vector) and map-based (unordered_map)
+// vertex_property_map containers.
+//
+// For index graphs: identical behavior to the legacy overloads above.
+// For mapped graphs: iterates vertexlist(g) to populate entries.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * @ingroup graph_algorithms
+ * @brief Initialize distances for shortest path algorithms (graph-aware).
+ *
+ * Sets every vertex's distance to shortest_path_infinite_distance().
+ *
+ * For index graphs (Distances is a random_access_range):
+ *   std::ranges::fill(distances, infinite).
+ * For mapped graphs (Distances is an unordered_map):
+ *   if the map is empty, populates all vertices from vertexlist(g);
+ *   if pre-populated, fills existing entries.
+ *
+ * @tparam G Graph type satisfying adjacency_list
+ * @tparam Distances vertex_property_map container (vector or unordered_map)
+ * @param g The graph
+ * @param distances The distance map to initialize
+ */
+template <class G, class Distances>
+constexpr void init_shortest_paths(const G& g, Distances& distances) {
+  using dist_value = vertex_property_map_value_t<Distances>;
+  constexpr auto infinite = shortest_path_infinite_distance<dist_value>();
+
+  if constexpr (std::ranges::random_access_range<Distances>) {
+    // Index graph: fill the pre-sized vector
+    std::ranges::fill(distances, infinite);
+  } else {
+    // Mapped graph
+    if (distances.empty()) {
+      // Lazy map: populate all vertices
+      for (auto&& [uid, u] : views::vertexlist(g)) {
+        distances[uid] = infinite;
+      }
+    } else {
+      // Pre-populated map: fill existing entries
+      for (auto& [key, val] : distances) {
+        val = infinite;
+      }
+    }
+  }
+}
+
+/**
+ * @ingroup graph_algorithms
+ * @brief Initialize distances and predecessors for shortest path algorithms (graph-aware).
+ *
+ * Sets every vertex's distance to shortest_path_infinite_distance() and
+ * every vertex's predecessor to itself.
+ *
+ * For index graphs: distances are filled, predecessors are iota'd from 0.
+ * For mapped graphs: vertices are iterated via vertexlist(g) to set both.
+ * Predecessors of type _null_range_type are skipped via is_null_range_v.
+ *
+ * @tparam G Graph type satisfying adjacency_list
+ * @tparam Distances vertex_property_map container (vector or unordered_map)
+ * @tparam Predecessors vertex_property_map container (vector or unordered_map), or _null_range_type
+ * @param g The graph
+ * @param distances The distance map to initialize
+ * @param predecessors The predecessor map to initialize (each vertex → itself)
+ */
+template <class G, class Distances, class Predecessors>
+constexpr void init_shortest_paths(const G& g, Distances& distances, Predecessors& predecessors) {
+  using dist_value = vertex_property_map_value_t<Distances>;
+  constexpr auto infinite = shortest_path_infinite_distance<dist_value>();
+
+  if constexpr (std::ranges::random_access_range<Distances>) {
+    // Index graph: fill distances, iota predecessors
+    std::ranges::fill(distances, infinite);
+    if constexpr (!is_null_range_v<Predecessors>) {
+      std::iota(predecessors.begin(), predecessors.end(), 0);
+    }
+  } else {
+    // Mapped graph: iterate vertexlist to set both maps
+    for (auto&& [uid, u] : views::vertexlist(g)) {
+      distances[uid] = infinite;
+      if constexpr (!is_null_range_v<Predecessors>) {
+        predecessors[uid] = uid;
+      }
+    }
+  }
+}
 
 } // namespace graph
 
