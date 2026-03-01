@@ -8,6 +8,7 @@
 #include <graph/algorithm/topological_sort.hpp>
 #include "../common/graph_fixtures.hpp"
 #include "../common/algorithm_test_types.hpp"
+#include "../common/map_graph_fixtures.hpp"
 #include <set>
 #include <algorithm>
 
@@ -633,4 +634,153 @@ TEST_CASE("topological_sort - verify output order property", "[algorithm][topolo
 
   // Verify it's a valid topological order
   REQUIRE(is_valid_topological_order(g, order));
+}
+
+// =============================================================================
+// Sparse (Map-Based) Vertex Container Tests
+// =============================================================================
+
+// Helper: verify topological ordering for generic vertex ID types
+template <typename G, typename Order>
+bool is_valid_topo_order_generic(const G& g, const Order& order) {
+  using vid_t = vertex_id_t<G>;
+  std::unordered_map<vid_t, size_t> position;
+  for (size_t i = 0; i < order.size(); ++i) {
+    position[order[i]] = i;
+  }
+  for (auto uid : order) {
+    for (auto&& [vid] : views::basic_incidence(g, uid)) {
+      if (position.count(vid) && position[uid] >= position[vid]) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+TEMPLATE_TEST_CASE("topological_sort - sparse full-graph DAG",
+                   "[algorithm][topological_sort][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph = TestType;
+  auto g      = map_fixtures::dag_graph<Graph>();
+
+  using vid_t = vertex_id_t<Graph>;
+  std::vector<vid_t> order;
+  bool success = topological_sort(g, std::back_inserter(order));
+
+  REQUIRE(success);
+  REQUIRE(order.size() == 4);
+  REQUIRE(is_valid_topo_order_generic(g, order));
+
+  // First vertex in topo order must be the root
+  auto root = map_fixtures::bfs_source<Graph>();
+  REQUIRE(order.front() == root);
+}
+
+TEMPLATE_TEST_CASE("topological_sort - sparse full-graph cycle detection",
+                   "[algorithm][topological_sort][sparse][cycle]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph = TestType;
+  auto g      = map_fixtures::cycle_graph<Graph>();
+
+  using vid_t = vertex_id_t<Graph>;
+  std::vector<vid_t> order;
+  bool success = topological_sort(g, std::back_inserter(order));
+
+  REQUIRE_FALSE(success);
+}
+
+TEMPLATE_TEST_CASE("topological_sort - sparse full-graph disconnected",
+                   "[algorithm][topological_sort][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph = TestType;
+  auto g      = map_fixtures::disconnected_graph<Graph>();
+
+  using vid_t = vertex_id_t<Graph>;
+  std::vector<vid_t> order;
+  bool success = topological_sort(g, std::back_inserter(order));
+
+  REQUIRE(success);
+  REQUIRE(order.size() == num_vertices(g));
+  REQUIRE(is_valid_topo_order_generic(g, order));
+
+  // All vertices must be present exactly once
+  std::set<vid_t> unique_verts(order.begin(), order.end());
+  REQUIRE(unique_verts.size() == order.size());
+}
+
+TEMPLATE_TEST_CASE("topological_sort - sparse single-source DAG",
+                   "[algorithm][topological_sort][sparse][single_source]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph = TestType;
+  auto g      = map_fixtures::dag_graph<Graph>();
+  auto source = map_fixtures::bfs_source<Graph>();
+
+  using vid_t = vertex_id_t<Graph>;
+  std::vector<vid_t> order;
+  bool success = topological_sort(g, source, std::back_inserter(order));
+
+  REQUIRE(success);
+  REQUIRE(order.size() == 4); // root reaches all 4 vertices in dag
+  REQUIRE(is_valid_topo_order_generic(g, order));
+  REQUIRE(order.front() == source);
+}
+
+TEMPLATE_TEST_CASE("topological_sort - sparse multi-source partial reachability",
+                   "[algorithm][topological_sort][sparse][multi_source]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph = TestType;
+  auto g      = map_fixtures::disconnected_graph<Graph>();
+
+  // Only one component — first component's source
+  using vid_t = vertex_id_t<Graph>;
+  vid_t comp1_source;
+  if constexpr (is_sparse_vertex_container_v<Graph>) {
+    comp1_source = 100;
+  } else {
+    comp1_source = 0;
+  }
+
+  std::vector<vid_t> sources = {comp1_source};
+  std::vector<vid_t> order;
+  bool success = topological_sort(g, sources, std::back_inserter(order));
+
+  REQUIRE(success);
+  // Should only contain the first component's vertices
+  REQUIRE(order.size() == 2); // disconnected_graph first component has 2 vertices
+  REQUIRE(is_valid_topo_order_generic(g, order));
+
+  // All vertices in order must be from component 1
+  for (auto v : order) {
+    if constexpr (is_sparse_vertex_container_v<Graph>) {
+      REQUIRE((v == 100 || v == 200));
+    } else {
+      REQUIRE((v == 0 || v == 1));
+    }
+  }
+}
+
+TEMPLATE_TEST_CASE("topological_sort - sparse multi-source all sources",
+                   "[algorithm][topological_sort][sparse][multi_source]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph = TestType;
+  auto g      = map_fixtures::dag_graph<Graph>();
+
+  // All vertices as sources
+  using vid_t = vertex_id_t<Graph>;
+  std::vector<vid_t> sources;
+  for (auto&& [uid, u] : views::vertexlist(g)) {
+    sources.push_back(uid);
+  }
+
+  std::vector<vid_t> order;
+  bool success = topological_sort(g, sources, std::back_inserter(order));
+
+  REQUIRE(success);
+  REQUIRE(order.size() == 4);
+  REQUIRE(is_valid_topo_order_generic(g, order));
+
+  // No duplicates
+  std::set<vid_t> unique_verts(order.begin(), order.end());
+  REQUIRE(unique_verts.size() == 4);
 }

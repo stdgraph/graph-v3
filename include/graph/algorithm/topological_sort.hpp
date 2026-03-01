@@ -60,10 +60,9 @@
  * - ❌ Cyclic graphs (algorithm detects and returns false)
  * 
  * **Container Requirements:**
- * - Requires: `index_adjacency_list<G>` concept
- * - Requires: `integral<vertex_id_t<G>>`
+ * - Requires: `adjacency_list<G>` concept
  * - Requires: `std::output_iterator<OutputIterator, vertex_id_t<G>>`
- * - Works with: All `dynamic_graph` container combinations
+ * - Works with: All `dynamic_graph` container combinations (index and map-based)
  * - Works with: Any graph type satisfying the concept
  * 
  * **Implementation Notes:**
@@ -89,7 +88,7 @@
  * - **Forward/Cross edge:** Edge to Black vertex → ignore (already processed)
  * 
  * **Data Structures:**
- * - **Color array:** `std::vector<Color>` for O(1) vertex state lookup
+ * - **Color array:** `vertex_property_map<G, Color>` — lazy init, absent keys default to White
  * - **Finish order:** `std::vector<vertex_id_t<G>>` collects vertices as finished
  * - **DFS stack:** `std::stack<StackFrame>` stores (vertex_id, edge_iterator, edge_sentinel)
  * - **Output:** Reversed finish_order produces topological ordering
@@ -130,6 +129,7 @@
 #include "graph/graph.hpp"
 #include "graph/algorithm/depth_first_search.hpp"
 #include "graph/algorithm/traversal_common.hpp"
+#include "graph/adj_list/vertex_property_map.hpp"
 #include "graph/views/incidence.hpp"
 
 #include <vector>
@@ -142,7 +142,7 @@
 namespace graph {
 
 // Using declarations for new namespace structure
-using adj_list::index_adjacency_list;
+using adj_list::adjacency_list;
 using adj_list::vertex_id_t;
 using adj_list::vertices;
 using adj_list::vertex_id;
@@ -150,29 +150,35 @@ using adj_list::target_id;
 
 namespace detail {
 
+  // Vertex color states for DFS in topological sort
+  enum class TopoColor : uint8_t {
+    White, // Undiscovered
+    Gray,  // Discovered but not finished (on stack)
+    Black  // Finished
+  };
+
   /**
  * @brief Helper function for DFS visit during topological sort.
  * 
  * Performs iterative DFS from a source vertex, collecting finish order and detecting cycles.
  * 
  * @tparam G Graph type
- * @tparam Color Enum type for vertex colors
+ * @tparam ColorMap Vertex property map type for colors
  * @param g The graph
  * @param source Starting vertex ID
- * @param color Color array for tracking vertex state
+ * @param color Color map for tracking vertex state
  * @param finish_order Vector to collect vertices in finish order
  * @param has_cycle Flag set to true if cycle detected
  */
-  template <index_adjacency_list G, typename Color>
+  template <adjacency_list G, typename ColorMap>
   void topological_sort_dfs_visit(const G&                     g,
                                   const vertex_id_t<G>&        source,
-                                  std::vector<Color>&          color,
+                                  ColorMap&                    color,
                                   std::vector<vertex_id_t<G>>& finish_order,
                                   bool&                        has_cycle) {
 
-    using id_type = vertex_id_store_t<G>;
-    static_assert(std::is_same_v<id_type, vertex_id_t<G>>,
-                  "vertex_id_store_t<G> should equal vertex_id_t<G> for index_adjacency_list");
+    using Color = TopoColor;
+    using id_type = vertex_id_t<G>;
     using namespace graph::views;
     using inc_range_t    = decltype(basic_incidence(g, source));
     using inc_iterator_t = std::ranges::iterator_t<inc_range_t>;
@@ -208,12 +214,14 @@ namespace detail {
       auto&& [vid] = *frame.it;
       ++frame.it;
 
-      if (color[vid] == Color::White) {
+      const Color target_color = vertex_property_map_get(color, vid, Color::White);
+
+      if (target_color == Color::White) {
         // Tree edge: discover target and push its frame
         color[vid] = Color::Gray;
         auto inc   = basic_incidence(g, vid);
         S.push({vid, std::ranges::begin(inc), std::ranges::end(inc)});
-      } else if (color[vid] == Color::Gray) {
+      } else if (target_color == Color::Gray) {
         // Back edge: cycle detected
         has_cycle = true;
         return;
@@ -237,9 +245,8 @@ namespace detail {
  * 
  * **Parameters:**
  * 
- * @tparam G Graph type satisfying `index_adjacency_list` concept
- *   - **Requires:** `index_adjacency_list<G>`
- *   - **Requires:** `integral<vertex_id_t<G>>`
+ * @tparam G Graph type satisfying `adjacency_list` concept
+ *   - **Requires:** `adjacency_list<G>`
  *   - **Description:** The directed graph type to operate on
  * 
  * @tparam Sources Input range of source vertex IDs
@@ -333,22 +340,16 @@ namespace detail {
  * @see topological_sort(const G&, OutputIterator) for full-graph variant
  * @see topological_sort(const G&, vertex_id_t<G>, OutputIterator) for single-source variant
  */
-template <index_adjacency_list G, std::ranges::input_range Sources, class OutputIterator>
+template <adjacency_list G, std::ranges::input_range Sources, class OutputIterator>
 requires std::convertible_to<std::ranges::range_value_t<Sources>, vertex_id_t<G>> &&
          std::output_iterator<OutputIterator, vertex_id_t<G>>
 bool topological_sort(const G& g, const Sources& sources, OutputIterator result) {
-  using id_type = vertex_id_store_t<G>;
-  static_assert(std::is_same_v<id_type, vertex_id_t<G>>,
-                "vertex_id_store_t<G> should equal vertex_id_t<G> for index_adjacency_list");
+  using id_type = vertex_id_t<G>;
+  using Color   = detail::TopoColor;
 
-  // Vertex color states for DFS
-  enum class Color : uint8_t {
-    White, // Undiscovered
-    Gray,  // Discovered but not finished (on stack)
-    Black  // Finished
-  };
-
-  std::vector<Color>   color(num_vertices(g), Color::White);
+  // Lazy init: index graphs get a sized vector (value-init → White=0),
+  // mapped graphs get an empty reserved map (absent key → White via get).
+  auto color = make_vertex_property_map<std::remove_reference_t<G>, Color>(g);
   std::vector<id_type> finish_order;
   finish_order.reserve(num_vertices(g));
 
@@ -356,7 +357,7 @@ bool topological_sort(const G& g, const Sources& sources, OutputIterator result)
 
   // Run DFS from each source (skipping already-visited vertices)
   for (auto source : sources) {
-    if (color[source] == Color::White) {
+    if (vertex_property_map_get(color, source, Color::White) == Color::White) {
       detail::topological_sort_dfs_visit(g, source, color, finish_order, has_cycle);
       if (has_cycle) {
         return false; // Cycle detected
@@ -383,9 +384,8 @@ bool topological_sort(const G& g, const Sources& sources, OutputIterator result)
  * 
  * **Parameters:**
  * 
- * @tparam G Graph type satisfying `index_adjacency_list` concept
- *   - **Requires:** `index_adjacency_list<G>`
- *   - **Requires:** `integral<vertex_id_t<G>>`
+ * @tparam G Graph type satisfying `adjacency_list` concept
+ *   - **Requires:** `adjacency_list<G>`
  *   - **Description:** The directed graph type to operate on
  * 
  * @tparam OutputIterator Iterator type for writing vertex IDs in topological order
@@ -460,7 +460,7 @@ bool topological_sort(const G& g, const Sources& sources, OutputIterator result)
  * @see topological_sort(const G&, OutputIterator) for full-graph variant
  * @see topological_sort(const G&, const Sources&, OutputIterator) for multi-source variant
  */
-template <index_adjacency_list G, class OutputIterator>
+template <adjacency_list G, class OutputIterator>
 requires std::output_iterator<OutputIterator, vertex_id_t<G>>
 bool topological_sort(const G& g, const vertex_id_t<G>& source, OutputIterator result) {
   // Delegate to multi-source version with single source
@@ -480,9 +480,8 @@ bool topological_sort(const G& g, const vertex_id_t<G>& source, OutputIterator r
  * 
  * **Parameters:**
  * 
- * @tparam G Graph type satisfying `index_adjacency_list` concept
- *   - **Requires:** `index_adjacency_list<G>`
- *   - **Requires:** `integral<vertex_id_t<G>>`
+ * @tparam G Graph type satisfying `adjacency_list` concept
+ *   - **Requires:** `adjacency_list<G>`
  *   - **Description:** The directed graph type to operate on
  * 
  * @tparam OutputIterator Iterator type for writing vertex IDs in topological order
@@ -546,21 +545,15 @@ bool topological_sort(const G& g, const vertex_id_t<G>& source, OutputIterator r
  * @see topological_sort(const G&, vertex_id_t<G>, OutputIterator) for single-source variant
  * @see topological_sort(const G&, const Sources&, OutputIterator) for multi-source variant
  */
-template <index_adjacency_list G, class OutputIterator>
+template <adjacency_list G, class OutputIterator>
 requires std::output_iterator<OutputIterator, vertex_id_t<G>>
 bool topological_sort(const G& g, OutputIterator result) {
-  using id_type = vertex_id_store_t<G>;
-  static_assert(std::is_same_v<id_type, vertex_id_t<G>>,
-                "vertex_id_store_t<G> should equal vertex_id_t<G> for index_adjacency_list");
+  using id_type = vertex_id_t<G>;
+  using Color   = detail::TopoColor;
 
-  // Vertex color states for DFS
-  enum class Color : uint8_t {
-    White, // Undiscovered
-    Gray,  // Discovered but not finished (on stack)
-    Black  // Finished
-  };
-
-  std::vector<Color>   color(num_vertices(g), Color::White);
+  // Lazy init: index graphs get a sized vector (value-init → White=0),
+  // mapped graphs get an empty reserved map (absent key → White via get).
+  auto color = make_vertex_property_map<std::remove_reference_t<G>, Color>(g);
   std::vector<id_type> finish_order;
   finish_order.reserve(num_vertices(g));
 
@@ -569,7 +562,7 @@ bool topological_sort(const G& g, OutputIterator result) {
   // Run DFS from each unvisited vertex
   for (auto v : vertices(g)) {
     id_type vid = vertex_id(g, v);
-    if (color[vid] == Color::White) {
+    if (vertex_property_map_get(color, vid, Color::White) == Color::White) {
       detail::topological_sort_dfs_visit(g, vid, color, finish_order, has_cycle);
       if (has_cycle) {
         return false; // Cycle detected

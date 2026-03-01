@@ -163,6 +163,45 @@ Graph dag_graph() {
 }
 
 // =============================================================================
+// Cycle Graph — Sparse (for DFS cycle detection)
+//
+// Topology: 0->1->2->3->0  (directed cycle)
+// Sparse:  10->20->30->40->10
+// =============================================================================
+
+template <typename Graph>
+Graph cycle_graph_sparse() {
+  return Graph({{10, 20, 1}, {20, 30, 1}, {30, 40, 1}, {40, 10, 1}});
+}
+
+template <typename Graph>
+Graph cycle_graph_contiguous() {
+  return Graph({{0, 1, 1}, {1, 2, 1}, {2, 3, 1}, {3, 0, 1}});
+}
+
+/**
+ * @brief Unified factory: returns cycle graph with appropriate IDs.
+ */
+template <typename Graph>
+Graph cycle_graph() {
+  if constexpr (is_sparse_vertex_container_v<Graph>) {
+    return cycle_graph_sparse<Graph>();
+  } else {
+    return cycle_graph_contiguous<Graph>();
+  }
+}
+
+/// Returns the source vertex ID for cycle graph tests, appropriate for the graph type.
+template <typename Graph>
+constexpr auto cycle_source() {
+  if constexpr (is_sparse_vertex_container_v<Graph>) {
+    return vertex_id_t<Graph>(10);
+  } else {
+    return vertex_id_t<Graph>(0);
+  }
+}
+
+// =============================================================================
 // Disconnected Graph — Sparse (two components)
 //
 // Component 1: 100 -> 200
