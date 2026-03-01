@@ -361,3 +361,192 @@ TEST_CASE("bellman_ford_shortest_paths - single vertex", "[algorithm][bellman_fo
   // Distance to itself should be 0
   REQUIRE(distance[0] == 0);
 }
+
+// =============================================================================
+// Sparse (Map-Based) Graph Tests
+// =============================================================================
+
+#include "../common/map_graph_fixtures.hpp"
+#include <graph/adj_list/vertex_property_map.hpp>
+
+using namespace graph::test::map_fixtures;
+
+TEMPLATE_TEST_CASE("bellman_ford_shortest_paths - sparse CLRS example",
+                   "[algorithm][bellman_ford_shortest_paths][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = vertex_id_t<Graph>;
+  const auto& exp = clrs_dijkstra_sparse_expected{};
+
+  auto g            = map_fixtures::clrs_dijkstra_graph<Graph>();
+  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
+  // Initialize predecessors: each vertex points to itself
+  for (auto&& [uid, u] : views::vertexlist(g))
+    predecessors[uid] = uid;
+
+  auto result = bellman_ford_shortest_paths(g, id_type(exp.s), distances, predecessors,
+                                            [](const auto& g, const auto& uv) { return edge_value(g, uv); });
+
+  // No negative cycle should be detected
+  REQUIRE(!result.has_value());
+
+  // Validate distances against known CLRS results
+  for (size_t i = 0; i < exp.num_vertices; ++i) {
+    REQUIRE(distances[exp.vertex_ids[i]] == exp.distances[i]);
+  }
+
+  // Source predecessor is itself
+  REQUIRE(predecessors[exp.s] == exp.s);
+}
+
+TEMPLATE_TEST_CASE("bellman_ford_shortest_distances - sparse CLRS example",
+                   "[algorithm][bellman_ford_shortest_paths][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = vertex_id_t<Graph>;
+  const auto& exp = clrs_dijkstra_sparse_expected{};
+
+  auto g         = map_fixtures::clrs_dijkstra_graph<Graph>();
+  auto distances = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+
+  auto result = bellman_ford_shortest_distances(g, id_type(exp.s), distances,
+                                                [](const auto& g, const auto& uv) { return edge_value(g, uv); });
+
+  // No negative cycle
+  REQUIRE(!result.has_value());
+
+  for (size_t i = 0; i < exp.num_vertices; ++i) {
+    REQUIRE(distances[exp.vertex_ids[i]] == exp.distances[i]);
+  }
+}
+
+TEMPLATE_TEST_CASE("bellman_ford_shortest_paths - sparse multi-source",
+                   "[algorithm][bellman_ford_shortest_paths][sparse][multi_source]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = vertex_id_t<Graph>;
+  const auto& exp = clrs_dijkstra_sparse_expected{};
+
+  auto g            = map_fixtures::clrs_dijkstra_graph<Graph>();
+  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
+  for (auto&& [uid, u] : views::vertexlist(g))
+    predecessors[uid] = uid;
+
+  // Start from s (10) and y (40)
+  std::vector<id_type> sources = {exp.s, exp.y};
+  auto result = bellman_ford_shortest_paths(g, sources, distances, predecessors,
+                                            [](const auto& g, const auto& uv) { return edge_value(g, uv); });
+
+  // No negative cycle
+  REQUIRE(!result.has_value());
+
+  // Both sources should have distance 0
+  REQUIRE(distances[exp.s] == 0);
+  REQUIRE(distances[exp.y] == 0);
+
+  // All vertices should be reachable
+  for (size_t i = 0; i < exp.num_vertices; ++i) {
+    REQUIRE(distances[exp.vertex_ids[i]] < shortest_path_infinite_distance<int>());
+  }
+}
+
+TEMPLATE_TEST_CASE("bellman_ford_shortest_paths - sparse with visitor",
+                   "[algorithm][bellman_ford_shortest_paths][sparse][visitor]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = vertex_id_t<Graph>;
+  const auto& exp = clrs_dijkstra_sparse_expected{};
+
+  auto g            = map_fixtures::clrs_dijkstra_graph<Graph>();
+  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
+  for (auto&& [uid, u] : views::vertexlist(g))
+    predecessors[uid] = uid;
+
+  BellmanCountingVisitor visitor;
+  auto result = bellman_ford_shortest_paths(
+        g, id_type(exp.s), distances, predecessors,
+        [](const auto& g, const auto& uv) { return edge_value(g, uv); }, visitor);
+
+  REQUIRE(!result.has_value());
+  REQUIRE(visitor.edges_examined > 0);
+  REQUIRE(visitor.edges_relaxed > 0);
+}
+
+TEMPLATE_TEST_CASE("bellman_ford_shortest_paths - sparse negative cycle detection",
+                   "[algorithm][bellman_ford_shortest_paths][sparse][negative_cycle]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = vertex_id_t<Graph>;
+
+  // Create graph with negative weight cycle: 10 -> 20 -> 30 -> 10
+  // Total cycle weight: 1 + 1 + (-3) = -1 (negative!)
+  Graph g({{10, 20, 1}, {20, 30, 1}, {30, 10, -3}});
+
+  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
+  for (auto&& [uid, u] : views::vertexlist(g))
+    predecessors[uid] = uid;
+
+  auto result = bellman_ford_shortest_paths(
+        g, id_type(10), distances, predecessors,
+        [](const auto& g, const auto& uv) { return edge_value(g, uv); });
+
+  // Negative cycle should be detected
+  REQUIRE(result.has_value());
+
+  // The returned vertex should be in the cycle (one of 10, 20, 30)
+  REQUIRE((result.value() == id_type(10) || result.value() == id_type(20) || result.value() == id_type(30)));
+}
+
+TEMPLATE_TEST_CASE("bellman_ford_shortest_paths - sparse find negative cycle vertices",
+                   "[algorithm][bellman_ford_shortest_paths][sparse][negative_cycle]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = vertex_id_t<Graph>;
+
+  // Same negative cycle graph
+  Graph g({{10, 20, 1}, {20, 30, 1}, {30, 10, -3}});
+
+  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
+  for (auto&& [uid, u] : views::vertexlist(g))
+    predecessors[uid] = uid;
+
+  auto cycle_vertex = bellman_ford_shortest_paths(
+        g, id_type(10), distances, predecessors,
+        [](const auto& g, const auto& uv) { return edge_value(g, uv); });
+
+  REQUIRE(cycle_vertex.has_value());
+
+  // Extract the cycle vertices
+  std::vector<id_type> cycle;
+  find_negative_cycle(g, predecessors, cycle_vertex, std::back_inserter(cycle));
+
+  // Should have 3 vertices in the cycle
+  REQUIRE(cycle.size() == 3);
+
+  // All cycle vertices should be unique
+  std::set<id_type> unique_vertices(cycle.begin(), cycle.end());
+  REQUIRE(unique_vertices.size() == 3);
+}
+
+TEMPLATE_TEST_CASE("bellman_ford_shortest_paths - sparse source not in graph throws",
+                   "[algorithm][bellman_ford_shortest_paths][sparse][error]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = vertex_id_t<Graph>;
+
+  auto g            = map_fixtures::clrs_dijkstra_graph<Graph>();
+  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
+  for (auto&& [uid, u] : views::vertexlist(g))
+    predecessors[uid] = uid;
+
+  // Vertex ID 999 does not exist in the sparse graph
+  CHECK_THROWS_AS(bellman_ford_shortest_paths(g, id_type(999), distances, predecessors,
+                                              [](const auto& g, const auto& uv) { return edge_value(g, uv); }),
+                  std::out_of_range);
+}

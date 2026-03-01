@@ -765,10 +765,10 @@ cd build/linux-gcc-asan && cmake --build . && ctest --output-on-failure
 | **2** | **2.5** | Generalize `topological_sort` | Complete |
 | **2** | **2.6** | Review gate: topological sort diff | Complete |
 | **2** | **2.7** | Commit BFS, DFS, topological_sort | Complete |
-| **3** | **3.1** | Add graph-parameterized `init_shortest_paths` overloads | Not Started |
-| **3** | **3.2** | Verify `_null_range_type` detection with `is_null_range_v` | Not Started |
-| **3** | **3.3** | Commit init_shortest_paths generalization | Not Started |
-| **3** | **3.R** | Review gate: init functions handle index/mapped/null correctly | Not Started |
+| **3** | **3.1** | Add graph-parameterized `init_shortest_paths` overloads | Complete |
+| **3** | **3.2** | Verify `_null_range_type` detection with `is_null_range_v` | Complete |
+| **3** | **3.3** | Commit init_shortest_paths generalization | Complete |
+| **3** | **3.R** | Review gate: init functions handle index/mapped/null correctly | Complete |
 | **4** | **4.1** | Generalize `dijkstra_shortest_paths` | Complete |
 | **4** | **4.2** | Review gate: Dijkstra diff | Complete |
 | **4** | **4.3** | Generalize `bellman_ford_shortest_paths` | Not Started |
