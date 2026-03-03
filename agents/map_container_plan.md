@@ -774,13 +774,14 @@ cd build/linux-gcc-asan && cmake --build . && ctest --output-on-failure
 | **4** | **4.3** | Generalize `bellman_ford_shortest_paths` | Complete |
 | **4** | **4.4** | Review gate: Bellman-Ford diff | Complete |
 | **4** | **4.5** | Commit Dijkstra + Bellman-Ford | Complete |
-| **5** | **5.1** | Generalize `connected_components()` | Not Started |
-| **5** | **5.2** | Review gate: connected_components() diff | Not Started |
-| **5** | **5.3** | Generalize `kosaraju()` | Not Started |
-| **5** | **5.4** | Review gate: kosaraju() diff | Not Started |
-| **5** | **5.5** | Generalize `afforest()` | Not Started |
-| **5** | **5.6** | Review gate: afforest() diff | Not Started |
-| **5** | **5.7** | Commit connected_components | Not Started |
+| **5** | **5.1** | Generalize `connected_components()` | Complete |
+| **5** | **5.2** | Review gate: connected_components() diff | Complete |
+| **5** | **5.3** | Generalize `kosaraju()` | Complete |
+| **5** | **5.4** | Review gate: kosaraju() diff | Complete |
+| **5** | **5.5** | Generalize `afforest()` | Complete |
+| **5** | **5.6** | Review gate: afforest() diff | Complete |
+| **5** | **5.7** | Commit connected_components | Complete |
+| **5+** | — | Vertex descriptor optimization (all component + Dijkstra algorithms) | Complete |
 | **6** | **6.1** | Generalize `jaccard_coefficient` | Not Started |
 | **6** | **6.2** | Generalize `mis` | Not Started |
 | **6** | **6.3** | Generalize `triangle_count` | Not Started |
