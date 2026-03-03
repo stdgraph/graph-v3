@@ -1238,3 +1238,202 @@ TEST_CASE("kosaraju - large component count verification", "[algorithm][kosaraju
   REQUIRE(different_components(component, 0, 6));
   REQUIRE(different_components(component, 4, 6));
 }
+
+// =============================================================================
+// Sparse (Map-Based) Graph Tests
+// =============================================================================
+
+#include "../common/map_graph_fixtures.hpp"
+#include <graph/adj_list/vertex_property_map.hpp>
+
+using namespace graph::test::map_fixtures;
+
+// Helper: check component equality for sparse vertex IDs
+template <typename Component, typename VId>
+bool sparse_same_component(const Component& component, const std::vector<VId>& vids) {
+  if (vids.empty())
+    return true;
+  auto first_comp = component.at(vids[0]);
+  return std::all_of(vids.begin(), vids.end(), [&](auto v) { return component.at(v) == first_comp; });
+}
+
+template <typename Component, typename VId>
+bool sparse_different_components(const Component& component, VId u, VId v) {
+  return component.at(u) != component.at(v);
+}
+
+template <typename Component>
+size_t sparse_count_unique_components(const Component& component) {
+  using VT = typename Component::mapped_type;
+  std::set<VT> unique;
+  for (auto& [k, v] : component) {
+    unique.insert(v);
+  }
+  return unique.size();
+}
+
+// =============================================================================
+// connected_components - Sparse Vertex Types
+// =============================================================================
+
+TEMPLATE_TEST_CASE("connected_components - sparse two components",
+                   "[algorithm][connected_components][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // Two components: {10,20,30} and {40,50}
+  // Undirected: add both directions
+  Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 1}, {30, 20, 1}, {40, 50, 1}, {50, 40, 1}});
+  auto component = make_vertex_property_map<Graph, uint32_t>(g, 0);
+
+  size_t num_components = connected_components(g, component);
+
+  REQUIRE(num_components == 2);
+  REQUIRE(sparse_same_component(component, std::vector<id_type>{10, 20, 30}));
+  REQUIRE(sparse_same_component(component, std::vector<id_type>{40, 50}));
+  REQUIRE(sparse_different_components(component, id_type(10), id_type(40)));
+}
+
+TEMPLATE_TEST_CASE("connected_components - sparse single component",
+                   "[algorithm][connected_components][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // All connected: 10-20-30-40
+  Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 1}, {30, 20, 1}, {30, 40, 1}, {40, 30, 1}});
+  auto component = make_vertex_property_map<Graph, uint32_t>(g, 0);
+
+  size_t num_components = connected_components(g, component);
+
+  REQUIRE(num_components == 1);
+  REQUIRE(sparse_same_component(component, std::vector<id_type>{10, 20, 30, 40}));
+}
+
+TEMPLATE_TEST_CASE("connected_components - sparse isolated vertices",
+                   "[algorithm][connected_components][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // Two connected (10-20) + two isolated vertices (30, 40)
+  // isolated vertices need at least one edge to appear in graph
+  Graph g({{10, 20, 1}, {20, 10, 1}, {30, 30, 1}, {40, 40, 1}});
+  auto component = make_vertex_property_map<Graph, uint32_t>(g, 0);
+
+  size_t num_components = connected_components(g, component);
+
+  // 10-20 form one component, 30 and 40 are each their own
+  REQUIRE(num_components >= 2);
+  REQUIRE(sparse_same_component(component, std::vector<id_type>{10, 20}));
+}
+
+// =============================================================================
+// afforest - Sparse Vertex Types
+// =============================================================================
+
+TEMPLATE_TEST_CASE("afforest - sparse two components",
+                   "[algorithm][afforest][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // Two components: {10,20} and {30,40}
+  Graph g({{10, 20, 1}, {20, 10, 1}, {30, 40, 1}, {40, 30, 1}});
+  auto component = make_vertex_property_map<Graph, id_type>(g, id_type{});
+
+  afforest(g, component);
+
+  REQUIRE(sparse_same_component(component, std::vector<id_type>{10, 20}));
+  REQUIRE(sparse_same_component(component, std::vector<id_type>{30, 40}));
+  REQUIRE(sparse_different_components(component, id_type(10), id_type(30)));
+}
+
+TEMPLATE_TEST_CASE("afforest - sparse single component",
+                   "[algorithm][afforest][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // All connected: 10-20-30
+  Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 1}, {30, 20, 1}});
+  auto component = make_vertex_property_map<Graph, id_type>(g, id_type{});
+
+  afforest(g, component);
+
+  REQUIRE(sparse_same_component(component, std::vector<id_type>{10, 20, 30}));
+}
+
+TEMPLATE_TEST_CASE("afforest - sparse with transpose",
+                   "[algorithm][afforest][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // Directed graph with bidirectional edges
+  Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 1}, {30, 20, 1}});
+  Graph g_t({{20, 10, 1}, {10, 20, 1}, {30, 20, 1}, {20, 30, 1}}); // Transpose
+  auto component = make_vertex_property_map<Graph, id_type>(g, id_type{});
+
+  afforest(g, g_t, component);
+
+  REQUIRE(sparse_same_component(component, std::vector<id_type>{10, 20, 30}));
+}
+
+// =============================================================================
+// kosaraju (two-graph) - Sparse Vertex Types
+// =============================================================================
+
+TEMPLATE_TEST_CASE("kosaraju - sparse simple cycle",
+                   "[algorithm][kosaraju][scc][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // Cycle: 10->20->30->10 — single SCC
+  Graph g({{10, 20, 1}, {20, 30, 1}, {30, 10, 1}});
+  Graph g_t({{20, 10, 1}, {30, 20, 1}, {10, 30, 1}});
+  auto component = make_vertex_property_map<Graph, uint32_t>(g, 0);
+
+  kosaraju(g, g_t, component);
+
+  REQUIRE(sparse_same_component(component, std::vector<id_type>{10, 20, 30}));
+}
+
+TEMPLATE_TEST_CASE("kosaraju - sparse two SCCs",
+                   "[algorithm][kosaraju][scc][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // SCC1: 10->20->10, SCC2: 30->40->30, bridge: 20->30
+  Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 1}, {30, 40, 1}, {40, 30, 1}});
+  Graph g_t({{20, 10, 1}, {10, 20, 1}, {30, 20, 1}, {40, 30, 1}, {30, 40, 1}});
+  auto component = make_vertex_property_map<Graph, uint32_t>(g, 0);
+
+  kosaraju(g, g_t, component);
+
+  REQUIRE(sparse_count_unique_components(component) == 2);
+  REQUIRE(sparse_same_component(component, std::vector<id_type>{10, 20}));
+  REQUIRE(sparse_same_component(component, std::vector<id_type>{30, 40}));
+  REQUIRE(sparse_different_components(component, id_type(10), id_type(30)));
+}
+
+TEMPLATE_TEST_CASE("kosaraju - sparse DAG (no cycles)",
+                   "[algorithm][kosaraju][scc][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // DAG: 10->20->30 — each vertex is its own SCC
+  Graph g({{10, 20, 1}, {20, 30, 1}});
+  Graph g_t({{20, 10, 1}, {30, 20, 1}});
+  auto component = make_vertex_property_map<Graph, uint32_t>(g, 0);
+
+  kosaraju(g, g_t, component);
+
+  REQUIRE(sparse_count_unique_components(component) == 3);
+  REQUIRE(sparse_different_components(component, id_type(10), id_type(20)));
+  REQUIRE(sparse_different_components(component, id_type(20), id_type(30)));
+}

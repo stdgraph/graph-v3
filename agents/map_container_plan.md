@@ -771,9 +771,9 @@ cd build/linux-gcc-asan && cmake --build . && ctest --output-on-failure
 | **3** | **3.R** | Review gate: init functions handle index/mapped/null correctly | Complete |
 | **4** | **4.1** | Generalize `dijkstra_shortest_paths` | Complete |
 | **4** | **4.2** | Review gate: Dijkstra diff | Complete |
-| **4** | **4.3** | Generalize `bellman_ford_shortest_paths` | Not Started |
-| **4** | **4.4** | Review gate: Bellman-Ford diff | Not Started |
-| **4** | **4.5** | Commit Dijkstra + Bellman-Ford | Not Started |
+| **4** | **4.3** | Generalize `bellman_ford_shortest_paths` | Complete |
+| **4** | **4.4** | Review gate: Bellman-Ford diff | Complete |
+| **4** | **4.5** | Commit Dijkstra + Bellman-Ford | Complete |
 | **5** | **5.1** | Generalize `connected_components()` | Not Started |
 | **5** | **5.2** | Review gate: connected_components() diff | Not Started |
 | **5** | **5.3** | Generalize `kosaraju()` | Not Started |

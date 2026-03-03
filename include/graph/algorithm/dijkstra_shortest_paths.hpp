@@ -31,6 +31,8 @@ using adj_list::num_vertices;
 using adj_list::find_vertex;
 using adj_list::target_id;
 using adj_list::vertex_id_t;
+using adj_list::vertex_t;
+using adj_list::vertex_id;
 using adj_list::edge_t;
 using adj_list::adjacency_list;
 using adj_list::index_vertex_range;
@@ -180,10 +182,13 @@ constexpr void dijkstra_shortest_paths(
   constexpr auto zero     = shortest_path_zero<distance_type>();
   constexpr auto infinite = shortest_path_infinite_distance<distance_type>();
 
-  auto qcompare = [&distances](id_type a, id_type b) {
-    return distances[a] > distances[b];
+  // Priority queue stores vertex descriptors — lightweight 8-byte values (index or iterator),
+  // eliminating string copies for map-based graphs and enabling O(1) vertex_id extraction.
+  using vertex_desc = vertex_t<std::remove_reference_t<G>>;
+  auto qcompare = [&g, &distances](vertex_desc a, vertex_desc b) {
+    return distances[vertex_id(g, a)] > distances[vertex_id(g, b)];
   };
-  using Queue = std::priority_queue<id_type, std::vector<id_type>, decltype(qcompare)>;
+  using Queue = std::priority_queue<vertex_desc, std::vector<vertex_desc>, decltype(qcompare)>;
   Queue queue(qcompare);
 
   // (The optimizer removes this loop if on_initialize_vertex() is empty.)
@@ -208,10 +213,11 @@ constexpr void dijkstra_shortest_paths(
         throw std::out_of_range(std::format("dijkstra_shortest_paths: source vertex id '{}' is out of range", source));
       }
     }
-    queue.push(source);
+    auto s_desc = *find_vertex(g, source);
+    queue.push(s_desc);
     distances[source] = zero; // mark source as discovered
     if constexpr (has_on_discover_vertex<G, Visitor>) {
-      visitor.on_discover_vertex(g, *find_vertex(g, source));
+      visitor.on_discover_vertex(g, s_desc);
     } else if constexpr (has_on_discover_vertex_id<G, Visitor>) {
       visitor.on_discover_vertex(g, source);
     }
@@ -219,16 +225,18 @@ constexpr void dijkstra_shortest_paths(
 
   // Main loop to process the queue
   while (!queue.empty()) {
-    const id_type uid = queue.top();
+    auto          u   = queue.top();
     queue.pop();
+    const id_type uid = vertex_id(g, u); // O(1) extraction from descriptor
     if constexpr (has_on_examine_vertex<G, Visitor>) {
-      visitor.on_examine_vertex(g, *find_vertex(g, uid));
+      visitor.on_examine_vertex(g, u); // descriptor already available, no find_vertex
     } else if constexpr (has_on_examine_vertex_id<G, Visitor>) {
       visitor.on_examine_vertex(g, uid);
     }
 
     // Process all outgoing edges from the current vertex
-    for (auto&& [vid, uv, w] : views::incidence(g, *find_vertex(g, uid), weight)) {
+    // Using descriptor directly avoids find_vertex for incidence view creation
+    for (auto&& [vid, uv, w] : views::incidence(g, u, weight)) {
       if constexpr (has_on_examine_edge<G, Visitor>) {
         visitor.on_examine_edge(g, uv);
       }
@@ -250,12 +258,14 @@ constexpr void dijkstra_shortest_paths(
           if constexpr (has_on_edge_relaxed<G, Visitor>) {
             visitor.on_edge_relaxed(g, uv);
           }
+          // Convert target_id to descriptor once; serves both visitor and queue push
+          auto v_desc = *find_vertex(g, vid);
           if constexpr (has_on_discover_vertex<G, Visitor>) {
-            visitor.on_discover_vertex(g, *find_vertex(g, vid));
+            visitor.on_discover_vertex(g, v_desc);
           } else if constexpr (has_on_discover_vertex_id<G, Visitor>) {
             visitor.on_discover_vertex(g, vid);
           }
-          queue.push(vid);
+          queue.push(v_desc); // push descriptor (8 bytes), not vertex ID
         } else {
           // This is an indicator of a bug in the algorithm and should be investigated.
           throw std::logic_error(
@@ -267,7 +277,7 @@ constexpr void dijkstra_shortest_paths(
           if constexpr (has_on_edge_relaxed<G, Visitor>) {
             visitor.on_edge_relaxed(g, uv);
           }
-          queue.push(vid); // re-enqueue vid to re-evaluate its neighbors with a shorter path
+          queue.push(*find_vertex(g, vid)); // re-enqueue descriptor to re-evaluate
         } else {
           if constexpr (has_on_edge_not_relaxed<G, Visitor>) {
             visitor.on_edge_not_relaxed(g, uv);
@@ -280,7 +290,7 @@ constexpr void dijkstra_shortest_paths(
     // and another path to this vertex has a lower accumulated weight, we'll process it again.
     // A consequence is that examine_vertex could be called twice (or more) on the same vertex.
     if constexpr (has_on_finish_vertex<G, Visitor>) {
-      visitor.on_finish_vertex(g, *find_vertex(g, uid));
+      visitor.on_finish_vertex(g, u); // descriptor already available, no find_vertex
     } else if constexpr (has_on_finish_vertex_id<G, Visitor>) {
       visitor.on_finish_vertex(g, uid);
     }
