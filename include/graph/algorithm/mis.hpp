@@ -13,6 +13,7 @@
  */
 
 #include "graph/graph.hpp"
+#include "graph/adj_list/vertex_property_map.hpp"
 
 #ifndef GRAPH_MIS_HPP
 #  define GRAPH_MIS_HPP
@@ -20,12 +21,13 @@
 namespace graph {
 
 // Using declarations for new namespace structure
-using adj_list::index_adjacency_list;
+using adj_list::adjacency_list;
 using adj_list::vertex_id_t;
 using adj_list::vertices;
 using adj_list::edges;
 using adj_list::target_id;
 using adj_list::vertex_id;
+using adj_list::find_vertex;
 using adj_list::num_vertices;
 
 /**
@@ -71,12 +73,11 @@ using adj_list::num_vertices;
  * - ✅ Empty graphs (returns 0)
  * 
  * ### Container Requirements
- * - Requires: `index_adjacency_list<G>` concept (contiguous vertex IDs)
+ * - Requires: `adjacency_list<G>` concept
  * - Requires: `std::output_iterator<Iter, vertex_id_t<G>>`
- * - Works with: All `dynamic_graph` container combinations with contiguous IDs
+ * - Works with: All `dynamic_graph` container combinations (index and mapped)
  * 
- * @tparam G          The graph type. Must satisfy index_adjacency_list concept,
- *                    which implies contiguous vertex IDs from 0 to num_vertices(g)-1.
+ * @tparam G          The graph type. Must satisfy adjacency_list concept.
  * @tparam Iter       The output iterator type. Must be output_iterator<vertex_id_t<G>>.
  * 
  * @param g           The graph.
@@ -87,8 +88,7 @@ using adj_list::num_vertices;
  * 
  * @return            The number of vertices in the maximal independent set.
  * 
- * @pre seed < num_vertices(g)
- * @pre g must have contiguous vertex IDs [0, num_vertices(g))
+ * @pre seed must be a valid vertex ID in the graph
  * 
  * @post The returned set is independent: no two vertices in the output are adjacent
  * @post The returned set is maximal: no additional vertex can be added while maintaining independence
@@ -143,7 +143,7 @@ using adj_list::num_vertices;
  * ```
  */
 
-template <index_adjacency_list G, class Iter>
+template <adjacency_list G, class Iter>
 requires output_iterator<Iter, vertex_id_t<G>>
 size_t maximal_independent_set(G&&                      g,       // graph
                                Iter                     mis,     // out: maximal independent set
@@ -154,17 +154,18 @@ size_t maximal_independent_set(G&&                      g,       // graph
     return 0;
   }
 
-  assert(seed < N);
+  auto seed_vit = find_vertex(g, seed);
+  assert(seed_vit != std::ranges::end(vertices(g)));
 
-  size_t               count = 0;
-  std::vector<uint8_t> removed_vertices(N);
+  size_t count            = 0;
+  auto   removed_vertices = make_vertex_property_map<G, uint8_t>(g, uint8_t{0});
 
   // Mark seed vertex as removed
   removed_vertices[seed] = 1;
 
   // Check if seed vertex has a self-loop
   bool seed_has_self_loop = false;
-  for (auto uv : edges(g, seed)) {
+  for (auto uv : edges(g, *seed_vit)) {
     if (target_id(g, uv) == seed) {
       seed_has_self_loop = true;
       break;
@@ -176,7 +177,7 @@ size_t maximal_independent_set(G&&                      g,       // graph
     *mis++ = seed;
     ++count;
     // Mark neighbors as removed
-    for (auto uv : edges(g, seed)) {
+    for (auto uv : edges(g, *seed_vit)) {
       removed_vertices[target_id(g, uv)] = 1;
     }
   }

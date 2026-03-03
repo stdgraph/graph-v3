@@ -406,3 +406,142 @@ TEMPLATE_TEST_CASE("label_propagation - disconnected graph (typed)", "[algorithm
   REQUIRE(label[0] == label[1]);
   REQUIRE(label[2] == label[3]);
 }
+
+// =============================================================================
+// Sparse (mapped) graph tests
+// =============================================================================
+
+#include "../common/map_graph_fixtures.hpp"
+#include <graph/adj_list/vertex_property_map.hpp>
+
+using namespace graph::test::map_fixtures;
+
+/// Generic convergence check for vertex property maps.
+template <typename G, typename Label>
+bool fully_converged_generic(G&& g, const Label& label) {
+  using vid_t = adj_list::vertex_id_t<std::remove_reference_t<G>>;
+  auto  it    = vertices(g).begin();
+  auto  end   = vertices(g).end();
+  if (it == end)
+    return true;
+  auto first_label = label.find(vertex_id(g, *it))->second;
+  for (; it != end; ++it) {
+    if (label.find(vertex_id(g, *it))->second != first_label)
+      return false;
+  }
+  return true;
+}
+
+TEMPLATE_TEST_CASE("label_propagation - sparse single edge",
+                   "[algorithm][label_propagation][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph = TestType;
+  using vid_t = adj_list::vertex_id_t<Graph>;
+
+  // Bidirectional edge: 10-20
+  Graph g({{10, 20, 1}, {20, 10, 1}});
+
+  auto label = make_vertex_property_map<Graph, int>(g, 0);
+  label[10]  = 100;
+  label[20]  = 200;
+
+  std::mt19937 rng{42};
+  label_propagation(g, label, rng);
+
+  // Both should converge to same label
+  REQUIRE(label[10] == label[20]);
+  REQUIRE((label[10] == 100 || label[10] == 200));
+}
+
+TEMPLATE_TEST_CASE("label_propagation - sparse path all same label",
+                   "[algorithm][label_propagation][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph = TestType;
+  using vid_t = adj_list::vertex_id_t<Graph>;
+
+  // Bidirectional path: 10-20-30-40
+  Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 1}, {30, 20, 1}, {30, 40, 1}, {40, 30, 1}});
+
+  auto label = make_vertex_property_map<Graph, int>(g, 5);
+
+  std::mt19937 rng{42};
+  label_propagation(g, label, rng);
+
+  // Already converged — should stay unchanged
+  REQUIRE(label[10] == 5);
+  REQUIRE(label[20] == 5);
+  REQUIRE(label[30] == 5);
+  REQUIRE(label[40] == 5);
+}
+
+TEMPLATE_TEST_CASE("label_propagation - sparse K4 majority wins",
+                   "[algorithm][label_propagation][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph = TestType;
+  using vid_t = adj_list::vertex_id_t<Graph>;
+
+  // K4: every pair connected bidirectionally
+  Graph g({{10, 20, 1}, {10, 30, 1}, {10, 40, 1},
+           {20, 10, 1}, {20, 30, 1}, {20, 40, 1},
+           {30, 10, 1}, {30, 20, 1}, {30, 40, 1},
+           {40, 10, 1}, {40, 20, 1}, {40, 30, 1}});
+
+  auto label = make_vertex_property_map<Graph, int>(g, 99);
+  label[40]  = 42; // minority
+
+  std::mt19937 rng{42};
+  label_propagation(g, label, rng);
+
+  // Majority label 99 should win
+  REQUIRE(label[10] == 99);
+  REQUIRE(label[20] == 99);
+  REQUIRE(label[30] == 99);
+  REQUIRE(label[40] == 99);
+}
+
+TEMPLATE_TEST_CASE("label_propagation - sparse disconnected",
+                   "[algorithm][label_propagation][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph = TestType;
+  using vid_t = adj_list::vertex_id_t<Graph>;
+
+  // Component 1: 10-20, Component 2: 30-40
+  Graph g({{10, 20, 1}, {20, 10, 1}, {30, 40, 1}, {40, 30, 1}});
+
+  auto label = make_vertex_property_map<Graph, int>(g, 0);
+  label[10]  = 100;
+  label[20]  = 200;
+  label[30]  = 300;
+  label[40]  = 400;
+
+  std::mt19937 rng{42};
+  label_propagation(g, label, rng);
+
+  // Each component converges independently
+  REQUIRE(label[10] == label[20]);
+  REQUIRE(label[30] == label[40]);
+  REQUIRE((label[10] == 100 || label[10] == 200));
+  REQUIRE((label[30] == 300 || label[30] == 400));
+}
+
+TEMPLATE_TEST_CASE("label_propagation - sparse empty_label propagation",
+                   "[algorithm][label_propagation][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph = TestType;
+  using vid_t = adj_list::vertex_id_t<Graph>;
+
+  // Bidirectional path: 10-20-30-40
+  Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 1}, {30, 20, 1}, {30, 40, 1}, {40, 30, 1}});
+
+  auto label = make_vertex_property_map<Graph, int>(g, -1);
+  label[10]  = 42; // only vertex 10 is labelled
+
+  std::mt19937 rng{42};
+  label_propagation(g, label, -1, rng);
+
+  // Label should propagate from vertex 10 outward
+  REQUIRE(label[10] == 42);
+  REQUIRE(label[20] == 42);
+  REQUIRE(label[30] == 42);
+  REQUIRE(label[40] == 42);
+}

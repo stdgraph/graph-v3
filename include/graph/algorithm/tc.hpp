@@ -30,9 +30,14 @@
 namespace graph {
 
 // Using declarations for new namespace structure
-using adj_list::index_adjacency_list;
+using adj_list::adjacency_list;
 using adj_list::ordered_vertex_edges;
 using adj_list::vertex_id_t;
+using adj_list::vertices;
+using adj_list::edges;
+using adj_list::target_id;
+using adj_list::vertex_id;
+using adj_list::num_vertices;
 
 /**
  * @ingroup graph_algorithms
@@ -81,12 +86,12 @@ using adj_list::vertex_id_t;
  * - ✅ May contain cycles (triangles are 3-cycles)
  * 
  * ### Container Requirements
- * - **Required:** `index_adjacency_list` concept (includes forward_range and integral vertex_id)
+ * - **Required:** `adjacency_list` concept
  * - **Required:** `ordered_vertex_edges<G>` - adjacency lists must be sorted by target ID
- * - **Works with:** `vos`, `uos`, `dos` graph types (vector/map + set edges)
+ * - **Works with:** `vos`, `uos`, `dos`, `mos` graph types (vector/map + set edges)
  * - **Not compatible:** `vov`, `vous`, `mous` (unsorted edge containers)
  * 
- * @tparam G Graph type satisfying index_adjacency_list with ordered edges.
+ * @tparam G Graph type satisfying adjacency_list with ordered edges.
  * 
  * @param g The graph to analyze. Must be undirected with sorted adjacency lists.
  * 
@@ -95,20 +100,20 @@ using adj_list::vertex_id_t;
  * ## Mandates (Compile-Time Requirements)
  * 
  * ```cpp
- * requires index_adjacency_list<G>
+ * requires adjacency_list<G>
  * requires ordered_vertex_edges<G>
  * ```
  * 
  * These constraints are enforced via C++20 concepts and will produce a compilation error
- * if not satisfied. The `index_adjacency_list` concept ensures forward_range vertex
- * iteration and integral vertex IDs. The `ordered_vertex_edges` concept requires sorted adjacency
+ * if not satisfied. The `adjacency_list` concept ensures forward_range vertex
+ * iteration and edge access. The `ordered_vertex_edges` concept requires sorted adjacency
  * lists (semantic requirement verified by graph type's container choice).
  * 
  * ## Preconditions (Runtime Requirements)
  * 
  * 1. Graph must store undirected edges bidirectionally (both (u,v) and (v,u))
  * 2. Adjacency lists must be sorted by target_id in ascending order
- * 3. Vertex IDs must be in range [0, num_vertices(g))
+ * 3. Vertex IDs must be valid vertex IDs in the graph
  * 
  * ## Postconditions
  * 
@@ -225,17 +230,17 @@ using adj_list::vertex_id_t;
  * @see https://en.wikipedia.org/wiki/Clique_(graph_theory)
  * @see "Finding, Counting and Listing all Triangles in Large Graphs" by Schank & Wagner (2005)
  */
-template <index_adjacency_list G>
+template <adjacency_list G>
 requires ordered_vertex_edges<G>
 size_t triangle_count(G&& g) {
-  const size_t vertex_count = num_vertices(g);
-  size_t       triangles    = 0;
+  size_t triangles = 0;
 
   // ============================================================================
   // Main loop: Process each vertex as the "first" vertex in potential triangles
   // ============================================================================
-  for (vertex_id_t<G> uid = 0; uid < vertex_count; ++uid) {
-    auto u_edges = edges(g, uid);
+  for (auto u : vertices(g)) {
+    auto uid     = vertex_id(g, u);
+    auto u_edges = edges(g, u);
     auto u_it    = std::ranges::begin(u_edges);
     auto u_end   = std::ranges::end(u_edges);
 
