@@ -788,9 +788,9 @@ cd build/linux-gcc-asan && cmake --build . && ctest --output-on-failure
 | **6** | **6.4** | Generalize `label_propagation` | Complete |
 | **6** | **6.5** | Review gate: all four diffs | Complete |
 | **6** | **6.6** | Commit jaccard, mis, triangle_count, label_propagation | Complete |
-| **7** | **7.1** | Generalize `articulation_points` (5 internal arrays) | Not Started |
-| **7** | **7.2** | Review gate: articulation_points diff (most complex) | Not Started |
-| **7** | **7.3** | Generalize `biconnected_components` (3 internal arrays) | Not Started |
+| **7** | **7.1** | Generalize `articulation_points` (5 internal arrays) | Complete |
+| **7** | **7.2** | Review gate: articulation_points diff (most complex) | Complete |
+| **7** | **7.3** | Generalize `biconnected_components` (3 internal arrays) | Complete |
 | **7** | **7.4** | Review gate: biconnected_components diff | Not Started |
 | **7** | **7.5** | Commit articulation_points + biconnected_components | Not Started |
 | **8** | **8.1** | Generalize `prim` MST | Not Started |
