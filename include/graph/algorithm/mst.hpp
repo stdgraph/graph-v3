@@ -116,10 +116,9 @@
  * - Output: Any container supporting `push_back()` with same edge descriptor type
  * 
  * **Prim's Algorithm:**
- * - Requires: `index_adjacency_list<G>` concept
- * - Requires: `integral<vertex_id_t<G>>`
- * - Requires: `random_access_range` for predecessor and weight outputs
- * - Works with: All `dynamic_graph` container combinations
+ * - Requires: `adjacency_list<G>` concept
+ * - Requires: `vertex_property_map_for<Predecessor, G>` and `vertex_property_map_for<Weight, G>`
+ * - Works with: All `dynamic_graph` container combinations (contiguous and mapped IDs)
  * - Works with: Any graph supporting incidence view
  * 
  * ---
@@ -252,6 +251,7 @@
  */
 
 #include "graph/graph.hpp"
+#include "graph/adj_list/vertex_property_map.hpp"
 #include "graph/edge_list/edge_list.hpp"
 #include "graph/views/edgelist.hpp"
 #include "graph/algorithm/traversal_common.hpp"
@@ -264,11 +264,14 @@
 namespace graph {
 
 // Using declarations for new namespace structure
+using adj_list::adjacency_list;
 using adj_list::index_adjacency_list;
+using adj_list::index_vertex_range;
 using adj_list::vertex_id_t;
 using adj_list::vertices;
 using adj_list::edges;
 using adj_list::num_vertices;
+using adj_list::find_vertex;
 using adj_list::target_id;
 using adj_list::source_id;
 using adj_list::edge_t;
@@ -771,9 +774,9 @@ auto inplace_kruskal(IELR&&    e,      // graph
  * 
  * Uses default comparison (operator<) for edge weights and numeric_limits::max() as initial distance.
  * 
- * @tparam G Graph type satisfying index_adjacency_list
- * @tparam Predecessor Random access range for predecessor output
- * @tparam Weight Random access range for edge weight output
+ * @tparam G Graph type satisfying adjacency_list
+ * @tparam Predecessor Vertex property map for predecessor output (subscriptable by vertex_id_t<G>)
+ * @tparam Weight Vertex property map for edge weight output (subscriptable by vertex_id_t<G>)
  * @tparam WF Edge weight function type
  * 
  * @param g [in] The graph to process
@@ -794,9 +797,9 @@ auto inplace_kruskal(IELR&&    e,      // graph
  * `prim(g, pred, wt, seed)` without capturing the return value is valid.
  * 
  * **Preconditions:**
- * - seed must be a valid vertex: seed < num_vertices(g)
- * - predecessor.size() >= num_vertices(g)
- * - weight.size() >= num_vertices(g)
+ * - seed must be a valid vertex in the graph
+ * - For index graphs: predecessor.size() >= num_vertices(g) and weight.size() >= num_vertices(g)
+ * - For mapped graphs: predecessor and weight must be vertex property maps
  * - Graph must have edge values (weighted)
  * 
  * **Postconditions:**
@@ -807,9 +810,8 @@ auto inplace_kruskal(IELR&&    e,      // graph
  * - MST edges can be reconstructed as: {predecessor[v], v, weight[v]} for all v != seed
  * 
  * **Throws:**
- * - std::out_of_range if seed >= num_vertices(g)
- * - std::out_of_range if predecessor.size() < num_vertices(g)
- * - std::out_of_range if weight.size() < num_vertices(g)
+ * - std::out_of_range if seed is not a valid vertex in the graph
+ * - std::out_of_range if predecessor or weight are too small (index graphs only)
  * 
  * **Note:** Only produces MST for the connected component containing seed.
  *           For disconnected graphs, call multiple times with different seeds.
@@ -829,20 +831,23 @@ auto inplace_kruskal(IELR&&    e,      // graph
  * auto count = prim(unweighted_g, pred, wt, 0, [](const auto&) { return 1; });
  * @endcode
  */
-template <index_adjacency_list G,
-          random_access_range  Predecessor,
-          random_access_range  Weight>
+template <adjacency_list G,
+          class          Predecessor,
+          class          Weight>
+requires vertex_property_map_for<Predecessor, G> &&
+         vertex_property_map_for<Weight, G>
 auto prim(G&&            g,           // graph
           Predecessor&   predecessor, // out: predecessor[uid] of uid in tree
           Weight&        weight,      // out: edge value weight[uid] from tree edge uid to predecessor[uid]
           const vertex_id_t<G>& seed = 0     // seed vtx
 ) {
+  using EV = vertex_property_map_value_t<Weight>;
   // Default weight function: use edge_value CPO
-  auto weight_fn = [](const auto& g, const edge_t<G>& uv) -> range_value_t<Weight> { return edge_value(g, uv); };
+  auto weight_fn = [](const auto& g, const edge_t<G>& uv) -> EV { return edge_value(g, uv); };
 
   return prim(
         g, predecessor, weight, [](auto&& i, auto&& j) { return i < j; },
-        std::numeric_limits<range_value_t<Weight>>::max(), weight_fn, seed);
+        std::numeric_limits<EV>::max(), weight_fn, seed);
 }
 
 /**
@@ -852,9 +857,9 @@ auto prim(G&&            g,           // graph
  * Full-featured Prim's algorithm variant with customizable comparison (for min/max spanning tree)
  * and initial distance value (for different numeric types or special values).
  * 
- * @tparam G Graph type satisfying index_adjacency_list
- * @tparam Predecessor Random access range for predecessor output
- * @tparam Weight Random access range for edge weight output  
+ * @tparam G          Graph type satisfying adjacency_list
+ * @tparam Predecessor Vertex property map for predecessor output (subscriptable by vertex_id_t<G>)
+ * @tparam Weight      Vertex property map for edge weight output (subscriptable by vertex_id_t<G>)
  * @tparam CompareOp Comparison operator type
  * @tparam WF Edge weight function type
  * 
@@ -877,9 +882,9 @@ auto prim(G&&            g,           // graph
  * **Note:** Return value may be ignored for backward compatibility.
  * 
  * **Preconditions:**
- * - seed must be a valid vertex: seed < num_vertices(g)
- * - predecessor.size() >= num_vertices(g)
- * - weight.size() >= num_vertices(g)
+ * - seed must be a valid vertex in the graph
+ * - For index graphs: predecessor.size() >= num_vertices(g) and weight.size() >= num_vertices(g)
+ * - For mapped graphs: predecessor and weight must be vertex property maps
  * - compare must define a strict weak ordering on edge weights
  * - init_dist should be larger than any actual edge weight when using std::less (or smaller for std::greater)
  * 
@@ -888,9 +893,8 @@ auto prim(G&&            g,           // graph
  * - Tree minimizes (or maximizes) total edge weight according to compare function
  * 
  * **Throws:**
- * - std::out_of_range if seed >= num_vertices(g)
- * - std::out_of_range if predecessor.size() < num_vertices(g)
- * - std::out_of_range if weight.size() < num_vertices(g)
+ * - std::out_of_range if seed is not a valid vertex in the graph
+ * - std::out_of_range if predecessor or weight are too small (index graphs only)
  * 
  * **Example (Maximum Spanning Tree):**
  * @code
@@ -899,33 +903,42 @@ auto prim(G&&            g,           // graph
  * auto total = prim(g, pred, wt, std::greater<int>{}, std::numeric_limits<int>::lowest(), 0);
  * @endcode
  */
-template <index_adjacency_list G,
-          random_access_range  Predecessor,
-          random_access_range  Weight,
+template <adjacency_list G,
+          class          Predecessor,
+          class          Weight,
           class CompareOp,
           class WF>
-requires basic_edge_weight_function<G, WF, range_value_t<Weight>, CompareOp, plus<range_value_t<Weight>>>
-auto prim(G&&                   g,           // graph
-          Predecessor&          predecessor, // out: predecessor[uid] of uid in tree
-          Weight&               weight,      // out: edge value weight[uid] from tree edge uid to predecessor[uid]
-          CompareOp             compare,     // edge value comparator
-          range_value_t<Weight> init_dist,   // initial distance
-          WF&&                  weight_fn,   // edge weight function
-          vertex_id_t<G>        seed = 0     // seed vtx
+requires vertex_property_map_for<Predecessor, G> &&
+         vertex_property_map_for<Weight, G> &&
+         basic_edge_weight_function<G, WF, vertex_property_map_value_t<Weight>, CompareOp, plus<vertex_property_map_value_t<Weight>>>
+auto prim(G&&                                 g,           // graph
+          Predecessor&                        predecessor, // out: predecessor[uid] of uid in tree
+          Weight&                             weight,      // out: edge value weight[uid] from tree edge uid to predecessor[uid]
+          CompareOp                           compare,     // edge value comparator
+          vertex_property_map_value_t<Weight> init_dist,   // initial distance
+          WF&&                                weight_fn,   // edge weight function
+          vertex_id_t<G>                      seed = 0     // seed vtx
 ) {
-  typedef range_value_t<Weight> EV;
-  size_t                        N(num_vertices(g));
+  using EV    = vertex_property_map_value_t<Weight>;
+  using vid_t = vertex_id_t<G>;
+  size_t N(num_vertices(g));
 
   // Validate preconditions
-  if (static_cast<size_t>(seed) >= N) {
-    throw std::out_of_range(std::format("prim: seed vertex {} is out of range [0, {})", seed, N));
-  }
-  if (size(predecessor) < N) {
-    throw std::out_of_range(
-          std::format("prim: predecessor size {} is less than num_vertices {}", size(predecessor), N));
-  }
-  if (size(weight) < N) {
-    throw std::out_of_range(std::format("prim: weight size {} is less than num_vertices {}", size(weight), N));
+  if constexpr (index_vertex_range<std::remove_reference_t<G>>) {
+    if (static_cast<size_t>(seed) >= N) {
+      throw std::out_of_range(std::format("prim: seed vertex {} is out of range [0, {})", seed, N));
+    }
+    if (size(predecessor) < N) {
+      throw std::out_of_range(
+            std::format("prim: predecessor size {} is less than num_vertices {}", size(predecessor), N));
+    }
+    if (size(weight) < N) {
+      throw std::out_of_range(std::format("prim: weight size {} is less than num_vertices {}", size(weight), N));
+    }
+  } else {
+    if (find_vertex(g, seed) == std::ranges::end(vertices(g))) {
+      throw std::out_of_range(std::format("prim: seed vertex {} is not in the graph", seed));
+    }
   }
 
   // Handle empty graph
@@ -934,11 +947,11 @@ auto prim(G&&                   g,           // graph
   }
 
   // Initialize distances: infinity for all vertices except seed
-  std::vector<EV> distance(N, init_dist);
+  auto distance     = make_vertex_property_map<G, EV>(g, init_dist);
   distance[seed]    = 0;    // Seed vertex has distance 0
   predecessor[seed] = seed; // Seed is its own predecessor (root of MST)
 
-  using weighted_vertex = tuple<vertex_id_t<G>, EV>; // (vertex_id, edge_weight)
+  using weighted_vertex = tuple<vid_t, EV>; // (vertex_id, edge_weight)
 
   // Priority queue comparator: compare by edge weight (second element of tuple)
   auto outer_compare = [&](auto&& i, auto&& j) { return compare(get<1>(i), get<1>(j)); };
@@ -968,8 +981,8 @@ auto prim(G&&                   g,           // graph
   // weight[v] contains the edge weight from predecessor[v] to v
   // Exclude seed vertex (which has no incoming edge in MST)
   EV total_weight = EV{};
-  for (size_t v = 0; v < N; ++v) {
-    if (v != static_cast<size_t>(seed) && predecessor[v] != static_cast<vertex_id_t<G>>(v)) {
+  for (auto [v] : views::basic_vertexlist(g)) {
+    if (v != seed && predecessor[v] != v) {
       // Only count vertices in MST (predecessor points to another vertex)
       total_weight += weight[v];
     }

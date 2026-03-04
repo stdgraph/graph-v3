@@ -645,7 +645,7 @@ Most complex transformation. Carefully review:
 
 ## Phase 8 — MST Algorithms
 
-### 8.1 Generalize `prim`
+### 8.1 Generalize `prim` ✅ Complete
 
 | Item | Detail |
 |------|--------|
@@ -653,27 +653,50 @@ Most complex transformation. Carefully review:
 | **Modify** | `include/graph/algorithm/mst.hpp` — `prim()` function only |
 | **Changes** | |
 
-- Internal `vector<EV> distance` → `vertex_map<G, EV>`
-- Relax `Predecessor`/`Weight` from `random_access_range` to accept vertex maps
-- `for(v = 0; v < N; ++v)` → vertex iteration
-- Drop `static_cast<size_t>()`
-- Relax concept to `adjacency_list<G>`
+- Internal `vector<EV> distance` → `make_vertex_property_map<G, EV>(g, init_dist)`
+- Relax `Predecessor`/`Weight` from `random_access_range` to `vertex_property_map_for<M, G>`
+- `range_value_t<Weight>` → `vertex_property_map_value_t<Weight>`
+- `for(v = 0; v < N; ++v)` → `for (auto [v] : views::basic_vertexlist(g))`
+- Drop `static_cast<size_t>()` / `static_cast<vertex_id_t<G>>()`
+- Relax concept from `index_adjacency_list` to `adjacency_list`
+- Validation: `if constexpr (index_vertex_range<...>)` for size checks, `find_vertex` for mapped seed
 
 | **Modify** | `tests/algorithms/test_mst.cpp` |
-| **Changes** | Add `SPARSE_VERTEX_TYPES` test section for `prim()` |
-| **Verify** | `ctest` — all existing + new tests pass |
+| **Changes** | Added 5 sparse `TEMPLATE_TEST_CASE` sections × 6 `SPARSE_VERTEX_TYPES` = 30 new tests |
+| **Tests** | triangle, linear, K4, kruskal comparison, invalid seed throws |
+| **Verify** | 4799 tests pass (4769 → 4799, +30 sparse prim tests) |
 
-### 8.2 Review Gate — Prim
+### 8.2 Review Gate — Prim ✅ Complete
 
-### 8.3 Evaluate `kruskal` / `inplace_kruskal`
+| Check | Status |
+|-------|--------|
+| Concepts generalized (`adjacency_list`, `vertex_property_map_for`) | ✅ |
+| Internal distance uses `make_vertex_property_map` | ✅ |
+| Validation: `if constexpr (index_vertex_range)` for index, `find_vertex` for mapped | ✅ |
+| Iteration: `basic_vertexlist` for total weight loop | ✅ |
+| Index snapshot unchanged (`index/mst.hpp` still uses `index_adjacency_list`) | ✅ |
+| Existing tests (8 contiguous prim) still pass | ✅ |
+| 30 new sparse tests (5 cases × 6 SPARSE_VERTEX_TYPES) pass | ✅ |
+| Full suite: 4799 tests, 0 failures | ✅ |
+
+### 8.3 Evaluate `kruskal` / `inplace_kruskal` ✅ Complete — No Changes Needed
 
 | Item | Detail |
 |------|--------|
 | **Read** | `include/graph/algorithm/mst.hpp` — `kruskal()` and `inplace_kruskal()` functions |
-| **Action** | Evaluate whether map support makes sense for edge-list-centric algorithms. These use `x_index_edgelist_range` and `disjoint_vector`. |
-| **Decision** | If feasible with reasonable effort, generalize. If the `disjoint_vector` coupling is too deep, document as deferred and skip. |
+| **Action** | Evaluated whether map support makes sense for edge-list-centric algorithms. |
+| **Decision** | **No changes needed.** Kruskal already works with sparse integral vertex IDs. |
 
-### 8.4 Review Gate — Kruskal Decision
+**Analysis:**
+
+1. **Edge-list-centric, not graph-centric** — Kruskal takes `IELR` (edge list range), not a graph `G`. The `adjacency_list`/`vertex_property_map_for` generalization pattern does not apply.
+2. **`disjoint_vector<VId>` = `vector<disjoint_element<VId>>`** — Union-find is indexed by vertex ID. It allocates `max_id + 1` elements, which already handles sparse integral IDs (e.g., IDs 10, 20, 30 → vector of 31 elements). Slight over-allocation is an acceptable trade-off.
+3. **`x_index_edgelist_range` requires `integral<source_id_type>`** — already satisfied by sparse `uint32_t` IDs. No concept change needed.
+4. **Non-integral IDs** (e.g., `std::string`) would require a map-based union-find — a fundamentally different data structure, not a simple concept relaxation. Out of scope.
+
+### 8.4 Review Gate — Kruskal Decision ✅ Complete
+
+Confirmed: Kruskal/inplace_kruskal require no changes. Edge-list-centric API with integral IDs already supports sparse vertex IDs. No code modifications, no new tests needed.
 
 ### 8.5 Commit (if applicable)
 
@@ -791,8 +814,8 @@ cd build/linux-gcc-asan && cmake --build . && ctest --output-on-failure
 | **7** | **7.1** | Generalize `articulation_points` (5 internal arrays) | Complete |
 | **7** | **7.2** | Review gate: articulation_points diff (most complex) | Complete |
 | **7** | **7.3** | Generalize `biconnected_components` (3 internal arrays) | Complete |
-| **7** | **7.4** | Review gate: biconnected_components diff | Not Started |
-| **7** | **7.5** | Commit articulation_points + biconnected_components | Not Started |
+| **7** | **7.4** | Review gate: biconnected_components diff | Complete |
+| **7** | **7.5** | Commit articulation_points + biconnected_components | Complete |
 | **8** | **8.1** | Generalize `prim` MST | Not Started |
 | **8** | **8.2** | Review gate: prim diff | Not Started |
 | **8** | **8.3** | Evaluate `kruskal` / `inplace_kruskal` feasibility | Not Started |
