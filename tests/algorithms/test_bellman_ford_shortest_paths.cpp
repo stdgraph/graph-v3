@@ -53,7 +53,7 @@ TEST_CASE("bellman_ford_shortest_paths - CLRS example", "[algorithm][bellman_for
   std::vector<int>                distance(num_vertices(g));
   std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
 
-  init_shortest_paths(distance, predecessor);
+  init_shortest_paths(g, distance, predecessor);
 
   auto result = bellman_ford_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor,
                                             [](const auto& g, const auto& uv) { return edge_value(g, uv); });
@@ -76,7 +76,7 @@ TEST_CASE("bellman_ford_shortest_paths - path graph", "[algorithm][bellman_ford_
   std::vector<int>                distance(num_vertices(g));
   std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
 
-  init_shortest_paths(distance, predecessor);
+  init_shortest_paths(g, distance, predecessor);
 
   auto result = bellman_ford_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor,
                                             [](const auto& g, const auto& uv) { return edge_value(g, uv); });
@@ -96,7 +96,7 @@ TEST_CASE("bellman_ford_shortest_distances - no predecessors", "[algorithm][bell
   auto             g = clrs_dijkstra_graph<Graph>();
   std::vector<int> distance(num_vertices(g));
 
-  init_shortest_paths(distance);
+  init_shortest_paths(g, distance);
 
   // Test distances-only variant (no predecessor tracking)
   auto result = bellman_ford_shortest_distances(g, vertex_id_t<Graph>(0), distance,
@@ -120,7 +120,7 @@ TEST_CASE("bellman_ford_shortest_paths - multi-source", "[algorithm][bellman_for
   std::vector<int>                distance(num_vertices(g));
   std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
 
-  init_shortest_paths(distance, predecessor);
+  init_shortest_paths(g, distance, predecessor);
 
   // Start from vertices 0 and 3
   std::vector<vertex_id_t<Graph>> sources = {0, 3};
@@ -146,7 +146,7 @@ TEST_CASE("bellman_ford_shortest_distances - multi-source", "[algorithm][bellman
   auto             g = clrs_dijkstra_graph<Graph>();
   std::vector<int> distance(num_vertices(g));
 
-  init_shortest_paths(distance);
+  init_shortest_paths(g, distance);
 
   // Start from vertices 0 and 3
   std::vector<vertex_id_t<Graph>> sources = {0, 3};
@@ -169,7 +169,7 @@ TEST_CASE("bellman_ford_shortest_paths - with visitor", "[algorithm][bellman_for
   std::vector<int>                distance(num_vertices(g));
   std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
 
-  init_shortest_paths(distance, predecessor);
+  init_shortest_paths(g, distance, predecessor);
 
   BellmanCountingVisitor visitor;
 
@@ -198,7 +198,7 @@ TEST_CASE("bellman_ford_shortest_paths - unweighted graph (default weight)",
   std::vector<int>                distance(num_vertices(g));
   std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
 
-  init_shortest_paths(distance, predecessor);
+  init_shortest_paths(g, distance, predecessor);
 
   // Use default weight function (returns 1 for all edges)
   auto result = bellman_ford_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor);
@@ -219,7 +219,7 @@ TEST_CASE("bellman_ford_shortest_paths - predecessor path reconstruction", "[alg
   std::vector<int>                distance(num_vertices(g));
   std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
 
-  init_shortest_paths(distance, predecessor);
+  init_shortest_paths(g, distance, predecessor);
 
   auto result = bellman_ford_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor,
                                             [](const auto& g, const auto& uv) { return edge_value(g, uv); });
@@ -258,7 +258,7 @@ TEST_CASE("bellman_ford_shortest_paths - unreachable vertices", "[algorithm][bel
   std::vector<int>                distance(num_vertices(g));
   std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
 
-  init_shortest_paths(distance, predecessor);
+  init_shortest_paths(g, distance, predecessor);
 
   auto result = bellman_ford_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor);
 
@@ -287,7 +287,7 @@ TEST_CASE("bellman_ford_shortest_paths - negative weight cycle detection", "[alg
   std::vector<int>                distance(num_vertices(g));
   std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
 
-  init_shortest_paths(distance, predecessor);
+  init_shortest_paths(g, distance, predecessor);
 
   BellmanCountingVisitor visitor;
 
@@ -314,7 +314,7 @@ TEST_CASE("bellman_ford_shortest_paths - find negative cycle vertices", "[algori
   std::vector<int>                distance(num_vertices(g));
   std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
 
-  init_shortest_paths(distance, predecessor);
+  init_shortest_paths(g, distance, predecessor);
 
   auto cycle_vertex = bellman_ford_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor,
                                                   [](const auto& g, const auto& uv) { return edge_value(g, uv); });
@@ -351,7 +351,7 @@ TEST_CASE("bellman_ford_shortest_paths - single vertex", "[algorithm][bellman_fo
   std::vector<int>                distance(1);
   std::vector<vertex_id_t<Graph>> predecessor(1);
 
-  init_shortest_paths(distance, predecessor);
+  init_shortest_paths(g, distance, predecessor);
 
   auto result = bellman_ford_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor);
 

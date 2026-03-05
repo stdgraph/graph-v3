@@ -47,7 +47,7 @@ TEST_CASE("dijkstra_shortest_paths - CLRS example", "[algorithm][dijkstra_shorte
   std::vector<int>                distance(num_vertices(g));
   std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
 
-  init_shortest_paths(distance, predecessor);
+  init_shortest_paths(g, distance, predecessor);
 
   dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor,
                           [](const auto& g, const auto& uv) { return edge_value(g, uv); });
@@ -67,7 +67,7 @@ TEST_CASE("dijkstra_shortest_paths - path graph", "[algorithm][dijkstra_shortest
   std::vector<int>                distance(num_vertices(g));
   std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
 
-  init_shortest_paths(distance, predecessor);
+  init_shortest_paths(g, distance, predecessor);
 
   dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor,
                           [](const auto& g, const auto& uv) { return edge_value(g, uv); });
@@ -84,7 +84,7 @@ TEST_CASE("dijkstra_shortest_distances - no predecessors", "[algorithm][dijkstra
   auto             g = clrs_dijkstra_graph<Graph>();
   std::vector<int> distance(num_vertices(g));
 
-  init_shortest_paths(distance);
+  init_shortest_paths(g, distance);
 
   // Test distances-only variant (no predecessor tracking)
   dijkstra_shortest_distances(g, vertex_id_t<Graph>(0), distance,
@@ -105,7 +105,7 @@ TEST_CASE("dijkstra_shortest_paths - multi-source", "[algorithm][dijkstra_shorte
   std::vector<int>                distance(num_vertices(g));
   std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
 
-  init_shortest_paths(distance, predecessor);
+  init_shortest_paths(g, distance, predecessor);
 
   // Start from vertices 0 and 3
   std::vector<vertex_id_t<Graph>> sources = {0, 3};
@@ -128,7 +128,7 @@ TEST_CASE("dijkstra_shortest_distances - multi-source", "[algorithm][dijkstra_sh
   auto             g = clrs_dijkstra_graph<Graph>();
   std::vector<int> distance(num_vertices(g));
 
-  init_shortest_paths(distance);
+  init_shortest_paths(g, distance);
 
   // Start from vertices 0 and 3
   std::vector<vertex_id_t<Graph>> sources = {0, 3};
@@ -147,7 +147,7 @@ TEST_CASE("dijkstra_shortest_paths - with visitor", "[algorithm][dijkstra_shorte
   std::vector<int>                distance(num_vertices(g));
   std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
 
-  init_shortest_paths(distance, predecessor);
+  init_shortest_paths(g, distance, predecessor);
 
   CountingVisitor visitor;
 
@@ -173,7 +173,7 @@ TEST_CASE("dijkstra_shortest_paths - unweighted graph (default weight)", "[algor
   std::vector<int>                distance(num_vertices(g));
   std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
 
-  init_shortest_paths(distance, predecessor);
+  init_shortest_paths(g, distance, predecessor);
 
   // Use default weight function (returns 1 for all edges)
   dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor);
@@ -191,7 +191,7 @@ TEST_CASE("dijkstra_shortest_paths - predecessor path reconstruction", "[algorit
   std::vector<int>                distance(num_vertices(g));
   std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
 
-  init_shortest_paths(distance, predecessor);
+  init_shortest_paths(g, distance, predecessor);
 
   dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor,
                           [](const auto& g, const auto& uv) { return edge_value(g, uv); });
@@ -226,7 +226,7 @@ TEST_CASE("dijkstra_shortest_paths - unreachable vertices", "[algorithm][dijkstr
   std::vector<int>                distance(num_vertices(g));
   std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
 
-  init_shortest_paths(distance, predecessor);
+  init_shortest_paths(g, distance, predecessor);
 
   dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor);
 
@@ -267,7 +267,7 @@ TEST_CASE("dijkstra_shortest_paths - vertex id visitor", "[algorithm][dijkstra_s
   std::vector<int>                distance(num_vertices(g));
   std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
 
-  init_shortest_paths(distance, predecessor);
+  init_shortest_paths(g, distance, predecessor);
 
   IdCountingVisitor visitor;
   dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor,
@@ -293,7 +293,7 @@ TEST_CASE("dijkstra_shortest_paths - distances too small throws", "[algorithm][d
   auto                            g = clrs_dijkstra_graph<Graph>(); // 5 vertices
   std::vector<int>                distances(2);                     // too small
   std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
-  init_shortest_paths(distances, predecessor);
+  init_shortest_paths(g, distances, predecessor);
 
   CHECK_THROWS_AS(dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distances, predecessor,
                                           [](const auto& g, const auto& uv) { return edge_value(g, uv); }),
@@ -306,7 +306,7 @@ TEST_CASE("dijkstra_shortest_paths - predecessor too small throws", "[algorithm]
   auto                            g = clrs_dijkstra_graph<Graph>(); // 5 vertices
   std::vector<int>                distances(num_vertices(g));
   std::vector<vertex_id_t<Graph>> predecessor(2); // too small
-  init_shortest_paths(distances, predecessor);
+  init_shortest_paths(g, distances, predecessor);
 
   CHECK_THROWS_AS(dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distances, predecessor,
                                           [](const auto& g, const auto& uv) { return edge_value(g, uv); }),
@@ -319,7 +319,7 @@ TEST_CASE("dijkstra_shortest_paths - source vertex out of range throws", "[algor
   auto                            g = path_graph_4_weighted<Graph>(); // 4 vertices (ids 0-3)
   std::vector<int>                distances(num_vertices(g));
   std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
-  init_shortest_paths(distances, predecessor);
+  init_shortest_paths(g, distances, predecessor);
 
   CHECK_THROWS_AS(dijkstra_shortest_paths(g, vertex_id_t<Graph>(99), distances, predecessor,
                                           [](const auto& g, const auto& uv) { return edge_value(g, uv); }),
@@ -332,7 +332,7 @@ TEST_CASE("dijkstra_shortest_paths - negative edge weight throws", "[algorithm][
   auto                            g = path_graph_4_weighted<Graph>(); // 0->1->2->3
   std::vector<int>                distances(num_vertices(g));
   std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
-  init_shortest_paths(distances, predecessor);
+  init_shortest_paths(g, distances, predecessor);
 
   // Weight function that always returns a negative value triggers the signed-weight guard
   CHECK_THROWS_AS(dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distances, predecessor,
@@ -350,7 +350,7 @@ TEST_CASE("dijkstra_shortest_paths - infinite weight edge triggers logic_error",
   auto                            g = path_graph_4_weighted<Graph>(); // 0->1->2->3
   std::vector<distance_type>      distances(num_vertices(g));
   std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
-  init_shortest_paths(distances, predecessor);
+  init_shortest_paths(g, distances, predecessor);
 
   const auto INF = shortest_path_infinite_distance<distance_type>();
   CHECK_THROWS_AS(dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distances, predecessor,
@@ -366,7 +366,7 @@ TEST_CASE("dijkstra_shortest_paths - on_edge_not_relaxed visitor callback", "[al
   auto                            g = clrs_dijkstra_graph<Graph>();
   std::vector<int>                distances(num_vertices(g));
   std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
-  init_shortest_paths(distances, predecessor);
+  init_shortest_paths(g, distances, predecessor);
 
   CountingVisitor visitor;
   dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distances, predecessor,

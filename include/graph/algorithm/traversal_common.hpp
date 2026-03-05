@@ -134,42 +134,6 @@ constexpr auto shortest_path_zero() {
   return DistanceValue();
 }
 
-/**
- * @ingroup graph_algorithms
- * @brief Initializes all distance values to infinite distance.
- * 
- * Prepares a distance range for use with shortest path algorithms by setting all values
- * to shortest_path_infinite_distance().
- * 
- * @tparam Distances Random access range type containing distance values.
- * 
- * @param distances The range of distance values to initialize.
- */
-template <class Distances>
-constexpr void init_shortest_paths(Distances& distances) {
-  std::ranges::fill(distances, shortest_path_infinite_distance<range_value_t<Distances>>());
-}
-
-/**
- * @ingroup graph_algorithms
- * @brief Initializes distance and predecessor values for shortest path algorithms.
- * 
- * Prepares both distance and predecessor ranges:
- * - Distances are set to shortest_path_infinite_distance()
- * - Predecessors are set to their own indices (each vertex is its own predecessor initially)
- * 
- * @tparam Distances Random access range type containing distance values.
- * @tparam Predecessors Random access range type containing predecessor vertex IDs.
- * 
- * @param distances The range of distance values to initialize.
- * @param predecessors The range of predecessor values to initialize.
- */
-template <class Distances, class Predecessors>
-constexpr void init_shortest_paths(Distances& distances, Predecessors& predecessors) {
-  init_shortest_paths(distances);
-  std::iota(predecessors.begin(), predecessors.end(), 0);
-}
-
 //
 // Visitor concepts
 //
@@ -380,6 +344,7 @@ inline constexpr bool is_null_range_v = std::is_same_v<std::remove_cvref_t<T>, _
  * @param distances The distance map to initialize
  */
 template <class G, class Distances>
+  requires adjacency_list<G> && vertex_property_map_for<Distances, G>
 constexpr void init_shortest_paths(const G& g, Distances& distances) {
   using dist_value = vertex_property_map_value_t<Distances>;
   constexpr auto infinite = shortest_path_infinite_distance<dist_value>();
@@ -422,6 +387,8 @@ constexpr void init_shortest_paths(const G& g, Distances& distances) {
  * @param predecessors The predecessor map to initialize (each vertex → itself)
  */
 template <class G, class Distances, class Predecessors>
+  requires adjacency_list<G> && vertex_property_map_for<Distances, G> &&
+           (vertex_property_map_for<Predecessors, G> || is_null_range_v<Predecessors>)
 constexpr void init_shortest_paths(const G& g, Distances& distances, Predecessors& predecessors) {
   using dist_value = vertex_property_map_value_t<Distances>;
   constexpr auto infinite = shortest_path_infinite_distance<dist_value>();
