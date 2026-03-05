@@ -32,8 +32,8 @@ Counts the number of **triangles** (3-cliques) in an undirected graph using
 merge-based sorted-list intersection. A triangle is a set of three mutually
 adjacent vertices {u, v, w}.
 
-The graph must satisfy `index_adjacency_list<G>` — vertices are stored in a
-contiguous, integer-indexed random-access range.
+The graph must satisfy `adjacency_list<G>` — both index-based (contiguous
+integer-indexed) and map-based (sparse vertex ID) graphs are supported.
 
 The algorithm additionally requires `ordered_vertex_edges<G>`, meaning each
 vertex's adjacency list is **sorted by target ID**. This is naturally the case
@@ -74,7 +74,7 @@ size_t triangle_count(G&& g);
 
 | Parameter | Description |
 |-----------|-------------|
-| `g` | Graph satisfying `index_adjacency_list` **and** `ordered_vertex_edges` (sorted adjacency lists) |
+| `g` | Graph satisfying `adjacency_list` **and** `ordered_vertex_edges` (sorted adjacency lists) |
 
 ## Examples
 
@@ -207,7 +207,7 @@ approaches O(V³).
 
 ## Preconditions
 
-- Graph must satisfy `index_adjacency_list<G>` **and** `ordered_vertex_edges<G>`.
+- Graph must satisfy `adjacency_list<G>` **and** `ordered_vertex_edges<G>`.
 - Adjacency lists must be **sorted by target ID**. Use sorted-edge traits
   (`vos`, `dos`) or `undirected_adjacency_list`.
 - For `vov`-based graphs, pre-sort each adjacency list before calling (see

@@ -36,8 +36,8 @@ invoked at each stage of the traversal.
 BFS is the foundation for unweighted shortest paths, connected-component
 discovery, and level-based graph analysis.
 
-The graph must satisfy `index_adjacency_list<G>` — vertices are stored in a
-contiguous, integer-indexed random-access range.
+The graph must satisfy `adjacency_list<G>` — both index-based (contiguous
+integer-indexed) and map-based (sparse vertex ID) graphs are supported.
 
 > **Note:** Unlike [DFS](dfs.md), BFS does **not** classify edges (no tree/back/
 > forward edge events). If you need edge classification, use DFS instead.
@@ -82,7 +82,7 @@ void breadth_first_search(G&& g, const vertex_id_t<G>& source,
 
 | Parameter | Description |
 |-----------|-------------|
-| `g` | Graph satisfying `index_adjacency_list` |
+| `g` | Graph satisfying `adjacency_list` |
 | `source` / `sources` | Source vertex ID or range of source vertex IDs |
 | `visitor` | Optional visitor struct with callback methods (see below). Default: `empty_visitor{}`. |
 
@@ -240,7 +240,7 @@ breadth_first_search(g, 0u, vis);
 
 ## Preconditions
 
-- Graph must satisfy `index_adjacency_list<G>`.
+- Graph must satisfy `adjacency_list<G>`.
 - Duplicate sources are allowed — each duplicate causes an extra discovery event.
 
 ## See Also

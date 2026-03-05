@@ -110,7 +110,7 @@ TEST_CASE("make_vertex_property_map lazy - mapped graph", "[vertex_property_map]
 // vertex_property_map_contains
 // =============================================================================
 
-TEST_CASE("vertex_property_map_contains - index graph always true", "[vertex_property_map][contains]") {
+TEST_CASE("vertex_property_map_contains - index graph bounds check", "[vertex_property_map][contains]") {
   using Graph = vov_weighted;
   auto g      = path_graph_4_weighted<Graph>();
   auto vmap   = make_vertex_property_map<Graph, int>(g, 0);
@@ -118,6 +118,9 @@ TEST_CASE("vertex_property_map_contains - index graph always true", "[vertex_pro
   for (auto&& [uid, u] : views::vertexlist(g)) {
     REQUIRE(vertex_property_map_contains(vmap, uid));
   }
+  // Out-of-range IDs should return false
+  REQUIRE_FALSE(vertex_property_map_contains(vmap, num_vertices(g)));
+  REQUIRE_FALSE(vertex_property_map_contains(vmap, num_vertices(g) + 100));
 }
 
 TEST_CASE("vertex_property_map_contains - mapped graph", "[vertex_property_map][contains]") {

@@ -710,39 +710,28 @@ Confirmed: Kruskal/inplace_kruskal require no changes. Edge-list-centric API wit
 
 ## Phase 9 — Cleanup & Documentation
 
-### 9.1 Final Full Test Run
+### 9.1 Final Full Test Run ✅ Complete
+
+| Preset | Tests | Result |
+|--------|-------|--------|
+| linux-clang-debug | 4799 | ✅ All pass |
+| linux-clang-release | 4799 | ✅ All pass |
+| linux-gcc-asan | 4799 | ✅ All pass |
+
+### 9.2 Update Documentation ✅ Complete
+
+| File | Changes |
+|------|---------|
+| `CHANGELOG.md` | Added mapped graph features, 456 new tests (4343 → 4799) |
+| `docs/user-guide/algorithms.md` | Updated overview for `adjacency_list` (index + mapped), added map-based usage example |
+| `docs/reference/concepts.md` | Updated hierarchy with `mapped_vertex_range`, `mapped_adjacency_list`; corrected `adjacency_list` definition |
+
+### 9.3 Commit ✅ Complete
 
 | Item | Detail |
 |------|--------|
-| **Action** | Run tests across multiple presets for confidence: |
-
-```bash
-# Debug build
-cd build/linux-clang-debug && cmake --build . && ctest --output-on-failure
-
-# Release build
-cd build/linux-clang-release && cmake --build . && ctest --output-on-failure
-
-# Address sanitizer
-cd build/linux-gcc-asan && cmake --build . && ctest --output-on-failure
-```
-
-| **Verify** | All pass in all presets |
-
-### 9.2 Update Documentation
-
-| Item | Detail |
-|------|--------|
-| **Modify** | `docs/user-guide/` — add section on using algorithms with map-based graphs |
-| **Modify** | `docs/reference/` — update algorithm reference to document map-graph support |
-| **Modify** | `CHANGELOG.md` — add entries for map-based algorithm support |
-| **Verify** | Docs build/render correctly |
-
-### 9.3 Commit
-
-| Item | Detail |
-|------|--------|
-| **Commit** | `chore: update docs for mapped graph support` |
+| **Commit** | `79bfd48` — `chore: update docs for mapped graph algorithm support` |
+| **Files** | `CHANGELOG.md`, `algorithms.md`, `concepts.md`, `map_container_plan.md` (4 files, +104 −41) |
 
 ---
 
@@ -816,6 +805,6 @@ cd build/linux-gcc-asan && cmake --build . && ctest --output-on-failure
 | **8** | **8.3** | Evaluate `kruskal` / `inplace_kruskal` feasibility | Complete |
 | **8** | **8.4** | Review gate: kruskal decision | Complete |
 | **8** | **8.5** | Commit MST (prim, and kruskal if applicable) | Complete |
-| **9** | **9.1** | Final full test run (clang-debug, clang-release, gcc-asan) | Not Started |
-| **9** | **9.2** | Update documentation for mapped graph support | Not Started |
-| **9** | **9.3** | Commit cleanup + docs | Not Started |
+| **9** | **9.1** | Final full test run (clang-debug, clang-release, gcc-asan) | Complete |
+| **9** | **9.2** | Update documentation for mapped graph support | Complete |
+| **9** | **9.3** | Commit cleanup + docs | Complete |

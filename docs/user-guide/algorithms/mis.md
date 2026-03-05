@@ -33,8 +33,8 @@ Finds a **maximal independent set** (MIS) — a set of non-adjacent vertices
 that cannot be extended by adding any other vertex without violating the
 independence property.
 
-The graph must satisfy `index_adjacency_list<G>` — vertices are stored in a
-contiguous, integer-indexed random-access range.
+The graph must satisfy `adjacency_list<G>` — both index-based (contiguous
+integer-indexed) and map-based (sparse vertex ID) graphs are supported.
 
 The algorithm is **greedy**: starting from a seed vertex, it includes that
 vertex in the MIS, marks all its neighbors as excluded, and repeats for
@@ -85,7 +85,7 @@ to the output iterator.
 
 | Parameter | Description |
 |-----------|-------------|
-| `g` | Graph satisfying `index_adjacency_list` |
+| `g` | Graph satisfying `adjacency_list` |
 | `mis` | Output iterator receiving vertex IDs in the MIS |
 | `seed` | Starting vertex ID (default: 0). The seed is always included in the MIS (unless it has a self-loop). |
 
@@ -222,7 +222,7 @@ size_t count = maximal_independent_set(g, std::back_inserter(result), 1u);
 
 ## Preconditions
 
-- Graph must satisfy `index_adjacency_list<G>`.
+- Graph must satisfy `adjacency_list<G>`.
 - Seed must be a valid vertex ID (`0 ≤ seed < num_vertices(g)`).
 - Self-loops exclude a vertex from the MIS (a vertex adjacent to itself is not
   independent).

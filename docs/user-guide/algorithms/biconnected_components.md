@@ -32,8 +32,8 @@ single vertex is removed. The algorithm uses the iterative **Hopcroft-Tarjan**
 approach with discovery times and low-link values to find all biconnected
 components.
 
-The graph must satisfy `index_adjacency_list<G>` — vertices are stored in a
-contiguous, integer-indexed random-access range.
+The graph must satisfy `adjacency_list<G>` — both index-based (contiguous
+integer-indexed) and map-based (sparse vertex ID) graphs are supported.
 
 Key properties of the output:
 
@@ -80,7 +80,7 @@ Where `OuterContainer` is typically `std::vector<std::vector<vertex_id_t<G>>>`.
 
 | Parameter | Description |
 |-----------|-------------|
-| `g` | Graph satisfying `index_adjacency_list` |
+| `g` | Graph satisfying `adjacency_list` |
 | `components` | Output container of containers. Each inner container holds vertex IDs in one biconnected component. Cleared and refilled by the algorithm. |
 
 ## Examples
@@ -205,7 +205,7 @@ biconnected_components(g, components);
 
 ## Preconditions
 
-- Graph must satisfy `index_adjacency_list<G>`.
+- Graph must satisfy `adjacency_list<G>`.
 - For undirected graphs, **both directions** of each edge must be stored (or use
   `undirected_adjacency_list`).
 - Self-loops are ignored and do not affect the result.

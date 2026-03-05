@@ -103,7 +103,7 @@ constexpr auto make_vertex_property_map(const G& g) {
 /**
  * @brief Test whether a vertex ID has an entry in the map.
  *
- * For index graphs (vector): always returns true — all indices in [0, size) are valid.
+ * For index graphs (vector): returns uid < size(m).
  * For mapped graphs (unordered_map): calls m.contains(uid).
  *
  * @tparam Map Container type (vector or unordered_map)
@@ -115,7 +115,7 @@ constexpr auto make_vertex_property_map(const G& g) {
 template <class Map, class Key>
 constexpr bool vertex_property_map_contains(const Map& m, const Key& uid) {
   if constexpr (std::ranges::random_access_range<Map>) {
-    return true; // vector: all indices in [0, size) are valid
+    return static_cast<size_t>(uid) < std::ranges::size(m);
   } else {
     return m.contains(uid);
   }

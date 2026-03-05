@@ -33,8 +33,8 @@
 
 The connected components header provides three algorithms for partitioning a
 graph into connected components. All three require a graph satisfying
-`index_adjacency_list<G>` — vertices are stored in a contiguous,
-integer-indexed random-access range.
+`adjacency_list<G>` — both index-based (contiguous integer-indexed) and
+map-based (sparse vertex ID) graphs are supported.
 
 | Algorithm | Use case | Approach |
 |-----------|----------|----------|
@@ -104,16 +104,15 @@ rounds are performed before falling back to full edge iteration. Call
 single-machine.
 
 The two-graph variant accepts a transpose `g_transpose` for directed-graph
-support. The transpose only needs to satisfy `adjacency_list` (not necessarily
-`index_adjacency_list`).
+support. The transpose must also satisfy `adjacency_list`.
 
 ## Parameters
 
 | Parameter | Description |
 |-----------|-------------|
-| `g` | Graph satisfying `index_adjacency_list` |
-| `g_transpose` | Transpose graph (for `kosaraju` and `afforest` with transpose). `kosaraju` requires `index_adjacency_list`; `afforest` requires `adjacency_list`. |
-| `component` | Random-access range sized to `num_vertices(g)`. Filled with component IDs. |
+| `g` | Graph satisfying `adjacency_list` |
+| `g_transpose` | Transpose graph (for `kosaraju` and `afforest` with transpose). `kosaraju` requires `adjacency_list`; `afforest` requires `adjacency_list`. |
+| `component` | Subscriptable by `vertex_id_t<G>`. For index graphs, a pre-sized `std::vector`; for mapped graphs, use `make_vertex_property_map<G, T>(g, init)`. Must satisfy `vertex_property_map_for<Component, G>`. |
 | `neighbor_rounds` | Number of neighbor-sampling rounds for `afforest` (default: 2) |
 
 **Return value (`connected_components` only):** `size_t` — number of connected
@@ -250,8 +249,8 @@ compress(comp);
 
 ## Preconditions
 
-- Graph must satisfy `index_adjacency_list<G>`.
-- `component` must be sized to `num_vertices(g)`.
+- Graph must satisfy `adjacency_list<G>`.
+- `component` must satisfy `vertex_property_map_for<Component, G>`.
 - For `connected_components`: undirected graphs must store both directions of
   each edge (or use `undirected_adjacency_list`).
 - For `kosaraju`: the transpose graph must contain all edges reversed.

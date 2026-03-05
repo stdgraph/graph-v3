@@ -33,8 +33,8 @@ The Bellman-Ford algorithm computes single-source (or multi-source) shortest
 paths in a weighted directed graph, supporting **negative edge weights**. Unlike
 Dijkstra's algorithm, it can detect negative-weight cycles.
 
-The graph must satisfy `index_adjacency_list<G>` — vertices are stored in a
-contiguous, integer-indexed random-access range.
+The graph must satisfy `adjacency_list<G>` — both index-based (contiguous
+integer-indexed) and map-based (sparse vertex ID) graphs are supported.
 
 The algorithm relaxes all edges V−1 times, then performs a final pass to detect
 negative cycles. It returns `std::optional<vertex_id_t<G>>`: empty if no
@@ -118,10 +118,10 @@ void find_negative_cycle(G& g, const Predecessors& predecessor,
 
 | Parameter | Description |
 |-----------|-------------|
-| `g` | Graph satisfying `index_adjacency_list` |
+| `g` | Graph satisfying `adjacency_list` |
 | `source` / `sources` | Source vertex ID or range of source vertex IDs |
-| `distances` | Random-access range sized to `num_vertices(g)`. Filled with shortest distances. |
-| `predecessors` | Random-access range sized to `num_vertices(g)`. Filled with predecessor vertex IDs. |
+| `distances` | Subscriptable by `vertex_id_t<G>`. For index graphs, a pre-sized `std::vector`; for mapped graphs, use `make_vertex_property_map<G, T>(g, init)`. Must satisfy `vertex_property_map_for<Distances, G>`. |
+| `predecessors` | Subscriptable by `vertex_id_t<G>`. For index graphs, a pre-sized `std::vector`; for mapped graphs, use `make_vertex_property_map<G, T>(g, init)`. Must satisfy `vertex_property_map_for<Predecessors, G>`. |
 | `weight` | Callable `WF(g, uv)` returning edge weight (may be negative). Must satisfy `basic_edge_weight_function`. |
 | `visitor` | Optional visitor struct with callback methods (see below). Default: `empty_visitor{}`. |
 | `compare` | Comparison function for distance values. Default: `std::less<>{}`. |
@@ -306,8 +306,9 @@ auto cycle = bellman_ford_shortest_paths(g, 0u, dist, pred,
 
 ## Preconditions
 
-- Graph must satisfy `index_adjacency_list<G>`.
-- `distances` and `predecessors` must be sized to `num_vertices(g)`.
+- Graph must satisfy `adjacency_list<G>`.
+- `distances` and `predecessors` must satisfy `vertex_property_map_for` (pre-sized
+  vectors for index graphs, or `make_vertex_property_map` for mapped graphs).
 - Call `init_shortest_paths(distances, predecessors)` before invoking the algorithm.
 - **Always check the return value** — if a negative cycle exists, distances are
   undefined for affected vertices.
