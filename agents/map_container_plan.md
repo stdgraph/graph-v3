@@ -698,11 +698,13 @@ Most complex transformation. Carefully review:
 
 Confirmed: Kruskal/inplace_kruskal require no changes. Edge-list-centric API with integral IDs already supports sparse vertex IDs. No code modifications, no new tests needed.
 
-### 8.5 Commit (if applicable)
+### 8.5 Commit ✅ Complete
 
 | Item | Detail |
 |------|--------|
-| **Commit** | `feat: generalize prim MST for mapped graphs` (and kruskal if included) |
+| **Commit** | `7a0c315` — `feat: generalize prim MST for mapped graphs` |
+| **Files** | `mst.hpp`, `test_mst.cpp`, `map_container_plan.md` (3 files, +210 −68) |
+| **Tests** | 4799 pass |
 
 ---
 
@@ -727,14 +729,7 @@ cd build/linux-gcc-asan && cmake --build . && ctest --output-on-failure
 
 | **Verify** | All pass in all presets |
 
-### 9.2 Remove Reference Directory
-
-| Item | Detail |
-|------|--------|
-| **Action** | `rm -rf include/graph/algorithm/index/` |
-| **Verify** | Directory removed; build still succeeds (no code references it) |
-
-### 9.3 Update Documentation
+### 9.2 Update Documentation
 
 | Item | Detail |
 |------|--------|
@@ -743,11 +738,11 @@ cd build/linux-gcc-asan && cmake --build . && ctest --output-on-failure
 | **Modify** | `CHANGELOG.md` — add entries for map-based algorithm support |
 | **Verify** | Docs build/render correctly |
 
-### 9.4 Commit
+### 9.3 Commit
 
 | Item | Detail |
 |------|--------|
-| **Commit** | `chore: remove index-only reference copies, update docs for mapped graph support` |
+| **Commit** | `chore: update docs for mapped graph support` |
 
 ---
 
@@ -816,12 +811,11 @@ cd build/linux-gcc-asan && cmake --build . && ctest --output-on-failure
 | **7** | **7.3** | Generalize `biconnected_components` (3 internal arrays) | Complete |
 | **7** | **7.4** | Review gate: biconnected_components diff | Complete |
 | **7** | **7.5** | Commit articulation_points + biconnected_components | Complete |
-| **8** | **8.1** | Generalize `prim` MST | Not Started |
-| **8** | **8.2** | Review gate: prim diff | Not Started |
-| **8** | **8.3** | Evaluate `kruskal` / `inplace_kruskal` feasibility | Not Started |
-| **8** | **8.4** | Review gate: kruskal decision | Not Started |
-| **8** | **8.5** | Commit MST (prim, and kruskal if applicable) | Not Started |
+| **8** | **8.1** | Generalize `prim` MST | Complete |
+| **8** | **8.2** | Review gate: prim diff | Complete |
+| **8** | **8.3** | Evaluate `kruskal` / `inplace_kruskal` feasibility | Complete |
+| **8** | **8.4** | Review gate: kruskal decision | Complete |
+| **8** | **8.5** | Commit MST (prim, and kruskal if applicable) | Complete |
 | **9** | **9.1** | Final full test run (clang-debug, clang-release, gcc-asan) | Not Started |
-| **9** | **9.2** | Remove `include/graph/algorithm/index/` directory | Not Started |
-| **9** | **9.3** | Update documentation for mapped graph support | Not Started |
-| **9** | **9.4** | Commit cleanup + docs | Not Started |
+| **9** | **9.2** | Update documentation for mapped graph support | Not Started |
+| **9** | **9.3** | Commit cleanup + docs | Not Started |
