@@ -24,7 +24,9 @@
   - [Reproducibility with Fixed RNG Seed](#example-6-reproducibility-with-fixed-rng-seed)
 - [Complexity](#complexity)
 - [Preconditions](#preconditions)
-- [Notes](#notes)
+- [Postconditions](#postconditions)
+- [Throws](#throws)
+- [Remarks](#remarks)
 - [See Also](#see-also)
 
 ## Overview
@@ -92,13 +94,13 @@ void label_propagation(G&& g, Label& label,
 
 ## Parameters
 
-| Parameter | Description |
-|-----------|-------------|
-| `g` | Graph satisfying `index_adjacency_list` |
-| `label` | Random-access range sized to `num_vertices(g)`. Initial labels in, community labels out. Modified in-place. |
-| `empty_label` | Sentinel value for unlabeled vertices (they don't vote until labeled) |
-| `rng` | Random number generator for tie-breaking and shuffle (e.g., `std::mt19937`) |
-| `max_iters` | Maximum number of iterations. Default: unlimited (run until convergence). |
+| Parameter     | Description                                                                                                                                                                                                          |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `g`           | Graph satisfying `index_adjacency_list<G>`. `G` must model `index_adjacency_list` with integral vertex IDs.                                                                                                          |
+| `label`       | Random-access range sized to `num_vertices(g)`. `Label` must satisfy `random_access_range` with an equality-comparable, hashable `range_value_t<Label>`. Initial labels in, community labels out. Modified in-place. |
+| `empty_label` | Sentinel value for unlabeled vertices (they don't vote until labeled)                                                                                                                                                |
+| `rng`         | Random number generator satisfying `uniform_random_bit_generator` for tie-breaking and shuffle (e.g., `std::mt19937`)                                                                                                |
+| `max_iters`   | Maximum number of iterations. Default: unlimited (run until convergence).                                                                                                                                            |
 
 ## Examples
 
@@ -247,10 +249,10 @@ auto labels_c = run_lp(123);
 
 ## Complexity
 
-| Metric | Value |
-|--------|-------|
-| Time | O(E) per iteration |
-| Space | O(V) auxiliary (shuffle buffer, frequency counts) |
+| Metric | Value                                             |
+| ------ | ------------------------------------------------- |
+| Time   | O(E) per iteration                                |
+| Space  | O(V) auxiliary (shuffle buffer, frequency counts) |
 
 Typically converges in a small number of iterations (often < 10) for
 real-world graphs. Worst-case iteration count is unbounded but rare in
@@ -265,7 +267,20 @@ practice.
 - With `empty_label` sentinel: vertices with the sentinel label don't vote.
   If all vertices start with the sentinel, no propagation occurs.
 
-## Notes
+## Postconditions
+
+- Every vertex in `label` holds a community label (or remains `empty_label` if unreachable from any labeled vertex in the sentinel overload).
+- All vertices in the same community share the same label value.
+- Labels are drawn from the initial label values — no new label values are created.
+- If `max_iters` is reached before convergence, labels reflect the state after the final iteration.
+
+## Throws
+
+- `std::bad_alloc` — if internal allocation for the shuffle buffer or frequency counts fails.
+- Any exception propagated from the RNG.
+- Provides the **basic exception guarantee**: if an exception is thrown, `label` may be in a partially-updated state.
+
+## Remarks
 
 - **Self-loops ARE counted** in the neighbor tally. A vertex with a self-loop
   counts its own label as one neighbor vote. This makes self-looped vertices

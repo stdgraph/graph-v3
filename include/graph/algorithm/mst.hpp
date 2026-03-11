@@ -209,19 +209,16 @@
  * 
  * ---
  * 
- * **Exception Safety:**
+ * Throws:
+ *   std::bad_alloc if internal containers cannot allocate memory.
+ *   std::out_of_range if preconditions are violated (seed vertex, container sizes).
+ *   May propagate exceptions from comparison operators (should be noexcept).
+ *   May propagate exceptions from container operations.
+ *   Basic exception guarantee.
  * 
- * **Guarantee:** Basic exception safety
+ * State after exception:
  * 
- * **Throws:**
- * - `std::bad_alloc` if internal containers cannot allocate memory
- * - `std::out_of_range` if preconditions are violated (seed vertex, container sizes)
- * - May propagate exceptions from comparison operators (should be noexcept)
- * - May propagate exceptions from container operations
- * 
- * **State after exception:**
- * 
- * **Kruskal variants:**
+ * Kruskal variants:
  * - Graph is never modified (edge list input only)
  * - Input edge list `e` unchanged (standard variant)
  * - Input edge list `e` may be partially sorted (inplace variant) 
@@ -481,7 +478,7 @@ struct has_edge<T, decltype(declval<T>().edge, void())> : true_type { };*/
  * - Edge values must be comparable with operator<
  * - Output container must support push_back() and reserve()
  * 
- * **Postconditions:**
+ * Postconditions:
  * - t contains V-1 edges (or fewer for disconnected graphs)
  * - Edges form minimum spanning tree/forest
  * - Input edge list e is unchanged
@@ -532,7 +529,7 @@ auto kruskal(IELR&& e, OELR&& t) {
  * - compare must define a strict weak ordering on edge values
  * - Output container must support push_back() and reserve()
  * 
- * **Postconditions:**
+ * Postconditions:
  * - t contains V-1 edges forming the optimal spanning tree
  * - Input edge list e is unchanged (copied internally)
  * 
@@ -640,7 +637,7 @@ auto kruskal(IELR&&    e,      // graph
  * - e must be a mutable range (not const)
  * - Edge values must be comparable with operator<
  * 
- * **Postconditions:**
+ * Postconditions:
  * - e is sorted by edge weight (ascending)
  * - t contains V-1 edges forming minimum spanning tree
  * 
@@ -688,7 +685,7 @@ auto inplace_kruskal(IELR&& e, OELR&& t) {
  * - e must be a mutable range
  * - compare must define a strict weak ordering
  * 
- * **Postconditions:**
+ * Postconditions:
  * - e is sorted according to compare function
  * - t contains V-1 edges forming optimal spanning tree
  */
@@ -799,17 +796,18 @@ auto inplace_kruskal(IELR&&    e,      // graph
  * - weight.size() >= num_vertices(g)
  * - Graph must have edge values (weighted)
  * 
- * **Postconditions:**
+ * Postconditions:
  * - predecessor[seed] == seed
  * - For vertices reachable from seed: predecessor[v] points to parent in MST
  * - For unreachable vertices: predecessor[v] is unchanged
  * - weight[v] contains edge weight from predecessor[v] to v (or init_dist if unreachable)
  * - MST edges can be reconstructed as: {predecessor[v], v, weight[v]} for all v != seed
  * 
- * **Throws:**
- * - std::out_of_range if seed >= num_vertices(g)
- * - std::out_of_range if predecessor.size() < num_vertices(g)
- * - std::out_of_range if weight.size() < num_vertices(g)
+ * Throws:
+ *   std::out_of_range if seed >= num_vertices(g).
+ *   std::out_of_range if predecessor.size() < num_vertices(g).
+ *   std::out_of_range if weight.size() < num_vertices(g).
+ *   Basic exception guarantee.
  * 
  * **Note:** Only produces MST for the connected component containing seed.
  *           For disconnected graphs, call multiple times with different seeds.
@@ -832,9 +830,9 @@ auto inplace_kruskal(IELR&&    e,      // graph
 template <index_adjacency_list G,
           random_access_range  Predecessor,
           random_access_range  Weight>
-auto prim(G&&            g,           // graph
-          Predecessor&   predecessor, // out: predecessor[uid] of uid in tree
-          Weight&        weight,      // out: edge value weight[uid] from tree edge uid to predecessor[uid]
+auto prim(G&&                   g,           // graph
+          Predecessor&          predecessor, // out: predecessor[uid] of uid in tree
+          Weight&               weight,      // out: edge value weight[uid] from tree edge uid to predecessor[uid]
           const vertex_id_t<G>& seed = 0     // seed vtx
 ) {
   // Default weight function: use edge_value CPO
@@ -883,14 +881,15 @@ auto prim(G&&            g,           // graph
  * - compare must define a strict weak ordering on edge weights
  * - init_dist should be larger than any actual edge weight when using std::less (or smaller for std::greater)
  * 
- * **Postconditions:**
+ * Postconditions:
  * - predecessor and weight arrays encode the spanning tree
  * - Tree minimizes (or maximizes) total edge weight according to compare function
  * 
- * **Throws:**
- * - std::out_of_range if seed >= num_vertices(g)
- * - std::out_of_range if predecessor.size() < num_vertices(g)
- * - std::out_of_range if weight.size() < num_vertices(g)
+ * Throws:
+ *   std::out_of_range if seed >= num_vertices(g).
+ *   std::out_of_range if predecessor.size() < num_vertices(g).
+ *   std::out_of_range if weight.size() < num_vertices(g).
+ *   Basic exception guarantee.
  * 
  * **Example (Maximum Spanning Tree):**
  * @code

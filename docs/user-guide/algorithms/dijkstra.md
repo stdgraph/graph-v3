@@ -25,6 +25,9 @@
   - [Custom Visitor](#example-6-custom-visitor)
 - [Complexity](#complexity)
 - [Preconditions](#preconditions)
+- [Postconditions](#postconditions)
+- [Throws](#throws)
+- [Remarks](#remarks)
 - [See Also](#see-also)
 
 ## Overview
@@ -109,22 +112,22 @@ constexpr void dijkstra_shortest_distances(G&& g, const vertex_id_t<G>& source,
     Combine&& combine = plus<>{});
 ```
 
+All overloads return `void`. Results are written into the caller-supplied
+`distances` and `predecessors` output ranges. See [Postconditions](#postconditions)
+for the precise output guarantees.
+
 ## Parameters
 
-| Parameter | Description |
-|-----------|-------------|
-| `g` | Graph satisfying `index_adjacency_list` |
-| `source` / `sources` | Source vertex ID or range of source vertex IDs |
-| `distances` | Random-access range sized to `num_vertices(g)`. Filled with shortest distances. Must satisfy `is_arithmetic_v<range_value_t<Distances>>`. |
-| `predecessors` | Random-access range sized to `num_vertices(g)`. Filled with predecessor vertex IDs. |
-| `weight` | Callable `WF(g, uv)` returning edge weight. Must satisfy `basic_edge_weight_function`. Default: returns `1` for every edge (unweighted). |
-| `visitor` | Optional visitor struct with callback methods (see below). Default: `empty_visitor{}`. |
-| `compare` | Comparison function for distance values. Default: `std::less<>{}`. |
-| `combine` | Combine function for distance + weight. Default: `std::plus<>{}`. |
-
-**Error handling:** Throws `std::out_of_range` if a source vertex ID is invalid,
-if `distances` or `predecessors` is undersized, or if a negative edge weight is
-encountered (signed weight types only).
+| Parameter            | Description                                                                                                                                                                            |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `g`                  | Graph satisfying `index_adjacency_list<G>`. `G` must have integral vertex IDs.                                                                                                         |
+| `source` / `sources` | Source vertex ID or input range of source vertex IDs. `range_value_t<Sources>` must be convertible to `vertex_id_t<G>`.                                                                |
+| `distances`          | Random-access range sized to `num_vertices(g)`. Filled with shortest distances. `range_value_t<Distances>` must satisfy `is_arithmetic_v`.                                             |
+| `predecessors`       | Random-access range sized to `num_vertices(g)`. Filled with predecessor vertex IDs. `range_value_t<Predecessors>` must be convertible from `vertex_id_t<G>`.                           |
+| `weight`             | Callable `WF(const G&, const edge_t<G>&) -> Distance`. Must satisfy `basic_edge_weight_function<G, WF, Distance, Compare, Combine>`. Default: returns `1` for every edge (unweighted). |
+| `visitor`            | Optional visitor struct with callback methods (see Visitor Events). Default: `empty_visitor{}`.                                                                                        |
+| `compare`            | Comparison function `(Distance, Distance) -> bool`. Default: `std::less<>{}`.                                                                                                          |
+| `combine`            | Combination function `(Distance, Weight) -> Distance`. Default: `std::plus<>{}`.                                                                                                       |
 
 ## Visitor Events
 
@@ -133,15 +136,15 @@ Each vertex event also has an `_id` variant that receives `vertex_id_t<G>`
 instead of a vertex reference (e.g., `on_discover_vertex_id(g, uid)`). You only
 need to define the events you care about — missing methods are silently skipped.
 
-| Event | Called when |
-|-------|------------|
-| `on_initialize_vertex(g, u)` | Before traversal starts, for each vertex |
-| `on_discover_vertex(g, u)` | Vertex first reached (inserted into priority queue) |
-| `on_examine_vertex(g, u)` | Vertex popped from priority queue for processing |
-| `on_examine_edge(g, uv)` | Outgoing edge examined for relaxation |
-| `on_edge_relaxed(g, uv)` | Edge improved a shorter path |
-| `on_edge_not_relaxed(g, uv)` | Edge did not improve the current best path |
-| `on_finish_vertex(g, u)` | All adjacent edges of vertex explored |
+| Event                        | Called when                                         |
+| ---------------------------- | --------------------------------------------------- |
+| `on_initialize_vertex(g, u)` | Before traversal starts, for each vertex            |
+| `on_discover_vertex(g, u)`   | Vertex first reached (inserted into priority queue) |
+| `on_examine_vertex(g, u)`    | Vertex popped from priority queue for processing    |
+| `on_examine_edge(g, uv)`     | Outgoing edge examined for relaxation               |
+| `on_edge_relaxed(g, uv)`     | Edge improved a shorter path                        |
+| `on_edge_not_relaxed(g, uv)` | Edge did not improve the current best path          |
+| `on_finish_vertex(g, u)`     | All adjacent edges of vertex explored               |
 
 ## Examples
 
@@ -324,10 +327,10 @@ struct IdVisitor {
 
 ## Complexity
 
-| Metric | Value |
-|--------|-------|
-| Time | O((V + E) log V) |
-| Space | O(V) auxiliary (priority queue + color map) |
+| Metric | Value                                       |
+| ------ | ------------------------------------------- |
+| Time   | O((V + E) log V)                            |
+| Space  | O(V) auxiliary (priority queue + color map) |
 
 ## Preconditions
 
@@ -338,6 +341,46 @@ struct IdVisitor {
 - `distances` and `predecessors` must be sized to `num_vertices(g)`.
 - Call `init_shortest_paths(distances, predecessors)` before invoking the
   algorithm.
+
+## Postconditions
+
+- For every source vertex `s`: `distances[s] == 0`.
+- For every vertex `v` reachable from the source(s): `distances[v]` holds the
+  shortest-path distance from the nearest source; `predecessors[v]` holds the
+  id of `v`'s predecessor on the shortest path, or `v` itself if `v` is a source.
+- For every unreachable vertex `v`: `distances[v]` is unchanged from its
+  pre-call value (typically `numeric_limits<Distance>::max()` after
+  `init_shortest_paths`).
+- For `dijkstra_shortest_distances` overloads: only the `distances` range is
+  populated; no predecessor information is available.
+- The graph `g` is not modified.
+
+## Throws
+
+- `std::out_of_range` — any source vertex id is outside `[0, num_vertices(g))`.
+- `std::out_of_range` — `distances` or `predecessors` is undersized
+  (size < `num_vertices(g)`).
+- `std::out_of_range` — a negative edge weight is encountered (signed weight
+  types only).
+- `std::logic_error` — internal invariant violation (should not arise in
+  correct usage; indicates a library bug).
+- `std::bad_alloc` — priority queue allocation fails.
+- Exceptions from the weight function or visitor callbacks are propagated
+  unchanged.
+
+**Exception guarantee:** Basic. If an exception is thrown, the graph `g` is
+unchanged but `distances` and `predecessors` may be partially modified.
+
+## Remarks
+
+- `dijkstra_shortest_distances` internally uses a null-predecessor range,
+  avoiding the cost of maintaining predecessor state.
+- The implementation uses `std::priority_queue` with lazy deletion (vertices
+  can be re-inserted with updated distances).
+- For unweighted graphs, the default weight function produces BFS-equivalent
+  distances at O((V+E) log V) instead of O(V+E). Use [BFS](bfs.md) if optimal
+  time complexity matters.
+- For single-target shortest paths, consider A* with an admissible heuristic.
 
 ## See Also
 

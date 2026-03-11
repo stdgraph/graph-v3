@@ -95,9 +95,10 @@ using adj_list::num_vertices;
  * @post For empty graphs, returns 0 with no output
  * @post The graph g is not modified
  * 
- * **Exception Safety:** Basic exception safety. May throw std::bad_alloc if internal
- * vector allocation fails. The graph g remains unchanged; output iterator may be
- * partially written.
+ * Throws:
+ *   std::bad_alloc if internal vector allocation fails.
+ *   Basic exception guarantee: the graph g remains unchanged; output iterator may be
+ *   partially written.
  * 
  * @note Vertices with self-loops cannot be in any independent set and are excluded.
  * @note The algorithm is deterministic for a given seed but produces different results
@@ -145,9 +146,9 @@ using adj_list::num_vertices;
 
 template <index_adjacency_list G, class Iter>
 requires output_iterator<Iter, vertex_id_t<G>>
-size_t maximal_independent_set(G&&                      g,       // graph
-                               Iter                     mis,     // out: maximal independent set
-                               const vertex_id_t<G>&    seed = 0 // seed vtx
+size_t maximal_independent_set(G&&                   g,       // graph
+                               Iter                  mis,     // out: maximal independent set
+                               const vertex_id_t<G>& seed = 0 // seed vtx
 ) {
   size_t N = num_vertices(g);
   if (N == 0) {

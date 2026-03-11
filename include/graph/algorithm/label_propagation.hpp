@@ -86,8 +86,10 @@ using adj_list::num_vertices;
  * @post `label[uid]` holds the discovered label assignment for vertex @p uid.
  * @post The graph @p g is not modified.
  *
- * **Exception Safety:** Basic. May throw `std::bad_alloc` from internal allocations.
- * The graph is unchanged; the label array may be partially updated.
+ * Throws:
+ *   std::bad_alloc if internal allocation fails.
+ *   Any exception propagated from the RNG.
+ *   Basic exception guarantee: the graph is unchanged; the label array may be partially updated.
  *
  * ## Example Usage
  *
@@ -111,7 +113,7 @@ using adj_list::num_vertices;
  * }
  * ```
  */
-template <index_adjacency_list G,
+template <index_adjacency_list             G,
           std::ranges::random_access_range Label,
           class Gen = std::default_random_engine,
           class T   = size_t>
@@ -199,17 +201,17 @@ void label_propagation(G&&    g,
  *
  * @param empty_label  Sentinel value representing an unlabelled vertex. Passed by value.
  */
-template <index_adjacency_list G,
+template <index_adjacency_list             G,
           std::ranges::random_access_range Label,
           class Gen = std::default_random_engine,
           class T   = size_t>
 requires std::equality_comparable<std::ranges::range_value_t<Label>> &&
          std::uniform_random_bit_generator<std::remove_cvref_t<Gen>>
-void label_propagation(G&&                                  g,
-                       Label&                               label,
-                       std::ranges::range_value_t<Label>    empty_label,
-                       Gen&&                                rng       = std::default_random_engine{},
-                       T                                    max_iters = std::numeric_limits<T>::max()) {
+void label_propagation(G&&                               g,
+                       Label&                            label,
+                       std::ranges::range_value_t<Label> empty_label,
+                       Gen&&                             rng       = std::default_random_engine{},
+                       T                                 max_iters = std::numeric_limits<T>::max()) {
   using label_type = std::ranges::range_value_t<Label>;
 
   const size_t N = num_vertices(g);

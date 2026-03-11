@@ -23,7 +23,9 @@
   - [Pre-sorting vov Adjacency Lists](#example-5-pre-sorting-vov-adjacency-lists)
 - [Complexity](#complexity)
 - [Preconditions](#preconditions)
-- [Notes](#notes)
+- [Postconditions](#postconditions)
+- [Throws](#throws)
+- [Remarks](#remarks)
 - [See Also](#see-also)
 
 ## Overview
@@ -68,13 +70,15 @@ for set-based containers (e.g., `vos` traits) and `undirected_adjacency_list`.
 size_t triangle_count(G&& g);
 ```
 
-**Returns** the total number of triangles in the graph.
+**Returns** the total number of triangles in the graph as `size_t`. Each
+triangle is counted exactly once (not three times). Returns 0 if the graph
+contains no triangles.
 
 ## Parameters
 
-| Parameter | Description |
-|-----------|-------------|
-| `g` | Graph satisfying `index_adjacency_list` **and** `ordered_vertex_edges` (sorted adjacency lists) |
+| Parameter | Description                                                                                                                                                     |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `g`       | Graph satisfying `index_adjacency_list<G>` **and** `ordered_vertex_edges<G>`. `G` must model both concepts with integral vertex IDs and sorted adjacency lists. |
 
 ## Examples
 
@@ -196,10 +200,10 @@ size_t count = triangle_count(g);
 
 ## Complexity
 
-| Metric | Value |
-|--------|-------|
-| Time | O(m^{3/2}) average for sparse graphs, where m = number of edges |
-| Space | O(1) auxiliary — uses sorted adjacency lists directly |
+| Metric | Value                                                           |
+| ------ | --------------------------------------------------------------- |
+| Time   | O(m^{3/2}) average for sparse graphs, where m = number of edges |
+| Space  | O(1) auxiliary — uses sorted adjacency lists directly           |
 
 The merge-based intersection exploits sorted neighbor lists, making it
 efficient for sparse graphs. For dense graphs with m ≈ V², the complexity
@@ -214,7 +218,18 @@ approaches O(V³).
   Example 5).
 - Self-loops are ignored and do not count as triangles.
 
-## Notes
+## Postconditions
+
+- The returned value is the exact count of distinct triangles (3-cliques) in `g`.
+- Each triangle {u, v, w} is counted exactly once regardless of edge direction or storage.
+- Self-loops do not contribute to the count.
+
+## Throws
+
+- The algorithm performs no dynamic allocation and does not throw. A candidate for `noexcept` annotation.
+- Provides the **strong exception guarantee**.
+
+## Remarks
 
 - The algorithm counts each triangle exactly **once**, not three times (once
   per vertex).

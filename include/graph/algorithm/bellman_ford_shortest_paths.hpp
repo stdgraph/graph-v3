@@ -116,28 +116,25 @@ void find_negative_cycle(G&                              g,
  * - predecessor.size() >= num_vertices(g) (unless using _null_predecessors)
  * - Weight function must not throw or modify graph state
  * 
- * **Postconditions:**
+ * Postconditions:
  * - distances[s] == 0 for all sources s
  * - If no negative cycle: For reachable v, distances[v] contains shortest distance from nearest source
  * - If no negative cycle: For reachable v, predecessor[v] contains predecessor in shortest path tree
  * - If negative cycle detected: distances and predecessor may contain intermediate values
  * - For unreachable vertices v: distances[v] == numeric_limits<Distance>::max()
  * 
- * **Effects:**
+ * Effects:
  * - Modifies distances: Sets distances[v] for all vertices v
  * - Modifies predecessor: Sets predecessor[v] for all processed edges
  * - Does not modify the graph g
  * 
- * **Exception Safety:**
- * Basic guarantee. If an exception is thrown:
- * - Graph g remains unchanged
- * - distances and predecessor may be partially modified (indeterminate state)
+ * Throws:
+ *   std::out_of_range if a source vertex ID is out of range.
+ *   std::out_of_range if distances or predecessor are undersized.
+ *   Basic exception guarantee: graph g remains unchanged; distances and predecessor
+ *   may be partially modified.
  * 
- * **Throws:**
- * - std::out_of_range if a source vertex ID is out of range
- * - std::out_of_range if distances or predecessor are undersized
- * 
- * **Remarks:**
+ * Remarks:
  * - Use Bellman-Ford when: graph has negative weights, need cycle detection, or edges processed sequentially
  * - Use Dijkstra when: all weights non-negative and need better performance O((V+E) log V)
  * - Negative cycle detection: Algorithm performs V iterations. If any edge relaxes on iteration V, a
@@ -179,7 +176,7 @@ requires convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&      //
       Visitor&&      visitor = empty_visitor(),
       Compare&&      compare = less<range_value_t<Distances>>(),
       Combine&&      combine = plus<range_value_t<Distances>>()) {
-  using id_type       = vertex_id_store_t<G>;
+  using id_type = vertex_id_store_t<G>;
   static_assert(std::is_same_v<id_type, vertex_id_t<G>>,
                 "vertex_id_store_t<G> should equal vertex_id_t<G> for index_adjacency_list");
   using DistanceValue = range_value_t<Distances>;
@@ -303,15 +300,15 @@ requires is_arithmetic_v<range_value_t<Distances>> &&                   //
          sized_range<Predecessors> &&                                   //
          basic_edge_weight_function<G, WF, range_value_t<Distances>, Compare, Combine>
 [[nodiscard]] constexpr optional<vertex_id_t<G>> bellman_ford_shortest_paths(
-      G&&                      g,
-      const vertex_id_t<G>&    source,
-      Distances&               distances,
-      Predecessors&            predecessor,
-      WF&&           weight  = [](const auto&,
+      G&&                   g,
+      const vertex_id_t<G>& source,
+      Distances&            distances,
+      Predecessors&         predecessor,
+      WF&&                  weight  = [](const auto&,
                        const edge_t<G>& uv) { return range_value_t<Distances>(1); }, // default weight(g, uv) -> 1
-      Visitor&&      visitor = empty_visitor(),
-      Compare&&      compare = less<range_value_t<Distances>>(),
-      Combine&&      combine = plus<range_value_t<Distances>>()) {
+      Visitor&&             visitor = empty_visitor(),
+      Compare&&             compare = less<range_value_t<Distances>>(),
+      Combine&&             combine = plus<range_value_t<Distances>>()) {
   return bellman_ford_shortest_paths(g, subrange(&source, (&source + 1)), distances, predecessor, weight,
                                      forward<Visitor>(visitor), forward<Compare>(compare), forward<Combine>(combine));
 }
@@ -394,14 +391,14 @@ requires is_arithmetic_v<range_value_t<Distances>> && //
          sized_range<Distances> &&                    //
          basic_edge_weight_function<G, WF, range_value_t<Distances>, Compare, Combine>
 [[nodiscard]] constexpr optional<vertex_id_t<G>> bellman_ford_shortest_distances(
-      G&&                      g,
-      const vertex_id_t<G>&    source,
-      Distances&               distances,
-      WF&&           weight  = [](const auto&,
+      G&&                   g,
+      const vertex_id_t<G>& source,
+      Distances&            distances,
+      WF&&                  weight  = [](const auto&,
                        const edge_t<G>& uv) { return range_value_t<Distances>(1); }, // default weight(g, uv) -> 1
-      Visitor&&      visitor = empty_visitor(),
-      Compare&&      compare = less<range_value_t<Distances>>(),
-      Combine&&      combine = plus<range_value_t<Distances>>()) {
+      Visitor&&             visitor = empty_visitor(),
+      Compare&&             compare = less<range_value_t<Distances>>(),
+      Combine&&             combine = plus<range_value_t<Distances>>()) {
   return bellman_ford_shortest_paths(g, subrange(&source, (&source + 1)), distances, _null_predecessors,
                                      forward<WF>(weight), forward<Visitor>(visitor), forward<Compare>(compare),
                                      forward<Combine>(combine));

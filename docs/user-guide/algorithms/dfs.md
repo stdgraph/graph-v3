@@ -25,6 +25,9 @@
   - [Using on_start_vertex and on_finish_edge](#example-6-using-on_start_vertex-and-on_finish_edge)
 - [Complexity](#complexity)
 - [Preconditions](#preconditions)
+- [Postconditions](#postconditions)
+- [Throws](#throws)
+- [Remarks](#remarks)
 - [See Also](#see-also)
 
 ## Overview
@@ -38,11 +41,11 @@ contiguous, integer-indexed random-access range.
 
 The three-color scheme enables precise **edge classification**:
 
-| Edge Type | Target Color | Meaning |
-|-----------|-------------|---------|
-| Tree edge | White | Edge to a newly discovered vertex |
-| Back edge | Gray | Edge to an ancestor (cycle indicator) |
-| Forward/cross edge | Black | Edge to an already-finished vertex |
+| Edge Type          | Target Color | Meaning                               |
+| ------------------ | ------------ | ------------------------------------- |
+| Tree edge          | White        | Edge to a newly discovered vertex     |
+| Back edge          | Gray         | Edge to an ancestor (cycle indicator) |
+| Forward/cross edge | Black        | Edge to an already-finished vertex    |
 
 This classification makes DFS the foundation for cycle detection, topological
 sorting, strongly connected components, and many other graph analyses.
@@ -84,11 +87,11 @@ void depth_first_search(G&& g, const vertex_id_t<G>& source,
 
 ## Parameters
 
-| Parameter | Description |
-|-----------|-------------|
-| `g` | Graph satisfying `index_adjacency_list` |
-| `source` | Source vertex ID to start DFS from |
-| `visitor` | Optional visitor struct with callback methods (see below). Default: `empty_visitor{}`. |
+| Parameter | Description                                                                                     |
+| --------- | ----------------------------------------------------------------------------------------------- |
+| `g`       | Graph satisfying `index_adjacency_list<G>`. `G` must have integral vertex IDs.                  |
+| `source`  | Source vertex ID. Must be convertible to `vertex_id_t<G>`.                                      |
+| `visitor` | Optional visitor struct with callback methods (see Visitor Events). Default: `empty_visitor{}`. |
 
 ## Visitor Events
 
@@ -96,17 +99,17 @@ DFS supports the richest set of visitor events among all graph-v3 algorithms.
 Each vertex event also has an `_id` variant that receives `vertex_id_t<G>`
 instead of a vertex reference. You only need to define the events you care about.
 
-| Event | Called when |
-|-------|------------|
-| `on_initialize_vertex(g, u)` | Before traversal (source vertex only) |
-| `on_start_vertex(g, u)` | DFS root vertex selected for traversal |
-| `on_discover_vertex(g, u)` | Vertex first reached (White → Gray) |
-| `on_examine_edge(g, uv)` | Outgoing edge examined |
-| `on_tree_edge(g, uv)` | Edge to unvisited (White) vertex — part of DFS tree |
-| `on_back_edge(g, uv)` | Edge to ancestor (Gray) vertex — **cycle indicator** |
-| `on_forward_or_cross_edge(g, uv)` | Edge to already-finished (Black) vertex |
-| `on_finish_edge(g, uv)` | All descendants of edge target fully explored |
-| `on_finish_vertex(g, u)` | All adjacent edges explored (Gray → Black) |
+| Event                             | Called when                                          |
+| --------------------------------- | ---------------------------------------------------- |
+| `on_initialize_vertex(g, u)`      | Before traversal (source vertex only)                |
+| `on_start_vertex(g, u)`           | DFS root vertex selected for traversal               |
+| `on_discover_vertex(g, u)`        | Vertex first reached (White → Gray)                  |
+| `on_examine_edge(g, uv)`          | Outgoing edge examined                               |
+| `on_tree_edge(g, uv)`             | Edge to unvisited (White) vertex — part of DFS tree  |
+| `on_back_edge(g, uv)`             | Edge to ancestor (Gray) vertex — **cycle indicator** |
+| `on_forward_or_cross_edge(g, uv)` | Edge to already-finished (Black) vertex              |
+| `on_finish_edge(g, uv)`           | All descendants of edge target fully explored        |
+| `on_finish_vertex(g, u)`          | All adjacent edges explored (Gray → Black)           |
 
 ## Examples
 
@@ -280,16 +283,46 @@ depth_first_search(dag, 0u, SubtreeCounter{sizes});
 
 ## Complexity
 
-| Metric | Value |
-|--------|-------|
-| Time | O(V + E) |
-| Space | O(V) for the color map and stack |
+| Metric | Value                            |
+| ------ | -------------------------------- |
+| Time   | O(V + E)                         |
+| Space  | O(V) for the color map and stack |
 
 ## Preconditions
 
 - Graph must satisfy `index_adjacency_list<G>`.
 - Single-source only — to cover all vertices in a disconnected graph, call
   DFS once per unvisited component.
+
+## Postconditions
+
+- Every vertex reachable from `source` is visited exactly once; its color
+  transitions White → Gray → Black.
+- `on_finish_vertex` is called for every visited vertex after all its
+  descendants have been explored.
+- Edge classification is complete: every edge from a visited vertex is
+  reported as exactly one of tree, back, or forward/cross.
+- The graph `g` is not modified.
+
+## Throws
+
+- `std::bad_alloc` — color array or internal DFS stack allocation fails.
+- Exceptions from visitor callbacks are propagated unchanged.
+
+**Exception guarantee:** Basic. If an exception is thrown, `g` is unchanged
+but visitor state and the internal color array are in a valid but
+unspecified state.
+
+## Remarks
+
+- The implementation is iterative (stack-based), not recursive. This avoids
+  stack overflow on deep graphs; maximum nesting depth is bounded by heap
+  memory, not the system call-stack size.
+- Single-source limitation: only vertices reachable from `source` are visited.
+  To cover all vertices in a disconnected graph, call DFS once per unvisited
+  component (see [Example 5](#example-5-covering-a-disconnected-graph)).
+- `on_finish_edge` fires after the entire subtree rooted at the edge's target
+  has been explored — useful for computing subtree properties.
 
 ## See Also
 

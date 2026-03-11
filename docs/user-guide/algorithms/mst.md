@@ -30,17 +30,19 @@
   - [Cross-Validation: Kruskal vs. Prim](#example-7-cross-validation-kruskal-vs-prim)
 - [Complexity](#complexity)
 - [Preconditions](#preconditions)
-- [Notes](#notes)
+- [Postconditions](#postconditions)
+- [Throws](#throws)
+- [Remarks](#remarks)
 - [See Also](#see-also)
 
 ## Overview
 
 The library provides two classic minimum spanning tree algorithms:
 
-| Algorithm | Input | Approach | Best for |
-|-----------|-------|----------|----------|
-| **Kruskal** | Edge list | Sort + union-find | Sparse graphs, edge-list input |
-| **Prim** | Adjacency list | Priority queue + greedy | Dense graphs, adjacency-list input |
+| Algorithm   | Input          | Approach                | Best for                           |
+| ----------- | -------------- | ----------------------- | ---------------------------------- |
+| **Kruskal** | Edge list      | Sort + union-find       | Sparse graphs, edge-list input     |
+| **Prim**    | Adjacency list | Priority queue + greedy | Dense graphs, adjacency-list input |
 
 Both algorithms produce an MST (or minimum spanning **forest** for disconnected
 graphs). Kruskal operates on an external edge list; Prim operates on a graph
@@ -101,11 +103,11 @@ components.
 
 ### Kruskal Parameters
 
-| Parameter | Description |
-|-----------|-------------|
-| `edges` | Range of edge descriptors with `.source_id`, `.target_id`, `.value` |
-| `tree` | Output iterator receiving MST edges |
-| `compare` | Edge-value comparator. Default: `std::less<>{}`. Use `std::greater<>{}` for max spanning tree. |
+| Parameter | Description                                                                                           |
+| --------- | ----------------------------------------------------------------------------------------------------- |
+| `edges`   | Range of edge descriptors with `.source_id`, `.target_id`, `.value`. Must satisfy `forward_range`.    |
+| `tree`    | Output iterator receiving MST edges. Must satisfy `output_iterator<OutputIterator, edge_descriptor>`. |
+| `compare` | Edge-value comparator. Default: `std::less<>{}`. Use `std::greater<>{}` for max spanning tree.        |
 
 ## Prim's Algorithm
 
@@ -129,15 +131,15 @@ auto prim(G&& g, Predecessors& predecessors, Weights& weights,
 
 ### Prim Parameters
 
-| Parameter | Description |
-|-----------|-------------|
-| `g` | Graph satisfying `index_adjacency_list` with weighted edges |
-| `predecessors` | Random-access range sized to `num_vertices(g)`. Filled with parent vertex IDs. |
-| `weights` | Random-access range sized to `num_vertices(g)`. Filled with edge weights to parent. |
-| `seed` | Starting vertex for the MST (default: 0) |
-| `compare` | Comparator for weight values (default: `std::less<>{}`) |
-| `init_dist` | Initial distance value (typically `std::numeric_limits<EV>::max()`) |
-| `weight_fn` | Callable `WF(g, uv)` returning edge weight. Default: `edge_value(g, uv)`. |
+| Parameter      | Description                                                                                                                                             |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `g`            | Graph satisfying `index_adjacency_list<G>` with weighted edges. `G` must have integral vertex IDs.                                                      |
+| `predecessors` | Random-access range sized to `num_vertices(g)`. Filled with parent vertex IDs. `range_value_t<Predecessors>` must be convertible from `vertex_id_t<G>`. |
+| `weights`      | Random-access range sized to `num_vertices(g)`. Filled with edge weights to parent. `range_value_t<Weights>` must be arithmetic.                        |
+| `seed`         | Starting vertex for the MST (default: 0)                                                                                                                |
+| `compare`      | Comparator for weight values (default: `std::less<>{}`)                                                                                                 |
+| `init_dist`    | Initial distance value (typically `std::numeric_limits<EV>::max()`)                                                                                     |
+| `weight_fn`    | Callable `WF(g, uv)` returning edge weight. Default: `edge_value(g, uv)`.                                                                               |
 
 ## Edge Descriptor
 
@@ -330,11 +332,11 @@ assert(kw == pw);  // Both produce the same total MST weight
 
 ## Complexity
 
-| Algorithm | Time | Space |
-|-----------|------|-------|
-| `kruskal` | O(E log E) | O(E + V) — sorted copy + union-find |
-| `inplace_kruskal` | O(E log E) | O(V) — in-place sort + union-find |
-| `prim` | O(E log V) | O(V) — priority queue + predecessor/weight arrays |
+| Algorithm         | Time       | Space                                             |
+| ----------------- | ---------- | ------------------------------------------------- |
+| `kruskal`         | O(E log E) | O(E + V) — sorted copy + union-find               |
+| `inplace_kruskal` | O(E log E) | O(V) — in-place sort + union-find                 |
+| `prim`            | O(E log V) | O(V) — priority queue + predecessor/weight arrays |
 
 ## Preconditions
 
@@ -345,10 +347,47 @@ assert(kw == pw);  // Both produce the same total MST weight
   vertex throws `std::out_of_range`.
 - For undirected graphs with Prim, both directions of each edge must be stored.
 
-## Notes
+## Postconditions
+
+**Kruskal / inplace_kruskal:**
+- The output iterator receives the edges of a minimum (or maximum, if
+  `std::greater` was passed) spanning tree or forest.
+- The returned `std::pair<EV, size_t>` contains the total MST weight and the
+  number of connected components.
+- For a connected graph: `tree` contains exactly `V − 1` edges.
+- For a disconnected graph: `tree` contains `V − k` edges where `k` is the
+  number of components.
+- `inplace_kruskal` additionally sorts the input `edges` range by weight.
+
+**Prim:**
+- `weights[seed] == EV{}` (zero weight for the seed vertex).
+- For every vertex `v` in the seed's component: `predecessors[v]` is the
+  parent in the MST and `weights[v]` is the weight of the edge connecting
+  `v` to its parent.
+- For unreachable vertices (disconnected from seed): `predecessors[v]` and
+  `weights[v]` retain their pre-call values.
+- The graph `g` is not modified.
+
+## Throws
+
+**Kruskal / inplace_kruskal:**
+- `std::bad_alloc` — disjoint-set or sorted-copy allocation fails.
+- May propagate exceptions from `compare`. Use `noexcept` comparators when
+  possible.
+
+**Prim:**
+- `std::out_of_range` — seed vertex id is outside `[0, num_vertices(g))`.
+- `std::out_of_range` — `predecessors` or `weights` is undersized.
+- `std::bad_alloc` — priority queue allocation fails.
+
+**Exception guarantee:** Basic for both. If an exception is thrown, `g` is
+unchanged but output ranges may be partially modified.
+
+## Remarks
 
 - `inplace_kruskal` **modifies the input edge list** — it is sorted by weight
-  after the call returns. Use `kruskal` if you need the original order.
+  after the call returns. The original edge order is not preserved. Use
+  `kruskal` if you need the original order.
 - The disjoint-set data structure used internally by Kruskal is a public utility
   available in the MST header.
 - For a disconnected graph, Kruskal returns the number of components. Prim only

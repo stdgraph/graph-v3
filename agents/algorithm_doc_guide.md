@@ -46,7 +46,10 @@ are included only when the algorithm has the relevant feature.
 - [Examples](#examples)
 - [Complexity](#complexity)
 - [Preconditions](#preconditions)
-- [Notes](#notes)                     ← (if applicable)
+- [Postconditions](#postconditions)   ← (if applicable)
+- [Throws](#throws)                   ← (if applicable)
+- [Error Conditions](#error-conditions) ← (if applicable)
+- [Remarks](#remarks)                 ← (if applicable)
 - [See Also](#see-also)
 ```
 
@@ -56,9 +59,10 @@ are included only when the algorithm has the relevant feature.
   Components has 3 algorithms): Replace the single Signature/Parameters
   sections with per-algorithm subsections under an `## Algorithms` or
   named `## Kruskal's Algorithm` / `## Prim's Algorithm` pattern.
-- **Visitor Events**: Include this section only for algorithms that accept a
-  visitor (currently: Dijkstra, Bellman-Ford, BFS, DFS).
-- **Notes**: Include when there are important behavioral details that don't
+- **Visitor Events**: Include this section for any algorithm whose signature
+  accepts a `Visitor` parameter. Check the actual header; do not rely on a
+  fixed list of algorithm names.
+- **Remarks**: Include when there are important behavioral details that don't
   fit in Preconditions (e.g., self-loop handling differences, in-place
   modification warnings, convergence properties).
 
@@ -98,8 +102,11 @@ are included only when the algorithm has the relevant feature.
 - Show all public overloads in a single fenced C++ code block.
 - Include `constexpr`, `[[nodiscard]]`, and template constraints if present in
   the actual header.
-- After the code block, document the **return type** in bold if non-void
-  (e.g., "**Returns** `std::pair<EV, size_t>` — total weight and component count.").
+- After the code block, document the **return type and return value semantics**
+  in bold if non-void: state the type, its value category, and what it
+  represents, including any sentinel values (e.g., "**Returns**
+  `std::pair<EV, size_t>` — the total MST edge weight and the number of edges
+  included. Returns `{EV{}, 0}` if the graph has no edges.").
 - Use "Signature" (singular) if there is only one overload; "Signatures" (plural)
   if there are multiple.
 
@@ -110,6 +117,9 @@ are included only when the algorithm has the relevant feature.
 - Note default values inline (e.g., "Default: `std::less<>{}`").
 - For output parameters, state the sizing requirement
   (e.g., "Random-access range sized to `num_vertices(g)`").
+- For template parameters, document the concept requirements (e.g.,
+  "`G` must satisfy `index_adjacency_list<G>`; `WF` must be callable as
+  `WF(edge_reference_t<G>) -> EV`").
 
 ### Visitor Events (if applicable)
 
@@ -119,7 +129,10 @@ are included only when the algorithm has the relevant feature.
 
 ### Examples
 
-**Quantity**: At minimum 5 examples per page. More is acceptable and
+**Quantity**: At minimum 5 examples per page. This minimum ensures coverage
+of: the basic happy path, at least one additional overload or mode, a
+topology-specific case that illuminates algorithm properties, an advanced
+feature, and one edge case or real-world scenario. More is acceptable and
 encouraged when the algorithm has multiple overloads, modes, or edge cases.
 
 **Progressive complexity**: Order examples from simplest to most advanced:
@@ -178,6 +191,18 @@ One-sentence explanation of what this example demonstrates and *why* it matters.
 
 ### Preconditions
 
+This section covers **three kinds of requirements** that the C++ standard
+distinguishes separately, presented here as a unified list for users:
+
+- *Constraints* — template conditions enforced silently at overload resolution
+  (the function is simply not viable if unsatisfied).
+- *Mandates* — conditions whose violation makes the program ill-formed
+  (`static_assert` or similar; a compiler diagnostic is issued).
+- *Preconditions* — runtime conditions whose violation causes undefined behavior.
+
+Document all three as a single bullet list; users need to know what must hold
+before calling the function, regardless of which category applies.
+
 - Bullet list of every requirement the caller must satisfy.
 - Always include the `index_adjacency_list<G>` requirement.
 - For undirected graph algorithms, state: "For undirected graphs, **both
@@ -186,7 +211,50 @@ One-sentence explanation of what this example demonstrates and *why* it matters.
 - Mention self-loop behavior, valid vertex ID ranges, and sizing requirements
   for output containers.
 
-### Notes (if applicable)
+### Postconditions (if applicable)
+
+Include this section when the algorithm writes results into caller-supplied
+output ranges or produces a return value whose state needs precise
+specification beyond a single sentence in Signatures.
+
+- Bullet list of conditions established by the function upon successful return.
+- Focus on output ranges: state what every element contains after the call
+  (e.g., "`distances[v]` holds the shortest-path distance from `source` to `v`,
+  or `numeric_limits<EV>::max()` if `v` is unreachable.").
+- State the postcondition for the return value here if it is too detailed for
+  the Signatures section.
+- Omit this section if postconditions are fully captured by the Returns
+  description and output-parameter notes in Parameters.
+
+### Throws (if applicable)
+
+Include this section when the algorithm can throw exceptions.
+
+- Bullet list of exception types and the conditions that cause each one.
+- Always state the exception guarantee: **strong** (no observable effects on
+  failure), **basic** (output is in a valid but unspecified state), or **none**.
+- If the algorithm is `noexcept` or only propagates exceptions from
+  user-supplied callables, state that explicitly (e.g., "Does not throw
+  directly; exceptions from `wf` or `visitor` callbacks are propagated
+  unchanged. No partial results are written (strong guarantee).").
+
+### Error Conditions (if applicable)
+
+Include this section only for algorithms that report errors via
+`std::error_code` or `std::expected` rather than (or in addition to)
+exceptions.
+
+- Bullet list of `std::errc` constants (or domain-specific codes) the
+  algorithm can set, with a brief explanation of each condition.
+- Note whether errors are reported via a return value or an output parameter.
+- Omit this section entirely if the algorithm never reports errors by error
+  code.
+
+### Remarks (if applicable)
+
+This section uses the term **Remarks** from the C++ standard function-semantics
+vocabulary: additional semantic constraints or behavioral details that don't
+belong in Preconditions, Postconditions, or Throws.
 
 - Bullet list of behavioral details, caveats, or design decisions.
 - Good candidates: in-place modification warnings, self-loop counting behavior
@@ -246,8 +314,11 @@ When creating a documentation page for a new algorithm:
    - Template constraints and concepts
    - `constexpr`, `[[nodiscard]]`, and other attributes
    - Default parameter values
-   - Return types
+   - Return types and return value semantics (including sentinel values)
    - Visitor event names (if any)
+   - `noexcept` specifiers and any documented exception types
+   - Error codes reported via `std::error_code` or `std::expected` (if any)
+   - Postconditions on output ranges (from comments or contracts, if present)
 
 2. **Read the test file** (`tests/algorithms/test_xxx.cpp`) to identify:
    - Graph topologies tested (star, path, cycle, complete, disconnected, etc.)
@@ -273,9 +344,15 @@ When creating a documentation page for a new algorithm:
    - The `index_adjacency_list<G>` requirement is stated in Overview and
      Preconditions.
    - All cross-links resolve (test by checking file paths).
-   - At least 5 examples are provided.
+   - At least 5 examples are provided, covering each overload and at least one
+     edge case.
    - Examples progress from simple to advanced.
    - Expected output values are shown in comments for every example.
+   - Throws section is present if the algorithm can throw, and states the
+     exception guarantee; absent (or noted as `noexcept`) otherwise.
+   - Postconditions section is present if output-range postconditions are not
+     fully covered by the Parameters and Returns descriptions.
+   - Error Conditions section is present if the algorithm uses `std::error_code`.
 
 ---
 
@@ -284,16 +361,16 @@ When creating a documentation page for a new algorithm:
 Use these as models. The pages vary slightly based on algorithm features but
 all follow the structure above.
 
-| Page | Notable features to model |
-|------|---------------------------|
-| `dijkstra.md` | Multiple overloads, visitor events, `constexpr` signatures, `_id` variant examples, error handling note |
-| `bellman_ford.md` | `[[nodiscard]]` attribute, `find_negative_cycle` helper, unique visitor events (`on_edge_minimized`) |
-| `dfs.md` | Richest visitor events (9), single-source limitation note, subtree computation example |
-| `connected_components.md` | Multi-algorithm structure (3 sub-algorithms), `compress()` helper, per-algorithm selection guidance |
-| `mst.md` | Two distinct algorithms (Kruskal + Prim) with separate signatures, `inplace_kruskal` modification warning, cross-validation example |
-| `label_propagation.md` | RNG parameter, convergence notes, self-loop counting behavior, reproducibility example |
-| `triangle_count.md` | Additional concept requirement (`ordered_vertex_edges`), pre-sorting workaround example |
-| `mis.md` | Seed sensitivity, maximal vs. maximum distinction, self-loop exclusion |
+| Page                      | Notable features to model                                                                                                           |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `dijkstra.md`             | Multiple overloads, visitor events, `constexpr` signatures, `_id` variant examples, error handling note                             |
+| `bellman_ford.md`         | `[[nodiscard]]` attribute, `find_negative_cycle` helper, unique visitor events (`on_edge_minimized`)                                |
+| `dfs.md`                  | Richest visitor events (9), single-source limitation note, subtree computation example                                              |
+| `connected_components.md` | Multi-algorithm structure (3 sub-algorithms), `compress()` helper, per-algorithm selection guidance                                 |
+| `mst.md`                  | Two distinct algorithms (Kruskal + Prim) with separate signatures, `inplace_kruskal` modification warning, cross-validation example |
+| `label_propagation.md`    | RNG parameter, convergence notes, self-loop counting behavior, reproducibility example                                              |
+| `triangle_count.md`       | Additional concept requirement (`ordered_vertex_edges`), pre-sorting workaround example                                             |
+| `mis.md`                  | Seed sensitivity, maximal vs. maximum distinction, self-loop exclusion                                                              |
 
 ---
 
@@ -315,3 +392,10 @@ all follow the structure above.
   assume based on other algorithms.
 - **Don't forget to update the catalog** — the landing page at
   `docs/user-guide/algorithms.md` must list every algorithm with complexity.
+- **Don't omit Throws** — if an algorithm can throw, document it with the
+  exception guarantee; if it is `noexcept` or only propagates user-callable
+  exceptions, state that explicitly.
+- **Don't confuse Preconditions and Postconditions** — Preconditions are what
+  must hold *before* the call; Postconditions describe the output state *after*.
+- **Don't omit Error Conditions** — if the algorithm returns `std::error_code`
+  or uses `std::expected`, document the error codes in their own section.

@@ -276,7 +276,7 @@ namespace detail {
  * 2. All vertex IDs in `sources` must be valid
  * 3. Reachable subgraph should be a DAG for successful result
  * 
- * **Postconditions:**
+ * Postconditions:
  * 1. If returns `true`:
  *    - For every edge (u,v) where both u,v are reachable from any source, u appears before v
  *    - Only vertices reachable from any source are written to output
@@ -292,10 +292,10 @@ namespace detail {
  * - **Time:** O(V_r + E_r) where V_r = vertices reachable from any source, E_r = reachable edges
  * - **Space:** O(V) for color array (full graph size), O(V_r) for finish order
  * 
- * **Exception Safety:**
- * - **Basic guarantee:** If exception thrown, graph remains unchanged
- * - **Throws:** May throw `std::bad_alloc` if memory allocation fails
- * - **Throws:** May propagate exceptions from `sources` range iteration (if any)
+ * Throws:
+ *   std::bad_alloc if memory allocation fails.
+ *   Any exception propagated from `sources` range iteration.
+ *   Basic exception guarantee: graph remains unchanged.
  * 
  * **Example:**
  * @code
@@ -336,7 +336,7 @@ namespace detail {
 template <index_adjacency_list G, std::ranges::input_range Sources, class OutputIterator>
 requires std::convertible_to<std::ranges::range_value_t<Sources>, vertex_id_t<G>> &&
          std::output_iterator<OutputIterator, vertex_id_t<G>>
-bool topological_sort(const G& g, const Sources& sources, OutputIterator result) {
+[[nodiscard]] bool topological_sort(const G& g, const Sources& sources, OutputIterator result) {
   using id_type = vertex_id_store_t<G>;
   static_assert(std::is_same_v<id_type, vertex_id_t<G>>,
                 "vertex_id_store_t<G> should equal vertex_id_t<G> for index_adjacency_list");
@@ -416,7 +416,7 @@ bool topological_sort(const G& g, const Sources& sources, OutputIterator result)
  * 2. `source` must be a valid vertex ID in the graph
  * 3. Reachable subgraph should be a DAG for successful result
  * 
- * **Postconditions:**
+ * Postconditions:
  * 1. If returns `true`:
  *    - For every edge (u,v) where both u,v are reachable from source, u appears before v
  *    - Only vertices reachable from source are written to output
@@ -430,9 +430,9 @@ bool topological_sort(const G& g, const Sources& sources, OutputIterator result)
  * - **Time:** O(V_r + E_r) where V_r = reachable vertices, E_r = reachable edges
  * - **Space:** O(V) for color array (full graph size), O(V_r) for finish order
  * 
- * **Exception Safety:**
- * - **Basic guarantee:** If exception thrown, graph remains unchanged
- * - **Throws:** May throw `std::bad_alloc` if memory allocation fails
+ * Throws:
+ *   std::bad_alloc if memory allocation fails.
+ *   Basic exception guarantee: graph remains unchanged.
  * 
  * **Example:**
  * @code
@@ -462,7 +462,7 @@ bool topological_sort(const G& g, const Sources& sources, OutputIterator result)
  */
 template <index_adjacency_list G, class OutputIterator>
 requires std::output_iterator<OutputIterator, vertex_id_t<G>>
-bool topological_sort(const G& g, const vertex_id_t<G>& source, OutputIterator result) {
+[[nodiscard]] bool topological_sort(const G& g, const vertex_id_t<G>& source, OutputIterator result) {
   // Delegate to multi-source version with single source
   std::array<vertex_id_t<G>, 1> sources = {source};
   return topological_sort(g, sources, result);
@@ -507,7 +507,7 @@ bool topological_sort(const G& g, const vertex_id_t<G>& source, OutputIterator r
  * 1. Graph `g` must be directed
  * 2. Graph should be a DAG (no cycles) for successful result
  * 
- * **Postconditions:**
+ * Postconditions:
  * 1. If returns `true`:
  *    - For every directed edge (u,v), u appears before v in output
  *    - All vertices in graph are written to output exactly once
@@ -521,10 +521,10 @@ bool topological_sort(const G& g, const vertex_id_t<G>& source, OutputIterator r
  * - **Time:** O(V + E) where V = number of vertices, E = number of edges
  * - **Space:** O(V) for color array, finish order vector, and DFS stack
  * 
- * **Exception Safety:**
- * - **Basic guarantee:** If exception thrown, graph remains unchanged
- * - **Throws:** May throw `std::bad_alloc` if memory allocation fails
- * - **Note:** Output iterator state is indeterminate after exception
+ * Throws:
+ *   std::bad_alloc if memory allocation fails.
+ *   Basic exception guarantee: graph remains unchanged; output iterator state is
+ *   indeterminate after exception.
  * 
  * **Example:**
  * @code
@@ -548,7 +548,7 @@ bool topological_sort(const G& g, const vertex_id_t<G>& source, OutputIterator r
  */
 template <index_adjacency_list G, class OutputIterator>
 requires std::output_iterator<OutputIterator, vertex_id_t<G>>
-bool topological_sort(const G& g, OutputIterator result) {
+[[nodiscard]] bool topological_sort(const G& g, OutputIterator result) {
   using id_type = vertex_id_store_t<G>;
   static_assert(std::is_same_v<id_type, vertex_id_t<G>>,
                 "vertex_id_store_t<G> should equal vertex_id_t<G> for index_adjacency_list");

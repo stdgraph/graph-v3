@@ -91,9 +91,11 @@ using adj_list::num_vertices;
  * @post All reported coefficient values lie in [0.0, 1.0].
  * @post The graph g is not modified.
  *
- * **Exception Safety:** Basic exception safety. May throw std::bad_alloc if internal
- * container allocation fails. The graph g remains unchanged; `out` may have been
- * partially invoked.
+ * Throws:
+ *   std::bad_alloc if internal container allocation fails.
+ *   Any exception propagated from the user-provided callback `out`.
+ *   Basic exception guarantee: the graph g remains unchanged; `out` may have been
+ *   partially invoked.
  *
  * @note T = double is the recommended default. Using integral types will truncate
  *       results to 0 or 1.
@@ -168,8 +170,7 @@ void jaccard_coefficient(G&& g, OutOp out) {
       // |N(u) ∪ N(v)| = |N(u)| + |N(v)| - |N(u) ∩ N(v)|
       size_t union_size = nbrs[uid].size() + nbrs[vid].size() - intersect_size;
 
-      T val = (union_size == 0) ? T{0}
-                                : static_cast<T>(intersect_size) / static_cast<T>(union_size);
+      T val = (union_size == 0) ? T{0} : static_cast<T>(intersect_size) / static_cast<T>(union_size);
 
       out(uid, vid, uv, val);
     }

@@ -81,36 +81,33 @@ using adj_list::index_adjacency_list;
  * - All edge weights must be non-negative
  * - Weight function must not throw or modify graph state
  * 
- * **Postconditions:**
+ * Postconditions:
  * - distances[s] == 0 for all sources s
  * - For reachable vertices v: distances[v] contains shortest distance from nearest source
  * - For reachable vertices v: predecessor[v] contains predecessor in shortest path tree
  * - For unreachable vertices v: distances[v] == numeric_limits<Distance>::max()
  * 
- * **Effects:**
+ * Effects:
  * - Modifies distances: Sets distances[v] for all vertices v
  * - Modifies predecessor: Sets predecessor[v] for all reachable vertices
  * - Does not modify the graph g
  * 
- * **Mandates:**
+ * Mandates:
  * - G must satisfy index_adjacency_list (integral vertex IDs)
  * - Sources must be input_range with values convertible to vertex_id_t<G>
  * - Distances must be random_access_range with arithmetic value type
  * - Predecessors must be random_access_range with values convertible from vertex_id_t<G>
  * - WF must satisfy basic_edge_weight_function
  * 
- * **Exception Safety:**
- * Basic guarantee. If an exception is thrown:
- * - Graph g remains unchanged
- * - distances and predecessor may be partially modified (indeterminate state)
+ * Throws:
+ *   std::out_of_range if a source vertex ID is out of range.
+ *   std::out_of_range if distances or predecessor are undersized.
+ *   std::out_of_range if a negative edge weight is encountered (for signed weight types).
+ *   std::logic_error if internal invariant violation detected.
+ *   Basic exception guarantee: graph g remains unchanged; distances and predecessor
+ *   may be partially modified.
  * 
- * **Throws:**
- * - std::out_of_range if a source vertex ID is out of range
- * - std::out_of_range if distances or predecessor are undersized
- * - std::out_of_range if a negative edge weight is encountered (for signed weight types)
- * - std::logic_error if internal invariant violation detected
- * 
- * **Remarks:**
+ * Remarks:
  * - Uses std::priority_queue with lazy deletion (vertices can be re-inserted)
  * - For unweighted graphs, use default weight function (equivalent to BFS)
  * - For single target, consider A* with admissible heuristic
@@ -147,7 +144,7 @@ constexpr void dijkstra_shortest_paths(
       Visitor&&      visitor = empty_visitor(),
       Compare&&      compare = less<range_value_t<Distances>>(),
       Combine&&      combine = plus<range_value_t<Distances>>()) {
-  using id_type       = vertex_id_store_t<G>;
+  using id_type = vertex_id_store_t<G>;
   static_assert(std::is_same_v<id_type, vertex_id_t<G>>,
                 "vertex_id_store_t<G> should equal vertex_id_t<G> for index_adjacency_list");
   using distance_type = range_value_t<Distances>;
@@ -311,15 +308,15 @@ requires is_arithmetic_v<range_value_t<Distances>> && //
          convertible_to<vertex_id_t<G>, range_value_t<Predecessors>> &&
          basic_edge_weight_function<G, WF, range_value_t<Distances>, Compare, Combine>
 constexpr void dijkstra_shortest_paths(
-      G&&                      g,
-      const vertex_id_t<G>&    source,
-      Distances&               distances,
-      Predecessors&            predecessor,
-      WF&&           weight  = [](const auto&,
+      G&&                   g,
+      const vertex_id_t<G>& source,
+      Distances&            distances,
+      Predecessors&         predecessor,
+      WF&&                  weight  = [](const auto&,
                        const edge_t<G>& uv) { return range_value_t<Distances>(1); }, // default weight(g, uv) -> 1
-      Visitor&&      visitor = empty_visitor(),
-      Compare&&      compare = less<range_value_t<Distances>>(),
-      Combine&&      combine = plus<range_value_t<Distances>>()) {
+      Visitor&&             visitor = empty_visitor(),
+      Compare&&             compare = less<range_value_t<Distances>>(),
+      Combine&&             combine = plus<range_value_t<Distances>>()) {
   dijkstra_shortest_paths(g, subrange(&source, (&source + 1)), distances, predecessor, weight,
                           forward<Visitor>(visitor), forward<Compare>(compare), forward<Combine>(combine));
 }
@@ -398,14 +395,14 @@ requires is_arithmetic_v<range_value_t<Distances>> && //
          sized_range<Distances> &&                    //
          basic_edge_weight_function<G, WF, range_value_t<Distances>, Compare, Combine>
 constexpr void dijkstra_shortest_distances(
-      G&&                      g,
-      const vertex_id_t<G>&    source,
-      Distances&               distances,
-      WF&&           weight  = [](const auto&,
+      G&&                   g,
+      const vertex_id_t<G>& source,
+      Distances&            distances,
+      WF&&                  weight  = [](const auto&,
                        const edge_t<G>& uv) { return range_value_t<Distances>(1); }, // default weight(g, uv) -> 1
-      Visitor&&      visitor = empty_visitor(),
-      Compare&&      compare = less<range_value_t<Distances>>(),
-      Combine&&      combine = plus<range_value_t<Distances>>()) {
+      Visitor&&             visitor = empty_visitor(),
+      Compare&&             compare = less<range_value_t<Distances>>(),
+      Combine&&             combine = plus<range_value_t<Distances>>()) {
   dijkstra_shortest_paths(g, subrange(&source, (&source + 1)), distances, _null_predecessors, forward<WF>(weight),
                           forward<Visitor>(visitor), forward<Compare>(compare), forward<Combine>(combine));
 }

@@ -114,17 +114,12 @@ using adj_list::find_vertex;
  * 
  * @par Exception Safety
  * 
- * **Guarantee:** Basic exception safety
- * 
- * **Throws:**
- * - May throw `std::bad_alloc` if visited array or queue cannot allocate memory
- * - May propagate exceptions from visitor callbacks
- * - May propagate exceptions from container operations
- * 
- * **State after exception:**
- * - Graph `g` remains unchanged
- * - Visitor state depends on implementation
- * - Partial traversal may have occurred
+ * Throws:
+ *   std::bad_alloc if visited array or queue cannot allocate memory.
+ *   Any exception propagated from visitor callbacks.
+ *   Any exception propagated from container operations.
+ *   Basic exception guarantee: graph `g` remains unchanged; visitor state depends on
+ *   implementation; partial traversal may have occurred.
  * 
  * @par Visitor Callbacks
  * 
@@ -335,9 +330,9 @@ void breadth_first_search(G&&            g, // graph
  * @see views::vertices_bfs BFS view for range-based traversal
  */
 template <index_adjacency_list G, class Visitor = empty_visitor>
-void breadth_first_search(G&&                      g,      // graph
-                          const vertex_id_t<G>&    source, // starting vertex_id
-                          Visitor&&                visitor = empty_visitor()) {
+void breadth_first_search(G&&                   g,      // graph
+                          const vertex_id_t<G>& source, // starting vertex_id
+                          Visitor&&             visitor = empty_visitor()) {
   // Wrap single source in array and delegate to multi-source version
   std::array<vertex_id_t<G>, 1> sources{source};
   breadth_first_search(std::forward<G>(g), sources, std::forward<Visitor>(visitor));

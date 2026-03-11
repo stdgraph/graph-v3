@@ -23,6 +23,9 @@
   - [Disconnected Graph with Isolated Vertices](#example-5-disconnected-graph-with-isolated-vertices)
 - [Complexity](#complexity)
 - [Preconditions](#preconditions)
+- [Postconditions](#postconditions)
+- [Throws](#throws)
+- [Remarks](#remarks)
 - [See Also](#see-also)
 
 ## Overview
@@ -78,10 +81,10 @@ Where `OuterContainer` is typically `std::vector<std::vector<vertex_id_t<G>>>`.
 
 ## Parameters
 
-| Parameter | Description |
-|-----------|-------------|
-| `g` | Graph satisfying `index_adjacency_list` |
-| `components` | Output container of containers. Each inner container holds vertex IDs in one biconnected component. Cleared and refilled by the algorithm. |
+| Parameter    | Description                                                                                                                                                                                                                       |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `g`          | Graph satisfying `index_adjacency_list<G>`. `G` must model `index_adjacency_list` with integral vertex IDs.                                                                                                                       |
+| `components` | Output container of containers (e.g., `std::vector<std::vector<vertex_id_t<G>>>`). `OuterContainer` must support `push_back` of an inner container whose `value_type` is `vertex_id_t<G>`. Cleared and refilled by the algorithm. |
 
 ## Examples
 
@@ -198,10 +201,10 @@ biconnected_components(g, components);
 
 ## Complexity
 
-| Metric | Value |
-|--------|-------|
-| Time | O(V + E) |
-| Space | O(V + E) for the component output and internal stack |
+| Metric | Value                                                |
+| ------ | ---------------------------------------------------- |
+| Time   | O(V + E)                                             |
+| Space  | O(V + E) for the component output and internal stack |
 
 ## Preconditions
 
@@ -209,6 +212,25 @@ biconnected_components(g, components);
 - For undirected graphs, **both directions** of each edge must be stored (or use
   `undirected_adjacency_list`).
 - Self-loops are ignored and do not affect the result.
+
+## Postconditions
+
+- Every edge in the graph belongs to exactly one biconnected component.
+- Articulation points appear in multiple biconnected components.
+- A bridge (cut edge) forms its own 2-vertex component.
+- Isolated vertices appear as single-vertex components.
+- The outer container is cleared before results are written.
+
+## Throws
+
+- `std::bad_alloc` — if internal allocation for discovery times, low-link values, the DFS stack, or the output containers fails.
+- Provides the **basic exception guarantee**: if an exception is thrown, `components` may be in a partially-filled state.
+
+## Remarks
+
+- A biconnected component is a **maximal** subgraph that remains connected when any single vertex is removed.
+- The algorithm is designed for **undirected** graphs. Applying it to a directed graph (stored with only one direction per edge) produces undefined results.
+- Self-loops are ignored and do not form components.
 
 ## See Also
 

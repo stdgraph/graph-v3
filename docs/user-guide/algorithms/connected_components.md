@@ -27,6 +27,9 @@
   - [Compressing Afforest Component IDs](#example-6-compressing-afforest-component-ids)
 - [Complexity](#complexity)
 - [Preconditions](#preconditions)
+- [Postconditions](#postconditions)
+- [Throws](#throws)
+- [Remarks](#remarks)
 - [See Also](#see-also)
 
 ## Overview
@@ -36,11 +39,11 @@ graph into connected components. All three require a graph satisfying
 `index_adjacency_list<G>` — vertices are stored in a contiguous,
 integer-indexed random-access range.
 
-| Algorithm | Use case | Approach |
-|-----------|----------|----------|
-| `connected_components` | Undirected graphs | DFS-based |
-| `kosaraju` | Directed graphs (SCC) | Two DFS passes (requires transpose) |
-| `afforest` | Large graphs, parallel-friendly | Union-find with neighbor sampling |
+| Algorithm              | Use case                        | Approach                            |
+| ---------------------- | ------------------------------- | ----------------------------------- |
+| `connected_components` | Undirected graphs               | DFS-based                           |
+| `kosaraju`             | Directed graphs (SCC)           | Two DFS passes (requires transpose) |
+| `afforest`             | Large graphs, parallel-friendly | Union-find with neighbor sampling   |
 
 All three fill a `component` array where `component[v]` is the component ID for
 vertex v.
@@ -109,12 +112,12 @@ support. The transpose only needs to satisfy `adjacency_list` (not necessarily
 
 ## Parameters
 
-| Parameter | Description |
-|-----------|-------------|
-| `g` | Graph satisfying `index_adjacency_list` |
-| `g_transpose` | Transpose graph (for `kosaraju` and `afforest` with transpose). `kosaraju` requires `index_adjacency_list`; `afforest` requires `adjacency_list`. |
-| `component` | Random-access range sized to `num_vertices(g)`. Filled with component IDs. |
-| `neighbor_rounds` | Number of neighbor-sampling rounds for `afforest` (default: 2) |
+| Parameter         | Description                                                                                                                                       |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `g`               | Graph satisfying `index_adjacency_list<G>`. `G` must have integral vertex IDs.                                                                    |
+| `g_transpose`     | Transpose graph (for `kosaraju` and `afforest` with transpose). `kosaraju` requires `index_adjacency_list`; `afforest` requires `adjacency_list`. |
+| `component`       | Random-access range sized to `num_vertices(g)`. Filled with component IDs. `range_value_t<Component>` must be convertible from `vertex_id_t<G>`.  |
+| `neighbor_rounds` | Number of neighbor-sampling rounds for `afforest` (default: 2).                                                                                   |
 
 **Return value (`connected_components` only):** `size_t` — number of connected
 components. `kosaraju` and `afforest` return `void`.
@@ -242,11 +245,11 @@ compress(comp);
 
 ## Complexity
 
-| Algorithm | Time | Space |
-|-----------|------|-------|
-| `connected_components` | O(V + E) | O(V) |
-| `kosaraju` | O(V + E) | O(V) |
-| `afforest` | O(V + E) | O(V) |
+| Algorithm              | Time     | Space |
+| ---------------------- | -------- | ----- |
+| `connected_components` | O(V + E) | O(V)  |
+| `kosaraju`             | O(V + E) | O(V)  |
+| `afforest`             | O(V + E) | O(V)  |
 
 ## Preconditions
 
@@ -255,6 +258,41 @@ compress(comp);
 - For `connected_components`: undirected graphs must store both directions of
   each edge (or use `undirected_adjacency_list`).
 - For `kosaraju`: the transpose graph must contain all edges reversed.
+
+## Postconditions
+
+- For every vertex `v`: `component[v]` contains a non-negative integer label
+  identifying its connected component. All vertices in the same component
+  share the same label.
+- Labels are not guaranteed to be contiguous or in any particular order unless
+  `compress()` is called afterward (applies to `afforest` and `kosaraju`).
+- `connected_components` (undirected): labels reflect weakly connected
+  components. The return value is the number of components.
+- `kosaraju` (directed): labels reflect strongly connected components.
+- `afforest` (undirected / directed with transpose): labels reflect connected
+  components; call `compress(component)` to normalize labels to canonical
+  root representatives.
+- The graph `g` is not modified.
+
+## Throws
+
+- `std::bad_alloc` — internal allocation fails (color array, DFS stack,
+  disjoint-set forest, or label vector). All three algorithms.
+
+**Exception guarantee:** Basic. If an exception is thrown, `g` is unchanged
+but `component` may be partially filled.
+
+## Remarks
+
+- Call `compress(component)` after `afforest` to normalize all component labels
+  to the range `[0, k)` where `k` is the number of components. Without
+  `compress`, labels are valid for equality testing but may not be root IDs.
+- `afforest` is designed for very large sparse graphs. It uses neighbour
+  sampling to skip the most expensive union operations, yielding better cache
+  behavior on large inputs.
+- `kosaraju` requires constructing the transpose graph before calling the
+  algorithm. For bidirectional `dynamic_graph` containers the transpose is
+  available directly.
 
 ## See Also
 

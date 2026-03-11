@@ -102,9 +102,10 @@ using adj_list::find_vertex;
  * @post Each component's induced subgraph is biconnected.
  * @post The graph g is not modified.
  *
- * **Exception Safety:** Basic exception safety. May throw std::bad_alloc if internal
- * vector or set allocation fails. The graph g remains unchanged; components may be
- * partially written.
+ * Throws:
+ *   std::bad_alloc if internal vector or set allocation fails.
+ *   Basic exception guarantee: the graph g remains unchanged; components may be
+ *   partially written.
  *
  * ## Example Usage
  *

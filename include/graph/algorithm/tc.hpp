@@ -110,19 +110,14 @@ using adj_list::vertex_id_t;
  * 2. Adjacency lists must be sorted by target_id in ascending order
  * 3. Vertex IDs must be in range [0, num_vertices(g))
  * 
- * ## Postconditions
+ * Postconditions:
+ *   Return value is non-negative.
+ *   For empty graphs or graphs with < 3 vertices, returns 0.
+ *   Graph `g` remains unmodified.
  * 
- * 1. Return value is non-negative
- * 2. For empty graphs or graphs with < 3 vertices, returns 0
- * 3. Graph `g` remains unmodified
- * 
- * ## Exception Safety
- * 
- * **Guarantee:** Strong exception safety (no-throw guarantee)
- * 
- * **Throws:** Never throws. Uses only non-throwing operations (arithmetic, iteration).
- * 
- * **State after exception:** N/A - function is `noexcept`
+ * Throws:
+ *   Never throws. Uses only non-throwing operations (arithmetic, iteration).
+ *   Strong exception guarantee (effectively noexcept).
  * 
  * ## Implementation Notes
  * 
@@ -227,7 +222,7 @@ using adj_list::vertex_id_t;
  */
 template <index_adjacency_list G>
 requires ordered_vertex_edges<G>
-size_t triangle_count(G&& g) {
+[[nodiscard]] size_t triangle_count(G&& g) noexcept {
   const size_t vertex_count = num_vertices(g);
   size_t       triangles    = 0;
 
