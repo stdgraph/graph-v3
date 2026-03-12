@@ -24,11 +24,19 @@
 
 ## Overview
 
-All graph-v3 algorithms require a graph satisfying the `index_adjacency_list<G>`
-concept — vertices must be stored in a contiguous, integer-indexed random-access
-range. This includes all three library containers (`dynamic_graph`,
-`compressed_graph`, `undirected_adjacency_list`) and any range-of-ranges graph
-with a random-access outer container.
+All graph-v3 algorithms require a graph satisfying the `adjacency_list<G>`
+concept. This supports two families of vertex storage:
+
+- **Index-based** (`index_adjacency_list<G>`) — contiguous, integer-indexed
+  random-access containers (`dynamic_graph` with vector/deque vertices,
+  `compressed_graph`, `undirected_adjacency_list`, or any range-of-ranges)
+- **Map-based** (`mapped_adjacency_list<G>`) — sparse vertex ID containers
+  (`dynamic_graph` with `map`/`unordered_map` vertices) where vertex IDs need
+  not be contiguous
+
+For map-based graphs, algorithm output parameters (distances, predecessors,
+component labels, etc.) should be vertex property maps created via
+`make_vertex_property_map<G, T>(g, init_value)` instead of pre-sized vectors.
 
 Algorithms follow a consistent pattern:
 
@@ -49,13 +57,28 @@ Algorithms follow a consistent pattern:
 ```cpp
 #include <graph/algorithm/dijkstra_shortest_paths.hpp>
 
-// Typical usage pattern
+// Index-based graph: use pre-sized vectors
 std::vector<int>    distance(num_vertices(g));
 std::vector<size_t> predecessor(num_vertices(g));
 
 init_shortest_paths(distance, predecessor);
 
 dijkstra_shortest_paths(g, 0, distance, predecessor,
+    [](const auto& g, const auto& uv) { return edge_value(g, uv); });
+```
+
+```cpp
+#include <graph/algorithm/dijkstra_shortest_paths.hpp>
+#include <graph/adj_list/vertex_property_map.hpp>
+
+// Map-based graph: use vertex property maps
+using G = /* some mapped_adjacency_list graph */;
+auto distances    = make_vertex_property_map<G, int>(g, shortest_path_infinite_distance<int>());
+auto predecessors = make_vertex_property_map<G, vertex_id_t<G>>(g, vertex_id_t<G>{});
+for (auto&& [uid, u] : views::vertexlist(g))
+    predecessors[uid] = uid;
+
+dijkstra_shortest_paths(g, source_id, distances, predecessors,
     [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 ```
 

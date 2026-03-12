@@ -2,6 +2,23 @@
 
 ## [Unreleased]
 
+### Added
+- **Mapped (sparse) graph algorithm support** — all 14 algorithms now accept `adjacency_list<G>` (both index and map-based containers)
+- `mapped_vertex_range`, `mapped_adjacency_list`, `mapped_bidirectional_adjacency_list` concepts
+- `vertex_property_map<G, T>` type alias and `make_vertex_property_map` factory (vector for index graphs, unordered_map for mapped)
+- `vertex_property_map_for<M, G>` concept for algorithm parameter constraints
+- `vertex_property_map_value_t<Container>` trait for extracting per-vertex value types
+- `is_sparse_vertex_container_v<G>` trait for compile-time graph type dispatch
+- Map-based graph test fixtures (`map_graph_fixtures.hpp`) with sparse vertex IDs
+- 456 new algorithm tests for sparse graph types (4343 → 4799)
+
+### Changed
+- All algorithms relaxed from `index_adjacency_list<G>` to `adjacency_list<G>`
+- Algorithm internal arrays use `make_vertex_property_map` (vector or unordered_map depending on graph type)
+- User-facing `Distances`, `Predecessors`, `Weight`, `Component`, `Label` parameters accept vertex property maps
+- Index-based for-loops replaced with `views::basic_vertexlist(g)` iteration
+- Validation uses `if constexpr (index_vertex_range<G>)` for size checks, `find_vertex` for mapped graphs
+
 ---
 
 ## [0.5.0] - 2026-03-01 *(Initial Beta)*

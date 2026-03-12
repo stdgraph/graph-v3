@@ -487,3 +487,109 @@ TEST_CASE("prim - undirected_adjacency_list CLRS example", "[algorithm][mst][pri
   REQUIRE(mst_weight == 16);
   REQUIRE(total_wt == 16);
 }
+
+// =============================================================================
+// Sparse (Map-Based) Graph Tests for Prim's Algorithm
+// =============================================================================
+
+#include "../common/graph_fixtures.hpp"
+#include "../common/map_graph_fixtures.hpp"
+#include <graph/adj_list/vertex_property_map.hpp>
+#include <catch2/catch_template_test_macros.hpp>
+
+using namespace graph::test::map_fixtures;
+
+TEMPLATE_TEST_CASE("prim - sparse triangle",
+                   "[algorithm][mst][prim][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = vertex_id_t<Graph>;
+
+  // Undirected triangle: 10-20-30 with weights 1,2,3
+  Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 2}, {30, 20, 2}, {30, 10, 3}, {10, 30, 3}});
+
+  auto predecessor = make_vertex_property_map<Graph, id_type>(g, id_type{});
+  auto weight_map  = make_vertex_property_map<Graph, int>(g, 0);
+
+  auto total_wt = prim(g, predecessor, weight_map, id_type(10));
+
+  REQUIRE(predecessor[id_type(10)] == id_type(10)); // Root
+  REQUIRE(total_wt == 3);                           // 1 + 2
+}
+
+TEMPLATE_TEST_CASE("prim - sparse linear graph",
+                   "[algorithm][mst][prim][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = vertex_id_t<Graph>;
+
+  // Linear: 10-20-30-40 with weights 1,2,3
+  Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 2}, {30, 20, 2}, {30, 40, 3}, {40, 30, 3}});
+
+  auto predecessor = make_vertex_property_map<Graph, id_type>(g, id_type{});
+  auto weight_map  = make_vertex_property_map<Graph, int>(g, 0);
+
+  auto total_wt = prim(g, predecessor, weight_map, id_type(10));
+
+  REQUIRE(predecessor[id_type(10)] == id_type(10)); // Root
+  REQUIRE(total_wt == 6);                           // 1 + 2 + 3
+}
+
+TEMPLATE_TEST_CASE("prim - sparse complete graph K4",
+                   "[algorithm][mst][prim][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = vertex_id_t<Graph>;
+
+  // Complete K4 on vertices {10,20,30,40}
+  Graph g({{10, 20, 1}, {20, 10, 1}, {10, 30, 4}, {30, 10, 4}, {10, 40, 3}, {40, 10, 3},
+           {20, 30, 2}, {30, 20, 2}, {20, 40, 5}, {40, 20, 5}, {30, 40, 6}, {40, 30, 6}});
+
+  auto predecessor = make_vertex_property_map<Graph, id_type>(g, id_type{});
+  auto weight_map  = make_vertex_property_map<Graph, int>(g, 0);
+
+  auto total_wt = prim(g, predecessor, weight_map, id_type(10));
+
+  REQUIRE(predecessor[id_type(10)] == id_type(10)); // Root
+  REQUIRE(total_wt == 6);                           // Same as contiguous K4 test
+}
+
+TEMPLATE_TEST_CASE("prim - sparse kruskal comparison",
+                   "[algorithm][mst][prim][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = vertex_id_t<Graph>;
+  using Edge    = simple_edge<uint32_t, int>;
+
+  // Sparse graph with bidirectional edges (same topology as contiguous comparison test)
+  Graph g({{10, 20, 2}, {20, 10, 2}, {10, 40, 6}, {40, 10, 6}, {20, 30, 3}, {30, 20, 3},
+           {20, 40, 8}, {40, 20, 8}, {20, 50, 5}, {50, 20, 5}, {30, 50, 7}, {50, 30, 7},
+           {40, 50, 9}, {50, 40, 9}});
+
+  // Run Kruskal with contiguous edge list (same topology)
+  std::vector<Edge> edges = {{0, 1, 2}, {0, 3, 6}, {1, 2, 3}, {1, 3, 8}, {1, 4, 5}, {2, 4, 7}, {3, 4, 9}};
+  std::vector<Edge> kruskal_mst;
+  kruskal(edges, kruskal_mst);
+  int kruskal_weight = total_weight(kruskal_mst);
+
+  // Run Prim on sparse graph
+  auto predecessor = make_vertex_property_map<Graph, id_type>(g, id_type{});
+  auto weight_map  = make_vertex_property_map<Graph, int>(g, 0);
+  auto prim_weight = prim(g, predecessor, weight_map, id_type(10));
+
+  REQUIRE(kruskal_weight == prim_weight);
+}
+
+TEMPLATE_TEST_CASE("prim - sparse invalid seed throws",
+                   "[algorithm][mst][prim][sparse][error]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = vertex_id_t<Graph>;
+
+  Graph g({{10, 20, 1}, {20, 10, 1}});
+
+  auto predecessor = make_vertex_property_map<Graph, id_type>(g, id_type{});
+  auto weight_map  = make_vertex_property_map<Graph, int>(g, 0);
+
+  CHECK_THROWS_AS(prim(g, predecessor, weight_map, id_type(999)), std::out_of_range);
+}

@@ -66,10 +66,13 @@ graph-v3 defines 9 concepts in `graph::adj_list` (re-exported into `graph::`).
 |---------|-------------|
 | `adjacency_list<G>` | `vertices(g)` returns a `vertex_range`; `edges(g, u)` returns an `out_edge_range` |
 | `index_adjacency_list<G>` | An `adjacency_list` whose vertex range is also an `index_vertex_range` (O(1) vertex lookup) |
+| `mapped_adjacency_list<G>` | An `adjacency_list` whose vertex range is a `mapped_vertex_range` (sparse vertex IDs, e.g. `map`/`unordered_map`) |
 | `ordered_vertex_edges<G>` | An `adjacency_list` whose edge ranges are sorted by `target_id` (enables algorithms like triangle counting) |
 
-Most library algorithms require `index_adjacency_list`. Standard containers
-such as `vector<vector<T>>` and `deque<vector<T>>` satisfy it automatically.
+All library algorithms require `adjacency_list`. Index-based containers
+(`vector<vector<T>>`, `deque<vector<T>>`) satisfy `index_adjacency_list`
+automatically; map-based containers (`map`, `unordered_map`) satisfy
+`mapped_adjacency_list`. Both are accepted by every algorithm.
 
 ---
 
@@ -163,7 +166,114 @@ Here `edge_value(g, uv)` returns `double&` and `vertex_value(g, u)` returns
 
 ---
 
-## 5. Descriptors
+## 5. Vertex Property Maps
+
+Algorithms need per-vertex storage for output data such as distances,
+predecessors, component labels, and colors. The
+**vertex property map** abstraction provides a single interface that works with
+both index-based and mapped graphs.
+
+### Include
+
+```cpp
+#include <graph/adj_list/vertex_property_map.hpp>
+```
+
+### Type alias
+
+```cpp
+template <class G, class T>
+using vertex_property_map = /* see below */;
+```
+
+| Graph kind | Concrete type |
+|------------|---------------|
+| Index-based (`index_vertex_range<G>`) | `std::vector<T>` |
+| Map-based (otherwise) | `std::unordered_map<vertex_id_t<G>, T>` |
+
+Both types support `m[uid]` subscript access by `vertex_id_t<G>`, so algorithm
+code can use a single expression regardless of the underlying storage.
+
+### Factory functions
+
+```cpp
+// Eager: every vertex pre-populated with init_value  (O(V))
+auto m = make_vertex_property_map<G, T>(g, init_value);
+
+// Lazy: sized for index graphs, empty+reserved for mapped graphs
+auto m = make_vertex_property_map<G, T>(g);
+```
+
+| Variant | Index graph | Mapped graph |
+|---------|-------------|--------------|
+| Eager | `vector<T>(N, init)` | `unordered_map` with all vertex keys inserted |
+| Lazy | `vector<T>(N)` (default-constructed) | Empty `unordered_map` with reserved buckets |
+
+Use **eager** when the algorithm reads every entry before writing (e.g.,
+`init_shortest_paths`). Use **lazy** when absence has a semantic meaning
+(e.g., infinity for distances, White for DFS color).
+
+### Access helpers
+
+| Function | Description |
+|----------|-------------|
+| `vertex_property_map_contains(m, uid)` | `true` if `uid` has an entry. For vectors, checks `uid < size(m)`. |
+| `vertex_property_map_get(m, uid, default_val)` | Returns `m[uid]` if present, else `default_val` — **no insertion** for maps. |
+
+### Concept — `vertex_property_map_for<M, G>`
+
+```cpp
+template <class M, class G>
+concept vertex_property_map_for = requires(M& m, const vertex_id_t<G>& uid) {
+  { m[uid] } -> std::convertible_to<vertex_property_map_value_t<M>>;
+};
+```
+
+This is the constraint used by algorithm parameters (distances, predecessors,
+component labels, etc.). It requires only `m[uid]` subscript access — the
+algorithm never iterates the map as a range.
+
+Satisfied by:
+
+- `std::vector<T>` when `vertex_id_t<G>` is integral
+- `std::unordered_map<VId, T>` / `std::map<VId, T>` for mapped graphs
+- Any custom container exposing `operator[]` by vertex ID
+
+### Type trait — `vertex_property_map_value_t<M>`
+
+Extracts the per-vertex value type from a property map container:
+
+| Container | Result |
+|-----------|--------|
+| `vector<T>` | `T` (via `value_type`) |
+| `unordered_map<K, V>` | `V` (via `mapped_type`) |
+
+### Example
+
+```cpp
+#include <graph/algorithm/dijkstra_shortest_paths.hpp>
+#include <graph/adj_list/vertex_property_map.hpp>
+
+// Works with any adjacency_list graph — index or mapped
+auto distances    = make_vertex_property_map<G, int>(g,
+    shortest_path_infinite_distance<int>());
+auto predecessors = make_vertex_property_map<G, vertex_id_t<G>>(g,
+    vertex_id_t<G>{});
+
+for (auto&& [uid, u] : views::vertexlist(g))
+    predecessors[uid] = uid;
+
+dijkstra_shortest_paths(g, source, distances, predecessors,
+    [](const auto& g, const auto& uv) { return edge_value(g, uv); });
+
+// Read results the same way regardless of graph type:
+for (auto&& [uid, u] : views::vertexlist(g))
+    std::cout << uid << ": dist=" << distances[uid] << "\n";
+```
+
+---
+
+## 6. Descriptors
 
 Descriptors are lightweight value objects that **identify** a vertex or edge.
 They are the currency of graph-v3's interface.
@@ -233,7 +343,7 @@ containers automatically:
 
 ---
 
-## 6. Working with Views
+## 7. Working with Views
 
 Views provide structured-binding-friendly iteration over graph structure.
 Instead of calling CPOs manually inside loops, a view bundles the results
@@ -277,7 +387,7 @@ Available views: `vertexlist`, `edgelist`, `incidence`, `neighbors`, `bfs`,
 
 ---
 
-## 7. Compile-Time Traits
+## 8. Compile-Time Traits
 
 Traits let you query a graph type's capabilities at compile time:
 
@@ -294,7 +404,7 @@ Each trait also has a `_v` variable template (e.g., `has_degree_v<G>`).
 
 ---
 
-## 8. Type Aliases
+## 9. Type Aliases
 
 Convenience aliases extracted from a graph type `G`:
 

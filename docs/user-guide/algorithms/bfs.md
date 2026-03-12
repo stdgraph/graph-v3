@@ -24,9 +24,6 @@
   - [Counting Events with a Visitor](#example-5-counting-events-with-a-visitor)
 - [Complexity](#complexity)
 - [Preconditions](#preconditions)
-- [Postconditions](#postconditions)
-- [Throws](#throws)
-- [Remarks](#remarks)
 - [See Also](#see-also)
 
 ## Overview
@@ -39,8 +36,8 @@ invoked at each stage of the traversal.
 BFS is the foundation for unweighted shortest paths, connected-component
 discovery, and level-based graph analysis.
 
-The graph must satisfy `index_adjacency_list<G>` — vertices are stored in a
-contiguous, integer-indexed random-access range.
+The graph must satisfy `adjacency_list<G>` — both index-based (contiguous
+integer-indexed) and map-based (sparse vertex ID) graphs are supported.
 
 > **Note:** Unlike [DFS](dfs.md), BFS does **not** classify edges (no tree/back/
 > forward edge events). If you need edge classification, use DFS instead.
@@ -83,11 +80,11 @@ void breadth_first_search(G&& g, const vertex_id_t<G>& source,
 
 ## Parameters
 
-| Parameter            | Description                                                                                                             |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `g`                  | Graph satisfying `index_adjacency_list<G>`. `G` must have integral vertex IDs.                                          |
-| `source` / `sources` | Source vertex ID or input range of source vertex IDs. `range_value_t<Sources>` must be convertible to `vertex_id_t<G>`. |
-| `visitor`            | Optional visitor struct with callback methods (see Visitor Events). Default: `empty_visitor{}`.                         |
+| Parameter | Description |
+|-----------|-------------|
+| `g` | Graph satisfying `adjacency_list` |
+| `source` / `sources` | Source vertex ID or range of source vertex IDs |
+| `visitor` | Optional visitor struct with callback methods (see below). Default: `empty_visitor{}`. |
 
 ## Visitor Events
 
@@ -96,13 +93,13 @@ also has an `_id` variant that receives `vertex_id_t<G>` instead of a vertex
 reference (e.g., `on_discover_vertex_id(g, uid)`). You only need to define the
 events you care about — missing methods are silently skipped.
 
-| Event                        | Called when                                                   |
-| ---------------------------- | ------------------------------------------------------------- |
+| Event | Called when |
+|-------|------------|
 | `on_initialize_vertex(g, u)` | Before traversal, for each vertex during color initialization |
-| `on_discover_vertex(g, u)`   | Vertex first reached (pushed into queue)                      |
-| `on_examine_vertex(g, u)`    | Vertex popped from queue for processing                       |
-| `on_examine_edge(g, uv)`     | Outgoing edge examined during vertex processing               |
-| `on_finish_vertex(g, u)`     | All adjacent edges of vertex explored                         |
+| `on_discover_vertex(g, u)` | Vertex first reached (pushed into queue) |
+| `on_examine_vertex(g, u)` | Vertex popped from queue for processing |
+| `on_examine_edge(g, uv)` | Outgoing edge examined during vertex processing |
+| `on_finish_vertex(g, u)` | All adjacent edges of vertex explored |
 
 ## Examples
 
@@ -236,40 +233,15 @@ breadth_first_search(g, 0u, vis);
 
 ## Complexity
 
-| Metric | Value                                |
-| ------ | ------------------------------------ |
-| Time   | O(V + E)                             |
-| Space  | O(V) for the visited array and queue |
+| Metric | Value |
+|--------|-------|
+| Time | O(V + E) |
+| Space | O(V) for the visited array and queue |
 
 ## Preconditions
 
-- Graph must satisfy `index_adjacency_list<G>`.
+- Graph must satisfy `adjacency_list<G>`.
 - Duplicate sources are allowed — each duplicate causes an extra discovery event.
-
-## Postconditions
-
-- Each vertex reachable from the source(s) is visited exactly once.
-- Visitor callbacks are invoked in breadth-first (level) order;
-  `on_discover_vertex` precedes `on_examine_vertex` for the same vertex.
-- The graph `g` is not modified.
-
-## Throws
-
-- `std::bad_alloc` — visited array or internal queue allocation fails.
-- Exceptions from visitor callbacks are propagated unchanged.
-
-**Exception guarantee:** Basic. If an exception is thrown, `g` is unchanged
-but visitor state and the internal visited array are in a valid but
-unspecified state.
-
-## Remarks
-
-- Vertices unreachable from the source(s) are never visited and no callbacks
-  are invoked for them.
-- For multi-source BFS, all sources are enqueued simultaneously at distance 0
-  before traversal begins.
-- BFS does **not** classify edges (no tree/back/forward edge events). Use
-  [DFS](dfs.md) if edge classification is needed.
 
 ## See Also
 

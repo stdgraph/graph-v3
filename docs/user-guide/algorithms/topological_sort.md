@@ -23,9 +23,6 @@
   - [Task Scheduling](#example-5-task-scheduling)
 - [Complexity](#complexity)
 - [Preconditions](#preconditions)
-- [Postconditions](#postconditions)
-- [Throws](#throws)
-- [Remarks](#remarks)
 - [See Also](#see-also)
 
 ## Overview
@@ -34,8 +31,8 @@ Topological sort produces a linear ordering of vertices in a **directed acyclic
 graph (DAG)** such that for every directed edge (u, v), vertex u appears before
 vertex v in the ordering.
 
-The graph must satisfy `index_adjacency_list<G>` — vertices are stored in a
-contiguous, integer-indexed random-access range.
+The graph must satisfy `adjacency_list<G>` — both index-based (contiguous
+integer-indexed) and map-based (sparse vertex ID) graphs are supported.
 
 The algorithm returns `bool` — `true` if the graph is a valid DAG (ordering
 produced), `false` if a cycle is detected (partial output may have been written).
@@ -95,15 +92,14 @@ bool topological_sort(const G& g, const Sources& sources, OutputIterator result)
 
 ## Parameters
 
-| Parameter            | Description                                                                                                                |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `g`                  | Graph satisfying `index_adjacency_list<G>` (taken by `const&`). `G` must have integral vertex IDs.                         |
-| `source` / `sources` | Source vertex ID or input range of source vertex IDs. `range_value_t<Sources>` must be convertible to `vertex_id_t<G>`.    |
-| `result`             | Output iterator receiving vertex IDs in topological order. Must satisfy `output_iterator<OutputIterator, vertex_id_t<G>>`. |
+| Parameter | Description |
+|-----------|-------------|
+| `g` | Graph satisfying `adjacency_list` (taken by `const&`) |
+| `source` / `sources` | Source vertex ID or range of source vertex IDs |
+| `result` | Output iterator receiving vertex IDs in topological order |
 
-**Returns:** `bool` — `true` if the graph is a DAG and a valid topological
-ordering was produced; `false` if a cycle was detected. Ignoring the return
-value silently discards cycle-detection information.
+**Return value:** `true` if the graph is a DAG (valid ordering produced),
+`false` if a cycle was detected.
 
 ## Examples
 
@@ -209,48 +205,18 @@ if (ok) {
 
 ## Complexity
 
-| Metric | Value                  |
-| ------ | ---------------------- |
-| Time   | O(V + E)               |
-| Space  | O(V) for the color map |
+| Metric | Value |
+|--------|-------|
+| Time | O(V + E) |
+| Space | O(V) for the color map |
 
 ## Preconditions
 
-- Graph must satisfy `index_adjacency_list<G>`.
+- Graph must satisfy `adjacency_list<G>`.
 - The graph should be a DAG for a valid ordering. If cycles exist, the function
   returns `false`.
 - Isolated vertices are included in full-graph sort but excluded from source-based
   sorts if not reachable.
-
-## Postconditions
-
-- When the return value is `true` (no cycle): the output range contains all
-  visited vertex ids in topological order — for every directed edge `(u, v)`,
-  `u` appears before `v`. In the full-graph overload, every vertex is included
-  (including isolated vertices).
-- When the return value is `false` (cycle detected): the output range is
-  partially filled and its contents are unspecified; the cycle itself is not
-  reported.
-- The graph `g` is not modified.
-
-## Throws
-
-- `std::bad_alloc` — internal color array or DFS stack allocation fails.
-
-**Exception guarantee:** Basic. If an exception is thrown, `g` is unchanged
-but the output range may have received partial results and the color array is
-in a valid but unspecified state.
-
-## Remarks
-
-- Returning `false` rather than throwing on cycle detection is intentional:
-  cycles are expected conditions in many applications (e.g., iterative
-  dependency resolution). This avoids exception overhead and simplifies
-  control flow.
-- The implementation uses iterative (stack-based) DFS to avoid stack overflow
-  on deep graphs.
-- For small graphs, recursive DFS may be slightly faster due to lower stack
-  allocation overhead.
 
 ## See Also
 

@@ -721,3 +721,134 @@ TEST_CASE("depth_first_search - vertex id visitor matches descriptor visitor", "
     REQUIRE(desc_visitor.finished[i] == static_cast<int>(id_visitor.finished[i]));
   }
 }
+
+// =============================================================================
+// Map-Based (Sparse Vertex ID) DFS Tests
+// =============================================================================
+
+#include "../common/map_graph_fixtures.hpp"
+
+using namespace graph::test::map_fixtures;
+
+TEMPLATE_TEST_CASE("depth_first_search - sparse graph basic traversal",
+                   "[algorithm][dfs][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph = TestType;
+
+  auto g      = bfs_graph<Graph>();   // 5-vertex DAG: src->a,b->merge->leaf
+  auto source = bfs_source<Graph>();
+
+  DFSCountingVisitor visitor;
+  depth_first_search(g, source, visitor);
+
+  // DFS from source should discover all 5 reachable vertices
+  REQUIRE(visitor.vertices_discovered == 5);
+  REQUIRE(visitor.vertices_finished == 5);
+}
+
+TEMPLATE_TEST_CASE("depth_first_search - sparse graph with tracking visitor",
+                   "[algorithm][dfs][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph = TestType;
+
+  auto g      = bfs_graph<Graph>();
+  auto source = bfs_source<Graph>();
+
+  DFSTrackingVisitor visitor;
+  depth_first_search(g, source, visitor);
+
+  // All 5 vertices should be discovered and finished
+  REQUIRE(visitor.discovered.size() == 5);
+  REQUIRE(visitor.finished.size() == 5);
+
+  // Source vertex should be discovered first
+  REQUIRE(visitor.discovered[0] == static_cast<int>(source));
+
+  // Source should be initialized and started
+  REQUIRE(visitor.initialized.size() == 1);
+  REQUIRE(visitor.initialized[0] == static_cast<int>(source));
+  REQUIRE(visitor.started.size() == 1);
+  REQUIRE(visitor.started[0] == static_cast<int>(source));
+}
+
+TEMPLATE_TEST_CASE("depth_first_search - sparse graph DAG edge classification",
+                   "[algorithm][dfs][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph = TestType;
+
+  // Diamond DAG: src->a, src->b, a->sink, b->sink
+  auto g      = dag_graph<Graph>();
+  auto source = bfs_source<Graph>(); // DAG source == bfs source for contiguous;
+                                     // for sparse, dag uses 10 as root too
+
+  DFSCountingVisitor visitor;
+
+  if constexpr (is_sparse_vertex_container_v<Graph>) {
+    depth_first_search(g, vertex_id_t<Graph>(10), visitor);
+  } else {
+    depth_first_search(g, vertex_id_t<Graph>(0), visitor);
+  }
+
+  // All 4 vertices discovered
+  REQUIRE(visitor.vertices_discovered == 4);
+  REQUIRE(visitor.vertices_finished == 4);
+
+  // DAG has no back edges
+  REQUIRE(visitor.back_edges == 0);
+
+  // Diamond should have a forward/cross edge (second path to sink)
+  REQUIRE(visitor.forward_or_cross_edges >= 1);
+}
+
+TEMPLATE_TEST_CASE("depth_first_search - sparse graph cycle detection",
+                   "[algorithm][dfs][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph = TestType;
+
+  auto g      = cycle_graph<Graph>();
+  auto source = cycle_source<Graph>();
+
+  DFSCountingVisitor visitor;
+  depth_first_search(g, source, visitor);
+
+  // All 4 vertices in the cycle should be discovered
+  REQUIRE(visitor.vertices_discovered == 4);
+  REQUIRE(visitor.vertices_finished == 4);
+
+  // Cycle should produce at least one back edge
+  REQUIRE(visitor.back_edges >= 1);
+}
+
+TEMPLATE_TEST_CASE("depth_first_search - sparse graph empty visitor",
+                   "[algorithm][dfs][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph = TestType;
+
+  auto g      = bfs_graph<Graph>();
+  auto source = bfs_source<Graph>();
+
+  // Should work with default empty visitor (no callbacks)
+  REQUIRE_NOTHROW(depth_first_search(g, source));
+}
+
+TEMPLATE_TEST_CASE("depth_first_search - sparse graph partial reachability",
+                   "[algorithm][dfs][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph = TestType;
+
+  auto g = map_fixtures::disconnected_graph<Graph>();
+
+  DFSCountingVisitor visitor;
+
+  // Start from first component only
+  if constexpr (is_sparse_vertex_container_v<Graph>) {
+    depth_first_search(g, vertex_id_t<Graph>(100), visitor);
+    // Component {100, 200} — only 2 vertices reachable
+    REQUIRE(visitor.vertices_discovered == 2);
+  } else {
+    depth_first_search(g, vertex_id_t<Graph>(0), visitor);
+    // Component {0, 1} — only 2 vertices reachable
+    REQUIRE(visitor.vertices_discovered == 2);
+  }
+  REQUIRE(visitor.vertices_finished == visitor.vertices_discovered);
+}

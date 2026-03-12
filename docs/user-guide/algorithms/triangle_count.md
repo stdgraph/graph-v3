@@ -23,9 +23,7 @@
   - [Pre-sorting vov Adjacency Lists](#example-5-pre-sorting-vov-adjacency-lists)
 - [Complexity](#complexity)
 - [Preconditions](#preconditions)
-- [Postconditions](#postconditions)
-- [Throws](#throws)
-- [Remarks](#remarks)
+- [Notes](#notes)
 - [See Also](#see-also)
 
 ## Overview
@@ -34,8 +32,8 @@ Counts the number of **triangles** (3-cliques) in an undirected graph using
 merge-based sorted-list intersection. A triangle is a set of three mutually
 adjacent vertices {u, v, w}.
 
-The graph must satisfy `index_adjacency_list<G>` — vertices are stored in a
-contiguous, integer-indexed random-access range.
+The graph must satisfy `adjacency_list<G>` — both index-based (contiguous
+integer-indexed) and map-based (sparse vertex ID) graphs are supported.
 
 The algorithm additionally requires `ordered_vertex_edges<G>`, meaning each
 vertex's adjacency list is **sorted by target ID**. This is naturally the case
@@ -70,15 +68,13 @@ for set-based containers (e.g., `vos` traits) and `undirected_adjacency_list`.
 size_t triangle_count(G&& g);
 ```
 
-**Returns** the total number of triangles in the graph as `size_t`. Each
-triangle is counted exactly once (not three times). Returns 0 if the graph
-contains no triangles.
+**Returns** the total number of triangles in the graph.
 
 ## Parameters
 
-| Parameter | Description                                                                                                                                                     |
-| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `g`       | Graph satisfying `index_adjacency_list<G>` **and** `ordered_vertex_edges<G>`. `G` must model both concepts with integral vertex IDs and sorted adjacency lists. |
+| Parameter | Description |
+|-----------|-------------|
+| `g` | Graph satisfying `adjacency_list` **and** `ordered_vertex_edges` (sorted adjacency lists) |
 
 ## Examples
 
@@ -200,10 +196,10 @@ size_t count = triangle_count(g);
 
 ## Complexity
 
-| Metric | Value                                                           |
-| ------ | --------------------------------------------------------------- |
-| Time   | O(m^{3/2}) average for sparse graphs, where m = number of edges |
-| Space  | O(1) auxiliary — uses sorted adjacency lists directly           |
+| Metric | Value |
+|--------|-------|
+| Time | O(m^{3/2}) average for sparse graphs, where m = number of edges |
+| Space | O(1) auxiliary — uses sorted adjacency lists directly |
 
 The merge-based intersection exploits sorted neighbor lists, making it
 efficient for sparse graphs. For dense graphs with m ≈ V², the complexity
@@ -211,25 +207,14 @@ approaches O(V³).
 
 ## Preconditions
 
-- Graph must satisfy `index_adjacency_list<G>` **and** `ordered_vertex_edges<G>`.
+- Graph must satisfy `adjacency_list<G>` **and** `ordered_vertex_edges<G>`.
 - Adjacency lists must be **sorted by target ID**. Use sorted-edge traits
   (`vos`, `dos`) or `undirected_adjacency_list`.
 - For `vov`-based graphs, pre-sort each adjacency list before calling (see
   Example 5).
 - Self-loops are ignored and do not count as triangles.
 
-## Postconditions
-
-- The returned value is the exact count of distinct triangles (3-cliques) in `g`.
-- Each triangle {u, v, w} is counted exactly once regardless of edge direction or storage.
-- Self-loops do not contribute to the count.
-
-## Throws
-
-- The algorithm performs no dynamic allocation and does not throw. A candidate for `noexcept` annotation.
-- Provides the **strong exception guarantee**.
-
-## Remarks
+## Notes
 
 - The algorithm counts each triangle exactly **once**, not three times (once
   per vertex).

@@ -13,11 +13,13 @@
  */
 
 #include "graph/graph.hpp"
+#include "graph/adj_list/vertex_property_map.hpp"
 
 #ifndef GRAPH_BICONNECTED_COMPONENTS_HPP
 #  define GRAPH_BICONNECTED_COMPONENTS_HPP
 
 #  include <limits>
+#  include <optional>
 #  include <set>
 #  include <stack>
 #  include <vector>
@@ -25,7 +27,7 @@
 namespace graph {
 
 // Using declarations for new namespace structure
-using adj_list::index_adjacency_list;
+using adj_list::adjacency_list;
 using adj_list::vertex_id_t;
 using adj_list::vertices;
 using adj_list::edges;
@@ -80,11 +82,10 @@ using adj_list::find_vertex;
  * - ✅ Empty graphs (returns immediately)
  *
  * ### Container Requirements
- * - Requires: `index_adjacency_list<G>` concept (contiguous vertex IDs)
- * - Works with: All `dynamic_graph` container combinations with contiguous IDs
+ * - Requires: `adjacency_list<G>` concept
+ * - Works with: All `dynamic_graph` container combinations (contiguous and mapped IDs)
  *
- * @tparam G               The graph type. Must satisfy index_adjacency_list concept,
- *                         which implies contiguous vertex IDs from 0 to num_vertices(g)-1.
+ * @tparam G               The graph type. Must satisfy adjacency_list concept.
  * @tparam OuterContainer  A container of containers for the output components.
  *                         Typically `std::vector<std::vector<vertex_id_t<G>>>`.
  *
@@ -94,7 +95,6 @@ using adj_list::find_vertex;
  *                    containers. No ordering guarantee on the order of components or vertex
  *                    IDs within a component.
  *
- * @pre g must have contiguous vertex IDs [0, num_vertices(g))
  * @pre For undirected semantics, each edge {u,v} must be stored as both (u,v) and (v,u).
  *
  * @post Every vertex appears in at least one component.
@@ -132,7 +132,7 @@ using adj_list::find_vertex;
  * }
  * ```
  */
-template <index_adjacency_list G, class OuterContainer>
+template <adjacency_list G, class OuterContainer>
 void biconnected_components(G&& g, OuterContainer& components) {
   using vid_t      = vertex_id_t<G>;
   using inner_type = typename OuterContainer::value_type;
@@ -143,11 +143,10 @@ void biconnected_components(G&& g, OuterContainer& components) {
   }
 
   constexpr size_t UNVISITED = std::numeric_limits<size_t>::max();
-  const vid_t      NO_PARENT = static_cast<vid_t>(N); // sentinel for "no parent"
 
-  std::vector<size_t> disc(N, UNVISITED);
-  std::vector<size_t> low(N, UNVISITED);
-  std::vector<vid_t>  parent(N, NO_PARENT);
+  auto disc   = make_vertex_property_map<G, size_t>(g, UNVISITED);
+  auto low    = make_vertex_property_map<G, size_t>(g, UNVISITED);
+  auto parent = make_vertex_property_map<G, std::optional<vid_t>>(g, std::nullopt);
 
   size_t timer = 0;
 
@@ -157,11 +156,21 @@ void biconnected_components(G&& g, OuterContainer& components) {
   using edge_pair = std::pair<vid_t, vid_t>;
   std::stack<edge_pair> edge_stk;
 
-  // Frame for iterative DFS: (vertex_id, edge_index, parent_edge_skipped)
+  // Deduce the iterator type for edge ranges returned by edges(g, uid).
+  // edge_descriptor_view iterators store the underlying edge_storage (an
+  // index for RA containers, an iterator for map-based containers) and
+  // do not reference the view, so they safely outlive it and can be
+  // stored on the DFS stack.
+  using edge_iter_t = std::ranges::iterator_t<decltype(edges(g, std::declval<const vid_t&>()))>;
+
+  // Frame for iterative DFS: (vertex_id, edge_iterator, edge_end, parent_edge_skipped)
+  // Storing iterators avoids the O(degree) re-scan that an index-based
+  // approach would require each time we resume a stack frame.
   struct dfs_frame {
-    vid_t  uid;
-    size_t edge_idx;
-    bool   parent_edge_skipped;
+    vid_t       uid;
+    edge_iter_t it;
+    edge_iter_t it_end;
+    bool        parent_edge_skipped;
   };
 
   std::stack<dfs_frame> stk;
@@ -184,14 +193,13 @@ void biconnected_components(G&& g, OuterContainer& components) {
   };
 
   // Outer loop: handle disconnected graphs
-  for (auto sv : vertices(g)) {
-    vid_t start = vertex_id(g, sv);
+  for (auto [start] : views::basic_vertexlist(g)) {
     if (disc[start] != UNVISITED) {
       continue;
     }
 
     // Check for isolated vertex (no edges)
-    auto start_edges = edges(g, sv);
+    auto start_edges = edges(g, start);
     if (std::ranges::begin(start_edges) == std::ranges::end(start_edges)) {
       // Isolated vertex — trivial biconnected component
       components.push_back(inner_type{static_cast<typename inner_type::value_type>(start)});
@@ -200,25 +208,18 @@ void biconnected_components(G&& g, OuterContainer& components) {
     }
 
     disc[start] = low[start] = timer++;
-    stk.push({start, 0, false});
+    stk.push({start, std::ranges::begin(start_edges),
+              std::ranges::end(start_edges), false});
 
     while (!stk.empty()) {
-      auto& [uid, edge_idx, parent_skipped] = stk.top();
-
-      auto edge_range = edges(g, uid);
-      auto it         = std::ranges::begin(edge_range);
-      auto it_end     = std::ranges::end(edge_range);
-
-      // Advance iterator to edge_idx position
-      for (size_t i = 0; i < edge_idx && it != it_end; ++i, ++it) {
-      }
+      auto& [uid, it, it_end, parent_skipped] = stk.top();
 
       if (it == it_end) {
         // All edges processed — backtrack
         vid_t backtrack_uid = uid;
         stk.pop();
         if (!stk.empty()) {
-          auto& [par_uid, par_edge_idx, par_skipped] = stk.top();
+          auto& [par_uid, par_it, par_it_end, par_skipped] = stk.top();
           // Update low-link of parent
           if (low[backtrack_uid] < low[par_uid]) {
             low[par_uid] = low[backtrack_uid];
@@ -235,7 +236,7 @@ void biconnected_components(G&& g, OuterContainer& components) {
       }
 
       vid_t vid = target_id(g, *it);
-      ++edge_idx; // advance for next iteration
+      ++it; // advance stored iterator for next resume
 
       // Skip self-loops
       if (vid == uid) {
@@ -247,8 +248,10 @@ void biconnected_components(G&& g, OuterContainer& components) {
         parent[vid] = uid;
         disc[vid] = low[vid] = timer++;
         edge_stk.push({uid, vid});
-        stk.push({vid, 0, false});
-      } else if (vid == parent[uid] && !parent_skipped) {
+        auto vid_edges = edges(g, vid);
+        stk.push({vid, std::ranges::begin(vid_edges),
+                  std::ranges::end(vid_edges), false});
+      } else if (parent[uid].has_value() && *parent[uid] == vid && !parent_skipped) {
         // First reverse edge to DFS parent — this is the tree edge; skip it
         parent_skipped = true;
       } else {

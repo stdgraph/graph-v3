@@ -24,9 +24,7 @@
   - [Self-Loop Exclusion](#example-6-self-loop-exclusion)
 - [Complexity](#complexity)
 - [Preconditions](#preconditions)
-- [Postconditions](#postconditions)
-- [Throws](#throws)
-- [Remarks](#remarks)
+- [Notes](#notes)
 - [See Also](#see-also)
 
 ## Overview
@@ -35,8 +33,8 @@ Finds a **maximal independent set** (MIS) — a set of non-adjacent vertices
 that cannot be extended by adding any other vertex without violating the
 independence property.
 
-The graph must satisfy `index_adjacency_list<G>` — vertices are stored in a
-contiguous, integer-indexed random-access range.
+The graph must satisfy `adjacency_list<G>` — both index-based (contiguous
+integer-indexed) and map-based (sparse vertex ID) graphs are supported.
 
 The algorithm is **greedy**: starting from a seed vertex, it includes that
 vertex in the MIS, marks all its neighbors as excluded, and repeats for
@@ -85,11 +83,11 @@ to the output iterator.
 
 ## Parameters
 
-| Parameter | Description                                                                                                                                     |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `g`       | Graph satisfying `index_adjacency_list<G>`. `G` must model `index_adjacency_list` with integral vertex IDs.                                     |
-| `mis`     | Output iterator satisfying `output_iterator<OutputIterator, vertex_id_t<G>>`. Receives vertex IDs in the MIS.                                   |
-| `seed`    | Starting vertex ID (default: 0). Must satisfy `0 ≤ seed < num_vertices(g)`. The seed is always included in the MIS (unless it has a self-loop). |
+| Parameter | Description |
+|-----------|-------------|
+| `g` | Graph satisfying `adjacency_list` |
+| `mis` | Output iterator receiving vertex IDs in the MIS |
+| `seed` | Starting vertex ID (default: 0). The seed is always included in the MIS (unless it has a self-loop). |
 
 ## Examples
 
@@ -217,32 +215,19 @@ size_t count = maximal_independent_set(g, std::back_inserter(result), 1u);
 
 ## Complexity
 
-| Metric | Value                      |
-| ------ | -------------------------- |
-| Time   | O(V + E)                   |
-| Space  | O(V) for the exclusion set |
+| Metric | Value |
+|--------|-------|
+| Time | O(V + E) |
+| Space | O(V) for the exclusion set |
 
 ## Preconditions
 
-- Graph must satisfy `index_adjacency_list<G>`.
+- Graph must satisfy `adjacency_list<G>`.
 - Seed must be a valid vertex ID (`0 ≤ seed < num_vertices(g)`).
 - Self-loops exclude a vertex from the MIS (a vertex adjacent to itself is not
   independent).
 
-## Postconditions
-
-- The returned count equals the number of vertex IDs written to `mis`.
-- The set of vertices written to `mis` is **independent**: no two are adjacent.
-- The set is **maximal**: no additional vertex can be added without violating independence.
-- The set is also **dominating**: every vertex not in the MIS is adjacent to at least one MIS member.
-- A vertex with a self-loop is never included in the MIS.
-
-## Throws
-
-- `std::bad_alloc` — if internal allocation for the exclusion set fails.
-- Provides the **basic exception guarantee**: if an exception is thrown, partial output may have been written to `mis`.
-
-## Remarks
+## Notes
 
 - The greedy order processes vertices starting from the seed, then continues
   through all vertices in index order. The first non-excluded vertex after the

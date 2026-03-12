@@ -13,6 +13,7 @@
  */
 
 #include "graph/graph.hpp"
+#include "graph/adj_list/vertex_property_map.hpp"
 
 #ifndef GRAPH_LABEL_PROPAGATION_HPP
 #  define GRAPH_LABEL_PROPAGATION_HPP
@@ -28,12 +29,13 @@
 namespace graph {
 
 // Using declarations for new namespace structure
-using adj_list::index_adjacency_list;
+using adj_list::adjacency_list;
 using adj_list::vertex_id_t;
 using adj_list::vertices;
 using adj_list::edges;
 using adj_list::target_id;
 using adj_list::vertex_id;
+using adj_list::find_vertex;
 using adj_list::num_vertices;
 
 /**
@@ -65,31 +67,29 @@ using adj_list::num_vertices;
  * - ✅ Cycles
  *
  * ### Container Requirements
- * - Requires: `index_adjacency_list<G>` concept (contiguous vertex IDs)
- * - Requires: `std::ranges::random_access_range<Label>` sized to `num_vertices(g)`
- * - Requires: `std::equality_comparable<std::ranges::range_value_t<Label>>`
+ * - Requires: `adjacency_list<G>` concept
+ * - Requires: `vertex_property_map_for<Label, G>` — subscript access by vertex ID
+ * - Requires: `std::equality_comparable<vertex_property_map_value_t<Label>>`
  *
- * @tparam G          Graph type satisfying `index_adjacency_list`.
- * @tparam Label      Random-access range whose `value_type` is the label type.
+ * @tparam G          Graph type satisfying `adjacency_list`.
+ * @tparam Label      Vertex property map whose `vertex_property_map_value_t` is the label type.
+ *                    For index graphs: `std::vector<T>`. For mapped graphs: `std::unordered_map<VId, T>`.
  * @tparam Gen        Uniform random bit generator type (default `std::default_random_engine`).
  * @tparam T          Integral type for the iteration limit (default `size_t`).
  *
  * @param g           The graph.
- * @param label       Random-access range of size `num_vertices(g)` holding the initial
- *                    labels. Modified in place to hold final labels on return.
+ * @param label       Vertex property map holding the initial labels for every vertex.
+ *                    Modified in place to hold final labels on return.
  * @param rng         Random-number generator used for shuffle and tie-breaking.
  * @param max_iters   Maximum number of iterations (default: unlimited).
  *
- * @pre `label.size() >= num_vertices(g)`
- * @pre `label` contains meaningful initial labels for every vertex.
+ * @pre `label` contains a meaningful initial label for every vertex in `g`.
  *
  * @post `label[uid]` holds the discovered label assignment for vertex @p uid.
  * @post The graph @p g is not modified.
  *
- * Throws:
- *   std::bad_alloc if internal allocation fails.
- *   Any exception propagated from the RNG.
- *   Basic exception guarantee: the graph is unchanged; the label array may be partially updated.
+ * **Exception Safety:** Basic. May throw `std::bad_alloc` from internal allocations.
+ * The graph is unchanged; the label array may be partially updated.
  *
  * ## Example Usage
  *
@@ -113,17 +113,18 @@ using adj_list::num_vertices;
  * }
  * ```
  */
-template <index_adjacency_list             G,
-          std::ranges::random_access_range Label,
+template <adjacency_list G,
+          class Label,
           class Gen = std::default_random_engine,
           class T   = size_t>
-requires std::equality_comparable<std::ranges::range_value_t<Label>> &&
+requires vertex_property_map_for<Label, G> &&
+         std::equality_comparable<vertex_property_map_value_t<Label>> &&
          std::uniform_random_bit_generator<std::remove_cvref_t<Gen>>
 void label_propagation(G&&    g,
                        Label& label,
                        Gen&&  rng       = std::default_random_engine{},
                        T      max_iters = std::numeric_limits<T>::max()) {
-  using label_type = std::ranges::range_value_t<Label>;
+  using label_type = vertex_property_map_value_t<Label>;
 
   const size_t N = num_vertices(g);
   if (N == 0) {
@@ -131,8 +132,11 @@ void label_propagation(G&&    g,
   }
 
   // Build shuffleable vector of vertex IDs
-  std::vector<vertex_id_t<G>> order(N);
-  std::iota(order.begin(), order.end(), vertex_id_t<G>{0});
+  std::vector<vertex_id_t<G>> order;
+  order.reserve(N);
+  for (auto&& u : vertices(g)) {
+    order.push_back(vertex_id(g, u));
+  }
 
   for (T iter = 0; iter < max_iters; ++iter) {
     std::shuffle(order.begin(), order.end(), rng);
@@ -201,18 +205,19 @@ void label_propagation(G&&    g,
  *
  * @param empty_label  Sentinel value representing an unlabelled vertex. Passed by value.
  */
-template <index_adjacency_list             G,
-          std::ranges::random_access_range Label,
+template <adjacency_list G,
+          class Label,
           class Gen = std::default_random_engine,
           class T   = size_t>
-requires std::equality_comparable<std::ranges::range_value_t<Label>> &&
+requires vertex_property_map_for<Label, G> &&
+         std::equality_comparable<vertex_property_map_value_t<Label>> &&
          std::uniform_random_bit_generator<std::remove_cvref_t<Gen>>
-void label_propagation(G&&                               g,
-                       Label&                            label,
-                       std::ranges::range_value_t<Label> empty_label,
-                       Gen&&                             rng       = std::default_random_engine{},
-                       T                                 max_iters = std::numeric_limits<T>::max()) {
-  using label_type = std::ranges::range_value_t<Label>;
+void label_propagation(G&&                                            g,
+                       Label&                                         label,
+                       vertex_property_map_value_t<Label>              empty_label,
+                       Gen&&                                           rng       = std::default_random_engine{},
+                       T                                               max_iters = std::numeric_limits<T>::max()) {
+  using label_type = vertex_property_map_value_t<Label>;
 
   const size_t N = num_vertices(g);
   if (N == 0) {
@@ -220,8 +225,11 @@ void label_propagation(G&&                               g,
   }
 
   // Build shuffleable vector of vertex IDs
-  std::vector<vertex_id_t<G>> order(N);
-  std::iota(order.begin(), order.end(), vertex_id_t<G>{0});
+  std::vector<vertex_id_t<G>> order;
+  order.reserve(N);
+  for (auto&& u : vertices(g)) {
+    order.push_back(vertex_id(g, u));
+  }
 
   for (T iter = 0; iter < max_iters; ++iter) {
     std::shuffle(order.begin(), order.end(), rng);

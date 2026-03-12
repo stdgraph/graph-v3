@@ -23,9 +23,6 @@
   - [Disconnected Graph](#example-5-disconnected-graph)
 - [Complexity](#complexity)
 - [Preconditions](#preconditions)
-- [Postconditions](#postconditions)
-- [Throws](#throws)
-- [Remarks](#remarks)
 - [See Also](#see-also)
 
 ## Overview
@@ -34,8 +31,8 @@ An **articulation point** (cut vertex) is a vertex whose removal disconnects the
 graph (or increases the number of connected components). The algorithm uses the
 iterative **Hopcroft-Tarjan** approach with discovery times and low-link values.
 
-The graph must satisfy `index_adjacency_list<G>` — vertices are stored in a
-contiguous, integer-indexed random-access range.
+The graph must satisfy `adjacency_list<G>` — both index-based (contiguous
+integer-indexed) and map-based (sparse vertex ID) graphs are supported.
 
 Each articulation point is emitted exactly once to the output iterator, though
 the order is unspecified.
@@ -72,10 +69,10 @@ void articulation_points(G&& g, OutputIterator cut_vertices);
 
 ## Parameters
 
-| Parameter      | Description                                                                                                                                                 |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `g`            | Graph satisfying `index_adjacency_list<G>`. `G` must model `index_adjacency_list` with integral vertex IDs.                                                 |
-| `cut_vertices` | Output iterator satisfying `output_iterator<OutputIterator, vertex_id_t<G>>`. Receives vertex IDs of articulation points. Each vertex appears exactly once. |
+| Parameter | Description |
+|-----------|-------------|
+| `g` | Graph satisfying `adjacency_list` |
+| `cut_vertices` | Output iterator receiving vertex IDs of articulation points. Each vertex appears exactly once. |
 
 ## Examples
 
@@ -183,38 +180,19 @@ articulation_points(g, std::back_inserter(cuts));
 
 ## Complexity
 
-| Metric | Value                                                        |
-| ------ | ------------------------------------------------------------ |
-| Time   | O(V + E)                                                     |
-| Space  | O(V) for discovery times, low-link values, and the DFS stack |
+| Metric | Value |
+|--------|-------|
+| Time | O(V + E) |
+| Space | O(V) for discovery times, low-link values, and the DFS stack |
 
 ## Preconditions
 
-- Graph must satisfy `index_adjacency_list<G>`.
+- Graph must satisfy `adjacency_list<G>`.
 - For undirected graphs, **both directions** of each edge must be stored (or use
   `undirected_adjacency_list`).
 - Self-loops do not affect the result.
 - Parallel edges: a vertex connecting two otherwise-disconnected subgraphs via
   parallel edges is still considered an articulation point.
-
-## Postconditions
-
-- Every vertex written to `cut_vertices` is an articulation point of `g`.
-- Each articulation point appears exactly once in the output.
-- The order of emitted vertex IDs is unspecified.
-- If the graph is biconnected (or has fewer than 3 vertices), no vertices are emitted.
-
-## Throws
-
-- `std::bad_alloc` — if internal allocation for discovery times, low-link values, or the DFS stack fails.
-- Provides the **basic exception guarantee**: if an exception is thrown, partial output may have been written to `cut_vertices`.
-
-## Remarks
-
-- An articulation point is a vertex whose removal increases the number of connected components.
-- The algorithm is designed for **undirected** graphs. Applying it to a directed graph (stored with only one direction per edge) produces undefined results.
-- Isolated vertices are never articulation points.
-- Self-loops do not affect the result.
 
 ## See Also
 

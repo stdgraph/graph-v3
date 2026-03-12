@@ -22,8 +22,8 @@
 #include "graph/graph.hpp"
 #include "graph/views/incidence.hpp"
 #include "graph/algorithm/traversal_common.hpp"
+#include "graph/adj_list/vertex_property_map.hpp"
 
-#include <vector>
 #include <stack>
 #include <ranges>
 #include <limits>
@@ -34,7 +34,7 @@
 namespace graph {
 
 // Using declarations for new namespace structure
-using adj_list::index_adjacency_list;
+using adj_list::adjacency_list;
 using adj_list::vertex_id_t;
 using adj_list::find_vertex;
 
@@ -92,12 +92,12 @@ using adj_list::find_vertex;
  * - ✅ Trees - all edges classified as tree edges
  * 
  * **Container Requirements:**
- * - Requires: `index_adjacency_list<G>` (vertex IDs are contiguous indices)
+ * - Requires: `adjacency_list<G>` (vertices + out_edges)
  * - Works with: All `dynamic_graph` container combinations
  * - Works with: Vector-based containers (vov, vol, vofl, etc.)
- * - Limitations: Requires contiguous vertex IDs for color array tracking
+ * - Works with: Map-based containers (mov, uov, mod, uod, etc.)
  * 
- * @tparam G Graph type satisfying index_adjacency_list concept
+ * @tparam G Graph type satisfying adjacency_list concept
  * @tparam Visitor Visitor type with optional callback methods
  * 
  * @param g The graph to traverse (forwarding reference)
@@ -193,7 +193,7 @@ using adj_list::find_vertex;
  * 
  * **Data Structures:**
  * - Stack: `std::stack<StackFrame>` where each frame holds `{vertex_id, it, end}`
- * - Color: `std::vector<Color>` with three states (White/Gray/Black) using `uint8_t`
+ * - Color: `vertex_property_map<G, Color>` — lazy init, absent keys default to White
  * - Edge iterators: Stored in stack frames for O(1) resume after backtracking
  * 
  * **Design Decisions:**
@@ -233,13 +233,11 @@ using adj_list::find_vertex;
  * @see breadth_first_search BFS algorithm for shortest-path traversal
  */
 
-template <index_adjacency_list G, class Visitor = empty_visitor>
+template <adjacency_list G, class Visitor = empty_visitor>
 void depth_first_search(G&&                   g,      // graph
                         const vertex_id_t<G>& source, // starting vertex_id
                         Visitor&&             visitor = empty_visitor()) {
-  using id_type = vertex_id_store_t<G>;
-  static_assert(std::is_same_v<id_type, vertex_id_t<G>>,
-                "vertex_id_store_t<G> should equal vertex_id_t<G> for index_adjacency_list");
+  using id_type = vertex_id_t<G>;
 
   // Vertex color states for DFS
   enum class Color : uint8_t {
@@ -248,7 +246,14 @@ void depth_first_search(G&&                   g,      // graph
     Black  // Finished
   };
 
-  std::vector<Color> color(num_vertices(g), Color::White);
+  // Lazy init: index graphs get a sized vector (value-init → White=0),
+  // mapped graphs get an empty reserved map (absent key → White via get_color).
+  auto color = make_vertex_property_map<std::remove_reference_t<G>, Color>(g);
+
+  // Read helper: returns White for absent keys (mapped graphs, unvisited vertices).
+  auto get_color = [&color](const id_type& uid) -> Color {
+    return vertex_property_map_get(color, uid, Color::White);
+  };
 
   // Initialize source vertex
   if constexpr (has_on_initialize_vertex<G, Visitor>) {
@@ -315,7 +320,9 @@ void depth_first_search(G&&                   g,      // graph
       visitor.on_examine_edge(g, uv);
     }
 
-    if (color[vid] == Color::White) {
+    const Color target_color = get_color(vid);
+
+    if (target_color == Color::White) {
       // Tree edge: target is undiscovered
       if constexpr (has_on_tree_edge<G, Visitor>) {
         visitor.on_tree_edge(g, uv);
@@ -333,7 +340,7 @@ void depth_first_search(G&&                   g,      // graph
       }
       auto inc = views::incidence(g, *find_vertex(g, vid));
       S.push({vid, std::ranges::begin(inc), std::ranges::end(inc)});
-    } else if (color[vid] == Color::Gray) {
+    } else if (target_color == Color::Gray) {
       // Back edge: target is an ancestor still being processed (cycle)
       if constexpr (has_on_back_edge<G, Visitor>) {
         visitor.on_back_edge(g, uv);

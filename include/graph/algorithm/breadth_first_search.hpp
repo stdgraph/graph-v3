@@ -21,8 +21,8 @@
 #include "graph/graph.hpp"
 #include "graph/views/incidence.hpp"
 #include "graph/algorithm/traversal_common.hpp"
+#include "graph/adj_list/vertex_property_map.hpp"
 
-#include <vector>
 #include <queue>
 #include <ranges>
 #include <limits>
@@ -33,7 +33,7 @@
 namespace graph {
 
 // Using declarations for new namespace structure
-using adj_list::index_adjacency_list;
+using adj_list::adjacency_list;
 using adj_list::vertex_id_t;
 using adj_list::find_vertex;
 
@@ -90,13 +90,14 @@ using adj_list::find_vertex;
  * - ✅ Trees (optimal level-order traversal)
  * 
  * **Container Requirements:**
- * - Requires: `index_adjacency_list<G>` (vertex IDs are indices)
+ * - Requires: `adjacency_list<G>` (index or mapped vertex containers)
  * - Requires: `input_range<Sources>` with convertible elements
  * - Works with: All `dynamic_graph` container combinations
  * - Works with: Vector-based containers (vov, vol, vofl, etc.)
- * - Limitations: Requires contiguous vertex IDs for visited tracking
+ * - Works with: Map-based containers (mov, mod, uov, uod, etc.)
+ * - Visited tracking: vector<bool> for index graphs, unordered_map for mapped
  * 
- * @tparam G Graph type satisfying index_adjacency_list concept
+ * @tparam G Graph type satisfying adjacency_list concept
  * @tparam Sources Input range of source vertex IDs
  * @tparam Visitor Visitor type with optional callback methods
  * 
@@ -114,12 +115,17 @@ using adj_list::find_vertex;
  * 
  * @par Exception Safety
  * 
- * Throws:
- *   std::bad_alloc if visited array or queue cannot allocate memory.
- *   Any exception propagated from visitor callbacks.
- *   Any exception propagated from container operations.
- *   Basic exception guarantee: graph `g` remains unchanged; visitor state depends on
- *   implementation; partial traversal may have occurred.
+ * **Guarantee:** Basic exception safety
+ * 
+ * **Throws:**
+ * - May throw `std::bad_alloc` if visited array or queue cannot allocate memory
+ * - May propagate exceptions from visitor callbacks
+ * - May propagate exceptions from container operations
+ * 
+ * **State after exception:**
+ * - Graph `g` remains unchanged
+ * - Visitor state depends on implementation
+ * - Partial traversal may have occurred
  * 
  * @par Visitor Callbacks
  * 
@@ -167,7 +173,7 @@ using adj_list::find_vertex;
  * 
  * **Data Structures:**
  * - Queue: `std::queue` for FIFO vertex processing
- * - Visited: `std::vector<bool>` for O(1) lookup (space-efficient)
+ * - Visited: `vertex_property_map<G, bool>` — vector<bool> for index graphs, unordered_map for mapped
  * - No distance tracking (use BFS views for distances)
  * 
  * **Design Decisions:**
@@ -181,14 +187,13 @@ using adj_list::find_vertex;
  *    - Efficiency: No overhead vs separate single-source implementation
  *    - Use cases: Multi-source shortest paths, reachability from sets
  * 
- * 3. **Why std::vector<bool> for visited tracking?**
- *    - Space efficiency: 1 bit per vertex (8x smaller than std::vector<char>)
- *    - Performance: Modern std::vector<bool> optimizations competitive with bitset
- *    - Flexibility: Size determined at runtime
+ * 3. **Why vertex_property_map<G, bool> for visited tracking?**
+ *    - For index graphs: vector<bool>, 1 bit per vertex (8x smaller than vector<char>)
+ *    - For mapped graphs: unordered_map<vertex_id_t<G>, bool>, O(1) amortized lookup
+ *    - Uniform API: make_vertex_property_map<G, bool>(g, false) works for both
  * 
  * **Optimization Opportunities:**
  * - For small graphs: Use std::bitset if vertex count known at compile time
- * - For sparse visitation: Use std::unordered_set<vertex_id_t> (map-based containers)
  * - For parallel BFS: Use concurrent queue and atomic visited flags
  * 
  * @see breadth_first_search(G&&, vertex_id_t<G>, Visitor&&) Single-source convenience wrapper
@@ -200,18 +205,16 @@ using adj_list::find_vertex;
  * - Moore, E. F. (1959). "The shortest path through a maze". *Proceedings of the International Symposium on the Theory of Switching*. Harvard University Press.
  * - Cormen et al. (2009). *Introduction to Algorithms* (3rd ed.). MIT Press. Section 22.2.
  */
-template <index_adjacency_list G, std::ranges::input_range Sources, class Visitor = empty_visitor>
+template <adjacency_list G, std::ranges::input_range Sources, class Visitor = empty_visitor>
 requires std::convertible_to<std::ranges::range_value_t<Sources>, vertex_id_t<G>>
 void breadth_first_search(G&&            g, // graph
                           const Sources& sources,
                           Visitor&&      visitor = empty_visitor()) {
-  using id_type = vertex_id_store_t<G>;
-  static_assert(std::is_same_v<id_type, vertex_id_t<G>>,
-                "vertex_id_store_t<G> should equal vertex_id_t<G> for index_adjacency_list");
+  using id_type = vertex_id_t<G>;
 
   // Initialize BFS data structures
-  std::queue<id_type> Q;                               // FIFO queue for level-order traversal
-  std::vector<bool>   visited(num_vertices(g), false); // Track visited vertices to prevent cycles
+  std::queue<id_type> Q;                                    // FIFO queue for level-order traversal
+  auto                visited = make_vertex_property_map<G, bool>(g, false); // Track visited vertices to prevent cycles
 
   // Initialize all source vertices
   for (auto uid : sources) {
@@ -288,14 +291,14 @@ void breadth_first_search(G&&            g, // graph
  * 
  * Identical to multi-source version since delegation overhead is negligible.
  * 
- * @tparam G Graph type satisfying index_adjacency_list concept
+ * @tparam G Graph type satisfying adjacency_list concept
  * @tparam Visitor Visitor type with optional callback methods
  * 
  * @param g The graph to traverse (forwarding reference)
  * @param source Starting vertex ID
  * @param visitor Visitor object to receive traversal events (default: empty_visitor)
  * 
- * @pre `source` must be valid: `source < num_vertices(g)`
+ * @pre `source` must be a valid vertex ID in the graph
  * @post All vertices reachable from `source` are visited exactly once
  * 
  * @par Exception Safety
@@ -329,10 +332,10 @@ void breadth_first_search(G&&            g, // graph
  * @see breadth_first_search(G&&, Sources&&, Visitor&&) Multi-source version (implementation)
  * @see views::vertices_bfs BFS view for range-based traversal
  */
-template <index_adjacency_list G, class Visitor = empty_visitor>
-void breadth_first_search(G&&                   g,      // graph
-                          const vertex_id_t<G>& source, // starting vertex_id
-                          Visitor&&             visitor = empty_visitor()) {
+template <adjacency_list G, class Visitor = empty_visitor>
+void breadth_first_search(G&&                      g,      // graph
+                          const vertex_id_t<G>&    source, // starting vertex_id
+                          Visitor&&                visitor = empty_visitor()) {
   // Wrap single source in array and delegate to multi-source version
   std::array<vertex_id_t<G>, 1> sources{source};
   breadth_first_search(std::forward<G>(g), sources, std::forward<Visitor>(visitor));

@@ -25,9 +25,6 @@
   - [Visitor: Monitoring the Final Check Pass](#example-6-visitor-monitoring-the-final-check-pass)
 - [Complexity](#complexity)
 - [Preconditions](#preconditions)
-- [Postconditions](#postconditions)
-- [Throws](#throws)
-- [Remarks](#remarks)
 - [See Also](#see-also)
 
 ## Overview
@@ -36,8 +33,8 @@ The Bellman-Ford algorithm computes single-source (or multi-source) shortest
 paths in a weighted directed graph, supporting **negative edge weights**. Unlike
 Dijkstra's algorithm, it can detect negative-weight cycles.
 
-The graph must satisfy `index_adjacency_list<G>` — vertices are stored in a
-contiguous, integer-indexed random-access range.
+The graph must satisfy `adjacency_list<G>` — both index-based (contiguous
+integer-indexed) and map-based (sparse vertex ID) graphs are supported.
 
 The algorithm relaxes all edges V−1 times, then performs a final pass to detect
 negative cycles. It returns `std::optional<vertex_id_t<G>>`: empty if no
@@ -119,24 +116,22 @@ void find_negative_cycle(G& g, const Predecessors& predecessor,
 
 ## Parameters
 
-| Parameter            | Description                                                                                                                                                      |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `g`                  | Graph satisfying `index_adjacency_list<G>`. `G` must have integral vertex IDs.                                                                                   |
-| `source` / `sources` | Source vertex ID or input range of source vertex IDs. `range_value_t<Sources>` must be convertible to `vertex_id_t<G>`.                                          |
-| `distances`          | Random-access range sized to `num_vertices(g)`. Filled with shortest distances. `range_value_t<Distances>` must satisfy `is_arithmetic_v`.                       |
-| `predecessors`       | Random-access range sized to `num_vertices(g)`. Filled with predecessor vertex IDs. `range_value_t<Predecessors>` must be convertible from `vertex_id_t<G>`.     |
-| `weight`             | Callable `WF(const G&, const edge_t<G>&) -> Distance`. Must satisfy `basic_edge_weight_function<G, WF, Distance, Compare, Combine>`. May return negative values. |
-| `visitor`            | Optional visitor struct with callback methods (see Visitor Events). Default: `empty_visitor{}`.                                                                  |
-| `compare`            | Comparison function `(Distance, Distance) -> bool`. Default: `std::less<>{}`.                                                                                    |
-| `combine`            | Combination function `(Distance, Weight) -> Distance`. Default: `std::plus<>{}`.                                                                                 |
-| `cycle_vertex_id`    | A vertex ID on the negative cycle (from the return value of the main algorithm).                                                                                 |
-| `out_cycle`          | Output iterator for the cycle vertex sequence. Must satisfy `output_iterator<OutputIterator, vertex_id_t<G>>`.                                                   |
+| Parameter | Description |
+|-----------|-------------|
+| `g` | Graph satisfying `adjacency_list` |
+| `source` / `sources` | Source vertex ID or range of source vertex IDs |
+| `distances` | Subscriptable by `vertex_id_t<G>`. For index graphs, a pre-sized `std::vector`; for mapped graphs, use `make_vertex_property_map<G, T>(g, init)`. Must satisfy `vertex_property_map_for<Distances, G>`. |
+| `predecessors` | Subscriptable by `vertex_id_t<G>`. For index graphs, a pre-sized `std::vector`; for mapped graphs, use `make_vertex_property_map<G, T>(g, init)`. Must satisfy `vertex_property_map_for<Predecessors, G>`. |
+| `weight` | Callable `WF(g, uv)` returning edge weight (may be negative). Must satisfy `basic_edge_weight_function`. |
+| `visitor` | Optional visitor struct with callback methods (see below). Default: `empty_visitor{}`. |
+| `compare` | Comparison function for distance values. Default: `std::less<>{}`. |
+| `combine` | Combine function for distance + weight. Default: `std::plus<>{}`. |
+| `cycle_vertex_id` | A vertex ID on the negative cycle (from the return value of the main algorithm) |
+| `out_cycle` | Output iterator for the cycle vertex sequence |
 
-**Returns:** `[[nodiscard]] constexpr optional<vertex_id_t<G>>` — returns
-`nullopt` if no negative-weight cycle is detected. Returns the id of a vertex on
-a negative-weight cycle if one exists. Use `find_negative_cycle()` to extract
-all cycle vertices from the predecessor array. **Always check this value** —
-if a negative cycle exists, distances for affected vertices are undefined.
+**Return value:** `std::optional<vertex_id_t<G>>` — empty if no negative cycle,
+or a vertex ID on the cycle. **Always check this value** — if a negative cycle
+exists, distances for affected vertices are undefined.
 
 ## Visitor Events
 
@@ -144,14 +139,14 @@ Bellman-Ford supports an optional visitor with the following callbacks. Vertex
 events have `_id` variants (e.g., `on_discover_vertex_id(g, uid)`). You only
 need to define the events you care about.
 
-| Event                          | Called when                                                           |
-| ------------------------------ | --------------------------------------------------------------------- |
-| `on_discover_vertex(g, u)`     | Vertex first reached                                                  |
-| `on_examine_edge(g, uv)`       | Edge examined for relaxation (each of V−1 passes)                     |
-| `on_edge_relaxed(g, uv)`       | Edge improved a shorter path                                          |
-| `on_edge_not_relaxed(g, uv)`   | Edge did not improve the current best path                            |
-| `on_edge_minimized(g, uv)`     | **Final check pass:** edge is at minimum distance (no negative cycle) |
-| `on_edge_not_minimized(g, uv)` | **Final check pass:** edge NOT at minimum (negative cycle indicator)  |
+| Event | Called when |
+|-------|------------|
+| `on_discover_vertex(g, u)` | Vertex first reached |
+| `on_examine_edge(g, uv)` | Edge examined for relaxation (each of V−1 passes) |
+| `on_edge_relaxed(g, uv)` | Edge improved a shorter path |
+| `on_edge_not_relaxed(g, uv)` | Edge did not improve the current best path |
+| `on_edge_minimized(g, uv)` | **Final check pass:** edge is at minimum distance (no negative cycle) |
+| `on_edge_not_minimized(g, uv)` | **Final check pass:** edge NOT at minimum (negative cycle indicator) |
 
 The `on_edge_minimized` / `on_edge_not_minimized` events are unique to
 Bellman-Ford. They fire during the V-th pass (verification) and indicate whether
@@ -304,58 +299,19 @@ auto cycle = bellman_ford_shortest_paths(g, 0u, dist, pred,
 
 ## Complexity
 
-| Metric | Value                                       |
-| ------ | ------------------------------------------- |
-| Time   | O(V · E)                                    |
-| Space  | O(1) auxiliary (beyond input/output arrays) |
+| Metric | Value |
+|--------|-------|
+| Time | O(V · E) |
+| Space | O(1) auxiliary (beyond input/output arrays) |
 
 ## Preconditions
 
-- Graph must satisfy `index_adjacency_list<G>`.
-- `distances` and `predecessors` must be sized to `num_vertices(g)`.
+- Graph must satisfy `adjacency_list<G>`.
+- `distances` and `predecessors` must satisfy `vertex_property_map_for` (pre-sized
+  vectors for index graphs, or `make_vertex_property_map` for mapped graphs).
 - Call `init_shortest_paths(distances, predecessors)` before invoking the algorithm.
 - **Always check the return value** — if a negative cycle exists, distances are
   undefined for affected vertices.
-
-## Postconditions
-
-- For every source vertex `s`: `distances[s] == 0`.
-- When the return value is `nullopt` (no negative cycle):
-  - For every reachable vertex `v`: `distances[v]` contains the shortest
-    distance from the nearest source; `predecessors[v]` contains the id of
-    `v`'s predecessor on the shortest path, or `v` itself if `v` is a source.
-  - For every unreachable vertex `v`: `distances[v]` is unchanged
-    (typically `numeric_limits<Distance>::max()` after `init_shortest_paths`).
-- When the return value is `optional<vertex_id_t<G>> id` (negative cycle detected):
-  - `id` is a vertex on the negative-weight cycle. The full cycle can be
-    recovered by calling `find_negative_cycle(g, predecessors, id, out)`.
-  - `distances` and `predecessors` may contain intermediate values; they are
-    not guaranteed to hold shortest distances for vertices on or reachable
-    from the cycle.
-- The graph `g` is not modified.
-
-## Throws
-
-- `std::out_of_range` — any source vertex id is outside `[0, num_vertices(g))`.
-- `std::out_of_range` — `distances` or `predecessors` is undersized
-  (size < `num_vertices(g)`).
-- `std::bad_alloc` — internal allocation fails.
-- Exceptions from the weight function or visitor callbacks are propagated
-  unchanged.
-
-**Exception guarantee:** Basic. If an exception is thrown, the graph `g` is
-unchanged but `distances` and `predecessors` may be partially modified.
-
-## Remarks
-
-- The weight function must be pure: no side effects, no graph modification.
-- The `O(V·E)` time bound holds regardless of graph connectivity.
-- `bellman_ford_shortest_distances` internally uses a null-predecessor range,
-  avoiding the cost of maintaining predecessor state. Negative-cycle detection
-  is still performed and the return value is still meaningful, but path
-  reconstruction is not available.
-- The `on_edge_minimized` / `on_edge_not_minimized` visitor events fire only
-  during the final (V-th) verification pass.
 
 ## See Also
 

@@ -15,6 +15,7 @@
 #include "graph/graph.hpp"
 #include "graph/views/incidence.hpp"
 #include "graph/views/vertexlist.hpp"
+#include "graph/adj_list/vertex_property_map.hpp"
 
 #ifndef GRAPH_JACCARD_HPP
 #  define GRAPH_JACCARD_HPP
@@ -26,7 +27,7 @@
 namespace graph {
 
 // Using declarations for new namespace structure
-using adj_list::index_adjacency_list;
+using adj_list::adjacency_list;
 using adj_list::vertex_id_t;
 using adj_list::edge_t;
 using adj_list::num_vertices;
@@ -73,10 +74,10 @@ using adj_list::num_vertices;
  * - ✅ Empty graphs (returns immediately)
  *
  * ### Container Requirements
- * - Requires: `index_adjacency_list<G>` concept (contiguous vertex IDs)
- * - Works with: All `dynamic_graph` container combinations with contiguous IDs
+ * - Requires: `adjacency_list<G>` concept (index or mapped vertex containers)
+ * - Works with: All `dynamic_graph` container combinations
  *
- * @tparam G      The graph type. Must satisfy index_adjacency_list concept.
+ * @tparam G      The graph type. Must satisfy adjacency_list concept.
  * @tparam OutOp  Callback invoked as `out(uid, vid, uv, val)` for each directed edge.
  * @tparam T      Floating-point type for the coefficient (default: double).
  *
@@ -84,7 +85,8 @@ using adj_list::num_vertices;
  * @param out Callback receiving (vertex_id_t<G> uid, vertex_id_t<G> vid,
  *            edge_t<G>& uv, T val) for every directed edge.
  *
- * @pre g must have contiguous vertex IDs [0, num_vertices(g)).
+ * @pre For index graphs: g must have contiguous vertex IDs [0, num_vertices(g)).
+ * @pre For mapped graphs: vertex IDs may be sparse (map/unordered_map containers).
  * @pre For undirected semantics, each edge {u,v} must be stored as both (u,v) and (v,u).
  *
  * @post `out` is called exactly once per directed edge in the graph.
@@ -123,20 +125,21 @@ using adj_list::num_vertices;
  * }
  * ```
  */
-template <index_adjacency_list G, typename OutOp, typename T = double>
+template <adjacency_list G, typename OutOp, typename T = double>
 requires std::invocable<OutOp, vertex_id_t<G>, vertex_id_t<G>, edge_t<G>&, T>
 void jaccard_coefficient(G&& g, OutOp out) {
   using vid_t = vertex_id_t<G>;
 
-  const size_t N = num_vertices(g);
-  if (N == 0) {
+  if (num_vertices(g) == 0) {
     return;
   }
 
   // ============================================================================
   // Phase 1: Build neighbor sets for every vertex (self-loops excluded)
   // ============================================================================
-  std::vector<std::unordered_set<vid_t>> nbrs(N);
+  // vertex_property_map: vector<set> for index graphs, unordered_map<VId, set> for mapped.
+  using nbr_set = std::unordered_set<vid_t>;
+  auto nbrs     = make_vertex_property_map<std::remove_reference_t<G>, nbr_set>(g, nbr_set{});
 
   for (auto [uid] : views::basic_vertexlist(g)) {
     for (auto [tid] : views::basic_incidence(g, uid)) {
@@ -149,8 +152,8 @@ void jaccard_coefficient(G&& g, OutOp out) {
   // ============================================================================
   // Phase 2: For every directed edge, compute and report the Jaccard coefficient
   // ============================================================================
-  for (auto [uid] : views::basic_vertexlist(g)) {
-    for (auto&& [vid, uv] : views::incidence(g, uid)) {
+  for (auto&& [uid, u] : views::vertexlist(g)) {
+    for (auto&& [vid, uv] : views::incidence(g, u)) {
       // Skip self-loops
       if (vid == uid) {
         continue;

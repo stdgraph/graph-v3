@@ -466,3 +466,101 @@ TEMPLATE_TEST_CASE("biconnected_components - K4 (typed)", "[algorithm][biconnect
   auto expected = normalize_components<typename Graph::vertex_id_type>({{0, 1, 2, 3}});
   REQUIRE(normalize_components(result) == expected);
 }
+
+// =============================================================================
+// Sparse (mapped vertex ID) tests
+// =============================================================================
+
+/// Generic helper: run biconnected_components on any adjacency_list graph.
+template <typename G>
+auto run_bcc_generic(G&& g) {
+  using vid_t = adj_list::vertex_id_t<std::remove_reference_t<G>>;
+  std::vector<std::vector<vid_t>> result;
+  biconnected_components(g, result);
+  return normalize_components(result);
+}
+
+TEMPLATE_TEST_CASE("biconnected_components - sparse path graph",
+                   "[algorithm][biconnected_components][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // Path: 10-20-30-40 (bidirectional)
+  Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 1}, {30, 20, 1}, {30, 40, 1}, {40, 30, 1}});
+
+  auto result = run_bcc_generic(g);
+
+  // Each bridge is its own biconnected component
+  auto expected = normalize_components<id_type>({{10, 20}, {20, 30}, {30, 40}});
+  REQUIRE(result == expected);
+}
+
+TEMPLATE_TEST_CASE("biconnected_components - sparse cycle graph",
+                   "[algorithm][biconnected_components][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // Cycle: 10-20-30-40-10 (bidirectional)
+  Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 1}, {30, 20, 1},
+           {30, 40, 1}, {40, 30, 1}, {40, 10, 1}, {10, 40, 1}});
+
+  auto result = run_bcc_generic(g);
+
+  // One biconnected component containing all vertices
+  auto expected = normalize_components<id_type>({{10, 20, 30, 40}});
+  REQUIRE(result == expected);
+}
+
+TEMPLATE_TEST_CASE("biconnected_components - sparse star graph",
+                   "[algorithm][biconnected_components][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // Star: centre=100, leaves=200,300,400 (bidirectional)
+  Graph g({{100, 200, 1}, {200, 100, 1},
+           {100, 300, 1}, {300, 100, 1},
+           {100, 400, 1}, {400, 100, 1}});
+
+  auto result = run_bcc_generic(g);
+
+  // Each spoke is its own biconnected component
+  auto expected = normalize_components<id_type>({{100, 200}, {100, 300}, {100, 400}});
+  REQUIRE(result == expected);
+}
+
+TEMPLATE_TEST_CASE("biconnected_components - sparse bridge graph",
+                   "[algorithm][biconnected_components][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // Triangle 10-20-30 bridged to triangle 40-50-60 via edge 30-40
+  Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 1}, {30, 20, 1}, {10, 30, 1}, {30, 10, 1},
+           {40, 50, 1}, {50, 40, 1}, {50, 60, 1}, {60, 50, 1}, {40, 60, 1}, {60, 40, 1},
+           {30, 40, 1}, {40, 30, 1}});
+
+  auto result = run_bcc_generic(g);
+
+  auto expected = normalize_components<id_type>({{10, 20, 30}, {30, 40}, {40, 50, 60}});
+  REQUIRE(result == expected);
+}
+
+TEMPLATE_TEST_CASE("biconnected_components - sparse disconnected graph",
+                   "[algorithm][biconnected_components][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // Component 1: path 10-20-30 (bidirectional)
+  // Component 2: single edge 100-200 (bidirectional)
+  Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 1}, {30, 20, 1},
+           {100, 200, 1}, {200, 100, 1}});
+
+  auto result = run_bcc_generic(g);
+
+  auto expected = normalize_components<id_type>({{10, 20}, {20, 30}, {100, 200}});
+  REQUIRE(result == expected);
+}

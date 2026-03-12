@@ -24,9 +24,7 @@
   - [Reproducibility with Fixed RNG Seed](#example-6-reproducibility-with-fixed-rng-seed)
 - [Complexity](#complexity)
 - [Preconditions](#preconditions)
-- [Postconditions](#postconditions)
-- [Throws](#throws)
-- [Remarks](#remarks)
+- [Notes](#notes)
 - [See Also](#see-also)
 
 ## Overview
@@ -36,8 +34,8 @@ with a label (typically its own vertex ID), and in each iteration, every vertex
 adopts the most frequent label among its neighbors (majority vote). The process
 repeats until convergence or a maximum iteration count is reached.
 
-The graph must satisfy `index_adjacency_list<G>` — vertices are stored in a
-contiguous, integer-indexed random-access range.
+The graph must satisfy `adjacency_list<G>` — both index-based (contiguous
+integer-indexed) and map-based (sparse vertex ID) graphs are supported.
 
 Key behaviors:
 
@@ -94,13 +92,13 @@ void label_propagation(G&& g, Label& label,
 
 ## Parameters
 
-| Parameter     | Description                                                                                                                                                                                                          |
-| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `g`           | Graph satisfying `index_adjacency_list<G>`. `G` must model `index_adjacency_list` with integral vertex IDs.                                                                                                          |
-| `label`       | Random-access range sized to `num_vertices(g)`. `Label` must satisfy `random_access_range` with an equality-comparable, hashable `range_value_t<Label>`. Initial labels in, community labels out. Modified in-place. |
-| `empty_label` | Sentinel value for unlabeled vertices (they don't vote until labeled)                                                                                                                                                |
-| `rng`         | Random number generator satisfying `uniform_random_bit_generator` for tie-breaking and shuffle (e.g., `std::mt19937`)                                                                                                |
-| `max_iters`   | Maximum number of iterations. Default: unlimited (run until convergence).                                                                                                                                            |
+| Parameter | Description |
+|-----------|-------------|
+| `g` | Graph satisfying `adjacency_list` |
+| `label` | Subscriptable by `vertex_id_t<G>`. For index graphs, a pre-sized `std::vector`; for mapped graphs, use `make_vertex_property_map<G, T>(g, init)`. Must satisfy `vertex_property_map_for<Label, G>`. Initial labels in, community labels out. Modified in-place. |
+| `empty_label` | Sentinel value for unlabeled vertices (they don't vote until labeled) |
+| `rng` | Random number generator for tie-breaking and shuffle (e.g., `std::mt19937`) |
+| `max_iters` | Maximum number of iterations. Default: unlimited (run until convergence). |
 
 ## Examples
 
@@ -249,10 +247,10 @@ auto labels_c = run_lp(123);
 
 ## Complexity
 
-| Metric | Value                                             |
-| ------ | ------------------------------------------------- |
-| Time   | O(E) per iteration                                |
-| Space  | O(V) auxiliary (shuffle buffer, frequency counts) |
+| Metric | Value |
+|--------|-------|
+| Time | O(E) per iteration |
+| Space | O(V) auxiliary (shuffle buffer, frequency counts) |
 
 Typically converges in a small number of iterations (often < 10) for
 real-world graphs. Worst-case iteration count is unbounded but rare in
@@ -260,27 +258,14 @@ practice.
 
 ## Preconditions
 
-- Graph must satisfy `index_adjacency_list<G>`.
-- `label` must be sized to `num_vertices(g)` and pre-initialized (e.g., with
-  `std::iota` for one-label-per-vertex).
+- Graph must satisfy `adjacency_list<G>`.
+- `label` must satisfy `vertex_property_map_for<Label, G>` and be pre-initialized
+  (e.g., with `std::iota` for one-label-per-vertex).
 - The RNG must satisfy `UniformRandomBitGenerator`.
 - With `empty_label` sentinel: vertices with the sentinel label don't vote.
   If all vertices start with the sentinel, no propagation occurs.
 
-## Postconditions
-
-- Every vertex in `label` holds a community label (or remains `empty_label` if unreachable from any labeled vertex in the sentinel overload).
-- All vertices in the same community share the same label value.
-- Labels are drawn from the initial label values — no new label values are created.
-- If `max_iters` is reached before convergence, labels reflect the state after the final iteration.
-
-## Throws
-
-- `std::bad_alloc` — if internal allocation for the shuffle buffer or frequency counts fails.
-- Any exception propagated from the RNG.
-- Provides the **basic exception guarantee**: if an exception is thrown, `label` may be in a partially-updated state.
-
-## Remarks
+## Notes
 
 - **Self-loops ARE counted** in the neighbor tally. A vertex with a self-loop
   counts its own label as one neighbor vote. This makes self-looped vertices

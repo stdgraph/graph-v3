@@ -23,16 +23,15 @@
   - [Most Similar Vertex Pairs](#example-5-most-similar-vertex-pairs)
 - [Complexity](#complexity)
 - [Preconditions](#preconditions)
-- [Postconditions](#postconditions)
-- [Throws](#throws)
-- [Remarks](#remarks)
+- [Notes](#notes)
 - [See Also](#see-also)
 
 ## Overview
 
 Computes the **Jaccard similarity coefficient** for every directed edge in the
-graph. The graph must satisfy `index_adjacency_list<G>` — vertices are stored
-in a contiguous, integer-indexed random-access range.
+graph. The graph must satisfy `adjacency_list<G>` — both index-based
+(contiguous integer-indexed) and map-based (sparse vertex ID) graphs are
+supported.
 
 For an edge (u, v), the coefficient is:
 
@@ -88,10 +87,10 @@ void out(vertex_id_t<G> uid, vertex_id_t<G> vid,
 
 ## Parameters
 
-| Parameter | Description                                                                                                                                                                                      |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `g`       | Graph satisfying `index_adjacency_list<G>`. `G` must model `index_adjacency_list` with integral vertex IDs.                                                                                      |
-| `out`     | Callable satisfying `invocable<OutOp, vertex_id_t<G>, vertex_id_t<G>, edge_reference_t<G>, double>`. Invoked for each directed edge (u, v) with the Jaccard coefficient. Self-loops are skipped. |
+| Parameter | Description |
+|-----------|-------------|
+| `g` | Graph satisfying `adjacency_list` |
+| `out` | Callback invoked for each directed edge (u, v) with the Jaccard coefficient. Self-loops are skipped. |
 
 ## Examples
 
@@ -212,34 +211,22 @@ std::cout << "Most similar: " << best_u << " - " << best_v
 
 ## Complexity
 
-| Metric | Value                                                                                   |
-| ------ | --------------------------------------------------------------------------------------- |
-| Time   | O(V · d_max + E · d_min) where d_max = max degree, d_min = min degree of edge endpoints |
-| Space  | O(V + E) for precomputed neighbor sets (`unordered_set` per vertex)                     |
+| Metric | Value |
+|--------|-------|
+| Time | O(V · d_max + E · d_min) where d_max = max degree, d_min = min degree of edge endpoints |
+| Space | O(V + E) for precomputed neighbor sets (`unordered_set` per vertex) |
 
 The `unordered_set` construction is O(V + E) total. Each edge intersection is
 proportional to the size of the smaller neighbor set.
 
 ## Preconditions
 
-- Graph must satisfy `index_adjacency_list<G>`.
+- Graph must satisfy `adjacency_list<G>`.
 - Self-loops are skipped (not passed to the callback).
 - The callback is invoked once per **directed** edge — for undirected graphs
   with bidirectional storage, expect two calls per logical edge.
 
-## Postconditions
-
-- The callback `out` is invoked exactly once per directed edge (u, v) where u ≠ v.
-- Each coefficient is in the range [0.0, 1.0].
-- For undirected graphs with bidirectional edge storage, J(u, v) == J(v, u).
-
-## Throws
-
-- `std::bad_alloc` — if allocation of the per-vertex `unordered_set` neighbor sets fails.
-- Any exception propagated from the user-provided callback `out`.
-- Provides the **basic exception guarantee**: if an exception is thrown, some edges may not have been reported to `out`.
-
-## Remarks
+## Notes
 
 - **Self-loops are excluded** from the neighbor sets. A vertex with a self-loop
   does not count itself as a neighbor for Jaccard computation (unlike

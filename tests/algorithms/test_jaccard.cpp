@@ -335,3 +335,147 @@ TEMPLATE_TEST_CASE("jaccard_coefficient - K4 (typed)", "[algorithm][jaccard]", v
     REQUIRE(approx_equal(val, 0.5));
   }
 }
+
+// =============================================================================
+// Sparse Vertex Tests — Map-based Containers
+// =============================================================================
+
+#include "../common/map_graph_fixtures.hpp"
+
+using namespace graph::test::map_fixtures;
+
+/// Collect Jaccard results into a map keyed by (uid, vid), using adj_list::vertex_id_t.
+template <typename G>
+auto collect_jaccard_generic(G&& g) {
+  using vid_t = adj_list::vertex_id_t<std::remove_reference_t<G>>;
+  std::map<std::pair<vid_t, vid_t>, double> result;
+  jaccard_coefficient(g, [&](auto uid, auto vid, auto& /*uv*/, double val) {
+    result[{uid, vid}] = val;
+  });
+  return result;
+}
+
+TEMPLATE_TEST_CASE("jaccard_coefficient - sparse triangle",
+                   "[algorithm][jaccard][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // Bidirectional triangle: 10-20-30
+  Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 1}, {30, 20, 1}, {10, 30, 1}, {30, 10, 1}});
+  auto  result = collect_jaccard_generic(g);
+
+  // 6 directed edges
+  REQUIRE(result.size() == 6);
+
+  // N(10)={20,30}, N(20)={10,30}, N(30)={10,20}
+  // For any pair: |intersect|=1, |union|=3 → J = 1/3
+  double expected = 1.0 / 3.0;
+  for (auto& [key, val] : result) {
+    REQUIRE(approx_equal(val, expected));
+  }
+}
+
+TEMPLATE_TEST_CASE("jaccard_coefficient - sparse K4",
+                   "[algorithm][jaccard][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // K4 bidirectional with sparse IDs: 10,20,30,40
+  Graph g({
+    {10, 20, 1}, {10, 30, 1}, {10, 40, 1},
+    {20, 10, 1}, {20, 30, 1}, {20, 40, 1},
+    {30, 10, 1}, {30, 20, 1}, {30, 40, 1},
+    {40, 10, 1}, {40, 20, 1}, {40, 30, 1}
+  });
+  auto result = collect_jaccard_generic(g);
+
+  // 12 directed edges
+  REQUIRE(result.size() == 12);
+
+  // N(u) has 3 vertices for each u, any pair shares 2 → |union|=4 → J = 2/4 = 0.5
+  for (auto& [key, val] : result) {
+    REQUIRE(approx_equal(val, 0.5));
+  }
+}
+
+TEMPLATE_TEST_CASE("jaccard_coefficient - sparse single edge",
+                   "[algorithm][jaccard][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // Bidirectional: 100 - 200
+  Graph g({{100, 200, 1}, {200, 100, 1}});
+  auto  result = collect_jaccard_generic(g);
+
+  // Two directed edges → two callbacks
+  REQUIRE(result.size() == 2);
+
+  // N(100)={200}, N(200)={100}, intersection=∅ → J=0
+  for (auto& [key, val] : result) {
+    REQUIRE(approx_equal(val, 0.0));
+  }
+}
+
+TEMPLATE_TEST_CASE("jaccard_coefficient - sparse star graph",
+                   "[algorithm][jaccard][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // Centre 10 connected to 20,30,40,50 (bidirectional)
+  Graph g({
+    {10, 20, 1}, {20, 10, 1},
+    {10, 30, 1}, {30, 10, 1},
+    {10, 40, 1}, {40, 10, 1},
+    {10, 50, 1}, {50, 10, 1}
+  });
+  auto result = collect_jaccard_generic(g);
+
+  // 8 directed edges
+  REQUIRE(result.size() == 8);
+
+  // N(10)={20,30,40,50}, N(leaf)={10}
+  // No shared neighbors → J=0
+  for (auto& [key, val] : result) {
+    REQUIRE(approx_equal(val, 0.0));
+  }
+}
+
+TEMPLATE_TEST_CASE("jaccard_coefficient - sparse symmetry",
+                   "[algorithm][jaccard][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // Diamond: K4 minus edge 10-40
+  Graph g({
+    {10, 20, 1}, {20, 10, 1},
+    {10, 30, 1}, {30, 10, 1},
+    {20, 30, 1}, {30, 20, 1},
+    {20, 40, 1}, {40, 20, 1},
+    {30, 40, 1}, {40, 30, 1}
+  });
+  auto result = collect_jaccard_generic(g);
+
+  // Check symmetry: J(u,v) == J(v,u) for all edges
+  for (auto& [key, val] : result) {
+    auto reverse = std::make_pair(key.second, key.first);
+    auto it      = result.find(reverse);
+    REQUIRE(it != result.end());
+    REQUIRE(approx_equal(val, it->second));
+  }
+
+  // Check specific values
+  // N(10)={20,30}, N(20)={10,30,40}, N(30)={10,20,40}, N(40)={20,30}
+  // J(20,30): intersect={10,40}, union={10,20,30,40} → 2/4 = 0.5
+  REQUIRE(approx_equal(result[{id_type(20), id_type(30)}], 0.5));
+
+  // Values in [0, 1]
+  for (auto& [key, val] : result) {
+    REQUIRE(val >= 0.0);
+    REQUIRE(val <= 1.0);
+  }
+}

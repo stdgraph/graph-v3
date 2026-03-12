@@ -11,6 +11,8 @@
 #include <graph/container/traits/vos_graph_traits.hpp>
 #include <graph/container/traits/uos_graph_traits.hpp>
 #include <graph/container/traits/dos_graph_traits.hpp>
+#include "../common/graph_fixtures.hpp"
+#include "../common/algorithm_test_types.hpp"
 
 using namespace graph;
 using namespace graph::container;
@@ -272,6 +274,73 @@ TEST_CASE("triangle_count - UAL graph with isolated vertices", "[algorithm][tria
 TEST_CASE("triangle_count - UAL bipartite graph (no triangles)", "[algorithm][triangle_count][ual]") {
   // Complete bipartite K(3,3): {0,1,2} to {3,4,5}
   ual_int g({{0, 3, 0}, {0, 4, 0}, {0, 5, 0}, {1, 3, 0}, {1, 4, 0}, {1, 5, 0}, {2, 3, 0}, {2, 4, 0}, {2, 5, 0}});
+
+  REQUIRE(triangle_count(g) == 0);
+}
+
+// =============================================================================
+// Sparse (mapped) graph tests — mos_weighted (map + ordered set edges)
+// =============================================================================
+
+using namespace graph::test::algorithm;
+
+TEST_CASE("triangle_count - sparse single triangle", "[algorithm][triangle_count][sparse]") {
+  using Graph = mos_weighted;
+
+  // Triangle: 10-20-30 (bidirectional, sorted edges via set)
+  Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 1}, {30, 20, 1}, {10, 30, 1}, {30, 10, 1}});
+
+  REQUIRE(triangle_count(g) == 1);
+}
+
+TEST_CASE("triangle_count - sparse K4", "[algorithm][triangle_count][sparse]") {
+  using Graph = mos_weighted;
+
+  // Complete graph K4 with sparse IDs: 10,20,30,40
+  Graph g({
+    {10, 20, 1}, {20, 10, 1}, {10, 30, 1}, {30, 10, 1}, {10, 40, 1}, {40, 10, 1},
+    {20, 30, 1}, {30, 20, 1}, {20, 40, 1}, {40, 20, 1}, {30, 40, 1}, {40, 30, 1}
+  });
+
+  REQUIRE(triangle_count(g) == 4);
+}
+
+TEST_CASE("triangle_count - sparse path (no triangles)", "[algorithm][triangle_count][sparse]") {
+  using Graph = mos_weighted;
+
+  // Path: 10-20-30-40-50 (bidirectional)
+  Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 1}, {30, 20, 1},
+           {30, 40, 1}, {40, 30, 1}, {40, 50, 1}, {50, 40, 1}});
+
+  REQUIRE(triangle_count(g) == 0);
+}
+
+TEST_CASE("triangle_count - sparse diamond", "[algorithm][triangle_count][sparse]") {
+  using Graph = mos_weighted;
+
+  // Diamond: 10 top, {20,30} middle connected, 40 bottom
+  Graph g({{10, 20, 1}, {20, 10, 1}, {10, 30, 1}, {30, 10, 1},
+           {20, 30, 1}, {30, 20, 1}, {20, 40, 1}, {40, 20, 1}, {30, 40, 1}, {40, 30, 1}});
+
+  REQUIRE(triangle_count(g) == 2); // {10,20,30} and {20,30,40}
+}
+
+TEST_CASE("triangle_count - sparse two separate triangles", "[algorithm][triangle_count][sparse]") {
+  using Graph = mos_weighted;
+
+  // Triangle 1: 10-20-30, Triangle 2: 100-200-300
+  Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 1}, {30, 20, 1}, {10, 30, 1}, {30, 10, 1},
+           {100, 200, 1}, {200, 100, 1}, {200, 300, 1}, {300, 200, 1}, {100, 300, 1}, {300, 100, 1}});
+
+  REQUIRE(triangle_count(g) == 2);
+}
+
+TEST_CASE("triangle_count - sparse star (no triangles)", "[algorithm][triangle_count][sparse]") {
+  using Graph = mos_weighted;
+
+  // Star: center=10, leaves=20,30,40,50,60
+  Graph g({{10, 20, 1}, {20, 10, 1}, {10, 30, 1}, {30, 10, 1},
+           {10, 40, 1}, {40, 10, 1}, {10, 50, 1}, {50, 10, 1}, {10, 60, 1}, {60, 10, 1}});
 
   REQUIRE(triangle_count(g) == 0);
 }
