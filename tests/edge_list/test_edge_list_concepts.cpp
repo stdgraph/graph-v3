@@ -2,6 +2,7 @@
 #include <graph/edge_list/edge_list.hpp>
 #include <graph/edge_list/edge_list_descriptor.hpp>
 #include <graph/graph_data.hpp>
+#include <graph/adj_list/adjacency_list_concepts.hpp>
 #include <vector>
 #include <tuple>
 
@@ -157,4 +158,31 @@ TEST_CASE("has_edge_value runtime behavior", "[edge_list][runtime]") {
 
   auto val = graph::edge_value(edges, e);
   REQUIRE(val == 3.14);
+}
+
+// =============================================================================
+// Interop with adj_list::edge<G,E> concept (I.2)
+// =============================================================================
+
+TEST_CASE("edge_list types satisfy adj_list::edge concept", "[edge_list][concepts][interop]") {
+  // After dropping the is_edge_descriptor_v gate, any type whose elements
+  // support source_id(g,e) and target_id(g,e) satisfies edge<G,E>.
+
+  // tuple<source, target, value>
+  using tuple_el = std::vector<std::tuple<int, int, double>>;
+  STATIC_REQUIRE(adj_list::edge<tuple_el, std::tuple<int, int, double>>);
+
+  // pair<source, target>
+  using pair_el = std::vector<std::pair<int, int>>;
+  STATIC_REQUIRE(adj_list::edge<pair_el, std::pair<int, int>>);
+
+  // edge_data with value
+  using ed_type = graph::edge_data<int, true, void, double>;
+  using ed_el   = std::vector<ed_type>;
+  STATIC_REQUIRE(adj_list::edge<ed_el, ed_type>);
+
+  // edge_list::edge_descriptor
+  using desc_type = edge_list::edge_descriptor<int, double>;
+  using desc_el   = std::vector<desc_type>;
+  STATIC_REQUIRE(adj_list::edge<desc_el, desc_type>);
 }

@@ -20,34 +20,33 @@ namespace graph::adj_list {
 // =============================================================================
 
 /**
- * @brief Concept for edge descriptors
- * 
- * An edge is an edge descriptor that provides access to both source and target vertices.
- * All edge descriptors in the graph library provide these operations.
- * 
+ * @brief Concept for edge types
+ *
+ * An edge is any type for which source_id(g, e) and target_id(g, e) are valid expressions.
+ * This includes adj_list edge_descriptors, edge_list descriptors, edge_data aggregates,
+ * tuple/pair representations, and any user-defined type with appropriate CPO support.
+ *
  * Requirements:
- * - e must be an edge_descriptor
  * - source_id(g, e) must be valid (returns source vertex ID)
- * - source(g, e) must be valid (returns source vertex descriptor)
  * - target_id(g, e) must be valid (returns target vertex ID)
- * - target(g, e) must be valid (returns target vertex descriptor)
- * 
+ *
  * Note: Return types are not constrained to allow better compiler error messages.
- * 
+ * Algorithms that additionally need vertex descriptors (source(g,e) / target(g,e))
+ * should add those requirements explicitly beyond this concept.
+ *
  * Examples:
- * - Edge in adjacency list: edge_descriptor<vector<vector<int>>::iterator, int>
- * - Edge in edge list: edge_descriptor<vector<tuple<int, int, double>>::iterator>
- * - Weighted edge: edge_descriptor with value access
- * 
- * @tparam G Graph type
- * @tparam E Edge type (must be edge_descriptor)
+ * - adj_list edge_descriptor<EdgeIter, VertexIter, EdgeDirection>
+ * - edge_list edge_descriptor<VId, EV>
+ * - edge_data<VId, true, void, EV>
+ * - std::tuple<int, int, double>  (source=get<0>, target=get<1>)
+ *
+ * @tparam G Graph (or edge-list container) type
+ * @tparam E Edge type
  */
 template <class G, class E>
-concept edge = is_edge_descriptor_v<std::remove_cvref_t<E>> && requires(G& g, const E& e) {
+concept edge = requires(G& g, const E& e) {
   source_id(g, e);
-  source(g, e);
   target_id(g, e);
-  target(g, e);
 };
 
 // =============================================================================
