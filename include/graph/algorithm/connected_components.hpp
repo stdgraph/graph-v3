@@ -99,7 +99,9 @@ using adj_list::target_id;
  * @post Component IDs are assigned 0, 1, 2, ..., num_components-1
  * @post Vertices in the same SCC have the same component ID
  * 
- * @throws May throw std::bad_alloc if internal allocations fail
+ * Throws:
+ *   std::bad_alloc if internal allocations fail.
+ *   Basic exception guarantee.
  * 
  * @par Example
  * @code
@@ -408,7 +410,9 @@ void kosaraju(G&&        g,        // bidirectional graph
  * @post Return value equals the number of distinct component IDs
  * @post Isolated vertices (no edges) are assigned unique component IDs
  * 
- * @throws May throw std::bad_alloc if internal allocations fail
+ * Throws:
+ *   std::bad_alloc if internal allocations fail.
+ *   Basic exception guarantee.
  * 
  * @par Example
  * @code
@@ -687,7 +691,9 @@ static vertex_id_t sample_frequent_element(Component& component, size_t num_samp
  * @post Vertices in the same component have the same component ID
  * @post Component IDs form a union-find forest (may need compression for queries)
  * 
- * @throws May throw std::bad_alloc if internal allocations fail
+ * Throws:
+ *   std::bad_alloc if internal allocations fail.
+ *   Basic exception guarantee.
  * 
  * @par Example
  * @code

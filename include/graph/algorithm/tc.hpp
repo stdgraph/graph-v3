@@ -232,7 +232,7 @@ using adj_list::num_vertices;
  */
 template <adjacency_list G>
 requires ordered_vertex_edges<G>
-size_t triangle_count(G&& g) {
+[[nodiscard]] size_t triangle_count(G&& g) noexcept {
   size_t triangles = 0;
 
   // ============================================================================
