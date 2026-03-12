@@ -44,8 +44,8 @@ The library provides two classic minimum spanning tree algorithms:
 
 Both algorithms produce an MST (or minimum spanning **forest** for disconnected
 graphs). Kruskal operates on an external edge list; Prim operates on a graph
-satisfying `index_adjacency_list<G>` — vertices are stored in a contiguous,
-integer-indexed random-access range.
+satisfying `adjacency_list<G>` — both index-based (contiguous integer-indexed)
+and map-based (sparse vertex ID) graphs are supported.
 
 ## When to Use
 
@@ -131,9 +131,9 @@ auto prim(G&& g, Predecessors& predecessors, Weights& weights,
 
 | Parameter | Description |
 |-----------|-------------|
-| `g` | Graph satisfying `index_adjacency_list` with weighted edges |
-| `predecessors` | Random-access range sized to `num_vertices(g)`. Filled with parent vertex IDs. |
-| `weights` | Random-access range sized to `num_vertices(g)`. Filled with edge weights to parent. |
+| `g` | Graph satisfying `adjacency_list` with weighted edges |
+| `predecessors` | Subscriptable by `vertex_id_t<G>`. For index graphs, a pre-sized `std::vector`; for mapped graphs, use `make_vertex_property_map<G, T>(g, init)`. Must satisfy `vertex_property_map_for<Predecessor, G>`. |
+| `weights` | Subscriptable by `vertex_id_t<G>`. For index graphs, a pre-sized `std::vector`; for mapped graphs, use `make_vertex_property_map<G, T>(g, init)`. Must satisfy `vertex_property_map_for<Weight, G>`. |
 | `seed` | Starting vertex for the MST (default: 0) |
 | `compare` | Comparator for weight values (default: `std::less<>{}`) |
 | `init_dist` | Initial distance value (typically `std::numeric_limits<EV>::max()`) |
@@ -340,8 +340,9 @@ assert(kw == pw);  // Both produce the same total MST weight
 
 - **Kruskal:** edge descriptors must have `source_id`, `target_id`, and `value`
   members (or use `edge_descriptor<VId, EV>`).
-- **Prim:** graph must satisfy `index_adjacency_list<G>` with weighted edges.
-  `predecessors` and `weights` must be sized to `num_vertices(g)`. Invalid seed
+- **Prim:** graph must satisfy `adjacency_list<G>` with weighted edges.
+  `predecessors` and `weights` must satisfy `vertex_property_map_for` (pre-sized
+  vectors for index graphs, or `make_vertex_property_map` for mapped graphs). Invalid seed
   vertex throws `std::out_of_range`.
 - For undirected graphs with Prim, both directions of each edge must be stored.
 

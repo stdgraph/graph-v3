@@ -639,3 +639,103 @@ TEST_CASE("breadth_first_search - vertex id visitor matches descriptor visitor",
     REQUIRE(desc_visitor.discovered[i] == static_cast<int>(id_visitor.discovered[i]));
   }
 }
+
+// =============================================================================
+// Map-Based (Sparse Vertex ID) BFS Tests
+// =============================================================================
+
+#include "../common/map_graph_fixtures.hpp"
+
+using namespace graph::test::map_fixtures;
+
+TEMPLATE_TEST_CASE("breadth_first_search - sparse graph basic traversal",
+                   "[algorithm][bfs][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph = TestType;
+
+  auto g      = bfs_graph<Graph>();
+  auto source = bfs_source<Graph>();
+
+  CountingVisitor visitor;
+  breadth_first_search(g, source, visitor);
+
+  // BFS from source should discover all 5 vertices: source -> two children -> merge -> leaf
+  REQUIRE(visitor.vertices_discovered == 5);
+  REQUIRE(visitor.vertices_examined == 5);
+  REQUIRE(visitor.vertices_finished == 5);
+}
+
+TEMPLATE_TEST_CASE("breadth_first_search - sparse graph with tracking visitor",
+                   "[algorithm][bfs][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph = TestType;
+
+  auto g      = bfs_graph<Graph>();
+  auto source = bfs_source<Graph>();
+
+  BFSTrackingVisitor visitor;
+  breadth_first_search(g, source, visitor);
+
+  // All 5 vertices should be discovered, examined, and finished
+  REQUIRE(visitor.discovered.size() == 5);
+  REQUIRE(visitor.examined.size() == 5);
+  REQUIRE(visitor.finished.size() == 5);
+
+  // Source vertex should be discovered first
+  REQUIRE(visitor.discovered[0] == static_cast<int>(source));
+}
+
+TEMPLATE_TEST_CASE("breadth_first_search - sparse graph multi-source",
+                   "[algorithm][bfs][sparse][multi_source]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph = TestType;
+
+  auto g = map_fixtures::disconnected_graph<Graph>();
+
+  CountingVisitor visitor;
+
+  // Start from one vertex in each component
+  if constexpr (is_sparse_vertex_container_v<Graph>) {
+    std::vector<vertex_id_t<Graph>> sources = {100, 300};
+    breadth_first_search(g, sources, visitor);
+  } else {
+    std::vector<vertex_id_t<Graph>> sources = {0, 2};
+    breadth_first_search(g, sources, visitor);
+  }
+
+  // Should discover all 5 vertices across both components
+  REQUIRE(visitor.vertices_discovered == 5);
+}
+
+TEMPLATE_TEST_CASE("breadth_first_search - sparse graph empty visitor",
+                   "[algorithm][bfs][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph = TestType;
+
+  auto g      = bfs_graph<Graph>();
+  auto source = bfs_source<Graph>();
+
+  // Should work with default empty visitor (no callbacks)
+  REQUIRE_NOTHROW(breadth_first_search(g, source));
+}
+
+TEMPLATE_TEST_CASE("breadth_first_search - sparse graph partial reachability",
+                   "[algorithm][bfs][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph = TestType;
+
+  auto g = map_fixtures::disconnected_graph<Graph>();
+
+  CountingVisitor visitor;
+
+  // Start from first component only
+  if constexpr (is_sparse_vertex_container_v<Graph>) {
+    breadth_first_search(g, vertex_id_t<Graph>(100), visitor);
+    // Component {100, 200} — only 2 vertices reachable
+    REQUIRE(visitor.vertices_discovered == 2);
+  } else {
+    breadth_first_search(g, vertex_id_t<Graph>(0), visitor);
+    // Component {0, 1} — only 2 vertices reachable
+    REQUIRE(visitor.vertices_discovered == 2);
+  }
+}

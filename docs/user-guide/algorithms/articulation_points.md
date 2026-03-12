@@ -31,8 +31,8 @@ An **articulation point** (cut vertex) is a vertex whose removal disconnects the
 graph (or increases the number of connected components). The algorithm uses the
 iterative **Hopcroft-Tarjan** approach with discovery times and low-link values.
 
-The graph must satisfy `index_adjacency_list<G>` — vertices are stored in a
-contiguous, integer-indexed random-access range.
+The graph must satisfy `adjacency_list<G>` — both index-based (contiguous
+integer-indexed) and map-based (sparse vertex ID) graphs are supported.
 
 Each articulation point is emitted exactly once to the output iterator, though
 the order is unspecified.
@@ -71,7 +71,7 @@ void articulation_points(G&& g, OutputIterator cut_vertices);
 
 | Parameter | Description |
 |-----------|-------------|
-| `g` | Graph satisfying `index_adjacency_list` |
+| `g` | Graph satisfying `adjacency_list` |
 | `cut_vertices` | Output iterator receiving vertex IDs of articulation points. Each vertex appears exactly once. |
 
 ## Examples
@@ -187,7 +187,7 @@ articulation_points(g, std::back_inserter(cuts));
 
 ## Preconditions
 
-- Graph must satisfy `index_adjacency_list<G>`.
+- Graph must satisfy `adjacency_list<G>`.
 - For undirected graphs, **both directions** of each edge must be stored (or use
   `undirected_adjacency_list`).
 - Self-loops do not affect the result.

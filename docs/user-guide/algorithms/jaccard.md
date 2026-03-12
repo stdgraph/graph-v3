@@ -29,8 +29,9 @@
 ## Overview
 
 Computes the **Jaccard similarity coefficient** for every directed edge in the
-graph. The graph must satisfy `index_adjacency_list<G>` — vertices are stored
-in a contiguous, integer-indexed random-access range.
+graph. The graph must satisfy `adjacency_list<G>` — both index-based
+(contiguous integer-indexed) and map-based (sparse vertex ID) graphs are
+supported.
 
 For an edge (u, v), the coefficient is:
 
@@ -88,7 +89,7 @@ void out(vertex_id_t<G> uid, vertex_id_t<G> vid,
 
 | Parameter | Description |
 |-----------|-------------|
-| `g` | Graph satisfying `index_adjacency_list` |
+| `g` | Graph satisfying `adjacency_list` |
 | `out` | Callback invoked for each directed edge (u, v) with the Jaccard coefficient. Self-loops are skipped. |
 
 ## Examples
@@ -220,7 +221,7 @@ proportional to the size of the smaller neighbor set.
 
 ## Preconditions
 
-- Graph must satisfy `index_adjacency_list<G>`.
+- Graph must satisfy `adjacency_list<G>`.
 - Self-loops are skipped (not passed to the callback).
 - The callback is invoked once per **directed** edge — for undirected graphs
   with bidirectional storage, expect two calls per logical edge.

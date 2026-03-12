@@ -27,11 +27,15 @@ edge<G, E>
 └── out_edge_range<R, G>
     └── vertex<G, V>
         └── vertex_range<R, G>
-            └── index_vertex_range<G>
-                └── adjacency_list<G>
-                    └── index_adjacency_list<G>
-                        ├── ordered_vertex_edges<G>
-                        └── bidirectional_adjacency_list<G>
+            ├── index_vertex_range<G>
+            └── mapped_vertex_range<G>
+            └── adjacency_list<G>           ← required by all algorithms
+                ├── index_adjacency_list<G>
+                │   ├── ordered_vertex_edges<G>
+                │   └── index_bidirectional_adjacency_list<G>
+                ├── mapped_adjacency_list<G>
+                │   └── mapped_bidirectional_adjacency_list<G>
+                └── bidirectional_adjacency_list<G>
 ```
 
 ### `edge<G, E>`
@@ -100,28 +104,53 @@ concept index_vertex_range = requires(G& g) {
 
 ### `adjacency_list<G>`
 
-Full adjacency list: random-access indexed vertices, each with a forward edge range.
+Full adjacency list: vertices with a forward edge range. Supports both index-based
+(vector/deque) and map-based (map/unordered_map) vertex storage. **This is the
+concept required by all algorithms.**
 
 ```cpp
 template <class G>
-concept adjacency_list =
-    index_vertex_range<G> &&
-    vertex<G, vertex_t<G>> &&
-    edge<G, edge_t<G>>;
+concept adjacency_list = requires(G& g, vertex_t<G> u) {
+    { vertices(g) } -> vertex_range<G>;
+    { out_edges(g, u) } -> out_edge_range<G>;
+};
 ```
 
 ### `index_adjacency_list<G>`
 
-Adjacency list with O(1) vertex lookup by integral target IDs on edges.
+Adjacency list with random-access vertex storage (contiguous integer IDs).
 
 ```cpp
 template <class G>
-concept index_adjacency_list =
-    adjacency_list<G> &&
-    std::integral<decltype(target_id(g, uv))>;
+concept index_adjacency_list = adjacency_list<G> && index_vertex_range<G>;
 ```
 
-> **This is the concept required by most algorithms.**
+### `mapped_vertex_range<G>`
+
+Vertices are stored in a map-based container with hashable, non-contiguous IDs.
+Mutually exclusive with `index_vertex_range<G>`.
+
+```cpp
+template <class G>
+concept mapped_vertex_range =
+    !index_vertex_range<G> &&
+    hashable_vertex_id<G> &&
+    requires(G& g) {
+        { vertices(g) } -> std::ranges::forward_range;
+    } &&
+    requires(G& g, const vertex_id_t<G>& uid) {
+        find_vertex(g, uid);
+    };
+```
+
+### `mapped_adjacency_list<G>`
+
+Adjacency list with map-based vertex storage (sparse vertex IDs).
+
+```cpp
+template <class G>
+concept mapped_adjacency_list = adjacency_list<G> && mapped_vertex_range<G>;
+```
 
 ### `ordered_vertex_edges<G>`
 

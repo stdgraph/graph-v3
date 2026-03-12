@@ -31,8 +31,8 @@ Topological sort produces a linear ordering of vertices in a **directed acyclic
 graph (DAG)** such that for every directed edge (u, v), vertex u appears before
 vertex v in the ordering.
 
-The graph must satisfy `index_adjacency_list<G>` — vertices are stored in a
-contiguous, integer-indexed random-access range.
+The graph must satisfy `adjacency_list<G>` — both index-based (contiguous
+integer-indexed) and map-based (sparse vertex ID) graphs are supported.
 
 The algorithm returns `bool` — `true` if the graph is a valid DAG (ordering
 produced), `false` if a cycle is detected (partial output may have been written).
@@ -94,7 +94,7 @@ bool topological_sort(const G& g, const Sources& sources, OutputIterator result)
 
 | Parameter | Description |
 |-----------|-------------|
-| `g` | Graph satisfying `index_adjacency_list` (taken by `const&`) |
+| `g` | Graph satisfying `adjacency_list` (taken by `const&`) |
 | `source` / `sources` | Source vertex ID or range of source vertex IDs |
 | `result` | Output iterator receiving vertex IDs in topological order |
 
@@ -212,7 +212,7 @@ if (ok) {
 
 ## Preconditions
 
-- Graph must satisfy `index_adjacency_list<G>`.
+- Graph must satisfy `adjacency_list<G>`.
 - The graph should be a DAG for a valid ordering. If cycles exist, the function
   returns `false`.
 - Isolated vertices are included in full-graph sort but excluded from source-based

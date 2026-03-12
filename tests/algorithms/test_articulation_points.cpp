@@ -414,3 +414,101 @@ TEMPLATE_TEST_CASE("articulation_points - bridge graph (typed)", "[algorithm][ar
 
   REQUIRE(same_set(result, {2u, 3u}));
 }
+// =============================================================================
+// Sparse Vertex Tests — mapped container independence
+// =============================================================================
+
+/// Generic helper: run articulation_points on a graph and return sorted result.
+template <typename G>
+auto run_ap_generic(G&& g) {
+  using vid_t = adj_list::vertex_id_t<std::remove_reference_t<G>>;
+  std::vector<vid_t> result;
+  articulation_points(g, std::back_inserter(result));
+  std::sort(result.begin(), result.end());
+  return result;
+}
+
+TEMPLATE_TEST_CASE("articulation_points - sparse path graph",
+                   "[algorithm][articulation_points][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // Path: 10-20-30-40 (bidirectional)
+  Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 1}, {30, 20, 1}, {30, 40, 1}, {40, 30, 1}});
+
+  auto result = run_ap_generic(g);
+
+  // Interior vertices 20 and 30 are articulation points
+  REQUIRE(result.size() == 2);
+  REQUIRE(result == std::vector<id_type>{20, 30});
+}
+
+TEMPLATE_TEST_CASE("articulation_points - sparse cycle graph",
+                   "[algorithm][articulation_points][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+
+  // Cycle: 10-20-30-40-10 (bidirectional)
+  Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 1}, {30, 20, 1},
+           {30, 40, 1}, {40, 30, 1}, {40, 10, 1}, {10, 40, 1}});
+
+  auto result = run_ap_generic(g);
+
+  // No articulation points in a cycle
+  REQUIRE(result.empty());
+}
+
+TEMPLATE_TEST_CASE("articulation_points - sparse star graph",
+                   "[algorithm][articulation_points][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // Star: centre=100, leaves=200,300,400 (bidirectional)
+  Graph g({{100, 200, 1}, {200, 100, 1},
+           {100, 300, 1}, {300, 100, 1},
+           {100, 400, 1}, {400, 100, 1}});
+
+  auto result = run_ap_generic(g);
+
+  // Centre is the only articulation point
+  REQUIRE(result.size() == 1);
+  REQUIRE(result[0] == id_type{100});
+}
+
+TEMPLATE_TEST_CASE("articulation_points - sparse bridge graph",
+                   "[algorithm][articulation_points][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // Triangle 10-20-30 bridged to triangle 40-50-60 via edge 30-40
+  Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 1}, {30, 20, 1}, {10, 30, 1}, {30, 10, 1},
+           {40, 50, 1}, {50, 40, 1}, {50, 60, 1}, {60, 50, 1}, {40, 60, 1}, {60, 40, 1},
+           {30, 40, 1}, {40, 30, 1}});
+
+  auto result = run_ap_generic(g);
+
+  // Bridge endpoints 30 and 40 are articulation points
+  REQUIRE(result.size() == 2);
+  REQUIRE(result == std::vector<id_type>{30, 40});
+}
+
+TEMPLATE_TEST_CASE("articulation_points - sparse disconnected graph",
+                   "[algorithm][articulation_points][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // Component 1: path 10-20-30 (bidirectional)
+  // Component 2: single edge 100-200 (bidirectional)
+  Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 1}, {30, 20, 1},
+           {100, 200, 1}, {200, 100, 1}});
+
+  auto result = run_ap_generic(g);
+
+  // Vertex 20 is an articulation point of component 1
+  REQUIRE(result.size() == 1);
+  REQUIRE(result[0] == id_type{20});
+}

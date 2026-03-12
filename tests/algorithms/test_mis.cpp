@@ -4,7 +4,9 @@
  */
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_template_test_macros.hpp>
 #include <graph/algorithm/mis.hpp>
+#include "../common/graph_fixtures.hpp"
 #include "../common/algorithm_test_types.hpp"
 #include <vector>
 #include <set>
@@ -474,4 +476,167 @@ TEST_CASE("mis - large path", "[algorithm][mis][large]") {
 
   std::set<typename Graph::vertex_id_type> mis_set(mis_result.begin(), mis_result.end());
   REQUIRE(mis_set.count(0) == 1); // seed must be included
+}
+
+// =============================================================================
+// Sparse (mapped) graph tests
+// =============================================================================
+
+#include "../common/map_graph_fixtures.hpp"
+
+using namespace graph::test::map_fixtures;
+
+/// Generic MIS helper: returns {mis_vector, count} for a graph with a given seed.
+template <typename G>
+auto run_mis_generic(G&& g, const adj_list::vertex_id_t<std::remove_reference_t<G>>& seed) {
+  using vid_t = adj_list::vertex_id_t<std::remove_reference_t<G>>;
+  std::vector<vid_t> result;
+  size_t             count = maximal_independent_set(g, std::back_inserter(result), seed);
+  return std::pair{result, count};
+}
+
+/// Generic independence check using adj_list::vertex_id_t.
+template <typename G>
+bool is_independent_set_generic(const G& g, const std::vector<adj_list::vertex_id_t<G>>& mis_vec) {
+  using vid_t = adj_list::vertex_id_t<G>;
+  std::set<vid_t> mis_set(mis_vec.begin(), mis_vec.end());
+  for (auto uid : mis_vec) {
+    auto u = *find_vertex(g, uid);
+    for (auto uv : edges(g, u)) {
+      if (mis_set.count(target_id(g, uv)))
+        return false;
+    }
+  }
+  return true;
+}
+
+/// Generic maximality check using adj_list::vertex_id_t.
+template <typename G>
+bool is_maximal_generic(const G& g, const std::vector<adj_list::vertex_id_t<G>>& mis_vec) {
+  using vid_t = adj_list::vertex_id_t<G>;
+  std::set<vid_t> mis_set(mis_vec.begin(), mis_vec.end());
+  for (auto u : vertices(g)) {
+    auto uid = vertex_id(g, u);
+    if (mis_set.count(uid))
+      continue;
+    bool adjacent_to_mis = false;
+    for (auto uv : edges(g, u)) {
+      if (mis_set.count(target_id(g, uv))) {
+        adjacent_to_mis = true;
+        break;
+      }
+    }
+    if (!adjacent_to_mis)
+      return false;
+  }
+  return true;
+}
+
+TEMPLATE_TEST_CASE("mis - sparse path graph",
+                   "[algorithm][mis][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // Path: 10-20-30-40-50 (bidirectional)
+  Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 1}, {30, 20, 1},
+           {30, 40, 1}, {40, 30, 1}, {40, 50, 1}, {50, 40, 1}});
+
+  auto [result, count] = run_mis_generic(g, id_type{10});
+
+  // Should include alternating vertices: {10, 30, 50}
+  REQUIRE(count == 3);
+  REQUIRE(result.size() == 3);
+  REQUIRE(is_independent_set_generic(g, result));
+  REQUIRE(is_maximal_generic(g, result));
+
+  std::set<id_type> mis_set(result.begin(), result.end());
+  REQUIRE(mis_set.count(10) == 1); // seed must be included
+}
+
+TEMPLATE_TEST_CASE("mis - sparse triangle",
+                   "[algorithm][mis][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // Triangle: 10-20-30 (bidirectional)
+  Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 1}, {30, 20, 1}, {10, 30, 1}, {30, 10, 1}});
+
+  auto [result, count] = run_mis_generic(g, id_type{10});
+
+  // Complete graph: only one vertex
+  REQUIRE(count == 1);
+  REQUIRE(result.size() == 1);
+  REQUIRE(result[0] == 10);
+  REQUIRE(is_independent_set_generic(g, result));
+  REQUIRE(is_maximal_generic(g, result));
+}
+
+TEMPLATE_TEST_CASE("mis - sparse star from leaf",
+                   "[algorithm][mis][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // Star: center=10, leaves=20,30,40,50 (bidirectional)
+  Graph g({{10, 20, 1}, {20, 10, 1}, {10, 30, 1}, {30, 10, 1},
+           {10, 40, 1}, {40, 10, 1}, {10, 50, 1}, {50, 10, 1}});
+
+  auto [result, count] = run_mis_generic(g, id_type{20});
+
+  // Seed=leaf 20 → 20 added, center 10 removed → all other leaves added: {20,30,40,50}
+  REQUIRE(count == 4);
+  REQUIRE(result.size() == 4);
+  REQUIRE(is_independent_set_generic(g, result));
+  REQUIRE(is_maximal_generic(g, result));
+
+  std::set<id_type> mis_set(result.begin(), result.end());
+  REQUIRE(mis_set.count(20) == 1); // seed must be included
+  REQUIRE(mis_set.count(10) == 0); // center excluded
+}
+
+TEMPLATE_TEST_CASE("mis - sparse diamond",
+                   "[algorithm][mis][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // Diamond: 10-{20,30}-40 (bidirectional)
+  Graph g({{10, 20, 1}, {20, 10, 1}, {10, 30, 1}, {30, 10, 1},
+           {20, 40, 1}, {40, 20, 1}, {30, 40, 1}, {40, 30, 1}});
+
+  auto [result, count] = run_mis_generic(g, id_type{10});
+
+  // Seed=10 → removes 20,30 → 40 added: {10, 40}
+  REQUIRE(count == 2);
+  REQUIRE(result.size() == 2);
+  REQUIRE(is_independent_set_generic(g, result));
+  REQUIRE(is_maximal_generic(g, result));
+
+  std::set<id_type> mis_set(result.begin(), result.end());
+  REQUIRE(mis_set.count(10) == 1);
+  REQUIRE(mis_set.count(40) == 1);
+}
+
+TEMPLATE_TEST_CASE("mis - sparse disconnected",
+                   "[algorithm][mis][sparse]",
+                   SPARSE_VERTEX_TYPES) {
+  using Graph   = TestType;
+  using id_type = adj_list::vertex_id_t<Graph>;
+
+  // Component 1: edge 10-20   Component 2: triangle 30-40-50
+  Graph g({{10, 20, 1}, {20, 10, 1},
+           {30, 40, 1}, {40, 30, 1}, {40, 50, 1}, {50, 40, 1}, {50, 30, 1}, {30, 50, 1}});
+
+  auto [result, count] = run_mis_generic(g, id_type{10});
+
+  // Seed=10 → 20 removed → from component 2, one vertex selected
+  REQUIRE(count == 2);
+  REQUIRE(result.size() == 2);
+  REQUIRE(is_independent_set_generic(g, result));
+  REQUIRE(is_maximal_generic(g, result));
+
+  std::set<id_type> mis_set(result.begin(), result.end());
+  REQUIRE(mis_set.count(10) == 1); // seed must be included
 }

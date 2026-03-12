@@ -13,18 +13,20 @@
  */
 
 #include "graph/graph.hpp"
+#include "graph/adj_list/vertex_property_map.hpp"
 
 #ifndef GRAPH_ARTICULATION_POINTS_HPP
 #  define GRAPH_ARTICULATION_POINTS_HPP
 
 #  include <limits>
+#  include <optional>
 #  include <stack>
 #  include <vector>
 
 namespace graph {
 
 // Using declarations for new namespace structure
-using adj_list::index_adjacency_list;
+using adj_list::adjacency_list;
 using adj_list::vertex_id_t;
 using adj_list::vertices;
 using adj_list::edges;
@@ -78,19 +80,17 @@ using adj_list::find_vertex;
  * - ✅ Empty graphs (returns immediately)
  *
  * ### Container Requirements
- * - Requires: `index_adjacency_list<G>` concept (contiguous vertex IDs)
+ * - Requires: `adjacency_list<G>` concept
  * - Requires: `std::output_iterator<Iter, vertex_id_t<G>>`
- * - Works with: All `dynamic_graph` container combinations with contiguous IDs
+ * - Works with: All `dynamic_graph` container combinations (contiguous and mapped IDs)
  *
- * @tparam G          The graph type. Must satisfy index_adjacency_list concept,
- *                    which implies contiguous vertex IDs from 0 to num_vertices(g)-1.
+ * @tparam G          The graph type. Must satisfy adjacency_list concept.
  * @tparam Iter       The output iterator type. Must be output_iterator<vertex_id_t<G>>.
  *
  * @param g           The graph. Callers must supply both directions of each undirected edge.
  * @param cut_vertices The output iterator where articulation point vertex IDs will be written.
  *                    No ordering guarantee on the emitted vertices.
  *
- * @pre g must have contiguous vertex IDs [0, num_vertices(g))
  * @pre For undirected semantics, each edge {u,v} must be stored as both (u,v) and (v,u).
  *
  * @post Output contains all articulation points, each emitted exactly once.
@@ -123,7 +123,7 @@ using adj_list::find_vertex;
  * }
  * ```
  */
-template <index_adjacency_list G, class Iter>
+template <adjacency_list G, class Iter>
 requires std::output_iterator<Iter, vertex_id_t<G>>
 void articulation_points(G&& g, Iter cut_vertices) {
   using vid_t = vertex_id_t<G>;
@@ -134,24 +134,32 @@ void articulation_points(G&& g, Iter cut_vertices) {
   }
 
   constexpr size_t UNVISITED = std::numeric_limits<size_t>::max();
-  const vid_t      NO_PARENT = static_cast<vid_t>(N); // sentinel for "no parent"
 
-  std::vector<size_t> disc(N, UNVISITED);
-  std::vector<size_t> low(N, UNVISITED);
-  std::vector<vid_t>  parent(N, NO_PARENT);
-  std::vector<size_t> child_count(N, 0); // DFS tree children count (for root rule)
-  std::vector<bool>   emitted(N, false); // deduplication guard
+  auto disc        = make_vertex_property_map<G, size_t>(g, UNVISITED);
+  auto low         = make_vertex_property_map<G, size_t>(g, UNVISITED);
+  auto parent      = make_vertex_property_map<G, std::optional<vid_t>>(g, std::nullopt);
+  auto child_count = make_vertex_property_map<G, size_t>(g, size_t{0});
+  auto emitted     = make_vertex_property_map<G, bool>(g, false);
 
   size_t timer = 0;
 
-  // Frame for iterative DFS: (vertex_id, edge_index, parent_edge_skipped)
-  // edge_index tracks how far we've iterated through edges(g, uid)
+  // Deduce the iterator type for edge ranges returned by edges(g, uid).
+  // edge_descriptor_view iterators store the underlying edge_storage (an
+  // index for RA containers, an iterator for map-based containers) and
+  // do not reference the view, so they safely outlive it and can be
+  // stored on the DFS stack.
+  using edge_iter_t = std::ranges::iterator_t<decltype(edges(g, std::declval<const vid_t&>()))>;
+
+  // Frame for iterative DFS: (vertex_id, edge_iterator, edge_end, parent_edge_skipped)
+  // Storing iterators avoids the O(degree) re-scan that an index-based
+  // approach would require each time we resume a stack frame.
   // parent_edge_skipped ensures only the first reverse edge to the DFS parent
   // is treated as the tree edge; subsequent parallel edges update low-link.
   struct dfs_frame {
-    vid_t  uid;
-    size_t edge_idx;
-    bool   parent_edge_skipped;
+    vid_t       uid;
+    edge_iter_t it;
+    edge_iter_t it_end;
+    bool        parent_edge_skipped;
   };
 
   std::stack<dfs_frame> stk;
@@ -163,33 +171,25 @@ void articulation_points(G&& g, Iter cut_vertices) {
     }
 
     disc[start] = low[start] = timer++;
-    stk.push({start, 0, false});
+    auto start_edges = edges(g, start);
+    stk.push({start, std::ranges::begin(start_edges),
+              std::ranges::end(start_edges), false});
 
     while (!stk.empty()) {
-      auto& [uid, edge_idx, parent_skipped] = stk.top();
-
-      // Collect edges into a temporary to allow indexed access
-      // We advance through edges one at a time using edge_idx
-      auto edge_range = views::incidence(g, uid);
-      auto it         = std::ranges::begin(edge_range);
-      auto it_end     = std::ranges::end(edge_range);
-
-      // Advance iterator to edge_idx position
-      for (size_t i = 0; i < edge_idx && it != it_end; ++i, ++it) {
-      }
+      auto& [uid, it, it_end, parent_skipped] = stk.top();
 
       if (it == it_end) {
         // All edges processed — backtrack
         stk.pop();
         if (!stk.empty()) {
-          auto& [par_uid, par_edge_idx, par_skipped] = stk.top();
+          auto& [par_uid, par_it, par_it_end, par_skipped] = stk.top();
           // Update low-link of parent
           if (low[uid] < low[par_uid]) {
             low[par_uid] = low[uid];
           }
 
           // Check articulation point condition for non-root
-          if (parent[par_uid] != NO_PARENT) {
+          if (parent[par_uid].has_value()) {
             // Non-root rule: child v has low[v] >= disc[u]
             if (low[uid] >= disc[par_uid] && !emitted[par_uid]) {
               *cut_vertices++ = par_uid;
@@ -201,7 +201,7 @@ void articulation_points(G&& g, Iter cut_vertices) {
       }
 
       vid_t vid = target_id(g, *it);
-      ++edge_idx; // advance for next iteration
+      ++it; // advance stored iterator for next resume
 
       // Skip self-loops
       if (vid == uid) {
@@ -213,8 +213,10 @@ void articulation_points(G&& g, Iter cut_vertices) {
         parent[vid] = uid;
         child_count[uid]++;
         disc[vid] = low[vid] = timer++;
-        stk.push({vid, 0, false});
-      } else if (vid == parent[uid] && !parent_skipped) {
+        auto vid_edges = edges(g, vid);
+        stk.push({vid, std::ranges::begin(vid_edges),
+                  std::ranges::end(vid_edges), false});
+      } else if (parent[uid].has_value() && *parent[uid] == vid && !parent_skipped) {
         // First reverse edge to DFS parent — this is the tree edge; skip it
         parent_skipped = true;
       } else {

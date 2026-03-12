@@ -22,6 +22,7 @@
 #include "graph/views/vertexlist.hpp"
 #include "graph/views/dfs.hpp"
 #include "graph/views/bfs.hpp"
+#include "graph/adj_list/vertex_property_map.hpp"
 #include <stack>
 #include <random>
 #include <numeric>
@@ -35,7 +36,9 @@ namespace graph {
 using adj_list::index_adjacency_list;
 using adj_list::index_bidirectional_adjacency_list;
 using adj_list::adjacency_list;
+using adj_list::index_vertex_range;
 using adj_list::vertex_id_t;
+using adj_list::vertex_t;
 using adj_list::edge_t;
 using adj_list::vertex_range_t;
 using adj_list::vertices;
@@ -132,18 +135,23 @@ using adj_list::target_id;
  * @see connected_components For undirected graphs
  * @see afforest For faster parallel-friendly alternative
  */
-template <index_adjacency_list G,
-          index_adjacency_list GT,
-          random_access_range  Component>
+template <adjacency_list G,
+          adjacency_list GT,
+          class           Component>
+requires vertex_property_map_for<Component, G>
 void kosaraju(G&&        g,        // graph
               GT&&       g_t,      // graph transpose
               Component& component // out: strongly connected component assignment
 
 ) {
-  size_t            N(num_vertices(g));
-  std::vector<bool> visited(N, false);
-  using CT = typename std::decay<decltype(*component.begin())>::type;
-  std::fill(component.begin(), component.end(), std::numeric_limits<CT>::max());
+  using CT = vertex_property_map_value_t<Component>;
+  auto visited = make_vertex_property_map<std::remove_reference_t<G>, bool>(g, false);
+  // Initialize all components as unvisited
+  for (auto&& [uid, u] : views::vertexlist(g)) {
+    component[uid] = std::numeric_limits<CT>::max();
+  }
+  // Order stores vertex IDs (not descriptors) because the second pass
+  // operates on g_t which has different descriptors than g.
   std::vector<vertex_id_t<G>> order;
 
   // Store a reference to avoid forwarding reference issues in lambda
@@ -151,31 +159,30 @@ void kosaraju(G&&        g,        // graph
 
   // Helper: iterative DFS to compute finish times (post-order)
   // This creates reverse topological ordering for SCC discovery
-  auto dfs_finish_order = [&](const vertex_id_t<G>& start) {
-    std::stack<std::pair<vertex_id_t<G>, bool>> stack; // (vertex, children_visited)
+  // Stack stores vertex descriptors — 8-byte iterators, no string copies,
+  // and O(1) vertex_id extraction via vertex_id(g, descriptor).
+  using vertex_desc = vertex_t<std::remove_reference_t<G>>;
+  auto dfs_finish_order = [&](vertex_desc start) {
+    std::stack<std::pair<vertex_desc, bool>> stack; // (vertex, children_visited)
     stack.push({start, false});
-    visited[start] = true;
+    visited[vertex_id(g_ref, start)] = true;
 
     while (!stack.empty()) {
-      auto [uid, children_visited] = stack.top();
+      auto [u, children_visited] = stack.top();
       stack.pop();
 
       if (children_visited) {
         // All children have been visited, add to finish order (post-order)
-        // This ensures children finish before parents in topological sort
-        order.push_back(uid);
+        order.push_back(vertex_id(g_ref, u));
       } else {
-        // Mark that we'll process this vertex after its children
         // Re-push with children_visited=true to record finish time later
-        stack.push({uid, true});
+        stack.push({u, true});
 
         // Push all unvisited neighbors onto stack
-        // They will be processed (and finish) before this vertex
-        auto uid_vertex = *find_vertex(g_ref, uid);
-        for (auto&& [vid, e] : views::incidence(g_ref, uid_vertex)) {
+        for (auto&& [vid, e] : views::incidence(g_ref, u)) {
           if (!visited[vid]) {
             visited[vid] = true;
-            stack.push({vid, false});
+            stack.push({*find_vertex(g_ref, vid), false});
           }
         }
       }
@@ -183,31 +190,33 @@ void kosaraju(G&&        g,        // graph
   };
 
   // First pass: compute finish times on original graph
-  // Visit all vertices and create reverse topological ordering
-  for (auto&& vinfo : views::vertexlist(g_ref)) {
-    auto uid = vertex_id(g_ref, vinfo.vertex);
+  for (auto&& [uid, u] : views::vertexlist(g_ref)) {
     if (!visited[uid]) {
-      dfs_finish_order(uid);
+      dfs_finish_order(u);
     }
   }
 
   // Second pass: DFS on transpose graph in reverse finish order
   // Each DFS tree in this pass corresponds to exactly one SCC
+  using gt_vertex_desc = vertex_t<std::remove_reference_t<GT>>;
   size_t                    cid = 0;
   std::ranges::reverse_view reverse{order};
   for (auto& uid : reverse) {
     if (component[uid] == std::numeric_limits<CT>::max()) {
-      // Use DFS view on transpose to find all vertices in this SCC
-      // In transpose: if u->v in original, v->u in transpose
-      // So we find all vertices that can reach this root in original graph
-      graph::views::vertices_dfs_view<std::remove_reference_t<GT>> dfs(g_t, uid);
-      for (auto&& [v] : dfs) {
-        auto vid = vertex_id(g_t, v);
-        if (component[vid] != std::numeric_limits<CT>::max()) {
-          // Already assigned to SCC, skip this branch
-          dfs.cancel(graph::views::cancel_search::cancel_branch);
-        } else {
-          component[vid] = cid; // Assign to current SCC
+      // Manual iterative DFS on transpose graph using descriptors
+      std::stack<gt_vertex_desc> dfs_stack;
+      dfs_stack.push(*find_vertex(g_t, uid));
+      component[uid] = cid;
+
+      while (!dfs_stack.empty()) {
+        auto current = dfs_stack.top();
+        dfs_stack.pop();
+
+        for (auto&& [vid, e] : views::incidence(g_t, current)) {
+          if (component[vid] == std::numeric_limits<CT>::max()) {
+            component[vid] = cid; // Assign to current SCC
+            dfs_stack.push(*find_vertex(g_t, vid));
+          }
         }
       }
       ++cid; // Move to next SCC
@@ -267,48 +276,52 @@ void kosaraju(G&&        g,        // graph
  * @see kosaraju(G&&, GT&&, Component&) For non-bidirectional graphs
  */
 template <index_bidirectional_adjacency_list G,
-          random_access_range                Component>
+          class                              Component>
+requires vertex_property_map_for<Component, G>
 void kosaraju(G&&        g,        // bidirectional graph
               Component& component // out: strongly connected component assignment
 ) {
-  size_t            N(num_vertices(g));
-  std::vector<bool> visited(N, false);
-  using CT = typename std::decay<decltype(*component.begin())>::type;
-  std::fill(component.begin(), component.end(), std::numeric_limits<CT>::max());
-  std::vector<vertex_id_t<G>> order;
+  using CT = vertex_property_map_value_t<Component>;
+  auto visited = make_vertex_property_map<std::remove_reference_t<G>, bool>(g, false);
+  // Initialize all components as unvisited
+  for (auto&& [uid, u] : views::vertexlist(g)) {
+    component[uid] = std::numeric_limits<CT>::max();
+  }
+  // Both passes use the same graph, so descriptors are valid throughout.
+  using vertex_desc = vertex_t<std::remove_reference_t<G>>;
+  std::vector<vertex_desc> order;
 
   auto& g_ref = g;
 
   // First pass: iterative DFS to compute finish times (same as two-graph version)
-  auto dfs_finish_order = [&](const vertex_id_t<G>& start) {
-    std::stack<std::pair<vertex_id_t<G>, bool>> stack;
+  // Stack stores vertex descriptors — lightweight, no string copies.
+  auto dfs_finish_order = [&](vertex_desc start) {
+    std::stack<std::pair<vertex_desc, bool>> stack;
     stack.push({start, false});
-    visited[start] = true;
+    visited[vertex_id(g_ref, start)] = true;
 
     while (!stack.empty()) {
-      auto [uid, children_visited] = stack.top();
+      auto [u, children_visited] = stack.top();
       stack.pop();
 
       if (children_visited) {
-        order.push_back(uid);
+        order.push_back(u);
       } else {
-        stack.push({uid, true});
+        stack.push({u, true});
 
-        auto uid_vertex = *find_vertex(g_ref, uid);
-        for (auto&& [vid, e] : views::incidence(g_ref, uid_vertex)) {
+        for (auto&& [vid, e] : views::incidence(g_ref, u)) {
           if (!visited[vid]) {
             visited[vid] = true;
-            stack.push({vid, false});
+            stack.push({*find_vertex(g_ref, vid), false});
           }
         }
       }
     }
   };
 
-  for (auto&& vinfo : views::vertexlist(g_ref)) {
-    auto uid = vertex_id(g_ref, vinfo.vertex);
+  for (auto&& [uid, u] : views::vertexlist(g_ref)) {
     if (!visited[uid]) {
-      dfs_finish_order(uid);
+      dfs_finish_order(u);
     }
   }
 
@@ -316,23 +329,23 @@ void kosaraju(G&&        g,        // bidirectional graph
   // Each DFS tree corresponds to exactly one SCC.
   size_t                    cid = 0;
   std::ranges::reverse_view reverse{order};
-  for (auto& uid : reverse) {
+  for (auto& u : reverse) {
+    auto uid = vertex_id(g_ref, u);
     if (component[uid] == std::numeric_limits<CT>::max()) {
-      // Manual iterative DFS using in_edges + source_id
-      std::stack<vertex_id_t<G>> dfs_stack;
-      dfs_stack.push(uid);
+      // Manual iterative DFS using in_edges + source_id, storing descriptors
+      std::stack<vertex_desc> dfs_stack;
+      dfs_stack.push(u);
       component[uid] = cid;
 
       while (!dfs_stack.empty()) {
         auto current = dfs_stack.top();
         dfs_stack.pop();
 
-        auto v = *adj_list::find_vertex(g_ref, current);
-        for (auto&& ie : adj_list::in_edges(g_ref, v)) {
+        for (auto&& ie : adj_list::in_edges(g_ref, current)) {
           auto src = adj_list::source_id(g_ref, ie);
           if (component[src] == std::numeric_limits<CT>::max()) {
             component[src] = cid;
-            dfs_stack.push(src);
+            dfs_stack.push(*adj_list::find_vertex(g_ref, src));
           }
         }
       }
@@ -441,19 +454,24 @@ void kosaraju(G&&        g,        // bidirectional graph
  * @see kosaraju For strongly connected components in directed graphs
  * @see afforest For faster parallel-friendly alternative
  */
-template <index_adjacency_list G,
-          random_access_range  Component>
+template <adjacency_list G,
+          class          Component>
+requires vertex_property_map_for<Component, G>
 size_t connected_components(G&&        g,        // graph
                             Component& component // out: connected component assignment
 ) {
-  size_t N(num_vertices(g));
-  using CT = typename std::decay<decltype(*component.begin())>::type;
+  using CT = vertex_property_map_value_t<Component>;
   // Initialize all components as unvisited
-  std::fill(component.begin(), component.end(), std::numeric_limits<CT>::max());
+  for (auto&& [uid, u] : views::vertexlist(g)) {
+    component[uid] = std::numeric_limits<CT>::max();
+  }
 
-  std::stack<vertex_id_t<G>> S;
-  CT                         cid = 0; // Current component ID
-  for (vertex_id_t<G> uid = 0; uid < N; ++uid) {
+  // Stack of vertex descriptors — lightweight (8 bytes), avoids string copies,
+  // and lets us call views::incidence(g, descriptor) without find_vertex on pop.
+  using vertex_desc = vertex_t<std::remove_reference_t<G>>;
+  std::stack<vertex_desc> S;
+  CT                      cid = 0; // Current component ID
+  for (auto&& [uid, u] : views::vertexlist(g)) {
     if (component[uid] < std::numeric_limits<CT>::max()) {
       continue; // Already assigned to a component
     }
@@ -466,16 +484,15 @@ size_t connected_components(G&&        g,        // graph
 
     // Start DFS for new component
     component[uid] = cid;
-    S.push(uid);
+    S.push(u);
     while (!S.empty()) {
-      auto vid = S.top();
+      auto v = S.top();
       S.pop();
       // Visit all unvisited neighbors and add to same component
-      for (auto&& einfo : views::basic_incidence(g, vid)) {
-        auto wid = einfo.target_id;
+      for (auto&& [wid, e] : views::incidence(g, v)) {
         if (component[wid] == std::numeric_limits<CT>::max()) {
           component[wid] = cid; // Same component as parent
-          S.push(wid);
+          S.push(*find_vertex(g, wid));
         }
       }
     }
@@ -495,12 +512,12 @@ size_t connected_components(G&&        g,        // graph
  * linking two components together.
  * 
  * @tparam vertex_id_t Vertex ID type
- * @tparam Component Random access range for component IDs
+ * @tparam Component Subscriptable container for component IDs (vector or unordered_map)
  * @param u First vertex ID
  * @param v Second vertex ID  
  * @param component Component assignment array (modified in-place)
  */
-template <typename vertex_id_t, random_access_range Component>
+template <typename vertex_id_t, class Component>
 static void link(vertex_id_t u, vertex_id_t v, Component& component) {
   vertex_id_t p1 = component[u]; // Parent of u
   vertex_id_t p2 = component[v]; // Parent of v
@@ -538,17 +555,27 @@ static void link(vertex_id_t u, vertex_id_t v, Component& component) {
  * Internal helper for afforest algorithm. Performs path compression to
  * flatten the component tree structure.
  * 
- * @tparam Component Random access range for component IDs
+ * @tparam Component Subscriptable container for component IDs (vector or unordered_map)
  * @param component Component assignment array (modified in-place)
  */
-template <random_access_range Component>
+template <class Component>
 static void compress(Component& component) {
   // Two-pass path compression: point each node to its grandparent
   // This flattens the union-find tree structure for faster queries
   // Note: Does not fully compress to root, but significantly reduces depth
-  for (size_t i = 0; i < component.size(); ++i) {
-    if (component[i] != component[component[i]]) {
-      component[i] = component[component[i]]; // Point to grandparent
+  if constexpr (std::ranges::random_access_range<Component>) {
+    for (size_t i = 0; i < component.size(); ++i) {
+      if (component[i] != component[component[i]]) {
+        component[i] = component[component[i]]; // Point to grandparent
+      }
+    }
+  } else {
+    // Map-based component: iterate over key-value pairs
+    for (auto& [key, val] : component) {
+      auto parent = component[val];
+      if (val != parent) {
+        val = parent; // Point to grandparent
+      }
     }
   }
 }
@@ -560,24 +587,38 @@ static void compress(Component& component) {
  * the largest component without full traversal.
  * 
  * @tparam vertex_id_t Vertex ID type
- * @tparam Component Random access range for component IDs
+ * @tparam Component Subscriptable container for component IDs (vector or unordered_map)
  * @param component Component assignment array
  * @param num_samples Number of random samples to take (default: 1024)
  * @return The most frequently occurring component ID in the sample
  */
-template <typename vertex_id_t, random_access_range Component>
+template <typename vertex_id_t, class Component>
 static vertex_id_t sample_frequent_element(Component& component, size_t num_samples = 1024) {
   // Use random sampling to find the most common component ID
   // This is faster than scanning all vertices for large graphs
   // The largest component is likely to be sampled frequently
-  std::unordered_map<vertex_id_t, int>       counts(32);
-  std::mt19937                               gen;
-  std::uniform_int_distribution<vertex_id_t> distribution(0, component.size() - 1);
+  std::unordered_map<vertex_id_t, int> counts(32);
+  std::mt19937                         gen;
 
-  // Take random samples and count occurrences of each component ID
-  for (size_t i = 0; i < num_samples; ++i) {
-    vertex_id_t sample = distribution(gen);
-    counts[component[sample]]++;
+  if constexpr (std::ranges::random_access_range<Component>) {
+    std::uniform_int_distribution<vertex_id_t> distribution(0, component.size() - 1);
+    // Take random samples and count occurrences of each component ID
+    for (size_t i = 0; i < num_samples; ++i) {
+      vertex_id_t sample = distribution(gen);
+      counts[component[sample]]++;
+    }
+  } else {
+    // Map-based: collect keys and sample from them
+    std::vector<vertex_id_t> keys;
+    keys.reserve(component.size());
+    for (auto& [k, v] : component) {
+      keys.push_back(k);
+    }
+    std::uniform_int_distribution<size_t> distribution(0, keys.size() - 1);
+    for (size_t i = 0; i < num_samples; ++i) {
+      auto& key = keys[distribution(gen)];
+      counts[component[key]]++;
+    }
   }
 
   // Return the component ID with highest count
@@ -713,15 +754,23 @@ static vertex_id_t sample_frequent_element(Component& component, size_t num_samp
  * - Sutton et al. (2018). "Afforest: A Fast Parallel Connected Components Algorithm"
  *   International Conference on Parallel Processing (ICPP)
  */
-template <index_adjacency_list G, random_access_range Component>
-requires std::convertible_to<range_value_t<Component>, vertex_id_t<G>> &&
-         std::convertible_to<vertex_id_t<G>, range_value_t<Component>>
+template <adjacency_list G, class Component>
+requires vertex_property_map_for<Component, G> &&
+         std::convertible_to<vertex_property_map_value_t<Component>, vertex_id_t<G>> &&
+         std::convertible_to<vertex_id_t<G>, vertex_property_map_value_t<Component>>
 void afforest(G&&          g,         // graph
               Component&   component, // out: connected component assignment
               const size_t neighbor_rounds = 2) {
-  size_t N(num_vertices(g));
   // Initialize: each vertex is its own component
-  std::iota(component.begin(), component.end(), 0);
+  if constexpr (std::ranges::random_access_range<Component>) {
+    std::iota(component.begin(), component.end(), vertex_property_map_value_t<Component>(0));
+  } else {
+    for (auto&& [uid, u] : views::vertexlist(g)) {
+      component[uid] = static_cast<vertex_property_map_value_t<Component>>(uid);
+    }
+  }
+
+  using vid_t = vertex_id_t<G>;
 
   // Phase 1: Neighbor sampling - link vertices through first few neighbors
   // This quickly forms large components without processing all edges
@@ -730,7 +779,7 @@ void afforest(G&&          g,         // graph
       if (r < size(edges(g, u))) {
         auto it = edges(g, u).begin();
         std::advance(it, r); // Get r-th neighbor
-        link(static_cast<vertex_id_t<G>>(uid), static_cast<vertex_id_t<G>>(target_id(g, *it)), component);
+        link(static_cast<vid_t>(uid), static_cast<vid_t>(target_id(g, *it)), component);
       }
     }
     compress(component); // Flatten union-find tree after each round
@@ -738,20 +787,19 @@ void afforest(G&&          g,         // graph
 
   // Phase 2: Identify largest component via sampling
   // Skip processing edges within largest component (optimization)
-  vertex_id_t<G> c = sample_frequent_element<vertex_id_t<G>>(component);
+  vid_t c = sample_frequent_element<vid_t>(component);
 
   // Phase 3: Process remaining edges for vertices not in largest component
   // Start from neighbor_rounds to avoid re-processing sampled neighbors
-  for (auto&& vinfo : views::vertexlist(g)) {
-    auto uid = vertex_id(g, vinfo.vertex);
+  for (auto&& [uid, u] : views::vertexlist(g)) {
     if (component[uid] == c) {
       continue; // Skip vertices in largest component
     }
-    if (neighbor_rounds < edges(g, uid).size()) {
-      auto it = edges(g, vinfo.vertex).begin();
+    if (neighbor_rounds < edges(g, u).size()) {
+      auto it = edges(g, u).begin();
       std::advance(it, neighbor_rounds); // Skip already-processed neighbors
-      for (; it != edges(g, vinfo.vertex).end(); ++it) {
-        link(static_cast<vertex_id_t<G>>(uid), static_cast<vertex_id_t<G>>(target_id(g, *it)), component);
+      for (; it != edges(g, u).end(); ++it) {
+        link(static_cast<vid_t>(uid), static_cast<vid_t>(target_id(g, *it)), component);
       }
     }
   }
@@ -819,16 +867,24 @@ void afforest(G&&          g,         // graph
  * 
  * @see afforest(G&&, Component&, size_t) For single-graph version
  */
-template <index_adjacency_list G, adjacency_list GT, random_access_range Component>
-requires std::convertible_to<range_value_t<Component>, vertex_id_t<G>> &&
-         std::convertible_to<vertex_id_t<G>, range_value_t<Component>>
+template <adjacency_list G, adjacency_list GT, class Component>
+requires vertex_property_map_for<Component, G> &&
+         std::convertible_to<vertex_property_map_value_t<Component>, vertex_id_t<G>> &&
+         std::convertible_to<vertex_id_t<G>, vertex_property_map_value_t<Component>>
 void afforest(G&&          g,         // graph
               GT&&         g_t,       // graph transpose
               Component&   component, // out: connected component assignment
               const size_t neighbor_rounds = 2) {
-  size_t N(num_vertices(g));
   // Initialize: each vertex is its own component
-  std::iota(component.begin(), component.end(), 0);
+  if constexpr (std::ranges::random_access_range<Component>) {
+    std::iota(component.begin(), component.end(), vertex_property_map_value_t<Component>(0));
+  } else {
+    for (auto&& [uid, u] : views::vertexlist(g)) {
+      component[uid] = static_cast<vertex_property_map_value_t<Component>>(uid);
+    }
+  }
+
+  using vid_t = vertex_id_t<G>;
 
   // Phase 1: Neighbor sampling (same as single-graph version)
   for (size_t r = 0; r < neighbor_rounds; ++r) {
@@ -836,14 +892,14 @@ void afforest(G&&          g,         // graph
       if (r < size(edges(g, u))) {
         auto it = edges(g, u).begin();
         std::advance(it, r); // Get r-th neighbor
-        link(static_cast<vertex_id_t<G>>(uid), static_cast<vertex_id_t<G>>(target_id(g, *it)), component);
+        link(static_cast<vid_t>(uid), static_cast<vid_t>(target_id(g, *it)), component);
       }
     }
     compress(component); // Flatten union-find tree
   }
 
   // Phase 2: Identify largest component via sampling
-  vertex_id_t<G> c = sample_frequent_element<vertex_id_t<G>>(component);
+  vid_t c = sample_frequent_element<vid_t>(component);
 
   // Phase 3: Process remaining edges in both directions
   for (auto&& [uid, u] : views::vertexlist(g)) {
@@ -851,17 +907,17 @@ void afforest(G&&          g,         // graph
       continue; // Skip largest component
     }
     // Process remaining forward edges (from g)
-    if (neighbor_rounds < edges(g, uid).size()) {
+    if (neighbor_rounds < edges(g, u).size()) {
       auto it = edges(g, u).begin();
       std::advance(it, neighbor_rounds); // Skip sampled neighbors
       for (; it != edges(g, u).end(); ++it) {
-        link(static_cast<vertex_id_t<G>>(uid), static_cast<vertex_id_t<G>>(target_id(g, *it)), component);
+        link(static_cast<vid_t>(uid), static_cast<vid_t>(target_id(g, *it)), component);
       }
     }
     // Process all backward edges (from transpose g_t)
     // This ensures bidirectional reachability for undirected graphs
     for (auto it2 = edges(g_t, u).begin(); it2 != edges(g_t, u).end(); ++it2) {
-      link(static_cast<vertex_id_t<G>>(uid), static_cast<vertex_id_t<G>>(target_id(g_t, *it2)), component);
+      link(static_cast<vid_t>(uid), static_cast<vid_t>(target_id(g_t, *it2)), component);
     }
   }
 

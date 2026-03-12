@@ -34,8 +34,8 @@ graph with **non-negative** edge weights. It uses a binary-heap priority queue
 to greedily expand the nearest unvisited vertex until all reachable vertices
 have been settled.
 
-The graph must satisfy `index_adjacency_list<G>` — vertices are stored in a
-contiguous, integer-indexed random-access range.
+The graph must satisfy `adjacency_list<G>` — both index-based (contiguous
+integer-indexed) and map-based (sparse vertex ID) graphs are supported.
 
 The library provides two families of overloads:
 
@@ -113,10 +113,10 @@ constexpr void dijkstra_shortest_distances(G&& g, const vertex_id_t<G>& source,
 
 | Parameter | Description |
 |-----------|-------------|
-| `g` | Graph satisfying `index_adjacency_list` |
+| `g` | Graph satisfying `adjacency_list` |
 | `source` / `sources` | Source vertex ID or range of source vertex IDs |
-| `distances` | Random-access range sized to `num_vertices(g)`. Filled with shortest distances. Must satisfy `is_arithmetic_v<range_value_t<Distances>>`. |
-| `predecessors` | Random-access range sized to `num_vertices(g)`. Filled with predecessor vertex IDs. |
+| `distances` | Subscriptable by `vertex_id_t<G>`. For index graphs, a pre-sized `std::vector`; for mapped graphs, use `make_vertex_property_map<G, T>(g, init)`. Must satisfy `vertex_property_map_for<Distances, G>`. |
+| `predecessors` | Subscriptable by `vertex_id_t<G>`. For index graphs, a pre-sized `std::vector`; for mapped graphs, use `make_vertex_property_map<G, T>(g, init)`. Must satisfy `vertex_property_map_for<Predecessors, G>`. |
 | `weight` | Callable `WF(g, uv)` returning edge weight. Must satisfy `basic_edge_weight_function`. Default: returns `1` for every edge (unweighted). |
 | `visitor` | Optional visitor struct with callback methods (see below). Default: `empty_visitor{}`. |
 | `compare` | Comparison function for distance values. Default: `std::less<>{}`. |
@@ -331,11 +331,12 @@ struct IdVisitor {
 
 ## Preconditions
 
-- Graph must satisfy `index_adjacency_list<G>`.
+- Graph must satisfy `adjacency_list<G>`.
 - All edge weights must be **non-negative**. For negative weights, use
   [Bellman-Ford](bellman_ford.md). For signed weight types, a negative weight
   throws `std::out_of_range` at runtime.
-- `distances` and `predecessors` must be sized to `num_vertices(g)`.
+- `distances` and `predecessors` must satisfy `vertex_property_map_for` (pre-sized
+  vectors for index graphs, or `make_vertex_property_map` for mapped graphs).
 - Call `init_shortest_paths(distances, predecessors)` before invoking the
   algorithm.
 

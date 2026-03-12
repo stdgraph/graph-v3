@@ -9,6 +9,7 @@
 #pragma once
 
 #include <concepts>
+#include <functional>
 #include <ranges>
 #include "detail/graph_cpo.hpp"
 
@@ -100,10 +101,11 @@ concept out_edge_range = std::ranges::forward_range<R> && edge<G, std::ranges::r
  * @tparam V Vertex type (must be vertex_descriptor)
  */
 template <class G, class V>
-concept vertex = is_vertex_descriptor_v<std::remove_cvref_t<V>> && requires(G& g, const V& u, const vertex_id_t<G>& uid) {
-  vertex_id(g, u);
-  find_vertex(g, uid);
-};
+concept vertex = is_vertex_descriptor_v<std::remove_cvref_t<V>> && //
+                 requires(G& g, const V& u, const vertex_id_t<G>& uid) {
+                   vertex_id(g, u);
+                   find_vertex(g, uid);
+                 };
 
 // =============================================================================
 // Vertex Range Concepts
@@ -147,11 +149,12 @@ concept vertex_range = std::ranges::forward_range<R> && std::ranges::sized_range
  * Requirements:
  * - The vertex ID type must be integral
  * - Must satisfy vertex_range
- * - The underlying iterator of the vertex_descriptor_view must be a random_access_iterator
+ * - The underlying container must be integral, allowing random access by index
  * 
- * Note: We check the underlying iterator type, not the view itself, because
- * vertex_descriptor_view is always a forward_range (synthesizes descriptors on-the-fly)
- * but the underlying container may still support random access.
+ * Note: We check the underlying iterator type via `vertex_range_t<G>::underlying_iterator`,
+ * not the view's own iterator, because vertex_descriptor_view always models forward_range
+ * (it synthesizes descriptors on-the-fly) while the underlying container may still support
+ * random access. `underlying_iterator` is exposed directly on vertex_descriptor_view.
  * 
  * Examples:
  * - vertex_descriptor_view over std::vector<T> (index-based)
@@ -163,11 +166,11 @@ concept vertex_range = std::ranges::forward_range<R> && std::ranges::sized_range
  * @tparam G Graph type
  */
 template <class G>
-concept index_vertex_range =
-      requires(G& g) {
-        { vertices(g) } -> vertex_range<G>;
-      } && std::integral<vertex_id_t<G>> &&
-      std::random_access_iterator<typename vertex_range_t<G>::vertex_desc::iterator_type>;
+concept index_vertex_range = std::integral<vertex_id_t<G>> &&                           //
+                             std::integral<typename vertex_range_t<G>::storage_type> && //
+                             requires(G& g) {
+                               { vertices(g) } -> vertex_range<G>;
+                             };
 
 // =============================================================================
 // Adjacency List Concepts
@@ -296,12 +299,10 @@ concept in_edge_range = std::ranges::forward_range<R> && edge<G, std::ranges::ra
  * @tparam G Graph type
  */
 template <class G>
-concept bidirectional_adjacency_list =
-      adjacency_list<G> &&
-      requires(G& g, vertex_t<G> u, in_edge_t<G> ie) {
-        { in_edges(g, u) } -> in_edge_range<G>;
-        { source_id(g, ie) } -> std::convertible_to<vertex_id_t<G>>;
-      };
+concept bidirectional_adjacency_list = adjacency_list<G> && requires(G& g, vertex_t<G> u, in_edge_t<G> ie) {
+  { in_edges(g, u) } -> in_edge_range<G>;
+  { source_id(g, ie) } -> std::convertible_to<vertex_id_t<G>>;
+};
 
 /**
  * @brief Concept for bidirectional graphs with index-based vertex access
@@ -316,9 +317,82 @@ concept bidirectional_adjacency_list =
  * @tparam G Graph type
  */
 template <class G>
-concept index_bidirectional_adjacency_list =
-      bidirectional_adjacency_list<G> && index_vertex_range<G>;
+concept index_bidirectional_adjacency_list = bidirectional_adjacency_list<G> && index_vertex_range<G>;
 
+// =============================================================================
+// Mapped (Key-Based) Graph Concepts
+// =============================================================================
+
+/**
+ * @brief Concept for graphs whose vertex IDs are hashable keys
+ * 
+ * A hashable_vertex_id graph has vertex IDs that can be used as keys in 
+ * std::unordered_map. This is required by algorithms that use unordered_map
+ * for internal vertex property storage.
+ * 
+ * @tparam G Graph type
+ */
+template <class G>
+concept hashable_vertex_id = requires(const vertex_id_t<G>& uid) {
+  { std::hash<vertex_id_t<G>>{}(uid) } -> std::convertible_to<size_t>;
+};
+
+/**
+ * @brief Concept for graphs with key-based (sparse) vertex access
+ * 
+ * A mapped_vertex_range is a vertex_range where vertices are addressed by
+ * sparse keys rather than dense integral indices. Lookup is via find_vertex(g, uid).
+ * 
+ * This is mutually exclusive with index_vertex_range: a graph satisfies exactly
+ * one of these two concepts (or neither, if it satisfies only vertex_range).
+ * 
+ * Requirements:
+ * - Must NOT satisfy index_vertex_range (mutually exclusive)
+ * - Vertex IDs must be hashable (for unordered_map-based property maps)
+ * - vertices(g) must return a forward range
+ * - find_vertex(g, uid) must be valid (key-based lookup)
+ * 
+ * Examples:
+ * - vertex_descriptor_view over std::map<K, V>
+ * - vertex_descriptor_view over std::unordered_map<K, V>
+ * 
+ * Note: std::vector-based and std::deque-based graphs do NOT satisfy this concept.
+ * 
+ * @tparam G Graph type
+ */
+template <class G>
+concept mapped_vertex_range =
+    !index_vertex_range<G> &&
+    hashable_vertex_id<G> &&
+    requires(G& g) {
+      { vertices(g) } -> std::ranges::forward_range;
+    } &&
+    requires(G& g, const vertex_id_t<G>& uid) {
+      find_vertex(g, uid);
+    };
+
+/**
+ * @brief Concept for graphs with map-based adjacency list structure
+ * 
+ * A mapped_adjacency_list combines the adjacency_list structure with
+ * key-based vertex access (mapped_vertex_range).
+ * 
+ * @tparam G Graph type
+ */
+template <class G>
+concept mapped_adjacency_list = adjacency_list<G> && mapped_vertex_range<G>;
+
+/**
+ * @brief Concept for bidirectional graphs with map-based vertex access
+ * 
+ * A mapped_bidirectional_adjacency_list combines bidirectional traversal
+ * with key-based vertex lookup.
+ * 
+ * @tparam G Graph type
+ */
+template <class G>
+concept mapped_bidirectional_adjacency_list =
+    bidirectional_adjacency_list<G> && mapped_vertex_range<G>;
 
 
 } // namespace graph::adj_list

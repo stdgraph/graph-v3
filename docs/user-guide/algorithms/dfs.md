@@ -33,8 +33,8 @@ Depth-first search performs iterative DFS from a single source vertex using a
 three-color marking scheme (White → Gray → Black). It is entirely
 **visitor-driven** — the algorithm itself has no output arrays.
 
-The graph must satisfy `index_adjacency_list<G>` — vertices are stored in a
-contiguous, integer-indexed random-access range.
+The graph must satisfy `adjacency_list<G>` — both index-based (contiguous
+integer-indexed) and map-based (sparse vertex ID) graphs are supported.
 
 The three-color scheme enables precise **edge classification**:
 
@@ -86,7 +86,7 @@ void depth_first_search(G&& g, const vertex_id_t<G>& source,
 
 | Parameter | Description |
 |-----------|-------------|
-| `g` | Graph satisfying `index_adjacency_list` |
+| `g` | Graph satisfying `adjacency_list` |
 | `source` | Source vertex ID to start DFS from |
 | `visitor` | Optional visitor struct with callback methods (see below). Default: `empty_visitor{}`. |
 
@@ -287,7 +287,7 @@ depth_first_search(dag, 0u, SubtreeCounter{sizes});
 
 ## Preconditions
 
-- Graph must satisfy `index_adjacency_list<G>`.
+- Graph must satisfy `adjacency_list<G>`.
 - Single-source only — to cover all vertices in a disconnected graph, call
   DFS once per unvisited component.
 
