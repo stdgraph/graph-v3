@@ -115,17 +115,12 @@ using adj_list::find_vertex;
  * 
  * @par Exception Safety
  * 
- * **Guarantee:** Basic exception safety
- * 
- * **Throws:**
- * - May throw `std::bad_alloc` if color array or stack cannot allocate memory
- * - May propagate exceptions from visitor callbacks
- * - May propagate exceptions from container operations
- * 
- * **State after exception:**
- * - Graph `g` remains unchanged
- * - Visitor state depends on implementation
- * - Partial traversal may have occurred
+ * Throws:
+ *   std::bad_alloc if color array or stack cannot allocate memory.
+ *   Any exception propagated from visitor callbacks.
+ *   Any exception propagated from container operations.
+ *   Basic exception guarantee: graph `g` remains unchanged; visitor state depends on
+ *   implementation; partial traversal may have occurred.
  * 
  * @par Visitor Callbacks
  * 

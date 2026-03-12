@@ -96,9 +96,10 @@ using adj_list::find_vertex;
  * @post Output contains all articulation points, each emitted exactly once.
  * @post The graph g is not modified.
  *
- * **Exception Safety:** Basic exception safety. May throw std::bad_alloc if internal
- * vector allocation fails. The graph g remains unchanged; output iterator may be
- * partially written.
+ * Throws:
+ *   std::bad_alloc if internal vector allocation fails.
+ *   Basic exception guarantee: the graph g remains unchanged; output iterator may be
+ *   partially written.
  *
  * ## Example Usage
  *
@@ -192,7 +193,7 @@ void articulation_points(G&& g, Iter cut_vertices) {
           if (parent[par_uid].has_value()) {
             // Non-root rule: child v has low[v] >= disc[u]
             if (low[uid] >= disc[par_uid] && !emitted[par_uid]) {
-              *cut_vertices++ = par_uid;
+              *cut_vertices++  = par_uid;
               emitted[par_uid] = true;
             }
           }
@@ -227,7 +228,7 @@ void articulation_points(G&& g, Iter cut_vertices) {
       }
     }
 
-    // Root rule: root is an articulation point iff it has >= 2 DFS children 
+    // Root rule: root is an articulation point iff it has >= 2 DFS children
     if (child_count[start] >= 2 && !emitted[start]) {
       *cut_vertices++ = start;
       emitted[start]  = true;
