@@ -83,10 +83,10 @@ void find_negative_cycle(G&                              g,
  * Unlike Dijkstra's algorithm, Bellman-Ford can handle negative edge weights and detects negative
  * weight cycles. Returns an optional vertex ID indicating whether a negative cycle was detected.
  * 
- * @tparam G            The graph type. Must satisfy index_adjacency_list concept.
+ * @tparam G            The graph type. Must satisfy adjacency_list concept (index or mapped).
  * @tparam Sources      Input range of source vertex IDs.
- * @tparam Distances    Random access range for storing distances. Value type must be arithmetic.
- * @tparam Predecessors Random access range for storing predecessor information. Can use _null_predecessors
+ * @tparam Distances    Vertex property map satisfying vertex_property_map_for<Distances,G>. Value type must be arithmetic.
+ * @tparam Predecessors Vertex property map satisfying vertex_property_map_for<Predecessors,G>. Can use null_predecessors
  *                      if path reconstruction is not needed.
  * @tparam WF           Edge weight function. Defaults to returning 1 for all edges (unweighted).
  * @tparam Visitor      Visitor type with callbacks for algorithm events. Defaults to empty_visitor.
@@ -96,8 +96,8 @@ void find_negative_cycle(G&                              g,
  * 
  * @param g            The graph to process.
  * @param sources      Range of source vertex IDs to start from.
- * @param distances    [out] Shortest distances from sources. Must be sized >= num_vertices(g).
- * @param predecessor  [out] Predecessor information for path reconstruction. Must be sized >= num_vertices(g).
+ * @param distances    [out] Shortest distances from sources. Must be a vertex property map for G.
+ * @param predecessor  [out] Predecessor information for path reconstruction. Must be a vertex property map for G.
  * @param weight       Edge weight function: (const edge_t<G>&) -> Distance.
  * @param visitor      Visitor for algorithm events (examine, relax, not_relaxed, minimized, not_minimized).
  * @param compare      Distance comparison function: (Distance, Distance) -> bool.
@@ -111,16 +111,16 @@ void find_negative_cycle(G&                              g,
  * - Space: O(1) auxiliary space (excluding output parameters)
  * 
  * **Mandates:**
- * - G must satisfy index_adjacency_list (integral vertex IDs)
+ * - G must satisfy adjacency_list (index or mapped graphs supported)
  * - Sources must be input_range with values convertible to vertex_id_t<G>
- * - Distances must be random_access_range with arithmetic value type
- * - Predecessors must be random_access_range with values convertible from vertex_id_t<G>
+ * - Distances must satisfy vertex_property_map_for<Distances,G> with arithmetic value type
+ * - Predecessors must satisfy vertex_property_map_for<Predecessors,G> (or null_predecessors)
  * - WF must satisfy basic_edge_weight_function
  * 
  * **Preconditions:**
- * - All source vertices must be valid: source < num_vertices(g) for vector-based containers
- * - distances.size() >= num_vertices(g)
- * - predecessor.size() >= num_vertices(g) (unless using _null_predecessors)
+ * - All source vertices must be valid vertex IDs in vertices(g)
+ * - distances must contain an entry for each vertex of g
+ * - predecessor must contain an entry for each vertex of g (unless using null_predecessors)
  * - Weight function must not throw or modify graph state
  * 
  * **Postconditions:**
@@ -337,9 +337,9 @@ requires vertex_property_map_for<Distances, G> &&                               
  * Computes shortest distances without tracking predecessor information. More efficient when
  * path reconstruction is not needed. Can detect negative weight cycles.
  * 
- * @tparam G            The graph type. Must satisfy index_adjacency_list concept.
+ * @tparam G            The graph type. Must satisfy adjacency_list concept (index or mapped).
  * @tparam Sources      Input range of source vertex IDs.
- * @tparam Distances    Random access range for storing distances. Value type must be arithmetic.
+ * @tparam Distances    Vertex property map satisfying vertex_property_map_for<Distances,G>. Value type must be arithmetic.
  * @tparam WF           Edge weight function. Defaults to returning 1 for all edges (unweighted).
  * @tparam Visitor      Visitor type with callbacks for algorithm events. Defaults to empty_visitor.
  * @tparam Compare      Comparison function for distance values. Defaults to less<>.
@@ -347,7 +347,7 @@ requires vertex_property_map_for<Distances, G> &&                               
  * 
  * @param g            The graph to process.
  * @param sources      Range of source vertex IDs to start from.
- * @param distances    [out] Shortest distances from sources. Must be sized >= num_vertices(g).
+ * @param distances    [out] Shortest distances from sources. Must be a vertex property map for G.
  * @param weight       Edge weight function: (const edge_t<G>&) -> Distance.
  * @param visitor      Visitor for algorithm events.
  * @param compare      Distance comparison function: (Distance, Distance) -> bool.
