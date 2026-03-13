@@ -233,10 +233,10 @@ void kosaraju(G&&        g,        // graph
 /**
  * @brief Finds strongly connected components using in_edges (no transpose needed).
  * 
- * When the graph satisfies `index_bidirectional_adjacency_list`, the second DFS
+ * When the graph satisfies `bidirectional_adjacency_list`, the second DFS
  * pass can traverse incoming edges directly instead of requiring a separate
  * transpose graph.  This eliminates the O(V + E) cost of constructing and
- * storing the transpose.
+ * storing the transpose.  Works with both index and mapped bidirectional graphs.
  * 
  * @par Complexity Analysis
  * 
@@ -249,17 +249,16 @@ void kosaraju(G&&        g,        // graph
  * 
  * @par Container Requirements
  * 
- * - Requires: `index_bidirectional_adjacency_list<G>` (in_edges + index vertices)
- * - Requires: `random_access_range<Component>`
- * - Works with: All bidirectional `dynamic_graph` container combinations
+ * - Requires: `bidirectional_adjacency_list<G>` (in_edges without needing a separate transpose)
+ * - Compatible with both index graphs and mapped graphs.
  * 
- * @tparam G Graph type (must satisfy index_bidirectional_adjacency_list concept)
- * @tparam Component Random access range for component IDs
+ * @tparam G Graph type (must satisfy bidirectional_adjacency_list concept)
+ * @tparam Component Vertex property map satisfying vertex_property_map_for<Component,G>
  * 
  * @param g The directed bidirectional graph to analyze
  * @param component Output: component[v] = component ID for vertex v
  * 
- * @pre `component.size() >= num_vertices(g)`
+ * @pre component contains an entry for each vertex of g
  * 
  * @post `component[v]` contains the SCC ID for vertex v
  * @post Component IDs are assigned 0, 1, 2, ..., num_components-1
@@ -277,8 +276,8 @@ void kosaraju(G&&        g,        // graph
  * 
  * @see kosaraju(G&&, GT&&, Component&) For non-bidirectional graphs
  */
-template <index_bidirectional_adjacency_list G,
-          class                              Component>
+template <bidirectional_adjacency_list G,
+          class                         Component>
 requires vertex_property_map_for<Component, G>
 void kosaraju(G&&        g,        // bidirectional graph
               Component& component // out: strongly connected component assignment
