@@ -120,42 +120,45 @@ using adj_list::index_vertex_range;
 // We use std::remove_reference_t<G> in WF default types, invoke_result_t, and concept
 // constraints so that "const std::remove_reference_t<G>&" always means a true const ref.
 // Default lambdas use "const auto&" instead of "const G&" to sidestep the issue entirely.
-template <adjacency_list G,
-          input_range    Sources,
-          class          Distances,
-          class          Predecessors,
-          class WF      = function<vertex_property_map_value_t<Distances>(const std::remove_reference_t<G>&, const edge_t<G>&)>,
-          class Visitor = empty_visitor,
-          class Compare = less<vertex_property_map_value_t<Distances>>,
-          class Combine = plus<vertex_property_map_value_t<Distances>>>
-requires vertex_property_map_for<Distances, G> &&                                              //
-         (is_null_range_v<Predecessors> || vertex_property_map_for<Predecessors, G>) &&         //
-         convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&                     //
-         is_arithmetic_v<vertex_property_map_value_t<Distances>> &&                              //
+template <
+      adjacency_list G,
+      input_range    Sources,
+      class Distances,
+      class Predecessors,
+      class WF = function<vertex_property_map_value_t<Distances>(const std::remove_reference_t<G>&, const edge_t<G>&)>,
+      class Visitor = empty_visitor,
+      class Compare = less<vertex_property_map_value_t<Distances>>,
+      class Combine = plus<vertex_property_map_value_t<Distances>>>
+requires vertex_property_map_for<Distances, G> &&                                       //
+         (is_null_range_v<Predecessors> || vertex_property_map_for<Predecessors, G>) && //
+         convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&                      //
+         is_arithmetic_v<vertex_property_map_value_t<Distances>> &&                     //
          basic_edge_weight_function<G, WF, vertex_property_map_value_t<Distances>, Compare, Combine>
 constexpr void dijkstra_shortest_paths(
       G&&            g,
       const Sources& sources,
       Distances&     distances,
       Predecessors&  predecessor,
-      WF&&           weight  = [](const auto&,
-                       const edge_t<G>& uv) { return vertex_property_map_value_t<Distances>(1); }, // default weight(g, uv) -> 1
-      Visitor&&      visitor = empty_visitor(),
-      Compare&&      compare = less<vertex_property_map_value_t<Distances>>(),
-      Combine&&      combine = plus<vertex_property_map_value_t<Distances>>()) {
+      WF&&           weight =
+            [](const auto&, const edge_t<G>& uv) {
+              return vertex_property_map_value_t<Distances>(1);
+            }, // default weight(g, uv) -> 1
+      Visitor&& visitor = empty_visitor(),
+      Compare&& compare = less<vertex_property_map_value_t<Distances>>(),
+      Combine&& combine = plus<vertex_property_map_value_t<Distances>>()) {
   using id_type       = vertex_id_t<G>;
   using distance_type = vertex_property_map_value_t<Distances>;
   using weight_type   = invoke_result_t<WF, const std::remove_reference_t<G>&, edge_t<G>>;
 
   // relaxing the target is the function of reducing the distance from the source to the target
   auto relax_target = [&g, &predecessor, &distances, &compare, &combine] //
-        (const edge_t<G>& e, const vertex_id_t<G>& uid, const weight_type& w_e) -> bool {
-    const id_type       vid = target_id(g, e);
+        (const edge_t<G>& uv, const vertex_id_t<G>& uid, const weight_type& w) -> bool {
+    const id_type       vid = target_id(g, uv);
     const distance_type d_u = distances[uid];
     const distance_type d_v = distances[vid];
 
-    if (compare(combine(d_u, w_e), d_v)) {
-      distances[vid] = combine(d_u, w_e);
+    if (compare(combine(d_u, w), d_v)) {
+      distances[vid] = combine(d_u, w);
       if constexpr (!is_null_range_v<Predecessors>) {
         predecessor[vid] = uid;
       }
@@ -182,60 +185,65 @@ constexpr void dijkstra_shortest_paths(
   constexpr auto zero     = shortest_path_zero<distance_type>();
   constexpr auto infinite = shortest_path_infinite_distance<distance_type>();
 
-  // Priority queue stores vertex descriptors — lightweight 8-byte values (index or iterator),
-  // eliminating string copies for map-based graphs and enabling O(1) vertex_id extraction.
-  using vertex_desc = vertex_t<std::remove_reference_t<G>>;
-  auto qcompare = [&g, &distances](vertex_desc a, vertex_desc b) {
-    return distances[vertex_id(g, a)] > distances[vertex_id(g, b)];
+  struct weighted_vertex {
+    vertex_t<std::remove_reference_t<G>> vertex_desc = {};
+    distance_type                        weight      = distance_type();
   };
-  using Queue = std::priority_queue<vertex_desc, std::vector<vertex_desc>, decltype(qcompare)>;
+  auto qcompare = [&compare](const weighted_vertex& a, const weighted_vertex& b) {
+    return compare(b.weight, a.weight); // min-heap: pop lowest weight first
+  };
+  using Queue = std::priority_queue<weighted_vertex, std::vector<weighted_vertex>, decltype(qcompare)>;
   Queue queue(qcompare);
 
   // (The optimizer removes this loop if on_initialize_vertex() is empty.)
-  if constexpr (has_on_initialize_vertex<G, Visitor>) {
+  if constexpr (has_on_initialize_vertex<G, Visitor> || has_on_initialize_vertex_id<G, Visitor>) {
     for (auto&& [uid, u] : views::vertexlist(g)) {
-      visitor.on_initialize_vertex(g, u);
-    }
-  } else if constexpr (has_on_initialize_vertex_id<G, Visitor>) {
-    for (auto&& [uid, u] : views::vertexlist(g)) {
-      visitor.on_initialize_vertex(g, uid);
+      if constexpr (has_on_initialize_vertex<G, Visitor>) {
+        visitor.on_initialize_vertex(g, u);
+      } else if constexpr (has_on_initialize_vertex_id<G, Visitor>) {
+        visitor.on_initialize_vertex(g, uid);
+      }
     }
   }
 
   // Seed the queue with the initial vertice(s)
-  for (auto&& source : sources) {
+  for (auto&& uid : sources) {
+    vertex_t<G> u;
     if constexpr (index_vertex_range<std::remove_reference_t<G>>) {
-      if (source >= num_vertices(g)) {
-        throw std::out_of_range(std::format("dijkstra_shortest_paths: source vertex id '{}' is out of range", source));
+      if (uid >= num_vertices(g)) {
+        throw std::out_of_range(
+              std::format("dijkstra_shortest_paths: uid vertex id '{}' is out of range", uid));
       }
+      u = *find_vertex(g, uid);
     } else {
-      if (find_vertex(g, source) == std::ranges::end(vertices(g))) {
-        throw std::out_of_range(std::format("dijkstra_shortest_paths: source vertex id '{}' is out of range", source));
+      auto v_it = find_vertex(g, uid);
+      if (v_it == std::ranges::end(vertices(g))) {
+        throw std::out_of_range(
+              std::format("dijkstra_shortest_paths: uid vertex id '{}' is out of range", uid));
       }
+      u = *v_it;
     }
-    auto s_desc = *find_vertex(g, source);
-    queue.push(s_desc);
-    distances[source] = zero; // mark source as discovered
+    distances[uid] = zero; // mark uid as discovered
+    queue.push({u, zero});
     if constexpr (has_on_discover_vertex<G, Visitor>) {
-      visitor.on_discover_vertex(g, s_desc);
+      visitor.on_discover_vertex(g, u);
     } else if constexpr (has_on_discover_vertex_id<G, Visitor>) {
-      visitor.on_discover_vertex(g, source);
+      visitor.on_discover_vertex(g, uid);
     }
   }
 
   // Main loop to process the queue
   while (!queue.empty()) {
-    auto          u   = queue.top();
+    auto [u, w] = queue.top();
     queue.pop();
-    const id_type uid = vertex_id(g, u); // O(1) extraction from descriptor
+    const id_type uid = vertex_id(g, u);
     if constexpr (has_on_examine_vertex<G, Visitor>) {
-      visitor.on_examine_vertex(g, u); // descriptor already available, no find_vertex
+      visitor.on_examine_vertex(g, u);
     } else if constexpr (has_on_examine_vertex_id<G, Visitor>) {
       visitor.on_examine_vertex(g, uid);
     }
 
     // Process all outgoing edges from the current vertex
-    // Using descriptor directly avoids find_vertex for incidence view creation
     for (auto&& [vid, uv, w] : views::incidence(g, u, weight)) {
       if constexpr (has_on_examine_edge<G, Visitor>) {
         visitor.on_examine_edge(g, uv);
@@ -258,14 +266,12 @@ constexpr void dijkstra_shortest_paths(
           if constexpr (has_on_edge_relaxed<G, Visitor>) {
             visitor.on_edge_relaxed(g, uv);
           }
-          // Convert target_id to descriptor once; serves both visitor and queue push
-          auto v_desc = *find_vertex(g, vid);
           if constexpr (has_on_discover_vertex<G, Visitor>) {
-            visitor.on_discover_vertex(g, v_desc);
+            visitor.on_discover_vertex(g, *find_vertex(g, vid));
           } else if constexpr (has_on_discover_vertex_id<G, Visitor>) {
             visitor.on_discover_vertex(g, vid);
           }
-          queue.push(v_desc); // push descriptor (8 bytes), not vertex ID
+          queue.push({*find_vertex(g, vid), distances[vid]});
         } else {
           // This is an indicator of a bug in the algorithm and should be investigated.
           throw std::logic_error(
@@ -277,7 +283,7 @@ constexpr void dijkstra_shortest_paths(
           if constexpr (has_on_edge_relaxed<G, Visitor>) {
             visitor.on_edge_relaxed(g, uv);
           }
-          queue.push(*find_vertex(g, vid)); // re-enqueue descriptor to re-evaluate
+          queue.push({*find_vertex(g, vid), distances[vid]}); // re-enqueue with updated distance
         } else {
           if constexpr (has_on_edge_not_relaxed<G, Visitor>) {
             visitor.on_edge_not_relaxed(g, uv);
@@ -290,8 +296,9 @@ constexpr void dijkstra_shortest_paths(
     // and another path to this vertex has a lower accumulated weight, we'll process it again.
     // A consequence is that examine_vertex could be called twice (or more) on the same vertex.
     if constexpr (has_on_finish_vertex<G, Visitor>) {
-      visitor.on_finish_vertex(g, u); // descriptor already available, no find_vertex
-    } else if constexpr (has_on_finish_vertex_id<G, Visitor>) {
+      visitor.on_finish_vertex(g, *find_vertex(g, uid));
+    }
+    if constexpr (has_on_finish_vertex_id<G, Visitor>) {
       visitor.on_finish_vertex(g, uid);
     }
   } // while(!queue.empty())
@@ -306,27 +313,30 @@ constexpr void dijkstra_shortest_paths(
  * 
  * @see dijkstra_shortest_paths(G&&, const Sources&, Distances&, Predecessors&, WF&&, Visitor&&, Compare&&, Combine&&)
  */
-template <adjacency_list G,
-          class          Distances,
-          class          Predecessors,
-          class WF      = function<vertex_property_map_value_t<Distances>(const std::remove_reference_t<G>&, const edge_t<G>&)>,
-          class Visitor = empty_visitor,
-          class Compare = less<vertex_property_map_value_t<Distances>>,
-          class Combine = plus<vertex_property_map_value_t<Distances>>>
-requires vertex_property_map_for<Distances, G> &&                                              //
-         (is_null_range_v<Predecessors> || vertex_property_map_for<Predecessors, G>) &&         //
-         is_arithmetic_v<vertex_property_map_value_t<Distances>> &&                              //
+template <
+      adjacency_list G,
+      class Distances,
+      class Predecessors,
+      class WF = function<vertex_property_map_value_t<Distances>(const std::remove_reference_t<G>&, const edge_t<G>&)>,
+      class Visitor = empty_visitor,
+      class Compare = less<vertex_property_map_value_t<Distances>>,
+      class Combine = plus<vertex_property_map_value_t<Distances>>>
+requires vertex_property_map_for<Distances, G> &&                                       //
+         (is_null_range_v<Predecessors> || vertex_property_map_for<Predecessors, G>) && //
+         is_arithmetic_v<vertex_property_map_value_t<Distances>> &&                     //
          basic_edge_weight_function<G, WF, vertex_property_map_value_t<Distances>, Compare, Combine>
 constexpr void dijkstra_shortest_paths(
-      G&&                      g,
-      const vertex_id_t<G>&    source,
-      Distances&               distances,
-      Predecessors&            predecessor,
-      WF&&           weight  = [](const auto&,
-                       const edge_t<G>& uv) { return vertex_property_map_value_t<Distances>(1); }, // default weight(g, uv) -> 1
-      Visitor&&      visitor = empty_visitor(),
-      Compare&&      compare = less<vertex_property_map_value_t<Distances>>(),
-      Combine&&      combine = plus<vertex_property_map_value_t<Distances>>()) {
+      G&&                   g,
+      const vertex_id_t<G>& source,
+      Distances&            distances,
+      Predecessors&         predecessor,
+      WF&&                  weight =
+            [](const auto&, const edge_t<G>& uv) {
+              return vertex_property_map_value_t<Distances>(1);
+            }, // default weight(g, uv) -> 1
+      Visitor&& visitor = empty_visitor(),
+      Compare&& compare = less<vertex_property_map_value_t<Distances>>(),
+      Combine&& combine = plus<vertex_property_map_value_t<Distances>>()) {
   dijkstra_shortest_paths(g, subrange(&source, (&source + 1)), distances, predecessor, weight,
                           forward<Visitor>(visitor), forward<Compare>(compare), forward<Combine>(combine));
 }
@@ -362,26 +372,29 @@ constexpr void dijkstra_shortest_paths(
  * 
  * @see dijkstra_shortest_paths() for full documentation and complexity analysis.
  */
-template <adjacency_list G,
-          input_range    Sources,
-          class          Distances,
-          class WF      = function<vertex_property_map_value_t<Distances>(const std::remove_reference_t<G>&, const edge_t<G>&)>,
-          class Visitor = empty_visitor,
-          class Compare = less<vertex_property_map_value_t<Distances>>,
-          class Combine = plus<vertex_property_map_value_t<Distances>>>
-requires vertex_property_map_for<Distances, G> &&                                              //
-         convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&                     //
-         is_arithmetic_v<vertex_property_map_value_t<Distances>> &&                              //
+template <
+      adjacency_list G,
+      input_range    Sources,
+      class Distances,
+      class WF = function<vertex_property_map_value_t<Distances>(const std::remove_reference_t<G>&, const edge_t<G>&)>,
+      class Visitor = empty_visitor,
+      class Compare = less<vertex_property_map_value_t<Distances>>,
+      class Combine = plus<vertex_property_map_value_t<Distances>>>
+requires vertex_property_map_for<Distances, G> &&                   //
+         convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&  //
+         is_arithmetic_v<vertex_property_map_value_t<Distances>> && //
          basic_edge_weight_function<G, WF, vertex_property_map_value_t<Distances>, Compare, Combine>
 constexpr void dijkstra_shortest_distances(
       G&&            g,
       const Sources& sources,
       Distances&     distances,
-      WF&&           weight  = [](const auto&,
-                       const edge_t<G>& uv) { return vertex_property_map_value_t<Distances>(1); }, // default weight(g, uv) -> 1
-      Visitor&&      visitor = empty_visitor(),
-      Compare&&      compare = less<vertex_property_map_value_t<Distances>>(),
-      Combine&&      combine = plus<vertex_property_map_value_t<Distances>>()) {
+      WF&&           weight =
+            [](const auto&, const edge_t<G>& uv) {
+              return vertex_property_map_value_t<Distances>(1);
+            }, // default weight(g, uv) -> 1
+      Visitor&& visitor = empty_visitor(),
+      Compare&& compare = less<vertex_property_map_value_t<Distances>>(),
+      Combine&& combine = plus<vertex_property_map_value_t<Distances>>()) {
   dijkstra_shortest_paths(g, sources, distances, _null_predecessors, forward<WF>(weight), forward<Visitor>(visitor),
                           forward<Compare>(compare), forward<Combine>(combine));
 }
@@ -395,24 +408,27 @@ constexpr void dijkstra_shortest_distances(
  * 
  * @see dijkstra_shortest_distances(G&&, const Sources&, Distances&, WF&&, Visitor&&, Compare&&, Combine&&)
  */
-template <adjacency_list G,
-          class          Distances,
-          class WF      = function<vertex_property_map_value_t<Distances>(const std::remove_reference_t<G>&, const edge_t<G>&)>,
-          class Visitor = empty_visitor,
-          class Compare = less<vertex_property_map_value_t<Distances>>,
-          class Combine = plus<vertex_property_map_value_t<Distances>>>
-requires vertex_property_map_for<Distances, G> &&                                              //
-         is_arithmetic_v<vertex_property_map_value_t<Distances>> &&                              //
+template <
+      adjacency_list G,
+      class Distances,
+      class WF = function<vertex_property_map_value_t<Distances>(const std::remove_reference_t<G>&, const edge_t<G>&)>,
+      class Visitor = empty_visitor,
+      class Compare = less<vertex_property_map_value_t<Distances>>,
+      class Combine = plus<vertex_property_map_value_t<Distances>>>
+requires vertex_property_map_for<Distances, G> &&                   //
+         is_arithmetic_v<vertex_property_map_value_t<Distances>> && //
          basic_edge_weight_function<G, WF, vertex_property_map_value_t<Distances>, Compare, Combine>
 constexpr void dijkstra_shortest_distances(
-      G&&                      g,
-      const vertex_id_t<G>&    source,
-      Distances&               distances,
-      WF&&           weight  = [](const auto&,
-                       const edge_t<G>& uv) { return vertex_property_map_value_t<Distances>(1); }, // default weight(g, uv) -> 1
-      Visitor&&      visitor = empty_visitor(),
-      Compare&&      compare = less<vertex_property_map_value_t<Distances>>(),
-      Combine&&      combine = plus<vertex_property_map_value_t<Distances>>()) {
+      G&&                   g,
+      const vertex_id_t<G>& source,
+      Distances&            distances,
+      WF&&                  weight =
+            [](const auto&, const edge_t<G>& uv) {
+              return vertex_property_map_value_t<Distances>(1);
+            }, // default weight(g, uv) -> 1
+      Visitor&& visitor = empty_visitor(),
+      Compare&& compare = less<vertex_property_map_value_t<Distances>>(),
+      Combine&& combine = plus<vertex_property_map_value_t<Distances>>()) {
   dijkstra_shortest_paths(g, subrange(&source, (&source + 1)), distances, _null_predecessors, forward<WF>(weight),
                           forward<Visitor>(visitor), forward<Compare>(compare), forward<Combine>(combine));
 }
