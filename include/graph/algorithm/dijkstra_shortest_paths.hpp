@@ -146,19 +146,32 @@ constexpr void dijkstra_shortest_paths(
       Visitor&& visitor = empty_visitor(),
       Compare&& compare = less<vertex_property_map_value_t<Distances>>(),
       Combine&& combine = plus<vertex_property_map_value_t<Distances>>()) {
-  using id_type       = vertex_id_t<G>;
+  using graph_type    = std::remove_reference_t<G>;
+  using id_type       = vertex_id_t<graph_type>;
   using distance_type = vertex_property_map_value_t<Distances>;
-  using weight_type   = invoke_result_t<WF, const std::remove_reference_t<G>&, edge_t<G>>;
+  using weight_type   = invoke_result_t<WF, const graph_type&, edge_t<graph_type>>;
+
+  constexpr auto zero     = shortest_path_zero<distance_type>();
+  constexpr auto infinite = shortest_path_infinite_distance<distance_type>();
 
   // relaxing the target is the function of reducing the distance from the source to the target
-  auto relax_target = [&g, &predecessor, &distances, &compare, &combine] //
-        (const edge_t<G>& uv, const vertex_id_t<G>& uid, const weight_type& w) -> bool {
-    const id_type       vid = target_id(g, uv);
-    const distance_type d_u = distances[uid];
-    const distance_type d_v = distances[vid];
+  auto relax_target = [&g, &predecessor, &distances, &compare, &combine, &weight] //
+        (const edge_t<graph_type>& uv, const vertex_id_t<graph_type>& uid) -> bool {
+    const id_type       vid  = target_id(g, uv);
+    const distance_type d_u  = distances[uid];
+    const distance_type d_v  = distances[vid];
+    const weight_type   w_uv = weight(g, uv);
 
-    if (compare(combine(d_u, w), d_v)) {
-      distances[vid] = combine(d_u, w);
+    // Negative weights are not allowed for Dijkstra's algorithm
+    if constexpr (is_signed_v<weight_type>) {
+      if (w_uv < zero) {
+        throw std::out_of_range(
+              std::format("dijkstra_shortest_paths: invalid negative edge weight of '{}' encountered", w_uv));
+      }
+    }
+
+    if (compare(combine(d_u, w_uv), d_v)) {
+      distances[vid] = combine(d_u, w_uv);
       if constexpr (!is_null_range_v<Predecessors>) {
         predecessor[vid] = uid;
       }
@@ -167,7 +180,8 @@ constexpr void dijkstra_shortest_paths(
     return false;
   };
 
-  if constexpr (index_vertex_range<std::remove_reference_t<G>>) {
+  // Validate preconditions: source vertices must be valid, distances and predecessor must be sized appropriately
+  if constexpr (index_vertex_range<graph_type>) {
     if (size(distances) < num_vertices(g)) {
       throw std::out_of_range(
             std::format("dijkstra_shortest_paths: size of distances of {} is less than the number of vertices {}",
@@ -182,12 +196,10 @@ constexpr void dijkstra_shortest_paths(
     }
   }
 
-  constexpr auto zero     = shortest_path_zero<distance_type>();
-  constexpr auto infinite = shortest_path_infinite_distance<distance_type>();
-
+  // Define and initialize the priority queue for Dijkstra's algorithm. We use a min-heap based on distance.
   struct weighted_vertex {
-    vertex_t<std::remove_reference_t<G>> vertex_desc = {};
-    distance_type                        weight      = distance_type();
+    vertex_t<graph_type> vertex_desc = {};
+    distance_type        weight      = distance_type();
   };
   auto qcompare = [&compare](const weighted_vertex& a, const weighted_vertex& b) {
     return compare(b.weight, a.weight); // min-heap: pop lowest weight first
@@ -196,39 +208,30 @@ constexpr void dijkstra_shortest_paths(
   Queue queue(qcompare);
 
   // (The optimizer removes this loop if on_initialize_vertex() is empty.)
-  if constexpr (has_on_initialize_vertex<G, Visitor> || has_on_initialize_vertex_id<G, Visitor>) {
+  if constexpr (has_on_initialize_vertex<graph_type, Visitor> || has_on_initialize_vertex_id<graph_type, Visitor>) {
     for (auto&& [uid, u] : views::vertexlist(g)) {
-      if constexpr (has_on_initialize_vertex<G, Visitor>) {
+      if constexpr (has_on_initialize_vertex<graph_type, Visitor>) {
         visitor.on_initialize_vertex(g, u);
-      } else if constexpr (has_on_initialize_vertex_id<G, Visitor>) {
+      } else if constexpr (has_on_initialize_vertex_id<graph_type, Visitor>) {
         visitor.on_initialize_vertex(g, uid);
       }
     }
   }
 
   // Seed the queue with the initial vertice(s)
-  for (auto&& uid : sources) {
-    vertex_t<G> u;
-    if constexpr (index_vertex_range<std::remove_reference_t<G>>) {
-      if (uid >= num_vertices(g)) {
-        throw std::out_of_range(
-              std::format("dijkstra_shortest_paths: uid vertex id '{}' is out of range", uid));
-      }
-      u = *find_vertex(g, uid);
-    } else {
-      auto v_it = find_vertex(g, uid);
-      if (v_it == std::ranges::end(vertices(g))) {
-        throw std::out_of_range(
-              std::format("dijkstra_shortest_paths: uid vertex id '{}' is out of range", uid));
-      }
-      u = *v_it;
+  for (auto&& seed_id : sources) {
+    auto seed_it = find_vertex(g, seed_id);
+    if (seed_it == std::ranges::end(vertices(g))) {
+      throw std::out_of_range(std::format("dijkstra_shortest_paths: source vertex id '{}' is out of range", seed_id));
     }
-    distances[uid] = zero; // mark uid as discovered
-    queue.push({u, zero});
-    if constexpr (has_on_discover_vertex<G, Visitor>) {
-      visitor.on_discover_vertex(g, u);
-    } else if constexpr (has_on_discover_vertex_id<G, Visitor>) {
-      visitor.on_discover_vertex(g, uid);
+    vertex_t<graph_type> seed = *seed_it;
+
+    distances[seed_id] = zero; // mark seed_id as discovered
+    queue.push({seed, zero});
+    if constexpr (has_on_discover_vertex<graph_type, Visitor>) {
+      visitor.on_discover_vertex(g, seed);
+    } else if constexpr (has_on_discover_vertex_id<graph_type, Visitor>) {
+      visitor.on_discover_vertex(g, seed_id);
     }
   }
 
@@ -237,41 +240,34 @@ constexpr void dijkstra_shortest_paths(
     auto [u, w] = queue.top();
     queue.pop();
     const id_type uid = vertex_id(g, u);
-    if constexpr (has_on_examine_vertex<G, Visitor>) {
+    if constexpr (has_on_examine_vertex<graph_type, Visitor>) {
       visitor.on_examine_vertex(g, u);
-    } else if constexpr (has_on_examine_vertex_id<G, Visitor>) {
+    } else     if constexpr (has_on_examine_vertex_id<graph_type, Visitor>) {
       visitor.on_examine_vertex(g, uid);
     }
 
     // Process all outgoing edges from the current vertex
-    for (auto&& [vid, uv, w] : views::incidence(g, u, weight)) {
-      if constexpr (has_on_examine_edge<G, Visitor>) {
+    for (auto&& [vid, uv] : views::incidence(g, u)) {
+      if constexpr (has_on_examine_edge<graph_type, Visitor>) {
         visitor.on_examine_edge(g, uv);
       }
 
-      // Negative weights are not allowed for Dijkstra's algorithm
-      if constexpr (is_signed_v<weight_type>) {
-        if (w < zero) {
-          throw std::out_of_range(
-                std::format("dijkstra_shortest_paths: invalid negative edge weight of '{}' encountered", w));
-        }
-      }
-
       const bool is_neighbor_undiscovered = (distances[vid] == infinite);
-      const bool was_edge_relaxed         = relax_target(uv, uid, w);
+      const bool was_edge_relaxed         = relax_target(uv, uid);
 
       if (is_neighbor_undiscovered) {
+        vertex_t<graph_type> v = *find_vertex(g, vid); // find_vertex must succeed since vid is a valid vertex ID
         // tree_edge
         if (was_edge_relaxed) {
-          if constexpr (has_on_edge_relaxed<G, Visitor>) {
+          if constexpr (has_on_edge_relaxed<graph_type, Visitor>) {
             visitor.on_edge_relaxed(g, uv);
           }
-          if constexpr (has_on_discover_vertex<G, Visitor>) {
-            visitor.on_discover_vertex(g, *find_vertex(g, vid));
-          } else if constexpr (has_on_discover_vertex_id<G, Visitor>) {
+          if constexpr (has_on_discover_vertex<graph_type, Visitor>) {
+            visitor.on_discover_vertex(g, v);
+          } else if constexpr (has_on_discover_vertex_id<graph_type, Visitor>) {
             visitor.on_discover_vertex(g, vid);
           }
-          queue.push({*find_vertex(g, vid), distances[vid]});
+          queue.push({v, distances[vid]});
         } else {
           // This is an indicator of a bug in the algorithm and should be investigated.
           throw std::logic_error(
@@ -280,12 +276,13 @@ constexpr void dijkstra_shortest_paths(
       } else {
         // non-tree edge
         if (was_edge_relaxed) {
-          if constexpr (has_on_edge_relaxed<G, Visitor>) {
+          vertex_t<graph_type> v = *find_vertex(g, vid); // find_vertex must succeed since vid is a valid vertex ID
+          if constexpr (has_on_edge_relaxed<graph_type, Visitor>) {
             visitor.on_edge_relaxed(g, uv);
           }
-          queue.push({*find_vertex(g, vid), distances[vid]}); // re-enqueue with updated distance
+          queue.push({v, distances[vid]}); // re-enqueue with updated distance
         } else {
-          if constexpr (has_on_edge_not_relaxed<G, Visitor>) {
+          if constexpr (has_on_edge_not_relaxed<graph_type, Visitor>) {
             visitor.on_edge_not_relaxed(g, uv);
           }
         }
@@ -295,10 +292,9 @@ constexpr void dijkstra_shortest_paths(
     // Note: while we *think* we're done with this vertex, we may not be. If the graph is unbalanced
     // and another path to this vertex has a lower accumulated weight, we'll process it again.
     // A consequence is that examine_vertex could be called twice (or more) on the same vertex.
-    if constexpr (has_on_finish_vertex<G, Visitor>) {
-      visitor.on_finish_vertex(g, *find_vertex(g, uid));
-    }
-    if constexpr (has_on_finish_vertex_id<G, Visitor>) {
+    if constexpr (has_on_finish_vertex<graph_type, Visitor>) {
+      visitor.on_finish_vertex(g, u);
+    } else if constexpr (has_on_finish_vertex_id<graph_type, Visitor>) {
       visitor.on_finish_vertex(g, uid);
     }
   } // while(!queue.empty())
