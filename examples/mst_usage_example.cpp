@@ -78,7 +78,7 @@ int main() {
   std::vector<int>      weight(n);
 
   try {
-    auto total_wt = prim(g, predecessor, weight, 0);
+    auto total_wt = prim(g, 0, predecessor, weight);
 
     std::cout << "MST from vertex 0:\n";
     std::cout << std::format("  Total weight: {}\n", total_wt);
@@ -98,7 +98,7 @@ int main() {
   try {
     std::vector<uint32_t> small_pred(2); // Too small!
     std::vector<int>      small_wt(2);
-    prim(g, small_pred, small_wt, 0);
+    prim(g, 0, small_pred, small_wt);
   } catch (const std::out_of_range& e) {
     std::cout << "Caught expected error:\n  " << e.what() << "\n";
   }
@@ -106,7 +106,7 @@ int main() {
   try {
     std::vector<uint32_t> pred(n);
     std::vector<int>      wt(n);
-    prim(g, pred, wt, 999); // Invalid seed
+    prim(g, 999, pred, wt); // Invalid seed
   } catch (const std::out_of_range& e) {
     std::cout << "\nCaught expected error:\n  " << e.what() << "\n";
   }

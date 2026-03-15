@@ -308,7 +308,7 @@ TEST_CASE("prim - simple triangle", "[algorithm][mst][prim]") {
   std::vector<uint32_t> predecessor(3);
   std::vector<int>      weight(3);
 
-  auto total_wt = prim(g, predecessor, weight, 0);
+  auto total_wt = prim(g, 0, predecessor, weight);
 
   // Check MST properties
   REQUIRE(predecessor[0] == 0); // Root
@@ -328,7 +328,7 @@ TEST_CASE("prim - linear graph", "[algorithm][mst][prim]") {
   std::vector<uint32_t> predecessor(4);
   std::vector<int>      weight(4);
 
-  prim(g, predecessor, weight, 0);
+  prim(g, 0, predecessor, weight);
 
   REQUIRE(predecessor[0] == 0); // Root
 
@@ -357,7 +357,7 @@ TEST_CASE("prim - complete graph K4", "[algorithm][mst][prim]") {
   std::vector<uint32_t> predecessor(4);
   std::vector<int>      weight(4);
 
-  prim(g, predecessor, weight, 0);
+  prim(g, 0, predecessor, weight);
 
   REQUIRE(predecessor[0] == 0);
 
@@ -396,7 +396,7 @@ TEST_CASE("kruskal and prim produce same MST weight", "[algorithm][mst]") {
   // Run Prim
   std::vector<uint32_t> predecessor(5);
   std::vector<int>      weight(5);
-  prim(g, predecessor, weight, 0);
+  prim(g, 0, predecessor, weight);
 
   int prim_weight = weight[1] + weight[2] + weight[3] + weight[4];
 
@@ -419,7 +419,7 @@ TEST_CASE("prim - undirected_adjacency_list triangle", "[algorithm][mst][prim][u
   std::vector<uint32_t> predecessor(3);
   std::vector<int>      weight(3);
 
-  auto total_wt = prim(g, predecessor, weight, 0);
+  auto total_wt = prim(g, 0, predecessor, weight);
 
   // Check MST properties
   REQUIRE(predecessor[0] == 0); // Root
@@ -440,7 +440,7 @@ TEST_CASE("prim - undirected_adjacency_list linear graph", "[algorithm][mst][pri
   std::vector<uint32_t> predecessor(4);
   std::vector<int>      weight(4);
 
-  auto total_wt = prim(g, predecessor, weight, 0);
+  auto total_wt = prim(g, 0, predecessor, weight);
 
   REQUIRE(predecessor[0] == 0); // Root
 
@@ -459,7 +459,7 @@ TEST_CASE("prim - undirected_adjacency_list complete graph K4", "[algorithm][mst
   std::vector<uint32_t> predecessor(4);
   std::vector<int>      weight(4);
 
-  auto total_wt = prim(g, predecessor, weight, 0);
+  auto total_wt = prim(g, 0, predecessor, weight);
 
   REQUIRE(predecessor[0] == 0);
 
@@ -478,7 +478,7 @@ TEST_CASE("prim - undirected_adjacency_list CLRS example", "[algorithm][mst][pri
   std::vector<uint32_t> predecessor(5);
   std::vector<int>      weight(5);
 
-  auto total_wt = prim(g, predecessor, weight, 0);
+  auto total_wt = prim(g, 0, predecessor, weight);
 
   REQUIRE(predecessor[0] == 0); // Root
 
@@ -511,7 +511,7 @@ TEMPLATE_TEST_CASE("prim - sparse triangle",
   auto predecessor = make_vertex_property_map<Graph, id_type>(g, id_type{});
   auto weight_map  = make_vertex_property_map<Graph, int>(g, 0);
 
-  auto total_wt = prim(g, predecessor, weight_map, id_type(10));
+  auto total_wt = prim(g, id_type(10), predecessor, weight_map);
 
   REQUIRE(predecessor[id_type(10)] == id_type(10)); // Root
   REQUIRE(total_wt == 3);                           // 1 + 2
@@ -529,7 +529,7 @@ TEMPLATE_TEST_CASE("prim - sparse linear graph",
   auto predecessor = make_vertex_property_map<Graph, id_type>(g, id_type{});
   auto weight_map  = make_vertex_property_map<Graph, int>(g, 0);
 
-  auto total_wt = prim(g, predecessor, weight_map, id_type(10));
+  auto total_wt = prim(g, id_type(10), predecessor, weight_map);
 
   REQUIRE(predecessor[id_type(10)] == id_type(10)); // Root
   REQUIRE(total_wt == 6);                           // 1 + 2 + 3
@@ -548,7 +548,7 @@ TEMPLATE_TEST_CASE("prim - sparse complete graph K4",
   auto predecessor = make_vertex_property_map<Graph, id_type>(g, id_type{});
   auto weight_map  = make_vertex_property_map<Graph, int>(g, 0);
 
-  auto total_wt = prim(g, predecessor, weight_map, id_type(10));
+  auto total_wt = prim(g, id_type(10), predecessor, weight_map);
 
   REQUIRE(predecessor[id_type(10)] == id_type(10)); // Root
   REQUIRE(total_wt == 6);                           // Same as contiguous K4 test
@@ -575,7 +575,7 @@ TEMPLATE_TEST_CASE("prim - sparse kruskal comparison",
   // Run Prim on sparse graph
   auto predecessor = make_vertex_property_map<Graph, id_type>(g, id_type{});
   auto weight_map  = make_vertex_property_map<Graph, int>(g, 0);
-  auto prim_weight = prim(g, predecessor, weight_map, id_type(10));
+  auto prim_weight = prim(g, id_type(10), predecessor, weight_map);
 
   REQUIRE(kruskal_weight == prim_weight);
 }
@@ -591,5 +591,5 @@ TEMPLATE_TEST_CASE("prim - sparse invalid seed throws",
   auto predecessor = make_vertex_property_map<Graph, id_type>(g, id_type{});
   auto weight_map  = make_vertex_property_map<Graph, int>(g, 0);
 
-  CHECK_THROWS_AS(prim(g, predecessor, weight_map, id_type(999)), std::out_of_range);
+  CHECK_THROWS_AS(prim(g, id_type(999), predecessor, weight_map), std::out_of_range);
 }
