@@ -344,3 +344,99 @@ TEST_CASE("triangle_count - sparse star (no triangles)", "[algorithm][triangle_c
 
   REQUIRE(triangle_count(g) == 0);
 }
+
+// =============================================================================
+// Directed Triangle Count Tests
+// =============================================================================
+
+TEST_CASE("directed_triangle_count - empty graph", "[algorithm][directed_triangle_count]") {
+  vos_void g;
+  REQUIRE(directed_triangle_count(g) == 0);
+}
+
+TEST_CASE("directed_triangle_count - single directed 3-cycle", "[algorithm][directed_triangle_count]") {
+  // Directed cycle: 0->1, 1->2, 0->2 (one directed 3-cycle)
+  vos_void g({{0, 1}, {1, 2}, {0, 2}});
+  REQUIRE(directed_triangle_count(g) == 1);
+}
+
+TEST_CASE("directed_triangle_count - missing one edge (no 3-cycle)", "[algorithm][directed_triangle_count]") {
+  // Only 0->1, 1->2 — no edge from 0 to 2, so no 3-cycle
+  vos_void g({{0, 1}, {1, 2}});
+  REQUIRE(directed_triangle_count(g) == 0);
+}
+
+TEST_CASE("directed_triangle_count - two directed 3-cycles from same vertices", "[algorithm][directed_triangle_count]") {
+  // All 6 directed edges between {0,1,2}: each permutation of the triangle
+  // forms a directed 3-cycle. With edges in both directions:
+  // 0->1, 1->2, 0->2 (one 3-cycle starting from 0 via 1)
+  // 0->2, 2->1, 0->1 (one 3-cycle starting from 0 via 2)
+  // 1->0, 0->2, 1->2 (one starting from 1 via 0)
+  // 1->2, 2->0, 1->0 (one starting from 1 via 2)
+  // 2->0, 0->1, 2->1 (one starting from 2 via 0)
+  // 2->1, 1->0, 2->0 (one starting from 2 via 1)
+  // = 6 directed 3-cycles total
+  vos_void g({{0, 1}, {1, 0}, {1, 2}, {2, 1}, {0, 2}, {2, 0}});
+  REQUIRE(directed_triangle_count(g) == 6);
+}
+
+TEST_CASE("directed_triangle_count - undirected triangle gives 6x", "[algorithm][directed_triangle_count]") {
+  // An undirected triangle stored bidirectionally gives 6 directed 3-cycles
+  // (one per permutation of the 3 vertices)
+  vos_void g({{0, 1}, {1, 0}, {1, 2}, {2, 1}, {0, 2}, {2, 0}});
+  // Compare: undirected triangle_count gives 1
+  REQUIRE(triangle_count(g) == 1);
+  REQUIRE(directed_triangle_count(g) == 6);
+}
+
+TEST_CASE("directed_triangle_count - directed acyclic (no 3-cycles)", "[algorithm][directed_triangle_count]") {
+  // DAG: 0->1, 0->2, 1->2 — this IS a 3-cycle (0->1, 1->2, and 0->2)
+  // But 2->0, 2->1 are missing, so only 1 directed 3-cycle
+  vos_void g({{0, 1}, {0, 2}, {1, 2}});
+  REQUIRE(directed_triangle_count(g) == 1);
+}
+
+TEST_CASE("directed_triangle_count - complete directed K4", "[algorithm][directed_triangle_count]") {
+  // All 12 directed edges between 4 vertices
+  // Number of directed 3-cycles = 4 * 6 = 24
+  // (4 triangles as vertex sets, each with 6 directed permutations via 3! / 3 = 2... wait)
+  // Actually: for each triple of vertices, there are 2 cyclic orderings that 
+  // produce directed 3-cycles where all 3 edges go the same circular direction.
+  // But our algorithm counts (u, v, w) where u->v, v->w, u->w exist.
+  // For each 3-vertex subset, with all 6 edges present, each of the 6 ordered 
+  // triples (u,v,w) with u,v,w distinct satisfies: u->v exists, v->w exists, u->w exists.
+  // C(4,3) = 4 subsets, 6 permutations each = 24
+  vos_void g({
+    {0, 1}, {1, 0}, {0, 2}, {2, 0}, {0, 3}, {3, 0},
+    {1, 2}, {2, 1}, {1, 3}, {3, 1}, {2, 3}, {3, 2}
+  });
+  REQUIRE(directed_triangle_count(g) == 24);
+}
+
+TEST_CASE("directed_triangle_count - self-loops ignored", "[algorithm][directed_triangle_count]") {
+  // 3-cycle with self-loops: self-loops should not be counted
+  vos_void g({{0, 1}, {1, 2}, {0, 2}, {0, 0}, {1, 1}, {2, 2}});
+  REQUIRE(directed_triangle_count(g) == 1);
+}
+
+TEST_CASE("directed_triangle_count - path (no 3-cycles)", "[algorithm][directed_triangle_count]") {
+  // Directed path: 0->1->2->3->4 (no triangles possible)
+  vos_void g({{0, 1}, {1, 2}, {2, 3}, {3, 4}});
+  REQUIRE(directed_triangle_count(g) == 0);
+}
+
+TEST_CASE("directed_triangle_count - sparse directed triangle", "[algorithm][directed_triangle_count][sparse]") {
+  using Graph = mos_weighted;
+
+  // Directed 3-cycle: 10->20, 20->30, 10->30
+  Graph g({{10, 20, 1}, {20, 30, 1}, {10, 30, 1}});
+  REQUIRE(directed_triangle_count(g) == 1);
+}
+
+TEST_CASE("directed_triangle_count - sparse bidirectional triangle", "[algorithm][directed_triangle_count][sparse]") {
+  using Graph = mos_weighted;
+
+  // All 6 directed edges between {10,20,30}
+  Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 1}, {30, 20, 1}, {10, 30, 1}, {30, 10, 1}});
+  REQUIRE(directed_triangle_count(g) == 6);
+}

@@ -115,14 +115,12 @@ lightest edge crossing the cut between tree and non-tree vertices.
 ### Prim Signatures
 
 ```cpp
-// Simple: uses default weight function from edge values
-auto prim(G&& g, Predecessors& predecessors, Weights& weights,
-    const vertex_id_t<G>& seed = 0);
-
-// Full: custom comparator, initial distance, and weight function
-auto prim(G&& g, Predecessors& predecessors, Weights& weights,
-    Compare compare, range_value_t<Weights> init_dist,
-    WF weight_fn, const vertex_id_t<G>& seed = 0);
+// weight_fn and compare are optional
+auto prim(G&& g,
+    const vertex_id_t<G>& seed,
+    Predecessor& predecessor, Weight& weight,
+    WF weight_fn = edge_value(g, uv),
+    Compare compare = std::less<>{});
 ```
 
 **Returns** the total MST weight.
@@ -132,12 +130,11 @@ auto prim(G&& g, Predecessors& predecessors, Weights& weights,
 | Parameter | Description |
 |-----------|-------------|
 | `g` | Graph satisfying `adjacency_list` with weighted edges |
-| `predecessors` | Subscriptable by `vertex_id_t<G>`. For index graphs, a pre-sized `std::vector`; for mapped graphs, use `make_vertex_property_map<G, T>(g, init)`. Must satisfy `vertex_property_map_for<Predecessor, G>`. |
-| `weights` | Subscriptable by `vertex_id_t<G>`. For index graphs, a pre-sized `std::vector`; for mapped graphs, use `make_vertex_property_map<G, T>(g, init)`. Must satisfy `vertex_property_map_for<Weight, G>`. |
-| `seed` | Starting vertex for the MST (default: 0) |
-| `compare` | Comparator for weight values (default: `std::less<>{}`) |
-| `init_dist` | Initial distance value (typically `std::numeric_limits<EV>::max()`) |
+| `seed` | Starting vertex for MST growth. Must be a valid vertex ID. |
+| `predecessor` | Subscriptable by `vertex_id_t<G>`. For index graphs, a pre-sized `std::vector`; for mapped graphs, use `make_vertex_property_map<G, T>(g, init)`. Must satisfy `vertex_property_map_for<Predecessor, G>`. |
+| `weight` | Subscriptable by `vertex_id_t<G>`. For index graphs, a pre-sized `std::vector`; for mapped graphs, use `make_vertex_property_map<G, T>(g, init)`. Must satisfy `vertex_property_map_for<Weight, G>`. |
 | `weight_fn` | Callable `WF(g, uv)` returning edge weight. Default: `edge_value(g, uv)`. |
+| `compare` | Comparator for weight values (default: `std::less<>{}`) |
 
 ## Edge Descriptor
 
@@ -261,7 +258,8 @@ size_t                n = num_vertices(g);
 std::vector<uint32_t> pred(n);
 std::vector<int>      wt(n);
 
-auto total = prim(g, pred, wt, 0u);
+init_shortest_paths(g, wt, pred);
+auto total = prim(g, 0u, pred, wt);
 
 // total = 6  (edges: 0-2:2 + 0-1:4)
 // pred[0] = 0  (seed — self)
@@ -290,11 +288,10 @@ auto neg_weight = [](const auto& g_ref, const auto& uv) {
     return -edge_value(g_ref, uv);
 };
 
-auto total = prim(g, pred, wt,
-    std::less<int>{},             // comparator (still min-heap)
-    std::numeric_limits<int>::max(), // init distance
-    neg_weight,                      // negated weight function
-    0u);                             // seed vertex
+init_shortest_paths(g, wt, pred);
+auto total = prim(g, 0u, pred, wt,
+    neg_weight,        // negated weight function
+    std::less<int>{}); // comparator (still min-heap)
 
 // |total| is the maximum spanning tree weight (negated)
 ```
@@ -323,7 +320,8 @@ Graph g({{0,1,4},{1,0,4}, {1,2,2},{2,1,2}, {0,2,5},{2,0,5}});
 size_t                n = num_vertices(g);
 std::vector<uint32_t> pred(n);
 std::vector<int>      wt(n);
-auto pw = prim(g, pred, wt, 0u);
+init_shortest_paths(g, wt, pred);
+auto pw = prim(g, 0u, pred, wt);
 
 assert(kw == pw);  // Both produce the same total MST weight
 ```

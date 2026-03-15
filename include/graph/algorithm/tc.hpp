@@ -1,13 +1,16 @@
 /**
  * @file tc.hpp
  * 
- * @brief Triangle counting for undirected graphs.
+ * @brief Triangle counting for undirected and directed graphs.
  * 
- * This file provides an efficient algorithm for counting triangles (3-cliques) in undirected
- * graphs. A triangle consists of three vertices where each pair is connected by an edge.
+ * This file provides efficient algorithms for counting triangles in graphs:
+ * - `triangle_count`: Counts triangles (3-cliques) in undirected graphs.
+ * - `directed_triangle_count`: Counts directed 3-cycles in directed graphs.
  * 
- * The algorithm requires sorted adjacency lists for correctness and optimal performance.
- * It uses a merge-based set intersection approach that is more efficient than nested loops
+ * A triangle consists of three vertices where each pair is connected by an edge.
+ * 
+ * The algorithms require sorted adjacency lists for correctness and optimal performance.
+ * They use a merge-based set intersection approach that is more efficient than nested loops
  * or hash-based methods for sparse graphs.
  * 
  * @copyright Copyright (c) 2022
@@ -298,6 +301,98 @@ requires ordered_vertex_edges<G>
 
   return triangles;
 }
+
+/**
+ * @ingroup graph_algorithms
+ * @brief Count directed 3-cycles in a directed graph with sorted adjacency lists.
+ * 
+ * A directed 3-cycle is a set of three vertices {u, v, w} where directed edges
+ * u->v, v->w, and u->w all exist. Unlike `triangle_count`, this function does not
+ * impose ordering constraints on vertex IDs, so it counts every directed 3-cycle
+ * exactly once by enumerating over all edges (u,v) and finding common out-neighbors w
+ * of both u and v (where w != u and w != v).
+ * 
+ * ## Algorithm Overview
+ * 
+ * For each vertex u, for each out-neighbor v (v != u):
+ * 1. Get sorted out-neighbor lists for u and v
+ * 2. Use merge-based intersection to find common out-neighbors w
+ * 3. Skip self-loops (w == u or w == v)
+ * 4. Each common out-neighbor forms one directed 3-cycle (u -> v, v -> w, u -> w)
+ * 
+ * Because every ordered triple (u, v, w) is visited exactly once, each 3-cycle is
+ * counted exactly once.
+ * 
+ * ## Complexity Analysis
+ * 
+ * Same asymptotic complexity as `triangle_count`:
+ * | Case | Complexity |
+ * |------|------------|
+ * | Average | O(m^(3/2)) for sparse graphs (m = E) |
+ * | Worst | O(V * d_max^2) where d_max = max out-degree |
+ * 
+ * **Space Complexity:** O(1) auxiliary space.
+ * 
+ * @tparam G Graph type satisfying adjacency_list with ordered edges.
+ * @param g The directed graph to analyze. Must have sorted adjacency lists.
+ * @return Total number of directed 3-cycles in the graph.
+ * 
+ * @note For an undirected graph stored with bidirectional edges, this will count
+ *       each undirected triangle 6 times (once per permutation of the 3 vertices).
+ *       Use `triangle_count` instead for undirected graphs.
+ * 
+ * @see triangle_count
+ */
+template <adjacency_list G>
+requires ordered_vertex_edges<G>
+[[nodiscard]] size_t directed_triangle_count(G&& g) noexcept {
+  size_t triangles = 0;
+
+  for (auto u : vertices(g)) {
+    auto uid     = vertex_id(g, u);
+    auto u_edges = edges(g, u);
+    auto u_it    = std::ranges::begin(u_edges);
+    auto u_end   = std::ranges::end(u_edges);
+
+    while (u_it != u_end) {
+      auto vid = target_id(g, *u_it);
+
+      // Skip self-loops
+      if (vid != uid) {
+        // Get adjacency list for vertex v
+        auto v_edges = edges(g, vid);
+        auto v_it    = std::ranges::begin(v_edges);
+        auto v_end   = std::ranges::end(v_edges);
+
+        // Scan all of u's out-neighbors (not just those after v)
+        auto u_remaining = std::ranges::begin(u_edges);
+
+        // Merge-based intersection of u's and v's out-neighbor lists
+        while (u_remaining != u_end && v_it != v_end) {
+          auto wid_from_u = target_id(g, *u_remaining);
+          auto wid_from_v = target_id(g, *v_it);
+
+          if (wid_from_u < wid_from_v) {
+            ++u_remaining;
+          } else if (wid_from_v < wid_from_u) {
+            ++v_it;
+          } else {
+            // Common out-neighbor w found; skip if w is u or v (self-loop)
+            if (wid_from_u != uid && wid_from_u != vid) {
+              ++triangles;
+            }
+            ++u_remaining;
+            ++v_it;
+          }
+        }
+      }
+      ++u_it;
+    }
+  }
+
+  return triangles;
+}
+
 } // namespace graph
 
 #endif //GRAPH_TC_HPP

@@ -77,7 +77,7 @@ using vertex_id_store_t = std::conditional_t<
  */
 template <class G, class WF, class DistanceValue, class Compare, class Combine>
 concept basic_edge_weight_function =
-      edge_value_function<WF, std::remove_reference_t<G>, edge_t<G>> && is_arithmetic_v<DistanceValue> &&
+      edge_value_function<WF, std::remove_reference_t<G>, edge_t<G>> && 
       std::strict_weak_order<Compare, DistanceValue, DistanceValue> &&
       std::assignable_from<
             std::add_lvalue_reference_t<DistanceValue>,
@@ -96,6 +96,7 @@ concept basic_edge_weight_function =
  */
 template <class G, class WF, class DistanceValue>
 concept edge_weight_function =
+      is_arithmetic_v<DistanceValue> && //
       is_arithmetic_v<invoke_result_t<WF, const std::remove_reference_t<G>&, edge_t<G>>> &&
       basic_edge_weight_function<G, WF, DistanceValue, less<DistanceValue>, plus<DistanceValue>>;
 
