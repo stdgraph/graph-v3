@@ -814,8 +814,10 @@ auto inplace_kruskal(IELR&&    e,      // graph
  * - Tree minimizes (or maximizes) total edge weight according to compare function
  * 
  * **Throws:**
- * - std::out_of_range if seed is not a valid vertex in the graph
- * - std::out_of_range if predecessor or weight are too small (index graphs only)
+ * - std::out_of_range if seed vertex ID is out of range
+ * - std::out_of_range if predecessor or weight are undersized
+ * - std::out_of_range if a negative edge weight is encountered (for signed weight types)
+ * - std::logic_error if internal invariant violation detected
  * 
  * **Note:** Only produces MST for the connected component containing seed.
  *           For disconnected graphs, call multiple times with different seeds.
