@@ -769,104 +769,25 @@ auto inplace_kruskal(IELR&&    e,      // graph
  * @brief Find the minimum weight spanning tree using Prim's algorithm starting from a seed vertex.
  * 
  * Grows a minimum spanning tree from a seed vertex by repeatedly adding the minimum-weight
- * edge that connects a vertex in the tree to a vertex outside the tree. Uses a priority
- * queue (binary heap) for efficient minimum-edge selection.
+ * edge that connects a vertex in the tree to a vertex outside the tree. Delegates to
+ * dijkstra_shortest_paths with a projecting combine function.
  * 
- * Uses default comparison (operator<) for edge weights and numeric_limits::max() as initial distance.
- * 
- * @tparam G Graph type satisfying adjacency_list
+ * @tparam G          Graph type satisfying adjacency_list
  * @tparam Predecessor Vertex property map for predecessor output (subscriptable by vertex_id_t<G>)
- * @tparam Weight Vertex property map for edge weight output (subscriptable by vertex_id_t<G>)
- * @tparam WF Edge weight function type
+ * @tparam Weight      Vertex property map for edge weight output (subscriptable by vertex_id_t<G>)
+ * @tparam WF          Edge weight function type. Defaults to edge_value(g, uv).
+ * @tparam CompareOp   Comparison operator type. Defaults to less<>.
  * 
  * @param g [in] The graph to process
  * @param seed [in] Starting vertex for MST growth
  * @param predecessor [out] predecessor[v] = parent of v in MST, predecessor[seed] = seed.
  *                         Caller should ensure size >= num_vertices(g).
- * @param weight [out] weight[v] = edge weight from predecessor[v] to v.
- *                     Caller should ensure size >= num_vertices(g).
- * @param weight_fn [in] Edge weight function: (const G&, const edge_t<G>&) -> Weight. Defaults to edge_value(g, uv).
- * 
- * **Complexity:** O(E log V) time, O(V) space
- * 
- * **Return Value:** 
- * Returns the total weight of the minimum spanning tree (sum of edge weights).
- * For disconnected graphs, returns weight of tree in seed's component only.
- * 
- * **Preconditions:**
- * - seed must be a valid vertex in the graph
- * - For index graphs: predecessor.size() >= num_vertices(g) and weight.size() >= num_vertices(g)
- * - For mapped graphs: predecessor and weight must be vertex property maps
- * - Graph must have edge values (weighted)
- * 
- * **Postconditions:**
- * - predecessor[seed] == seed
- * - For vertices reachable from seed: predecessor[v] points to parent in MST
- * - For unreachable vertices: predecessor[v] is unchanged
- * - weight[v] contains edge weight from predecessor[v] to v (or infinity if unreachable)
- * - MST edges can be reconstructed as: {predecessor[v], v, weight[v]} for all v != seed
- * 
- * **Throws:**
- * - std::out_of_range if seed is not a valid vertex in the graph
- * - std::out_of_range if predecessor or weight are too small (index graphs only)
- * 
- * **Note:** Only produces MST for the connected component containing seed.
- *           For disconnected graphs, call multiple times with different seeds.
- * 
- * **Example:**
- * @code
- * using Graph = dynamic_graph<int, void, void, uint32_t, false, vov_graph_traits<int>>;
- * Graph g({{0,1,4}, {1,2,8}, {2,0,11}, {0,2,2}});
- * std::vector<uint32_t> pred(num_vertices(g));
- * std::vector<int> wt(num_vertices(g));
- * 
- * // Default uses edge_value(g, uv)
- * auto total_weight = prim(g, 0, pred, wt);
- * // MST edges: {0,2,2}, {0,1,4}, total_weight = 6
- * @endcode
- */
-template <adjacency_list G,
-          class          Predecessor,
-          class          Weight>
-requires vertex_property_map_for<Predecessor, G> &&
-         vertex_property_map_for<Weight, G>
-auto prim(G&&                   g,           // graph
-          const vertex_id_t<G>& seed,        // seed vtx
-          Predecessor&          predecessor, // out: predecessor[uid] of uid in tree
-          Weight&               weight       // out: edge value weight[uid] from tree edge uid to predecessor[uid]
-) {
-  using EV = vertex_property_map_value_t<Weight>;
-  // Default weight function: use edge_value CPO
-  auto weight_fn = [](const auto& gr, const edge_t<G>& uv) -> EV { return edge_value(gr, uv); };
-
-  // Initialize weight and predecessor (like init_shortest_paths for dijkstra)
-  init_shortest_paths(g, weight, predecessor);
-
-  return prim(g, seed, predecessor, weight, std::forward<decltype(weight_fn)>(weight_fn));
-}
-
-/**
- * @ingroup graph_algorithms
- * @brief Find spanning tree using Prim's algorithm with custom comparison and initial distance.
- * 
- * Full-featured Prim's algorithm variant with customizable comparison (for min/max spanning tree)
- * and initial distance value (for different numeric types or special values).
- * 
- * @tparam G          Graph type satisfying adjacency_list
- * @tparam Predecessor Vertex property map for predecessor output (subscriptable by vertex_id_t<G>)
- * @tparam Weight      Vertex property map for edge weight output (subscriptable by vertex_id_t<G>)
- * @tparam CompareOp Comparison operator type
- * @tparam WF Edge weight function type
- * 
- * @param g [in] The graph to process
- * @param seed [in] Starting vertex for MST growth
- * @param predecessor [out] predecessor[v] = parent of v in spanning tree.
- *                         Caller should ensure size >= num_vertices(g).
  *                         Must be initialized before calling (use init_shortest_paths).
  * @param weight [out] weight[v] = edge weight from predecessor[v] to v.
  *                     Caller should ensure size >= num_vertices(g).
  *                     Must be initialized to infinity before calling (use init_shortest_paths).
- * @param weight_fn [in] Edge weight function: (const G&, const edge_t<G>&) -> Weight
+ * @param weight_fn [in] Edge weight function: (const G&, const edge_t<G>&) -> Weight.
+ *                      Defaults to edge_value(g, uv).
  * @param compare [in] Comparison for edge weights: compare(w1, w2) returns true if w1 is "better" than w2.
  *                     Defaults to less<>.
  * 
@@ -885,24 +806,36 @@ auto prim(G&&                   g,           // graph
  * - compare must define a strict weak ordering on edge weights
  * 
  * **Postconditions:**
- * - predecessor and weight arrays encode the spanning tree
+ * - predecessor[seed] == seed
+ * - For vertices reachable from seed: predecessor[v] points to parent in MST
+ * - For unreachable vertices: predecessor[v] is unchanged
+ * - weight[v] contains edge weight from predecessor[v] to v (or infinity if unreachable)
+ * - MST edges can be reconstructed as: {predecessor[v], v, weight[v]} for all v != seed
  * - Tree minimizes (or maximizes) total edge weight according to compare function
  * 
  * **Throws:**
  * - std::out_of_range if seed is not a valid vertex in the graph
  * - std::out_of_range if predecessor or weight are too small (index graphs only)
  * 
- * **Example (Maximum Spanning Tree):**
+ * **Note:** Only produces MST for the connected component containing seed.
+ *           For disconnected graphs, call multiple times with different seeds.
+ * 
+ * **Example:**
  * @code
- * std::vector<uint32_t> pred(n);
- * std::vector<int> wt(n);
- * auto total = prim(g, 0, pred, wt, weight_fn, std::greater<int>{});
+ * using Graph = dynamic_graph<int, void, void, uint32_t, false, vov_graph_traits<int>>;
+ * Graph g({{0,1,4}, {1,2,8}, {2,0,11}, {0,2,2}});
+ * std::vector<uint32_t> pred(num_vertices(g));
+ * std::vector<int> wt(num_vertices(g));
+ * 
+ * init_shortest_paths(g, wt, pred);
+ * auto total_weight = prim(g, 0, pred, wt);
+ * // MST edges: {0,2,2}, {0,1,4}, total_weight = 6
  * @endcode
  */
 template <adjacency_list G,
           class          Predecessor,
           class          Weight,
-          class WF,
+          class WF = function<vertex_property_map_value_t<Weight>(const std::remove_reference_t<G>&, const edge_t<G>&)>,
           class CompareOp = less<vertex_property_map_value_t<Weight>>>
 requires vertex_property_map_for<Predecessor, G> &&
          vertex_property_map_for<Weight, G> &&
@@ -911,7 +844,10 @@ auto prim(G&&                   g,           // graph
           const vertex_id_t<G>& seed,        // seed vtx
           Predecessor&          predecessor, // out: predecessor[uid] of uid in tree
           Weight&               weight,      // out: edge value weight[uid] from tree edge uid to predecessor[uid]
-          WF&&                  weight_fn,   // edge weight function
+          WF&&                  weight_fn =
+                [](const auto& gr, const edge_t<G>& uv) {
+                  return edge_value(gr, uv);
+                }, // default weight_fn(g, uv) -> edge_value(g, uv)
           CompareOp             compare = less<vertex_property_map_value_t<Weight>>() // edge value comparator
 ) {
   using edge_value_type = vertex_property_map_value_t<Weight>;

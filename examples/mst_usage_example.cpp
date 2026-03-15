@@ -78,6 +78,7 @@ int main() {
   std::vector<int>      weight(n);
 
   try {
+    init_shortest_paths(g, weight, predecessor);
     auto total_wt = prim(g, 0, predecessor, weight);
 
     std::cout << "MST from vertex 0:\n";
@@ -98,6 +99,7 @@ int main() {
   try {
     std::vector<uint32_t> small_pred(2); // Too small!
     std::vector<int>      small_wt(2);
+    init_shortest_paths(g, small_wt, small_pred);
     prim(g, 0, small_pred, small_wt);
   } catch (const std::out_of_range& e) {
     std::cout << "Caught expected error:\n  " << e.what() << "\n";
@@ -106,6 +108,7 @@ int main() {
   try {
     std::vector<uint32_t> pred(n);
     std::vector<int>      wt(n);
+    init_shortest_paths(g, wt, pred);
     prim(g, 999, pred, wt); // Invalid seed
   } catch (const std::out_of_range& e) {
     std::cout << "\nCaught expected error:\n  " << e.what() << "\n";
