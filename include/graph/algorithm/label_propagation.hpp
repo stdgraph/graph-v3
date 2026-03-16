@@ -21,6 +21,7 @@
 #  include <algorithm>
 #  include <limits>
 #  include <numeric>
+#  include <optional>
 #  include <random>
 #  include <ranges>
 #  include <unordered_map>
@@ -38,92 +39,20 @@ using adj_list::vertex_id;
 using adj_list::find_vertex;
 using adj_list::num_vertices;
 
-/**
- * @ingroup graph_algorithms
- * @brief Propagate vertex labels by majority voting among neighbours.
- *
- * Each iteration shuffles the vertex processing order, then sets every vertex's label
- * to the most popular label among its neighbours. Ties are broken randomly using the
- * supplied random-number generator. The algorithm iterates until no label changes
- * (convergence) or until @p max_iters iterations have been performed.
- *
- * ## Complexity Analysis
- *
- * **Time Complexity:** O(M) per iteration, where M = |E|. The number of iterations
- * required for convergence is typically small relative to graph size.
- *
- * **Space Complexity:** O(V) for the shuffled vertex-ID vector and frequency map.
- *
- * ## Supported Graph Properties
- *
- * ### Directedness
- * - ✅ Directed graphs
- *
- * ### Edge Properties
- * - ✅ Unweighted edges
- * - ✅ Weighted edges (weights ignored)
- * - ✅ Multi-edges (all edges counted in tally)
- * - ✅ Self-loops (counted in tally)
- * - ✅ Cycles
- *
- * ### Container Requirements
- * - Requires: `adjacency_list<G>` concept
- * - Requires: `vertex_property_map_for<Label, G>` — subscript access by vertex ID
- * - Requires: `std::equality_comparable<vertex_property_map_value_t<Label>>`
- *
- * @tparam G          Graph type satisfying `adjacency_list`.
- * @tparam Label      Vertex property map whose `vertex_property_map_value_t` is the label type.
- *                    For index graphs: `std::vector<T>`. For mapped graphs: `std::unordered_map<VId, T>`.
- * @tparam Gen        Uniform random bit generator type (default `std::default_random_engine`).
- * @tparam T          Integral type for the iteration limit (default `size_t`).
- *
- * @param g           The graph.
- * @param label       Vertex property map holding the initial labels for every vertex.
- *                    Modified in place to hold final labels on return.
- * @param rng         Random-number generator used for shuffle and tie-breaking.
- * @param max_iters   Maximum number of iterations (default: unlimited).
- *
- * @pre `label` contains a meaningful initial label for every vertex in `g`.
- *
- * @post `label[uid]` holds the discovered label assignment for vertex @p uid.
- * @post The graph @p g is not modified.
- *
- * **Exception Safety:** Basic. May throw `std::bad_alloc` from internal allocations.
- * The graph is unchanged; the label array may be partially updated.
- *
- * ## Example Usage
- *
- * ```cpp
- * #include <graph/graph.hpp>
- * #include <graph/algorithm/label_propagation.hpp>
- * #include <vector>
- * #include <random>
- *
- * using namespace graph;
- *
- * int main() {
- *     using Graph = container::dynamic_graph<void, void, void, uint32_t, false,
- *                       container::vov_graph_traits<void, void, void, uint32_t, false>>;
- *     Graph g({{0,1},{1,0},{1,2},{2,1},{2,3},{3,2}});
- *
- *     std::vector<int> label = {0, 1, 2, 3};
- *     std::mt19937 rng{42};
- *     label_propagation(g, label, rng);
- *     // label is now converged — neighbouring vertices share a common label
- * }
- * ```
- */
+namespace detail {
+
 template <adjacency_list G,
           class Label,
-          class Gen = std::default_random_engine,
-          class T   = size_t>
+          class Gen,
+          class T>
 requires vertex_property_map_for<Label, G> &&
          std::equality_comparable<vertex_property_map_value_t<Label>> &&
          std::uniform_random_bit_generator<std::remove_cvref_t<Gen>>
-void label_propagation(G&&    g,
-                       Label& label,
-                       Gen&&  rng       = std::default_random_engine{},
-                       T      max_iters = std::numeric_limits<T>::max()) {
+void label_propagation_impl(G&&                                                     g,
+                            Label&                                                   label,
+                            std::optional<vertex_property_map_value_t<Label>> const&  empty_label,
+                            Gen&&                                                     rng,
+                            T                                                         max_iters) {
   using label_type = vertex_property_map_value_t<Label>;
 
   const size_t N = num_vertices(g);
@@ -144,15 +73,17 @@ void label_propagation(G&&    g,
     bool changed = false;
 
     for (auto uid : order) {
-      // Tally neighbour labels
+      // Tally neighbour labels, skipping neighbours with empty_label if provided
       std::unordered_map<label_type, size_t> freq;
       for (auto&& uv : edges(g, *find_vertex(g, uid))) {
         auto tid = target_id(g, uv);
-        ++freq[label[tid]];
+        if (!empty_label || !(label[tid] == *empty_label)) {
+          ++freq[label[tid]];
+        }
       }
 
       if (freq.empty()) {
-        continue; // isolated vertex — keep current label
+        continue; // isolated vertex or no labelled neighbours — keep current label
       }
 
       // Find the maximum frequency
@@ -192,18 +123,161 @@ void label_propagation(G&&    g,
   }
 }
 
+} // namespace detail
+
 /**
- * @ingroup graph_algorithms
- * @brief Propagate vertex labels with an empty-label sentinel.
+ * @brief Label propagation for community detection by majority voting among neighbours.
+ *
+ * Each iteration shuffles the vertex processing order, then sets every vertex's label
+ * to the most popular label among its neighbours. Ties are broken randomly using the
+ * supplied random-number generator. The algorithm iterates until no label changes
+ * (convergence) or until @p max_iters iterations have been performed.
+ *
+ * @tparam G          The graph type. Must satisfy adjacency_list concept.
+ * @tparam Label      Vertex property map whose vertex_property_map_value_t is the label type.
+ *                    For index graphs: std::vector<T>. For mapped graphs: std::unordered_map<VId, T>.
+ * @tparam Gen        Uniform random bit generator type (default std::default_random_engine).
+ * @tparam T          Integral type for the iteration limit (default size_t).
+ *
+ * @param g           The graph to process.
+ * @param label       [in,out] Vertex property map holding initial labels for every vertex.
+ *                    Modified in place to hold final labels on return.
+ * @param rng         Random-number generator used for shuffle and tie-breaking.
+ * @param max_iters   Maximum number of iterations (default: unlimited).
+ *
+ * @return void. Results are stored in the label output parameter.
+ *
+ * **Complexity:**
+ * - Time: O(E) per iteration; the number of iterations required for convergence is
+ *   typically small relative to graph size
+ * - Space: O(V) for the shuffled vertex-ID vector and frequency map
+ *
+ * **Mandates:**
+ * - G must satisfy adjacency_list (index or mapped vertex containers)
+ * - Label must satisfy vertex_property_map_for<Label, G> (subscriptable by vertex_id_t<G>)
+ * - vertex_property_map_value_t<Label> must satisfy std::equality_comparable
+ * - Gen must satisfy std::uniform_random_bit_generator
+ *
+ * **Preconditions:**
+ * - label contains a meaningful initial label for every vertex in g
+ * - For index graphs: label.size() >= num_vertices(g)
+ *
+ * **Postconditions:**
+ * - label[uid] holds the discovered community label for vertex uid
+ * - Neighbouring vertices in the same dense community share a common label
+ *
+ * **Effects:**
+ * - Modifies label: Sets label[v] for all vertices v
+ * - Does not modify the graph g
+ *
+ * **Exception Safety:**
+ * Basic guarantee. If an exception is thrown:
+ * - Graph g remains unchanged
+ * - label may be partially modified (indeterminate state)
+ *
+ * **Throws:**
+ * - std::bad_alloc from internal allocations (frequency map, candidate vector)
+ *
+ * **Remarks:**
+ * - For semi-supervised propagation with unlabelled vertices, use the overload
+ *   accepting an empty_label sentinel
+ *
+ * **Supported Graph Properties:**
+ *
+ * Directedness:
+ * - ✅ Directed graphs
+ *
+ * Edge Properties:
+ * - ✅ Unweighted edges
+ * - ✅ Weighted edges (weights ignored)
+ * - ✅ Multi-edges (all edges counted in tally)
+ * - ✅ Self-loops (counted in tally)
+ * - ✅ Cycles
+ */
+template <adjacency_list G,
+          class Label,
+          class Gen = std::default_random_engine,
+          class T   = size_t>
+requires vertex_property_map_for<Label, G> &&
+         std::equality_comparable<vertex_property_map_value_t<Label>> &&
+         std::uniform_random_bit_generator<std::remove_cvref_t<Gen>>
+void label_propagation(G&&    g,
+                       Label& label,
+                       Gen&&  rng       = std::default_random_engine{},
+                       T      max_iters = std::numeric_limits<T>::max()) {
+  detail::label_propagation_impl(g, label, std::nullopt, std::forward<Gen>(rng), max_iters);
+}
+
+/**
+ * @brief Label propagation with an empty-label sentinel for semi-supervised community detection.
  *
  * Behaves like the primary overload, except vertices whose label equals @p empty_label
  * are treated as unlabelled: they do not vote and are not counted in neighbour tallies.
  * When an unlabelled vertex acquires a label from a neighbour, that acquisition counts
  * as a change for convergence purposes.
  *
- * @copydetails label_propagation(G&&, Label&, Gen&&, T)
+ * @tparam G          The graph type. Must satisfy adjacency_list concept.
+ * @tparam Label      Vertex property map whose vertex_property_map_value_t is the label type.
+ * @tparam Gen        Uniform random bit generator type (default std::default_random_engine).
+ * @tparam T          Integral type for the iteration limit (default size_t).
  *
- * @param empty_label  Sentinel value representing an unlabelled vertex. Passed by value.
+ * @param g           The graph to process.
+ * @param label       [in,out] Vertex property map holding initial labels for every vertex.
+ *                    Modified in place to hold final labels on return.
+ * @param empty_label Sentinel value representing an unlabelled vertex. Passed by value.
+ * @param rng         Random-number generator used for shuffle and tie-breaking.
+ * @param max_iters   Maximum number of iterations (default: unlimited).
+ *
+ * @return void. Results are stored in the label output parameter.
+ *
+ * **Complexity:**
+ * - Time: O(E) per iteration; the number of iterations required for convergence is
+ *   typically small relative to graph size
+ * - Space: O(V) for the shuffled vertex-ID vector and frequency map
+ *
+ * **Mandates:**
+ * - G must satisfy adjacency_list (index or mapped vertex containers)
+ * - Label must satisfy vertex_property_map_for<Label, G> (subscriptable by vertex_id_t<G>)
+ * - vertex_property_map_value_t<Label> must satisfy std::equality_comparable
+ * - Gen must satisfy std::uniform_random_bit_generator
+ *
+ * **Preconditions:**
+ * - label contains an initial label (or empty_label) for every vertex in g
+ * - For index graphs: label.size() >= num_vertices(g)
+ *
+ * **Postconditions:**
+ * - Vertices reachable from a labelled vertex acquire a non-empty label
+ * - Vertices in components with no labelled vertex retain empty_label
+ *
+ * **Effects:**
+ * - Modifies label: Sets label[v] for all vertices v that acquire a label
+ * - Does not modify the graph g
+ *
+ * **Exception Safety:**
+ * Basic guarantee. If an exception is thrown:
+ * - Graph g remains unchanged
+ * - label may be partially modified (indeterminate state)
+ *
+ * **Throws:**
+ * - std::bad_alloc from internal allocations (frequency map, candidate vector)
+ *
+ * **Remarks:**
+ * - If no vertex in a connected component has a non-empty label, those vertices
+ *   remain unlabelled (empty_label) after convergence
+ * - When empty_label is not present in label, behaviour is identical to the
+ *   primary overload
+ *
+ * **Supported Graph Properties:**
+ *
+ * Directedness:
+ * - ✅ Directed graphs
+ *
+ * Edge Properties:
+ * - ✅ Unweighted edges
+ * - ✅ Weighted edges (weights ignored)
+ * - ✅ Multi-edges (all edges counted in tally)
+ * - ✅ Self-loops (counted in tally)
+ * - ✅ Cycles
  */
 template <adjacency_list G,
           class Label,
@@ -217,74 +291,8 @@ void label_propagation(G&&                                            g,
                        vertex_property_map_value_t<Label>              empty_label,
                        Gen&&                                           rng       = std::default_random_engine{},
                        T                                               max_iters = std::numeric_limits<T>::max()) {
-  using label_type = vertex_property_map_value_t<Label>;
-
-  const size_t N = num_vertices(g);
-  if (N == 0) {
-    return;
-  }
-
-  // Build shuffleable vector of vertex IDs
-  std::vector<vertex_id_t<G>> order;
-  order.reserve(N);
-  for (auto&& u : vertices(g)) {
-    order.push_back(vertex_id(g, u));
-  }
-
-  for (T iter = 0; iter < max_iters; ++iter) {
-    std::shuffle(order.begin(), order.end(), rng);
-
-    bool changed = false;
-
-    for (auto uid : order) {
-      // Tally neighbour labels, skipping neighbours with empty_label
-      std::unordered_map<label_type, size_t> freq;
-      for (auto&& uv : edges(g, *find_vertex(g, uid))) {
-        auto tid = target_id(g, uv);
-        if (!(label[tid] == empty_label)) {
-          ++freq[label[tid]];
-        }
-      }
-
-      if (freq.empty()) {
-        continue; // no labelled neighbours — keep current label
-      }
-
-      // Find the maximum frequency
-      size_t max_count = 0;
-      for (auto& [lbl, cnt] : freq) {
-        if (cnt > max_count) {
-          max_count = cnt;
-        }
-      }
-
-      // Collect all labels tied at the maximum
-      std::vector<label_type> candidates;
-      for (auto& [lbl, cnt] : freq) {
-        if (cnt == max_count) {
-          candidates.push_back(lbl);
-        }
-      }
-
-      // Pick one of the tied labels (randomly if more than one)
-      label_type best;
-      if (candidates.size() == 1) {
-        best = candidates[0];
-      } else {
-        std::uniform_int_distribution<size_t> dist(0, candidates.size() - 1);
-        best = candidates[dist(rng)];
-      }
-
-      if (!(label[uid] == best)) {
-        label[uid] = best;
-        changed    = true;
-      }
-    }
-
-    if (!changed) {
-      break; // convergence
-    }
-  }
+  detail::label_propagation_impl(g, label, std::optional(std::move(empty_label)),
+                                 std::forward<Gen>(rng), max_iters);
 }
 
 } // namespace graph

@@ -151,6 +151,51 @@ void find_negative_cycle(G&                              g,
  *   negative cycle exists. The returned vertex ID can be used with find_negative_cycle() to extract
  *   all vertices in the cycle.
  * - Based on Boost.Graph bellman_ford_shortest_paths implementation
+ *
+ * **Supported Graph Properties:**
+ *
+ * Directedness:
+ * - ✅ Directed graphs
+ *
+ * Edge Properties:
+ * - ✅ Weighted edges (including negative weights)
+ * - ✅ Unweighted edges (default weight function returns 1)
+ * - ✅ Multi-edges (all edges considered during relaxation)
+ * - ✅ Self-loops (relaxation has no effect since distance cannot decrease)
+ * - ✅ Cycles
+ * - ✅ Negative weight cycles (detected and reported via return value)
+ *
+ * Graph Structure:
+ * - ✅ Connected graphs
+ * - ✅ Disconnected graphs (unreachable vertices retain infinite distance)
+ * - ✅ Empty graphs (returns immediately)
+ *
+ * ## Example Usage
+ *
+ * ```cpp
+ * #include <graph/graph.hpp>
+ * #include <graph/algorithm/bellman_ford_shortest_paths.hpp>
+ * #include <vector>
+ * #include <limits>
+ *
+ * using namespace graph;
+ *
+ * int main() {
+ *     using Graph = container::dynamic_graph<void, void, double, uint32_t, false,
+ *                       container::vol_graph_traits<void, void, double, uint32_t, false>>;
+ *
+ *     // Weighted directed graph with a negative edge: 0 --(4.0)--> 1 --(-2.0)--> 2 --(3.0)--> 3
+ *     Graph g({{0,1,4.0},{1,2,-2.0},{2,3,3.0}});
+ *
+ *     constexpr auto INF = std::numeric_limits<double>::max();
+ *     std::vector<double>   dist(num_vertices(g), INF);
+ *     std::vector<uint32_t> pred(num_vertices(g), 0);
+ *
+ *     auto cycle = bellman_ford_shortest_paths(g, 0u, dist, pred);
+ *     // cycle is empty (no negative cycle)
+ *     // dist == {0.0, 4.0, 2.0, 5.0}
+ * }
+ * ```
  * 
  * @see find_negative_cycle() to extract vertices in detected negative cycle
  * @see dijkstra_shortest_paths() for faster algorithm with non-negative weights

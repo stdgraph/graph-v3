@@ -112,6 +112,50 @@ using adj_list::index_vertex_range;
  * - For unweighted graphs, use default weight function (equivalent to BFS)
  * - For single target, consider A* with admissible heuristic
  * - Implementation based on Boost.Graph dijkstra_shortest_paths_no_init
+ *
+ * **Supported Graph Properties:**
+ *
+ * Directedness:
+ * - ✅ Directed graphs
+ *
+ * Edge Properties:
+ * - ✅ Weighted edges (non-negative weights required)
+ * - ✅ Unweighted edges (default weight function returns 1, equivalent to BFS)
+ * - ❌ Negative edge weights (throws std::out_of_range for signed weight types)
+ * - ✅ Multi-edges (all edges considered during relaxation)
+ * - ✅ Self-loops (relaxation has no effect since distance cannot decrease)
+ * - ✅ Cycles
+ *
+ * Graph Structure:
+ * - ✅ Connected graphs
+ * - ✅ Disconnected graphs (unreachable vertices retain infinite distance)
+ * - ✅ Empty graphs (returns immediately)
+ *
+ * ## Example Usage
+ *
+ * ```cpp
+ * #include <graph/graph.hpp>
+ * #include <graph/algorithm/dijkstra_shortest_paths.hpp>
+ * #include <vector>
+ * #include <limits>
+ *
+ * using namespace graph;
+ *
+ * int main() {
+ *     using Graph = container::dynamic_graph<void, void, double, uint32_t, false,
+ *                       container::vol_graph_traits<void, void, double, uint32_t, false>>;
+ *
+ *     // Weighted directed graph: 0 --(1.0)--> 1 --(2.0)--> 2 --(3.0)--> 3
+ *     Graph g({{0,1,1.0},{1,2,2.0},{2,3,3.0}});
+ *
+ *     constexpr auto INF = std::numeric_limits<double>::max();
+ *     std::vector<double>   dist(num_vertices(g), INF);
+ *     std::vector<uint32_t> pred(num_vertices(g), 0);
+ *
+ *     dijkstra_shortest_paths(g, 0u, dist, pred);
+ *     // dist == {0.0, 1.0, 3.0, 6.0}
+ * }
+ * ```
  */
 // Note on std::remove_reference_t<G>:
 // These templates declare G&& (forwarding reference), so for lvalue arguments G deduces as a
