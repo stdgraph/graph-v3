@@ -37,8 +37,7 @@ using adj_list::num_vertices;
 using adj_list::find_vertex;
 
 /**
- * @ingroup graph_algorithms
- * @brief Find the biconnected components of a graph.
+ * @brief Find the biconnected components of a graph using the Hopcroft-Tarjan algorithm.
  *
  * A biconnected component (also called a 2-connected component) is a maximal
  * biconnected subgraph — one that is connected and has no articulation points.
@@ -55,20 +54,56 @@ using adj_list::find_vertex;
  * Isolated vertices (degree 0) are emitted as trivial single-vertex components.
  * Articulation-point vertices appear in more than one component.
  *
- * ## Complexity Analysis
+ * @tparam G               The graph type. Must satisfy adjacency_list concept.
+ * @tparam OuterContainer  A container of containers for the output components.
+ *                         Typically std::vector<std::vector<vertex_id_t<G>>>.
  *
- * **Time Complexity:** O(|V| + |E|) where V is the number of vertices and E is
- * the number of edges. Each vertex and edge is visited exactly once during the DFS.
+ * @param g           The graph to process. Callers must supply both directions of each
+ *                    undirected edge.
+ * @param components  [out] Output container; one inner container is push_back'd per biconnected
+ *                    component found. Articulation-point vertices appear in multiple inner
+ *                    containers. No ordering guarantee on the order of components or vertex
+ *                    IDs within a component.
  *
- * **Space Complexity:** O(V + E) for the discovery time and low-link arrays (O(V)),
- * the DFS stack (O(V)), and the edge stack (O(E)).
+ * @return void. Results are stored in the components output parameter.
  *
- * ## Supported Graph Properties
+ * **Mandates:**
+ * - G must satisfy adjacency_list (index or mapped vertex containers)
+ * - OuterContainer must support push_back with an inner container constructible
+ *   from a pair of set iterators
  *
- * ### Directedness
+ * **Preconditions:**
+ * - For undirected semantics, each edge {u,v} must be stored as both (u,v) and (v,u)
+ *
+ * **Effects:**
+ * - Modifies components: push_back's one inner container per biconnected component
+ * - Does not modify the graph g
+ *
+ * **Postconditions:**
+ * - Every vertex appears in at least one component
+ * - Articulation-point vertices appear in more than one component
+ * - Each component's induced subgraph is biconnected
+ *
+ * **Throws:**
+ * - std::bad_alloc from internal vector, set, or stack allocations
+ * - Exception guarantee: Basic. If an exception is thrown, graph g remains unchanged;
+ *   components may be partially written (indeterminate state).
+ *
+ * **Complexity:**
+ * - Time: O(V + E) — each vertex and edge is visited exactly once during the DFS
+ * - Space: O(V + E) for discovery/low-link arrays (O(V)), DFS stack (O(V)), and
+ *   edge stack (O(E))
+ *
+ * **Remarks:**
+ * - Uses iterative DFS with explicit stack to avoid recursion-depth limits
+ * - Edge iterators are stored on the DFS stack to avoid O(degree) re-scans on resume
+ *
+ * **Supported Graph Properties:**
+ *
+ * Directedness:
  * - ✅ Directed graphs (caller must store both {u,v} and {v,u} for undirected semantics)
  *
- * ### Edge Properties
+ * Edge Properties:
  * - ✅ Unweighted edges
  * - ✅ Weighted edges (weights ignored)
  * - ✅ Multi-edges (only the first reverse edge to the DFS parent is skipped as the tree edge;
@@ -76,36 +111,10 @@ using adj_list::find_vertex;
  * - ✅ Self-loops (ignored — do not affect biconnected component detection)
  * - ✅ Cycles
  *
- * ### Graph Structure
+ * Graph Structure:
  * - ✅ Connected graphs
  * - ✅ Disconnected graphs (processes all components via outer loop)
  * - ✅ Empty graphs (returns immediately)
- *
- * ### Container Requirements
- * - Requires: `adjacency_list<G>` concept
- * - Works with: All `dynamic_graph` container combinations (contiguous and mapped IDs)
- *
- * @tparam G               The graph type. Must satisfy adjacency_list concept.
- * @tparam OuterContainer  A container of containers for the output components.
- *                         Typically `std::vector<std::vector<vertex_id_t<G>>>`.
- *
- * @param g           The graph. Callers must supply both directions of each undirected edge.
- * @param components  Output container; one inner container is push_back'd per biconnected
- *                    component found. Articulation-point vertices appear in multiple inner
- *                    containers. No ordering guarantee on the order of components or vertex
- *                    IDs within a component.
- *
- * @pre For undirected semantics, each edge {u,v} must be stored as both (u,v) and (v,u).
- *
- * @post Every vertex appears in at least one component.
- * @post Articulation-point vertices appear in more than one component.
- * @post Each component's induced subgraph is biconnected.
- * @post The graph g is not modified.
- *
- * Throws:
- *   std::bad_alloc if internal vector or set allocation fails.
- *   Basic exception guarantee: the graph g remains unchanged; components may be
- *   partially written.
  *
  * ## Example Usage
  *

@@ -18,6 +18,7 @@
   - [`kosaraju` — strongly connected components](#kosaraju--strongly-connected-components)
   - [`afforest` — union-find with neighbor sampling](#afforest--union-find-with-neighbor-sampling)
 - [Parameters](#parameters)
+- [Supported Graph Properties](#supported-graph-properties)
 - [Examples](#examples)
   - [Undirected Connected Components](#example-1-undirected-connected-components)
   - [Strongly Connected Components (Kosaraju)](#example-2-strongly-connected-components-kosaraju)
@@ -25,8 +26,12 @@
   - [Undirected Adjacency List](#example-4-undirected-adjacency-list)
   - [Counting Components and Sizes](#example-5-counting-components-and-sizes)
   - [Compressing Afforest Component IDs](#example-6-compressing-afforest-component-ids)
-- [Complexity](#complexity)
+- [Mandates](#mandates)
 - [Preconditions](#preconditions)
+- [Effects](#effects)
+- [Returns](#returns)
+- [Throws](#throws)
+- [Complexity](#complexity)
 - [See Also](#see-also)
 
 ## Overview
@@ -117,6 +122,29 @@ support. The transpose must also satisfy `adjacency_list`.
 
 **Return value (`connected_components` only):** `size_t` — number of connected
 components. `kosaraju` and `afforest` return `void`.
+
+## Supported Graph Properties
+
+**Directedness:**
+- ✅ Undirected graphs (`connected_components`, `afforest` without transpose)
+- ✅ Directed graphs (`kosaraju`, `afforest` with transpose)
+
+**Edge Properties:**
+- ✅ Unweighted edges
+- ✅ Weighted edges (weights ignored)
+- ✅ Multi-edges (do not affect component assignment)
+- ✅ Self-loops (do not affect component assignment)
+
+**Graph Structure:**
+- ✅ Connected graphs (single component)
+- ✅ Disconnected graphs (each component labeled independently)
+- ✅ Empty graphs (zero components)
+- ✅ Isolated vertices (each is its own component)
+
+**Container Requirements:**
+- Required: `adjacency_list<G>`
+- `component` must satisfy `vertex_property_map_for<Component, G>`
+- `kosaraju`: transpose graph must also satisfy `adjacency_list`
 
 ## Examples
 
@@ -239,6 +267,35 @@ compress(comp);
 // and now consistent across all vertices.
 ```
 
+## Mandates
+
+- `G` must satisfy `adjacency_list<G>`
+- `Component` must satisfy `vertex_property_map_for<Component, G>`
+- For `kosaraju`: `GT` must satisfy `adjacency_list<GT>`
+
+## Preconditions
+
+- `component` must be pre-sized for all vertex IDs in `g`
+- For `connected_components`: undirected graphs must store both directions of
+  each edge (or use `undirected_adjacency_list`)
+- For `kosaraju`: the transpose graph must contain all edges reversed
+
+## Effects
+
+- Writes component IDs to `component[v]` for all vertices
+- Does not modify the graph `g` (or `g_transpose`)
+- For `afforest`: call `compress(component)` afterwards for canonical root IDs
+
+## Returns
+
+- `connected_components` returns `size_t` — the number of connected components
+- `kosaraju` and `afforest` return `void`
+
+## Throws
+
+- `std::bad_alloc` if internal allocations fail
+- Exception guarantee: Basic. Graph `g` remains unchanged; component output may be partial.
+
 ## Complexity
 
 | Algorithm | Time | Space |
@@ -246,14 +303,6 @@ compress(comp);
 | `connected_components` | O(V + E) | O(V) |
 | `kosaraju` | O(V + E) | O(V) |
 | `afforest` | O(V + E) | O(V) |
-
-## Preconditions
-
-- Graph must satisfy `adjacency_list<G>`.
-- `component` must satisfy `vertex_property_map_for<Component, G>`.
-- For `connected_components`: undirected graphs must store both directions of
-  each edge (or use `undirected_adjacency_list`).
-- For `kosaraju`: the transpose graph must contain all edges reversed.
 
 ## See Also
 

@@ -16,6 +16,7 @@
 - [Signatures](#signatures)
 - [Parameters](#parameters)
 - [Visitor Events](#visitor-events)
+- [Supported Graph Properties](#supported-graph-properties)
 - [Examples](#examples)
   - [Single-Source Shortest Paths](#example-1-single-source-shortest-paths)
   - [Negative Cycle Detection](#example-2-negative-cycle-detection)
@@ -23,8 +24,12 @@
   - [Multi-Source Shortest Paths](#example-4-multi-source-shortest-paths)
   - [Distances Only](#example-5-distances-only)
   - [Visitor: Monitoring the Final Check Pass](#example-6-visitor-monitoring-the-final-check-pass)
-- [Complexity](#complexity)
+- [Mandates](#mandates)
 - [Preconditions](#preconditions)
+- [Effects](#effects)
+- [Returns](#returns)
+- [Throws](#throws)
+- [Complexity](#complexity)
 - [See Also](#see-also)
 
 ## Overview
@@ -151,6 +156,31 @@ need to define the events you care about.
 The `on_edge_minimized` / `on_edge_not_minimized` events are unique to
 Bellman-Ford. They fire during the V-th pass (verification) and indicate whether
 each edge satisfies the triangle inequality.
+
+## Supported Graph Properties
+
+**Directedness:**
+- ✅ Directed graphs (primary use case)
+- ✅ Undirected graphs (each undirected edge treated as two directed edges)
+
+**Edge Properties:**
+- ✅ Positive edge weights
+- ✅ Negative edge weights (primary advantage over Dijkstra)
+- ✅ Zero-weight edges
+- ✅ Multi-edges (each edge considered for relaxation)
+- ✅ Self-loops (relaxation no-op since distance cannot improve via self-loop)
+
+**Graph Structure:**
+- ✅ Connected graphs
+- ✅ Disconnected graphs (unreachable vertices retain infinity distance)
+- ✅ DAGs (works correctly, though topological-order relaxation is faster)
+- ⚠️ Negative-weight cycles — detected and reported; distances undefined for affected vertices
+
+**Container Requirements:**
+- Required: `adjacency_list<G>`
+- `distances` must satisfy `vertex_property_map_for<Distances, G>`
+- `predecessors` must satisfy `vertex_property_map_for<Predecessors, G>`
+- `weight` must satisfy `basic_edge_weight_function`
 
 ## Examples
 
@@ -297,21 +327,48 @@ auto cycle = bellman_ford_shortest_paths(g, 0u, dist, pred,
 // inspector.not_minimized > 0 if and only if cycle.has_value()
 ```
 
+## Mandates
+
+- `G` must satisfy `adjacency_list<G>`
+- `Distances` must satisfy `vertex_property_map_for<Distances, G>`
+- `Predecessors` must satisfy `vertex_property_map_for<Predecessors, G>`
+- `WF` must satisfy `basic_edge_weight_function`
+- All overloads are `[[nodiscard]]` — the compiler warns if the return value is discarded
+
+## Preconditions
+
+- `distances` and `predecessors` must be pre-sized for all vertex IDs in `g`
+- Call `init_shortest_paths(distances, predecessors)` before invoking the algorithm
+- All source vertex IDs must be valid vertex IDs in `g`
+- **Always check the return value** — if a negative cycle exists, distances are
+  undefined for affected vertices
+
+## Effects
+
+- Writes shortest-path distances to `distances[v]` for all reachable vertices
+  (when no negative cycle exists)
+- Writes predecessor vertex IDs to `predecessors[v]` for path reconstruction
+  (`bellman_ford_shortest_paths` only)
+- Does not modify the graph `g`
+- Invokes visitor callbacks during relaxation and verification passes
+
+## Returns
+
+`std::optional<vertex_id_t<G>>` — empty if no negative cycle exists, or a
+vertex ID on the negative cycle if one is detected. Use `find_negative_cycle`
+to extract the full cycle path from the predecessor array.
+
+## Throws
+
+- `std::bad_alloc` if internal allocations fail
+- Exception guarantee: Basic. Graph `g` remains unchanged; output may be partial.
+
 ## Complexity
 
 | Metric | Value |
 |--------|-------|
 | Time | O(V · E) |
 | Space | O(1) auxiliary (beyond input/output arrays) |
-
-## Preconditions
-
-- Graph must satisfy `adjacency_list<G>`.
-- `distances` and `predecessors` must satisfy `vertex_property_map_for` (pre-sized
-  vectors for index graphs, or `make_vertex_property_map` for mapped graphs).
-- Call `init_shortest_paths(distances, predecessors)` before invoking the algorithm.
-- **Always check the return value** — if a negative cycle exists, distances are
-  undefined for affected vertices.
 
 ## See Also
 

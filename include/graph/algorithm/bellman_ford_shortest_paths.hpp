@@ -106,10 +106,6 @@ void find_negative_cycle(G&                              g,
  * @return optional<vertex_id_t<G>>. Returns empty if no negative cycle detected. Returns a vertex ID
  *         in the negative cycle if one exists. Use find_negative_cycle() to extract all cycle vertices.
  * 
- * **Complexity:**
- * - Time: O(V * E) - iterates over all edges V times
- * - Space: O(1) auxiliary space (excluding output parameters)
- * 
  * **Mandates:**
  * - G must satisfy adjacency_list (index or mapped graphs supported)
  * - Sources must be input_range with values convertible to vertex_id_t<G>
@@ -123,6 +119,11 @@ void find_negative_cycle(G&                              g,
  * - predecessor must contain an entry for each vertex of g (unless using null_predecessors)
  * - Weight function must not throw or modify graph state
  * 
+ * **Effects:**
+ * - Modifies distances: Sets distances[v] for all vertices v
+ * - Modifies predecessor: Sets predecessor[v] for all processed edges
+ * - Does not modify the graph g
+ * 
  * **Postconditions:**
  * - distances[s] == 0 for all sources s
  * - If no negative cycle: For reachable v, distances[v] contains shortest distance from nearest source
@@ -130,19 +131,20 @@ void find_negative_cycle(G&                              g,
  * - If negative cycle detected: distances and predecessor may contain intermediate values
  * - For unreachable vertices v: distances[v] == numeric_limits<Distance>::max()
  * 
- * **Effects:**
- * - Modifies distances: Sets distances[v] for all vertices v
- * - Modifies predecessor: Sets predecessor[v] for all processed edges
- * - Does not modify the graph g
- * 
- * **Exception Safety:**
- * Basic guarantee. If an exception is thrown:
- * - Graph g remains unchanged
- * - distances and predecessor may be partially modified (indeterminate state)
+ * **Returns:**
+ * - optional<vertex_id_t<G>>: empty if no negative cycle detected; contains a vertex ID in the
+ *   negative cycle if one exists. Use find_negative_cycle() to extract all cycle vertices.
+ * - Attribute: [[nodiscard]]
  * 
  * **Throws:**
  * - std::out_of_range if a source vertex ID is out of range
  * - std::out_of_range if distances or predecessor are undersized
+ * - Exception guarantee: Basic. If an exception is thrown, graph g remains unchanged;
+ *   distances and predecessor may be partially modified (indeterminate state).
+ * 
+ * **Complexity:**
+ * - Time: O(V * E) - iterates over all edges V times
+ * - Space: O(1) auxiliary space (excluding output parameters)
  * 
  * **Remarks:**
  * - Use Bellman-Ford when: graph has negative weights, need cycle detection, or edges processed sequentially
@@ -151,6 +153,51 @@ void find_negative_cycle(G&                              g,
  *   negative cycle exists. The returned vertex ID can be used with find_negative_cycle() to extract
  *   all vertices in the cycle.
  * - Based on Boost.Graph bellman_ford_shortest_paths implementation
+ *
+ * **Supported Graph Properties:**
+ *
+ * Directedness:
+ * - ✅ Directed graphs
+ *
+ * Edge Properties:
+ * - ✅ Weighted edges (including negative weights)
+ * - ✅ Unweighted edges (default weight function returns 1)
+ * - ✅ Multi-edges (all edges considered during relaxation)
+ * - ✅ Self-loops (relaxation has no effect since distance cannot decrease)
+ * - ✅ Cycles
+ * - ✅ Negative weight cycles (detected and reported via return value)
+ *
+ * Graph Structure:
+ * - ✅ Connected graphs
+ * - ✅ Disconnected graphs (unreachable vertices retain infinite distance)
+ * - ✅ Empty graphs (returns immediately)
+ *
+ * ## Example Usage
+ *
+ * ```cpp
+ * #include <graph/graph.hpp>
+ * #include <graph/algorithm/bellman_ford_shortest_paths.hpp>
+ * #include <vector>
+ * #include <limits>
+ *
+ * using namespace graph;
+ *
+ * int main() {
+ *     using Graph = container::dynamic_graph<void, void, double, uint32_t, false,
+ *                       container::vol_graph_traits<void, void, double, uint32_t, false>>;
+ *
+ *     // Weighted directed graph with a negative edge: 0 --(4.0)--> 1 --(-2.0)--> 2 --(3.0)--> 3
+ *     Graph g({{0,1,4.0},{1,2,-2.0},{2,3,3.0}});
+ *
+ *     constexpr auto INF = std::numeric_limits<double>::max();
+ *     std::vector<double>   dist(num_vertices(g), INF);
+ *     std::vector<uint32_t> pred(num_vertices(g), 0);
+ *
+ *     auto cycle = bellman_ford_shortest_paths(g, 0u, dist, pred);
+ *     // cycle is empty (no negative cycle)
+ *     // dist == {0.0, 4.0, 2.0, 5.0}
+ * }
+ * ```
  * 
  * @see find_negative_cycle() to extract vertices in detected negative cycle
  * @see dijkstra_shortest_paths() for faster algorithm with non-negative weights

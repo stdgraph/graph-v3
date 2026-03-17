@@ -44,62 +44,59 @@ using adj_list::find_vertex;
  * uses the iterative Hopcroft-Tarjan algorithm based on DFS discovery times and
  * low-link values.
  *
- * The algorithm maintains two arrays:
- * - `disc[v]`: DFS discovery time of vertex `v`.
- * - `low[v]`: minimum discovery time reachable from the subtree rooted at `v`
- *   via back-edges.
- *
- * A vertex `u` is an articulation point if:
- * - **Root rule:** `u` is the root of a DFS tree and has two or more DFS children.
- * - **Non-root rule:** `u` is not a root and has a child `v` with `low[v] >= disc[u]`.
- *
- * ## Complexity Analysis
- *
- * **Time Complexity:** O(|V| + |E|) where V is the number of vertices and E is
- * the number of edges. Each vertex and edge is visited exactly once during the DFS.
- *
- * **Space Complexity:** O(V) for the discovery time, low-link, parent, child count,
- * and emitted arrays, plus O(V) for the DFS stack.
- *
- * ## Supported Graph Properties
- *
- * ### Directedness
- * - ✅ Directed graphs (caller must store both {u,v} and {v,u} for undirected semantics)
- *
- * ### Edge Properties
- * - ✅ Unweighted edges
- * - ✅ Weighted edges (weights ignored)
- * - ✅ Multi-edges (only the first reverse edge to the DFS parent is skipped as the tree edge;
- *      additional parallel edges are treated as back-edges that update low-link values)
- * - ✅ Self-loops (ignored — do not affect articulation point detection)
- * - ✅ Cycles
- *
- * ### Graph Structure
- * - ✅ Connected graphs
- * - ✅ Disconnected graphs (processes all components via outer loop)
- * - ✅ Empty graphs (returns immediately)
- *
- * ### Container Requirements
- * - Requires: `adjacency_list<G>` concept
- * - Requires: `std::output_iterator<Iter, vertex_id_t<G>>`
- * - Works with: All `dynamic_graph` container combinations (contiguous and mapped IDs)
- *
  * @tparam G          The graph type. Must satisfy adjacency_list concept.
  * @tparam Iter       The output iterator type. Must be output_iterator<vertex_id_t<G>>.
  *
  * @param g           The graph. Callers must supply both directions of each undirected edge.
  * @param cut_vertices The output iterator where articulation point vertex IDs will be written.
- *                    No ordering guarantee on the emitted vertices.
  *
- * @pre For undirected semantics, each edge {u,v} must be stored as both (u,v) and (v,u).
+ * @return void. Articulation point IDs are written to the output iterator.
  *
- * @post Output contains all articulation points, each emitted exactly once.
- * @post The graph g is not modified.
+ * **Mandates:**
+ * - G must satisfy adjacency_list (index or mapped vertex containers)
+ * - Iter must satisfy std::output_iterator<vertex_id_t<G>>
  *
- * Throws:
- *   std::bad_alloc if internal vector allocation fails.
- *   Basic exception guarantee: the graph g remains unchanged; output iterator may be
+ * **Preconditions:**
+ * - For undirected semantics, each edge {u,v} must be stored as both (u,v) and (v,u)
+ *
+ * **Effects:**
+ * - Writes articulation point vertex IDs to cut_vertices output iterator
+ * - Does not modify the graph g
+ *
+ * **Postconditions:**
+ * - Output contains all articulation points, each emitted exactly once
+ * - No ordering guarantee on the emitted vertices
+ *
+ * **Throws:**
+ * - std::bad_alloc if internal vector allocation fails
+ * - Exception guarantee: Basic. Graph g remains unchanged; output iterator may be
  *   partially written.
+ *
+ * **Complexity:**
+ * - Time: O(V + E) — each vertex and edge visited exactly once during the DFS
+ * - Space: O(V) for discovery time, low-link, parent, child count, emitted arrays, and DFS stack
+ *
+ * **Remarks:**
+ * - Uses iterative DFS with explicit stack to avoid recursion-depth limits
+ * - Root rule: root is articulation point if it has 2+ DFS children
+ * - Non-root rule: u is articulation point if child v has low[v] >= disc[u]
+ *
+ * **Supported Graph Properties:**
+ *
+ * Directedness:
+ * - ✅ Directed graphs (caller must store both {u,v} and {v,u} for undirected semantics)
+ *
+ * Edge Properties:
+ * - ✅ Unweighted edges
+ * - ✅ Weighted edges (weights ignored)
+ * - ✅ Multi-edges (first reverse edge to parent skipped; additional parallel edges treated as back-edges)
+ * - ✅ Self-loops (ignored)
+ * - ✅ Cycles
+ *
+ * Graph Structure:
+ * - ✅ Connected graphs
+ * - ✅ Disconnected graphs (processes all components via outer loop)
+ * - ✅ Empty graphs (returns immediately)
  *
  * ## Example Usage
  *
@@ -107,21 +104,15 @@ using adj_list::find_vertex;
  * #include <graph/graph.hpp>
  * #include <graph/algorithm/articulation_points.hpp>
  * #include <vector>
- * #include <iostream>
  *
  * using namespace graph;
  *
- * int main() {
- *     using Graph = container::dynamic_graph<void, void, void, uint32_t, false,
- *                       container::vov_graph_traits<void, void, void, uint32_t, false>>;
+ * // Path graph: 0 - 1 - 2 - 3 (bidirectional)
+ * Graph g({{0,1},{1,0},{1,2},{2,1},{2,3},{3,2}});
  *
- *     // Path graph: 0 - 1 - 2 - 3 (bidirectional)
- *     Graph g({{0,1},{1,0},{1,2},{2,1},{2,3},{3,2}});
- *
- *     std::vector<vertex_id_t<Graph>> result;
- *     articulation_points(g, std::back_inserter(result));
- *     // result contains {1, 2} (in some order)
- * }
+ * std::vector<vertex_id_t<Graph>> result;
+ * articulation_points(g, std::back_inserter(result));
+ * // result contains {1, 2} (in some order)
  * ```
  */
 template <adjacency_list G, class Iter>

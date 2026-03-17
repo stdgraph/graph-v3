@@ -36,93 +36,80 @@ using adj_list::num_vertices;
  * @ingroup graph_algorithms
  * @brief Calculate the Jaccard coefficient for every edge in a graph.
  *
- * For each directed edge (u, v) in the graph, the Jaccard coefficient is:
- *
+ * For each directed edge (u, v), the Jaccard coefficient is:
  *     J(u,v) = |N(u) ∩ N(v)| / |N(u) ∪ N(v)|
- *
- * where N(x) is the open neighborhood of vertex x (the set of all vertices
- * adjacent to x, excluding x itself). The coefficient lies in [0, 1] and
- * measures the similarity of two vertices based on their shared neighbors.
- *
- * The callback `out` is invoked once per directed edge with the two endpoint
- * IDs, a reference to the edge, and the computed coefficient. For an undirected
- * graph stored bidirectionally, `out` is called for both (u,v) and (v,u).
- *
- * ## Complexity Analysis
- *
- * **Time Complexity:** O(V + E × d_min) where d_min is the minimum degree of
- * the two endpoints per edge. Worst case O(|V|³) when the graph is dense.
- * The precomputation of neighbor sets costs O(V + E).
- *
- * **Space Complexity:** O(V + E) for the precomputed neighbor sets.
- *
- * ## Supported Graph Properties
- *
- * ### Directedness
- * - ✅ Directed graphs
- * - ✅ Undirected graphs (stored bidirectionally — callback fires for both directions)
- *
- * ### Edge Properties
- * - ✅ Unweighted edges
- * - ✅ Weighted edges (weights ignored)
- * - ✅ Multi-edges (deduplicated into neighbor sets; callers should prefer simple graphs)
- * - ❌ Self-loops (skipped — do not affect Jaccard computation)
- *
- * ### Graph Structure
- * - ✅ Connected graphs
- * - ✅ Disconnected graphs (processes all components; isolated vertices produce no callbacks)
- * - ✅ Empty graphs (returns immediately)
- *
- * ### Container Requirements
- * - Requires: `adjacency_list<G>` concept (index or mapped vertex containers)
- * - Works with: All `dynamic_graph` container combinations
+ * where N(x) is the open neighborhood of vertex x. The coefficient lies in [0, 1].
  *
  * @tparam G      The graph type. Must satisfy adjacency_list concept.
- * @tparam OutOp  Callback invoked as `out(uid, vid, uv, val)` for each directed edge.
+ * @tparam OutOp  Callback invoked as out(uid, vid, uv, val) for each directed edge.
  * @tparam T      Floating-point type for the coefficient (default: double).
  *
  * @param g   The graph.
  * @param out Callback receiving (vertex_id_t<G> uid, vertex_id_t<G> vid,
  *            edge_t<G>& uv, T val) for every directed edge.
  *
- * @pre For index graphs: g must have contiguous vertex IDs [0, num_vertices(g)).
- * @pre For mapped graphs: vertex IDs may be sparse (map/unordered_map containers).
- * @pre For undirected semantics, each edge {u,v} must be stored as both (u,v) and (v,u).
+ * @return void. Results are delivered via the callback.
  *
- * @post `out` is called exactly once per directed edge in the graph.
- * @post All reported coefficient values lie in [0.0, 1.0].
- * @post The graph g is not modified.
+ * **Mandates:**
+ * - G must satisfy adjacency_list (index or mapped vertex containers)
+ * - OutOp must be invocable with (vertex_id_t<G>, vertex_id_t<G>, edge_t<G>&, T)
  *
- * Throws:
- *   std::bad_alloc if internal container allocation fails.
- *   Any exception propagated from the user-provided callback `out`.
- *   Basic exception guarantee: the graph g remains unchanged; `out` may have been
- *   partially invoked.
+ * **Preconditions:**
+ * - For undirected semantics, each edge {u,v} must be stored as both (u,v) and (v,u)
  *
- * @note T = double is the recommended default. Using integral types will truncate
- *       results to 0 or 1.
+ * **Effects:**
+ * - Invokes out(uid, vid, uv, val) once per directed edge
+ * - Does not modify the graph g
+ *
+ * **Postconditions:**
+ * - out is called exactly once per directed edge in the graph
+ * - All reported coefficient values lie in [0.0, 1.0]
+ *
+ * **Throws:**
+ * - std::bad_alloc if internal container allocation fails
+ * - May propagate exceptions from the user-provided callback out
+ * - Exception guarantee: Basic. Graph g remains unchanged; out may have been partially invoked.
+ *
+ * **Complexity:**
+ * - Time: O(V + E × d_min) where d_min is minimum degree per edge; worst case O(V³)
+ * - Space: O(V + E) for precomputed neighbor sets
+ *
+ * **Remarks:**
+ * - T = double is recommended. Integral types truncate results to 0 or 1.
+ * - Self-loops are skipped and do not affect Jaccard computation
+ *
+ * **Supported Graph Properties:**
+ *
+ * Directedness:
+ * - ✅ Directed graphs
+ * - ✅ Undirected graphs (stored bidirectionally — callback fires for both directions)
+ *
+ * Edge Properties:
+ * - ✅ Unweighted edges
+ * - ✅ Weighted edges (weights ignored)
+ * - ✅ Multi-edges (deduplicated into neighbor sets)
+ * - ❌ Self-loops (skipped)
+ *
+ * Graph Structure:
+ * - ✅ Connected graphs
+ * - ✅ Disconnected graphs (processes all components; isolated vertices produce no callbacks)
+ * - ✅ Empty graphs (returns immediately)
  *
  * ## Example Usage
  *
  * ```cpp
  * #include <graph/graph.hpp>
  * #include <graph/algorithm/jaccard.hpp>
- * #include <iostream>
  *
  * using namespace graph;
  *
- * int main() {
- *     using Graph = container::dynamic_graph<void, void, void, uint32_t, false,
- *                       container::vov_graph_traits<void, void, void, uint32_t, false>>;
+ * // Triangle: 0-1-2 (bidirectional)
+ * Graph g({{0,1},{1,0},{1,2},{2,1},{0,2},{2,0}});
  *
- *     // Triangle: 0-1-2 (bidirectional)
- *     Graph g({{0,1},{1,0},{1,2},{2,1},{0,2},{2,0}});
- *
- *     jaccard_coefficient(g, [](auto uid, auto vid, auto& uv, double val) {
- *         std::cout << uid << " - " << vid << " : " << val << "\n";
- *     });
- *     // Each edge prints J ≈ 0.333 (1 shared neighbor out of 3 total)
- * }
+ * jaccard_coefficient(g, [](auto uid, auto vid, auto& uv, double val) {
+ *     std::cout << uid << " - " << vid << " : " << val << "\n";
+ * });
+ * // Each edge prints J ≈ 0.333
  * ```
  */
 template <adjacency_list G, typename OutOp, typename T = double>

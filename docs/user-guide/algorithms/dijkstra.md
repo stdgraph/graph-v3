@@ -16,6 +16,7 @@
 - [Signatures](#signatures)
 - [Parameters](#parameters)
 - [Visitor Events](#visitor-events)
+- [Supported Graph Properties](#supported-graph-properties)
 - [Examples](#examples)
   - [Single-Source Shortest Paths](#example-1-single-source-shortest-paths)
   - [Distances Only (No Predecessors)](#example-2-distances-only-no-predecessors)
@@ -23,8 +24,11 @@
   - [Path Reconstruction](#example-4-path-reconstruction)
   - [Unweighted Graph (Default Weight)](#example-5-unweighted-graph-default-weight)
   - [Custom Visitor](#example-6-custom-visitor)
-- [Complexity](#complexity)
+- [Mandates](#mandates)
 - [Preconditions](#preconditions)
+- [Effects](#effects)
+- [Throws](#throws)
+- [Complexity](#complexity)
 - [See Also](#see-also)
 
 ## Overview
@@ -122,10 +126,6 @@ constexpr void dijkstra_shortest_distances(G&& g, const vertex_id_t<G>& source,
 | `compare` | Comparison function for distance values. Default: `std::less<>{}`. |
 | `combine` | Combine function for distance + weight. Default: `std::plus<>{}`. |
 
-**Error handling:** Throws `std::out_of_range` if a source vertex ID is invalid,
-if `distances` or `predecessors` is undersized, or if a negative edge weight is
-encountered (signed weight types only).
-
 ## Visitor Events
 
 Dijkstra's algorithm supports an optional visitor with the following callbacks.
@@ -142,6 +142,29 @@ need to define the events you care about — missing methods are silently skippe
 | `on_edge_relaxed(g, uv)` | Edge improved a shorter path |
 | `on_edge_not_relaxed(g, uv)` | Edge did not improve the current best path |
 | `on_finish_vertex(g, u)` | All adjacent edges of vertex explored |
+
+## Supported Graph Properties
+
+**Directedness:**
+- ✅ Undirected graphs
+- ✅ Directed graphs
+
+**Edge Properties:**
+- ✅ Non-negative edge weights (required)
+- ❌ Negative edge weights — use [Bellman-Ford](bellman_ford.md)
+- ✅ Multi-edges (each edge considered for relaxation)
+- ✅ Self-loops (relaxation no-op since distance cannot improve)
+
+**Graph Structure:**
+- ✅ Connected graphs
+- ✅ Disconnected graphs (unreachable vertices retain infinity distance)
+- ✅ Empty graphs (no-op)
+
+**Container Requirements:**
+- Required: `adjacency_list<G>`
+- `distances` must satisfy `vertex_property_map_for<Distances, G>`
+- `predecessors` must satisfy `vertex_property_map_for<Predecessors, G>`
+- `weight` must satisfy `basic_edge_weight_function`
 
 ## Examples
 
@@ -322,23 +345,44 @@ struct IdVisitor {
 };
 ```
 
+## Mandates
+
+- `G` must satisfy `adjacency_list<G>`
+- `Distances` must satisfy `vertex_property_map_for<Distances, G>`
+- `Predecessors` must satisfy `vertex_property_map_for<Predecessors, G>`
+- `WF` must satisfy `basic_edge_weight_function`
+- Visitor callbacks (if present) must accept appropriate graph and vertex/edge parameters
+
+## Preconditions
+
+- All edge weights must be **non-negative**. For signed weight types, a negative
+  weight throws `std::out_of_range` at runtime.
+- `distances` and `predecessors` must be pre-sized for all vertex IDs in `g`
+- Call `init_shortest_paths(distances, predecessors)` before invoking the algorithm
+- All source vertex IDs must be valid vertex IDs in `g`
+
+## Effects
+
+- Writes shortest-path distances to `distances[v]` for all reachable vertices
+- Writes predecessor vertex IDs to `predecessors[v]` for path reconstruction
+  (`dijkstra_shortest_paths` only)
+- Does not modify the graph `g`
+- Invokes visitor callbacks in Dijkstra traversal order
+
+## Throws
+
+- `std::out_of_range` if a source vertex ID is invalid, if `distances` or
+  `predecessors` is undersized, or if a negative edge weight is encountered
+  (signed weight types only)
+- `std::bad_alloc` if internal allocations fail
+- Exception guarantee: Basic. Graph `g` remains unchanged; output may be partial.
+
 ## Complexity
 
 | Metric | Value |
 |--------|-------|
 | Time | O((V + E) log V) |
 | Space | O(V) auxiliary (priority queue + color map) |
-
-## Preconditions
-
-- Graph must satisfy `adjacency_list<G>`.
-- All edge weights must be **non-negative**. For negative weights, use
-  [Bellman-Ford](bellman_ford.md). For signed weight types, a negative weight
-  throws `std::out_of_range` at runtime.
-- `distances` and `predecessors` must satisfy `vertex_property_map_for` (pre-sized
-  vectors for index graphs, or `make_vertex_property_map` for mapped graphs).
-- Call `init_shortest_paths(distances, predecessors)` before invoking the
-  algorithm.
 
 ## See Also
 

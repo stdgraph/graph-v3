@@ -57,32 +57,6 @@ using adj_list::target_id;
  * performs two depth-first searches: one on the original graph to determine finish times,
  * and one on the transpose graph to identify components.
  * 
- * @par Complexity Analysis
- * 
- * | Case | Time | Space |
- * |------|------|-------|
- * | All cases | O(V + E) | O(V) |
- * 
- * - Time: Two DFS traversals on graph and transpose
- * - Space: O(V) for visited array, finish order, and component assignment
- * 
- * @par Supported Graph Properties
- * 
- * - ✅ Directed graphs (required)
- * - ❌ Undirected graphs (use connected_components instead)
- * - ✅ Weighted edges (weights ignored)
- * - ✅ Self-loops (handled correctly)
- * - ✅ Multi-edges (treated as single edge)
- * - ✅ Disconnected graphs
- * - ✅ Cyclic graphs
- * 
- * @par Container Requirements
- * 
- * - Requires: `index_adjacency_list<G>`
- * - Requires: `index_adjacency_list<GT>` (transpose)
- * - Requires: `random_access_range<Component>`
- * - Works with: All `dynamic_graph` container combinations
- * 
  * @tparam G Graph type (must satisfy index_adjacency_list concept)
  * @tparam GT Graph transpose type (must satisfy index_adjacency_list concept)
  * @tparam Component Random access range for component IDs
@@ -91,49 +65,70 @@ using adj_list::target_id;
  * @param g_t The transpose of graph g (edges reversed)
  * @param component Output: component[v] = component ID for vertex v
  * 
- * @pre `component.size() >= num_vertices(g)`
- * @pre `num_vertices(g) == num_vertices(g_t)`
- * @pre `g_t` is the transpose of `g` (all edges reversed)
+ * @return void. Results are stored in the component output parameter.
  * 
- * @post `component[v]` contains the SCC ID for vertex v
- * @post Component IDs are assigned 0, 1, 2, ..., num_components-1
- * @post Vertices in the same SCC have the same component ID
+ * **Mandates:**
+ * - G must satisfy adjacency_list
+ * - GT must satisfy adjacency_list
+ * - Component must satisfy vertex_property_map_for<Component, G>
  * 
- * Throws:
- *   std::bad_alloc if internal allocations fail.
- *   Basic exception guarantee.
+ * **Preconditions:**
+ * - component must contain an entry for each vertex of g
+ * - num_vertices(g) == num_vertices(g_t)
+ * - g_t is the transpose of g (all edges reversed)
  * 
- * @par Example
- * @code
- * // Create directed graph: 0->1->2->0 (cycle), 2->3
- * using Graph = container::dynamic_graph<...>;
- * Graph g({{0,1}, {1,2}, {2,0}, {2,3}});
- * Graph g_t = transpose(g); // Transpose the graph
+ * **Effects:**
+ * - Modifies component: Sets component[v] for all vertices v
+ * - Does not modify graphs g or g_t
  * 
- * std::vector<size_t> component(num_vertices(g));
- * kosaraju(g, g_t, component);
+ * **Postconditions:**
+ * - component[v] contains the SCC ID for vertex v
+ * - Component IDs are assigned 0, 1, 2, ..., num_components-1
+ * - Vertices in the same SCC have the same component ID
  * 
- * // component = {0, 0, 0, 1}  // Vertices 0,1,2 in SCC 0; vertex 3 in SCC 1
- * @endcode
+ * **Throws:**
+ * - std::bad_alloc if internal allocations fail
+ * - Exception guarantee: Basic.
  * 
- * @par Algorithm Overview
+ * **Complexity:**
+ * - Time: O(V + E) — two DFS traversals on graph and transpose
+ * - Space: O(V) for visited array, finish order, and component assignment
  * 
- * 1. **First DFS Pass (on g):**
- *    - Visit all vertices and compute finish times
- *    - Store vertices in post-order (finish time order)
- * 
- * 2. **Second DFS Pass (on g_t):**
- *    - Process vertices in reverse finish time order
- *    - Each DFS tree in this pass is one SCC
- *    - Assign component IDs to vertices as they're visited
- * 
- * @par Implementation Notes
- * 
+ * **Remarks:**
  * - Uses iterative DFS (stack-based) to avoid recursion stack overflow
  * - Finish times tracked via explicit ordering vector
  * - Uses numeric_limits<CT>::max() as unvisited marker
  * - Component IDs assigned in topological order of SCCs
  * 
+ * **Supported Graph Properties:**
+ *
+ * Directedness:
+ * - ✅ Directed graphs (required)
+ * - ❌ Undirected graphs (use connected_components instead)
+ *
+ * Edge Properties:
+ * - ✅ Weighted edges (weights ignored)
+ * - ✅ Self-loops (handled correctly)
+ * - ✅ Multi-edges (treated as single edge)
+ * - ✅ Cycles
+ *
+ * Graph Structure:
+ * - ✅ Connected graphs
+ * - ✅ Disconnected graphs
+ * - ✅ Empty graphs
+ *
+ * ## Example Usage
+ *
+ * ```cpp
+ * // Create directed graph: 0->1->2->0 (cycle), 2->3
+ * Graph g({{0,1}, {1,2}, {2,0}, {2,3}});
+ * Graph g_t = transpose(g);
+ *
+ * std::vector<size_t> component(num_vertices(g));
+ * kosaraju(g, g_t, component);
+ * // component = {0, 0, 0, 1}
+ * ```
+ *
  * @see connected_components For undirected graphs
  * @see afforest For faster parallel-friendly alternative
  */
@@ -238,42 +233,48 @@ void kosaraju(G&&        g,        // graph
  * transpose graph.  This eliminates the O(V + E) cost of constructing and
  * storing the transpose.  Works with both index and mapped bidirectional graphs.
  * 
- * @par Complexity Analysis
- * 
- * | Case | Time | Space |
- * |------|------|-------|
- * | All cases | O(V + E) | O(V) |
- * 
- * Same asymptotic cost as the two-graph overload, but with lower constant
- * factor due to avoided transpose construction.
- * 
- * @par Container Requirements
- * 
- * - Requires: `bidirectional_adjacency_list<G>` (in_edges without needing a separate transpose)
- * - Compatible with both index graphs and mapped graphs.
- * 
  * @tparam G Graph type (must satisfy bidirectional_adjacency_list concept)
  * @tparam Component Vertex property map satisfying vertex_property_map_for<Component,G>
  * 
  * @param g The directed bidirectional graph to analyze
  * @param component Output: component[v] = component ID for vertex v
  * 
- * @pre component contains an entry for each vertex of g
+ * @return void. Results are stored in the component output parameter.
  * 
- * @post `component[v]` contains the SCC ID for vertex v
- * @post Component IDs are assigned 0, 1, 2, ..., num_components-1
- * @post Vertices in the same SCC have the same component ID
+ * **Mandates:**
+ * - G must satisfy bidirectional_adjacency_list
+ * - Component must satisfy vertex_property_map_for<Component, G>
  * 
- * @par Example
- * @code
- * // Create bidirectional directed graph: 0->1->2->0 (cycle), 2->3
+ * **Preconditions:**
+ * - component must contain an entry for each vertex of g
+ * 
+ * **Effects:**
+ * - Modifies component: Sets component[v] for all vertices v
+ * - Does not modify the graph g
+ * 
+ * **Postconditions:**
+ * - component[v] contains the SCC ID for vertex v
+ * - Component IDs are assigned 0, 1, 2, ..., num_components-1
+ * - Vertices in the same SCC have the same component ID
+ * 
+ * **Throws:**
+ * - std::bad_alloc if internal allocations fail
+ * - Exception guarantee: Basic.
+ * 
+ * **Complexity:**
+ * - Time: O(V + E) — same asymptotic cost as two-graph overload
+ * - Space: O(V) — lower constant factor (no transpose construction)
+ *
+ * ## Example Usage
+ *
+ * ```cpp
  * using Traits = container::vov_graph_traits<int, void, void, size_t, false, true>;
  * container::dynamic_graph<Traits> g({{0,1}, {1,2}, {2,0}, {2,3}});
- * 
+ *
  * std::vector<size_t> component(num_vertices(g));
  * kosaraju(g, component);  // No transpose needed!
- * @endcode
- * 
+ * ```
+ *
  * @see kosaraju(G&&, GT&&, Component&) For non-bidirectional graphs
  */
 template <bidirectional_adjacency_list G,
@@ -366,33 +367,6 @@ void kosaraju(G&&        g,        // bidirectional graph
  * between any pair of vertices in the set. This algorithm uses depth-first search
  * with an explicit stack to identify all connected components in the graph.
  * 
- * @par Complexity Analysis
- * 
- * | Case | Time | Space |
- * |------|------|-------|
- * | All cases | O(V + E) | O(V) |
- * 
- * - Time: Single traversal visiting each vertex and edge once
- * - Space: O(V) for component assignment and DFS stack
- * 
- * @par Supported Graph Properties
- * 
- * - ✅ Undirected graphs (treats directed graphs as undirected)
- * - ✅ Directed graphs (ignores edge direction)
- * - ✅ Weighted edges (weights ignored)
- * - ✅ Self-loops (handled correctly, counted as component)
- * - ✅ Multi-edges (treated as single edge)
- * - ✅ Disconnected graphs (primary use case)
- * - ✅ Acyclic graphs
- * - ✅ Cyclic graphs
- * 
- * @par Container Requirements
- * 
- * - Requires: `index_adjacency_list<G>` (vertex IDs are indices)
- * - Requires: `random_access_range<Component>`
- * - Works with: All `dynamic_graph` container combinations
- * - Works with: Vector-based containers (vov, vol, vofl, etc.)
- * 
  * @tparam G Graph type (must satisfy index_adjacency_list concept)
  * @tparam Component Random access range for component IDs
  * 
@@ -401,59 +375,70 @@ void kosaraju(G&&        g,        // bidirectional graph
  * 
  * @return Number of connected components found
  * 
- * @pre `component.size() >= num_vertices(g)`
+ * **Mandates:**
+ * - G must satisfy adjacency_list
+ * - Component must satisfy vertex_property_map_for<Component, G>
  * 
- * @post `component[v]` contains the component ID for vertex v
- * @post Component IDs are assigned 0, 1, 2, ..., num_components-1
- * @post Vertices in the same component have the same component ID
- * @post Return value equals the number of distinct component IDs
- * @post Isolated vertices (no edges) are assigned unique component IDs
+ * **Preconditions:**
+ * - component must contain an entry for each vertex of g
  * 
- * Throws:
- *   std::bad_alloc if internal allocations fail.
- *   Basic exception guarantee.
+ * **Effects:**
+ * - Modifies component: Sets component[v] for all vertices v
+ * - Does not modify the graph g
  * 
- * @par Example
- * @code
- * // Create undirected graph with 2 components: {0,1,2} and {3,4}
- * using Graph = container::dynamic_graph<...>;
- * Graph g(5);
- * // Component 1: 0-1-2
- * g.add_edge(0, 1);
- * g.add_edge(1, 2);
- * // Component 2: 3-4
- * g.add_edge(3, 4);
+ * **Postconditions:**
+ * - component[v] contains the component ID for vertex v
+ * - Component IDs are assigned 0, 1, 2, ..., num_components-1
+ * - Vertices in the same component have the same component ID
+ * - Return value equals the number of distinct component IDs
+ * - Isolated vertices (no edges) are assigned unique component IDs
  * 
- * std::vector<size_t> component(num_vertices(g));
- * size_t num_components = connected_components(g, component);
+ * **Returns:**
+ * - Number of connected components found (size_t)
  * 
- * // num_components = 2
- * // component = {0, 0, 0, 1, 1}
- * @endcode
+ * **Throws:**
+ * - std::bad_alloc if internal allocations fail
+ * - Exception guarantee: Basic.
  * 
- * @par Algorithm Overview
+ * **Complexity:**
+ * - Time: O(V + E) — single traversal visiting each vertex and edge once
+ * - Space: O(V) for component assignment and DFS stack
  * 
- * 1. Initialize all components to unvisited (numeric_limits::max)
- * 2. For each unvisited vertex:
- *    - Start new component with unique ID
- *    - Use DFS to visit all reachable vertices
- *    - Assign component ID to all visited vertices
- * 3. Return total number of components found
- * 
- * @par Implementation Notes
- * 
+ * **Remarks:**
  * - Uses iterative DFS with explicit stack (no recursion)
  * - Isolated vertices (degree 0) get unique component IDs
- * - Handles vertices with no edges specially for efficiency
  * - Uses numeric_limits<CT>::max() as unvisited marker
+ * - Special cases: empty graph returns 0, single vertex returns 1
  * 
- * @par Special Cases
- * 
- * - **Isolated vertices:** Each gets its own component ID
- * - **Empty graph:** Returns 0 (no components)
- * - **Single vertex:** Returns 1 (one component)
- * - **Fully connected:** Returns 1 (one component)
- * 
+ * **Supported Graph Properties:**
+ *
+ * Directedness:
+ * - ✅ Undirected graphs (primary use case)
+ * - ✅ Directed graphs (ignores edge direction)
+ *
+ * Edge Properties:
+ * - ✅ Weighted edges (weights ignored)
+ * - ✅ Self-loops (handled correctly)
+ * - ✅ Multi-edges (treated as single edge)
+ * - ✅ Cycles
+ *
+ * Graph Structure:
+ * - ✅ Connected graphs
+ * - ✅ Disconnected graphs (primary use case)
+ * - ✅ Empty graphs (returns 0)
+ *
+ * ## Example Usage
+ *
+ * ```cpp
+ * Graph g(5);
+ * g.add_edge(0, 1); g.add_edge(1, 2); // Component 1: {0,1,2}
+ * g.add_edge(3, 4);                     // Component 2: {3,4}
+ *
+ * std::vector<size_t> component(num_vertices(g));
+ * size_t num = connected_components(g, component);
+ * // num = 2, component = {0, 0, 0, 1, 1}
+ * ```
+ *
  * @see kosaraju For strongly connected components in directed graphs
  * @see afforest For faster parallel-friendly alternative
  */
@@ -640,41 +625,7 @@ static vertex_id_t sample_frequent_element(Component& component, size_t num_samp
  * Afforest is a fast, parallel-friendly algorithm for finding connected components that
  * uses neighbor sampling and union-find with path compression. It processes edges in
  * rounds, linking vertices through their first few neighbors, then samples to identify
- * the largest component before processing remaining edges. This approach is particularly
- * effective for large graphs and can be parallelized efficiently.
- * 
- * @par Complexity Analysis
- * 
- * | Case | Time | Space |
- * |------|------|-------|
- * | Best case | O(V) | O(V) |
- * | Average case | O(V + E·α(V)) | O(V) |
- * | Worst case | O(V + E·α(V)) | O(V) |
- * 
- * Where α(V) is the inverse Ackermann function (effectively constant).
- * 
- * - Time: Nearly linear due to union-find with path compression
- * - Space: O(V) for component array only (no additional structures)
- * - Practical performance: Often faster than DFS-based algorithms for large graphs
- * 
- * @par Supported Graph Properties
- * 
- * - ✅ Undirected graphs (primary use case)
- * - ✅ Directed graphs (treats as undirected)
- * - ✅ Weighted edges (weights ignored)
- * - ✅ Self-loops (handled correctly)
- * - ✅ Multi-edges (all edges processed)
- * - ✅ Disconnected graphs
- * - ✅ Large-scale graphs (designed for performance)
- * - ✅ Parallel execution friendly (this implementation is serial)
- * 
- * @par Container Requirements
- * 
- * - Requires: `index_adjacency_list<G>` (vertex IDs are indices)
- * - Requires: `random_access_range<Component>`
- * - Requires: Bidirectional conversion between vertex_id_t<G> and Component value type
- * - Works with: All `dynamic_graph` container combinations
- * - Works with: Vector-based containers for best performance
+ * the largest component before processing remaining edges.
  * 
  * @tparam G Graph type (must satisfy index_adjacency_list concept)
  * @tparam Component Random access range for component IDs
@@ -683,81 +634,70 @@ static vertex_id_t sample_frequent_element(Component& component, size_t num_samp
  * @param component Output: component[v] = component ID for vertex v
  * @param neighbor_rounds Number of neighbor sampling rounds (default: 2)
  * 
- * @pre `component.size() >= num_vertices(g)`
- * @pre `neighbor_rounds >= 0`
+ * @return void. Results are stored in the component output parameter.
  * 
- * @post `component[v]` contains the component ID for vertex v
- * @post Vertices in the same component have the same component ID
- * @post Component IDs form a union-find forest (may need compression for queries)
+ * **Mandates:**
+ * - G must satisfy adjacency_list
+ * - Component must satisfy vertex_property_map_for<Component, G>
+ * - Bidirectional conversion between vertex_id_t<G> and vertex_property_map_value_t<Component>
  * 
- * Throws:
- *   std::bad_alloc if internal allocations fail.
- *   Basic exception guarantee.
+ * **Preconditions:**
+ * - component must contain an entry for each vertex of g
+ * - neighbor_rounds >= 0
  * 
- * @par Example
- * @code
- * using Graph = container::dynamic_graph<...>;
- * Graph g({{0,1}, {1,2}, {3,4}, {4,5}});  // Two components
+ * **Effects:**
+ * - Modifies component: Sets component[v] for all vertices v
+ * - Does not modify the graph g
  * 
- * std::vector<size_t> component(num_vertices(g));
- * afforest(g, component);
+ * **Postconditions:**
+ * - component[v] contains the component ID for vertex v
+ * - Vertices in the same component have the same component ID
+ * - Component IDs form a union-find forest (compressed at end)
  * 
- * // Compress to get canonical component IDs
- * compress(component);
- * @endcode
+ * **Throws:**
+ * - std::bad_alloc if internal allocations fail
+ * - Exception guarantee: Basic.
  * 
- * @par Algorithm Overview
+ * **Complexity:**
+ * - Time: O(V + E·α(V)) where α is inverse Ackermann (effectively constant)
+ * - Space: O(V) for component array only
+ * - Often faster than DFS-based algorithms for large graphs
  * 
- * 1. **Initialization:** Each vertex is its own component
- * 2. **Neighbor Rounds:** For r = 0 to neighbor_rounds-1:
- *    - Link each vertex to its r-th neighbor
- *    - Compress paths
- * 3. **Sampling:** Identify most frequent component (largest)
- * 4. **Remaining Edges:** Process edges beyond neighbor_rounds for non-largest components
- * 5. **Final Compression:** Flatten union-find structure
- * 
- * @par Implementation Notes
- * 
+ * **Remarks:**
  * - Uses union-find with path compression for near-constant time operations
  * - Neighbor sampling reduces total edge processing for many graphs
- * - Sampling step identifies largest component to skip redundant work
- * - More efficient than DFS for graphs with large components
- * - **Serial implementation**: Current code is single-threaded
+ * - Serial implementation; designed for parallelization (see Sutton et al., 2018)
+ * - Performance tuning: neighbor_rounds=1 for dense, 2 for balanced, >2 diminishing returns
  * 
- * @par Parallelization Potential
- * 
- * Afforest is designed to be highly parallelizable and is based on the parallel
- * algorithm by Sutton et al. (2018). To implement a multi-threaded version:
- * 
- * - **Atomic operations in `link()`**: Replace regular reads/writes to `component[]`
- *   with atomic compare-and-swap operations to ensure thread-safe union-find merging
- * - **Parallel loop constructs**: Use OpenMP, TBB, or C++17 parallel algorithms
- *   to parallelize the vertex/edge processing loops
- * - **Lock-free union-find**: The algorithm's union-find operations can resolve
- *   conflicts through atomic CAS, allowing concurrent execution without locks
- * - **Phase synchronization**: Barrier synchronization after neighbor rounds
- *   and compress operations to ensure consistency
- * 
- * The algorithm's design (neighbor sampling + union-find) makes it particularly
- * well-suited for parallelization compared to DFS-based approaches, as different
- * threads can independently process edges and conflicts are naturally resolved
- * by the union-find structure
- * 
- * @par Performance Tuning
- * 
- * - `neighbor_rounds=1`: Fastest, good for dense graphs
- * - `neighbor_rounds=2`: Default, balanced performance
- * - `neighbor_rounds>2`: More thorough initial linking, diminishing returns
- * - For sparse graphs: Lower values perform better
- * - For dense graphs: Higher values may improve early component formation
- * 
+ * **Supported Graph Properties:**
+ *
+ * Directedness:
+ * - ✅ Undirected graphs (primary use case)
+ * - ✅ Directed graphs (treats as undirected)
+ *
+ * Edge Properties:
+ * - ✅ Weighted edges (weights ignored)
+ * - ✅ Self-loops (handled correctly)
+ * - ✅ Multi-edges (all edges processed)
+ * - ✅ Cycles
+ *
+ * Graph Structure:
+ * - ✅ Connected graphs
+ * - ✅ Disconnected graphs
+ * - ✅ Empty graphs
+ *
+ * ## Example Usage
+ *
+ * ```cpp
+ * Graph g({{0,1}, {1,2}, {3,4}, {4,5}});  // Two components
+ *
+ * std::vector<size_t> component(num_vertices(g));
+ * afforest(g, component);
+ * compress(component); // Get canonical component IDs
+ * ```
+ *
  * @see connected_components For simpler DFS-based alternative
  * @see kosaraju For directed graph strongly connected components
- * 
- * @par References
- * 
- * - Sutton et al. (2018). "Afforest: A Fast Parallel Connected Components Algorithm"
- *   International Conference on Parallel Processing (ICPP)
  */
 template <adjacency_list G, class Component>
 requires vertex_property_map_for<Component, G> &&
@@ -815,22 +755,9 @@ void afforest(G&&          g,         // graph
 /**
  * @brief Finds connected components using Afforest with bidirectional edge processing.
  * 
- * This overload of afforest processes edges in both directions (forward and reverse)
- * by accepting both the original graph and its transpose. This can improve convergence
- * for directed graphs when treating them as undirected, and may find components faster
- * in some graph structures.
- * 
- * @par Complexity Analysis
- * 
- * Same as single-graph afforest, but processes edges in both directions:
- * - Time: O(V + (E + E_t)·α(V)) where E_t is edges in transpose
- * - Space: O(V) (transpose not counted)
- * 
- * @par Additional Requirements
- * 
- * All requirements from single-graph afforest, plus:
- * - `g_t` must be transpose of `g` (edges reversed) OR contain additional edges
- * - Can be used for bidirectional edge processing in undirected graphs represented as directed
+ * This overload processes edges in both directions (forward and reverse) by accepting
+ * both the original graph and its transpose. This can improve convergence for directed
+ * graphs when treating them as undirected.
  * 
  * @tparam G Graph type (must satisfy index_adjacency_list concept)
  * @tparam GT Graph transpose type (must satisfy adjacency_list concept)
@@ -841,35 +768,43 @@ void afforest(G&&          g,         // graph
  * @param component Output: component[v] = component ID for vertex v
  * @param neighbor_rounds Number of neighbor sampling rounds (default: 2)
  * 
- * @pre All preconditions from single-graph afforest
- * @pre `num_vertices(g) == num_vertices(g_t)`
+ * @return void. Results are stored in the component output parameter.
  * 
- * @post Same postconditions as single-graph afforest
+ * **Mandates:**
+ * - All mandates from single-graph afforest, plus:
+ * - GT must satisfy adjacency_list
  * 
- * @par Example
- * @code
- * using Graph = container::dynamic_graph<...>;
+ * **Preconditions:**
+ * - All preconditions from single-graph afforest
+ * - num_vertices(g) == num_vertices(g_t)
+ * - g_t must be transpose of g (edges reversed) or contain additional edges
+ * 
+ * **Effects:**
+ * - Modifies component: Sets component[v] for all vertices v
+ * - Does not modify graphs g or g_t
+ * 
+ * **Postconditions:**
+ * - Same postconditions as single-graph afforest
+ * 
+ * **Throws:**
+ * - std::bad_alloc if internal allocations fail
+ * - Exception guarantee: Basic.
+ * 
+ * **Complexity:**
+ * - Time: O(V + (E + E_t)·α(V)) where E_t is edges in transpose
+ * - Space: O(V) (transpose not counted)
+ *
+ * ## Example Usage
+ *
+ * ```cpp
  * Graph g({{0,1}, {2,3}});
- * Graph g_t = transpose(g);  // g_t: {{1,0}, {3,2}}
- * 
+ * Graph g_t = transpose(g);
+ *
  * std::vector<size_t> component(num_vertices(g));
- * afforest(g, g_t, component);  // Process edges in both directions
- * 
+ * afforest(g, g_t, component);
  * compress(component);
- * @endcode
- * 
- * @par Algorithm Differences
- * 
- * Same as single-graph afforest, with additional step:
- * - After processing remaining edges from g, also processes all edges from g_t
- * - This ensures bidirectional reachability for vertices not in largest component
- * 
- * @par Use Cases
- * 
- * - Directed graphs represented as undirected (process both edge directions)
- * - Graphs where transpose is already available
- * - Improving convergence speed for certain graph topologies
- * 
+ * ```
+ *
  * @see afforest(G&&, Component&, size_t) For single-graph version
  */
 template <adjacency_list G, adjacency_list GT, class Component>

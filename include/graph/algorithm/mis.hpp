@@ -35,47 +35,9 @@ using adj_list::num_vertices;
  * @brief Find a maximal independent set of vertices in a graph.
  * 
  * An independent set is a set of vertices where no two vertices are adjacent.
- * A maximal independent set (MIS) is an independent set that cannot be extended
- * by adding any other vertex from the graph.
- * 
- * This implementation uses a greedy algorithm:
- * 1. Starts from a seed vertex (if valid and has no self-loop)
- * 2. Adds vertex to MIS and marks all its neighbors as ineligible
- * 3. Continues with remaining unmarked vertices until none remain
- * 
- * The result is order-dependent: different seed vertices or iteration orders
- * produce different maximal independent sets. The algorithm produces a maximal
- * set, not necessarily a maximum set (largest possible).
- * 
- * ## Complexity Analysis
- * 
- * **Time Complexity:** O(|V| + |E|) where V is the number of vertices and E is the number of edges.
- * The algorithm visits each vertex once and examines all edges.
- * 
- * **Space Complexity:** O(V) for the uint8_t array tracking removed vertices.
- * 
- * ## Supported Graph Properties
- * 
- * ### Directedness
- * - ✅ Undirected graphs (recommended - each edge should be stored bidirectionally)
- * - ⚠️ Directed graphs: Treats edges as directed; result may not be a valid independent set
- *      for the underlying undirected graph
- * 
- * ### Edge Properties
- * - ✅ Unweighted edges
- * - ✅ Weighted edges (weights ignored)
- * - ✅ Multi-edges (all edges considered when marking neighbors)
- * - ✅ Self-loops: Vertices with self-loops are automatically excluded from MIS
- * 
- * ### Graph Structure
- * - ✅ Connected graphs
- * - ✅ Disconnected graphs (processes all components)
- * - ✅ Empty graphs (returns 0)
- * 
- * ### Container Requirements
- * - Requires: `adjacency_list<G>` concept
- * - Requires: `std::output_iterator<Iter, vertex_id_t<G>>`
- * - Works with: All `dynamic_graph` container combinations (index and mapped)
+ * A maximal independent set (MIS) is one that cannot be extended by adding any
+ * other vertex. This greedy algorithm is order-dependent and produces a maximal
+ * set, not necessarily a maximum (largest possible) set.
  * 
  * @tparam G          The graph type. Must satisfy adjacency_list concept.
  * @tparam Iter       The output iterator type. Must be output_iterator<vertex_id_t<G>>.
@@ -83,64 +45,72 @@ using adj_list::num_vertices;
  * @param g           The graph.
  * @param mis         The output iterator where selected vertex IDs will be written.
  * @param seed        The seed vertex ID to start from (default: 0).
- *                    Must be < num_vertices(g). If the seed vertex has a self-loop,
- *                    it will be skipped as it cannot be in any independent set.
  * 
- * @return            The number of vertices in the maximal independent set.
+ * @return The number of vertices in the maximal independent set.
  * 
- * @pre seed must be a valid vertex ID in the graph
+ * **Mandates:**
+ * - G must satisfy adjacency_list (index or mapped vertex containers)
+ * - Iter must satisfy std::output_iterator<vertex_id_t<G>>
  * 
- * @post The returned set is independent: no two vertices in the output are adjacent
- * @post The returned set is maximal: no additional vertex can be added while maintaining independence
- * @post For empty graphs, returns 0 with no output
- * @post The graph g is not modified
+ * **Preconditions:**
+ * - seed must be a valid vertex ID in the graph
  * 
- * Throws:
- *   std::bad_alloc if internal vector allocation fails.
- *   Basic exception guarantee: the graph g remains unchanged; output iterator may be
- *   partially written.
+ * **Effects:**
+ * - Writes selected vertex IDs to mis output iterator
+ * - Does not modify the graph g
  * 
- * @note Vertices with self-loops cannot be in any independent set and are excluded.
- * @note The algorithm is deterministic for a given seed but produces different results
- *       with different seeds or vertex orderings.
- * @note This finds a maximal (cannot be extended) independent set, not necessarily
- *       a maximum (largest possible) independent set. The maximum independent set
- *       problem is NP-complete.
+ * **Postconditions:**
+ * - The returned set is independent: no two vertices in output are adjacent
+ * - The returned set is maximal: no additional vertex can be added
+ * - For empty graphs, returns 0 with no output
  * 
+ * **Returns:**
+ * - Number of vertices in the maximal independent set (size_t)
+ * - Attribute: [[nodiscard]]
+ * 
+ * **Throws:**
+ * - std::bad_alloc if internal vector allocation fails
+ * - Exception guarantee: Basic. Graph g remains unchanged; output may be partially written.
+ * 
+ * **Complexity:**
+ * - Time: O(V + E) — visits each vertex once and examines all edges
+ * - Space: O(V) for the uint8_t array tracking removed vertices
+ * 
+ * **Remarks:**
+ * - Vertices with self-loops are automatically excluded from MIS
+ * - Deterministic for a given seed but different seeds produce different results
+ * - This finds maximal (cannot extend), not maximum (NP-complete) independent set
+ * 
+ * **Supported Graph Properties:**
+ *
+ * Directedness:
+ * - ✅ Undirected graphs (recommended — each edge stored bidirectionally)
+ * - ⚠️ Directed graphs (treats edges as directed; result may not be valid for underlying undirected graph)
+ *
+ * Edge Properties:
+ * - ✅ Unweighted edges
+ * - ✅ Weighted edges (weights ignored)
+ * - ✅ Multi-edges (all edges considered when marking neighbors)
+ * - ✅ Self-loops (vertices with self-loops excluded from MIS)
+ *
+ * Graph Structure:
+ * - ✅ Connected graphs
+ * - ✅ Disconnected graphs (processes all components)
+ * - ✅ Empty graphs (returns 0)
+ *
  * ## Example Usage
- * 
+ *
  * ```cpp
  * #include <graph/graph.hpp>
  * #include <graph/algorithm/mis.hpp>
  * #include <vector>
- * #include <iostream>
- * 
+ *
  * using namespace graph;
- * 
- * int main() {
- *     // Create an undirected graph (path: 0-1-2-3-4)
- *     using Graph = container::dynamic_graph<void, void, void, uint32_t, false,
- *                       container::vov_graph_traits<void, void, void, uint32_t, false>>;
- *     
- *     Graph g(5);
- *     g.push_back(0, 1); g.push_back(1, 0);
- *     g.push_back(1, 2); g.push_back(2, 1);
- *     g.push_back(2, 3); g.push_back(3, 2);
- *     g.push_back(3, 4); g.push_back(4, 3);
- *     
- *     // Find maximal independent set
- *     std::vector<vertex_id_t<Graph>> mis_result;
- *     size_t mis_size = maximal_independent_set(g, std::back_inserter(mis_result));
- *     
- *     std::cout << "MIS size: " << mis_size << "\n";
- *     std::cout << "MIS vertices: ";
- *     for (auto v : mis_result) {
- *         std::cout << v << " ";
- *     }
- *     // Possible output: MIS size: 3, MIS vertices: 0 2 4
- *     
- *     return 0;
- * }
+ *
+ * // Path: 0-1-2-3-4 (bidirectional)
+ * std::vector<vertex_id_t<Graph>> mis_result;
+ * size_t mis_size = maximal_independent_set(g, std::back_inserter(mis_result));
+ * // Possible output: mis_size=3, vertices: {0, 2, 4}
  * ```
  */
 
