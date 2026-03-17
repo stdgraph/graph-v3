@@ -15,14 +15,18 @@
 - [Include](#include)
 - [Signature](#signature)
 - [Parameters](#parameters)
+- [Supported Graph Properties](#supported-graph-properties)
 - [Examples](#examples)
   - [Finding Biconnected Components](#example-1-finding-biconnected-components)
   - [Bridge Detection](#example-2-bridge-detection)
   - [Identifying Articulation Points](#example-3-identifying-articulation-points)
   - [Complete Graph — Single Component](#example-4-complete-graph--single-component)
   - [Disconnected Graph with Isolated Vertices](#example-5-disconnected-graph-with-isolated-vertices)
-- [Complexity](#complexity)
+- [Mandates](#mandates)
 - [Preconditions](#preconditions)
+- [Effects](#effects)
+- [Throws](#throws)
+- [Complexity](#complexity)
 - [See Also](#see-also)
 
 ## Overview
@@ -82,6 +86,28 @@ Where `OuterContainer` is typically `std::vector<std::vector<vertex_id_t<G>>>`.
 |-----------|-------------|
 | `g` | Graph satisfying `adjacency_list` |
 | `components` | Output container of containers. Each inner container holds vertex IDs in one biconnected component. Cleared and refilled by the algorithm. |
+
+## Supported Graph Properties
+
+**Directedness:**
+- ✅ Undirected graphs (each edge stored bidirectionally)
+- ❌ Directed graphs — algorithm is defined for undirected graphs only
+
+**Edge Properties:**
+- ✅ Unweighted edges (weights ignored)
+- ✅ Weighted edges (weights ignored)
+- ✅ Multi-edges (parallel edges treated as single edge)
+- ✅ Self-loops (ignored — do not affect decomposition)
+
+**Graph Structure:**
+- ✅ Connected graphs
+- ✅ Disconnected graphs (each component processed independently)
+- ✅ Empty graphs (returns empty components)
+- ✅ Isolated vertices (emitted as single-vertex components)
+
+**Container Requirements:**
+- Required: `adjacency_list<G>`
+- Output: Nested container (e.g., `std::vector<std::vector<vertex_id_t<G>>>`)
 
 ## Examples
 
@@ -196,19 +222,33 @@ biconnected_components(g, components);
 //   {4, 5}     — the single edge (a "bridge" with no further structure)
 ```
 
+## Mandates
+
+- `G` must satisfy `adjacency_list<G>`
+- `OuterContainer` must be a container of containers supporting `push_back()`
+
+## Preconditions
+
+- For undirected graphs, **both directions** of each edge must be stored (or use
+  `undirected_adjacency_list`).
+- Self-loops are ignored and do not affect the result.
+
+## Effects
+
+- Clears `components` and refills it with biconnected component vertex sets
+- Does not modify the graph `g`
+
+## Throws
+
+- `std::bad_alloc` if internal allocations fail
+- Exception guarantee: Basic. Graph `g` remains unchanged; `components` may be partial.
+
 ## Complexity
 
 | Metric | Value |
 |--------|-------|
 | Time | O(V + E) |
 | Space | O(V + E) for the component output and internal stack |
-
-## Preconditions
-
-- Graph must satisfy `adjacency_list<G>`.
-- For undirected graphs, **both directions** of each edge must be stored (or use
-  `undirected_adjacency_list`).
-- Self-loops are ignored and do not affect the result.
 
 ## See Also
 

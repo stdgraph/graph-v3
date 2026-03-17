@@ -15,6 +15,7 @@
 - [Include](#include)
 - [Signatures](#signatures)
 - [Parameters](#parameters)
+- [Supported Graph Properties](#supported-graph-properties)
 - [Examples](#examples)
   - [Basic Community Detection](#example-1-basic-community-detection)
   - [Majority-Vote Convergence](#example-2-majority-vote-convergence)
@@ -22,9 +23,12 @@
   - [Controlling Iterations](#example-4-controlling-iterations)
   - [Disconnected Graph — Natural Communities](#example-5-disconnected-graph--natural-communities)
   - [Reproducibility with Fixed RNG Seed](#example-6-reproducibility-with-fixed-rng-seed)
-- [Complexity](#complexity)
+- [Mandates](#mandates)
 - [Preconditions](#preconditions)
-- [Notes](#notes)
+- [Effects](#effects)
+- [Throws](#throws)
+- [Complexity](#complexity)
+- [Remarks](#remarks)
 - [See Also](#see-also)
 
 ## Overview
@@ -99,6 +103,29 @@ void label_propagation(G&& g, Label& label,
 | `empty_label` | Sentinel value for unlabeled vertices (they don't vote until labeled) |
 | `rng` | Random number generator for tie-breaking and shuffle (e.g., `std::mt19937`) |
 | `max_iters` | Maximum number of iterations. Default: unlimited (run until convergence). |
+
+## Supported Graph Properties
+
+**Directedness:**
+- ✅ Undirected graphs (each edge stored bidirectionally)
+- ✅ Directed graphs (neighbor tallies use outgoing edges)
+
+**Edge Properties:**
+- ✅ Unweighted edges
+- ✅ Weighted edges (weights ignored — only adjacency matters)
+- ✅ Multi-edges (each edge contributes to neighbor tallies)
+- ⚠️ Self-loops — counted in neighbor tally (vertex votes for its own label)
+
+**Graph Structure:**
+- ✅ Connected graphs
+- ✅ Disconnected graphs (each component converges independently)
+- ✅ Empty graphs (no-op)
+- ✅ Isolated vertices (retain initial label)
+
+**Container Requirements:**
+- Required: `adjacency_list<G>`
+- `label` must satisfy `vertex_property_map_for<Label, G>`
+- `rng` must satisfy `UniformRandomBitGenerator`
 
 ## Examples
 
@@ -245,6 +272,31 @@ auto labels_c = run_lp(123);
 // the partition with the highest modularity.
 ```
 
+## Mandates
+
+- `G` must satisfy `adjacency_list<G>`
+- `Label` must satisfy `vertex_property_map_for<Label, G>`
+- `Gen` must satisfy `UniformRandomBitGenerator`
+- Label values must be equality-comparable and hashable
+
+## Preconditions
+
+- `label` must be pre-initialized (e.g., with `std::iota` for one-label-per-vertex)
+- With `empty_label` sentinel: vertices with the sentinel label don't vote.
+  If all vertices start with the sentinel, no propagation occurs.
+
+## Effects
+
+- Modifies `label[v]` in-place for all vertices
+- Does not modify the graph `g`
+- Vertex processing order is shuffled each iteration
+- Iterates until convergence or `max_iters` is reached
+
+## Throws
+
+- `std::bad_alloc` if internal allocations fail
+- Exception guarantee: Basic. Graph `g` remains unchanged; labels may be partially updated.
+
 ## Complexity
 
 | Metric | Value |
@@ -256,16 +308,7 @@ Typically converges in a small number of iterations (often < 10) for
 real-world graphs. Worst-case iteration count is unbounded but rare in
 practice.
 
-## Preconditions
-
-- Graph must satisfy `adjacency_list<G>`.
-- `label` must satisfy `vertex_property_map_for<Label, G>` and be pre-initialized
-  (e.g., with `std::iota` for one-label-per-vertex).
-- The RNG must satisfy `UniformRandomBitGenerator`.
-- With `empty_label` sentinel: vertices with the sentinel label don't vote.
-  If all vertices start with the sentinel, no propagation occurs.
-
-## Notes
+## Remarks
 
 - **Self-loops ARE counted** in the neighbor tally. A vertex with a self-loop
   counts its own label as one neighbor vote. This makes self-looped vertices

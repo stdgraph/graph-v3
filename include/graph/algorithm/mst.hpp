@@ -457,48 +457,53 @@ struct has_edge<T, decltype(declval<T>().edge, void())> : true_type { };*/
  * @brief Find the minimum weight spanning tree using Kruskal's algorithm.
  * 
  * Processes edges in sorted order by weight, using union-find to detect cycles.
- * Produces a minimum spanning tree (or forest for disconnected graphs) by selecting
- * V-1 edges that minimize total weight without creating cycles.
+ * Uses default comparison (operator<) for minimum spanning tree.
  * 
- * Uses default comparison (operator<) for edge weights.
+ * @tparam IELR Input edge list range type.
+ * @tparam OELR Output edge list range type.
  * 
- * @tparam IELR Input edge list range type
- * @tparam OELR Output edge list range type
+ * @param e Input edge list with source_id, target_id, and value members.
+ * @param t Output edge list for MST edges. Must support push_back() and reserve().
  * 
- * @param e [in] Input edge list with source_id, target_id, and value members
- * @param t [out] Output edge list for MST edges. Must support push_back() and reserve().
- *                 Caller should clear container before calling if reusing. MST edges are appended.
+ * @return std::pair<EV, size_t> with total MST weight and number of connected components.
  * 
- * **Complexity:** O(E log E) time, O(E + V) space
- * 
- * **Return Value:** 
- * Returns std::pair<EV, size_t> containing:
- * - first: Total weight of the minimum spanning tree/forest
- * - second: Number of connected components (1 for connected graph, >1 for forest)
- * 
- * **Note:** Return value may be ignored. For backward compatibility, calling
- * `kruskal(edges, mst)` without capturing the return value is valid.
+ * **Mandates:**
+ * - IELR must satisfy x_index_edgelist_range (forward range of integral edge descriptors with values)
+ * - OELR must satisfy x_index_edgelist_range with push_back() and reserve()
  * 
  * **Preconditions:**
  * - Edge descriptors must have integral source_id and target_id
  * - Edge values must be comparable with operator<
- * - Output container must support push_back() and reserve()
+ * 
+ * **Effects:**
+ * - Copies and sorts edge list internally; input e is unchanged
+ * - Appends MST edges to output container t
  * 
  * **Postconditions:**
- * - t contains V-1 edges (or fewer for disconnected graphs)
- * - Edges form minimum spanning tree/forest
+ * - t contains V-1 edges forming minimum spanning tree (or fewer for disconnected graphs)
  * - Input edge list e is unchanged
  * 
- * **Example:**
- * @code
+ * **Returns:**
+ * - first: Total weight of the minimum spanning tree/forest (EV)
+ * - second: Number of connected components (size_t)
+ * 
+ * **Throws:**
+ * - std::bad_alloc if internal containers cannot allocate memory
+ * - Exception guarantee: Basic. Input e unchanged; output t may be partially written.
+ * 
+ * **Complexity:**
+ * - Time: O(E log E) — dominated by edge sorting
+ * - Space: O(E + V) for edge copy and disjoint-set structure
+ * 
+ * ## Example Usage
+ *
+ * ```cpp
  * std::vector<edge_descriptor<uint32_t, int>> edges = {
  *   {0, 1, 4}, {1, 2, 8}, {2, 3, 7}, {3, 0, 9}, {0, 2, 2}, {1, 3, 5}
  * };
  * std::vector<edge_descriptor<uint32_t, int>> mst;
  * auto [total_weight, num_components] = kruskal(edges, mst);
- * // mst contains: {0,2,2}, {0,1,4}, {1,3,5}
- * // total_weight = 11, num_components = 1
- * @endcode
+ * ```
  */
 template <x_index_edgelist_range IELR, x_index_edgelist_range OELR>
 auto kruskal(IELR&& e, OELR&& t) {
@@ -509,44 +514,53 @@ auto kruskal(IELR&& e, OELR&& t) {
  * @ingroup graph_algorithms
  * @brief Find the minimum (or maximum) weight spanning tree using Kruskal's algorithm with custom comparison.
  * 
- * Processes edges in sorted order determined by the comparison function. Use std::less<> for
- * minimum spanning tree, std::greater<> for maximum spanning tree, or custom comparators for
- * specialized criteria.
+ * Processes edges in sorted order determined by the comparison function.
  * 
- * @tparam IELR Input edge list range type
- * @tparam OELR Output edge list range type
- * @tparam CompareOp Comparison operator type
+ * @tparam IELR      Input edge list range type.
+ * @tparam OELR      Output edge list range type.
+ * @tparam CompareOp Comparison operator type.
  * 
- * @param e [in] Input edge list with source_id, target_id, and value members
- * @param t [out] Output edge list for spanning tree edges. Must support push_back() and reserve().
- *                 Caller should clear container before calling if reusing. MST edges are appended.
- * @param compare [in] Comparison function: compare(ev1, ev2) returns true if ev1 should be processed before ev2
+ * @param e       Input edge list with source_id, target_id, and value members.
+ * @param t       Output edge list for spanning tree edges. Must support push_back() and reserve().
+ * @param compare Comparison function: compare(ev1, ev2) returns true if ev1 should be processed first.
  * 
- * **Complexity:** O(E log E) time, O(E + V) space
+ * @return std::pair<EV, size_t> with total weight and number of connected components.
  * 
- * **Return Value:** 
- * Returns std::pair<EV, size_t> containing:
- * - first: Total weight of the spanning tree/forest (sum of selected edge weights)
- * - second: Number of connected components (1 for connected graph, >1 for forest)
- * 
- * **Note:** Return value may be ignored for backward compatibility.
+ * **Mandates:**
+ * - IELR must satisfy x_index_edgelist_range
+ * - OELR must satisfy x_index_edgelist_range with push_back() and reserve()
  * 
  * **Preconditions:**
  * - compare must define a strict weak ordering on edge values
- * - Output container must support push_back() and reserve()
+ * 
+ * **Effects:**
+ * - Copies and sorts edge list using compare; input e is unchanged
+ * - Appends optimal spanning tree edges to output container t
  * 
  * **Postconditions:**
- * - t contains V-1 edges forming the optimal spanning tree
- * - Input edge list e is unchanged (copied internally)
+ * - t contains V-1 edges forming optimal spanning tree
+ * - Input edge list e is unchanged
  * 
- * **Example (Maximum Spanning Tree):**
- * @code
- * std::vector<edge_descriptor<uint32_t, int>> edges = {{0,1,4}, {1,2,8}, {0,2,2}};
+ * **Returns:**
+ * - first: Total weight of the spanning tree/forest (EV)
+ * - second: Number of connected components (size_t)
+ * 
+ * **Throws:**
+ * - std::bad_alloc if internal containers cannot allocate memory
+ * - May propagate exceptions from comparison operator
+ * - Exception guarantee: Basic. Input e unchanged; output t may be partially written.
+ * 
+ * **Complexity:**
+ * - Time: O(E log E) — dominated by edge sorting
+ * - Space: O(E + V) for edge copy and disjoint-set structure
+ * 
+ * ## Example Usage
+ *
+ * ```cpp
+ * // Maximum spanning tree
  * std::vector<edge_descriptor<uint32_t, int>> max_st;
  * auto [total_weight, components] = kruskal(edges, max_st, std::greater<int>{});
- * // max_st contains heaviest edges: {1,2,8}, {0,1,4}
- * // total_weight = 12, components = 1
- * @endcode
+ * ```
  */
 template <x_index_edgelist_range IELR, x_index_edgelist_range OELR, class CompareOp>
 auto kruskal(IELR&&    e,      // graph
@@ -619,42 +633,46 @@ auto kruskal(IELR&&    e,      // graph
  * @ingroup graph_algorithms
  * @brief Find the minimum weight spanning tree using Kruskal's algorithm, sorting input in place.
  * 
- * Memory-efficient variant that sorts the input edge list directly instead of creating a copy.
- * Use this when the input edge list is no longer needed after computing the MST.
+ * Memory-efficient variant that sorts the input edge list directly instead of copying.
  * 
- * ⚠️ **Warning:** This function modifies the input edge list by sorting it.
+ * @tparam IELR Input edge list range type (must be permutable).
+ * @tparam OELR Output edge list range type.
  * 
- * @tparam IELR Input edge list range type (must be permutable)
- * @tparam OELR Output edge list range type
+ * @param e Input edge list (will be sorted by edge weight).
+ * @param t Output edge list for MST edges.
  * 
- * @param e [in,out] Input edge list (will be sorted by edge weight)
- * @param t [out] Output edge list to store MST edges. Caller should clear before calling if reusing.
+ * @return std::pair<EV, size_t> with total MST weight and number of connected components.
  * 
- * **Complexity:** O(E log E) time, O(V) space (no edge copy)
- * 
- * **Return Value:** 
- * Returns std::pair<EV, size_t> containing:
- * - first: Total weight of the minimum spanning tree/forest
- * - second: Number of connected components
- * 
- * **Note:** Return value may be ignored for backward compatibility.
+ * **Mandates:**
+ * - IELR must satisfy x_index_edgelist_range and std::permutable<iterator_t<IELR>>
+ * - OELR must satisfy x_index_edgelist_range with push_back() and reserve()
  * 
  * **Preconditions:**
  * - e must be a mutable range (not const)
  * - Edge values must be comparable with operator<
  * 
+ * **Effects:**
+ * - Sorts input e by edge weight (destructive — modifies input)
+ * - Appends MST edges to output container t
+ * 
  * **Postconditions:**
  * - e is sorted by edge weight (ascending)
  * - t contains V-1 edges forming minimum spanning tree
  * 
- * **Example:**
- * @code
- * std::vector<edge_descriptor<uint32_t, int>> edges = {{0,1,4}, {1,2,8}, {0,2,2}};
- * std::vector<edge_descriptor<uint32_t, int>> mst;
- * auto [weight, components] = inplace_kruskal(edges, mst);
- * // edges is now sorted: [{0,2,2}, {0,1,4}, {1,2,8}]
- * // weight = 6, components = 1
- * @endcode
+ * **Returns:**
+ * - first: Total weight of the minimum spanning tree/forest (EV)
+ * - second: Number of connected components (size_t)
+ * 
+ * **Throws:**
+ * - std::bad_alloc if internal containers cannot allocate memory
+ * - Exception guarantee: Basic. Input e may be partially sorted; output t may be partial.
+ * 
+ * **Complexity:**
+ * - Time: O(E log E) — dominated by edge sorting
+ * - Space: O(V) for disjoint-set structure (no edge copy)
+ * 
+ * **Remarks:**
+ * - Use when input edge list is no longer needed in original order
  */
 template <x_index_edgelist_range IELR, x_index_edgelist_range OELR>
 requires std::permutable<iterator_t<IELR>>
@@ -668,32 +686,44 @@ auto inplace_kruskal(IELR&& e, OELR&& t) {
  * 
  * Memory-efficient variant with custom comparison function. Sorts input edge list directly.
  * 
- * ⚠️ **Warning:** This function modifies the input edge list by sorting it.
+ * @tparam IELR      Input edge list range type (must be permutable).
+ * @tparam OELR      Output edge list range type.
+ * @tparam CompareOp Comparison operator type.
  * 
- * @tparam IELR Input edge list range type (must be permutable)
- * @tparam OELR Output edge list range type
- * @tparam CompareOp Comparison operator type
+ * @param e       Input edge list (will be sorted by comparison function).
+ * @param t       Output edge list for spanning tree edges.
+ * @param compare Comparison function for edge values.
  * 
- * @param e [in,out] Input edge list (will be sorted by comparison function)
- * @param t [out] Output edge list to store spanning tree edges. Caller should clear before calling if reusing.
- * @param compare [in] Comparison function for edge values
+ * @return std::pair<EV, size_t> with total weight and number of connected components.
  * 
- * **Complexity:** O(E log E) time, O(V) space
- * 
- * **Return Value:** 
- * Returns std::pair<EV, size_t> containing:
- * - first: Total weight of the spanning tree/forest
- * - second: Number of connected components
- * 
- * **Note:** Return value may be ignored for backward compatibility.
+ * **Mandates:**
+ * - IELR must satisfy x_index_edgelist_range and std::permutable<iterator_t<IELR>>
+ * - OELR must satisfy x_index_edgelist_range with push_back() and reserve()
  * 
  * **Preconditions:**
  * - e must be a mutable range
  * - compare must define a strict weak ordering
  * 
+ * **Effects:**
+ * - Sorts input e using compare (destructive — modifies input)
+ * - Appends optimal spanning tree edges to output container t
+ * 
  * **Postconditions:**
  * - e is sorted according to compare function
  * - t contains V-1 edges forming optimal spanning tree
+ * 
+ * **Returns:**
+ * - first: Total weight of the spanning tree/forest (EV)
+ * - second: Number of connected components (size_t)
+ * 
+ * **Throws:**
+ * - std::bad_alloc if internal containers cannot allocate memory
+ * - May propagate exceptions from comparison operator
+ * - Exception guarantee: Basic. Input e may be partially sorted; output t may be partial.
+ * 
+ * **Complexity:**
+ * - Time: O(E log E) — dominated by edge sorting
+ * - Space: O(V) for disjoint-set structure (no edge copy)
  */
 template <x_index_edgelist_range IELR, x_index_edgelist_range OELR, class CompareOp>
 requires std::permutable<iterator_t<IELR>>
@@ -769,70 +799,71 @@ auto inplace_kruskal(IELR&&    e,      // graph
  * @brief Find the minimum weight spanning tree using Prim's algorithm starting from a seed vertex.
  * 
  * Grows a minimum spanning tree from a seed vertex by repeatedly adding the minimum-weight
- * edge that connects a vertex in the tree to a vertex outside the tree. Delegates to
- * dijkstra_shortest_paths with a projecting combine function.
+ * edge connecting a tree vertex to a non-tree vertex. Delegates to dijkstra_shortest_paths
+ * with a projecting combine function.
  * 
- * @tparam G          Graph type satisfying adjacency_list
- * @tparam Predecessor Vertex property map for predecessor output (subscriptable by vertex_id_t<G>)
- * @tparam Weight      Vertex property map for edge weight output (subscriptable by vertex_id_t<G>)
+ * @tparam G           Graph type satisfying adjacency_list.
+ * @tparam Predecessor Vertex property map for predecessor output.
+ * @tparam Weight      Vertex property map for edge weight output.
  * @tparam WF          Edge weight function type. Defaults to edge_value(g, uv).
  * @tparam CompareOp   Comparison operator type. Defaults to less<>.
  * 
- * @param g [in] The graph to process
- * @param seed [in] Starting vertex for MST growth
- * @param predecessor [out] predecessor[v] = parent of v in MST, predecessor[seed] = seed.
- *                         Caller should ensure size >= num_vertices(g).
- *                         Must be initialized before calling (use init_shortest_paths).
- * @param weight [out] weight[v] = edge weight from predecessor[v] to v.
- *                     Caller should ensure size >= num_vertices(g).
- *                     Must be initialized to infinity before calling (use init_shortest_paths).
- * @param weight_fn [in] Edge weight function: (const G&, const edge_t<G>&) -> Weight.
- *                      Defaults to edge_value(g, uv).
- * @param compare [in] Comparison for edge weights: compare(w1, w2) returns true if w1 is "better" than w2.
- *                     Defaults to less<>.
+ * @param g           The graph to process.
+ * @param seed        Starting vertex for MST growth.
+ * @param predecessor Output: predecessor[v] = parent of v in MST, predecessor[seed] = seed.
+ * @param weight      Output: weight[v] = edge weight from predecessor[v] to v.
+ * @param weight_fn   Edge weight function (default: edge_value).
+ * @param compare     Comparison for edge weights (default: less<>).
  * 
- * **Complexity:** O(E log V) time, O(V) space
+ * @return Total weight of the spanning tree.
  * 
- * **Return Value:** 
- * Returns the total weight of the spanning tree (sum of selected edge weights).
- * For disconnected graphs, returns weight of tree in seed's component only.
+ * **Mandates:**
+ * - G must satisfy adjacency_list
+ * - Predecessor must satisfy vertex_property_map_for<Predecessor, G>
+ * - Weight must satisfy vertex_property_map_for<Weight, G>
+ * - WF must satisfy basic_edge_weight_function
  * 
  * **Preconditions:**
  * - seed must be a valid vertex in the graph
- * - predecessor and weight must be initialized before calling
- *   (use init_shortest_paths(g, weight, predecessor))
+ * - predecessor and weight must be initialized (use init_shortest_paths)
  * - For index graphs: predecessor.size() >= num_vertices(g) and weight.size() >= num_vertices(g)
- * - For mapped graphs: predecessor and weight must be vertex property maps
- * - compare must define a strict weak ordering on edge weights
+ * - compare must define a strict weak ordering
+ * 
+ * **Effects:**
+ * - Writes MST structure to predecessor and weight arrays
+ * - Does not modify graph g
  * 
  * **Postconditions:**
  * - predecessor[seed] == seed
- * - For vertices reachable from seed: predecessor[v] points to parent in MST
+ * - For reachable vertices: predecessor[v] points to parent in MST
  * - For unreachable vertices: predecessor[v] is unchanged
- * - weight[v] contains edge weight from predecessor[v] to v (or infinity if unreachable)
- * - MST edges can be reconstructed as: {predecessor[v], v, weight[v]} for all v != seed
- * - Tree minimizes (or maximizes) total edge weight according to compare function
+ * - weight[v] contains edge weight from predecessor[v] to v
+ * 
+ * **Returns:**
+ * - Total weight of the spanning tree (edge_value_type)
+ * - For disconnected graphs: weight of tree in seed's component only
  * 
  * **Throws:**
  * - std::out_of_range if seed vertex ID is out of range
  * - std::out_of_range if predecessor or weight are undersized
- * - std::out_of_range if a negative edge weight is encountered (for signed weight types)
- * - std::logic_error if internal invariant violation detected
+ * - Exception guarantee: Basic. Graph g unchanged; predecessor/weight may be partial.
  * 
- * **Note:** Only produces MST for the connected component containing seed.
- *           For disconnected graphs, call multiple times with different seeds.
+ * **Complexity:**
+ * - Time: O(E log V) with binary heap priority queue
+ * - Space: O(V) for distance array and priority queue
  * 
- * **Example:**
- * @code
- * using Graph = dynamic_graph<int, void, void, uint32_t, false, vov_graph_traits<int>>;
- * Graph g({{0,1,4}, {1,2,8}, {2,0,11}, {0,2,2}});
+ * **Remarks:**
+ * - Only produces MST for the connected component containing seed
+ * - For disconnected graphs, call multiple times with different seeds
+ * 
+ * ## Example Usage
+ *
+ * ```cpp
  * std::vector<uint32_t> pred(num_vertices(g));
  * std::vector<int> wt(num_vertices(g));
- * 
  * init_shortest_paths(g, wt, pred);
  * auto total_weight = prim(g, 0, pred, wt);
- * // MST edges: {0,2,2}, {0,1,4}, total_weight = 6
- * @endcode
+ * ```
  */
 template <adjacency_list G,
           class          Predecessor,

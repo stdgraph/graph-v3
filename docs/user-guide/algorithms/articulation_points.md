@@ -15,14 +15,18 @@
 - [Include](#include)
 - [Signature](#signature)
 - [Parameters](#parameters)
+- [Supported Graph Properties](#supported-graph-properties)
 - [Examples](#examples)
   - [Finding Cut Vertices](#example-1-finding-cut-vertices)
   - [Star Graph — Single Articulation Point](#example-2-star-graph--single-articulation-point)
   - [Path Graph vs. Cycle](#example-3-path-graph-vs-cycle)
   - [Complete Graph — No Articulation Points](#example-4-complete-graph--no-articulation-points)
   - [Disconnected Graph](#example-5-disconnected-graph)
-- [Complexity](#complexity)
+- [Mandates](#mandates)
 - [Preconditions](#preconditions)
+- [Effects](#effects)
+- [Throws](#throws)
+- [Complexity](#complexity)
 - [See Also](#see-also)
 
 ## Overview
@@ -73,6 +77,27 @@ void articulation_points(G&& g, OutputIterator cut_vertices);
 |-----------|-------------|
 | `g` | Graph satisfying `adjacency_list` |
 | `cut_vertices` | Output iterator receiving vertex IDs of articulation points. Each vertex appears exactly once. |
+
+## Supported Graph Properties
+
+**Directedness:**
+- ✅ Undirected graphs (each edge stored bidirectionally)
+- ❌ Directed graphs — algorithm is defined for undirected graphs only
+
+**Edge Properties:**
+- ✅ Unweighted edges (weights ignored)
+- ✅ Weighted edges (weights ignored)
+- ✅ Multi-edges (parallel edges do not affect result)
+- ✅ Self-loops (ignored — do not affect detection)
+
+**Graph Structure:**
+- ✅ Connected graphs
+- ✅ Disconnected graphs (each component processed independently)
+- ✅ Empty graphs (returns no articulation points)
+
+**Container Requirements:**
+- Required: `adjacency_list<G>`
+- Output: `std::output_iterator<OutputIterator, vertex_id_t<G>>`
 
 ## Examples
 
@@ -178,21 +203,35 @@ articulation_points(g, std::back_inserter(cuts));
 // The triangle has no articulation points
 ```
 
+## Mandates
+
+- `G` must satisfy `adjacency_list<G>`
+- `OutputIterator` must satisfy `std::output_iterator<vertex_id_t<G>>`
+
+## Preconditions
+
+- For undirected graphs, **both directions** of each edge must be stored (or use
+  `undirected_adjacency_list`).
+- Self-loops do not affect the result.
+- Parallel edges: a vertex connecting two otherwise-disconnected subgraphs via
+  parallel edges is still considered an articulation point.
+
+## Effects
+
+- Writes articulation point vertex IDs to the output iterator
+- Does not modify the graph `g`
+
+## Throws
+
+- `std::bad_alloc` if internal allocations fail
+- Exception guarantee: Basic. Graph `g` remains unchanged; output may be partial.
+
 ## Complexity
 
 | Metric | Value |
 |--------|-------|
 | Time | O(V + E) |
 | Space | O(V) for discovery times, low-link values, and the DFS stack |
-
-## Preconditions
-
-- Graph must satisfy `adjacency_list<G>`.
-- For undirected graphs, **both directions** of each edge must be stored (or use
-  `undirected_adjacency_list`).
-- Self-loops do not affect the result.
-- Parallel edges: a vertex connecting two otherwise-disconnected subgraphs via
-  parallel edges is still considered an articulation point.
 
 ## See Also
 

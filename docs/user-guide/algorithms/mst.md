@@ -20,6 +20,7 @@
   - [Signatures](#prim-signatures)
   - [Parameters](#prim-parameters)
 - [Edge Descriptor](#edge-descriptor)
+- [Supported Graph Properties](#supported-graph-properties)
 - [Examples](#examples)
   - [Kruskal — Basic MST](#example-1-kruskal--basic-mst)
   - [Kruskal — Maximum Spanning Tree](#example-2-kruskal--maximum-spanning-tree)
@@ -28,9 +29,13 @@
   - [Prim — Adjacency List MST](#example-5-prim--adjacency-list-mst)
   - [Prim — Custom Weight Function](#example-6-prim--custom-weight-function)
   - [Cross-Validation: Kruskal vs. Prim](#example-7-cross-validation-kruskal-vs-prim)
-- [Complexity](#complexity)
+- [Mandates](#mandates)
 - [Preconditions](#preconditions)
-- [Notes](#notes)
+- [Effects](#effects)
+- [Returns](#returns)
+- [Throws](#throws)
+- [Complexity](#complexity)
+- [Remarks](#remarks)
 - [See Also](#see-also)
 
 ## Overview
@@ -147,6 +152,30 @@ Kruskal works with edge descriptors that expose `source_id`, `target_id`, and
 using Edge = graph::edge_descriptor<uint32_t, int>;
 // Edge{source_id, target_id, value}
 ```
+
+## Supported Graph Properties
+
+**Directedness:**
+- ✅ Undirected graphs (primary use case for MST)
+- ⚠️ Directed graphs — Kruskal treats edges as undirected; Prim requires
+  both directions stored
+
+**Edge Properties:**
+- ✅ Weighted edges (required — weights determine MST)
+- ❌ Unweighted edges — MST is trivial (any spanning tree is minimal)
+- ✅ Multi-edges (lightest edge between each pair is selected)
+- ✅ Self-loops (ignored — cannot be part of a spanning tree)
+
+**Graph Structure:**
+- ✅ Connected graphs (produces MST)
+- ✅ Disconnected graphs (Kruskal produces minimum spanning forest;
+  Prim only spans seed's component)
+- ✅ Empty graphs (no-op)
+
+**Container Requirements:**
+- **Kruskal:** edge descriptors with `source_id`, `target_id`, `value` members
+- **Prim:** `adjacency_list<G>` with weighted edges;
+  `predecessor` and `weight` must satisfy `vertex_property_map_for`
 
 ## Examples
 
@@ -326,6 +355,39 @@ auto pw = prim(g, 0u, pred, wt);
 assert(kw == pw);  // Both produce the same total MST weight
 ```
 
+## Mandates
+
+- **Kruskal:** edge descriptors must have `source_id`, `target_id`, and `value`
+  members (or use `edge_descriptor<VId, EV>`)
+- **Prim:** `G` must satisfy `adjacency_list<G>`; `Predecessor` and `Weight`
+  must satisfy `vertex_property_map_for`; `WF` must satisfy
+  `basic_edge_weight_function`
+
+## Preconditions
+
+- **Prim:** `predecessor` and `weight` must be pre-sized for all vertex IDs.
+  Invalid seed vertex throws `std::out_of_range`.
+- For undirected graphs with Prim, both directions of each edge must be stored.
+
+## Effects
+
+- **Kruskal:** writes MST edges to the output iterator; `inplace_kruskal`
+  sorts the input edge list in-place
+- **Prim:** writes predecessor and weight arrays for path reconstruction;
+  does not modify the graph `g`
+
+## Returns
+
+- **Kruskal / inplace_kruskal:** `std::pair<EV, size_t>` — total MST weight
+  and number of connected components
+- **Prim:** total MST weight (type determined by weight function)
+
+## Throws
+
+- **Prim:** `std::out_of_range` if the seed vertex is invalid
+- `std::bad_alloc` if internal allocations fail
+- Exception guarantee: Basic. Graph `g` remains unchanged; output may be partial.
+
 ## Complexity
 
 | Algorithm | Time | Space |
@@ -334,17 +396,7 @@ assert(kw == pw);  // Both produce the same total MST weight
 | `inplace_kruskal` | O(E log E) | O(V) — in-place sort + union-find |
 | `prim` | O(E log V) | O(V) — priority queue + predecessor/weight arrays |
 
-## Preconditions
-
-- **Kruskal:** edge descriptors must have `source_id`, `target_id`, and `value`
-  members (or use `edge_descriptor<VId, EV>`).
-- **Prim:** graph must satisfy `adjacency_list<G>` with weighted edges.
-  `predecessors` and `weights` must satisfy `vertex_property_map_for` (pre-sized
-  vectors for index graphs, or `make_vertex_property_map` for mapped graphs). Invalid seed
-  vertex throws `std::out_of_range`.
-- For undirected graphs with Prim, both directions of each edge must be stored.
-
-## Notes
+## Remarks
 
 - `inplace_kruskal` **modifies the input edge list** — it is sorted by weight
   after the call returns. Use `kruskal` if you need the original order.

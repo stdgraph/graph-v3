@@ -15,14 +15,19 @@
 - [Include](#include)
 - [Signatures](#signatures)
 - [Parameters](#parameters)
+- [Supported Graph Properties](#supported-graph-properties)
 - [Examples](#examples)
   - [Full-Graph Topological Sort](#example-1-full-graph-topological-sort)
   - [Single-Source Topological Sort](#example-2-single-source-topological-sort)
   - [Cycle Detection](#example-3-cycle-detection)
   - [Multi-Source Topological Sort](#example-4-multi-source-topological-sort)
   - [Task Scheduling](#example-5-task-scheduling)
-- [Complexity](#complexity)
+- [Mandates](#mandates)
 - [Preconditions](#preconditions)
+- [Effects](#effects)
+- [Returns](#returns)
+- [Throws](#throws)
+- [Complexity](#complexity)
 - [See Also](#see-also)
 
 ## Overview
@@ -100,6 +105,29 @@ bool topological_sort(const G& g, const Sources& sources, OutputIterator result)
 
 **Return value:** `true` if the graph is a DAG (valid ordering produced),
 `false` if a cycle was detected.
+
+## Supported Graph Properties
+
+**Directedness:**
+- ✅ Directed acyclic graphs (DAGs) — primary use case
+- ❌ Undirected graphs — not meaningful for topological ordering
+- ⚠️ Directed graphs with cycles — detected and reported (`false` return)
+
+**Edge Properties:**
+- ✅ Unweighted edges
+- ✅ Weighted edges (weights ignored)
+- ✅ Multi-edges (do not affect ordering)
+- ⚠️ Self-loops — cause cycle detection (`false` return)
+
+**Graph Structure:**
+- ✅ Connected DAGs
+- ✅ Disconnected DAGs (all components included in full-graph sort)
+- ✅ Empty graphs (no-op, returns `true`)
+- ✅ Isolated vertices (included in full-graph sort)
+
+**Container Requirements:**
+- Required: `adjacency_list<G>`
+- Output: `std::output_iterator<OutputIterator, vertex_id_t<G>>`
 
 ## Examples
 
@@ -203,20 +231,41 @@ if (ok) {
 }
 ```
 
+## Mandates
+
+- `G` must satisfy `adjacency_list<G>`
+- `OutputIterator` must satisfy `std::output_iterator<vertex_id_t<G>>`
+
+## Preconditions
+
+- The graph should be a DAG for a valid ordering. If cycles exist, the function
+  returns `false`.
+- All source vertex IDs must be valid vertex IDs in `g` (source-based overloads)
+- Isolated vertices are included in full-graph sort but excluded from source-based
+  sorts if not reachable.
+
+## Effects
+
+- Writes vertex IDs in topological order to the output iterator
+- Does not modify the graph `g`
+
+## Returns
+
+`bool` — `true` if the graph is a valid DAG and a complete topological ordering
+was produced; `false` if a cycle was detected. When `false` is returned, partial
+output may have been written to the output iterator.
+
+## Throws
+
+- `std::bad_alloc` if internal allocations fail
+- Exception guarantee: Basic. Graph `g` remains unchanged; output may be partial.
+
 ## Complexity
 
 | Metric | Value |
 |--------|-------|
 | Time | O(V + E) |
 | Space | O(V) for the color map |
-
-## Preconditions
-
-- Graph must satisfy `adjacency_list<G>`.
-- The graph should be a DAG for a valid ordering. If cycles exist, the function
-  returns `false`.
-- Isolated vertices are included in full-graph sort but excluded from source-based
-  sorts if not reachable.
 
 ## See Also
 

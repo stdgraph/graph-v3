@@ -16,14 +16,18 @@
 - [Signatures](#signatures)
 - [Parameters](#parameters)
 - [Visitor Events](#visitor-events)
+- [Supported Graph Properties](#supported-graph-properties)
 - [Examples](#examples)
   - [Level-Order Traversal](#example-1-level-order-traversal)
   - [Multi-Source BFS](#example-2-multi-source-bfs)
   - [Computing Distances (Unweighted)](#example-3-computing-distances-unweighted)
   - [Connected Component Discovery](#example-4-connected-component-discovery)
   - [Counting Events with a Visitor](#example-5-counting-events-with-a-visitor)
-- [Complexity](#complexity)
+- [Mandates](#mandates)
 - [Preconditions](#preconditions)
+- [Effects](#effects)
+- [Throws](#throws)
+- [Complexity](#complexity)
 - [See Also](#see-also)
 
 ## Overview
@@ -100,6 +104,27 @@ events you care about — missing methods are silently skipped.
 | `on_examine_vertex(g, u)` | Vertex popped from queue for processing |
 | `on_examine_edge(g, uv)` | Outgoing edge examined during vertex processing |
 | `on_finish_vertex(g, u)` | All adjacent edges of vertex explored |
+
+## Supported Graph Properties
+
+**Directedness:**
+- ✅ Undirected graphs
+- ✅ Directed graphs
+
+**Edge Properties:**
+- ✅ Unweighted edges
+- ✅ Weighted edges (weights ignored)
+- ✅ Multi-edges (each edge triggers visitor events)
+- ✅ Self-loops (treated as normal edges for visitor events)
+
+**Graph Structure:**
+- ✅ Connected graphs
+- ✅ Disconnected graphs (only reachable vertices visited)
+- ✅ Empty graphs (no-op)
+
+**Container Requirements:**
+- Required: `adjacency_list<G>`
+- Sources: `std::ranges::input_range` with values convertible to `vertex_id_t<G>`
 
 ## Examples
 
@@ -231,17 +256,37 @@ breadth_first_search(g, 0u, vis);
 //   is eventually examined and finished)
 ```
 
+## Mandates
+
+- `G` must satisfy `adjacency_list<G>`
+- `Sources` must be `std::ranges::input_range` with values convertible to `vertex_id_t<G>` (multi-source overload)
+- Visitor callbacks (if present) must accept appropriate graph and vertex/edge parameters
+
+## Preconditions
+
+- All vertex IDs in `sources` must be valid vertex IDs in `g`
+- `g` must not be modified during traversal
+- Visitor methods must not modify graph structure
+- Duplicate sources are allowed — each duplicate causes an extra discovery event
+
+## Effects
+
+- Does not modify the graph `g`
+- Invokes visitor callbacks in BFS traversal order
+- Vertices are visited in level-order (distance from sources)
+- All vertices reachable from any source are visited exactly once
+
+## Throws
+
+- `std::bad_alloc` if internal allocations fail
+- Exception guarantee: Basic. Graph `g` remains unchanged; output may be partial.
+
 ## Complexity
 
 | Metric | Value |
 |--------|-------|
 | Time | O(V + E) |
 | Space | O(V) for the visited array and queue |
-
-## Preconditions
-
-- Graph must satisfy `adjacency_list<G>`.
-- Duplicate sources are allowed — each duplicate causes an extra discovery event.
 
 ## See Also
 

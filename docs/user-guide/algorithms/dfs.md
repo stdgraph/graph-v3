@@ -16,6 +16,7 @@
 - [Signature](#signature)
 - [Parameters](#parameters)
 - [Visitor Events](#visitor-events)
+- [Supported Graph Properties](#supported-graph-properties)
 - [Examples](#examples)
   - [Basic DFS Traversal](#example-1-basic-dfs-traversal)
   - [Edge Classification](#example-2-edge-classification)
@@ -23,8 +24,11 @@
   - [Reverse Topological Order](#example-4-reverse-topological-order)
   - [Covering a Disconnected Graph](#example-5-covering-a-disconnected-graph)
   - [Using on_start_vertex and on_finish_edge](#example-6-using-on_start_vertex-and-on_finish_edge)
-- [Complexity](#complexity)
+- [Mandates](#mandates)
 - [Preconditions](#preconditions)
+- [Effects](#effects)
+- [Throws](#throws)
+- [Complexity](#complexity)
 - [See Also](#see-also)
 
 ## Overview
@@ -107,6 +111,26 @@ instead of a vertex reference. You only need to define the events you care about
 | `on_forward_or_cross_edge(g, uv)` | Edge to already-finished (Black) vertex |
 | `on_finish_edge(g, uv)` | All descendants of edge target fully explored |
 | `on_finish_vertex(g, u)` | All adjacent edges explored (Gray → Black) |
+
+## Supported Graph Properties
+
+**Directedness:**
+- ✅ Undirected graphs
+- ✅ Directed graphs (with full edge classification)
+
+**Edge Properties:**
+- ✅ Unweighted edges
+- ✅ Weighted edges (weights ignored)
+- ✅ Multi-edges (each edge triggers visitor events)
+- ✅ Self-loops (classified as back edges)
+
+**Graph Structure:**
+- ✅ Connected graphs
+- ✅ Disconnected graphs (only reachable vertices visited; call per component)
+- ✅ Empty graphs (no-op)
+
+**Container Requirements:**
+- Required: `adjacency_list<G>`
 
 ## Examples
 
@@ -278,18 +302,37 @@ depth_first_search(dag, 0u, SubtreeCounter{sizes});
 // sizes[0] includes all descendants in the DFS tree
 ```
 
+## Mandates
+
+- `G` must satisfy `adjacency_list<G>`
+- Visitor callbacks (if present) must accept appropriate graph and vertex/edge parameters
+
+## Preconditions
+
+- `source` must be a valid vertex ID in `g`
+- `g` must not be modified during traversal
+- Visitor methods must not modify graph structure
+- Single-source only — to cover all vertices in a disconnected graph, call
+  DFS once per unvisited component
+
+## Effects
+
+- Does not modify the graph `g`
+- Invokes visitor callbacks in DFS traversal order
+- Classifies every edge as tree, back, or forward/cross
+- All vertices reachable from source are visited exactly once
+
+## Throws
+
+- `std::bad_alloc` if internal allocations fail
+- Exception guarantee: Basic. Graph `g` remains unchanged; output may be partial.
+
 ## Complexity
 
 | Metric | Value |
 |--------|-------|
 | Time | O(V + E) |
 | Space | O(V) for the color map and stack |
-
-## Preconditions
-
-- Graph must satisfy `adjacency_list<G>`.
-- Single-source only — to cover all vertices in a disconnected graph, call
-  DFS once per unvisited component.
 
 ## See Also
 

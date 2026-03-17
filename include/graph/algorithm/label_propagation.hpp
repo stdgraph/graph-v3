@@ -147,11 +147,6 @@ void label_propagation_impl(G&&                                                 
  *
  * @return void. Results are stored in the label output parameter.
  *
- * **Complexity:**
- * - Time: O(E) per iteration; the number of iterations required for convergence is
- *   typically small relative to graph size
- * - Space: O(V) for the shuffled vertex-ID vector and frequency map
- *
  * **Mandates:**
  * - G must satisfy adjacency_list (index or mapped vertex containers)
  * - Label must satisfy vertex_property_map_for<Label, G> (subscriptable by vertex_id_t<G>)
@@ -162,21 +157,23 @@ void label_propagation_impl(G&&                                                 
  * - label contains a meaningful initial label for every vertex in g
  * - For index graphs: label.size() >= num_vertices(g)
  *
- * **Postconditions:**
- * - label[uid] holds the discovered community label for vertex uid
- * - Neighbouring vertices in the same dense community share a common label
- *
  * **Effects:**
  * - Modifies label: Sets label[v] for all vertices v
  * - Does not modify the graph g
  *
- * **Exception Safety:**
- * Basic guarantee. If an exception is thrown:
- * - Graph g remains unchanged
- * - label may be partially modified (indeterminate state)
+ * **Postconditions:**
+ * - label[uid] holds the discovered community label for vertex uid
+ * - Neighbouring vertices in the same dense community share a common label
  *
  * **Throws:**
  * - std::bad_alloc from internal allocations (frequency map, candidate vector)
+ * - Exception guarantee: Basic. If an exception is thrown, graph g remains unchanged;
+ *   label may be partially modified (indeterminate state).
+ *
+ * **Complexity:**
+ * - Time: O(E) per iteration; the number of iterations required for convergence is
+ *   typically small relative to graph size
+ * - Space: O(V) for the shuffled vertex-ID vector and frequency map
  *
  * **Remarks:**
  * - For semi-supervised propagation with unlabelled vertices, use the overload
@@ -230,11 +227,6 @@ void label_propagation(G&&    g,
  *
  * @return void. Results are stored in the label output parameter.
  *
- * **Complexity:**
- * - Time: O(E) per iteration; the number of iterations required for convergence is
- *   typically small relative to graph size
- * - Space: O(V) for the shuffled vertex-ID vector and frequency map
- *
  * **Mandates:**
  * - G must satisfy adjacency_list (index or mapped vertex containers)
  * - Label must satisfy vertex_property_map_for<Label, G> (subscriptable by vertex_id_t<G>)
@@ -245,21 +237,23 @@ void label_propagation(G&&    g,
  * - label contains an initial label (or empty_label) for every vertex in g
  * - For index graphs: label.size() >= num_vertices(g)
  *
- * **Postconditions:**
- * - Vertices reachable from a labelled vertex acquire a non-empty label
- * - Vertices in components with no labelled vertex retain empty_label
- *
  * **Effects:**
  * - Modifies label: Sets label[v] for all vertices v that acquire a label
  * - Does not modify the graph g
  *
- * **Exception Safety:**
- * Basic guarantee. If an exception is thrown:
- * - Graph g remains unchanged
- * - label may be partially modified (indeterminate state)
+ * **Postconditions:**
+ * - Vertices reachable from a labelled vertex acquire a non-empty label
+ * - Vertices in components with no labelled vertex retain empty_label
  *
  * **Throws:**
  * - std::bad_alloc from internal allocations (frequency map, candidate vector)
+ * - Exception guarantee: Basic. If an exception is thrown, graph g remains unchanged;
+ *   label may be partially modified (indeterminate state).
+ *
+ * **Complexity:**
+ * - Time: O(E) per iteration; the number of iterations required for convergence is
+ *   typically small relative to graph size
+ * - Space: O(V) for the shuffled vertex-ID vector and frequency map
  *
  * **Remarks:**
  * - If no vertex in a connected component has a non-empty label, those vertices

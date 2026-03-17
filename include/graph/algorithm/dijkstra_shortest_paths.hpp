@@ -66,10 +66,6 @@ using adj_list::index_vertex_range;
  * 
  * @return void. Results are stored in the distances and predecessor output parameters.
  * 
- * **Complexity:**
- * - Time: O((V + E) log V) using binary heap priority queue
- * - Space: O(V) for priority queue and internal bookkeeping
- * 
  * **Mandates:**
  * - G must satisfy adjacency_list (index or mapped vertex containers)
  * - Sources must be input_range with values convertible to vertex_id_t<G>
@@ -85,27 +81,28 @@ using adj_list::index_vertex_range;
  * - All edge weights must be non-negative
  * - Weight function must not throw or modify graph state
  * 
+ * **Effects:**
+ * - Modifies distances: Sets distances[v] for all vertices v
+ * - Modifies predecessor: Sets predecessor[v] for all reachable vertices
+ * - Does not modify the graph g
+ * 
  * **Postconditions:**
  * - distances[s] == 0 for all sources s
  * - For reachable vertices v: distances[v] contains shortest distance from nearest source
  * - For reachable vertices v: predecessor[v] contains predecessor in shortest path tree
  * - For unreachable vertices v: distances[v] == numeric_limits<Distance>::max()
  * 
- * **Effects:**
- * - Modifies distances: Sets distances[v] for all vertices v
- * - Modifies predecessor: Sets predecessor[v] for all reachable vertices
- * - Does not modify the graph g
- * 
- * **Exception Safety:**
- * Basic guarantee. If an exception is thrown:
- * - Graph g remains unchanged
- * - distances and predecessor may be partially modified (indeterminate state)
- * 
  * **Throws:**
  * - std::out_of_range if a source vertex ID is out of range
  * - std::out_of_range if distances or predecessor are undersized
  * - std::out_of_range if a negative edge weight is encountered (for signed weight types)
  * - std::logic_error if internal invariant violation detected
+ * - Exception guarantee: Basic. If an exception is thrown, graph g remains unchanged;
+ *   distances and predecessor may be partially modified (indeterminate state).
+ * 
+ * **Complexity:**
+ * - Time: O((V + E) log V) using binary heap priority queue
+ * - Space: O(V) for priority queue and internal bookkeeping
  * 
  * **Remarks:**
  * - Uses std::priority_queue with lazy deletion (vertices can be re-inserted)

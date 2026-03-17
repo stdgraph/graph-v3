@@ -67,11 +67,6 @@ using adj_list::find_vertex;
  *
  * @return void. Results are stored in the components output parameter.
  *
- * **Complexity:**
- * - Time: O(V + E) — each vertex and edge is visited exactly once during the DFS
- * - Space: O(V + E) for discovery/low-link arrays (O(V)), DFS stack (O(V)), and
- *   edge stack (O(E))
- *
  * **Mandates:**
  * - G must satisfy adjacency_list (index or mapped vertex containers)
  * - OuterContainer must support push_back with an inner container constructible
@@ -80,22 +75,24 @@ using adj_list::find_vertex;
  * **Preconditions:**
  * - For undirected semantics, each edge {u,v} must be stored as both (u,v) and (v,u)
  *
+ * **Effects:**
+ * - Modifies components: push_back's one inner container per biconnected component
+ * - Does not modify the graph g
+ *
  * **Postconditions:**
  * - Every vertex appears in at least one component
  * - Articulation-point vertices appear in more than one component
  * - Each component's induced subgraph is biconnected
  *
- * **Effects:**
- * - Modifies components: push_back's one inner container per biconnected component
- * - Does not modify the graph g
- *
- * **Exception Safety:**
- * Basic guarantee. If an exception is thrown:
- * - Graph g remains unchanged
- * - components may be partially written (indeterminate state)
- *
  * **Throws:**
  * - std::bad_alloc from internal vector, set, or stack allocations
+ * - Exception guarantee: Basic. If an exception is thrown, graph g remains unchanged;
+ *   components may be partially written (indeterminate state).
+ *
+ * **Complexity:**
+ * - Time: O(V + E) — each vertex and edge is visited exactly once during the DFS
+ * - Space: O(V + E) for discovery/low-link arrays (O(V)), DFS stack (O(V)), and
+ *   edge stack (O(E))
  *
  * **Remarks:**
  * - Uses iterative DFS with explicit stack to avoid recursion-depth limits

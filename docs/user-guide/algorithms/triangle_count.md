@@ -15,15 +15,20 @@
 - [Include](#include)
 - [Signature](#signature)
 - [Parameters](#parameters)
+- [Supported Graph Properties](#supported-graph-properties)
 - [Examples](#examples)
   - [Counting Triangles](#example-1-counting-triangles)
   - [Complete Graph K4](#example-2-complete-graph-k4)
   - [Triangle-Free Graphs](#example-3-triangle-free-graphs)
   - [Multiple Sharing Triangles](#example-4-multiple-sharing-triangles)
   - [Pre-sorting vov Adjacency Lists](#example-5-pre-sorting-vov-adjacency-lists)
-- [Complexity](#complexity)
+- [Mandates](#mandates)
 - [Preconditions](#preconditions)
-- [Notes](#notes)
+- [Effects](#effects)
+- [Returns](#returns)
+- [Throws](#throws)
+- [Complexity](#complexity)
+- [Remarks](#remarks)
 - [See Also](#see-also)
 
 ## Overview
@@ -75,6 +80,27 @@ size_t triangle_count(G&& g);
 | Parameter | Description |
 |-----------|-------------|
 | `g` | Graph satisfying `adjacency_list` **and** `ordered_vertex_edges` (sorted adjacency lists) |
+
+## Supported Graph Properties
+
+**Directedness:**
+- ✅ Undirected graphs (primary use case)
+- ❌ Directed graphs — algorithm treats graph as undirected
+
+**Edge Properties:**
+- ✅ Unweighted edges
+- ✅ Weighted edges (weights ignored)
+- ✅ Multi-edges (do not affect triangle count)
+- ✅ Self-loops (ignored — do not count as triangles)
+
+**Graph Structure:**
+- ✅ Connected graphs
+- ✅ Disconnected graphs (triangles counted per component)
+- ✅ Empty graphs (returns 0)
+
+**Container Requirements:**
+- Required: `adjacency_list<G>` **and** `ordered_vertex_edges<G>`
+- Adjacency lists must be sorted by target ID (use `vos`/`dos` traits or `undirected_adjacency_list`)
 
 ## Examples
 
@@ -194,6 +220,33 @@ size_t count = triangle_count(g);
 //      manual sorting.
 ```
 
+## Mandates
+
+- `G` must satisfy `adjacency_list<G>` **and** `ordered_vertex_edges<G>`
+
+## Preconditions
+
+- Adjacency lists must be **sorted by target ID**. Use sorted-edge traits
+  (`vos`, `dos`) or `undirected_adjacency_list`.
+- For `vov`-based graphs, pre-sort each adjacency list before calling (see
+  Example 5).
+- Self-loops are ignored and do not count as triangles.
+
+## Effects
+
+- Does not modify the graph `g`
+- Reads adjacency lists via sorted merge-based intersection
+
+## Returns
+
+`size_t` — the total number of triangles in the graph. Each triangle is
+counted exactly once, not three times (once per vertex). Declared
+`[[nodiscard]] noexcept`.
+
+## Throws
+
+Does not throw — declared `noexcept`.
+
 ## Complexity
 
 | Metric | Value |
@@ -205,16 +258,7 @@ The merge-based intersection exploits sorted neighbor lists, making it
 efficient for sparse graphs. For dense graphs with m ≈ V², the complexity
 approaches O(V³).
 
-## Preconditions
-
-- Graph must satisfy `adjacency_list<G>` **and** `ordered_vertex_edges<G>`.
-- Adjacency lists must be **sorted by target ID**. Use sorted-edge traits
-  (`vos`, `dos`) or `undirected_adjacency_list`.
-- For `vov`-based graphs, pre-sort each adjacency list before calling (see
-  Example 5).
-- Self-loops are ignored and do not count as triangles.
-
-## Notes
+## Remarks
 
 - The algorithm counts each triangle exactly **once**, not three times (once
   per vertex).

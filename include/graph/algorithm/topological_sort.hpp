@@ -235,107 +235,69 @@ namespace detail {
 /**
  * @brief Compute topological ordering of vertices reachable from multiple sources.
  * 
- * Performs topological sort starting from multiple source vertices using depth-first 
+ * Performs topological sort starting from multiple source vertices using depth-first
  * search. Outputs all vertices reachable from any source in reverse finish-time order.
  * Returns false if a cycle is detected in the reachable subgraph.
  * 
- * This is the most general form. Use when you need the dependency ordering for building
- * multiple targets, processing only the union of their dependency subgraphs. The algorithm
- * maintains a shared color array to prevent duplicate vertex visits across sources.
+ * @tparam G              Graph type satisfying adjacency_list concept.
+ * @tparam Sources         Input range of source vertex IDs.
+ * @tparam OutputIterator  Output iterator for writing vertex IDs in topological order.
  * 
- * **Parameters:**
+ * @param g       The directed graph to sort.
+ * @param sources Range of starting vertex IDs for traversal.
+ * @param result  Output iterator where vertex IDs are written in topological order.
  * 
- * @tparam G Graph type satisfying `adjacency_list` concept
- *   - **Requires:** `adjacency_list<G>`
- *   - **Description:** The directed graph type to operate on
+ * @return true if reachable subgraph is acyclic, false if cycle detected.
  * 
- * @tparam Sources Input range of source vertex IDs
- *   - **Requires:** `std::ranges::input_range<Sources>`
- *   - **Requires:** `std::convertible_to<std::ranges::range_value_t<Sources>, vertex_id_t<G>>`
- *   - **Description:** Range providing source vertex IDs to start traversal from
- *   - **Typical:** `std::vector<vertex_id_t<G>>`, `std::array<vertex_id_t<G>, N>`, `std::span`, etc.
- * 
- * @tparam OutputIterator Iterator type for writing vertex IDs in topological order
- *   - **Requires:** `std::output_iterator<OutputIterator, vertex_id_t<G>>`
- *   - **Description:** Output iterator that accepts vertex IDs
- * 
- * @param g The directed graph to sort
- *   - **Precondition:** Graph must be directed
- *   - **Postcondition:** Graph remains unmodified
- * 
- * @param sources Range of starting vertex IDs for traversal
- *   - **Type:** `const Sources&`
- *   - **Precondition:** All vertex IDs must be valid (in range for graph)
- *   - **Precondition:** `sources` can be empty (returns true with no output)
- *   - **Description:** Collection of source vertices from which to start DFS
- * 
- * @param result Output iterator where vertex IDs are written in topological order
- *   - **Postcondition:** If returns true, contains all reachable vertices exactly once
- *   - **Postcondition:** If returns false, may contain partial results
- * 
- * **Return Value:**
- * - **Type:** `bool`
- * - **Returns:** `true` if reachable subgraph is acyclic and ordering is valid
- * - **Returns:** `false` if cycle is detected in reachable subgraph
+ * **Mandates:**
+ * - G must satisfy adjacency_list
+ * - Sources must satisfy std::ranges::input_range with values convertible to vertex_id_t<G>
+ * - OutputIterator must satisfy std::output_iterator<vertex_id_t<G>>
  * 
  * **Preconditions:**
- * 1. Graph `g` must be directed
- * 2. All vertex IDs in `sources` must be valid
- * 3. Reachable subgraph should be a DAG for successful result
+ * - Graph g must be directed
+ * - All vertex IDs in sources must be valid
+ * - Reachable subgraph should be a DAG for successful result
+ * 
+ * **Effects:**
+ * - Performs DFS from each source vertex, recording finish order
+ * - Outputs reachable vertices in reverse finish-time order (topological order)
+ * - Does not modify graph g
  * 
  * **Postconditions:**
- * 1. If returns `true`:
- *    - For every edge (u,v) where both u,v are reachable from any source, u appears before v
- *    - Only vertices reachable from any source are written to output
- *    - Each reachable vertex appears exactly once (even if reachable from multiple sources)
- *    - Vertices from different sources may be interleaved in output
- * 2. If returns `false`:
- *    - A cycle was detected in the reachable subgraph
- *    - Output iterator may contain partial results
- * 3. If `sources` is empty:
- *    - Returns `true` with no output (trivially valid)
+ * - If returns true: for every edge (u,v) where both are reachable, u appears before v.
+ *   Each reachable vertex appears exactly once. Unreachable vertices are excluded.
+ * - If returns false: cycle was detected; output may contain partial results
+ * - If sources is empty: returns true with no output
+ * 
+ * **Returns:**
+ * - true if reachable subgraph is acyclic and ordering is valid (bool)
+ * - false if cycle detected in reachable subgraph
+ * - Attribute: [[nodiscard]] recommended
+ * 
+ * **Throws:**
+ * - std::bad_alloc if memory allocation fails
+ * - May propagate exceptions from sources range iteration
+ * - Exception guarantee: Basic. Graph g remains unchanged; output may be partial.
  * 
  * **Complexity:**
- * - **Time:** O(V_r + E_r) where V_r = vertices reachable from any source, E_r = reachable edges
- * - **Space:** O(V) for color array (full graph size), O(V_r) for finish order
+ * - Time: O(V_r + E_r) where V_r = reachable vertices, E_r = reachable edges
+ * - Space: O(V) for color array, O(V_r) for finish order
  * 
- * **Exception Safety:**
- * - **Basic guarantee:** If exception thrown, graph remains unchanged
- * - **Throws:** May throw `std::bad_alloc` if memory allocation fails
- * - **Throws:** May propagate exceptions from `sources` range iteration (if any)
+ * **Remarks:**
+ * - This is the most general form; single-source and full-graph variants delegate to it
+ * - Redundant sources (where one is reachable from another) are handled efficiently
+ * - Sources can be in any order; components are processed as encountered
  * 
- * **Example:**
- * @code
- * using Graph = vov_void;
- * // Graph: 0->2, 1->2, 2->3, 4->5 (vertices 4,5 unreachable from 0,1)
- * Graph g({{0,2}, {1,2}, {2,3}, {4,5}});
- * 
+ * ## Example Usage
+ *
+ * ```cpp
  * std::vector<uint32_t> sources = {0, 1};
  * std::vector<uint32_t> order;
- * 
  * if (topological_sort(g, sources, std::back_inserter(order))) {
- *     // order contains: [0, 1, 2, 3] or [1, 0, 2, 3]
- *     // Both are valid - vertex 2 comes after both 0 and 1
- *     // Vertices 4, 5 are NOT included (unreachable)
- *     std::cout << "Build order for targets 0 and 1: ";
- *     for (auto v : order) {
- *         std::cout << v << " ";
- *     }
+ *     // order contains reachable vertices in valid topological order
  * }
- * @endcode
- * 
- * **Use Cases:**
- * - Building multiple targets in a build system
- * - Resolving dependencies for installing multiple packages
- * - Finding prerequisites for completing multiple courses
- * - Processing disconnected components with explicit starting points
- * - Incremental computation: process only affected subgraph after changes
- * 
- * **Notes:**
- * - Redundant sources (where one is reachable from another) are handled efficiently
- * - Sources can be provided in any order
- * - If sources span disconnected components, all components are processed
- * - Empty sources range is valid (returns true, no output)
+ * ```
  * 
  * @see topological_sort(const G&, OutputIterator) for full-graph variant
  * @see topological_sort(const G&, vertex_id_t<G>, OutputIterator) for single-source variant
@@ -374,88 +336,54 @@ bool topological_sort(const G& g, const Sources& sources, OutputIterator result)
 /**
  * @brief Compute topological ordering of vertices reachable from a single source.
  * 
- * Performs topological sort starting from a single source vertex using depth-first 
- * search. Outputs only vertices reachable from the source in reverse finish-time order.
- * Returns false if a cycle is detected in the reachable subgraph.
+ * Performs topological sort starting from a single source vertex. Only vertices
+ * reachable from the source are included in the output.
  * 
- * Use this when you need the dependency ordering for building a specific target,
- * ignoring unreachable parts of the graph. This is more efficient than full-graph
- * topological sort when only a subset of the graph needs to be processed.
+ * @tparam G              Graph type satisfying adjacency_list concept.
+ * @tparam OutputIterator  Output iterator for writing vertex IDs in topological order.
  * 
- * **Parameters:**
+ * @param g       The directed graph to sort.
+ * @param source  Starting vertex ID for traversal.
+ * @param result  Output iterator where vertex IDs are written in topological order.
  * 
- * @tparam G Graph type satisfying `adjacency_list` concept
- *   - **Requires:** `adjacency_list<G>`
- *   - **Description:** The directed graph type to operate on
+ * @return true if reachable subgraph is acyclic, false if cycle detected.
  * 
- * @tparam OutputIterator Iterator type for writing vertex IDs in topological order
- *   - **Requires:** `std::output_iterator<OutputIterator, vertex_id_t<G>>`
- *   - **Description:** Output iterator that accepts vertex IDs
- * 
- * @param g The directed graph to sort
- *   - **Precondition:** Graph must be directed
- *   - **Postcondition:** Graph remains unmodified
- * 
- * @param source Starting vertex ID for traversal
- *   - **Type:** `vertex_id_t<G>`
- *   - **Precondition:** `source < num_vertices(g)` (for vector-based containers)
- *   - **Precondition:** `contains_vertex(g, source)` (for map-based containers)
- *   - **Description:** The source vertex from which to start DFS traversal
- * 
- * @param result Output iterator where vertex IDs are written in topological order
- *   - **Postcondition:** If returns true, contains reachable vertices in valid topological order
- *   - **Postcondition:** If returns false, may contain partial results
- * 
- * **Return Value:**
- * - **Type:** `bool`
- * - **Returns:** `true` if reachable subgraph is acyclic and ordering is valid
- * - **Returns:** `false` if cycle is detected in reachable subgraph
+ * **Mandates:**
+ * - G must satisfy adjacency_list
+ * - OutputIterator must satisfy std::output_iterator<vertex_id_t<G>>
  * 
  * **Preconditions:**
- * 1. Graph `g` must be directed
- * 2. `source` must be a valid vertex ID in the graph
- * 3. Reachable subgraph should be a DAG for successful result
+ * - Graph g must be directed
+ * - source must be a valid vertex ID in the graph
+ * 
+ * **Effects:**
+ * - Delegates to multi-source variant with single-element array
+ * - Does not modify graph g
  * 
  * **Postconditions:**
- * 1. If returns `true`:
- *    - For every edge (u,v) where both u,v are reachable from source, u appears before v
- *    - Only vertices reachable from source are written to output
- *    - Each reachable vertex appears exactly once
- *    - Source vertex always appears in output (unless self-loop detected)
- * 2. If returns `false`:
- *    - A cycle was detected in the reachable subgraph
- *    - Output iterator may contain partial results
+ * - If returns true: reachable vertices in valid topological order, source vertex included
+ * - If returns false: cycle detected; output may contain partial results
+ * 
+ * **Returns:**
+ * - true if reachable subgraph is acyclic (bool)
+ * - false if cycle detected
+ * 
+ * **Throws:**
+ * - std::bad_alloc if memory allocation fails
+ * - Exception guarantee: Basic. Graph g remains unchanged.
  * 
  * **Complexity:**
- * - **Time:** O(V_r + E_r) where V_r = reachable vertices, E_r = reachable edges
- * - **Space:** O(V) for color array (full graph size), O(V_r) for finish order
+ * - Time: O(V_r + E_r) where V_r = reachable vertices, E_r = reachable edges
+ * - Space: O(V) for color array, O(V_r) for finish order
  * 
- * **Exception Safety:**
- * - **Basic guarantee:** If exception thrown, graph remains unchanged
- * - **Throws:** May throw `std::bad_alloc` if memory allocation fails
- * 
- * **Example:**
- * @code
- * using Graph = vov_void;
- * // Graph: 0->1->3, 2->3 (vertex 2 is not reachable from 0)
- * Graph g({{0,1}, {1,3}, {2,3}});
- * 
+ * ## Example Usage
+ *
+ * ```cpp
  * std::vector<uint32_t> order;
  * if (topological_sort(g, 0, std::back_inserter(order))) {
- *     // order contains: [0, 1, 3]
- *     // Vertex 2 is not included (unreachable from source 0)
- *     std::cout << "Build order: ";
- *     for (auto v : order) {
- *         std::cout << v << " ";
- *     }
+ *     // order contains vertices reachable from 0 in topological order
  * }
- * @endcode
- * 
- * **Use Cases:**
- * - Computing build dependencies for a specific target
- * - Finding prerequisite courses to complete a specific course
- * - Resolving package dependencies for installing one package
- * - Processing only the relevant portion of a large dependency graph
+ * ```
  * 
  * @see topological_sort(const G&, OutputIterator) for full-graph variant
  * @see topological_sort(const G&, const Sources&, OutputIterator) for multi-source variant
@@ -471,76 +399,57 @@ bool topological_sort(const G& g, const vertex_id_t<G>& source, OutputIterator r
 /**
  * @brief Compute topological ordering of all vertices in a directed acyclic graph (DAG).
  * 
- * Performs topological sort of the entire graph using depth-first search. Outputs 
- * all vertices in reverse finish-time order, which is a valid topological ordering 
- * if the graph is acyclic. Returns false if a cycle is detected (back edge found).
+ * Performs topological sort of the entire graph using depth-first search. Outputs all
+ * vertices in reverse finish-time order. Returns false if a cycle is detected.
  * 
- * This is the most common topological sort use case: ordering all vertices in the graph
- * such that for every directed edge (u,v), vertex u appears before vertex v.
+ * @tparam G              Graph type satisfying adjacency_list concept.
+ * @tparam OutputIterator  Output iterator for writing vertex IDs in topological order.
  * 
- * **Parameters:**
+ * @param g       The directed graph to sort.
+ * @param result  Output iterator where vertex IDs are written in topological order.
  * 
- * @tparam G Graph type satisfying `adjacency_list` concept
- *   - **Requires:** `adjacency_list<G>`
- *   - **Description:** The directed graph type to operate on
+ * @return true if graph is acyclic, false if cycle detected.
  * 
- * @tparam OutputIterator Iterator type for writing vertex IDs in topological order
- *   - **Requires:** `std::output_iterator<OutputIterator, vertex_id_t<G>>`
- *   - **Description:** Output iterator that accepts vertex IDs
- *   - **Typical:** `std::back_inserter(vector)`, `std::ostream_iterator`, etc.
- * 
- * @param g The directed graph to sort
- *   - **Precondition:** Graph must be directed (undirected graphs not supported)
- *   - **Postcondition:** Graph remains unmodified
- * 
- * @param result Output iterator where vertex IDs are written in topological order
- *   - **Postcondition:** If returns true, contains all vertices in valid topological order
- *   - **Postcondition:** If returns false, may contain partial results (indeterminate)
- * 
- * **Return Value:**
- * - **Type:** `bool`
- * - **Returns:** `true` if graph is acyclic and ordering is valid
- * - **Returns:** `false` if cycle is detected (graph is not a DAG)
+ * **Mandates:**
+ * - G must satisfy adjacency_list
+ * - OutputIterator must satisfy std::output_iterator<vertex_id_t<G>>
  * 
  * **Preconditions:**
- * 1. Graph `g` must be directed
- * 2. Graph should be a DAG (no cycles) for successful result
+ * - Graph g must be directed
+ * - Graph should be a DAG for successful result
+ * 
+ * **Effects:**
+ * - Performs DFS from each unvisited vertex, recording finish order
+ * - Outputs all vertices in reverse finish-time order (topological order)
+ * - Does not modify graph g
  * 
  * **Postconditions:**
- * 1. If returns `true`:
- *    - For every directed edge (u,v), u appears before v in output
- *    - All vertices in graph are written to output exactly once
- *    - Output represents a valid topological ordering
- * 2. If returns `false`:
- *    - A cycle was detected during DFS traversal
- *    - Output iterator may contain partial results
- *    - No guarantee about output content
+ * - If returns true: for every directed edge (u,v), u appears before v in output.
+ *   All vertices appear exactly once.
+ * - If returns false: cycle detected; output may contain partial results
+ * 
+ * **Returns:**
+ * - true if graph is acyclic and ordering is valid (bool)
+ * - false if cycle detected (graph is not a DAG)
+ * 
+ * **Throws:**
+ * - std::bad_alloc if memory allocation fails
+ * - Exception guarantee: Basic. Graph g remains unchanged; output may be partial.
  * 
  * **Complexity:**
- * - **Time:** O(V + E) where V = number of vertices, E = number of edges
- * - **Space:** O(V) for color array, finish order vector, and DFS stack
+ * - Time: O(V + E) where V = number of vertices, E = number of edges
+ * - Space: O(V) for color array, finish order vector, and DFS stack
  * 
- * **Exception Safety:**
- * - **Basic guarantee:** If exception thrown, graph remains unchanged
- * - **Throws:** May throw `std::bad_alloc` if memory allocation fails
- * - **Note:** Output iterator state is indeterminate after exception
- * 
- * **Example:**
- * @code
- * using Graph = vov_void;
- * Graph g({{0,1}, {0,2}, {1,3}, {2,3}});
- * 
+ * ## Example Usage
+ *
+ * ```cpp
  * std::vector<uint32_t> order;
  * if (topological_sort(g, std::back_inserter(order))) {
- *     // order contains: [0, 1, 2, 3] or [0, 2, 1, 3]
- *     // Both are valid topological orderings
- *     for (auto v : order) {
- *         std::cout << v << " ";
- *     }
+ *     // order contains all vertices in valid topological order
  * } else {
- *     std::cout << "Graph contains a cycle!\n";
+ *     // Graph contains a cycle
  * }
- * @endcode
+ * ```
  * 
  * @see topological_sort(const G&, vertex_id_t<G>, OutputIterator) for single-source variant
  * @see topological_sort(const G&, const Sources&, OutputIterator) for multi-source variant

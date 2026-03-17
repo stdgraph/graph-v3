@@ -15,6 +15,7 @@
 - [Include](#include)
 - [Signature](#signature)
 - [Parameters](#parameters)
+- [Supported Graph Properties](#supported-graph-properties)
 - [Examples](#examples)
   - [Basic MIS](#example-1-basic-mis)
   - [Seed Sensitivity](#example-2-seed-sensitivity)
@@ -22,9 +23,13 @@
   - [Complete Graph — MIS Is a Single Vertex](#example-4-complete-graph--mis-is-a-single-vertex)
   - [Disconnected Graph](#example-5-disconnected-graph)
   - [Self-Loop Exclusion](#example-6-self-loop-exclusion)
-- [Complexity](#complexity)
+- [Mandates](#mandates)
 - [Preconditions](#preconditions)
-- [Notes](#notes)
+- [Effects](#effects)
+- [Returns](#returns)
+- [Throws](#throws)
+- [Complexity](#complexity)
+- [Remarks](#remarks)
 - [See Also](#see-also)
 
 ## Overview
@@ -88,6 +93,27 @@ to the output iterator.
 | `g` | Graph satisfying `adjacency_list` |
 | `mis` | Output iterator receiving vertex IDs in the MIS |
 | `seed` | Starting vertex ID (default: 0). The seed is always included in the MIS (unless it has a self-loop). |
+
+## Supported Graph Properties
+
+**Directedness:**
+- ✅ Undirected graphs (each edge stored bidirectionally)
+- ✅ Directed graphs (adjacency used for exclusion)
+
+**Edge Properties:**
+- ✅ Unweighted edges
+- ✅ Weighted edges (weights ignored)
+- ✅ Multi-edges (do not affect MIS result)
+- ⚠️ Self-loops — vertex with self-loop excluded from MIS (adjacent to itself)
+
+**Graph Structure:**
+- ✅ Connected graphs
+- ✅ Disconnected graphs (all components processed)
+- ✅ Empty graphs (all vertices included in MIS)
+
+**Container Requirements:**
+- Required: `adjacency_list<G>`
+- Output: `std::output_iterator<OutputIterator, vertex_id_t<G>>`
 
 ## Examples
 
@@ -213,6 +239,31 @@ size_t count = maximal_independent_set(g, std::back_inserter(result), 1u);
 // neighbors (other than itself).
 ```
 
+## Mandates
+
+- `G` must satisfy `adjacency_list<G>`
+- `OutputIterator` must satisfy `std::output_iterator<vertex_id_t<G>>`
+
+## Preconditions
+
+- `seed` must be a valid vertex ID (`0 ≤ seed < num_vertices(g)`)
+- Self-loops exclude a vertex from the MIS (a vertex adjacent to itself is not
+  independent)
+
+## Effects
+
+- Writes MIS vertex IDs to the output iterator
+- Does not modify the graph `g`
+
+## Returns
+
+`size_t` — the number of vertices in the maximal independent set.
+
+## Throws
+
+- `std::bad_alloc` if internal allocations fail
+- Exception guarantee: Basic. Graph `g` remains unchanged; output may be partial.
+
 ## Complexity
 
 | Metric | Value |
@@ -220,14 +271,7 @@ size_t count = maximal_independent_set(g, std::back_inserter(result), 1u);
 | Time | O(V + E) |
 | Space | O(V) for the exclusion set |
 
-## Preconditions
-
-- Graph must satisfy `adjacency_list<G>`.
-- Seed must be a valid vertex ID (`0 ≤ seed < num_vertices(g)`).
-- Self-loops exclude a vertex from the MIS (a vertex adjacent to itself is not
-  independent).
-
-## Notes
+## Remarks
 
 - The greedy order processes vertices starting from the seed, then continues
   through all vertices in index order. The first non-excluded vertex after the

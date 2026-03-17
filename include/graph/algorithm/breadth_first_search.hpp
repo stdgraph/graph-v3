@@ -49,54 +49,6 @@ using adj_list::find_vertex;
  * from any source are discovered in the first wave, making this useful for multi-source
  * shortest path problems and parallel/concurrent reachability analysis.
  * 
- * @par Complexity Analysis
- * 
- * | Case | Time | Space |
- * |------|------|-------|
- * | All cases | O(V + E) | O(V) |
- * 
- * Where V = number of vertices, E = number of edges
- * 
- * **Time Complexity:**
- * - Each vertex is visited exactly once: O(V)
- * - Each edge is examined exactly once: O(E)
- * - Queue operations (push/pop) are O(1) each
- * - Total: O(V + E) for all cases
- * 
- * **Space Complexity:**
- * - Visited array: O(V)
- * - Queue: O(V) worst case (all vertices at same level)
- * - Total auxiliary space: O(V)
- * 
- * @par Supported Graph Properties
- * 
- * **Directedness:**
- * - ✅ Directed graphs
- * - ✅ Undirected graphs
- * - ✅ Mixed (with edge direction semantics)
- * 
- * **Edge Properties:**
- * - ✅ Unweighted edges (BFS finds shortest paths)
- * - ✅ Weighted edges (weights ignored, treats as unweighted)
- * - ✅ Uniform weights (optimal shortest path algorithm)
- * - ✅ Multi-edges: All edges examined, vertices visited once
- * - ✅ Self-loops: Examined but don't affect traversal
- * 
- * **Graph Structure:**
- * - ✅ Connected graphs
- * - ✅ Disconnected graphs (visits reachable component)
- * - ✅ Acyclic graphs (DAG)
- * - ✅ Cyclic graphs (visited tracking prevents infinite loops)
- * - ✅ Trees (optimal level-order traversal)
- * 
- * **Container Requirements:**
- * - Requires: `adjacency_list<G>` (index or mapped vertex containers)
- * - Requires: `input_range<Sources>` with convertible elements
- * - Works with: All `dynamic_graph` container combinations
- * - Works with: Vector-based containers (vov, vol, vofl, etc.)
- * - Works with: Map-based containers (mov, mod, uov, uod, etc.)
- * - Visited tracking: vector<bool> for index graphs, unordered_map for mapped
- * 
  * @tparam G Graph type satisfying adjacency_list concept
  * @tparam Sources Input range of source vertex IDs
  * @tparam Visitor Visitor type with optional callback methods
@@ -105,105 +57,101 @@ using adj_list::find_vertex;
  * @param sources Range of starting vertex IDs
  * @param visitor Visitor object to receive traversal events (default: empty_visitor)
  * 
- * @pre `g` must not be modified during traversal
- * @pre All vertex IDs in `sources` must be valid: `source < num_vertices(g)`
- * @pre `Visitor` methods must not modify graph structure
+ * @return void. Results delivered via visitor callbacks.
  * 
- * @post All vertices reachable from any source are visited exactly once
- * @post `visitor` callbacks invoked in BFS order
- * @post Graph `g` is unchanged
+ * **Mandates:**
+ * - G must satisfy adjacency_list (index or mapped vertex containers)
+ * - Sources must be input_range with values convertible to vertex_id_t<G>
+ * - Visitor callbacks (if present) must accept appropriate parameters
  * 
- * @par Exception Safety
+ * **Preconditions:**
+ * - g must not be modified during traversal
+ * - All vertex IDs in sources must be valid vertex IDs in g
+ * - Visitor methods must not modify graph structure
  * 
- * **Guarantee:** Basic exception safety
+ * **Effects:**
+ * - Does not modify the graph g
+ * - Invokes visitor callbacks in BFS traversal order
+ * - Vertices are visited in level-order (distance from sources)
+ * 
+ * **Postconditions:**
+ * - All vertices reachable from any source are visited exactly once
+ * - Visitor callbacks invoked in BFS order
+ * - Graph g is unchanged
  * 
  * **Throws:**
- * - May throw `std::bad_alloc` if visited array or queue cannot allocate memory
+ * - std::bad_alloc if visited array or queue cannot allocate memory
  * - May propagate exceptions from visitor callbacks
  * - May propagate exceptions from container operations
+ * - Exception guarantee: Basic. If an exception is thrown, graph g remains unchanged;
+ *   visitor state depends on implementation; partial traversal may have occurred.
  * 
- * **State after exception:**
- * - Graph `g` remains unchanged
- * - Visitor state depends on implementation
- * - Partial traversal may have occurred
+ * **Complexity:**
+ * - Time: O(V + E) — each vertex visited once, each edge examined once
+ * - Space: O(V) for visited array and queue
  * 
- * @par Visitor Callbacks
+ * **Remarks:**
+ * - Uses std::queue for FIFO vertex processing
+ * - Visited tracking: vector<bool> for index graphs, unordered_map for mapped graphs
+ * - No distance tracking (use BFS views for distances)
+ * - Multi-source as primary interface: single-source is a special case with no overhead
  * 
- * The visitor can optionally implement any of these methods:
+ * **Visitor Callbacks:**
+ * - on_initialize_vertex(vertex_id): Called when vertex is added to initial sources
+ * - on_discover_vertex(vertex_id): Called when vertex is first encountered
+ * - on_examine_vertex(vertex_id): Called when vertex is dequeued for processing
+ * - on_examine_edge(edge): Called for each outgoing edge examined
+ * - on_finish_vertex(vertex_id): Called after all edges examined
+ * All callbacks are optional via SFINAE (has_on_* concept checks).
  * 
- * - `on_initialize_vertex(vertex_id)`: Called when vertex is added to initial sources
- * - `on_discover_vertex(vertex_id)`: Called when vertex is first encountered
- * - `on_examine_vertex(vertex_id)`: Called when vertex is dequeued for processing
- * - `on_examine_edge(edge)`: Called for each outgoing edge examined
- * - `on_finish_vertex(vertex_id)`: Called after all edges examined
- * 
- * All callbacks are optional via SFINAE (`has_on_*` concept checks).
- * 
- * @par Example Usage
- * 
- * **Basic traversal:**
- * @code
- * using Graph = container::dynamic_graph<...>;
+ * **Supported Graph Properties:**
+ *
+ * Directedness:
+ * - ✅ Directed graphs
+ * - ✅ Undirected graphs
+ *
+ * Edge Properties:
+ * - ✅ Unweighted edges (BFS finds shortest paths)
+ * - ✅ Weighted edges (weights ignored, treats as unweighted)
+ * - ✅ Multi-edges (all edges examined, vertices visited once)
+ * - ✅ Self-loops (examined but don't affect traversal)
+ * - ✅ Cycles (visited tracking prevents infinite loops)
+ *
+ * Graph Structure:
+ * - ✅ Connected graphs
+ * - ✅ Disconnected graphs (visits reachable component)
+ * - ✅ Empty graphs (returns immediately)
+ *
+ * ## Example Usage
+ *
+ * ```cpp
+ * #include <graph/graph.hpp>
+ * #include <graph/algorithm/breadth_first_search.hpp>
+ *
+ * using namespace graph;
+ *
+ * // Basic traversal:
  * Graph g({{0,1}, {1,2}, {2,3}});
- * 
  * std::vector<uint32_t> sources = {0};
  * breadth_first_search(g, sources); // Traverses 0->1->2->3
- * @endcode
- * 
- * **With custom visitor:**
- * @code
+ *
+ * // With custom visitor:
  * struct PrintVisitor {
- *     void on_discover_vertex(auto v) {
+ *     void on_discover_vertex(auto& g, auto v) {
  *         std::cout << "Discovered: " << v << "\n";
  *     }
  * };
- * 
  * PrintVisitor visitor;
- * std::vector<uint32_t> sources = {0};
  * breadth_first_search(g, sources, visitor);
- * @endcode
- * 
- * **Multi-source BFS:**
- * @code
- * std::vector<uint32_t> sources = {0, 5, 10}; // Start from 3 vertices
- * breadth_first_search(g, sources); // Explores from all simultaneously
- * @endcode
- * 
- * @par Implementation Notes
- * 
- * **Data Structures:**
- * - Queue: `std::queue` for FIFO vertex processing
- * - Visited: `vertex_property_map<G, bool>` — vector<bool> for index graphs, unordered_map for mapped
- * - No distance tracking (use BFS views for distances)
- * 
- * **Design Decisions:**
- * 1. **Why visitor pattern?**
- *    - Flexibility: Clients customize behavior without modifying algorithm
- *    - Performance: Callbacks inlined via template, zero overhead
- *    - Extensibility: Easy to add tracking, statistics, early termination
- * 
- * 2. **Why multi-source as primary interface?**
- *    - Generality: Single-source is special case
- *    - Efficiency: No overhead vs separate single-source implementation
- *    - Use cases: Multi-source shortest paths, reachability from sets
- * 
- * 3. **Why vertex_property_map<G, bool> for visited tracking?**
- *    - For index graphs: vector<bool>, 1 bit per vertex (8x smaller than vector<char>)
- *    - For mapped graphs: unordered_map<vertex_id_t<G>, bool>, O(1) amortized lookup
- *    - Uniform API: make_vertex_property_map<G, bool>(g, false) works for both
- * 
- * **Optimization Opportunities:**
- * - For small graphs: Use std::bitset if vertex count known at compile time
- * - For parallel BFS: Use concurrent queue and atomic visited flags
- * 
+ *
+ * // Multi-source BFS:
+ * std::vector<uint32_t> multi_sources = {0, 5, 10};
+ * breadth_first_search(g, multi_sources); // Explores from all simultaneously
+ * ```
+ *
  * @see breadth_first_search(G&&, vertex_id_t<G>, Visitor&&) Single-source convenience wrapper
  * @see views::vertices_bfs BFS view for range-based traversal
  * @see connected_components For component detection using BFS
- * 
- * @par References
- * 
- * - Moore, E. F. (1959). "The shortest path through a maze". *Proceedings of the International Symposium on the Theory of Switching*. Harvard University Press.
- * - Cormen et al. (2009). *Introduction to Algorithms* (3rd ed.). MIT Press. Section 22.2.
  */
 template <adjacency_list G, std::ranges::input_range Sources, class Visitor = empty_visitor>
 requires std::convertible_to<std::ranges::range_value_t<Sources>, vertex_id_t<G>>
@@ -279,17 +227,7 @@ void breadth_first_search(G&&            g, // graph
  * @brief Single-source breadth-first search with visitor pattern.
  * 
  * Convenience wrapper for BFS starting from a single source vertex.
- * This function delegates to the multi-source version by wrapping the
- * source in a std::array, providing the same visitor pattern capabilities
- * with simpler API for the common single-source case.
- * 
- * @par Complexity Analysis
- * 
- * | Case | Time | Space |
- * |------|------|-------|
- * | All cases | O(V + E) | O(V) |
- * 
- * Identical to multi-source version since delegation overhead is negligible.
+ * Delegates to the multi-source version by wrapping the source in a std::array.
  * 
  * @tparam G Graph type satisfying adjacency_list concept
  * @tparam Visitor Visitor type with optional callback methods
@@ -298,38 +236,30 @@ void breadth_first_search(G&&            g, // graph
  * @param source Starting vertex ID
  * @param visitor Visitor object to receive traversal events (default: empty_visitor)
  * 
- * @pre `source` must be a valid vertex ID in the graph
- * @post All vertices reachable from `source` are visited exactly once
+ * @return void. Results delivered via visitor callbacks.
  * 
- * @par Exception Safety
- * Basic exception safety (same as multi-source version)
+ * **Preconditions:**
+ * - source must be a valid vertex ID in g
  * 
- * @par Example Usage
+ * **Postconditions:**
+ * - All vertices reachable from source are visited exactly once
  * 
- * **Simple traversal:**
- * @code
- * using Graph = container::dynamic_graph<...>;
+ * **Throws:**
+ * - Exception guarantee: Basic (same as multi-source version).
+ * 
+ * **Complexity:**
+ * - Time: O(V + E)
+ * - Space: O(V)
+ * - Identical to multi-source version; delegation overhead is negligible.
+ *
+ * ## Example Usage
+ *
+ * ```cpp
  * Graph g({{0,1}, {1,2}, {2,3}});
  * breadth_first_search(g, 0); // Start from vertex 0
- * @endcode
- * 
- * **With visitor:**
- * @code
- * struct DepthTracker {
- *     std::unordered_map<uint32_t, int> depths;
- *     int current_depth = 0;
- *     
- *     void on_discover_vertex(auto v) {
- *         depths[v] = current_depth;
- *     }
- * };
- * 
- * DepthTracker tracker;
- * breadth_first_search(g, 0, tracker);
- * // tracker.depths now contains BFS depths from vertex 0
- * @endcode
- * 
- * @see breadth_first_search(G&&, Sources&&, Visitor&&) Multi-source version (implementation)
+ * ```
+ *
+ * @see breadth_first_search(G&&, Sources&&, Visitor&&) Multi-source version
  * @see views::vertices_bfs BFS view for range-based traversal
  */
 template <adjacency_list G, class Visitor = empty_visitor>

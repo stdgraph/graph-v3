@@ -15,15 +15,19 @@
 - [Include](#include)
 - [Signature](#signature)
 - [Parameters](#parameters)
+- [Supported Graph Properties](#supported-graph-properties)
 - [Examples](#examples)
   - [Collecting Similarity Scores](#example-1-collecting-similarity-scores)
   - [Triangle — Shared Neighbors](#example-2-triangle--shared-neighbors)
   - [Star Graph — No Shared Neighbors](#example-3-star-graph--no-shared-neighbors)
   - [Threshold Filtering — Link Prediction](#example-4-threshold-filtering--link-prediction)
   - [Most Similar Vertex Pairs](#example-5-most-similar-vertex-pairs)
-- [Complexity](#complexity)
+- [Mandates](#mandates)
 - [Preconditions](#preconditions)
-- [Notes](#notes)
+- [Effects](#effects)
+- [Throws](#throws)
+- [Complexity](#complexity)
+- [Remarks](#remarks)
 - [See Also](#see-also)
 
 ## Overview
@@ -91,6 +95,26 @@ void out(vertex_id_t<G> uid, vertex_id_t<G> vid,
 |-----------|-------------|
 | `g` | Graph satisfying `adjacency_list` |
 | `out` | Callback invoked for each directed edge (u, v) with the Jaccard coefficient. Self-loops are skipped. |
+
+## Supported Graph Properties
+
+**Directedness:**
+- ✅ Directed graphs (coefficient computed per directed edge)
+- ✅ Undirected graphs (with bidirectional storage; J(u,v) == J(v,u))
+
+**Edge Properties:**
+- ✅ Unweighted edges
+- ✅ Weighted edges (weights ignored — only adjacency matters)
+- ✅ Multi-edges (each directed edge triggers the callback)
+- ❌ Self-loops — skipped (not passed to callback, excluded from neighbor sets)
+
+**Graph Structure:**
+- ✅ Connected graphs
+- ✅ Disconnected graphs
+- ✅ Empty graphs (no-op — no edges to process)
+
+**Container Requirements:**
+- Required: `adjacency_list<G>`
 
 ## Examples
 
@@ -209,6 +233,29 @@ std::cout << "Most similar: " << best_u << " - " << best_v
 // inside a community, far from the boundary.
 ```
 
+## Mandates
+
+- `G` must satisfy `adjacency_list<G>`
+- `OutOp` must be callable with `(vertex_id_t<G>, vertex_id_t<G>, edge_reference_t<G>, double)`
+
+## Preconditions
+
+- Self-loops are skipped (not passed to the callback)
+- The callback is invoked once per **directed** edge — for undirected graphs
+  with bidirectional storage, expect two calls per logical edge
+
+## Effects
+
+- Invokes `out(uid, vid, uv, coefficient)` for each non-self-loop directed edge
+- Does not modify the graph `g`
+- Precomputes neighbor sets (`unordered_set` per vertex) internally
+
+## Throws
+
+- `std::bad_alloc` if internal allocations fail (neighbor set construction)
+- Exception guarantee: Basic. Graph `g` remains unchanged; callback may have been
+  invoked for a subset of edges.
+
 ## Complexity
 
 | Metric | Value |
@@ -219,14 +266,7 @@ std::cout << "Most similar: " << best_u << " - " << best_v
 The `unordered_set` construction is O(V + E) total. Each edge intersection is
 proportional to the size of the smaller neighbor set.
 
-## Preconditions
-
-- Graph must satisfy `adjacency_list<G>`.
-- Self-loops are skipped (not passed to the callback).
-- The callback is invoked once per **directed** edge — for undirected graphs
-  with bidirectional storage, expect two calls per logical edge.
-
-## Notes
+## Remarks
 
 - **Self-loops are excluded** from the neighbor sets. A vertex with a self-loop
   does not count itself as a neighbor for Jaccard computation (unlike

@@ -106,10 +106,6 @@ void find_negative_cycle(G&                              g,
  * @return optional<vertex_id_t<G>>. Returns empty if no negative cycle detected. Returns a vertex ID
  *         in the negative cycle if one exists. Use find_negative_cycle() to extract all cycle vertices.
  * 
- * **Complexity:**
- * - Time: O(V * E) - iterates over all edges V times
- * - Space: O(1) auxiliary space (excluding output parameters)
- * 
  * **Mandates:**
  * - G must satisfy adjacency_list (index or mapped graphs supported)
  * - Sources must be input_range with values convertible to vertex_id_t<G>
@@ -123,6 +119,11 @@ void find_negative_cycle(G&                              g,
  * - predecessor must contain an entry for each vertex of g (unless using null_predecessors)
  * - Weight function must not throw or modify graph state
  * 
+ * **Effects:**
+ * - Modifies distances: Sets distances[v] for all vertices v
+ * - Modifies predecessor: Sets predecessor[v] for all processed edges
+ * - Does not modify the graph g
+ * 
  * **Postconditions:**
  * - distances[s] == 0 for all sources s
  * - If no negative cycle: For reachable v, distances[v] contains shortest distance from nearest source
@@ -130,19 +131,20 @@ void find_negative_cycle(G&                              g,
  * - If negative cycle detected: distances and predecessor may contain intermediate values
  * - For unreachable vertices v: distances[v] == numeric_limits<Distance>::max()
  * 
- * **Effects:**
- * - Modifies distances: Sets distances[v] for all vertices v
- * - Modifies predecessor: Sets predecessor[v] for all processed edges
- * - Does not modify the graph g
- * 
- * **Exception Safety:**
- * Basic guarantee. If an exception is thrown:
- * - Graph g remains unchanged
- * - distances and predecessor may be partially modified (indeterminate state)
+ * **Returns:**
+ * - optional<vertex_id_t<G>>: empty if no negative cycle detected; contains a vertex ID in the
+ *   negative cycle if one exists. Use find_negative_cycle() to extract all cycle vertices.
+ * - Attribute: [[nodiscard]]
  * 
  * **Throws:**
  * - std::out_of_range if a source vertex ID is out of range
  * - std::out_of_range if distances or predecessor are undersized
+ * - Exception guarantee: Basic. If an exception is thrown, graph g remains unchanged;
+ *   distances and predecessor may be partially modified (indeterminate state).
+ * 
+ * **Complexity:**
+ * - Time: O(V * E) - iterates over all edges V times
+ * - Space: O(1) auxiliary space (excluding output parameters)
  * 
  * **Remarks:**
  * - Use Bellman-Ford when: graph has negative weights, need cycle detection, or edges processed sequentially
