@@ -74,8 +74,8 @@ using adj_list::index_vertex_range;
  * **Mandates:**
  * - G must satisfy adjacency_list (index or mapped vertex containers)
  * - Sources must be input_range with values convertible to vertex_id_t<G>
- * - DistanceFn must satisfy distance_function_for<DistanceFn, G> with arithmetic return type
- * - PredecessorFn must satisfy predecessor_function_for<PredecessorFn, G> (or be _null_predecessor_fn)
+ * - DistanceFn must satisfy distance_fn_for<DistanceFn, G>
+ * - PredecessorFn must satisfy predecessor_fn_for<PredecessorFn, G> (or be _null_predecessor_fn)
  * - WF must satisfy basic_edge_weight_function
  * 
  * **Preconditions:**
@@ -94,7 +94,7 @@ using adj_list::index_vertex_range;
  * - distance(g, s) == 0 for all sources s
  * - For reachable vertices v: distance(g, v) contains shortest distance from nearest source
  * - For reachable vertices v: predecessor(g, v) contains predecessor in shortest path tree
- * - For unreachable vertices v: distance(g, v) == numeric_limits<Distance>::max()
+ * - For unreachable vertices v: distance(g, v) == infinite_distance<Distance>()
  * 
  * **Throws:**
  * - std::out_of_range if a source vertex ID is out of range
@@ -148,7 +148,7 @@ using adj_list::index_vertex_range;
  *     // Weighted directed graph: 0 --(1.0)--> 1 --(2.0)--> 2 --(3.0)--> 3
  *     Graph g({{0,1,1.0},{1,2,2.0},{2,3,3.0}});
  *
- *     constexpr auto INF = std::numeric_limits<double>::max();
+ *     constexpr auto INF = infinite_distance<double>();
  *     std::vector<double>   dist(num_vertices(g), INF);
  *     std::vector<uint32_t> pred(num_vertices(g), 0);
  *
@@ -175,8 +175,8 @@ template <
       class Visitor = empty_visitor,
       class Compare = less<distance_fn_value_t<DistanceFn, G>>,
       class Combine = plus<distance_fn_value_t<DistanceFn, G>>>
-requires distance_function_for<DistanceFn, G> &&                                //
-         predecessor_function_for<PredecessorFn, G> &&                          //
+requires distance_fn_for<DistanceFn, G> &&                                //
+         predecessor_fn_for<PredecessorFn, G> &&                          //
          convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&              //
          basic_edge_weight_function<G, WF, distance_fn_value_t<DistanceFn, G>, Compare, Combine>
 constexpr void dijkstra_shortest_paths(
@@ -196,8 +196,8 @@ constexpr void dijkstra_shortest_paths(
   using distance_type = distance_fn_value_t<DistanceFn, G>;
   using weight_type   = invoke_result_t<WF, const graph_type&, edge_t<graph_type>>;
 
-  constexpr auto zero     = shortest_path_zero<distance_type>();
-  constexpr auto infinite = shortest_path_infinite_distance<distance_type>();
+  constexpr auto zero     = zero_distance<distance_type>();
+  constexpr auto infinite = infinite_distance<distance_type>();
 
   // relaxing the target is the function of reducing the distance from the source to the target
   auto relax_target = [&g, &predecessor, &distance, &compare, &combine, &weight] //
@@ -346,8 +346,8 @@ template <
       class Visitor = empty_visitor,
       class Compare = less<distance_fn_value_t<DistanceFn, G>>,
       class Combine = plus<distance_fn_value_t<DistanceFn, G>>>
-requires distance_function_for<DistanceFn, G> &&                                //
-         predecessor_function_for<PredecessorFn, G> &&                          //
+requires distance_fn_for<DistanceFn, G> &&                                //
+         predecessor_fn_for<PredecessorFn, G> &&                          //
          basic_edge_weight_function<G, WF, distance_fn_value_t<DistanceFn, G>, Compare, Combine>
 constexpr void dijkstra_shortest_paths(
       G&&                   g,
@@ -404,7 +404,7 @@ template <
       class Visitor = empty_visitor,
       class Compare = less<distance_fn_value_t<DistanceFn, G>>,
       class Combine = plus<distance_fn_value_t<DistanceFn, G>>>
-requires distance_function_for<DistanceFn, G> &&                                                //
+requires distance_fn_for<DistanceFn, G> &&                                                //
          convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&                              //
          basic_edge_weight_function<G, WF, distance_fn_value_t<DistanceFn, G>, Compare, Combine>
 constexpr void dijkstra_shortest_distances(
@@ -438,7 +438,7 @@ template <
       class Visitor = empty_visitor,
       class Compare = less<distance_fn_value_t<DistanceFn, G>>,
       class Combine = plus<distance_fn_value_t<DistanceFn, G>>>
-requires distance_function_for<DistanceFn, G> &&                                                //
+requires distance_fn_for<DistanceFn, G> &&                                                //
          basic_edge_weight_function<G, WF, distance_fn_value_t<DistanceFn, G>, Compare, Combine>
 constexpr void dijkstra_shortest_distances(
       G&&                   g,

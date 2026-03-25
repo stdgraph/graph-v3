@@ -80,7 +80,7 @@ from the predecessor array.
 // Multi-source, distances + predecessors
 [[nodiscard]] constexpr optional<vertex_id_t<G>>
 bellman_ford_shortest_paths(G&& g, const Sources& sources,
-    Distances& distances, Predecessors& predecessors,
+    DistanceFn&& distance, PredecessorFn&& predecessor,
     WF&& weight = /* default returns 1 */,
     Visitor&& visitor = empty_visitor(),
     Compare&& compare = less<>{},
@@ -89,7 +89,7 @@ bellman_ford_shortest_paths(G&& g, const Sources& sources,
 // Single-source, distances + predecessors
 [[nodiscard]] constexpr optional<vertex_id_t<G>>
 bellman_ford_shortest_paths(G&& g, const vertex_id_t<G>& source,
-    Distances& distances, Predecessors& predecessors,
+    DistanceFn&& distance, PredecessorFn&& predecessor,
     WF&& weight,
     Visitor&& visitor = empty_visitor(),
     Compare&& compare = less<>{},
@@ -98,7 +98,7 @@ bellman_ford_shortest_paths(G&& g, const vertex_id_t<G>& source,
 // Multi-source, distances only
 [[nodiscard]] constexpr optional<vertex_id_t<G>>
 bellman_ford_shortest_distances(G&& g, const Sources& sources,
-    Distances& distances,
+    DistanceFn&& distance,
     WF&& weight,
     Visitor&& visitor = empty_visitor(),
     Compare&& compare = less<>{},
@@ -107,7 +107,7 @@ bellman_ford_shortest_distances(G&& g, const Sources& sources,
 // Single-source, distances only
 [[nodiscard]] constexpr optional<vertex_id_t<G>>
 bellman_ford_shortest_distances(G&& g, const vertex_id_t<G>& source,
-    Distances& distances,
+    DistanceFn&& distance,
     WF&& weight,
     Visitor&& visitor = empty_visitor(),
     Compare&& compare = less<>{},
@@ -125,8 +125,8 @@ void find_negative_cycle(G& g, const Predecessors& predecessor,
 |-----------|-------------|
 | `g` | Graph satisfying `adjacency_list` |
 | `source` / `sources` | Source vertex ID or range of source vertex IDs |
-| `distances` | Subscriptable by `vertex_id_t<G>`. For index graphs, a pre-sized `std::vector`; for mapped graphs, use `make_vertex_property_map<G, T>(g, init)`. Must satisfy `vertex_property_map_for<Distances, G>`. |
-| `predecessors` | Subscriptable by `vertex_id_t<G>`. For index graphs, a pre-sized `std::vector`; for mapped graphs, use `make_vertex_property_map<G, T>(g, init)`. Must satisfy `vertex_property_map_for<Predecessors, G>`. |
+| `distance` | Callable `(const G&, vertex_id_t<G>) -> Distance&` returning a mutable reference to the per-vertex distance. For containers: wrap with `container_value_fn(dist)`. Must satisfy `distance_fn_for<DistanceFn, G>`. |
+| `predecessor` | Callable `(const G&, vertex_id_t<G>) -> Predecessor&` returning a mutable reference to the per-vertex predecessor. For containers: wrap with `container_value_fn(pred)`. Must satisfy `predecessor_fn_for<PredecessorFn, G>`. Use `_null_predecessor` when path reconstruction is not needed. |
 | `weight` | Callable `WF(g, uv)` returning edge weight (may be negative). Must satisfy `basic_edge_weight_function`. |
 | `visitor` | Optional visitor struct with callback methods (see below). Default: `empty_visitor{}`. |
 | `compare` | Comparison function for distance values. Default: `std::less<>{}`. |
@@ -176,11 +176,12 @@ each edge satisfies the triangle inequality.
 - ✅ DAGs (works correctly, though topological-order relaxation is faster)
 - ⚠️ Negative-weight cycles — detected and reported; distances undefined for affected vertices
 
-**Container Requirements:**
+**Property Function Requirements:**
 - Required: `adjacency_list<G>`
-- `distances` must satisfy `vertex_property_map_for<Distances, G>`
-- `predecessors` must satisfy `vertex_property_map_for<Predecessors, G>`
+- `distance` must satisfy `distance_fn_for<DistanceFn, G>`
+- `predecessor` must satisfy `predecessor_fn_for<PredecessorFn, G>`
 - `weight` must satisfy `basic_edge_weight_function`
+- Use `container_value_fn(vec)` to adapt a `std::vector` or similar container
 
 ## Examples
 
@@ -205,12 +206,13 @@ std::vector<uint32_t> pred(num_vertices(g));
 
 init_shortest_paths(dist, pred);
 
-auto cycle = bellman_ford_shortest_paths(g, 0u, dist, pred,
+auto cycle = bellman_ford_shortest_paths(g, 0u, container_value_fn(dist), container_value_fn(pred),
     [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
 if (!cycle) {
     // No negative cycle — dist[v] is the shortest distance from source 0
     // dist[0] = 0, dist[1] = 6, dist[2] = 7, dist[3] = 2, dist[4] = 4
+    // Unreachable vertices retain infinite_distance<int>()
 }
 ```
 
@@ -228,7 +230,7 @@ std::vector<uint32_t> pred(num_vertices(g));
 
 init_shortest_paths(dist, pred);
 
-auto cycle = bellman_ford_shortest_paths(g, 0u, dist, pred,
+auto cycle = bellman_ford_shortest_paths(g, 0u, container_value_fn(dist), container_value_fn(pred),
     [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
 if (cycle) {
@@ -245,7 +247,7 @@ if (cycle) {
 Use `find_negative_cycle` to obtain the full cycle from the predecessor array.
 
 ```cpp
-auto cycle = bellman_ford_shortest_paths(g, 0u, dist, pred,
+auto cycle = bellman_ford_shortest_paths(g, 0u, container_value_fn(dist), container_value_fn(pred),
     [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
 if (cycle) {
@@ -272,7 +274,7 @@ std::vector<uint32_t> pred(num_vertices(g));
 init_shortest_paths(dist, pred);
 
 std::array sources{0u, 3u};
-auto cycle = bellman_ford_shortest_paths(g, sources, dist, pred,
+auto cycle = bellman_ford_shortest_paths(g, sources, container_value_fn(dist), container_value_fn(pred),
     [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
 // dist[v] = shortest distance from nearest source to v
@@ -287,11 +289,12 @@ When you don't need predecessors (and can't reconstruct paths), use
 std::vector<int> dist(num_vertices(g));
 init_shortest_paths(dist);
 
-auto cycle = bellman_ford_shortest_distances(g, 0u, dist,
+auto cycle = bellman_ford_shortest_distances(g, 0u, container_value_fn(dist),
     [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
 if (!cycle) {
     // dist[v] = shortest distance from source 0 to v
+    // Unreachable vertices retain infinite_distance<int>()
     // No path reconstruction available (no predecessors)
 }
 ```
@@ -320,7 +323,7 @@ struct NegativeCycleInspector {
 };
 
 NegativeCycleInspector inspector;
-auto cycle = bellman_ford_shortest_paths(g, 0u, dist, pred,
+auto cycle = bellman_ford_shortest_paths(g, 0u, container_value_fn(dist), container_value_fn(pred),
     [](const auto& g, const auto& uv) { return edge_value(g, uv); },
     inspector);
 
@@ -330,24 +333,24 @@ auto cycle = bellman_ford_shortest_paths(g, 0u, dist, pred,
 ## Mandates
 
 - `G` must satisfy `adjacency_list<G>`
-- `Distances` must satisfy `vertex_property_map_for<Distances, G>`
-- `Predecessors` must satisfy `vertex_property_map_for<Predecessors, G>`
+- `DistanceFn` must satisfy `distance_fn_for<DistanceFn, G>`
+- `PredecessorFn` must satisfy `predecessor_fn_for<PredecessorFn, G>` (or use `_null_predecessor`)
 - `WF` must satisfy `basic_edge_weight_function`
 - All overloads are `[[nodiscard]]` — the compiler warns if the return value is discarded
 
 ## Preconditions
 
-- `distances` and `predecessors` must be pre-sized for all vertex IDs in `g`
-- Call `init_shortest_paths(distances, predecessors)` before invoking the algorithm
+- `distance(g, uid)` must be valid for all vertex IDs in `g`
+- Call `init_shortest_paths(dist, pred)` on the underlying containers before invoking the algorithm
 - All source vertex IDs must be valid vertex IDs in `g`
 - **Always check the return value** — if a negative cycle exists, distances are
   undefined for affected vertices
 
 ## Effects
 
-- Writes shortest-path distances to `distances[v]` for all reachable vertices
+- Writes shortest-path distances via `distance(g, v)` for all reachable vertices
   (when no negative cycle exists)
-- Writes predecessor vertex IDs to `predecessors[v]` for path reconstruction
+- Writes predecessor vertex IDs via `predecessor(g, v)` for path reconstruction
   (`bellman_ford_shortest_paths` only)
 - Does not modify the graph `g`
 - Invokes visitor callbacks during relaxation and verification passes

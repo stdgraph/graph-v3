@@ -26,6 +26,7 @@
 #include <stack>
 #include <random>
 #include <numeric>
+#include "graph/algorithm/traversal_common.hpp"
 
 #ifndef GRAPH_CC_HPP
 #  define GRAPH_CC_HPP
@@ -59,18 +60,21 @@ using adj_list::target_id;
  * 
  * @tparam G Graph type (must satisfy index_adjacency_list concept)
  * @tparam GT Graph transpose type (must satisfy index_adjacency_list concept)
- * @tparam Component Random access range for component IDs
+ * @tparam ComponentFn Callable providing per-vertex component ID access:
+ *                     (const G&, vertex_id_t<G>) -> ComponentID&. Must satisfy
+ *                     vertex_property_fn_for<ComponentFn, G>.
  * 
  * @param g The directed graph to analyze
  * @param g_t The transpose of graph g (edges reversed)
- * @param component Output: component[v] = component ID for vertex v
+ * @param component Callable providing per-vertex component access: component(g, uid) -> ComponentID&.
+ *                  For containers: wrap with container_value_fn(c).
  * 
  * @return void. Results are stored in the component output parameter.
  * 
  * **Mandates:**
  * - G must satisfy adjacency_list
  * - GT must satisfy adjacency_list
- * - Component must satisfy vertex_property_map_for<Component, G>
+ * - ComponentFn must satisfy vertex_property_fn_for<ComponentFn, G>
  * 
  * **Preconditions:**
  * - component must contain an entry for each vertex of g
@@ -78,11 +82,11 @@ using adj_list::target_id;
  * - g_t is the transpose of g (all edges reversed)
  * 
  * **Effects:**
- * - Modifies component: Sets component[v] for all vertices v
+ * - Sets component(g, uid) for all vertices via the component function
  * - Does not modify graphs g or g_t
  * 
  * **Postconditions:**
- * - component[v] contains the SCC ID for vertex v
+ * - component(g, uid) contains the SCC ID for vertex uid
  * - Component IDs are assigned 0, 1, 2, ..., num_components-1
  * - Vertices in the same SCC have the same component ID
  * 
@@ -125,7 +129,7 @@ using adj_list::target_id;
  * Graph g_t = transpose(g);
  *
  * std::vector<size_t> component(num_vertices(g));
- * kosaraju(g, g_t, component);
+ * kosaraju(g, g_t, container_value_fn(component));
  * // component = {0, 0, 0, 1}
  * ```
  *
@@ -134,18 +138,17 @@ using adj_list::target_id;
  */
 template <adjacency_list G,
           adjacency_list GT,
-          class           Component>
-requires vertex_property_map_for<Component, G>
-void kosaraju(G&&        g,        // graph
-              GT&&       g_t,      // graph transpose
-              Component& component // out: strongly connected component assignment
-
+          class          ComponentFn>
+requires vertex_property_fn_for<ComponentFn, G>
+void kosaraju(G&&           g,         // graph
+              GT&&          g_t,       // graph transpose
+              ComponentFn&& component  // out: strongly connected component assignment
 ) {
-  using CT = vertex_property_map_value_t<Component>;
+  using CT = vertex_fn_value_t<ComponentFn, G>;
   auto visited = make_vertex_property_map<std::remove_reference_t<G>, bool>(g, false);
   // Initialize all components as unvisited
   for (auto&& [uid, u] : views::vertexlist(g)) {
-    component[uid] = std::numeric_limits<CT>::max();
+    component(g, uid) = std::numeric_limits<CT>::max();
   }
   // Order stores vertex IDs (not descriptors) because the second pass
   // operates on g_t which has different descriptors than g.
@@ -199,19 +202,19 @@ void kosaraju(G&&        g,        // graph
   size_t                    cid = 0;
   std::ranges::reverse_view reverse{order};
   for (auto& uid : reverse) {
-    if (component[uid] == std::numeric_limits<CT>::max()) {
+    if (component(g, uid) == std::numeric_limits<CT>::max()) {
       // Manual iterative DFS on transpose graph using descriptors
       std::stack<gt_vertex_desc> dfs_stack;
       dfs_stack.push(*find_vertex(g_t, uid));
-      component[uid] = cid;
+      component(g, uid) = cid;
 
       while (!dfs_stack.empty()) {
         auto current = dfs_stack.top();
         dfs_stack.pop();
 
         for (auto&& [vid, e] : views::incidence(g_t, current)) {
-          if (component[vid] == std::numeric_limits<CT>::max()) {
-            component[vid] = cid; // Assign to current SCC
+          if (component(g, vid) == std::numeric_limits<CT>::max()) {
+            component(g, vid) = cid; // Assign to current SCC
             dfs_stack.push(*find_vertex(g_t, vid));
           }
         }
@@ -234,26 +237,29 @@ void kosaraju(G&&        g,        // graph
  * storing the transpose.  Works with both index and mapped bidirectional graphs.
  * 
  * @tparam G Graph type (must satisfy bidirectional_adjacency_list concept)
- * @tparam Component Vertex property map satisfying vertex_property_map_for<Component,G>
+ * @tparam ComponentFn Callable providing per-vertex component ID access:
+ *                     (const G&, vertex_id_t<G>) -> ComponentID&. Must satisfy
+ *                     vertex_property_fn_for<ComponentFn, G>.
  * 
  * @param g The directed bidirectional graph to analyze
- * @param component Output: component[v] = component ID for vertex v
+ * @param component Callable providing per-vertex component access: component(g, uid) -> ComponentID&.
+ *                  For containers: wrap with container_value_fn(c).
  * 
  * @return void. Results are stored in the component output parameter.
  * 
  * **Mandates:**
  * - G must satisfy bidirectional_adjacency_list
- * - Component must satisfy vertex_property_map_for<Component, G>
+ * - ComponentFn must satisfy vertex_property_fn_for<ComponentFn, G>
  * 
  * **Preconditions:**
  * - component must contain an entry for each vertex of g
  * 
  * **Effects:**
- * - Modifies component: Sets component[v] for all vertices v
+ * - Sets component(g, uid) for all vertices via the component function
  * - Does not modify the graph g
  * 
  * **Postconditions:**
- * - component[v] contains the SCC ID for vertex v
+ * - component(g, uid) contains the SCC ID for vertex uid
  * - Component IDs are assigned 0, 1, 2, ..., num_components-1
  * - Vertices in the same SCC have the same component ID
  * 
@@ -272,22 +278,22 @@ void kosaraju(G&&        g,        // graph
  * container::dynamic_graph<Traits> g({{0,1}, {1,2}, {2,0}, {2,3}});
  *
  * std::vector<size_t> component(num_vertices(g));
- * kosaraju(g, component);  // No transpose needed!
+ * kosaraju(g, container_value_fn(component));  // No transpose needed!
  * ```
  *
  * @see kosaraju(G&&, GT&&, Component&) For non-bidirectional graphs
  */
 template <bidirectional_adjacency_list G,
-          class                         Component>
-requires vertex_property_map_for<Component, G>
-void kosaraju(G&&        g,        // bidirectional graph
-              Component& component // out: strongly connected component assignment
+          class                        ComponentFn>
+requires vertex_property_fn_for<ComponentFn, G>
+void kosaraju(G&&           g,         // bidirectional graph
+              ComponentFn&& component  // out: strongly connected component assignment
 ) {
-  using CT = vertex_property_map_value_t<Component>;
+  using CT = vertex_fn_value_t<ComponentFn, G>;
   auto visited = make_vertex_property_map<std::remove_reference_t<G>, bool>(g, false);
   // Initialize all components as unvisited
   for (auto&& [uid, u] : views::vertexlist(g)) {
-    component[uid] = std::numeric_limits<CT>::max();
+    component(g, uid) = std::numeric_limits<CT>::max();
   }
   // Both passes use the same graph, so descriptors are valid throughout.
   using vertex_desc = vertex_t<std::remove_reference_t<G>>;
@@ -333,11 +339,11 @@ void kosaraju(G&&        g,        // bidirectional graph
   std::ranges::reverse_view reverse{order};
   for (auto& u : reverse) {
     auto uid = vertex_id(g_ref, u);
-    if (component[uid] == std::numeric_limits<CT>::max()) {
+    if (component(g, uid) == std::numeric_limits<CT>::max()) {
       // Manual iterative DFS using in_edges + source_id, storing descriptors
       std::stack<vertex_desc> dfs_stack;
       dfs_stack.push(u);
-      component[uid] = cid;
+      component(g, uid) = cid;
 
       while (!dfs_stack.empty()) {
         auto current = dfs_stack.top();
@@ -345,8 +351,8 @@ void kosaraju(G&&        g,        // bidirectional graph
 
         for (auto&& ie : adj_list::in_edges(g_ref, current)) {
           auto src = adj_list::source_id(g_ref, ie);
-          if (component[src] == std::numeric_limits<CT>::max()) {
-            component[src] = cid;
+          if (component(g, src) == std::numeric_limits<CT>::max()) {
+            component(g, src) = cid;
             dfs_stack.push(*adj_list::find_vertex(g_ref, src));
           }
         }
@@ -368,26 +374,29 @@ void kosaraju(G&&        g,        // bidirectional graph
  * with an explicit stack to identify all connected components in the graph.
  * 
  * @tparam G Graph type (must satisfy index_adjacency_list concept)
- * @tparam Component Random access range for component IDs
+ * @tparam ComponentFn Callable providing per-vertex component ID access:
+ *                     (const G&, vertex_id_t<G>) -> ComponentID&. Must satisfy
+ *                     vertex_property_fn_for<ComponentFn, G>.
  * 
  * @param g The graph to analyze (treated as undirected)
- * @param component Output: component[v] = component ID for vertex v
+ * @param component Callable providing per-vertex component access: component(g, uid) -> ComponentID&.
+ *                  For containers: wrap with container_value_fn(c).
  * 
  * @return Number of connected components found
  * 
  * **Mandates:**
  * - G must satisfy adjacency_list
- * - Component must satisfy vertex_property_map_for<Component, G>
+ * - ComponentFn must satisfy vertex_property_fn_for<ComponentFn, G>
  * 
  * **Preconditions:**
  * - component must contain an entry for each vertex of g
  * 
  * **Effects:**
- * - Modifies component: Sets component[v] for all vertices v
+ * - Modifies component: Sets component(g, uid) for all vertices
  * - Does not modify the graph g
  * 
  * **Postconditions:**
- * - component[v] contains the component ID for vertex v
+ * - component(g, uid) contains the component ID for vertex uid
  * - Component IDs are assigned 0, 1, 2, ..., num_components-1
  * - Vertices in the same component have the same component ID
  * - Return value equals the number of distinct component IDs
@@ -435,7 +444,7 @@ void kosaraju(G&&        g,        // bidirectional graph
  * g.add_edge(3, 4);                     // Component 2: {3,4}
  *
  * std::vector<size_t> component(num_vertices(g));
- * size_t num = connected_components(g, component);
+ * size_t num = connected_components(g, container_value_fn(component));
  * // num = 2, component = {0, 0, 0, 1, 1}
  * ```
  *
@@ -443,15 +452,15 @@ void kosaraju(G&&        g,        // bidirectional graph
  * @see afforest For faster parallel-friendly alternative
  */
 template <adjacency_list G,
-          class          Component>
-requires vertex_property_map_for<Component, G>
-size_t connected_components(G&&        g,        // graph
-                            Component& component // out: connected component assignment
+          class          ComponentFn>
+requires vertex_property_fn_for<ComponentFn, G>
+size_t connected_components(G&&           g,         // graph
+                            ComponentFn&& component  // out: connected component assignment
 ) {
-  using CT = vertex_property_map_value_t<Component>;
+  using CT = vertex_fn_value_t<ComponentFn, G>;
   // Initialize all components as unvisited
   for (auto&& [uid, u] : views::vertexlist(g)) {
-    component[uid] = std::numeric_limits<CT>::max();
+    component(g, uid) = std::numeric_limits<CT>::max();
   }
 
   // Stack of vertex descriptors — lightweight (8 bytes), avoids string copies,
@@ -460,26 +469,26 @@ size_t connected_components(G&&        g,        // graph
   std::stack<vertex_desc> S;
   CT                      cid = 0; // Current component ID
   for (auto&& [uid, u] : views::vertexlist(g)) {
-    if (component[uid] < std::numeric_limits<CT>::max()) {
+    if (component(g, uid) < std::numeric_limits<CT>::max()) {
       continue; // Already assigned to a component
     }
 
     // Handle isolated vertices (no edges)
     if (!num_edges(g, uid)) {
-      component[uid] = cid++;
+      component(g, uid) = cid++;
       continue;
     }
 
     // Start DFS for new component
-    component[uid] = cid;
+    component(g, uid) = cid;
     S.push(u);
     while (!S.empty()) {
       auto v = S.top();
       S.pop();
       // Visit all unvisited neighbors and add to same component
       for (auto&& [wid, e] : views::incidence(g, v)) {
-        if (component[wid] == std::numeric_limits<CT>::max()) {
-          component[wid] = cid; // Same component as parent
+        if (component(g, wid) == std::numeric_limits<CT>::max()) {
+          component(g, wid) = cid; // Same component as parent
           S.push(*find_vertex(g, wid));
         }
       }

@@ -123,7 +123,7 @@ lightest edge crossing the cut between tree and non-tree vertices.
 // weight_fn and compare are optional
 auto prim(G&& g,
     const vertex_id_t<G>& seed,
-    Predecessor& predecessor, Weight& weight,
+    WeightFn&& weight, PredecessorFn&& predecessor,
     WF weight_fn = edge_value(g, uv),
     Compare compare = std::less<>{});
 ```
@@ -136,8 +136,8 @@ auto prim(G&& g,
 |-----------|-------------|
 | `g` | Graph satisfying `adjacency_list` with weighted edges |
 | `seed` | Starting vertex for MST growth. Must be a valid vertex ID. |
-| `predecessor` | Subscriptable by `vertex_id_t<G>`. For index graphs, a pre-sized `std::vector`; for mapped graphs, use `make_vertex_property_map<G, T>(g, init)`. Must satisfy `vertex_property_map_for<Predecessor, G>`. |
-| `weight` | Subscriptable by `vertex_id_t<G>`. For index graphs, a pre-sized `std::vector`; for mapped graphs, use `make_vertex_property_map<G, T>(g, init)`. Must satisfy `vertex_property_map_for<Weight, G>`. |
+| `weight` | Callable `(const G&, vertex_id_t<G>) -> W&` returning a mutable reference to the per-vertex edge weight. For containers: wrap with `container_value_fn(wt)`. Must satisfy `distance_fn_for<WeightFn, G>`. |
+| `predecessor` | Callable `(const G&, vertex_id_t<G>) -> P&` returning a mutable reference to the per-vertex predecessor. For containers: wrap with `container_value_fn(pred)`. Must satisfy `predecessor_fn_for<PredecessorFn, G>`. |
 | `weight_fn` | Callable `WF(g, uv)` returning edge weight. Default: `edge_value(g, uv)`. |
 | `compare` | Comparator for weight values (default: `std::less<>{}`) |
 
@@ -175,7 +175,9 @@ using Edge = graph::edge_descriptor<uint32_t, int>;
 **Container Requirements:**
 - **Kruskal:** edge descriptors with `source_id`, `target_id`, `value` members
 - **Prim:** `adjacency_list<G>` with weighted edges;
-  `predecessor` and `weight` must satisfy `vertex_property_map_for`
+  `weight` must satisfy `distance_fn_for<WeightFn, G>`;
+  `predecessor` must satisfy `predecessor_fn_for<PredecessorFn, G>`;
+  use `container_value_fn(vec)` to adapt a `std::vector`
 
 ## Examples
 
@@ -288,7 +290,7 @@ std::vector<uint32_t> pred(n);
 std::vector<int>      wt(n);
 
 init_shortest_paths(g, wt, pred);
-auto total = prim(g, 0u, pred, wt);
+auto total = prim(g, 0u, container_value_fn(wt), container_value_fn(pred));
 
 // total = 6  (edges: 0-2:2 + 0-1:4)
 // pred[0] = 0  (seed — self)
@@ -318,7 +320,7 @@ auto neg_weight = [](const auto& g_ref, const auto& uv) {
 };
 
 init_shortest_paths(g, wt, pred);
-auto total = prim(g, 0u, pred, wt,
+auto total = prim(g, 0u, container_value_fn(wt), container_value_fn(pred),
     neg_weight,        // negated weight function
     std::less<int>{}); // comparator (still min-heap)
 
@@ -350,7 +352,7 @@ size_t                n = num_vertices(g);
 std::vector<uint32_t> pred(n);
 std::vector<int>      wt(n);
 init_shortest_paths(g, wt, pred);
-auto pw = prim(g, 0u, pred, wt);
+auto pw = prim(g, 0u, container_value_fn(wt), container_value_fn(pred));
 
 assert(kw == pw);  // Both produce the same total MST weight
 ```
@@ -359,13 +361,15 @@ assert(kw == pw);  // Both produce the same total MST weight
 
 - **Kruskal:** edge descriptors must have `source_id`, `target_id`, and `value`
   members (or use `edge_descriptor<VId, EV>`)
-- **Prim:** `G` must satisfy `adjacency_list<G>`; `Predecessor` and `Weight`
-  must satisfy `vertex_property_map_for`; `WF` must satisfy
+- **Prim:** `G` must satisfy `adjacency_list<G>`; `WeightFn` must satisfy
+  `distance_fn_for<WeightFn, G>`; `PredecessorFn` must satisfy
+  `predecessor_fn_for<PredecessorFn, G>`; `WF` must satisfy
   `basic_edge_weight_function`
 
 ## Preconditions
 
-- **Prim:** `predecessor` and `weight` must be pre-sized for all vertex IDs.
+- **Prim:** `weight(g, uid)` and `predecessor(g, uid)` must be valid for all vertex IDs.
+  Call `init_shortest_paths(wt, pred)` on the underlying containers first.
   Invalid seed vertex throws `std::out_of_range`.
 - For undirected graphs with Prim, both directions of each edge must be stored.
 
@@ -373,8 +377,8 @@ assert(kw == pw);  // Both produce the same total MST weight
 
 - **Kruskal:** writes MST edges to the output iterator; `inplace_kruskal`
   sorts the input edge list in-place
-- **Prim:** writes predecessor and weight arrays for path reconstruction;
-  does not modify the graph `g`
+- **Prim:** writes weight and predecessor values via `weight(g, v)` and
+  `predecessor(g, v)`; does not modify the graph `g`
 
 ## Returns
 

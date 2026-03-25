@@ -349,7 +349,7 @@ TEST_CASE("dijkstra_shortest_paths - infinite weight edge triggers logic_error",
   std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
   init_shortest_paths(g, distances, predecessor);
 
-  const auto INF = shortest_path_infinite_distance<distance_type>();
+  const auto INF = infinite_distance<distance_type>();
   CHECK_THROWS_AS(dijkstra_shortest_paths(g, vertex_id_t<Graph>(0),
                                           container_value_fn(distances),
                                           container_value_fn(predecessor),
@@ -398,7 +398,7 @@ TEMPLATE_TEST_CASE("dijkstra_shortest_paths - sparse CLRS example",
   const auto& exp   = clrs_dijkstra_sparse_expected{};
 
   auto g            = map_fixtures::clrs_dijkstra_graph<Graph>();
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   // Initialize predecessors: each vertex points to itself
   for (auto&& [uid, u] : views::vertexlist(g))
@@ -426,7 +426,7 @@ TEMPLATE_TEST_CASE("dijkstra_shortest_distances - sparse CLRS example",
   const auto& exp = clrs_dijkstra_sparse_expected{};
 
   auto g         = map_fixtures::clrs_dijkstra_graph<Graph>();
-  auto distances = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
 
   dijkstra_shortest_distances(g, id_type(exp.s),
                               container_value_fn(distances),
@@ -445,7 +445,7 @@ TEMPLATE_TEST_CASE("dijkstra_shortest_paths - sparse multi-source",
   const auto& exp = clrs_dijkstra_sparse_expected{};
 
   auto g            = map_fixtures::clrs_dijkstra_graph<Graph>();
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
@@ -463,7 +463,7 @@ TEMPLATE_TEST_CASE("dijkstra_shortest_paths - sparse multi-source",
 
   // All vertices should be reachable
   for (size_t i = 0; i < exp.num_vertices; ++i) {
-    REQUIRE(distances[exp.vertex_ids[i]] < shortest_path_infinite_distance<int>());
+    REQUIRE(distances[exp.vertex_ids[i]] < infinite_distance<int>());
   }
 }
 
@@ -475,7 +475,7 @@ TEMPLATE_TEST_CASE("dijkstra_shortest_paths - sparse with visitor",
   const auto& exp = clrs_dijkstra_sparse_expected{};
 
   auto g            = map_fixtures::clrs_dijkstra_graph<Graph>();
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
@@ -499,7 +499,7 @@ TEMPLATE_TEST_CASE("dijkstra_shortest_paths - sparse source not in graph throws"
   using id_type = vertex_id_t<Graph>;
 
   auto g            = map_fixtures::clrs_dijkstra_graph<Graph>();
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
@@ -568,7 +568,7 @@ TEMPLATE_TEST_CASE("dijkstra_shortest_paths - string vertex IDs",
   static_assert(std::is_same_v<id_type, std::string>, "vertex_id_t must be std::string");
 
   auto g            = clrs_dijkstra_string_graph<Graph>();
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
@@ -597,7 +597,7 @@ TEMPLATE_TEST_CASE("dijkstra_shortest_distances - string vertex IDs",
   using id_type = vertex_id_t<Graph>;
 
   auto g         = clrs_dijkstra_string_graph<Graph>();
-  auto distances = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
 
   dijkstra_shortest_distances(g, std::string("s"),
                               container_value_fn(distances),
@@ -615,7 +615,7 @@ TEMPLATE_TEST_CASE("dijkstra_shortest_paths - string vertex IDs multi-source",
   using id_type = vertex_id_t<Graph>;
 
   auto g            = clrs_dijkstra_string_graph<Graph>();
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
@@ -633,7 +633,7 @@ TEMPLATE_TEST_CASE("dijkstra_shortest_paths - string vertex IDs multi-source",
 
   // All vertices should be reachable
   for (const auto& [vid, _] : clrs_string_expected::distances) {
-    REQUIRE(distances[vid] < shortest_path_infinite_distance<int>());
+    REQUIRE(distances[vid] < infinite_distance<int>());
   }
 }
 
@@ -644,7 +644,7 @@ TEMPLATE_TEST_CASE("dijkstra_shortest_paths - string vertex IDs with visitor",
   using id_type = vertex_id_t<Graph>;
 
   auto g            = clrs_dijkstra_string_graph<Graph>();
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
@@ -669,7 +669,7 @@ TEMPLATE_TEST_CASE("dijkstra_shortest_paths - string vertex IDs invalid source t
   using id_type = vertex_id_t<Graph>;
 
   auto g            = clrs_dijkstra_string_graph<Graph>();
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
@@ -689,7 +689,7 @@ TEMPLATE_TEST_CASE("dijkstra_shortest_paths - string vertex IDs path reconstruct
   using id_type = vertex_id_t<Graph>;
 
   auto g            = clrs_dijkstra_string_graph<Graph>();
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;

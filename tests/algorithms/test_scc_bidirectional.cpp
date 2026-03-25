@@ -110,7 +110,7 @@ TEST_CASE("kosaraju bidir - single vertex (vov)", "[algorithm][kosaraju][scc][bi
   auto g = single_vertex<bidir_vov_void>();
 
   std::vector<uint32_t> component(num_vertices(g));
-  kosaraju(g, component);
+  kosaraju(g, container_value_fn(component));
 
   REQUIRE(component[0] == 0);
   REQUIRE(count_unique_components(component) == 1);
@@ -120,7 +120,7 @@ TEST_CASE("kosaraju bidir - single vertex (vol)", "[algorithm][kosaraju][scc][bi
   auto g = single_vertex<bidir_vol_void>();
 
   std::vector<uint32_t> component(num_vertices(g));
-  kosaraju(g, component);
+  kosaraju(g, container_value_fn(component));
 
   REQUIRE(component[0] == 0);
   REQUIRE(count_unique_components(component) == 1);
@@ -135,7 +135,7 @@ TEST_CASE("kosaraju bidir - simple cycle (vov)", "[algorithm][kosaraju][scc][bid
   bidir_vov_void        g({{0, 1}, {1, 2}, {2, 0}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, component);
+  kosaraju(g, container_value_fn(component));
 
   REQUIRE(all_same_component(component, {0, 1, 2}));
   REQUIRE(count_unique_components(component) == 1);
@@ -145,7 +145,7 @@ TEST_CASE("kosaraju bidir - simple cycle (vol)", "[algorithm][kosaraju][scc][bid
   bidir_vol_void        g({{0, 1}, {1, 2}, {2, 0}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, component);
+  kosaraju(g, container_value_fn(component));
 
   REQUIRE(all_same_component(component, {0, 1, 2}));
   REQUIRE(count_unique_components(component) == 1);
@@ -162,7 +162,7 @@ TEST_CASE("kosaraju bidir - two SCCs (vov)", "[algorithm][kosaraju][scc][bidirec
   bidir_vov_void        g({{0, 1}, {1, 0}, {1, 2}, {2, 3}, {3, 2}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, component);
+  kosaraju(g, container_value_fn(component));
 
   REQUIRE(all_same_component(component, {0, 1}));
   REQUIRE(all_same_component(component, {2, 3}));
@@ -174,7 +174,7 @@ TEST_CASE("kosaraju bidir - two SCCs (vol)", "[algorithm][kosaraju][scc][bidirec
   bidir_vol_void        g({{0, 1}, {1, 0}, {1, 2}, {2, 3}, {3, 2}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, component);
+  kosaraju(g, container_value_fn(component));
 
   REQUIRE(all_same_component(component, {0, 1}));
   REQUIRE(all_same_component(component, {2, 3}));
@@ -191,7 +191,7 @@ TEST_CASE("kosaraju bidir - DAG (vov)", "[algorithm][kosaraju][scc][bidirectiona
   bidir_vov_void        g({{0, 1}, {1, 2}, {2, 3}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, component);
+  kosaraju(g, container_value_fn(component));
 
   REQUIRE(count_unique_components(component) == 4);
   for (size_t i = 0; i < 4; ++i)
@@ -203,7 +203,7 @@ TEST_CASE("kosaraju bidir - DAG (vol)", "[algorithm][kosaraju][scc][bidirectiona
   bidir_vol_void        g({{0, 1}, {1, 2}, {2, 3}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, component);
+  kosaraju(g, container_value_fn(component));
 
   REQUIRE(count_unique_components(component) == 4);
   for (size_t i = 0; i < 4; ++i)
@@ -223,7 +223,7 @@ TEST_CASE("kosaraju bidir - complex SCCs (vov)", "[algorithm][kosaraju][scc][bid
   bidir_vov_void g({{0, 1}, {1, 2}, {2, 0}, {2, 3}, {3, 4}, {4, 3}, {4, 5}});
 
   std::vector<uint32_t> component(num_vertices(g));
-  kosaraju(g, component);
+  kosaraju(g, container_value_fn(component));
 
   REQUIRE(count_unique_components(component) == 3);
   REQUIRE(all_same_component(component, {0, 1, 2}));
@@ -237,7 +237,7 @@ TEST_CASE("kosaraju bidir - complex SCCs (vol)", "[algorithm][kosaraju][scc][bid
   bidir_vol_void g({{0, 1}, {1, 2}, {2, 0}, {2, 3}, {3, 4}, {4, 3}, {4, 5}});
 
   std::vector<uint32_t> component(num_vertices(g));
-  kosaraju(g, component);
+  kosaraju(g, container_value_fn(component));
 
   REQUIRE(count_unique_components(component) == 3);
   REQUIRE(all_same_component(component, {0, 1, 2}));
@@ -256,7 +256,7 @@ TEST_CASE("kosaraju bidir - self loops", "[algorithm][kosaraju][scc][bidirection
   bidir_vov_void        g({{0, 0}, {1, 1}, {0, 1}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, component);
+  kosaraju(g, container_value_fn(component));
 
   // Each vertex is its own SCC (self-loop doesn't merge with others)
   REQUIRE(count_unique_components(component) == 2);
@@ -281,8 +281,8 @@ TEST_CASE("kosaraju bidir - agrees with two-graph overload", "[algorithm][kosara
   std::vector<uint32_t> comp_bidir(num_vertices(g_bidir));
   std::vector<uint32_t> comp_twog(num_vertices(g_fwd));
 
-  kosaraju(g_bidir, comp_bidir);
-  kosaraju(g_fwd, g_rev, comp_twog);
+  kosaraju(g_bidir, container_value_fn(comp_bidir));
+  kosaraju(g_fwd, g_rev, container_value_fn(comp_twog));
 
   // Both should find the same number of SCCs
   REQUIRE(count_unique_components(comp_bidir) == count_unique_components(comp_twog));
@@ -304,7 +304,7 @@ TEST_CASE("kosaraju bidir - weighted edges ignored", "[algorithm][kosaraju][scc]
   bidir_vov_int         g({{0, 1, 10}, {1, 2, 20}, {2, 0, 30}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, component);
+  kosaraju(g, container_value_fn(component));
 
   REQUIRE(all_same_component(component, {0, 1, 2}));
   REQUIRE(count_unique_components(component) == 1);
@@ -320,7 +320,7 @@ TEST_CASE("kosaraju bidir - disconnected graph", "[algorithm][kosaraju][scc][bid
 
   // Need 5 vertices (0-4). Graph constructor infers from max vertex id in edge list.
   std::vector<uint32_t> component(num_vertices(g));
-  kosaraju(g, component);
+  kosaraju(g, container_value_fn(component));
 
   REQUIRE(count_unique_components(component) == 3);
   REQUIRE(all_same_component(component, {0, 1}));

@@ -62,7 +62,7 @@ TEST_CASE("connected_components - single vertex", "[algorithm][connected_compone
   auto                  g = single_vertex<Graph>();
   std::vector<uint32_t> component(num_vertices(g));
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 1);
   REQUIRE(component[0] == 0);
@@ -74,7 +74,7 @@ TEST_CASE("connected_components - single edge", "[algorithm][connected_component
   auto                  g = single_edge<Graph>();
   std::vector<uint32_t> component(num_vertices(g));
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 1);
   REQUIRE(all_same_component(component, {0, 1}));
@@ -87,7 +87,7 @@ TEST_CASE("connected_components - path graph", "[algorithm][connected_components
   auto                  g = path_graph_4<Graph>();
   std::vector<uint32_t> component(num_vertices(g));
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 1);
   REQUIRE(all_same_component(component, {0, 1, 2, 3}));
@@ -100,7 +100,7 @@ TEST_CASE("connected_components - cycle graph", "[algorithm][connected_component
   auto                  g = cycle_graph_5<Graph>();
   std::vector<uint32_t> component(num_vertices(g));
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 1);
   REQUIRE(all_same_component(component, {0, 1, 2, 3, 4}));
@@ -113,7 +113,7 @@ TEST_CASE("connected_components - disconnected graph", "[algorithm][connected_co
   Graph                 g({{0, 1}, {1, 0}, {2, 3}, {3, 2}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 2);
   REQUIRE(all_same_component(component, {0, 1}));
@@ -129,7 +129,7 @@ TEST_CASE("connected_components - multiple isolated vertices", "[algorithm][conn
   g.resize_vertices(5);
   std::vector<uint32_t> component(num_vertices(g));
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 5);
   for (size_t i = 0; i < 5; ++i) {
@@ -146,7 +146,7 @@ TEST_CASE("connected_components - star graph", "[algorithm][connected_components
   Graph                 g({{0, 1}, {0, 2}, {0, 3}, {0, 4}, {1, 0}, {2, 0}, {3, 0}, {4, 0}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 1);
   REQUIRE(all_same_component(component, {0, 1, 2, 3, 4}));
@@ -159,7 +159,7 @@ TEST_CASE("connected_components - complete graph", "[algorithm][connected_compon
   Graph g({{0, 1}, {0, 2}, {0, 3}, {1, 0}, {1, 2}, {1, 3}, {2, 0}, {2, 1}, {2, 3}, {3, 0}, {3, 1}, {3, 2}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 1);
   REQUIRE(all_same_component(component, {0, 1, 2, 3}));
@@ -172,7 +172,7 @@ TEST_CASE("connected_components - tree structure", "[algorithm][connected_compon
   Graph g({{0, 1}, {0, 2}, {1, 0}, {1, 3}, {1, 4}, {2, 0}, {2, 5}, {2, 6}, {3, 1}, {4, 1}, {5, 2}, {6, 2}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 1);
   REQUIRE(all_same_component(component, {0, 1, 2, 3, 4, 5, 6}));
@@ -188,7 +188,7 @@ TEST_CASE("connected_components - multiple components of different sizes", "[alg
   g.resize_vertices(6); // Add isolated vertex 5
   std::vector<uint32_t> component(num_vertices(g));
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 3);
   REQUIRE(all_same_component(component, {0, 1, 2}));
@@ -225,7 +225,7 @@ TEST_CASE("connected_components - undirected single edge (vov vs UAL)",
     vov_void              g({{0, 1}, {1, 0}});
     std::vector<uint32_t> component(2);
 
-    size_t num = connected_components(g, component);
+    size_t num = connected_components(g, container_value_fn(component));
 
     REQUIRE(num == 1);
     REQUIRE(all_same_component(component, {0, 1}));
@@ -236,7 +236,7 @@ TEST_CASE("connected_components - undirected single edge (vov vs UAL)",
     undirected_adjacency_list<int, int> g({{0, 1, 1}});
     std::vector<uint32_t>               component(2);
 
-    size_t num = connected_components(g, component);
+    size_t num = connected_components(g, container_value_fn(component));
 
     REQUIRE(num == 1);
     REQUIRE(all_same_component(component, {0, 1}));
@@ -256,7 +256,7 @@ TEST_CASE("connected_components - undirected path (vov vs UAL)", "[algorithm][co
     });
     std::vector<uint32_t> component(4);
 
-    size_t num = connected_components(g, component);
+    size_t num = connected_components(g, container_value_fn(component));
 
     REQUIRE(num == 1);
     REQUIRE(all_same_component(component, {0, 1, 2, 3}));
@@ -266,7 +266,7 @@ TEST_CASE("connected_components - undirected path (vov vs UAL)", "[algorithm][co
     undirected_adjacency_list<int, int> g({{0, 1, 1}, {1, 2, 1}, {2, 3, 1}});
     std::vector<uint32_t>               component(4);
 
-    size_t num = connected_components(g, component);
+    size_t num = connected_components(g, container_value_fn(component));
 
     REQUIRE(num == 1);
     REQUIRE(all_same_component(component, {0, 1, 2, 3}));
@@ -284,7 +284,7 @@ TEST_CASE("connected_components - undirected disconnected (vov vs UAL)",
     });
     std::vector<uint32_t> component(4);
 
-    size_t num = connected_components(g, component);
+    size_t num = connected_components(g, container_value_fn(component));
 
     REQUIRE(num == 2);
     REQUIRE(all_same_component(component, {0, 1}));
@@ -296,7 +296,7 @@ TEST_CASE("connected_components - undirected disconnected (vov vs UAL)",
     undirected_adjacency_list<int, int> g({{0, 1, 1}, {2, 3, 1}});
     std::vector<uint32_t>               component(4);
 
-    size_t num = connected_components(g, component);
+    size_t num = connected_components(g, container_value_fn(component));
 
     REQUIRE(num == 2);
     REQUIRE(all_same_component(component, {0, 1}));
@@ -310,7 +310,7 @@ TEST_CASE("connected_components - undirected cycle (vov vs UAL)", "[algorithm][c
     vov_void              g({{0, 1}, {1, 0}, {1, 2}, {2, 1}, {2, 3}, {3, 2}, {3, 4}, {4, 3}, {4, 0}, {0, 4}});
     std::vector<uint32_t> component(5);
 
-    size_t num = connected_components(g, component);
+    size_t num = connected_components(g, container_value_fn(component));
 
     REQUIRE(num == 1);
     REQUIRE(all_same_component(component, {0, 1, 2, 3, 4}));
@@ -320,7 +320,7 @@ TEST_CASE("connected_components - undirected cycle (vov vs UAL)", "[algorithm][c
     undirected_adjacency_list<int, int> g({{0, 1, 1}, {1, 2, 1}, {2, 3, 1}, {3, 4, 1}, {4, 0, 1}});
     std::vector<uint32_t>               component(5);
 
-    size_t num = connected_components(g, component);
+    size_t num = connected_components(g, container_value_fn(component));
 
     REQUIRE(num == 1);
     REQUIRE(all_same_component(component, {0, 1, 2, 3, 4}));
@@ -332,7 +332,7 @@ TEST_CASE("connected_components - undirected triangle (vov vs UAL)", "[algorithm
     vov_void              g({{0, 1}, {1, 0}, {1, 2}, {2, 1}, {2, 0}, {0, 2}});
     std::vector<uint32_t> component(3);
 
-    size_t num = connected_components(g, component);
+    size_t num = connected_components(g, container_value_fn(component));
 
     REQUIRE(num == 1);
     REQUIRE(all_same_component(component, {0, 1, 2}));
@@ -342,7 +342,7 @@ TEST_CASE("connected_components - undirected triangle (vov vs UAL)", "[algorithm
     undirected_adjacency_list<int, int> g({{0, 1, 1}, {1, 2, 1}, {2, 0, 1}});
     std::vector<uint32_t>               component(3);
 
-    size_t num = connected_components(g, component);
+    size_t num = connected_components(g, container_value_fn(component));
 
     REQUIRE(num == 1);
     REQUIRE(all_same_component(component, {0, 1, 2}));
@@ -354,7 +354,7 @@ TEST_CASE("connected_components - undirected star (vov vs UAL)", "[algorithm][co
     vov_void              g({{0, 1}, {1, 0}, {0, 2}, {2, 0}, {0, 3}, {3, 0}, {0, 4}, {4, 0}});
     std::vector<uint32_t> component(5);
 
-    size_t num = connected_components(g, component);
+    size_t num = connected_components(g, container_value_fn(component));
 
     REQUIRE(num == 1);
     REQUIRE(all_same_component(component, {0, 1, 2, 3, 4}));
@@ -364,7 +364,7 @@ TEST_CASE("connected_components - undirected star (vov vs UAL)", "[algorithm][co
     undirected_adjacency_list<int, int> g({{0, 1, 1}, {0, 2, 1}, {0, 3, 1}, {0, 4, 1}});
     std::vector<uint32_t>               component(5);
 
-    size_t num = connected_components(g, component);
+    size_t num = connected_components(g, container_value_fn(component));
 
     REQUIRE(num == 1);
     REQUIRE(all_same_component(component, {0, 1, 2, 3, 4}));
@@ -389,7 +389,7 @@ TEST_CASE("connected_components - undirected complex (vov vs UAL)", "[algorithm]
     g.resize_vertices(6); // Add isolated vertex 5
     std::vector<uint32_t> component(6);
 
-    size_t num = connected_components(g, component);
+    size_t num = connected_components(g, container_value_fn(component));
 
     REQUIRE(num == 3);
     REQUIRE(all_same_component(component, {0, 1, 2}));
@@ -404,7 +404,7 @@ TEST_CASE("connected_components - undirected complex (vov vs UAL)", "[algorithm]
     g.resize_vertices(6); // Add isolated vertex 5
     std::vector<uint32_t> component(6);
 
-    size_t num = connected_components(g, component);
+    size_t num = connected_components(g, container_value_fn(component));
 
     REQUIRE(num == 3);
     REQUIRE(all_same_component(component, {0, 1, 2}));
@@ -426,7 +426,7 @@ TEST_CASE("connected_components (UAL) - single vertex", "[algorithm][connected_c
   g.create_vertex(0);
   std::vector<uint32_t> component(num_vertices(g));
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 1);
   REQUIRE(component[0] == 0);
@@ -438,7 +438,7 @@ TEST_CASE("connected_components (UAL) - single edge", "[algorithm][connected_com
   Graph                 g({{0, 1, 1}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 1);
   REQUIRE(all_same_component(component, {0, 1}));
@@ -451,7 +451,7 @@ TEST_CASE("connected_components (UAL) - path graph", "[algorithm][connected_comp
   Graph                 g({{0, 1, 1}, {1, 2, 1}, {2, 3, 1}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 1);
   REQUIRE(all_same_component(component, {0, 1, 2, 3}));
@@ -464,7 +464,7 @@ TEST_CASE("connected_components (UAL) - cycle graph", "[algorithm][connected_com
   Graph                 g({{0, 1, 1}, {1, 2, 1}, {2, 3, 1}, {3, 4, 1}, {4, 0, 1}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 1);
   REQUIRE(all_same_component(component, {0, 1, 2, 3, 4}));
@@ -477,7 +477,7 @@ TEST_CASE("connected_components (UAL) - disconnected graph", "[algorithm][connec
   Graph                 g({{0, 1, 1}, {2, 3, 1}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 2);
   REQUIRE(all_same_component(component, {0, 1}));
@@ -495,7 +495,7 @@ TEST_CASE("connected_components (UAL) - isolated vertices", "[algorithm][connect
   }
   std::vector<uint32_t> component(num_vertices(g));
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 5);
   for (size_t i = 0; i < 5; ++i) {
@@ -512,7 +512,7 @@ TEST_CASE("connected_components (UAL) - star graph", "[algorithm][connected_comp
   Graph                 g({{0, 1, 1}, {0, 2, 1}, {0, 3, 1}, {0, 4, 1}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 1);
   REQUIRE(all_same_component(component, {0, 1, 2, 3, 4}));
@@ -525,7 +525,7 @@ TEST_CASE("connected_components (UAL) - complete graph", "[algorithm][connected_
   Graph                 g({{0, 1, 1}, {0, 2, 1}, {0, 3, 1}, {1, 2, 1}, {1, 3, 1}, {2, 3, 1}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 1);
   REQUIRE(all_same_component(component, {0, 1, 2, 3}));
@@ -538,7 +538,7 @@ TEST_CASE("connected_components (UAL) - tree structure", "[algorithm][connected_
   Graph                 g({{0, 1, 1}, {0, 2, 1}, {1, 3, 1}, {1, 4, 1}, {2, 5, 1}, {2, 6, 1}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 1);
   REQUIRE(all_same_component(component, {0, 1, 2, 3, 4, 5, 6}));
@@ -560,7 +560,7 @@ TEST_CASE("connected_components (UAL) - multiple components of different sizes",
   g.resize_vertices(6); // Add isolated vertex 5
   std::vector<uint32_t> component(num_vertices(g));
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 3);
   REQUIRE(all_same_component(component, {0, 1, 2}));
@@ -578,7 +578,7 @@ TEST_CASE("connected_components (UAL) - self loop", "[algorithm][connected_compo
                            {0, 1, 1}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 1);
   REQUIRE(all_same_component(component, {0, 1}));
@@ -591,7 +591,7 @@ TEST_CASE("connected_components (UAL) - with edge values", "[algorithm][connecte
   Graph                 g({{0, 1, 10}, {1, 2, 20}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 1);
   REQUIRE(all_same_component(component, {0, 1, 2}));
@@ -608,7 +608,7 @@ TEST_CASE("connected_components (UAL) - with vertex values", "[algorithm][connec
   g.create_edge(0, 1, 1);
   std::vector<uint32_t> component(num_vertices(g));
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 2);
   REQUIRE(all_same_component(component, {0, 1}));
@@ -626,7 +626,7 @@ TEST_CASE("kosaraju - single vertex", "[algorithm][kosaraju][scc]") {
   auto                  g_t = single_vertex<Graph>(); // Transpose
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   REQUIRE(component[0] == 0);
   REQUIRE(count_unique_components(component) == 1);
@@ -640,7 +640,7 @@ TEST_CASE("kosaraju - simple cycle", "[algorithm][kosaraju][scc]") {
   Graph                 g_t({{1, 0}, {2, 1}, {0, 2}}); // Transpose
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   // All three vertices should be in the same SCC
   REQUIRE(all_same_component(component, {0, 1, 2}));
@@ -655,7 +655,7 @@ TEST_CASE("kosaraju - two SCCs", "[algorithm][kosaraju][scc]") {
   Graph                 g_t({{1, 0}, {0, 1}, {2, 1}, {3, 2}, {2, 3}}); // Transpose
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   // Vertices 0 and 1 should be in same SCC
   REQUIRE(all_same_component(component, {0, 1}));
@@ -673,7 +673,7 @@ TEST_CASE("kosaraju - no cycles (DAG)", "[algorithm][kosaraju][scc]") {
   Graph                 g_t({{1, 0}, {2, 1}, {3, 2}}); // Transpose
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   // Each vertex should be in its own SCC
   REQUIRE(count_unique_components(component) == 4);
@@ -708,7 +708,7 @@ TEST_CASE("kosaraju - complex SCC structure", "[algorithm][kosaraju][scc]") {
                              {5, 4}}); // Cross-SCC edge transposed
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   REQUIRE(count_unique_components(component) == 3);
   REQUIRE(all_same_component(component, {0, 1, 2}));
@@ -826,7 +826,7 @@ TEST_CASE("connected_components - empty graph", "[algorithm][connected_component
   auto                  g = empty_graph<Graph>();
   std::vector<uint32_t> component;
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 0);
 }
@@ -838,7 +838,7 @@ TEST_CASE("connected_components - self loops", "[algorithm][connected_components
   Graph                 g({{0, 0}, {0, 1}, {1, 0}, {1, 1}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 1);
   REQUIRE(all_same_component(component, {0, 1}));
@@ -852,7 +852,7 @@ TEST_CASE("kosaraju - self loops", "[algorithm][kosaraju][scc]") {
   Graph                 g_t({{0, 0}, {1, 0}, {1, 1}}); // Transpose
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   // Self-loops don't create SCCs by themselves without cycles
   // 0 -> 1 is a DAG, so they should be in different SCCs
@@ -872,7 +872,7 @@ TEST_CASE("kosaraju - graph with singleton SCCs", "[algorithm][kosaraju][scc][co
   Graph                 g_t({{1, 0}, {0, 1}, {2, 1}, {3, 2}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   // Verify structure
   REQUIRE(count_unique_components(component) == 3); // {0,1}, {2}, {3}
@@ -901,7 +901,7 @@ TEST_CASE("kosaraju - multiple cycles sharing vertices", "[algorithm][kosaraju][
                              {1, 4}}); // Second cycle transposed
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   // All vertices should be in the same SCC
   REQUIRE(count_unique_components(component) == 1);
@@ -930,7 +930,7 @@ TEST_CASE("kosaraju - nested SCCs with bridges", "[algorithm][kosaraju][scc][com
                              {4, 5}}); // SCC3 transposed
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   REQUIRE(count_unique_components(component) == 3);
   REQUIRE(all_same_component(component, {0, 1}));
@@ -948,7 +948,7 @@ TEST_CASE("kosaraju - complete directed graph", "[algorithm][kosaraju][scc][comp
   Graph g_t({{1, 0}, {0, 1}, {2, 0}, {0, 2}, {3, 0}, {0, 3}, {2, 1}, {1, 2}, {3, 1}, {1, 3}, {3, 2}, {2, 3}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   // All vertices should be in one SCC
   REQUIRE(count_unique_components(component) == 1);
@@ -963,7 +963,7 @@ TEST_CASE("kosaraju - star topology DAG", "[algorithm][kosaraju][scc][comprehens
   Graph                 g_t({{1, 0}, {2, 0}, {3, 0}, {4, 0}}); // All point to center
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   // No cycles, each vertex is its own SCC
   REQUIRE(count_unique_components(component) == 5);
@@ -982,7 +982,7 @@ TEST_CASE("kosaraju - bidirectional star", "[algorithm][kosaraju][scc][comprehen
   Graph                 g_t({{1, 0}, {0, 1}, {2, 0}, {0, 2}, {3, 0}, {0, 3}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   // All vertices in one SCC (can reach each other through center)
   REQUIRE(count_unique_components(component) == 1);
@@ -1017,7 +1017,7 @@ TEST_CASE("kosaraju - long chain of SCCs", "[algorithm][kosaraju][scc][comprehen
                              {6, 7}}); // SCC3
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   REQUIRE(count_unique_components(component) == 4);
   REQUIRE(all_same_component(component, {0, 1}));
@@ -1034,7 +1034,7 @@ TEST_CASE("kosaraju - converging paths", "[algorithm][kosaraju][scc][comprehensi
   Graph                 g_t({{2, 0}, {2, 1}, {3, 2}, {4, 3}, {2, 4}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   REQUIRE(count_unique_components(component) == 3); // {0}, {1}, {2,3,4}
   REQUIRE(all_same_component(component, {2, 3, 4}));
@@ -1051,7 +1051,7 @@ TEST_CASE("kosaraju - diverging paths", "[algorithm][kosaraju][scc][comprehensiv
   Graph                 g_t({{1, 0}, {0, 1}, {2, 1}, {3, 1}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   REQUIRE(count_unique_components(component) == 3); // {0,1}, {2}, {3}
   REQUIRE(all_same_component(component, {0, 1}));
@@ -1085,7 +1085,7 @@ TEST_CASE("kosaraju - cross edges between SCCs", "[algorithm][kosaraju][scc][com
                              {5, 2}}); // Cross edges
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   REQUIRE(count_unique_components(component) == 2);
   REQUIRE(all_same_component(component, {0, 1, 2}));
@@ -1101,7 +1101,7 @@ TEST_CASE("kosaraju - triangle with tail", "[algorithm][kosaraju][scc][comprehen
   Graph                 g_t({{1, 0}, {2, 1}, {0, 2}, {3, 2}, {4, 3}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   REQUIRE(count_unique_components(component) == 3); // {0,1,2}, {3}, {4}
   REQUIRE(all_same_component(component, {0, 1, 2}));
@@ -1117,7 +1117,7 @@ TEST_CASE("kosaraju - back edges creating large SCC", "[algorithm][kosaraju][scc
   Graph                 g_t({{1, 0}, {2, 1}, {3, 2}, {4, 3}, {0, 4}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   REQUIRE(count_unique_components(component) == 1);
   REQUIRE(all_same_component(component, {0, 1, 2, 3, 4}));
@@ -1131,7 +1131,7 @@ TEST_CASE("kosaraju - multiple self-loops in cycle", "[algorithm][kosaraju][scc]
   Graph                 g_t({{0, 0}, {1, 0}, {1, 1}, {2, 1}, {2, 2}, {0, 2}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   // Self-loops don't affect the SCC structure
   REQUIRE(count_unique_components(component) == 1);
@@ -1146,7 +1146,7 @@ TEST_CASE("kosaraju - single vertex self-loop only", "[algorithm][kosaraju][scc]
   Graph                 g_t({{0, 0}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   REQUIRE(count_unique_components(component) == 1);
   REQUIRE(component[0] == 0);
@@ -1160,7 +1160,7 @@ TEST_CASE("kosaraju - parallel edges", "[algorithm][kosaraju][scc][comprehensive
   Graph                 g_t({{1, 0}, {1, 0}, {0, 1}, {0, 1}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   // Multiple edges don't change SCC structure
   REQUIRE(count_unique_components(component) == 1);
@@ -1186,7 +1186,7 @@ TEST_CASE("kosaraju - butterfly pattern", "[algorithm][kosaraju][scc][comprehens
                              {2, 4}}); // Triangle 2
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   // All vertices in one SCC (connected through shared vertex 2)
   REQUIRE(count_unique_components(component) == 1);
@@ -1203,7 +1203,7 @@ TEST_CASE("kosaraju - weakly connected but not strongly", "[algorithm][kosaraju]
   Graph                 g_t({{1, 0}, {2, 1}, {3, 2}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   REQUIRE(count_unique_components(component) == 4);
   for (size_t i = 0; i < 4; ++i) {
@@ -1229,7 +1229,7 @@ TEST_CASE("kosaraju - large component count verification", "[algorithm][kosaraju
   Graph                 g_t({{1, 0}, {2, 1}, {3, 2}, {0, 3}, {4, 3}, {5, 4}, {4, 5}, {6, 5}});
   std::vector<uint32_t> component(num_vertices(g));
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   REQUIRE(count_unique_components(component) == 3);
   REQUIRE(all_same_component(component, {0, 1, 2, 3}));
@@ -1287,7 +1287,7 @@ TEMPLATE_TEST_CASE("connected_components - sparse two components",
   Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 1}, {30, 20, 1}, {40, 50, 1}, {50, 40, 1}});
   auto component = make_vertex_property_map<Graph, uint32_t>(g, 0);
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 2);
   REQUIRE(sparse_same_component(component, std::vector<id_type>{10, 20, 30}));
@@ -1305,7 +1305,7 @@ TEMPLATE_TEST_CASE("connected_components - sparse single component",
   Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 1}, {30, 20, 1}, {30, 40, 1}, {40, 30, 1}});
   auto component = make_vertex_property_map<Graph, uint32_t>(g, 0);
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   REQUIRE(num_components == 1);
   REQUIRE(sparse_same_component(component, std::vector<id_type>{10, 20, 30, 40}));
@@ -1322,7 +1322,7 @@ TEMPLATE_TEST_CASE("connected_components - sparse isolated vertices",
   Graph g({{10, 20, 1}, {20, 10, 1}, {30, 30, 1}, {40, 40, 1}});
   auto component = make_vertex_property_map<Graph, uint32_t>(g, 0);
 
-  size_t num_components = connected_components(g, component);
+  size_t num_components = connected_components(g, container_value_fn(component));
 
   // 10-20 form one component, 30 and 40 are each their own
   REQUIRE(num_components >= 2);
@@ -1396,7 +1396,7 @@ TEMPLATE_TEST_CASE("kosaraju - sparse simple cycle",
   Graph g_t({{20, 10, 1}, {30, 20, 1}, {10, 30, 1}});
   auto component = make_vertex_property_map<Graph, uint32_t>(g, 0);
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   REQUIRE(sparse_same_component(component, std::vector<id_type>{10, 20, 30}));
 }
@@ -1412,7 +1412,7 @@ TEMPLATE_TEST_CASE("kosaraju - sparse two SCCs",
   Graph g_t({{20, 10, 1}, {10, 20, 1}, {30, 20, 1}, {40, 30, 1}, {30, 40, 1}});
   auto component = make_vertex_property_map<Graph, uint32_t>(g, 0);
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   REQUIRE(sparse_count_unique_components(component) == 2);
   REQUIRE(sparse_same_component(component, std::vector<id_type>{10, 20}));
@@ -1431,7 +1431,7 @@ TEMPLATE_TEST_CASE("kosaraju - sparse DAG (no cycles)",
   Graph g_t({{20, 10, 1}, {30, 20, 1}});
   auto component = make_vertex_property_map<Graph, uint32_t>(g, 0);
 
-  kosaraju(g, g_t, component);
+  kosaraju(g, g_t, container_value_fn(component));
 
   REQUIRE(sparse_count_unique_components(component) == 3);
   REQUIRE(sparse_different_components(component, id_type(10), id_type(20)));

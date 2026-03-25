@@ -85,8 +85,10 @@ void find_negative_cycle(G&                              g,
  * 
  * @tparam G            The graph type. Must satisfy adjacency_list concept (index or mapped).
  * @tparam Sources      Input range of source vertex IDs.
- * @tparam Distances    Vertex property map satisfying vertex_property_map_for<Distances,G>. Value type must be arithmetic.
- * @tparam Predecessors Vertex property map satisfying vertex_property_map_for<Predecessors,G>. Can use null_predecessors
+ * @tparam DistanceFn   Function returning a mutable reference to a per-vertex distance value:
+ *                      (const G&, vertex_id_t<G>) -> Distance&.
+ * @tparam PredecessorFn Function returning a mutable reference to a per-vertex predecessor value:
+ *                      (const G&, vertex_id_t<G>) -> PredecessorValue&. Can use _null_predecessor
  *                      if path reconstruction is not needed.
  * @tparam WF           Edge weight function. Defaults to returning 1 for all edges (unweighted).
  * @tparam Visitor      Visitor type with callbacks for algorithm events. Defaults to empty_visitor.
@@ -96,8 +98,8 @@ void find_negative_cycle(G&                              g,
  * 
  * @param g            The graph to process.
  * @param sources      Range of source vertex IDs to start from.
- * @param distances    [out] Shortest distances from sources. Must be a vertex property map for G.
- * @param predecessor  [out] Predecessor information for path reconstruction. Must be a vertex property map for G.
+ * @param distance     Function to access per-vertex distance: distance(g, uid) -> Distance&.
+ * @param predecessor  Function to access per-vertex predecessor: predecessor(g, uid) -> Predecessor&.
  * @param weight       Edge weight function: (const edge_t<G>&) -> Distance.
  * @param visitor      Visitor for algorithm events (examine, relax, not_relaxed, minimized, not_minimized).
  * @param compare      Distance comparison function: (Distance, Distance) -> bool.
@@ -109,27 +111,27 @@ void find_negative_cycle(G&                              g,
  * **Mandates:**
  * - G must satisfy adjacency_list (index or mapped graphs supported)
  * - Sources must be input_range with values convertible to vertex_id_t<G>
- * - Distances must satisfy vertex_property_map_for<Distances,G> with arithmetic value type
- * - Predecessors must satisfy vertex_property_map_for<Predecessors,G> (or null_predecessors)
+ * - DistanceFn must satisfy distance_fn_for<DistanceFn, G>
+ * - PredecessorFn must satisfy predecessor_fn_for<PredecessorFn, G> (or be _null_predecessor_fn)
  * - WF must satisfy basic_edge_weight_function
  * 
  * **Preconditions:**
- * - All source vertices must be valid vertex IDs in vertices(g)
- * - distances must contain an entry for each vertex of g
- * - predecessor must contain an entry for each vertex of g (unless using null_predecessors)
+ * - All source vertices must be valid vertex IDs in the graph
+ * - distance(g, uid) must be valid for all vertex IDs in the graph
+ * - predecessor(g, uid) must be valid for all vertex IDs in the graph (unless using _null_predecessor)
  * - Weight function must not throw or modify graph state
  * 
  * **Effects:**
- * - Modifies distances: Sets distances[v] for all vertices v
- * - Modifies predecessor: Sets predecessor[v] for all processed edges
+ * - Sets distance(g, v) for all vertices v via the distance function
+ * - Sets predecessor(g, v) for all processed edges via the predecessor function
  * - Does not modify the graph g
  * 
  * **Postconditions:**
- * - distances[s] == 0 for all sources s
- * - If no negative cycle: For reachable v, distances[v] contains shortest distance from nearest source
- * - If no negative cycle: For reachable v, predecessor[v] contains predecessor in shortest path tree
- * - If negative cycle detected: distances and predecessor may contain intermediate values
- * - For unreachable vertices v: distances[v] == numeric_limits<Distance>::max()
+ * - distance(g, s) == 0 for all sources s
+ * - If no negative cycle: For reachable v, distance(g, v) contains shortest distance from nearest source
+ * - If no negative cycle: For reachable v, predecessor(g, v) contains predecessor in shortest path tree
+ * - If negative cycle detected: distance and predecessor values may be intermediate (indeterminate)
+ * - For unreachable vertices v: distance(g, v) == infinite_distance<Distance>()
  * 
  * **Returns:**
  * - optional<vertex_id_t<G>>: empty if no negative cycle detected; contains a vertex ID in the
@@ -189,7 +191,7 @@ void find_negative_cycle(G&                              g,
  *     // Weighted directed graph with a negative edge: 0 --(4.0)--> 1 --(-2.0)--> 2 --(3.0)--> 3
  *     Graph g({{0,1,4.0},{1,2,-2.0},{2,3,3.0}});
  *
- *     constexpr auto INF = std::numeric_limits<double>::max();
+ *     constexpr auto INF = infinite_distance<double>();
  *     std::vector<double>   dist(num_vertices(g), INF);
  *     std::vector<uint32_t> pred(num_vertices(g), 0);
  *
@@ -218,8 +220,8 @@ template <
       class Visitor = empty_visitor,
       class Compare = less<distance_fn_value_t<DistanceFn, G>>,
       class Combine = plus<distance_fn_value_t<DistanceFn, G>>>
-requires distance_function_for<DistanceFn, G> &&                                //
-         predecessor_function_for<PredecessorFn, G> &&                          //
+requires distance_fn_for<DistanceFn, G> &&                                //
+         predecessor_fn_for<PredecessorFn, G> &&                          //
          convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&              //
          basic_edge_weight_function<G, WF, distance_fn_value_t<DistanceFn, G>, Compare, Combine>
 [[nodiscard]] constexpr optional<vertex_id_t<G>> bellman_ford_shortest_paths(
@@ -240,8 +242,8 @@ requires distance_function_for<DistanceFn, G> &&                                
   using weight_type   = invoke_result_t<WF, const graph_type&, edge_t<graph_type>>;
   using return_type   = optional<vertex_id_t<graph_type>>;
 
-  constexpr auto zero     = shortest_path_zero<DistanceValue>();
-  constexpr auto infinite = shortest_path_infinite_distance<DistanceValue>();
+  constexpr auto zero     = zero_distance<DistanceValue>();
+  constexpr auto infinite = infinite_distance<DistanceValue>();
 
   // relaxing the target is the function of reducing the distance from the source to the target
   auto relax_target = [&g, &predecessor, &distance, &compare, &combine] //
@@ -341,8 +343,8 @@ template <
       class Visitor = empty_visitor,
       class Compare = less<distance_fn_value_t<DistanceFn, G>>,
       class Combine = plus<distance_fn_value_t<DistanceFn, G>>>
-requires distance_function_for<DistanceFn, G> &&                                //
-         predecessor_function_for<PredecessorFn, G> &&                          //
+requires distance_fn_for<DistanceFn, G> &&                                //
+         predecessor_fn_for<PredecessorFn, G> &&                          //
          basic_edge_weight_function<G, WF, distance_fn_value_t<DistanceFn, G>, Compare, Combine>
 [[nodiscard]] constexpr optional<vertex_id_t<G>> bellman_ford_shortest_paths(
       G&&                   g,
@@ -401,7 +403,7 @@ template <
       class Visitor = empty_visitor,
       class Compare = less<distance_fn_value_t<DistanceFn, G>>,
       class Combine = plus<distance_fn_value_t<DistanceFn, G>>>
-requires distance_function_for<DistanceFn, G> &&                                //
+requires distance_fn_for<DistanceFn, G> &&                                //
          convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&              //
          basic_edge_weight_function<G, WF, distance_fn_value_t<DistanceFn, G>, Compare, Combine>
 [[nodiscard]] constexpr optional<vertex_id_t<G>> bellman_ford_shortest_distances(
@@ -437,7 +439,7 @@ template <
       class Visitor = empty_visitor,
       class Compare = less<distance_fn_value_t<DistanceFn, G>>,
       class Combine = plus<distance_fn_value_t<DistanceFn, G>>>
-requires distance_function_for<DistanceFn, G> &&                                //
+requires distance_fn_for<DistanceFn, G> &&                                //
          basic_edge_weight_function<G, WF, distance_fn_value_t<DistanceFn, G>, Compare, Combine>
 [[nodiscard]] constexpr optional<vertex_id_t<G>> bellman_ford_shortest_distances(
       G&&                   g,

@@ -819,8 +819,8 @@ auto inplace_kruskal(IELR&&    e,      // graph
  * 
  * **Mandates:**
  * - G must satisfy adjacency_list
- * - WeightFn must satisfy distance_function_for<WeightFn, G>
- * - PredecessorFn must satisfy predecessor_function_for<PredecessorFn, G>
+ * - WeightFn must satisfy distance_fn_for<WeightFn, G>
+ * - PredecessorFn must satisfy predecessor_fn_for<PredecessorFn, G>
  * - WF must satisfy basic_edge_weight_function
  * 
  * **Preconditions:**
@@ -870,9 +870,9 @@ template <adjacency_list G,
           class          PredecessorFn,
           class WF = function<distance_fn_value_t<WeightFn, G>(const std::remove_reference_t<G>&, const edge_t<G>&)>,
           class CompareOp = less<distance_fn_value_t<WeightFn, G>>>
-requires distance_function_for<WeightFn, G> &&
+requires distance_fn_for<WeightFn, G> &&
          is_arithmetic_v<distance_fn_value_t<WeightFn, G>> &&
-         predecessor_function_for<PredecessorFn, G> &&
+         predecessor_fn_for<PredecessorFn, G> &&
          basic_edge_weight_function<G, WF, distance_fn_value_t<WeightFn, G>, CompareOp, plus<distance_fn_value_t<WeightFn, G>>>
 auto prim(G&&                   g,           // graph
           const vertex_id_t<G>& seed,        // seed vtx

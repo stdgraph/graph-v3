@@ -379,7 +379,7 @@ TEMPLATE_TEST_CASE("bellman_ford_shortest_paths - sparse CLRS example",
   const auto& exp = clrs_dijkstra_sparse_expected{};
 
   auto g            = map_fixtures::clrs_dijkstra_graph<Graph>();
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   // Initialize predecessors: each vertex points to itself
   for (auto&& [uid, u] : views::vertexlist(g))
@@ -408,7 +408,7 @@ TEMPLATE_TEST_CASE("bellman_ford_shortest_distances - sparse CLRS example",
   const auto& exp = clrs_dijkstra_sparse_expected{};
 
   auto g         = map_fixtures::clrs_dijkstra_graph<Graph>();
-  auto distances = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
 
   auto result = bellman_ford_shortest_distances(g, id_type(exp.s), container_value_fn(distances),
                                                 [](const auto& g, const auto& uv) { return edge_value(g, uv); });
@@ -429,7 +429,7 @@ TEMPLATE_TEST_CASE("bellman_ford_shortest_paths - sparse multi-source",
   const auto& exp = clrs_dijkstra_sparse_expected{};
 
   auto g            = map_fixtures::clrs_dijkstra_graph<Graph>();
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
@@ -448,7 +448,7 @@ TEMPLATE_TEST_CASE("bellman_ford_shortest_paths - sparse multi-source",
 
   // All vertices should be reachable
   for (size_t i = 0; i < exp.num_vertices; ++i) {
-    REQUIRE(distances[exp.vertex_ids[i]] < shortest_path_infinite_distance<int>());
+    REQUIRE(distances[exp.vertex_ids[i]] < infinite_distance<int>());
   }
 }
 
@@ -460,7 +460,7 @@ TEMPLATE_TEST_CASE("bellman_ford_shortest_paths - sparse with visitor",
   const auto& exp = clrs_dijkstra_sparse_expected{};
 
   auto g            = map_fixtures::clrs_dijkstra_graph<Graph>();
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
@@ -485,7 +485,7 @@ TEMPLATE_TEST_CASE("bellman_ford_shortest_paths - sparse negative cycle detectio
   // Total cycle weight: 1 + 1 + (-3) = -1 (negative!)
   Graph g({{10, 20, 1}, {20, 30, 1}, {30, 10, -3}});
 
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
@@ -510,7 +510,7 @@ TEMPLATE_TEST_CASE("bellman_ford_shortest_paths - sparse find negative cycle ver
   // Same negative cycle graph
   Graph g({{10, 20, 1}, {20, 30, 1}, {30, 10, -3}});
 
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
@@ -540,7 +540,7 @@ TEMPLATE_TEST_CASE("bellman_ford_shortest_paths - sparse source not in graph thr
   using id_type = vertex_id_t<Graph>;
 
   auto g            = map_fixtures::clrs_dijkstra_graph<Graph>();
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
