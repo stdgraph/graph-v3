@@ -136,6 +136,72 @@ constexpr auto shortest_path_zero() {
 }
 
 //
+// Distance and predecessor function concepts
+//
+// These concepts enable algorithms to accept functions for per-vertex distance and
+// predecessor access: distance(g, uid) and predecessor(g, uid). This is more flexible
+// than requiring a specific container, because the values can reside on a vertex property
+// or in an external container.
+//
+
+/// Type alias: extracts the distance value type from a distance function's return type
+template <class DF, class G>
+using distance_fn_value_t = std::remove_cvref_t<
+    std::invoke_result_t<DF&, const std::remove_reference_t<G>&, const vertex_id_t<G>&>>;
+
+/// Concept: a callable returning a mutable reference to a per-vertex distance value
+template <class DF, class G>
+concept distance_function_for =
+      std::invocable<DF&, const std::remove_reference_t<G>&, const vertex_id_t<G>&> &&
+      std::is_lvalue_reference_v<
+            std::invoke_result_t<DF&, const std::remove_reference_t<G>&, const vertex_id_t<G>&>>;
+
+/// Concept: a callable returning a mutable reference to a per-vertex predecessor value
+template <class PF, class G>
+concept predecessor_function_for =
+      std::invocable<PF&, const std::remove_reference_t<G>&, const vertex_id_t<G>&> &&
+      std::is_lvalue_reference_v<
+            std::invoke_result_t<PF&, const std::remove_reference_t<G>&, const vertex_id_t<G>&>>;
+
+/// Null predecessor function — used when predecessor tracking is not needed.
+/// Detected at compile time via is_null_predecessor_fn_v to skip predecessor writes.
+struct _null_predecessor_fn {
+  template <class G, class VId>
+  size_t& operator()(const G&, const VId&) {
+    static size_t dummy = 0;
+    return dummy;
+  }
+};
+
+/// Global instance of the null predecessor function
+inline _null_predecessor_fn _null_predecessor;
+
+/// Type trait to detect _null_predecessor_fn at compile time
+template <class T>
+inline constexpr bool is_null_predecessor_fn_v = std::is_same_v<std::remove_cvref_t<T>, _null_predecessor_fn>;
+
+/// Function object that adapts a subscriptable container into a property function.
+/// Wraps container[uid] into fn(g, uid) -> auto&, satisfying distance_function_for
+/// and predecessor_function_for concepts.
+///
+/// Usage:
+///   std::vector<int> distances(num_vertices(g));
+///   dijkstra_shortest_paths(g, source, container_value_fn(distances), ...);
+///
+template <class Container>
+struct container_value_fn {
+  Container& c;
+
+  template <class G, class VId>
+  constexpr auto& operator()(const G&, const VId& uid) const {
+    return c[uid];
+  }
+};
+
+template <class Container>
+container_value_fn(Container&) -> container_value_fn<Container>;
+
+//
 // Visitor concepts
 //
 // These concepts enable compile-time detection of visitor callback methods. Algorithms check

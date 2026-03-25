@@ -802,16 +802,16 @@ auto inplace_kruskal(IELR&&    e,      // graph
  * edge connecting a tree vertex to a non-tree vertex. Delegates to dijkstra_shortest_paths
  * with a projecting combine function.
  * 
- * @tparam G           Graph type satisfying adjacency_list.
- * @tparam Predecessor Vertex property map for predecessor output.
- * @tparam Weight      Vertex property map for edge weight output.
- * @tparam WF          Edge weight function type. Defaults to edge_value(g, uv).
- * @tparam CompareOp   Comparison operator type. Defaults to less<>.
+ * @tparam G             Graph type satisfying adjacency_list.
+ * @tparam PredecessorFn Function type returning lvalue ref to predecessor for a vertex.
+ * @tparam WeightFn      Function type returning lvalue ref to edge weight for a vertex.
+ * @tparam WF            Edge weight function type. Defaults to edge_value(g, uv).
+ * @tparam CompareOp     Comparison operator type. Defaults to less<>.
  * 
  * @param g           The graph to process.
  * @param seed        Starting vertex for MST growth.
- * @param predecessor Output: predecessor[v] = parent of v in MST, predecessor[seed] = seed.
- * @param weight      Output: weight[v] = edge weight from predecessor[v] to v.
+ * @param weight      Function weight(g, uid) -> edge_weight&: returns lvalue ref to edge weight for vertex uid.
+ * @param predecessor Function predecessor(g, uid) -> vertex_id&: returns lvalue ref to predecessor for vertex uid.
  * @param weight_fn   Edge weight function (default: edge_value).
  * @param compare     Comparison for edge weights (default: less<>).
  * 
@@ -819,25 +819,24 @@ auto inplace_kruskal(IELR&&    e,      // graph
  * 
  * **Mandates:**
  * - G must satisfy adjacency_list
- * - Predecessor must satisfy vertex_property_map_for<Predecessor, G>
- * - Weight must satisfy vertex_property_map_for<Weight, G>
+ * - WeightFn must satisfy distance_function_for<WeightFn, G>
+ * - PredecessorFn must satisfy predecessor_function_for<PredecessorFn, G>
  * - WF must satisfy basic_edge_weight_function
  * 
  * **Preconditions:**
  * - seed must be a valid vertex in the graph
  * - predecessor and weight must be initialized (use init_shortest_paths)
- * - For index graphs: predecessor.size() >= num_vertices(g) and weight.size() >= num_vertices(g)
  * - compare must define a strict weak ordering
  * 
  * **Effects:**
- * - Writes MST structure to predecessor and weight arrays
+ * - Writes MST structure via predecessor and weight functions
  * - Does not modify graph g
  * 
  * **Postconditions:**
- * - predecessor[seed] == seed
- * - For reachable vertices: predecessor[v] points to parent in MST
- * - For unreachable vertices: predecessor[v] is unchanged
- * - weight[v] contains edge weight from predecessor[v] to v
+ * - predecessor(g, seed) == seed
+ * - For reachable vertices: predecessor(g, v) points to parent in MST
+ * - For unreachable vertices: predecessor(g, v) is unchanged
+ * - weight(g, v) contains edge weight from predecessor(g, v) to v
  * 
  * **Returns:**
  * - Total weight of the spanning tree (edge_value_type)
@@ -845,7 +844,6 @@ auto inplace_kruskal(IELR&&    e,      // graph
  * 
  * **Throws:**
  * - std::out_of_range if seed vertex ID is out of range
- * - std::out_of_range if predecessor or weight are undersized
  * - Exception guarantee: Basic. Graph g unchanged; predecessor/weight may be partial.
  * 
  * **Complexity:**
@@ -862,43 +860,48 @@ auto inplace_kruskal(IELR&&    e,      // graph
  * std::vector<uint32_t> pred(num_vertices(g));
  * std::vector<int> wt(num_vertices(g));
  * init_shortest_paths(g, wt, pred);
- * auto total_weight = prim(g, 0, pred, wt);
+ * auto total_weight = prim(g, 0,
+ *   [&wt](const auto& g, auto uid) -> auto& { return wt[uid]; },
+ *   [&pred](const auto& g, auto uid) -> auto& { return pred[uid]; });
  * ```
  */
 template <adjacency_list G,
-          class          Predecessor,
-          class          Weight,
-          class WF = function<vertex_property_map_value_t<Weight>(const std::remove_reference_t<G>&, const edge_t<G>&)>,
-          class CompareOp = less<vertex_property_map_value_t<Weight>>>
-requires vertex_property_map_for<Predecessor, G> &&
-         vertex_property_map_for<Weight, G> &&
-         basic_edge_weight_function<G, WF, vertex_property_map_value_t<Weight>, CompareOp, plus<vertex_property_map_value_t<Weight>>>
+          class          WeightFn,
+          class          PredecessorFn,
+          class WF = function<distance_fn_value_t<WeightFn, G>(const std::remove_reference_t<G>&, const edge_t<G>&)>,
+          class CompareOp = less<distance_fn_value_t<WeightFn, G>>>
+requires distance_function_for<WeightFn, G> &&
+         is_arithmetic_v<distance_fn_value_t<WeightFn, G>> &&
+         predecessor_function_for<PredecessorFn, G> &&
+         basic_edge_weight_function<G, WF, distance_fn_value_t<WeightFn, G>, CompareOp, plus<distance_fn_value_t<WeightFn, G>>>
 auto prim(G&&                   g,           // graph
           const vertex_id_t<G>& seed,        // seed vtx
-          Predecessor&          predecessor, // out: predecessor[uid] of uid in tree
-          Weight&               weight,      // out: edge value weight[uid] from tree edge uid to predecessor[uid]
+          WeightFn&&            weight,      // out: weight(g, uid) -> edge weight& from tree edge uid to predecessor
+          PredecessorFn&&       predecessor, // out: predecessor(g, uid) -> predecessor& of uid in tree
           WF&&                  weight_fn =
                 [](const auto& gr, const edge_t<G>& uv) {
                   return edge_value(gr, uv);
                 }, // default weight_fn(g, uv) -> edge_value(g, uv)
-          CompareOp             compare = less<vertex_property_map_value_t<Weight>>() // edge value comparator
+          CompareOp             compare = less<distance_fn_value_t<WeightFn, G>>() // edge value comparator
 ) {
-  using edge_value_type = vertex_property_map_value_t<Weight>;
+  using edge_value_type = distance_fn_value_t<WeightFn, G>;
 
   // Prim's combine: ignore accumulated distance, use edge weight directly.
   // This transforms Dijkstra's relaxation check from compare(d_u + w, d_v)
   // to compare(w, d_v), which is exactly Prim's criterion.
   auto prim_combine = [](edge_value_type /*d_u*/, edge_value_type w_uv) -> edge_value_type { return w_uv; };
 
-  dijkstra_shortest_paths(g, seed, weight, predecessor,
+  dijkstra_shortest_paths(g, seed,
+                          std::forward<WeightFn>(weight),
+                          std::forward<PredecessorFn>(predecessor),
                           std::forward<WF>(weight_fn), empty_visitor(),
                           std::forward<CompareOp>(compare), prim_combine);
 
   // Calculate total MST weight by summing edge weights
   edge_value_type total_weight = edge_value_type{};
   for (auto [vid] : views::basic_vertexlist(g)) {
-    if (vid != seed && predecessor[vid] != vid) {
-      total_weight += weight[vid];
+    if (vid != seed && predecessor(g, vid) != vid) {
+      total_weight += weight(g, vid);
     }
   }
 
