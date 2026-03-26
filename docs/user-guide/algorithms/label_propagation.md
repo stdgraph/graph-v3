@@ -83,13 +83,13 @@ Key behaviors:
 
 ```cpp
 // Basic: all vertices start with labels
-void label_propagation(G&& g, Label& label,
+void label_propagation(G&& g, LabelFn&& label,
     Gen&& rng = /* default */,
     T max_iters = std::numeric_limits<T>::max());
 
 // With empty-label sentinel: unlabeled vertices don't participate
-void label_propagation(G&& g, Label& label,
-    range_value_t<Label> empty_label,
+void label_propagation(G&& g, LabelFn&& label,
+    vertex_fn_value_t<LabelFn, G> empty_label,
     Gen&& rng = /* default */,
     T max_iters = std::numeric_limits<T>::max());
 ```
@@ -99,7 +99,7 @@ void label_propagation(G&& g, Label& label,
 | Parameter | Description |
 |-----------|-------------|
 | `g` | Graph satisfying `adjacency_list` |
-| `label` | Subscriptable by `vertex_id_t<G>`. For index graphs, a pre-sized `std::vector`; for mapped graphs, use `make_vertex_property_map<G, T>(g, init)`. Must satisfy `vertex_property_map_for<Label, G>`. Initial labels in, community labels out. Modified in-place. |
+| `label` | Callable `(const G&, vertex_id_t<G>) -> LabelValue&` returning a mutable reference to the per-vertex label. Initial labels in, community labels out. For containers: wrap with `container_value_fn(lbl)`. Must satisfy `vertex_property_fn_for<LabelFn, G>`. |
 | `empty_label` | Sentinel value for unlabeled vertices (they don't vote until labeled) |
 | `rng` | Random number generator for tie-breaking and shuffle (e.g., `std::mt19937`) |
 | `max_iters` | Maximum number of iterations. Default: unlimited (run until convergence). |
@@ -124,7 +124,7 @@ void label_propagation(G&& g, Label& label,
 
 **Container Requirements:**
 - Required: `adjacency_list<G>`
-- `label` must satisfy `vertex_property_map_for<Label, G>`
+- `label` must satisfy `vertex_property_fn_for<LabelFn, G>`
 - `rng` must satisfy `UniformRandomBitGenerator`
 
 ## Examples
@@ -153,7 +153,7 @@ std::vector<uint32_t> label(num_vertices(g));
 std::iota(label.begin(), label.end(), 0u);  // label[v] = v initially
 
 std::mt19937 rng{42};
-label_propagation(g, label, rng);
+label_propagation(g, container_value_fn(label), rng);
 
 // After convergence:
 //   label[0] == label[1] == label[2]  (community A)
@@ -175,7 +175,7 @@ Graph k4({{0,1},{1,0}, {0,2},{2,0}, {0,3},{3,0},
 std::vector<int> label = {99, 99, 99, 42};
 
 std::mt19937 rng{42};
-label_propagation(k4, label, rng);
+label_propagation(k4, container_value_fn(label), rng);
 
 // All converge to 99 — majority wins
 // label = {99, 99, 99, 99}
@@ -193,7 +193,7 @@ don't vote until they receive a label from a neighbor. This enables
 std::vector<int> label = {42, -1, -1, -1, -1, 99};
 
 std::mt19937 rng{42};
-label_propagation(g, label, -1, rng);
+label_propagation(g, container_value_fn(label), -1, rng);
 
 // Labels propagate outward from initially-labeled vertices:
 //   42 spreads to vertices 1, 2 (close to vertex 0)
@@ -210,7 +210,7 @@ std::vector<uint32_t> label(num_vertices(g));
 std::iota(label.begin(), label.end(), 0u);
 
 std::mt19937 rng{42};
-label_propagation(g, label, rng, 1);  // single iteration
+label_propagation(g, container_value_fn(label), rng, 1);  // single iteration
 
 // After just 1 iteration, some vertices may not have converged yet.
 // Useful for:
@@ -219,7 +219,7 @@ label_propagation(g, label, rng, 1);  // single iteration
 //   - Monitoring convergence behavior
 
 // Re-running continues from current labels:
-label_propagation(g, label, rng, 5);  // 5 more iterations
+label_propagation(g, container_value_fn(label), rng, 5);  // 5 more iterations
 // Labels refine further; often converges within these additional rounds
 ```
 
@@ -239,7 +239,7 @@ std::vector<uint32_t> label(num_vertices(g));
 std::iota(label.begin(), label.end(), 0u);
 
 std::mt19937 rng{42};
-label_propagation(g, label, rng);
+label_propagation(g, container_value_fn(label), rng);
 
 // label[0] == label[1] == label[2]  (one community)
 // label[3] == label[4] == label[5]  (another community)
@@ -257,7 +257,7 @@ auto run_lp = [&](unsigned seed) {
     std::vector<uint32_t> label(num_vertices(g));
     std::iota(label.begin(), label.end(), 0u);
     std::mt19937 rng{seed};
-    label_propagation(g, label, rng);
+    label_propagation(g, container_value_fn(label), rng);
     return label;
 };
 
@@ -275,19 +275,20 @@ auto labels_c = run_lp(123);
 ## Mandates
 
 - `G` must satisfy `adjacency_list<G>`
-- `Label` must satisfy `vertex_property_map_for<Label, G>`
+- `LabelFn` must satisfy `vertex_property_fn_for<LabelFn, G>`
 - `Gen` must satisfy `UniformRandomBitGenerator`
-- Label values must be equality-comparable and hashable
+- Label values (returned by `LabelFn`) must be equality-comparable and hashable
 
 ## Preconditions
 
-- `label` must be pre-initialized (e.g., with `std::iota` for one-label-per-vertex)
+- `label(g, uid)` must be valid for all vertex IDs in `g` and initialized
+  (e.g., via `std::iota` on the underlying container for one-label-per-vertex)
 - With `empty_label` sentinel: vertices with the sentinel label don't vote.
   If all vertices start with the sentinel, no propagation occurs.
 
 ## Effects
 
-- Modifies `label[v]` in-place for all vertices
+- Writes community labels via `label(g, uid)` in-place for all vertices
 - Does not modify the graph `g`
 - Vertex processing order is shuffled each iteration
 - Iterates until convergence or `max_iters` is reached

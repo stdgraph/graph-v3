@@ -77,21 +77,24 @@ vertex v.
 ### `connected_components` — undirected
 
 ```cpp
-size_t connected_components(G&& g, Component& component);
+size_t connected_components(G&& g, ComponentFn&& component);
 ```
 
 DFS-based algorithm for undirected graphs. Returns the number of connected
-components. Assigns `component[v]` = component ID (0-based).
+components. `component(g, uid)` is called with each vertex ID to assign its
+component ID (0-based).
 
 ### `kosaraju` — strongly connected components
 
 ```cpp
-void kosaraju(G&& g, GT&& g_transpose, Component& component);
+void kosaraju(G&& g, GT&& g_transpose, ComponentFn&& component);
+
+// Bidirectional overload — no transpose graph needed
+void kosaraju(G&& g, ComponentFn&& component);
 ```
 
-Kosaraju's two-pass DFS algorithm for directed graphs. Requires both the
-original graph `g` and its transpose `g_transpose` (edges reversed). Fills
-`component[v]` with the SCC ID.
+Kosaraju's two-pass DFS algorithm for directed graphs. Fills
+`component(g, uid)` with the SCC ID for each vertex.
 
 ### `afforest` — union-find with neighbor sampling
 
@@ -105,19 +108,19 @@ void afforest(G&& g, GT&& g_transpose, Component& component,
 Union-find-based algorithm with neighbor sampling for large or parallel-friendly
 workloads. The `neighbor_rounds` parameter controls how many initial sampling
 rounds are performed before falling back to full edge iteration. Call
-`compress(component)` afterwards for canonical (root) component IDs on a
-single-machine.
+`compress(component)` afterwards for canonical (root) component IDs.
 
-The two-graph variant accepts a transpose `g_transpose` for directed-graph
-support. The transpose must also satisfy `adjacency_list`.
+> **Note:** `afforest` retains a container-based `Component&` interface (not the
+> function-based API) because its internal union-find helpers (`link`, `compress`,
+> `sample_frequent_element`) require direct subscript access to the component array.
 
 ## Parameters
 
 | Parameter | Description |
 |-----------|-------------|
 | `g` | Graph satisfying `adjacency_list` |
-| `g_transpose` | Transpose graph (for `kosaraju` and `afforest` with transpose). `kosaraju` requires `adjacency_list`; `afforest` requires `adjacency_list`. |
-| `component` | Subscriptable by `vertex_id_t<G>`. For index graphs, a pre-sized `std::vector`; for mapped graphs, use `make_vertex_property_map<G, T>(g, init)`. Must satisfy `vertex_property_map_for<Component, G>`. |
+| `g_transpose` | Transpose graph (for `kosaraju` and `afforest` with transpose). Must satisfy `adjacency_list`. |
+| `component` | For `connected_components` and `kosaraju`: callable `(const G&, vertex_id_t<G>) -> ComponentID&` returning a mutable reference. For containers: wrap with `container_value_fn(comp)`. Must satisfy `vertex_property_fn_for<ComponentFn, G>`. For `afforest`: a subscriptable container (`vector` or `unordered_map`), still using the container API. |
 | `neighbor_rounds` | Number of neighbor-sampling rounds for `afforest` (default: 2) |
 
 **Return value (`connected_components` only):** `size_t` — number of connected
@@ -143,7 +146,8 @@ components. `kosaraju` and `afforest` return `void`.
 
 **Container Requirements:**
 - Required: `adjacency_list<G>`
-- `component` must satisfy `vertex_property_map_for<Component, G>`
+- `component` (`connected_components` and `kosaraju`) must satisfy `vertex_property_fn_for<ComponentFn, G>`
+- `component` (`afforest`) must satisfy `vertex_property_map_for<Component, G>`
 - `kosaraju`: transpose graph must also satisfy `adjacency_list`
 
 ## Examples
@@ -167,7 +171,7 @@ using Graph = container::dynamic_graph<void, void, void, uint32_t, false,
 Graph g({{0, 1}, {1, 0}, {1, 2}, {2, 1}, {3, 4}, {4, 3}});
 
 std::vector<uint32_t> comp(num_vertices(g));
-size_t num_cc = connected_components(g, comp);
+size_t num_cc = connected_components(g, container_value_fn(comp));
 
 // num_cc == 2
 // comp[0] == comp[1] == comp[2]  (same component)
@@ -188,7 +192,7 @@ Graph g({{0, 1}, {1, 2}, {2, 0}, {2, 3}});
 Graph g_t({{1, 0}, {2, 1}, {0, 2}, {3, 2}});
 
 std::vector<uint32_t> comp(num_vertices(g));
-kosaraju(g, g_t, comp);
+kosaraju(g, g_t, container_value_fn(comp));
 
 // comp[0] == comp[1] == comp[2]  (cycle forms an SCC)
 // comp[3] != comp[0]             (3 is its own SCC — not on any cycle)
@@ -217,7 +221,7 @@ bidirectional edge pairs.
 undirected_adjacency_list<int, int> g({{0, 1, 1}, {1, 2, 1}, {3, 4, 1}});
 
 std::vector<uint32_t> comp(num_vertices(g));
-size_t num_cc = connected_components(g, comp);
+size_t num_cc = connected_components(g, container_value_fn(comp));
 
 // num_cc == 2
 // Same results as vov with bidirectional edges, but simpler construction
@@ -270,19 +274,22 @@ compress(comp);
 ## Mandates
 
 - `G` must satisfy `adjacency_list<G>`
-- `Component` must satisfy `vertex_property_map_for<Component, G>`
+- `connected_components` and `kosaraju`: `ComponentFn` must satisfy `vertex_property_fn_for<ComponentFn, G>`
+- `afforest`: `Component` must satisfy `vertex_property_map_for<Component, G>`
 - For `kosaraju`: `GT` must satisfy `adjacency_list<GT>`
 
 ## Preconditions
 
-- `component` must be pre-sized for all vertex IDs in `g`
+- `component(g, uid)` must be valid for all vertex IDs in `g` (`connected_components`, `kosaraju`)
+- `component` must be pre-sized for all vertex IDs in `g` (`afforest`)
 - For `connected_components`: undirected graphs must store both directions of
   each edge (or use `undirected_adjacency_list`)
 - For `kosaraju`: the transpose graph must contain all edges reversed
 
 ## Effects
 
-- Writes component IDs to `component[v]` for all vertices
+- Writes component IDs via `component(g, uid)` for all vertices (`connected_components`, `kosaraju`)
+- Writes component IDs to `component[uid]` for all vertices (`afforest`)
 - Does not modify the graph `g` (or `g_transpose`)
 - For `afforest`: call `compress(component)` afterwards for canonical root IDs
 

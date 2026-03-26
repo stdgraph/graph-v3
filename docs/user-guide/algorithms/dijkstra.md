@@ -82,7 +82,7 @@ function, an optional visitor, and optional comparator/combiner functors.
 ```cpp
 // Multi-source, distances + predecessors
 constexpr void dijkstra_shortest_paths(G&& g, const Sources& sources,
-    Distances& distances, Predecessors& predecessors,
+    DistanceFn&& distance, PredecessorFn&& predecessor,
     WF&& weight = /* default returns 1 */,
     Visitor&& visitor = empty_visitor(),
     Compare&& compare = less<>{},
@@ -90,7 +90,7 @@ constexpr void dijkstra_shortest_paths(G&& g, const Sources& sources,
 
 // Single-source, distances + predecessors
 constexpr void dijkstra_shortest_paths(G&& g, const vertex_id_t<G>& source,
-    Distances& distances, Predecessors& predecessors,
+    DistanceFn&& distance, PredecessorFn&& predecessor,
     WF&& weight = /* default returns 1 */,
     Visitor&& visitor = empty_visitor(),
     Compare&& compare = less<>{},
@@ -98,7 +98,7 @@ constexpr void dijkstra_shortest_paths(G&& g, const vertex_id_t<G>& source,
 
 // Multi-source, distances only
 constexpr void dijkstra_shortest_distances(G&& g, const Sources& sources,
-    Distances& distances,
+    DistanceFn&& distance,
     WF&& weight = /* default returns 1 */,
     Visitor&& visitor = empty_visitor(),
     Compare&& compare = less<>{},
@@ -106,7 +106,7 @@ constexpr void dijkstra_shortest_distances(G&& g, const Sources& sources,
 
 // Single-source, distances only
 constexpr void dijkstra_shortest_distances(G&& g, const vertex_id_t<G>& source,
-    Distances& distances,
+    DistanceFn&& distance,
     WF&& weight = /* default returns 1 */,
     Visitor&& visitor = empty_visitor(),
     Compare&& compare = less<>{},
@@ -119,8 +119,8 @@ constexpr void dijkstra_shortest_distances(G&& g, const vertex_id_t<G>& source,
 |-----------|-------------|
 | `g` | Graph satisfying `adjacency_list` |
 | `source` / `sources` | Source vertex ID or range of source vertex IDs |
-| `distances` | Subscriptable by `vertex_id_t<G>`. For index graphs, a pre-sized `std::vector`; for mapped graphs, use `make_vertex_property_map<G, T>(g, init)`. Must satisfy `vertex_property_map_for<Distances, G>`. |
-| `predecessors` | Subscriptable by `vertex_id_t<G>`. For index graphs, a pre-sized `std::vector`; for mapped graphs, use `make_vertex_property_map<G, T>(g, init)`. Must satisfy `vertex_property_map_for<Predecessors, G>`. |
+| `distance` | Callable `(const G&, vertex_id_t<G>) -> Distance&` returning a mutable reference to the per-vertex distance. For containers: wrap with `container_value_fn(dist)`. Must satisfy `distance_fn_for<DistanceFn, G>`. |
+| `predecessor` | Callable `(const G&, vertex_id_t<G>) -> Predecessor&` returning a mutable reference to the per-vertex predecessor. For containers: wrap with `container_value_fn(pred)`. Must satisfy `predecessor_fn_for<PredecessorFn, G>`. Use `_null_predecessor` when path reconstruction is not needed. |
 | `weight` | Callable `WF(g, uv)` returning edge weight. Must satisfy `basic_edge_weight_function`. Default: returns `1` for every edge (unweighted). |
 | `visitor` | Optional visitor struct with callback methods (see below). Default: `empty_visitor{}`. |
 | `compare` | Comparison function for distance values. Default: `std::less<>{}`. |
@@ -160,11 +160,12 @@ need to define the events you care about — missing methods are silently skippe
 - ✅ Disconnected graphs (unreachable vertices retain infinity distance)
 - ✅ Empty graphs (no-op)
 
-**Container Requirements:**
+**Property Function Requirements:**
 - Required: `adjacency_list<G>`
-- `distances` must satisfy `vertex_property_map_for<Distances, G>`
-- `predecessors` must satisfy `vertex_property_map_for<Predecessors, G>`
+- `distance` must satisfy `distance_fn_for<DistanceFn, G>`
+- `predecessor` must satisfy `predecessor_fn_for<PredecessorFn, G>`
 - `weight` must satisfy `basic_edge_weight_function`
+- Use `container_value_fn(vec)` to adapt a `std::vector` or similar container
 
 ## Examples
 
@@ -201,7 +202,7 @@ std::vector<unsigned> pred(num_vertices(g));
 // Initialize distances to infinity, predecessors to self
 init_shortest_paths(dist, pred);
 
-dijkstra_shortest_paths(g, 0u, dist, pred,
+dijkstra_shortest_paths(g, 0u, container_value_fn(dist), container_value_fn(pred),
     [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
 // dist[0] = 0, dist[1] = 8, dist[2] = 5, dist[3] = 6, dist[4] = 2
@@ -217,11 +218,11 @@ When you only need distances and don't need to reconstruct paths, use
 std::vector<double> dist(num_vertices(g));
 init_shortest_paths(dist);  // one-argument form: distances only
 
-dijkstra_shortest_distances(g, 0u, dist,
+dijkstra_shortest_distances(g, 0u, container_value_fn(dist),
     [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
 // dist[v] = shortest distance from source 0 to v
-// Unreachable vertices remain at numeric_limits<double>::max()
+// Unreachable vertices remain at infinite_distance<double>()
 ```
 
 ### Example 3: Multi-Source Shortest Paths
@@ -237,7 +238,7 @@ init_shortest_paths(dist, pred);
 
 // Sources can be any range: vector, array, initializer_list
 std::array sources{0u, 2u};
-dijkstra_shortest_paths(g, sources, dist, pred,
+dijkstra_shortest_paths(g, sources, container_value_fn(dist), container_value_fn(pred),
     [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
 // dist[v] = shortest distance from the nearest source to v
@@ -250,12 +251,12 @@ After running `dijkstra_shortest_paths`, reconstruct the shortest path from
 source to any target by walking the predecessor array backwards.
 
 ```cpp
-// After running dijkstra_shortest_paths(g, source, dist, pred, weight) ...
+// After running dijkstra_shortest_paths(g, source, container_value_fn(dist), container_value_fn(pred), weight) ...
 
 unsigned target = 3;
 unsigned source = 0;
 
-if (dist[target] == std::numeric_limits<double>::max()) {
+if (dist[target] == infinite_distance<double>()) {
     // target is unreachable from source
 } else {
     // Build path in reverse
@@ -289,7 +290,7 @@ std::vector<uint32_t> pred(num_vertices(g));
 init_shortest_paths(dist, pred);
 
 // No weight function — default returns 1 per edge
-dijkstra_shortest_paths(g, 0u, dist, pred);
+dijkstra_shortest_paths(g, 0u, container_value_fn(dist), container_value_fn(pred));
 
 // dist[0] = 0, dist[1] = 1, dist[2] = 1, dist[3] = 2, dist[4] = 3
 // These are hop counts — same as BFS distances
@@ -324,7 +325,7 @@ std::vector<unsigned> pred(num_vertices(g));
 init_shortest_paths(dist, pred);
 
 RelaxationTracker tracker;
-dijkstra_shortest_paths(g, 0u, dist, pred,
+dijkstra_shortest_paths(g, 0u, container_value_fn(dist), container_value_fn(pred),
     [](const auto& g, const auto& uv) { return edge_value(g, uv); },
     tracker);
 
@@ -348,8 +349,8 @@ struct IdVisitor {
 ## Mandates
 
 - `G` must satisfy `adjacency_list<G>`
-- `Distances` must satisfy `vertex_property_map_for<Distances, G>`
-- `Predecessors` must satisfy `vertex_property_map_for<Predecessors, G>`
+- `DistanceFn` must satisfy `distance_fn_for<DistanceFn, G>`
+- `PredecessorFn` must satisfy `predecessor_fn_for<PredecessorFn, G>` (or use `_null_predecessor`)
 - `WF` must satisfy `basic_edge_weight_function`
 - Visitor callbacks (if present) must accept appropriate graph and vertex/edge parameters
 
@@ -357,14 +358,14 @@ struct IdVisitor {
 
 - All edge weights must be **non-negative**. For signed weight types, a negative
   weight throws `std::out_of_range` at runtime.
-- `distances` and `predecessors` must be pre-sized for all vertex IDs in `g`
-- Call `init_shortest_paths(distances, predecessors)` before invoking the algorithm
+- `distance(g, uid)` must be valid for all vertex IDs in `g`
+- Call `init_shortest_paths(distances, predecessors)` on the underlying containers before invoking the algorithm
 - All source vertex IDs must be valid vertex IDs in `g`
 
 ## Effects
 
-- Writes shortest-path distances to `distances[v]` for all reachable vertices
-- Writes predecessor vertex IDs to `predecessors[v]` for path reconstruction
+- Writes shortest-path distances via `distance(g, v)` for all reachable vertices
+- Writes predecessor vertex IDs via `predecessor(g, v)` for path reconstruction
   (`dijkstra_shortest_paths` only)
 - Does not modify the graph `g`
 - Invokes visitor callbacks in Dijkstra traversal order

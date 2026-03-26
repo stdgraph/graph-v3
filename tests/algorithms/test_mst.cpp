@@ -309,7 +309,9 @@ TEST_CASE("prim - simple triangle", "[algorithm][mst][prim]") {
   std::vector<int>      weight(3);
   init_shortest_paths(g, weight, predecessor);
 
-  auto total_wt = prim(g, 0, predecessor, weight);
+  auto total_wt = prim(g, 0,
+                       container_value_fn(weight),
+                       container_value_fn(predecessor));
 
   // Check MST properties
   REQUIRE(predecessor[0] == 0); // Root
@@ -330,7 +332,9 @@ TEST_CASE("prim - linear graph", "[algorithm][mst][prim]") {
   std::vector<int>      weight(4);
   init_shortest_paths(g, weight, predecessor);
 
-  prim(g, 0, predecessor, weight);
+  prim(g, 0,
+       container_value_fn(weight),
+       container_value_fn(predecessor));
 
   REQUIRE(predecessor[0] == 0); // Root
 
@@ -360,7 +364,9 @@ TEST_CASE("prim - complete graph K4", "[algorithm][mst][prim]") {
   std::vector<int>      weight(4);
   init_shortest_paths(g, weight, predecessor);
 
-  prim(g, 0, predecessor, weight);
+  prim(g, 0,
+       container_value_fn(weight),
+       container_value_fn(predecessor));
 
   REQUIRE(predecessor[0] == 0);
 
@@ -400,7 +406,9 @@ TEST_CASE("kruskal and prim produce same MST weight", "[algorithm][mst]") {
   std::vector<uint32_t> predecessor(5);
   std::vector<int>      weight(5);
   init_shortest_paths(g, weight, predecessor);
-  prim(g, 0, predecessor, weight);
+  prim(g, 0,
+       container_value_fn(weight),
+       container_value_fn(predecessor));
 
   int prim_weight = weight[1] + weight[2] + weight[3] + weight[4];
 
@@ -424,7 +432,9 @@ TEST_CASE("prim - undirected_adjacency_list triangle", "[algorithm][mst][prim][u
   std::vector<int>      weight(3);
   init_shortest_paths(g, weight, predecessor);
 
-  auto total_wt = prim(g, 0, predecessor, weight);
+  auto total_wt = prim(g, 0,
+                       container_value_fn(weight),
+                       container_value_fn(predecessor));
 
   // Check MST properties
   REQUIRE(predecessor[0] == 0); // Root
@@ -446,7 +456,9 @@ TEST_CASE("prim - undirected_adjacency_list linear graph", "[algorithm][mst][pri
   std::vector<int>      weight(4);
   init_shortest_paths(g, weight, predecessor);
 
-  auto total_wt = prim(g, 0, predecessor, weight);
+  auto total_wt = prim(g, 0,
+                       container_value_fn(weight),
+                       container_value_fn(predecessor));
 
   REQUIRE(predecessor[0] == 0); // Root
 
@@ -466,7 +478,9 @@ TEST_CASE("prim - undirected_adjacency_list complete graph K4", "[algorithm][mst
   std::vector<int>      weight(4);
   init_shortest_paths(g, weight, predecessor);
 
-  auto total_wt = prim(g, 0, predecessor, weight);
+  auto total_wt = prim(g, 0,
+                       container_value_fn(weight),
+                       container_value_fn(predecessor));
 
   REQUIRE(predecessor[0] == 0);
 
@@ -486,7 +500,9 @@ TEST_CASE("prim - undirected_adjacency_list CLRS example", "[algorithm][mst][pri
   std::vector<int>      weight(5);
   init_shortest_paths(g, weight, predecessor);
 
-  auto total_wt = prim(g, 0, predecessor, weight);
+  auto total_wt = prim(g, 0,
+                       container_value_fn(weight),
+                       container_value_fn(predecessor));
 
   REQUIRE(predecessor[0] == 0); // Root
 
@@ -520,7 +536,9 @@ TEMPLATE_TEST_CASE("prim - sparse triangle",
   auto weight_map  = make_vertex_property_map<Graph, int>(g, 0);
   init_shortest_paths(g, weight_map, predecessor);
 
-  auto total_wt = prim(g, id_type(10), predecessor, weight_map);
+  auto total_wt = prim(g, id_type(10),
+                       container_value_fn(weight_map),
+                       container_value_fn(predecessor));
 
   REQUIRE(predecessor[id_type(10)] == id_type(10)); // Root
   REQUIRE(total_wt == 3);                           // 1 + 2
@@ -539,7 +557,9 @@ TEMPLATE_TEST_CASE("prim - sparse linear graph",
   auto weight_map  = make_vertex_property_map<Graph, int>(g, 0);
   init_shortest_paths(g, weight_map, predecessor);
 
-  auto total_wt = prim(g, id_type(10), predecessor, weight_map);
+  auto total_wt = prim(g, id_type(10),
+                       container_value_fn(weight_map),
+                       container_value_fn(predecessor));
 
   REQUIRE(predecessor[id_type(10)] == id_type(10)); // Root
   REQUIRE(total_wt == 6);                           // 1 + 2 + 3
@@ -559,7 +579,9 @@ TEMPLATE_TEST_CASE("prim - sparse complete graph K4",
   auto weight_map  = make_vertex_property_map<Graph, int>(g, 0);
   init_shortest_paths(g, weight_map, predecessor);
 
-  auto total_wt = prim(g, id_type(10), predecessor, weight_map);
+  auto total_wt = prim(g, id_type(10),
+                       container_value_fn(weight_map),
+                       container_value_fn(predecessor));
 
   REQUIRE(predecessor[id_type(10)] == id_type(10)); // Root
   REQUIRE(total_wt == 6);                           // Same as contiguous K4 test
@@ -587,7 +609,9 @@ TEMPLATE_TEST_CASE("prim - sparse kruskal comparison",
   auto predecessor = make_vertex_property_map<Graph, id_type>(g, id_type{});
   auto weight_map  = make_vertex_property_map<Graph, int>(g, 0);
   init_shortest_paths(g, weight_map, predecessor);
-  auto prim_weight = prim(g, id_type(10), predecessor, weight_map);
+  auto prim_weight = prim(g, id_type(10),
+                          container_value_fn(weight_map),
+                          container_value_fn(predecessor));
 
   REQUIRE(kruskal_weight == prim_weight);
 }
@@ -604,5 +628,8 @@ TEMPLATE_TEST_CASE("prim - sparse invalid seed throws",
   auto weight_map  = make_vertex_property_map<Graph, int>(g, 0);
   init_shortest_paths(g, weight_map, predecessor);
 
-  CHECK_THROWS_AS(prim(g, id_type(999), predecessor, weight_map), std::out_of_range);
+  CHECK_THROWS_AS(prim(g, id_type(999),
+                       container_value_fn(weight_map),
+                       container_value_fn(predecessor)),
+                  std::out_of_range);
 }

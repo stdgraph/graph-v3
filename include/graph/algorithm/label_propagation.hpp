@@ -14,6 +14,7 @@
 
 #include "graph/graph.hpp"
 #include "graph/adj_list/vertex_property_map.hpp"
+#include "graph/algorithm/traversal_common.hpp"
 
 #ifndef GRAPH_LABEL_PROPAGATION_HPP
 #  define GRAPH_LABEL_PROPAGATION_HPP
@@ -42,18 +43,18 @@ using adj_list::num_vertices;
 namespace detail {
 
 template <adjacency_list G,
-          class Label,
+          class LabelFn,
           class Gen,
           class T>
-requires vertex_property_map_for<Label, G> &&
-         std::equality_comparable<vertex_property_map_value_t<Label>> &&
+requires vertex_property_fn_for<LabelFn, G> &&
+         std::equality_comparable<vertex_fn_value_t<LabelFn, G>> &&
          std::uniform_random_bit_generator<std::remove_cvref_t<Gen>>
-void label_propagation_impl(G&&                                                     g,
-                            Label&                                                   label,
-                            std::optional<vertex_property_map_value_t<Label>> const&  empty_label,
-                            Gen&&                                                     rng,
-                            T                                                         max_iters) {
-  using label_type = vertex_property_map_value_t<Label>;
+void label_propagation_impl(G&&                                                  g,
+                            LabelFn&&                                            label,
+                            std::optional<vertex_fn_value_t<LabelFn, G>> const& empty_label,
+                            Gen&&                                                rng,
+                            T                                                    max_iters) {
+  using label_type = vertex_fn_value_t<LabelFn, G>;
 
   const size_t N = num_vertices(g);
   if (N == 0) {
@@ -77,8 +78,8 @@ void label_propagation_impl(G&&                                                 
       std::unordered_map<label_type, size_t> freq;
       for (auto&& uv : edges(g, *find_vertex(g, uid))) {
         auto tid = target_id(g, uv);
-        if (!empty_label || !(label[tid] == *empty_label)) {
-          ++freq[label[tid]];
+        if (!empty_label || !(label(g, tid) == *empty_label)) {
+          ++freq[label(g, tid)];
         }
       }
 
@@ -111,8 +112,8 @@ void label_propagation_impl(G&&                                                 
         best = candidates[dist(rng)];
       }
 
-      if (!(label[uid] == best)) {
-        label[uid] = best;
+      if (!(label(g, uid) == best)) {
+        label(g, uid) = best;
         changed    = true;
       }
     }
@@ -134,14 +135,16 @@ void label_propagation_impl(G&&                                                 
  * (convergence) or until @p max_iters iterations have been performed.
  *
  * @tparam G          The graph type. Must satisfy adjacency_list concept.
- * @tparam Label      Vertex property map whose vertex_property_map_value_t is the label type.
- *                    For index graphs: std::vector<T>. For mapped graphs: std::unordered_map<VId, T>.
+ * @tparam LabelFn    Callable providing per-vertex label access:
+ *                    (const G&, vertex_id_t<G>) -> LabelValue&. Must satisfy
+ *                    vertex_property_fn_for<LabelFn, G>.
  * @tparam Gen        Uniform random bit generator type (default std::default_random_engine).
  * @tparam T          Integral type for the iteration limit (default size_t).
  *
  * @param g           The graph to process.
- * @param label       [in,out] Vertex property map holding initial labels for every vertex.
- *                    Modified in place to hold final labels on return.
+ * @param label       Callable providing per-vertex label access: label(g, uid) -> LabelValue&.
+ *                    Initial labels in (e.g., iota via container); community labels out.
+ *                    For containers: wrap with container_value_fn(c).
  * @param rng         Random-number generator used for shuffle and tie-breaking.
  * @param max_iters   Maximum number of iterations (default: unlimited).
  *
@@ -149,20 +152,20 @@ void label_propagation_impl(G&&                                                 
  *
  * **Mandates:**
  * - G must satisfy adjacency_list (index or mapped vertex containers)
- * - Label must satisfy vertex_property_map_for<Label, G> (subscriptable by vertex_id_t<G>)
- * - vertex_property_map_value_t<Label> must satisfy std::equality_comparable
+ * - LabelFn must satisfy vertex_property_fn_for<LabelFn, G>
+ * - vertex_fn_value_t<LabelFn, G> must satisfy std::equality_comparable
  * - Gen must satisfy std::uniform_random_bit_generator
  *
  * **Preconditions:**
- * - label contains a meaningful initial label for every vertex in g
- * - For index graphs: label.size() >= num_vertices(g)
+ * - label(g, uid) returns a valid reference for every vertex in g
+ * - label has been initialized (e.g., iota: label(g, uid) = uid initially)
  *
  * **Effects:**
- * - Modifies label: Sets label[v] for all vertices v
+ * - Sets label(g, uid) for all vertices via the label function
  * - Does not modify the graph g
  *
  * **Postconditions:**
- * - label[uid] holds the discovered community label for vertex uid
+ * - label(g, uid) holds the discovered community label for vertex uid
  * - Neighbouring vertices in the same dense community share a common label
  *
  * **Throws:**
@@ -192,16 +195,16 @@ void label_propagation_impl(G&&                                                 
  * - ✅ Cycles
  */
 template <adjacency_list G,
-          class Label,
+          class LabelFn,
           class Gen = std::default_random_engine,
           class T   = size_t>
-requires vertex_property_map_for<Label, G> &&
-         std::equality_comparable<vertex_property_map_value_t<Label>> &&
+requires vertex_property_fn_for<LabelFn, G> &&
+         std::equality_comparable<vertex_fn_value_t<LabelFn, G>> &&
          std::uniform_random_bit_generator<std::remove_cvref_t<Gen>>
-void label_propagation(G&&    g,
-                       Label& label,
-                       Gen&&  rng       = std::default_random_engine{},
-                       T      max_iters = std::numeric_limits<T>::max()) {
+void label_propagation(G&&      g,
+                       LabelFn&& label,
+                       Gen&&    rng       = std::default_random_engine{},
+                       T        max_iters = std::numeric_limits<T>::max()) {
   detail::label_propagation_impl(g, label, std::nullopt, std::forward<Gen>(rng), max_iters);
 }
 
@@ -214,13 +217,16 @@ void label_propagation(G&&    g,
  * as a change for convergence purposes.
  *
  * @tparam G          The graph type. Must satisfy adjacency_list concept.
- * @tparam Label      Vertex property map whose vertex_property_map_value_t is the label type.
+ * @tparam LabelFn    Callable providing per-vertex label access:
+ *                    (const G&, vertex_id_t<G>) -> LabelValue&. Must satisfy
+ *                    vertex_property_fn_for<LabelFn, G>.
  * @tparam Gen        Uniform random bit generator type (default std::default_random_engine).
  * @tparam T          Integral type for the iteration limit (default size_t).
  *
  * @param g           The graph to process.
- * @param label       [in,out] Vertex property map holding initial labels for every vertex.
- *                    Modified in place to hold final labels on return.
+ * @param label       Callable providing per-vertex label access: label(g, uid) -> LabelValue&.
+ *                    Initial labels in; community labels out.
+ *                    For containers: wrap with container_value_fn(c).
  * @param empty_label Sentinel value representing an unlabelled vertex. Passed by value.
  * @param rng         Random-number generator used for shuffle and tie-breaking.
  * @param max_iters   Maximum number of iterations (default: unlimited).
@@ -229,16 +235,17 @@ void label_propagation(G&&    g,
  *
  * **Mandates:**
  * - G must satisfy adjacency_list (index or mapped vertex containers)
- * - Label must satisfy vertex_property_map_for<Label, G> (subscriptable by vertex_id_t<G>)
- * - vertex_property_map_value_t<Label> must satisfy std::equality_comparable
+ * - LabelFn must satisfy vertex_property_fn_for<LabelFn, G>
+ * - vertex_fn_value_t<LabelFn, G> must satisfy std::equality_comparable
  * - Gen must satisfy std::uniform_random_bit_generator
  *
  * **Preconditions:**
- * - label contains an initial label (or empty_label) for every vertex in g
- * - For index graphs: label.size() >= num_vertices(g)
+ * - label(g, uid) returns a valid reference for every vertex in g
+ * - label has been initialized (vertices with empty_label are treated as unlabelled)
+ * - If all vertices start with empty_label, no propagation occurs
  *
  * **Effects:**
- * - Modifies label: Sets label[v] for all vertices v that acquire a label
+ * - Sets label(g, uid) for vertices that acquire a label via the label function
  * - Does not modify the graph g
  *
  * **Postconditions:**
@@ -274,17 +281,17 @@ void label_propagation(G&&    g,
  * - ✅ Cycles
  */
 template <adjacency_list G,
-          class Label,
+          class LabelFn,
           class Gen = std::default_random_engine,
           class T   = size_t>
-requires vertex_property_map_for<Label, G> &&
-         std::equality_comparable<vertex_property_map_value_t<Label>> &&
+requires vertex_property_fn_for<LabelFn, G> &&
+         std::equality_comparable<vertex_fn_value_t<LabelFn, G>> &&
          std::uniform_random_bit_generator<std::remove_cvref_t<Gen>>
-void label_propagation(G&&                                            g,
-                       Label&                                         label,
-                       vertex_property_map_value_t<Label>              empty_label,
-                       Gen&&                                           rng       = std::default_random_engine{},
-                       T                                               max_iters = std::numeric_limits<T>::max()) {
+void label_propagation(G&&                           g,
+                       LabelFn&&                     label,
+                       vertex_fn_value_t<LabelFn, G> empty_label,
+                       Gen&&                         rng       = std::default_random_engine{},
+                       T                             max_iters = std::numeric_limits<T>::max()) {
   detail::label_propagation_impl(g, label, std::optional(std::move(empty_label)),
                                  std::forward<Gen>(rng), max_iters);
 }

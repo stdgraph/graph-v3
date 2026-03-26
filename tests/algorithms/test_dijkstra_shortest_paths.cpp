@@ -49,7 +49,9 @@ TEST_CASE("dijkstra_shortest_paths - CLRS example", "[algorithm][dijkstra_shorte
 
   init_shortest_paths(g, distance, predecessor);
 
-  dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor,
+  dijkstra_shortest_paths(g, vertex_id_t<Graph>(0),
+                          container_value_fn(distance),
+                          container_value_fn(predecessor),
                           [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
   // Validate against known results from CLRS Figure 24.6
@@ -69,7 +71,9 @@ TEST_CASE("dijkstra_shortest_paths - path graph", "[algorithm][dijkstra_shortest
 
   init_shortest_paths(g, distance, predecessor);
 
-  dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor,
+  dijkstra_shortest_paths(g, vertex_id_t<Graph>(0),
+                          container_value_fn(distance),
+                          container_value_fn(predecessor),
                           [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
   // Path: 0 -> 1 -> 2 -> 3 with weight 1 each
@@ -87,7 +91,8 @@ TEST_CASE("dijkstra_shortest_distances - no predecessors", "[algorithm][dijkstra
   init_shortest_paths(g, distance);
 
   // Test distances-only variant (no predecessor tracking)
-  dijkstra_shortest_distances(g, vertex_id_t<Graph>(0), distance,
+  dijkstra_shortest_distances(g, vertex_id_t<Graph>(0),
+                              container_value_fn(distance),
                               [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
   // Validate distances match expected results
@@ -110,7 +115,9 @@ TEST_CASE("dijkstra_shortest_paths - multi-source", "[algorithm][dijkstra_shorte
   // Start from vertices 0 and 3
   std::vector<vertex_id_t<Graph>> sources = {0, 3};
 
-  dijkstra_shortest_paths(g, sources, distance, predecessor,
+  dijkstra_shortest_paths(g, sources,
+                          container_value_fn(distance),
+                          container_value_fn(predecessor),
                           [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
   // Both source vertices should have distance 0
@@ -133,7 +140,9 @@ TEST_CASE("dijkstra_shortest_distances - multi-source", "[algorithm][dijkstra_sh
   // Start from vertices 0 and 3
   std::vector<vertex_id_t<Graph>> sources = {0, 3};
 
-  dijkstra_shortest_distances(g, sources, distance, [](const auto& g, const auto& uv) { return edge_value(g, uv); });
+  dijkstra_shortest_distances(g, sources,
+                              container_value_fn(distance),
+                              [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
   // Both source vertices should have distance 0
   REQUIRE(distance[0] == 0);
@@ -152,7 +161,9 @@ TEST_CASE("dijkstra_shortest_paths - with visitor", "[algorithm][dijkstra_shorte
   CountingVisitor visitor;
 
   dijkstra_shortest_paths(
-        g, vertex_id_t<Graph>(0), distance, predecessor,
+        g, vertex_id_t<Graph>(0),
+        container_value_fn(distance),
+        container_value_fn(predecessor),
         [](const auto& g, const auto& uv) { return edge_value(g, uv); }, visitor);
 
   // Verify visitor was called (should have discovered all 4 vertices, examined them, and relaxed edges)
@@ -176,7 +187,9 @@ TEST_CASE("dijkstra_shortest_paths - unweighted graph (default weight)", "[algor
   init_shortest_paths(g, distance, predecessor);
 
   // Use default weight function (returns 1 for all edges)
-  dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor);
+  dijkstra_shortest_paths(g, vertex_id_t<Graph>(0),
+                          container_value_fn(distance),
+                          container_value_fn(predecessor));
 
   REQUIRE(distance[0] == 0);
   REQUIRE(distance[1] == 1);
@@ -193,7 +206,9 @@ TEST_CASE("dijkstra_shortest_paths - predecessor path reconstruction", "[algorit
 
   init_shortest_paths(g, distance, predecessor);
 
-  dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor,
+  dijkstra_shortest_paths(g, vertex_id_t<Graph>(0),
+                          container_value_fn(distance),
+                          container_value_fn(predecessor),
                           [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
   // Reconstruct path from 0 to 3: should be 0 -> 1 -> 2 -> 3
@@ -228,7 +243,9 @@ TEST_CASE("dijkstra_shortest_paths - unreachable vertices", "[algorithm][dijkstr
 
   init_shortest_paths(g, distance, predecessor);
 
-  dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor);
+  dijkstra_shortest_paths(g, vertex_id_t<Graph>(0),
+                          container_value_fn(distance),
+                          container_value_fn(predecessor));
 
   // Vertices 0 and 1 should be reachable
   REQUIRE(distance[0] == 0);
@@ -270,7 +287,9 @@ TEST_CASE("dijkstra_shortest_paths - vertex id visitor", "[algorithm][dijkstra_s
   init_shortest_paths(g, distance, predecessor);
 
   IdCountingVisitor visitor;
-  dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor,
+  dijkstra_shortest_paths(g, vertex_id_t<Graph>(0),
+                          container_value_fn(distance),
+                          container_value_fn(predecessor),
                           [](const auto& g, const auto& uv) { return edge_value(g, uv); }, visitor);
 
   // All 5 vertices should be discovered via id-based callbacks
@@ -287,32 +306,6 @@ TEST_CASE("dijkstra_shortest_paths - vertex id visitor", "[algorithm][dijkstra_s
 // Error / Exception Condition Tests
 // =============================================================================
 
-TEST_CASE("dijkstra_shortest_paths - distances too small throws", "[algorithm][dijkstra_shortest_paths][error]") {
-  using Graph = vov_weighted;
-
-  auto                            g = clrs_dijkstra_graph<Graph>(); // 5 vertices
-  std::vector<int>                distances(2);                     // too small
-  std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
-  init_shortest_paths(g, distances, predecessor);
-
-  CHECK_THROWS_AS(dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distances, predecessor,
-                                          [](const auto& g, const auto& uv) { return edge_value(g, uv); }),
-                  std::out_of_range);
-}
-
-TEST_CASE("dijkstra_shortest_paths - predecessor too small throws", "[algorithm][dijkstra_shortest_paths][error]") {
-  using Graph = vov_weighted;
-
-  auto                            g = clrs_dijkstra_graph<Graph>(); // 5 vertices
-  std::vector<int>                distances(num_vertices(g));
-  std::vector<vertex_id_t<Graph>> predecessor(2); // too small
-  init_shortest_paths(g, distances, predecessor);
-
-  CHECK_THROWS_AS(dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distances, predecessor,
-                                          [](const auto& g, const auto& uv) { return edge_value(g, uv); }),
-                  std::out_of_range);
-}
-
 TEST_CASE("dijkstra_shortest_paths - source vertex out of range throws", "[algorithm][dijkstra_shortest_paths][error]") {
   using Graph = vov_weighted;
 
@@ -321,7 +314,9 @@ TEST_CASE("dijkstra_shortest_paths - source vertex out of range throws", "[algor
   std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
   init_shortest_paths(g, distances, predecessor);
 
-  CHECK_THROWS_AS(dijkstra_shortest_paths(g, vertex_id_t<Graph>(99), distances, predecessor,
+  CHECK_THROWS_AS(dijkstra_shortest_paths(g, vertex_id_t<Graph>(99),
+                                          container_value_fn(distances),
+                                          container_value_fn(predecessor),
                                           [](const auto& g, const auto& uv) { return edge_value(g, uv); }),
                   std::out_of_range);
 }
@@ -335,7 +330,9 @@ TEST_CASE("dijkstra_shortest_paths - negative edge weight throws", "[algorithm][
   init_shortest_paths(g, distances, predecessor);
 
   // Weight function that always returns a negative value triggers the signed-weight guard
-  CHECK_THROWS_AS(dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distances, predecessor,
+  CHECK_THROWS_AS(dijkstra_shortest_paths(g, vertex_id_t<Graph>(0),
+                                          container_value_fn(distances),
+                                          container_value_fn(predecessor),
                                           [](const auto&, const auto&) { return -1; }),
                   std::out_of_range);
 }
@@ -352,8 +349,10 @@ TEST_CASE("dijkstra_shortest_paths - infinite weight edge triggers logic_error",
   std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
   init_shortest_paths(g, distances, predecessor);
 
-  const auto INF = shortest_path_infinite_distance<distance_type>();
-  CHECK_THROWS_AS(dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distances, predecessor,
+  const auto INF = infinite_distance<distance_type>();
+  CHECK_THROWS_AS(dijkstra_shortest_paths(g, vertex_id_t<Graph>(0),
+                                          container_value_fn(distances),
+                                          container_value_fn(predecessor),
                                           [INF](const auto&, const auto&) { return INF; }),
                   std::logic_error);
 }
@@ -369,7 +368,9 @@ TEST_CASE("dijkstra_shortest_paths - on_edge_not_relaxed visitor callback", "[al
   init_shortest_paths(g, distances, predecessor);
 
   CountingVisitor visitor;
-  dijkstra_shortest_paths(g, vertex_id_t<Graph>(0), distances, predecessor,
+  dijkstra_shortest_paths(g, vertex_id_t<Graph>(0),
+                          container_value_fn(distances),
+                          container_value_fn(predecessor),
                           [](const auto& g, const auto& uv) { return edge_value(g, uv); }, visitor);
 
   CHECK(visitor.edges_not_relaxed > 0);
@@ -397,13 +398,15 @@ TEMPLATE_TEST_CASE("dijkstra_shortest_paths - sparse CLRS example",
   const auto& exp   = clrs_dijkstra_sparse_expected{};
 
   auto g            = map_fixtures::clrs_dijkstra_graph<Graph>();
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   // Initialize predecessors: each vertex points to itself
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
 
-  dijkstra_shortest_paths(g, id_type(exp.s), distances, predecessors,
+  dijkstra_shortest_paths(g, id_type(exp.s),
+                          container_value_fn(distances),
+                          container_value_fn(predecessors),
                           [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
   // Validate distances against known CLRS results
@@ -423,9 +426,10 @@ TEMPLATE_TEST_CASE("dijkstra_shortest_distances - sparse CLRS example",
   const auto& exp = clrs_dijkstra_sparse_expected{};
 
   auto g         = map_fixtures::clrs_dijkstra_graph<Graph>();
-  auto distances = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
 
-  dijkstra_shortest_distances(g, id_type(exp.s), distances,
+  dijkstra_shortest_distances(g, id_type(exp.s),
+                              container_value_fn(distances),
                               [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
   for (size_t i = 0; i < exp.num_vertices; ++i) {
@@ -441,14 +445,16 @@ TEMPLATE_TEST_CASE("dijkstra_shortest_paths - sparse multi-source",
   const auto& exp = clrs_dijkstra_sparse_expected{};
 
   auto g            = map_fixtures::clrs_dijkstra_graph<Graph>();
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
 
   // Start from s (10) and y (40)
   std::vector<id_type> sources = {exp.s, exp.y};
-  dijkstra_shortest_paths(g, sources, distances, predecessors,
+  dijkstra_shortest_paths(g, sources,
+                          container_value_fn(distances),
+                          container_value_fn(predecessors),
                           [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
   // Both sources should have distance 0
@@ -457,7 +463,7 @@ TEMPLATE_TEST_CASE("dijkstra_shortest_paths - sparse multi-source",
 
   // All vertices should be reachable
   for (size_t i = 0; i < exp.num_vertices; ++i) {
-    REQUIRE(distances[exp.vertex_ids[i]] < shortest_path_infinite_distance<int>());
+    REQUIRE(distances[exp.vertex_ids[i]] < infinite_distance<int>());
   }
 }
 
@@ -469,14 +475,16 @@ TEMPLATE_TEST_CASE("dijkstra_shortest_paths - sparse with visitor",
   const auto& exp = clrs_dijkstra_sparse_expected{};
 
   auto g            = map_fixtures::clrs_dijkstra_graph<Graph>();
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
 
   CountingVisitor visitor;
   dijkstra_shortest_paths(
-        g, id_type(exp.s), distances, predecessors,
+        g, id_type(exp.s),
+        container_value_fn(distances),
+        container_value_fn(predecessors),
         [](const auto& g, const auto& uv) { return edge_value(g, uv); }, visitor);
 
   REQUIRE(visitor.vertices_discovered == static_cast<int>(exp.num_vertices));
@@ -491,13 +499,15 @@ TEMPLATE_TEST_CASE("dijkstra_shortest_paths - sparse source not in graph throws"
   using id_type = vertex_id_t<Graph>;
 
   auto g            = map_fixtures::clrs_dijkstra_graph<Graph>();
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
 
   // Vertex ID 999 does not exist in the sparse graph
-  CHECK_THROWS_AS(dijkstra_shortest_paths(g, id_type(999), distances, predecessors,
+  CHECK_THROWS_AS(dijkstra_shortest_paths(g, id_type(999),
+                                          container_value_fn(distances),
+                                          container_value_fn(predecessors),
                                           [](const auto& g, const auto& uv) { return edge_value(g, uv); }),
                   std::out_of_range);
 }
@@ -558,12 +568,14 @@ TEMPLATE_TEST_CASE("dijkstra_shortest_paths - string vertex IDs",
   static_assert(std::is_same_v<id_type, std::string>, "vertex_id_t must be std::string");
 
   auto g            = clrs_dijkstra_string_graph<Graph>();
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
 
-  dijkstra_shortest_paths(g, std::string("s"), distances, predecessors,
+  dijkstra_shortest_paths(g, std::string("s"),
+                          container_value_fn(distances),
+                          container_value_fn(predecessors),
                           [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
   // Validate all distances
@@ -585,9 +597,10 @@ TEMPLATE_TEST_CASE("dijkstra_shortest_distances - string vertex IDs",
   using id_type = vertex_id_t<Graph>;
 
   auto g         = clrs_dijkstra_string_graph<Graph>();
-  auto distances = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
 
-  dijkstra_shortest_distances(g, std::string("s"), distances,
+  dijkstra_shortest_distances(g, std::string("s"),
+                              container_value_fn(distances),
                               [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
   for (const auto& [vid, expected_dist] : clrs_string_expected::distances) {
@@ -602,14 +615,16 @@ TEMPLATE_TEST_CASE("dijkstra_shortest_paths - string vertex IDs multi-source",
   using id_type = vertex_id_t<Graph>;
 
   auto g            = clrs_dijkstra_string_graph<Graph>();
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
 
   // Start from "s" and "y"
   std::vector<id_type> sources = {std::string("s"), std::string("y")};
-  dijkstra_shortest_paths(g, sources, distances, predecessors,
+  dijkstra_shortest_paths(g, sources,
+                          container_value_fn(distances),
+                          container_value_fn(predecessors),
                           [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
   // Both sources should have distance 0
@@ -618,7 +633,7 @@ TEMPLATE_TEST_CASE("dijkstra_shortest_paths - string vertex IDs multi-source",
 
   // All vertices should be reachable
   for (const auto& [vid, _] : clrs_string_expected::distances) {
-    REQUIRE(distances[vid] < shortest_path_infinite_distance<int>());
+    REQUIRE(distances[vid] < infinite_distance<int>());
   }
 }
 
@@ -629,14 +644,16 @@ TEMPLATE_TEST_CASE("dijkstra_shortest_paths - string vertex IDs with visitor",
   using id_type = vertex_id_t<Graph>;
 
   auto g            = clrs_dijkstra_string_graph<Graph>();
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
 
   CountingVisitor visitor;
   dijkstra_shortest_paths(
-        g, std::string("s"), distances, predecessors,
+        g, std::string("s"),
+        container_value_fn(distances),
+        container_value_fn(predecessors),
         [](const auto& g, const auto& uv) { return edge_value(g, uv); }, visitor);
 
   REQUIRE(visitor.vertices_discovered == static_cast<int>(clrs_string_expected::num_vertices));
@@ -652,13 +669,15 @@ TEMPLATE_TEST_CASE("dijkstra_shortest_paths - string vertex IDs invalid source t
   using id_type = vertex_id_t<Graph>;
 
   auto g            = clrs_dijkstra_string_graph<Graph>();
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
 
   // "nonexistent" is not a vertex in the graph
-  CHECK_THROWS_AS(dijkstra_shortest_paths(g, std::string("nonexistent"), distances, predecessors,
+  CHECK_THROWS_AS(dijkstra_shortest_paths(g, std::string("nonexistent"),
+                                          container_value_fn(distances),
+                                          container_value_fn(predecessors),
                                           [](const auto& g, const auto& uv) { return edge_value(g, uv); }),
                   std::out_of_range);
 }
@@ -670,12 +689,14 @@ TEMPLATE_TEST_CASE("dijkstra_shortest_paths - string vertex IDs path reconstruct
   using id_type = vertex_id_t<Graph>;
 
   auto g            = clrs_dijkstra_string_graph<Graph>();
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
 
-  dijkstra_shortest_paths(g, std::string("s"), distances, predecessors,
+  dijkstra_shortest_paths(g, std::string("s"),
+                          container_value_fn(distances),
+                          container_value_fn(predecessors),
                           [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
   // Reconstruct path from "s" to "x": should be s -> y -> t -> x (cost 5+3+1=9)

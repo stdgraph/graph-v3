@@ -256,7 +256,7 @@ Extracts the per-vertex value type from a property map container:
 
 // Works with any adjacency_list graph — index or mapped
 auto distances    = make_vertex_property_map<G, int>(g,
-    shortest_path_infinite_distance<int>());
+    infinite_distance<int>());
 auto predecessors = make_vertex_property_map<G, vertex_id_t<G>>(g,
     vertex_id_t<G>{});
 

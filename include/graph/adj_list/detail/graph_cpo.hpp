@@ -402,7 +402,7 @@ using vertex_id_t = std::remove_cvref_t<
  *
  * For vector-based graphs this is a prvalue (e.g. size_t).
  * For map-based graphs this is an lvalue reference to the stable key (e.g. const std::string&).
- * Used primarily by vertex_id_store_t to select the optimal internal storage strategy.
+ * Allows algorithms to distinguish value-type IDs (integral) from reference IDs (map-based keys).
  */
 template <typename G>
 using raw_vertex_id_t = decltype(vertex_id(std::declval<G&>(), std::declval<vertex_t<G>>()));

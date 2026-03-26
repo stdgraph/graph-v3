@@ -168,11 +168,13 @@ template <class Container, bool HasMapped = has_mapped_type_v<Container>>
 struct vertex_property_map_value_impl;
 
 template <class Container>
+requires forward_range<Container>
 struct vertex_property_map_value_impl<Container, true> {
   using type = typename Container::mapped_type;
 };
 
 template <class Container>
+requires random_access_range<Container>
 struct vertex_property_map_value_impl<Container, false> {
   using type = typename Container::value_type;
 };
@@ -204,7 +206,7 @@ using vertex_property_map_value_t = typename detail::vertex_property_map_value_i
  * it never iterates the map as a range.
  *
  * Satisfied by:
- * - vector<T> for index graphs (VId is integral)
+ * - vector<T> / deque<T> for index graphs (VId is integral)
  * - unordered_map<VId, T> / map<VId, T> for mapped graphs
  *
  * @tparam M Container type (e.g. vector<T>, unordered_map<VId, T>)

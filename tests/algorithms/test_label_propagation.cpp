@@ -57,7 +57,7 @@ TEST_CASE("label_propagation - empty graph", "[algorithm][label_propagation]") {
   std::mt19937     rng{42};
 
   // Should return without crash
-  label_propagation(g, label, rng);
+  label_propagation(g, container_value_fn(label), rng);
 
   REQUIRE(label.empty());
 }
@@ -70,7 +70,7 @@ TEST_CASE("label_propagation - single vertex no edges", "[algorithm][label_propa
   std::vector<int> label = {7};
   std::mt19937     rng{42};
 
-  label_propagation(g, label, rng);
+  label_propagation(g, container_value_fn(label), rng);
 
   REQUIRE(label[0] == 7); // unchanged — no neighbours
 }
@@ -84,7 +84,7 @@ TEST_CASE("label_propagation - single edge two different labels", "[algorithm][l
   std::vector<int> label = {10, 20};
   std::mt19937     rng{42};
 
-  label_propagation(g, label, rng);
+  label_propagation(g, container_value_fn(label), rng);
 
   // After convergence both vertices must share one of the original labels
   REQUIRE(label[0] == label[1]);
@@ -100,7 +100,7 @@ TEST_CASE("label_propagation - path graph all same label", "[algorithm][label_pr
   std::vector<int> label = {5, 5, 5, 5};
   std::mt19937     rng{42};
 
-  label_propagation(g, label, rng);
+  label_propagation(g, container_value_fn(label), rng);
 
   // Already converged — should stay the same
   for (auto& l : label) {
@@ -116,7 +116,7 @@ TEST_CASE("label_propagation - path graph alternating labels", "[algorithm][labe
   std::vector<int> label = {0, 1, 0, 1};
   std::mt19937     rng{42};
 
-  label_propagation(g, label, rng);
+  label_propagation(g, container_value_fn(label), rng);
 
   // Should reach a stable result (all vertices have some valid label)
   std::set<int> valid = {0, 1};
@@ -132,7 +132,7 @@ TEST_CASE("label_propagation - cycle graph 5 vertices", "[algorithm][label_propa
   std::vector<int> label = {0, 1, 2, 3, 4};
   std::mt19937     rng{42};
 
-  label_propagation(g, label, rng);
+  label_propagation(g, container_value_fn(label), rng);
 
   // All vertices should converge to a single label
   REQUIRE(fully_converged(label));
@@ -148,7 +148,7 @@ TEST_CASE("label_propagation - complete graph K4 majority wins", "[algorithm][la
   std::vector<int> label = {99, 99, 99, 42};
   std::mt19937     rng{42};
 
-  label_propagation(g, label, rng);
+  label_propagation(g, container_value_fn(label), rng);
 
   // Majority label should win
   for (auto& l : label) {
@@ -165,7 +165,7 @@ TEST_CASE("label_propagation - disconnected graph", "[algorithm][label_propagati
   std::vector<int> label = {10, 20, 30, 40};
   std::mt19937     rng{42};
 
-  label_propagation(g, label, rng);
+  label_propagation(g, container_value_fn(label), rng);
 
   // Each component converges independently
   REQUIRE(label[0] == label[1]);
@@ -183,7 +183,7 @@ TEST_CASE("label_propagation - max_iters = 0", "[algorithm][label_propagation]")
   std::vector<int> label = {10, 20};
   std::mt19937     rng{42};
 
-  label_propagation(g, label, rng, size_t{0});
+  label_propagation(g, container_value_fn(label), rng, size_t{0});
 
   // No iterations performed — labels unchanged
   REQUIRE(label[0] == 10);
@@ -206,7 +206,7 @@ TEST_CASE("label_propagation - max_iters = 1", "[algorithm][label_propagation]")
   std::vector<int> label = {0, 1, 1, 1, 1};
   std::mt19937     rng{42};
 
-  label_propagation(g, label, rng, size_t{1});
+  label_propagation(g, container_value_fn(label), rng, size_t{1});
 
   // After exactly one round: centre 0 should adopt label 1 (majority of neighbours)
   // Leaves may or may not change depending on processing order, but centre should change.
@@ -223,7 +223,7 @@ TEST_CASE("label_propagation - all vertices same label", "[algorithm][label_prop
   std::vector<int> label = {3, 3, 3};
   std::mt19937     rng{42};
 
-  label_propagation(g, label, rng);
+  label_propagation(g, container_value_fn(label), rng);
 
   // Already converged — should stay unchanged
   for (auto& l : label) {
@@ -240,7 +240,7 @@ TEST_CASE("label_propagation - tie breaking", "[algorithm][label_propagation]") 
   std::vector<int> label = {10, 20, 30};
   std::mt19937     rng{42};
 
-  label_propagation(g, label, rng);
+  label_propagation(g, container_value_fn(label), rng);
 
   // Result should be one of the original labels (not some arbitrary value)
   std::set<int> valid = {10, 20, 30};
@@ -261,7 +261,7 @@ TEST_CASE("label_propagation - empty_label: all unlabelled", "[algorithm][label_
   std::vector<int> label = {-1, -1, -1};
   std::mt19937     rng{42};
 
-  label_propagation(g, label, -1, rng);
+  label_propagation(g, container_value_fn(label), -1, rng);
 
   // All unlabelled, no source of labels — should remain -1
   for (auto& l : label) {
@@ -278,7 +278,7 @@ TEST_CASE("label_propagation - empty_label: one labelled vertex propagates", "[a
   std::vector<int> label = {42, -1, -1, -1};
   std::mt19937     rng{42};
 
-  label_propagation(g, label, -1, rng);
+  label_propagation(g, container_value_fn(label), -1, rng);
 
   // Label should propagate outward from vertex 0
   for (auto& l : label) {
@@ -297,7 +297,7 @@ TEST_CASE("label_propagation - empty_label: disconnected labelled + unlabelled",
   std::vector<int> label = {5, 5, -1, -1};
   std::mt19937     rng{42};
 
-  label_propagation(g, label, -1, rng);
+  label_propagation(g, container_value_fn(label), -1, rng);
 
   // Component 1 stays labelled
   REQUIRE(label[0] == 5);
@@ -317,7 +317,7 @@ TEST_CASE("label_propagation - empty_label: mixed pre-labelled and unlabelled",
   std::vector<int> label = {7, -1, 7, -1};
   std::mt19937     rng{42};
 
-  label_propagation(g, label, -1, rng);
+  label_propagation(g, container_value_fn(label), -1, rng);
 
   // All should acquire label 7
   for (auto& l : label) {
@@ -337,8 +337,8 @@ TEST_CASE("label_propagation - empty_label: no empty labels present behaves like
   std::mt19937     rng1{42};
   std::mt19937     rng2{42};
 
-  label_propagation(g, label1, rng1);
-  label_propagation(g, label2, -1, rng2);
+  label_propagation(g, container_value_fn(label1), rng1);
+  label_propagation(g, container_value_fn(label2), -1, rng2);
 
   // Both overloads should produce the same result
   REQUIRE(label1 == label2);
@@ -357,7 +357,7 @@ TEMPLATE_TEST_CASE("label_propagation - single edge (typed)", "[algorithm][label
   std::vector<int> label = {10, 20};
   std::mt19937     rng{42};
 
-  label_propagation(g, label, rng);
+  label_propagation(g, container_value_fn(label), rng);
 
   REQUIRE(label[0] == label[1]);
   REQUIRE((label[0] == 10 || label[0] == 20));
@@ -372,7 +372,7 @@ TEMPLATE_TEST_CASE("label_propagation - path graph (typed)", "[algorithm][label_
   std::vector<int> label = {1, 2, 1, 2};
   std::mt19937     rng{42};
 
-  label_propagation(g, label, rng);
+  label_propagation(g, container_value_fn(label), rng);
 
   std::set<int> valid = {1, 2};
   REQUIRE(all_labelled(label, valid));
@@ -387,7 +387,7 @@ TEMPLATE_TEST_CASE("label_propagation - cycle graph (typed)", "[algorithm][label
   std::vector<int> label = {0, 1, 2, 3, 4};
   std::mt19937     rng{42};
 
-  label_propagation(g, label, rng);
+  label_propagation(g, container_value_fn(label), rng);
 
   REQUIRE(fully_converged(label));
 }
@@ -401,7 +401,7 @@ TEMPLATE_TEST_CASE("label_propagation - disconnected graph (typed)", "[algorithm
   std::vector<int> label = {10, 20, 30, 40};
   std::mt19937     rng{42};
 
-  label_propagation(g, label, rng);
+  label_propagation(g, container_value_fn(label), rng);
 
   REQUIRE(label[0] == label[1]);
   REQUIRE(label[2] == label[3]);
@@ -446,7 +446,7 @@ TEMPLATE_TEST_CASE("label_propagation - sparse single edge",
   label[20]  = 200;
 
   std::mt19937 rng{42};
-  label_propagation(g, label, rng);
+  label_propagation(g, container_value_fn(label), rng);
 
   // Both should converge to same label
   REQUIRE(label[10] == label[20]);
@@ -465,7 +465,7 @@ TEMPLATE_TEST_CASE("label_propagation - sparse path all same label",
   auto label = make_vertex_property_map<Graph, int>(g, 5);
 
   std::mt19937 rng{42};
-  label_propagation(g, label, rng);
+  label_propagation(g, container_value_fn(label), rng);
 
   // Already converged — should stay unchanged
   REQUIRE(label[10] == 5);
@@ -490,7 +490,7 @@ TEMPLATE_TEST_CASE("label_propagation - sparse K4 majority wins",
   label[40]  = 42; // minority
 
   std::mt19937 rng{42};
-  label_propagation(g, label, rng);
+  label_propagation(g, container_value_fn(label), rng);
 
   // Majority label 99 should win
   REQUIRE(label[10] == 99);
@@ -515,7 +515,7 @@ TEMPLATE_TEST_CASE("label_propagation - sparse disconnected",
   label[40]  = 400;
 
   std::mt19937 rng{42};
-  label_propagation(g, label, rng);
+  label_propagation(g, container_value_fn(label), rng);
 
   // Each component converges independently
   REQUIRE(label[10] == label[20]);
@@ -537,7 +537,7 @@ TEMPLATE_TEST_CASE("label_propagation - sparse empty_label propagation",
   label[10]  = 42; // only vertex 10 is labelled
 
   std::mt19937 rng{42};
-  label_propagation(g, label, -1, rng);
+  label_propagation(g, container_value_fn(label), -1, rng);
 
   // Label should propagate from vertex 10 outward
   REQUIRE(label[10] == 42);

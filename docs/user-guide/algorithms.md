@@ -73,7 +73,7 @@ dijkstra_shortest_paths(g, 0, distance, predecessor,
 
 // Map-based graph: use vertex property maps
 using G = /* some mapped_adjacency_list graph */;
-auto distances    = make_vertex_property_map<G, int>(g, shortest_path_infinite_distance<int>());
+auto distances    = make_vertex_property_map<G, int>(g, infinite_distance<int>());
 auto predecessors = make_vertex_property_map<G, vertex_id_t<G>>(g, vertex_id_t<G>{});
 for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
@@ -299,8 +299,8 @@ All shortest-path algorithms share utilities from `traversal_common.hpp`:
 |---------|---------|
 | `init_shortest_paths(distances)` | Set all distances to infinity |
 | `init_shortest_paths(distances, predecessors)` | Set distances to infinity, predecessors to self |
-| `shortest_path_infinite_distance<T>()` | Returns the "infinity" sentinel for type `T` |
-| `shortest_path_zero<T>()` | Returns the additive identity for type `T` |
+| `infinite_distance<T>()` | Returns the "infinity" sentinel for type `T` |
+| `zero_distance<T>()` | Returns the additive identity for type `T` |
 
 ### Visitors
 

@@ -55,7 +55,7 @@ TEST_CASE("bellman_ford_shortest_paths - CLRS example", "[algorithm][bellman_for
 
   init_shortest_paths(g, distance, predecessor);
 
-  auto result = bellman_ford_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor,
+  auto result = bellman_ford_shortest_paths(g, vertex_id_t<Graph>(0), container_value_fn(distance), container_value_fn(predecessor),
                                             [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
   // No negative cycle should be detected
@@ -78,7 +78,7 @@ TEST_CASE("bellman_ford_shortest_paths - path graph", "[algorithm][bellman_ford_
 
   init_shortest_paths(g, distance, predecessor);
 
-  auto result = bellman_ford_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor,
+  auto result = bellman_ford_shortest_paths(g, vertex_id_t<Graph>(0), container_value_fn(distance), container_value_fn(predecessor),
                                             [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
   // No negative cycle
@@ -99,7 +99,7 @@ TEST_CASE("bellman_ford_shortest_distances - no predecessors", "[algorithm][bell
   init_shortest_paths(g, distance);
 
   // Test distances-only variant (no predecessor tracking)
-  auto result = bellman_ford_shortest_distances(g, vertex_id_t<Graph>(0), distance,
+  auto result = bellman_ford_shortest_distances(g, vertex_id_t<Graph>(0), container_value_fn(distance),
                                                 [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
   // No negative cycle
@@ -125,7 +125,7 @@ TEST_CASE("bellman_ford_shortest_paths - multi-source", "[algorithm][bellman_for
   // Start from vertices 0 and 3
   std::vector<vertex_id_t<Graph>> sources = {0, 3};
 
-  auto result = bellman_ford_shortest_paths(g, sources, distance, predecessor,
+  auto result = bellman_ford_shortest_paths(g, sources, container_value_fn(distance), container_value_fn(predecessor),
                                             [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
   // No negative cycle
@@ -151,7 +151,7 @@ TEST_CASE("bellman_ford_shortest_distances - multi-source", "[algorithm][bellman
   // Start from vertices 0 and 3
   std::vector<vertex_id_t<Graph>> sources = {0, 3};
 
-  auto result = bellman_ford_shortest_distances(g, sources, distance,
+  auto result = bellman_ford_shortest_distances(g, sources, container_value_fn(distance),
                                                 [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
   // No negative cycle
@@ -174,7 +174,7 @@ TEST_CASE("bellman_ford_shortest_paths - with visitor", "[algorithm][bellman_for
   BellmanCountingVisitor visitor;
 
   auto result = bellman_ford_shortest_paths(
-        g, vertex_id_t<Graph>(0), distance, predecessor,
+        g, vertex_id_t<Graph>(0), container_value_fn(distance), container_value_fn(predecessor),
         [](const auto& g, const auto& uv) { return edge_value(g, uv); }, visitor);
 
   // No negative cycle
@@ -201,7 +201,7 @@ TEST_CASE("bellman_ford_shortest_paths - unweighted graph (default weight)",
   init_shortest_paths(g, distance, predecessor);
 
   // Use default weight function (returns 1 for all edges)
-  auto result = bellman_ford_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor);
+  auto result = bellman_ford_shortest_paths(g, vertex_id_t<Graph>(0), container_value_fn(distance), container_value_fn(predecessor));
 
   // No negative cycle
   REQUIRE(!result.has_value());
@@ -221,7 +221,7 @@ TEST_CASE("bellman_ford_shortest_paths - predecessor path reconstruction", "[alg
 
   init_shortest_paths(g, distance, predecessor);
 
-  auto result = bellman_ford_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor,
+  auto result = bellman_ford_shortest_paths(g, vertex_id_t<Graph>(0), container_value_fn(distance), container_value_fn(predecessor),
                                             [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
   // No negative cycle
@@ -260,7 +260,7 @@ TEST_CASE("bellman_ford_shortest_paths - unreachable vertices", "[algorithm][bel
 
   init_shortest_paths(g, distance, predecessor);
 
-  auto result = bellman_ford_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor);
+  auto result = bellman_ford_shortest_paths(g, vertex_id_t<Graph>(0), container_value_fn(distance), container_value_fn(predecessor));
 
   // No negative cycle
   REQUIRE(!result.has_value());
@@ -292,7 +292,7 @@ TEST_CASE("bellman_ford_shortest_paths - negative weight cycle detection", "[alg
   BellmanCountingVisitor visitor;
 
   auto result = bellman_ford_shortest_paths(
-        g, vertex_id_t<Graph>(0), distance, predecessor,
+        g, vertex_id_t<Graph>(0), container_value_fn(distance), container_value_fn(predecessor),
         [](const auto& g, const auto& uv) { return edge_value(g, uv); }, visitor);
 
   // Negative cycle should be detected
@@ -316,7 +316,7 @@ TEST_CASE("bellman_ford_shortest_paths - find negative cycle vertices", "[algori
 
   init_shortest_paths(g, distance, predecessor);
 
-  auto cycle_vertex = bellman_ford_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor,
+  auto cycle_vertex = bellman_ford_shortest_paths(g, vertex_id_t<Graph>(0), container_value_fn(distance), container_value_fn(predecessor),
                                                   [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
   REQUIRE(cycle_vertex.has_value());
@@ -353,7 +353,7 @@ TEST_CASE("bellman_ford_shortest_paths - single vertex", "[algorithm][bellman_fo
 
   init_shortest_paths(g, distance, predecessor);
 
-  auto result = bellman_ford_shortest_paths(g, vertex_id_t<Graph>(0), distance, predecessor);
+  auto result = bellman_ford_shortest_paths(g, vertex_id_t<Graph>(0), container_value_fn(distance), container_value_fn(predecessor));
 
   // No negative cycle
   REQUIRE(!result.has_value());
@@ -379,13 +379,13 @@ TEMPLATE_TEST_CASE("bellman_ford_shortest_paths - sparse CLRS example",
   const auto& exp = clrs_dijkstra_sparse_expected{};
 
   auto g            = map_fixtures::clrs_dijkstra_graph<Graph>();
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   // Initialize predecessors: each vertex points to itself
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
 
-  auto result = bellman_ford_shortest_paths(g, id_type(exp.s), distances, predecessors,
+  auto result = bellman_ford_shortest_paths(g, id_type(exp.s), container_value_fn(distances), container_value_fn(predecessors),
                                             [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
   // No negative cycle should be detected
@@ -408,9 +408,9 @@ TEMPLATE_TEST_CASE("bellman_ford_shortest_distances - sparse CLRS example",
   const auto& exp = clrs_dijkstra_sparse_expected{};
 
   auto g         = map_fixtures::clrs_dijkstra_graph<Graph>();
-  auto distances = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
 
-  auto result = bellman_ford_shortest_distances(g, id_type(exp.s), distances,
+  auto result = bellman_ford_shortest_distances(g, id_type(exp.s), container_value_fn(distances),
                                                 [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
   // No negative cycle
@@ -429,14 +429,14 @@ TEMPLATE_TEST_CASE("bellman_ford_shortest_paths - sparse multi-source",
   const auto& exp = clrs_dijkstra_sparse_expected{};
 
   auto g            = map_fixtures::clrs_dijkstra_graph<Graph>();
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
 
   // Start from s (10) and y (40)
   std::vector<id_type> sources = {exp.s, exp.y};
-  auto result = bellman_ford_shortest_paths(g, sources, distances, predecessors,
+  auto result = bellman_ford_shortest_paths(g, sources, container_value_fn(distances), container_value_fn(predecessors),
                                             [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
   // No negative cycle
@@ -448,7 +448,7 @@ TEMPLATE_TEST_CASE("bellman_ford_shortest_paths - sparse multi-source",
 
   // All vertices should be reachable
   for (size_t i = 0; i < exp.num_vertices; ++i) {
-    REQUIRE(distances[exp.vertex_ids[i]] < shortest_path_infinite_distance<int>());
+    REQUIRE(distances[exp.vertex_ids[i]] < infinite_distance<int>());
   }
 }
 
@@ -460,14 +460,14 @@ TEMPLATE_TEST_CASE("bellman_ford_shortest_paths - sparse with visitor",
   const auto& exp = clrs_dijkstra_sparse_expected{};
 
   auto g            = map_fixtures::clrs_dijkstra_graph<Graph>();
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
 
   BellmanCountingVisitor visitor;
   auto result = bellman_ford_shortest_paths(
-        g, id_type(exp.s), distances, predecessors,
+        g, id_type(exp.s), container_value_fn(distances), container_value_fn(predecessors),
         [](const auto& g, const auto& uv) { return edge_value(g, uv); }, visitor);
 
   REQUIRE(!result.has_value());
@@ -485,13 +485,13 @@ TEMPLATE_TEST_CASE("bellman_ford_shortest_paths - sparse negative cycle detectio
   // Total cycle weight: 1 + 1 + (-3) = -1 (negative!)
   Graph g({{10, 20, 1}, {20, 30, 1}, {30, 10, -3}});
 
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
 
   auto result = bellman_ford_shortest_paths(
-        g, id_type(10), distances, predecessors,
+        g, id_type(10), container_value_fn(distances), container_value_fn(predecessors),
         [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
   // Negative cycle should be detected
@@ -510,13 +510,13 @@ TEMPLATE_TEST_CASE("bellman_ford_shortest_paths - sparse find negative cycle ver
   // Same negative cycle graph
   Graph g({{10, 20, 1}, {20, 30, 1}, {30, 10, -3}});
 
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
 
   auto cycle_vertex = bellman_ford_shortest_paths(
-        g, id_type(10), distances, predecessors,
+        g, id_type(10), container_value_fn(distances), container_value_fn(predecessors),
         [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 
   REQUIRE(cycle_vertex.has_value());
@@ -540,13 +540,13 @@ TEMPLATE_TEST_CASE("bellman_ford_shortest_paths - sparse source not in graph thr
   using id_type = vertex_id_t<Graph>;
 
   auto g            = map_fixtures::clrs_dijkstra_graph<Graph>();
-  auto distances    = make_vertex_property_map<Graph, int>(g, shortest_path_infinite_distance<int>());
+  auto distances    = make_vertex_property_map<Graph, int>(g, infinite_distance<int>());
   auto predecessors = make_vertex_property_map<Graph, id_type>(g, id_type{});
   for (auto&& [uid, u] : views::vertexlist(g))
     predecessors[uid] = uid;
 
   // Vertex ID 999 does not exist in the sparse graph
-  CHECK_THROWS_AS(bellman_ford_shortest_paths(g, id_type(999), distances, predecessors,
+  CHECK_THROWS_AS(bellman_ford_shortest_paths(g, id_type(999), container_value_fn(distances), container_value_fn(predecessors),
                                               [](const auto& g, const auto& uv) { return edge_value(g, uv); }),
                   std::out_of_range);
 }

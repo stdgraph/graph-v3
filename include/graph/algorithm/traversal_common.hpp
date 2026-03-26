@@ -31,26 +31,6 @@
 namespace graph {
 
 //
-// vertex_id_store_t<G> — efficient storage type for vertex IDs in algorithm internals
-//
-
-/**
- * @brief Efficient storage type for vertex IDs in algorithm-internal containers.
- *
- * For integral IDs (vector-based graphs): same as vertex_id_t<G> (zero overhead).
- * For non-trivial IDs (e.g., std::string from map-based graphs): reference_wrapper
- * to the stable key in the graph's map node (8 bytes, trivially copyable).
- *
- * @note Requires: the graph must not be mutated while values of this type are alive.
- * This is already an implicit precondition for all traversal algorithms.
- */
-template <typename G>
-using vertex_id_store_t = std::conditional_t<
-    std::is_reference_v<adj_list::raw_vertex_id_t<G>>,
-    std::reference_wrapper<std::remove_reference_t<adj_list::raw_vertex_id_t<G>>>,
-    adj_list::vertex_id_t<G>>;
-
-//
 // Edge weight function concepts
 //
 // Note on std::remove_reference_t<G>:
@@ -113,10 +93,10 @@ concept edge_weight_function =
  * 
  * @tparam DistanceValue The arithmetic type used for distances.
  * 
- * @return A sentinel value representing infinite distance (typically std::numeric_limits<T>::max()).
+ * @return A sentinel value representing infinite distance (std::numeric_limits<T>::max()).
  */
 template <class DistanceValue>
-constexpr auto shortest_path_infinite_distance() {
+constexpr auto infinite_distance() {
   return std::numeric_limits<DistanceValue>::max();
 }
 
@@ -131,9 +111,89 @@ constexpr auto shortest_path_infinite_distance() {
  * @return A zero-initialized distance value.
  */
 template <class DistanceValue>
-constexpr auto shortest_path_zero() {
+constexpr auto zero_distance() {
   return DistanceValue();
 }
+
+//
+// Distance and predecessor function concepts
+//
+// These concepts enable algorithms to accept functions for per-vertex distance and
+// predecessor access: distance(g, uid) and predecessor(g, uid). This is more flexible
+// than requiring a specific container, because the values can reside on a vertex property
+// or in an external container.
+//
+
+/// Type alias: extracts the distance value type from a distance function's return type
+template <class DF, class G>
+using distance_fn_value_t = std::remove_cvref_t<
+    std::invoke_result_t<DF&, const std::remove_reference_t<G>&, const vertex_id_t<G>&>>;
+
+/// Concept: a callable returning a mutable reference to a per-vertex distance value
+template <class DF, class G>
+concept distance_fn_for =
+      std::invocable<DF&, const std::remove_reference_t<G>&, const vertex_id_t<G>&> &&
+      std::is_lvalue_reference_v<
+            std::invoke_result_t<DF&, const std::remove_reference_t<G>&, const vertex_id_t<G>&>>;
+
+/// Concept: a callable returning a mutable reference to a per-vertex predecessor value
+template <class PF, class G>
+concept predecessor_fn_for =
+      std::invocable<PF&, const std::remove_reference_t<G>&, const vertex_id_t<G>&> &&
+      std::is_lvalue_reference_v<
+            std::invoke_result_t<PF&, const std::remove_reference_t<G>&, const vertex_id_t<G>&>>;
+
+/// General concept: a callable returning a mutable lvalue reference to any per-vertex property value.
+/// Used by connected_components, label_propagation, and similar algorithms with per-vertex
+/// property output parameters.
+template <class VF, class G>
+concept vertex_property_fn_for =
+      std::invocable<VF&, const std::remove_reference_t<G>&, const vertex_id_t<G>&> &&
+      std::is_lvalue_reference_v<
+            std::invoke_result_t<VF&, const std::remove_reference_t<G>&, const vertex_id_t<G>&>>;
+
+/// Type alias: extracts the value type from a vertex property function's return type
+template <class VF, class G>
+using vertex_fn_value_t = std::remove_cvref_t<
+    std::invoke_result_t<VF&, const std::remove_reference_t<G>&, const vertex_id_t<G>&>>;
+
+/// Null predecessor function — used when predecessor tracking is not needed.
+/// Detected at compile time via is_null_predecessor_fn_v to skip predecessor writes.
+struct _null_predecessor_fn {
+  template <class G, class VId>
+  size_t& operator()(const G&, const VId&) {
+    static size_t dummy = 0;
+    return dummy;
+  }
+};
+
+/// Global instance of the null predecessor function
+inline _null_predecessor_fn _null_predecessor;
+
+/// Type trait to detect _null_predecessor_fn at compile time
+template <class T>
+inline constexpr bool is_null_predecessor_fn_v = std::is_same_v<std::remove_cvref_t<T>, _null_predecessor_fn>;
+
+/// Function object that adapts a subscriptable container into a property function.
+/// Wraps container[uid] into fn(g, uid) -> auto&, satisfying distance_fn_for
+/// and predecessor_fn_for concepts.
+///
+/// Usage:
+///   std::vector<int> distances(num_vertices(g));
+///   dijkstra_shortest_paths(g, source, container_value_fn(distances), ...);
+///
+template <class Container>
+struct container_value_fn {
+  Container& c;
+
+  template <class G, class VId>
+  constexpr auto& operator()(const G&, const VId& uid) const {
+    return c[uid];
+  }
+};
+
+template <class Container>
+container_value_fn(Container&) -> container_value_fn<Container>;
 
 //
 // Visitor concepts
@@ -331,7 +391,7 @@ inline constexpr bool is_null_range_v = std::is_same_v<std::remove_cvref_t<T>, _
  * @ingroup graph_algorithms
  * @brief Initialize distances for shortest path algorithms (graph-aware).
  *
- * Sets every vertex's distance to shortest_path_infinite_distance().
+ * Sets every vertex's distance to infinite_distance().
  *
  * For index graphs (Distances is a random_access_range):
  *   std::ranges::fill(distances, infinite).
@@ -348,7 +408,7 @@ template <class G, class Distances>
   requires adjacency_list<G> && vertex_property_map_for<Distances, G>
 constexpr void init_shortest_paths(const G& g, Distances& distances) {
   using dist_value = vertex_property_map_value_t<Distances>;
-  constexpr auto infinite = shortest_path_infinite_distance<dist_value>();
+  constexpr auto infinite = infinite_distance<dist_value>();
 
   if constexpr (std::ranges::random_access_range<Distances>) {
     // Index graph: fill the pre-sized vector
@@ -373,7 +433,7 @@ constexpr void init_shortest_paths(const G& g, Distances& distances) {
  * @ingroup graph_algorithms
  * @brief Initialize distances and predecessors for shortest path algorithms (graph-aware).
  *
- * Sets every vertex's distance to shortest_path_infinite_distance() and
+ * Sets every vertex's distance to infinite_distance() and
  * every vertex's predecessor to itself.
  *
  * For index graphs: distances are filled, predecessors are iota'd from 0.
@@ -392,7 +452,7 @@ template <class G, class Distances, class Predecessors>
            (vertex_property_map_for<Predecessors, G> || is_null_range_v<Predecessors>)
 constexpr void init_shortest_paths(const G& g, Distances& distances, Predecessors& predecessors) {
   using dist_value = vertex_property_map_value_t<Distances>;
-  constexpr auto infinite = shortest_path_infinite_distance<dist_value>();
+  constexpr auto infinite = infinite_distance<dist_value>();
 
   if constexpr (std::ranges::random_access_range<Distances>) {
     // Index graph: fill distances, iota predecessors
