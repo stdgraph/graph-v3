@@ -343,7 +343,7 @@ namespace _cpo_impls {
              * The descriptor default works for standard containers:
              * - Random-access containers (vector, deque): returns the index
              * - Associative containers (map): returns the key
-             * - Bidirectional containers: returns the iterator position
+             * - Forward containers: returns the iterator position
              * 
              * @tparam G Graph type
              * @tparam U Vertex descriptor type (constrained to be a vertex_descriptor_type)
@@ -391,7 +391,7 @@ inline namespace _cpo_instances {
  * The type of the unique identifier returned by vertex_id(g, u), with references stripped.
  * - For random-access containers (vector, deque): size_t (index)
  * - For associative containers (map): key type (e.g. std::string)
- * - For bidirectional containers: iterator-based ID
+ * - For forward containers: iterator-based ID
  */
 template <typename G>
 using vertex_id_t = std::remove_cvref_t<
@@ -3005,7 +3005,7 @@ namespace _cpo_impls {
              * - Uses u.inner_value(g) which returns the actual vertex data
              * - For random-access containers (vector): returns container[index]
              * - For associative containers (map): returns the .second value
-             * - For bidirectional containers: returns the dereferenced value
+             * - For forward containers: returns the dereferenced value
              * 
              * This provides access to user-defined vertex properties/data stored in the graph.
              * 

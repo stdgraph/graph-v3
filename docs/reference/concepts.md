@@ -285,7 +285,7 @@ for full documentation.
 | Concept | Purpose |
 |---------|---------|
 | `direct_vertex_type<Iter>` | Random-access, index-based vertex |
-| `keyed_vertex_type<Iter>` | Bidirectional, key-based vertex |
+| `keyed_vertex_type<Iter>` | Forward, key-based vertex |
 | `vertex_iterator<Iter>` | Either direct or keyed |
 | `random_access_vertex_pattern<Iter>` | Inner value: return whole element |
 | `pair_value_vertex_pattern<Iter>` | Inner value: return `.second` |

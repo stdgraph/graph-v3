@@ -110,25 +110,25 @@ Edges in the graph can be stored in various ways depending on graph structure:
 - MUST be a template with a single parameter for the underlying container's iterator type
 - Iterator category constraints:
   - **Random Access Iterator** (e.g., vector, deque): Used for index-based vertex storage
-  - **Bidirectional Iterator** (e.g., map, unordered_map): Used for key-value based vertex storage
-    - When bidirectional: the iterator's `value_type` MUST satisfy a pair-like concept where:
+  - **Forward Iterator** (e.g., map, unordered_map, unordered_set): Used for key-value based vertex storage
+    - When forward (non-random-access): the iterator's `value_type` MUST satisfy a pair-like concept where:
       - The type MUST have at least 2 members (accessible via tuple protocol or pair interface)
       - The first element serves as the vertex ID (key)
       - This can be checked using `std::tuple_size<value_type>::value >= 2` or by requiring `.first` and `.second` members
 - MUST have a single member variable that:
   - MUST be `size_t index` when the iterator is a random access iterator
-  - MUST be the iterator type itself when the iterator is a bidirectional iterator (non-random access)
+  - MUST be the iterator type itself when the iterator is a forward iterator (non-random access)
 - MUST provide a `vertex_id()` member function that returns the vertex's unique identifier:
   - When the vertex iterator is random access: MUST return the `size_t` member value (the index)
-  - When the vertex iterator is bidirectional: MUST return the key (first element) from the pair-like `value_type`
+  - When the vertex iterator is forward (non-random-access): MUST return the key (first element) from the pair-like `value_type`
   - Return type SHOULD be deduced appropriately based on iterator category
 - MUST provide a public `value()` member function that returns the underlying storage handle:
   - When the vertex iterator is random access: `value()` MUST return the stored `size_t` index
-  - When the vertex iterator is bidirectional: `value()` MUST return the stored iterator
+  - When the vertex iterator is forward (non-random-access): `value()` MUST return the stored iterator
   - Return type SHOULD be the exact type of the underlying member (copy by value)
 - MUST provide pre-increment and post-increment operators (`operator++` / `operator++(int)`) whose behavior mirrors the underlying storage:
   - For random access iterators: increment operations MUST advance the `size_t` index by one
-  - For bidirectional iterators: increment operations MUST advance the stored iterator
+  - For forward iterators: increment operations MUST advance the stored iterator
 - MUST be efficiently passable by value
 - SHOULD support conversion to/from underlying index type (for random access case)
 - MUST integrate with std::hash for unordered containers
