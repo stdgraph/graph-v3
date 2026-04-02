@@ -309,7 +309,7 @@ Descriptors are value types that identify a single vertex or edge:
 | Type | Description |
 |------|-------------|
 | `vertex_descriptor<VId>` | Holds an index or iterator that identifies a vertex; provides `vertex_id()`, `value()`, `inner_value()` |
-| `edge_descriptor<VId, EI>` | Holds an edge iterator + source vertex descriptor; provides `source_id()`, `target_id()`, `value()` |
+| `edge_descriptor<EdgeIter, VertexIter>` | Holds an edge iterator + source vertex descriptor; provides `source_id()`, `target_id()`, `value()` |
 
 Descriptor views are range adaptors that wrap an entire physical range and
 yield one descriptor per element:

@@ -144,15 +144,14 @@ The `edge_descriptor` already uses generic iterators:
 ```cpp
 template<edge_iterator EdgeIter, vertex_iterator VertexIter>
 class edge_descriptor {
-  using edge_storage_type = std::conditional_t<
-    std::random_access_iterator<EdgeIter>,
-    std::size_t,        // Store index for vector
-    EdgeIter            // Store iterator for set/map
-  >;
+  // Always stores the edge iterator directly
+  using edge_storage_type = EdgeIter;
 };
 ```
 
-For `std::map`, `EdgeIter` is a bidirectional iterator (not random access), so the descriptor stores the iterator itself. This already works.
+Edge descriptors always store the iterator — unlike vertex descriptors
+which may use `size_t` for index-only graphs, edges always have physical
+containers.
 
 **Target ID Extraction:**
 

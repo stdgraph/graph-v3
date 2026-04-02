@@ -70,29 +70,25 @@ struct vertex_descriptor {
 
 **Edge Descriptor:**
 ```cpp
-// Edge descriptor with conditional storage + source vertex
+// Edge descriptor always stores the edge iterator directly
 template<typename EdgeIter, typename VertexIter>
 struct edge_descriptor {
-    // Stores size_t for random access edge containers, iterator otherwise
-    using edge_storage_type = std::conditional_t<
-        std::random_access_iterator<EdgeIter>,
-        std::size_t,
-        EdgeIter
-    >;
+    // Always stores edge iterator — edges always have physical containers
+    using edge_storage_type = EdgeIter;
     edge_storage_type edge_storage_;
     vertex_descriptor<VertexIter> source_;  // Source vertex descriptor
     
     auto source_id() const;                      // Delegates to source_.vertex_id()
-    auto target_id(const VertexData&) const;     // Extracts from edge data
-    auto edge_value(const VertexData&) const;    // Edge property access
+    auto target_id() const;                      // Extracts from *edge_storage_
+    auto edge_value() const;                     // Edge property access via *edge_storage_
 };
 ```
 
 **Edge Descriptor Characteristics:**
 - **Carries source**: Unlike BGL2 which stores source in edge data, graph-v3 stores source vertex descriptor directly
-- **Conditional edge storage**: Index for random-access edge containers (vector), iterator for others (forward_list, list)
+- **Always iterator-based**: Edge storage is always the edge iterator (unlike vertex descriptors which may be index-only)
 - **Flexible target extraction**: Supports simple integral targets, pair-like edges, and custom edge types
-- **Size**: 16 bytes minimum (8 for edge + 8 for source) for vector-based; larger for iterator-based
+- **Size**: Iterator-dependent; typically 8 bytes per iterator + 8 bytes for source vertex index
 
 ### Comparative Analysis
 
@@ -117,7 +113,7 @@ struct edge_descriptor {
 | **Source storage** | In edge data (`source` field) | Embedded `vertex_descriptor` member |
 | **Target storage** | In edge data (`target` field) | Extracted via `target_id(vertex_data)` |
 | **Parallel edge support** | `edge_index` field distinguishes duplicates | Iterator position distinguishes duplicates |
-| **Size (vector-based)** | 24 bytes (source + target + index) | 16 bytes (edge index + source vertex index) |
+| **Size (vector-based)** | 24 bytes (source + target + index) | Iterator-dependent (typically 16 bytes: 8 for edge iterator + 8 for source vertex index) |
 | **Size (iterator-based)** | Varies by iterator size (for listS/setS) | Varies by iterator size |
 | **Property access** | `g[e].property` with property map | CPO `edge_value(g, uv)` or `inner_value()` |
 

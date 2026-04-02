@@ -281,9 +281,13 @@ objects on-the-fly. Inherits from `std::ranges::view_interface`.
 ### Deduction Guides
 
 ```cpp
-vertex_descriptor_view(Container&)       -> vertex_descriptor_view<typename Container::iterator>;
-vertex_descriptor_view(const Container&) -> vertex_descriptor_view<typename Container::const_iterator>;
+vertex_descriptor_view(Container&)       -> vertex_descriptor_view<std::ranges::iterator_t<Container&>>;
+vertex_descriptor_view(const Container&) -> vertex_descriptor_view<std::ranges::iterator_t<const Container&>>;
 ```
+
+Using `std::ranges::iterator_t<>` instead of `Container::iterator` allows
+deduction to work with views (e.g. `iota_view`) that lack nested
+`iterator`/`const_iterator` typedefs.
 
 ### Range Traits
 

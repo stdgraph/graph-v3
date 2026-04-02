@@ -13,6 +13,10 @@
 - 456 new algorithm tests for sparse graph types (4343 → 4799)
 
 ### Changed
+- **`edge_descriptor` simplified to iterator-only storage** — removed the `conditional_t<random_access_iterator, size_t, EdgeIter>` dual-storage path; edges always store the iterator directly since edges always have physical containers. Eliminates 38 `if constexpr` branches across 6 files (~500 lines removed).
+- **`compressed_graph::vertices(g)` returns `iota_view`** — simplified to `std::ranges::iota_view<size_t, size_t>(0, num_vertices())`, which the `vertices` CPO wraps automatically via `_wrap_if_needed`.
+- **`vertex_descriptor_view` CTAD deduction guides** — updated from `Container::iterator`/`const_iterator` to `std::ranges::iterator_t<>` for compatibility with views like `iota_view`.
+- **`edge_descriptor_view` forward_list compatibility** — fixed constructor to use `if constexpr` for `sized_range` check so `std::ranges::size()` is not compiled for non-sized ranges like `forward_list`.
 - All algorithms relaxed from `index_adjacency_list<G>` to `adjacency_list<G>`
 - Algorithm internal arrays use `make_vertex_property_map` (vector or unordered_map depending on graph type)
 - User-facing `Distances`, `Predecessors`, `Weight`, `Component`, `Label` parameters accept vertex property maps
