@@ -93,12 +93,19 @@ using adj_list::edge_descriptor;
 using adj_list::vertex_descriptor_view;
 using adj_list::edge_descriptor_view;
 
+// Index-only vertex aliases
+using adj_list::index_iterator;
+using adj_list::index_vertex_descriptor;
+using adj_list::index_vertex_descriptor_view;
+
 // Descriptor concepts and traits
 using adj_list::descriptor_type;
 using adj_list::vertex_descriptor_type;
 using adj_list::edge_descriptor_type;
 using adj_list::vertex_iterator;
 using adj_list::edge_iterator;
+using adj_list::index_only_vertex;
+using adj_list::container_backed_vertex;
 using adj_list::is_descriptor_v;
 using adj_list::is_vertex_descriptor_v;
 using adj_list::is_edge_descriptor_v;
