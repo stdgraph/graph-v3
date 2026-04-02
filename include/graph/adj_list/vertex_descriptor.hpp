@@ -163,6 +163,13 @@ private:
   storage_type storage_;
 };
 
+/// Canonical iterator type for index-only vertices (no physical container).
+/// Satisfies random_access_iterator, so vertex_descriptor stores size_t.
+using index_iterator = std::ranges::iterator_t<std::ranges::iota_view<std::size_t, std::size_t>>;
+
+/// Vertex descriptor for index-only graphs (no physical vertex container).
+using index_vertex_descriptor = vertex_descriptor<index_iterator>;
+
 } // namespace graph::adj_list
 
 // Hash specialization for std::unordered containers

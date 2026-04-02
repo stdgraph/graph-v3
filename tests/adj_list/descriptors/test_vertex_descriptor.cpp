@@ -640,3 +640,76 @@ TEST_CASE("vertex_descriptor_view - const vs non-const distinction", "[vertex_de
   static_assert(std::is_same_v<MutableIter, std::vector<int>::iterator>);
   static_assert(std::is_same_v<ConstIter, std::vector<int>::const_iterator>);
 }
+
+// =============================================================================
+// Index-Only Vertex Descriptor Tests
+// =============================================================================
+
+TEST_CASE("index_vertex_descriptor type properties", "[vertex_descriptor][index]") {
+  // index_iterator must satisfy the vertex_iterator concept
+  static_assert(vertex_iterator<index_iterator>);
+  static_assert(direct_vertex_type<index_iterator>);
+  static_assert(std::random_access_iterator<index_iterator>);
+
+  // Storage type must be size_t
+  static_assert(std::same_as<index_vertex_descriptor::storage_type, std::size_t>);
+
+  // vertex_id() returns size_t by value
+  index_vertex_descriptor vd{std::size_t{42}};
+  CHECK(vd.vertex_id() == 42);
+  CHECK(vd.value() == 42);
+
+  // Increment
+  auto vd2 = vd;
+  ++vd2;
+  CHECK(vd2.vertex_id() == 43);
+
+  // Comparison
+  CHECK(vd < vd2);
+  CHECK(vd != vd2);
+}
+
+TEST_CASE("index_vertex_descriptor default construction", "[vertex_descriptor][index]") {
+  index_vertex_descriptor vd{};
+  CHECK(vd.vertex_id() == 0);
+  CHECK(vd.value() == 0);
+}
+
+TEST_CASE("index_vertex_descriptor hashing", "[vertex_descriptor][index]") {
+  index_vertex_descriptor vd1{std::size_t{10}};
+  index_vertex_descriptor vd2{std::size_t{10}};
+  index_vertex_descriptor vd3{std::size_t{20}};
+
+  std::hash<index_vertex_descriptor> hasher;
+  CHECK(hasher(vd1) == hasher(vd2));
+  // Different IDs should (very likely) have different hashes
+  CHECK(hasher(vd1) != hasher(vd3));
+}
+
+TEST_CASE("index_vertex_descriptor_view iteration", "[vertex_descriptor_view][index]") {
+  index_vertex_descriptor_view view(std::size_t{0}, std::size_t{5});
+  CHECK(view.size() == 5);
+
+  std::vector<std::size_t> ids;
+  for (auto desc : view) {
+    ids.push_back(desc.vertex_id());
+  }
+  CHECK(ids == std::vector<std::size_t>{0, 1, 2, 3, 4});
+}
+
+TEST_CASE("index_vertex_descriptor_view empty range", "[vertex_descriptor_view][index]") {
+  index_vertex_descriptor_view view(std::size_t{0}, std::size_t{0});
+  CHECK(view.size() == 0);
+  CHECK(view.begin() == view.end());
+}
+
+TEST_CASE("index_vertex_descriptor_view non-zero start", "[vertex_descriptor_view][index]") {
+  index_vertex_descriptor_view view(std::size_t{10}, std::size_t{13});
+  CHECK(view.size() == 3);
+
+  std::vector<std::size_t> ids;
+  for (auto desc : view) {
+    ids.push_back(desc.vertex_id());
+  }
+  CHECK(ids == std::vector<std::size_t>{10, 11, 12});
+}
