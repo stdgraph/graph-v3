@@ -183,8 +183,8 @@ TEST_CASE("edge_descriptor_storage_type extracts edge storage type", "[traits][t
   using ED_Vector  = edge_descriptor<VectorIter, VectorIter>;
   using ED_List    = edge_descriptor<ListIter, VectorIter>;
 
-  SECTION("Random access edge iterator uses size_t storage") {
-    STATIC_REQUIRE(std::same_as<edge_descriptor_storage_type_t<ED_Vector>, std::size_t>);
+  SECTION("Edge iterator always uses iterator storage") {
+    STATIC_REQUIRE(std::same_as<edge_descriptor_storage_type_t<ED_Vector>, VectorIter>);
   }
 
   SECTION("Forward edge iterator uses iterator storage") {

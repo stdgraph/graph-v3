@@ -298,7 +298,7 @@ struct is_random_access_descriptor<vertex_descriptor<VertexIter>>
 
 template <edge_iterator EdgeIter, vertex_iterator VertexIter, class EdgeDirection>
 struct is_random_access_descriptor<edge_descriptor<EdgeIter, VertexIter, EdgeDirection>>
-      : std::bool_constant<std::random_access_iterator<EdgeIter>> {};
+      : std::false_type {};
 
 /**
  * @brief Helper variable template for is_random_access_descriptor
@@ -319,7 +319,7 @@ struct is_iterator_based_descriptor<vertex_descriptor<VertexIter>>
 
 template <edge_iterator EdgeIter, vertex_iterator VertexIter, class EdgeDirection>
 struct is_iterator_based_descriptor<edge_descriptor<EdgeIter, VertexIter, EdgeDirection>>
-      : std::bool_constant<!std::random_access_iterator<EdgeIter>> {};
+      : std::true_type {};
 
 /**
  * @brief Helper variable template for is_iterator_based_descriptor

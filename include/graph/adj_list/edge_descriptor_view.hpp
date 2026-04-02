@@ -87,11 +87,7 @@ public:
      */
   constexpr edge_descriptor_view(edge_storage_type begin_val, edge_storage_type end_val, vertex_desc source) noexcept
         : begin_(begin_val), end_(end_val), source_(source) {
-    if constexpr (std::random_access_iterator<EdgeIter>) {
-      size_ = end_val - begin_val;
-    } else {
-      size_ = static_cast<std::size_t>(std::distance(begin_val, end_val));
-    }
+    size_ = static_cast<std::size_t>(std::distance(begin_val, end_val));
   }
 
   /**
@@ -105,13 +101,11 @@ public:
     { c.end() } -> std::convertible_to<EdgeIter>;
   }
   constexpr edge_descriptor_view(Container& container, vertex_desc source) noexcept : source_(source) {
-    if constexpr (std::random_access_iterator<EdgeIter>) {
-      begin_ = 0;
-      end_   = static_cast<edge_storage_type>(container.size());
-      size_  = container.size();
+    begin_ = container.begin();
+    end_   = container.end();
+    if constexpr(std::ranges::sized_range<Container>) {
+      size_ = std::ranges::size(container);
     } else {
-      begin_ = container.begin();
-      end_   = container.end();
       size_  = static_cast<std::size_t>(std::distance(begin_, end_));
     }
   }
@@ -130,13 +124,11 @@ public:
     { c.end() } -> std::convertible_to<EdgeIter>;
   }
   constexpr edge_descriptor_view(const Container& container, vertex_desc source) noexcept : source_(source) {
-    if constexpr (std::random_access_iterator<EdgeIter>) {
-      begin_ = 0;
-      end_   = static_cast<edge_storage_type>(container.size());
-      size_  = container.size();
+    begin_ = container.begin();
+    end_   = container.end();
+    if constexpr(std::ranges::sized_range<const Container>) {
+      size_ = std::ranges::size(container);
     } else {
-      begin_ = container.begin();
-      end_   = container.end();
       size_  = static_cast<std::size_t>(std::distance(begin_, end_));
     }
   }
