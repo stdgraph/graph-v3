@@ -275,6 +275,36 @@ requires vertex_iterator<Iter>
 using vertex_id_type_t = typename vertex_id_type<Iter>::type;
 
 // =============================================================================
+// Index-Only Vertex Detection
+// =============================================================================
+
+/**
+ * @brief Concept for index-only vertex iterators (no physical container backing)
+ *
+ * An index-only vertex iterator is a random-access iterator whose value_type
+ * is integral AND whose reference type is not an actual reference (i.e., it
+ * returns by value, like iota_view iterators). This distinguishes generated
+ * index sequences from container iterators over integral types (e.g.,
+ * vector<int>::iterator has reference = int&, so it is NOT index-only).
+ *
+ * For these iterators, inner_value() and underlying_value() are not meaningful
+ * because there is no physical container to index into.
+ */
+template <typename Iter>
+concept index_only_vertex = std::random_access_iterator<Iter> &&
+                            std::integral<std::iter_value_t<Iter>> &&
+                            !std::is_reference_v<std::iter_reference_t<Iter>>;
+
+/**
+ * @brief Concept for container-backed vertex iterators
+ *
+ * The inverse of index_only_vertex. These iterators reference elements in
+ * a physical container, so inner_value() and underlying_value() are valid.
+ */
+template <typename Iter>
+concept container_backed_vertex = vertex_iterator<Iter> && !index_only_vertex<Iter>;
+
+// =============================================================================
 // Edge Value Type Concepts for target_id() Extraction
 // =============================================================================
 

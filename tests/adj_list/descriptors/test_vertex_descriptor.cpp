@@ -713,3 +713,40 @@ TEST_CASE("index_vertex_descriptor_view non-zero start", "[vertex_descriptor_vie
   }
   CHECK(ids == std::vector<std::size_t>{10, 11, 12});
 }
+
+TEST_CASE("index_vertex_descriptor concept checks", "[vertex_descriptor][index]") {
+  // index_iterator is correctly classified as index-only
+  static_assert(index_only_vertex<index_iterator>);
+  static_assert(!container_backed_vertex<index_iterator>);
+
+  // vertex_id() and value() are always available
+  static_assert(requires(index_vertex_descriptor vd) {
+    { vd.vertex_id() } -> std::same_as<std::size_t>;
+    { vd.value() } -> std::same_as<std::size_t>;
+  });
+
+  // vector<int>::iterator is integral but container-backed (returns by reference)
+  using VecIntIter = std::vector<int>::iterator;
+  static_assert(!index_only_vertex<VecIntIter>);
+  static_assert(container_backed_vertex<VecIntIter>);
+}
+
+TEST_CASE("container-backed descriptors still expose container methods", "[vertex_descriptor][index]") {
+  // Vector-backed descriptor should still have inner_value and underlying_value
+  using VecIter = std::vector<int>::iterator;
+  static_assert(container_backed_vertex<VecIter>);
+  static_assert(!index_only_vertex<VecIter>);
+  static_assert(requires(vertex_descriptor<VecIter> vd, std::vector<int>& c) {
+    vd.inner_value(c);
+    vd.underlying_value(c);
+  });
+
+  // Map-backed descriptor should still have inner_value and underlying_value
+  using MapIter = std::map<int, double>::iterator;
+  static_assert(container_backed_vertex<MapIter>);
+  static_assert(!index_only_vertex<MapIter>);
+  static_assert(requires(vertex_descriptor<MapIter> vd, std::map<int, double>& c) {
+    vd.inner_value(c);
+    vd.underlying_value(c);
+  });
+}

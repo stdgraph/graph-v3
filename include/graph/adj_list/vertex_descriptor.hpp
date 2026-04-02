@@ -74,7 +74,9 @@ public:
      * For forward iterators, dereferences the stored iterator.
      */
   template <typename Container>
-  [[nodiscard]] constexpr decltype(auto) underlying_value(Container& container) const noexcept {
+  [[nodiscard]] constexpr decltype(auto) underlying_value(Container& container) const noexcept
+  requires (container_backed_vertex<VertexIter> && !std::is_void_v<Container>)
+  {
     if constexpr (std::random_access_iterator<VertexIter>) {
       return (container[storage_]);
     } else {
@@ -83,7 +85,9 @@ public:
   }
 
   template <typename Container>
-  [[nodiscard]] constexpr decltype(auto) underlying_value(const Container& container) const noexcept {
+  [[nodiscard]] constexpr decltype(auto) underlying_value(const Container& container) const noexcept
+  requires (container_backed_vertex<VertexIter> && !std::is_void_v<Container>)
+  {
     if constexpr (std::random_access_iterator<VertexIter>) {
       return (container[storage_]);
     } else {
@@ -100,7 +104,9 @@ public:
      * For forward containers (map, unordered_map), returns the .second part (the actual data, not the key).
      */
   template <typename Container>
-  [[nodiscard]] constexpr decltype(auto) inner_value(Container& container) const noexcept {
+  [[nodiscard]] constexpr decltype(auto) inner_value(Container& container) const noexcept
+  requires (container_backed_vertex<VertexIter> && !std::is_void_v<Container>)
+  {
     using vt = typename std::iterator_traits<VertexIter>::value_type;
 
     if constexpr (std::random_access_iterator<VertexIter>) {
@@ -126,7 +132,9 @@ public:
      * @return Const reference to the vertex data
      */
   template <typename Container>
-  [[nodiscard]] constexpr decltype(auto) inner_value(const Container& container) const noexcept {
+  [[nodiscard]] constexpr decltype(auto) inner_value(const Container& container) const noexcept
+  requires (container_backed_vertex<VertexIter> && !std::is_void_v<Container>)
+  {
     using vt = typename std::iterator_traits<VertexIter>::value_type;
 
     if constexpr (std::random_access_iterator<VertexIter>) {
