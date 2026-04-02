@@ -115,6 +115,7 @@ Edges in the graph can be stored in various ways depending on graph structure:
       - The type MUST have at least 2 members (accessible via tuple protocol or pair interface)
       - The first element serves as the vertex ID (key)
       - This can be checked using `std::tuple_size<value_type>::value >= 2` or by requiring `.first` and `.second` members
+  - **Index-only iterator** (e.g., `iota_view<size_t>::iterator`): Used for graphs with no physical vertex container. Satisfies `index_only_vertex<Iter>`. `inner_value()` and `underlying_value()` are not available (constrained out by `container_backed_vertex`). The canonical alias `index_iterator` is provided.
 - MUST have a single member variable that:
   - MUST be `size_t index` when the iterator is a random access iterator
   - MUST be the iterator type itself when the iterator is a forward iterator (non-random access)
