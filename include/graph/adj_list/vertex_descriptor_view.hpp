@@ -153,6 +153,9 @@ vertex_descriptor_view(Container&) -> vertex_descriptor_view<typename Container:
 template <typename Container>
 vertex_descriptor_view(const Container&) -> vertex_descriptor_view<typename Container::const_iterator>;
 
+/// Vertex descriptor view for index-only graphs (no physical vertex container).
+using index_vertex_descriptor_view = vertex_descriptor_view<index_iterator>;
+
 } // namespace graph::adj_list
 
 // Enable borrowed_range for vertex_descriptor_view since it doesn't own the data

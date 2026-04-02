@@ -39,6 +39,7 @@ using adj_list::vertex_descriptor_view;
 using adj_list::edge_descriptor_view;
 using adj_list::vertex_descriptor_type;
 using adj_list::edge_descriptor_type;
+using adj_list::index_iterator;
 
 /**
  * @ingroup graph_containers
@@ -1083,11 +1084,8 @@ public: // Friend functions
   template <typename G>
   requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
   [[nodiscard]] friend constexpr auto vertices(G&& g) noexcept {
-    // Since row_index_ is a vector of csr_row structs (random access),
-    // we use the index-based constructor with storage_type (size_t) for vertex IDs
-    using vertex_iter_type =
-          std::conditional_t<std::is_const_v<std::remove_reference_t<G>>, typename row_index_vector::const_iterator,
-                             typename row_index_vector::iterator>;
+    // Index-only vertex descriptor: no physical vertex container, just size_t IDs
+    using vertex_iter_type = index_iterator;
 
     if (g.empty()) {
       return vertex_descriptor_view<vertex_iter_type>(static_cast<std::size_t>(0), static_cast<std::size_t>(0));
@@ -1115,9 +1113,7 @@ public: // Friend functions
   template <typename G, std::integral PId>
   requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
   [[nodiscard]] friend constexpr auto vertices(G&& g, const PId& pid) noexcept {
-    using vertex_iter_type =
-          std::conditional_t<std::is_const_v<std::remove_reference_t<G>>, typename row_index_vector::const_iterator,
-                             typename row_index_vector::iterator>;
+    using vertex_iter_type = index_iterator;
 
     // Handle empty graph
     if (g.empty()) {
@@ -1180,9 +1176,7 @@ public: // Friend functions
   template <typename G, typename VId2>
   requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
   [[nodiscard]] friend constexpr auto find_vertex([[maybe_unused]] G&& g, const VId2& uid) noexcept {
-    using vertex_iter_type =
-          std::conditional_t<std::is_const_v<std::remove_reference_t<G>>, typename row_index_vector::const_iterator,
-                             typename row_index_vector::iterator>;
+    using vertex_iter_type     = index_iterator;
     using vertex_desc_view     = vertex_descriptor_view<vertex_iter_type>;
     using vertex_desc_iterator = typename vertex_desc_view::iterator;
 
@@ -1228,11 +1222,9 @@ public: // Friend functions
     using edge_iter_type =
           std::conditional_t<std::is_const_v<std::remove_reference_t<G>>, typename col_index_vector::const_iterator,
                              typename col_index_vector::iterator>;
-    using vertex_iter_type =
-          std::conditional_t<std::is_const_v<std::remove_reference_t<G>>, typename row_index_vector::const_iterator,
-                             typename row_index_vector::iterator>;
-    using edge_desc_view = edge_descriptor_view<edge_iter_type, vertex_iter_type>;
-    using vertex_desc    = vertex_descriptor<vertex_iter_type>;
+    using vertex_iter_type = index_iterator;
+    using edge_desc_view   = edge_descriptor_view<edge_iter_type, vertex_iter_type>;
+    using vertex_desc      = vertex_descriptor<vertex_iter_type>;
 
     // Get the vertex ID from the descriptor
     auto vid = static_cast<std::size_t>(u.vertex_id());

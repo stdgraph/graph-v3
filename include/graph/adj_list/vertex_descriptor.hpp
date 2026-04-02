@@ -26,7 +26,7 @@ public:
   using iterator_type = VertexIter;
   using value_type    = typename std::iterator_traits<VertexIter>::value_type;
 
-  // Conditional storage type: size_t for random access, iterator for bidirectional
+  // Conditional storage type: size_t for random access, iterator for forward
   using storage_type = std::conditional_t<std::random_access_iterator<VertexIter>, std::size_t, VertexIter>;
 
   // Default constructor
@@ -39,13 +39,13 @@ public:
 
   /**
      * @brief Get the underlying storage value (index or iterator)
-     * @return The stored index (for random access) or iterator (for bidirectional)
+     * @return The stored index (for random access) or iterator (for forward)
      */
   [[nodiscard]] constexpr storage_type value() const noexcept { return storage_; }
 
   /**
      * @brief Get the vertex ID
-     * @return For random access: the index (by value). For bidirectional: const& to the key.
+     * @return For random access: the index (by value). For forward: const& to the key.
      * 
      * Returns decltype(auto) so that map-based graphs return a const reference
      * to the stable key stored in the map node, avoiding copies of non-trivial
@@ -53,7 +53,7 @@ public:
      * 
      * For random-access iterators, `return storage_;` (non-parenthesized) ensures
      * decltype deduces the value type (size_t) — safe even on temporaries.
-     * For bidirectional iterators, std::get<0> returns a reference to the map key,
+     * For forward iterators, std::get<0> returns a reference to the map key,
      * which is stable as long as the container is alive.
      */
   [[nodiscard]] constexpr decltype(auto) vertex_id() const noexcept {
@@ -71,10 +71,12 @@ public:
      * @return Reference to the vertex data from the container
      * 
      * For random access iterators, accesses container[index].
-     * For bidirectional iterators, dereferences the stored iterator.
+     * For forward iterators, dereferences the stored iterator.
      */
   template <typename Container>
-  [[nodiscard]] constexpr decltype(auto) underlying_value(Container& container) const noexcept {
+  [[nodiscard]] constexpr decltype(auto) underlying_value(Container& container) const noexcept
+  requires (container_backed_vertex<VertexIter> && !std::is_void_v<Container>)
+  {
     if constexpr (std::random_access_iterator<VertexIter>) {
       return (container[storage_]);
     } else {
@@ -83,7 +85,9 @@ public:
   }
 
   template <typename Container>
-  [[nodiscard]] constexpr decltype(auto) underlying_value(const Container& container) const noexcept {
+  [[nodiscard]] constexpr decltype(auto) underlying_value(const Container& container) const noexcept
+  requires (container_backed_vertex<VertexIter> && !std::is_void_v<Container>)
+  {
     if constexpr (std::random_access_iterator<VertexIter>) {
       return (container[storage_]);
     } else {
@@ -97,10 +101,12 @@ public:
      * @return Reference to the vertex data (for maps: the .second value; for vectors: the whole value)
      * 
      * For random access containers (vector), returns the entire value.
-     * For bidirectional containers (map), returns the .second part (the actual data, not the key).
+     * For forward containers (map, unordered_map), returns the .second part (the actual data, not the key).
      */
   template <typename Container>
-  [[nodiscard]] constexpr decltype(auto) inner_value(Container& container) const noexcept {
+  [[nodiscard]] constexpr decltype(auto) inner_value(Container& container) const noexcept
+  requires (container_backed_vertex<VertexIter> && !std::is_void_v<Container>)
+  {
     using vt = typename std::iterator_traits<VertexIter>::value_type;
 
     if constexpr (std::random_access_iterator<VertexIter>) {
@@ -108,7 +114,7 @@ public:
       using diff_t = typename std::iterator_traits<decltype(std::begin(container))>::difference_type;
       return (*(std::begin(container) + static_cast<diff_t>(storage_)));
     } else {
-      // For bidirectional, check if it's a pair-like type
+      // For forward, check if it's a pair-like type
       if constexpr (pair_like_value<vt>) {
         // For map, bind the pair first, then return .second
         auto& element = *storage_;
@@ -126,7 +132,9 @@ public:
      * @return Const reference to the vertex data
      */
   template <typename Container>
-  [[nodiscard]] constexpr decltype(auto) inner_value(const Container& container) const noexcept {
+  [[nodiscard]] constexpr decltype(auto) inner_value(const Container& container) const noexcept
+  requires (container_backed_vertex<VertexIter> && !std::is_void_v<Container>)
+  {
     using vt = typename std::iterator_traits<VertexIter>::value_type;
 
     if constexpr (std::random_access_iterator<VertexIter>) {
@@ -162,6 +170,13 @@ public:
 private:
   storage_type storage_;
 };
+
+/// Canonical iterator type for index-only vertices (no physical container).
+/// Satisfies random_access_iterator, so vertex_descriptor stores size_t.
+using index_iterator = std::ranges::iterator_t<std::ranges::iota_view<std::size_t, std::size_t>>;
+
+/// Vertex descriptor for index-only graphs (no physical vertex container).
+using index_vertex_descriptor = vertex_descriptor<index_iterator>;
 
 } // namespace graph::adj_list
 

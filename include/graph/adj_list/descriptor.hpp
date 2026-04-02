@@ -20,7 +20,7 @@ struct in_edge_tag {};
 /**
  * @brief Concept to check if a type is pair-like (has at least 2 members accessible via tuple protocol)
  * 
- * This is used to constrain bidirectional iterator value_types for vertex storage.
+ * This is used to constrain forward iterator value_types for vertex storage.
  */
 template <typename T>
 concept pair_like = requires {
@@ -89,7 +89,7 @@ concept keyed_vertex_type = std::forward_iterator<Iter> && !std::random_access_i
  * 
  * A vertex iterator must be either:
  * - Random access (direct/indexed storage)
- * - Bidirectional with pair-like value_type (keyed storage)
+ * - Forward with pair-like value_type (keyed storage)
  */
 template <typename Iter>
 concept vertex_iterator = direct_vertex_type<Iter> || keyed_vertex_type<Iter>;
@@ -111,25 +111,25 @@ concept random_access_vertex_pattern = std::random_access_iterator<Iter>;
 /**
  * @brief Concept for pair-value vertex pattern (map-like)
  * 
- * Used with bidirectional iterators where the value_type is pair-like.
+ * Used with forward iterators where the value_type is pair-like.
  * inner_value returns the .second part (the data, excluding the key).
  * Pattern: *iterator -> pair{key, data}, inner_value returns data&
- * Example: std::map<int, VertexData> where inner_value returns VertexData& (.second)
+ * Example: std::map<int, VertexData> or std::unordered_map<int, VertexData> where inner_value returns VertexData& (.second)
  */
 template <typename Iter>
-concept pair_value_vertex_pattern = std::bidirectional_iterator<Iter> && !std::random_access_iterator<Iter> &&
+concept pair_value_vertex_pattern = std::forward_iterator<Iter> && !std::random_access_iterator<Iter> &&
                                     pair_like_value<typename std::iterator_traits<Iter>::value_type>;
 
 /**
- * @brief Concept for whole-value vertex pattern (custom bidirectional)
+ * @brief Concept for whole-value vertex pattern (custom forward)
  * 
- * Used with bidirectional iterators where the value_type is NOT pair-like.
+ * Used with forward iterators where the value_type is NOT pair-like.
  * inner_value returns the entire element (same as underlying_value).
  * Pattern: *iterator -> value, inner_value returns value&
- * Example: Custom bidirectional container with non-pair value_type
+ * Example: Custom forward container with non-pair value_type
  */
 template <typename Iter>
-concept whole_value_vertex_pattern = std::bidirectional_iterator<Iter> && !std::random_access_iterator<Iter> &&
+concept whole_value_vertex_pattern = std::forward_iterator<Iter> && !std::random_access_iterator<Iter> &&
                                      !pair_like_value<typename std::iterator_traits<Iter>::value_type>;
 
 /**
@@ -273,6 +273,36 @@ struct vertex_id_type<Iter> {
 template <typename Iter>
 requires vertex_iterator<Iter>
 using vertex_id_type_t = typename vertex_id_type<Iter>::type;
+
+// =============================================================================
+// Index-Only Vertex Detection
+// =============================================================================
+
+/**
+ * @brief Concept for index-only vertex iterators (no physical container backing)
+ *
+ * An index-only vertex iterator is a random-access iterator whose value_type
+ * is integral AND whose reference type is not an actual reference (i.e., it
+ * returns by value, like iota_view iterators). This distinguishes generated
+ * index sequences from container iterators over integral types (e.g.,
+ * vector<int>::iterator has reference = int&, so it is NOT index-only).
+ *
+ * For these iterators, inner_value() and underlying_value() are not meaningful
+ * because there is no physical container to index into.
+ */
+template <typename Iter>
+concept index_only_vertex = std::random_access_iterator<Iter> &&
+                            std::integral<std::iter_value_t<Iter>> &&
+                            !std::is_reference_v<std::iter_reference_t<Iter>>;
+
+/**
+ * @brief Concept for container-backed vertex iterators
+ *
+ * The inverse of index_only_vertex. These iterators reference elements in
+ * a physical container, so inner_value() and underlying_value() are valid.
+ */
+template <typename Iter>
+concept container_backed_vertex = vertex_iterator<Iter> && !index_only_vertex<Iter>;
 
 // =============================================================================
 // Edge Value Type Concepts for target_id() Extraction

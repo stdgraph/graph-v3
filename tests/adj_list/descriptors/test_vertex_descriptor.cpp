@@ -640,3 +640,113 @@ TEST_CASE("vertex_descriptor_view - const vs non-const distinction", "[vertex_de
   static_assert(std::is_same_v<MutableIter, std::vector<int>::iterator>);
   static_assert(std::is_same_v<ConstIter, std::vector<int>::const_iterator>);
 }
+
+// =============================================================================
+// Index-Only Vertex Descriptor Tests
+// =============================================================================
+
+TEST_CASE("index_vertex_descriptor type properties", "[vertex_descriptor][index]") {
+  // index_iterator must satisfy the vertex_iterator concept
+  static_assert(vertex_iterator<index_iterator>);
+  static_assert(direct_vertex_type<index_iterator>);
+  static_assert(std::random_access_iterator<index_iterator>);
+
+  // Storage type must be size_t
+  static_assert(std::same_as<index_vertex_descriptor::storage_type, std::size_t>);
+
+  // vertex_id() returns size_t by value
+  index_vertex_descriptor vd{std::size_t{42}};
+  CHECK(vd.vertex_id() == 42);
+  CHECK(vd.value() == 42);
+
+  // Increment
+  auto vd2 = vd;
+  ++vd2;
+  CHECK(vd2.vertex_id() == 43);
+
+  // Comparison
+  CHECK(vd < vd2);
+  CHECK(vd != vd2);
+}
+
+TEST_CASE("index_vertex_descriptor default construction", "[vertex_descriptor][index]") {
+  index_vertex_descriptor vd{};
+  CHECK(vd.vertex_id() == 0);
+  CHECK(vd.value() == 0);
+}
+
+TEST_CASE("index_vertex_descriptor hashing", "[vertex_descriptor][index]") {
+  index_vertex_descriptor vd1{std::size_t{10}};
+  index_vertex_descriptor vd2{std::size_t{10}};
+  index_vertex_descriptor vd3{std::size_t{20}};
+
+  std::hash<index_vertex_descriptor> hasher;
+  CHECK(hasher(vd1) == hasher(vd2));
+  // Different IDs should (very likely) have different hashes
+  CHECK(hasher(vd1) != hasher(vd3));
+}
+
+TEST_CASE("index_vertex_descriptor_view iteration", "[vertex_descriptor_view][index]") {
+  index_vertex_descriptor_view view(std::size_t{0}, std::size_t{5});
+  CHECK(view.size() == 5);
+
+  std::vector<std::size_t> ids;
+  for (auto desc : view) {
+    ids.push_back(desc.vertex_id());
+  }
+  CHECK(ids == std::vector<std::size_t>{0, 1, 2, 3, 4});
+}
+
+TEST_CASE("index_vertex_descriptor_view empty range", "[vertex_descriptor_view][index]") {
+  index_vertex_descriptor_view view(std::size_t{0}, std::size_t{0});
+  CHECK(view.size() == 0);
+  CHECK(view.begin() == view.end());
+}
+
+TEST_CASE("index_vertex_descriptor_view non-zero start", "[vertex_descriptor_view][index]") {
+  index_vertex_descriptor_view view(std::size_t{10}, std::size_t{13});
+  CHECK(view.size() == 3);
+
+  std::vector<std::size_t> ids;
+  for (auto desc : view) {
+    ids.push_back(desc.vertex_id());
+  }
+  CHECK(ids == std::vector<std::size_t>{10, 11, 12});
+}
+
+TEST_CASE("index_vertex_descriptor concept checks", "[vertex_descriptor][index]") {
+  // index_iterator is correctly classified as index-only
+  static_assert(index_only_vertex<index_iterator>);
+  static_assert(!container_backed_vertex<index_iterator>);
+
+  // vertex_id() and value() are always available
+  static_assert(requires(index_vertex_descriptor vd) {
+    { vd.vertex_id() } -> std::same_as<std::size_t>;
+    { vd.value() } -> std::same_as<std::size_t>;
+  });
+
+  // vector<int>::iterator is integral but container-backed (returns by reference)
+  using VecIntIter = std::vector<int>::iterator;
+  static_assert(!index_only_vertex<VecIntIter>);
+  static_assert(container_backed_vertex<VecIntIter>);
+}
+
+TEST_CASE("container-backed descriptors still expose container methods", "[vertex_descriptor][index]") {
+  // Vector-backed descriptor should still have inner_value and underlying_value
+  using VecIter = std::vector<int>::iterator;
+  static_assert(container_backed_vertex<VecIter>);
+  static_assert(!index_only_vertex<VecIter>);
+  static_assert(requires(vertex_descriptor<VecIter> vd, std::vector<int>& c) {
+    vd.inner_value(c);
+    vd.underlying_value(c);
+  });
+
+  // Map-backed descriptor should still have inner_value and underlying_value
+  using MapIter = std::map<int, double>::iterator;
+  static_assert(container_backed_vertex<MapIter>);
+  static_assert(!index_only_vertex<MapIter>);
+  static_assert(requires(vertex_descriptor<MapIter> vd, std::map<int, double>& c) {
+    vd.inner_value(c);
+    vd.underlying_value(c);
+  });
+}
