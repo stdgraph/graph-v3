@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 ### Added
+- **Tarjan's SCC algorithm** (`tarjan_scc.hpp`) — single-pass O(V+E) strongly connected components using iterative DFS with low-link values; no transpose graph needed
+- 17 new Tarjan SCC tests (`test_tarjan_scc.cpp`)
 - **Mapped (sparse) graph algorithm support** — all 14 algorithms now accept `adjacency_list<G>` (both index and map-based containers)
 - `mapped_vertex_range`, `mapped_adjacency_list`, `mapped_bidirectional_adjacency_list` concepts
 - `vertex_property_map<G, T>` type alias and `make_vertex_property_map` factory (vector for index graphs, unordered_map for mapped)

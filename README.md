@@ -22,7 +22,7 @@
 - **Header-only** — drop into any CMake project; no compiled components
 - **Generic** - Enabled by the use of descriptors.
 - **Works with your graphs** — Bring your own graph. `std::vector<std::vector<int>>` and `std::map<int, std::list<std::pair<int,double>>>` are also valid graphs out of the box.
-- **13 algorithms** — Dijkstra, Bellman-Ford, BFS, DFS, topological sort, connected components, articulation points, biconnected components, MST, triangle counting, MIS, label propagation, Jaccard coefficient
+- **14 algorithms** — Dijkstra, Bellman-Ford, BFS, DFS, topological sort, connected components, Tarjan SCC, articulation points, biconnected components, MST, triangle counting, MIS, label propagation, Jaccard coefficient
 - **7 lazy views** — vertexlist, edgelist, incidence, neighbors, BFS, DFS, topological sort — all composable with range adaptors
 - **Bidirectional edge access** — `in_edges`, `in_degree`, reverse BFS/DFS/topological sort via `in_edge_accessor`
 - **Customization Point Objects (CPOs)** — adapt existing data structures without modifying them
@@ -96,7 +96,7 @@ Both share a common descriptor system and customization-point interface.
 
 | Category | What's Included | Details |
 |----------|-----------------|---------|
-| **Algorithms** | Dijkstra, Bellman-Ford, BFS, DFS, topological sort, connected components, articulation points, biconnected components, MST, triangle counting, MIS, label propagation, Jaccard | [Algorithm reference](docs/status/implementation_matrix.md#algorithms) |
+| **Algorithms** | Dijkstra, Bellman-Ford, BFS, DFS, topological sort, connected components, Tarjan SCC, articulation points, biconnected components, MST, triangle counting, MIS, label propagation, Jaccard | [Algorithm reference](docs/status/implementation_matrix.md#algorithms) |
 | **Views** | vertexlist, edgelist, incidence, neighbors, BFS, DFS, topological sort | [View reference](docs/status/implementation_matrix.md#views) |
 | **Containers** | `dynamic_graph` (27 trait combos), `compressed_graph` (CSR), `undirected_adjacency_list` | [Container reference](docs/status/implementation_matrix.md#containers) |
 | **CPOs** | 19 customization point objects (vertices, edges, target_id, vertex_value, edge_value, …) | [CPO reference](docs/reference/cpo-reference.md) |

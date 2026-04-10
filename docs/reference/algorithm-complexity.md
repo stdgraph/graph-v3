@@ -47,6 +47,7 @@ headers for every algorithm in graph-v3.
 |-----------|----------|------|-------|-------------------|--------|
 | **Connected Components** | `connected_components` | O(V+E) | O(V) | `index_adjacency_list` | `connected_components.hpp` |
 | **Kosaraju (SCC)** | `kosaraju` | O(V+E) | O(V) | `index_adjacency_list` (graph + transpose) | `connected_components.hpp` |
+| **Tarjan (SCC)** | `tarjan_scc` | O(V+E) | O(V) | `adjacency_list` | `tarjan_scc.hpp` |
 | **Afforest** | `afforest` | O(V + E·α(V)) | O(V) | `index_adjacency_list` | `connected_components.hpp` |
 | **Biconnected Components** | `biconnected_components` | O(V+E) | O(V+E) | `index_adjacency_list` | `biconnected_components.hpp` |
 
@@ -96,6 +97,7 @@ algorithm/
 ├── jaccard.hpp
 ├── label_propagation.hpp
 ├── mst.hpp
+├── tarjan_scc.hpp
 ├── topological_sort.hpp
 └── traversal_common.hpp        (shared types: visitors, init helpers)
 ```
