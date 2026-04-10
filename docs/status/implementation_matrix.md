@@ -15,7 +15,7 @@
 
 ## Algorithms
 
-13 implemented algorithms in `include/graph/algorithm/` (excluding `traversal_common.hpp`):
+14 implemented algorithms in `include/graph/algorithm/` (excluding `traversal_common.hpp`):
 
 | Algorithm | Header | Test File | Status |
 |-----------|--------|-----------|--------|
@@ -25,6 +25,7 @@
 | Depth-first search | `depth_first_search.hpp` | `test_depth_first_search.cpp` | Implemented |
 | Topological sort | `topological_sort.hpp` | `test_topological_sort.cpp` | Implemented |
 | Connected components (Kosaraju SCC) | `connected_components.hpp` | `test_connected_components.cpp`, `test_scc_bidirectional.cpp` | Implemented |
+| Tarjan SCC | `tarjan_scc.hpp` | `test_tarjan_scc.cpp` | Implemented |
 | Articulation points | `articulation_points.hpp` | `test_articulation_points.cpp` | Implemented |
 | Biconnected components | `biconnected_components.hpp` | `test_biconnected_components.cpp` | Implemented |
 | MST (Prim / Kruskal) | `mst.hpp` | `test_mst.cpp` | Implemented |

@@ -45,6 +45,7 @@ map-based (sparse vertex ID) graphs are supported.
 |-----------|----------|----------|
 | `connected_components` | Undirected graphs | DFS-based |
 | `kosaraju` | Directed graphs (SCC) | Two DFS passes (requires transpose) |
+| `tarjan_scc` | Directed graphs (SCC) | Single DFS pass (no transpose needed) |
 | `afforest` | Large graphs, parallel-friendly | Union-find with neighbor sampling |
 
 All three fill a `component` array where `component[v]` is the component ID for
@@ -56,6 +57,9 @@ vertex v.
   the number of components directly.
 - **`kosaraju`** — when you need strongly connected components of a directed
   graph. Requires constructing the transpose graph (all edges reversed).
+- **`tarjan_scc`** — when you need SCCs without constructing a transpose graph.
+  Single-pass DFS using low-link values. Returns the number of SCCs.
+  See [Tarjan SCC](tarjan_scc.md).
 - **`afforest`** — when working with large graphs or when you intend to
   parallelize later. Uses union-find with neighbor sampling, which has good
   cache behavior on large inputs.
@@ -313,6 +317,7 @@ compress(comp);
 
 ## See Also
 
+- [Tarjan SCC](tarjan_scc.md) — single-pass SCC algorithm (no transpose needed)
 - [Biconnected Components](biconnected_components.md) — maximal 2-connected subgraphs
 - [Articulation Points](articulation_points.md) — cut vertices
 - [Algorithm Catalog](../algorithms.md) — full list of algorithms
