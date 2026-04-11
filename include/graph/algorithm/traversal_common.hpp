@@ -115,34 +115,6 @@ constexpr auto zero_distance() {
   return DistanceValue();
 }
 
-//
-// Distance and predecessor function concepts
-//
-// These concepts enable algorithms to accept functions for per-vertex distance and
-// predecessor access: distance(g, uid) and predecessor(g, uid). This is more flexible
-// than requiring a specific container, because the values can reside on a vertex property
-// or in an external container.
-//
-
-/// Type alias: extracts the distance value type from a distance function's return type
-template <class DF, class G>
-using distance_fn_value_t = std::remove_cvref_t<
-    std::invoke_result_t<DF&, const std::remove_reference_t<G>&, const vertex_id_t<G>&>>;
-
-/// Concept: a callable returning a mutable reference to a per-vertex distance value
-template <class DF, class G>
-concept distance_fn_for =
-      std::invocable<DF&, const std::remove_reference_t<G>&, const vertex_id_t<G>&> &&
-      std::is_lvalue_reference_v<
-            std::invoke_result_t<DF&, const std::remove_reference_t<G>&, const vertex_id_t<G>&>>;
-
-/// Concept: a callable returning a mutable reference to a per-vertex predecessor value
-template <class PF, class G>
-concept predecessor_fn_for =
-      std::invocable<PF&, const std::remove_reference_t<G>&, const vertex_id_t<G>&> &&
-      std::is_lvalue_reference_v<
-            std::invoke_result_t<PF&, const std::remove_reference_t<G>&, const vertex_id_t<G>&>>;
-
 /// General concept: a callable returning a mutable lvalue reference to any per-vertex property value.
 /// Used by connected_components, label_propagation, and similar algorithms with per-vertex
 /// property output parameters.
@@ -156,6 +128,31 @@ concept vertex_property_fn_for =
 template <class VF, class G>
 using vertex_fn_value_t = std::remove_cvref_t<
     std::invoke_result_t<VF&, const std::remove_reference_t<G>&, const vertex_id_t<G>&>>;
+
+//
+// Distance and predecessor function concepts
+//
+// These concepts enable algorithms to accept functions for per-vertex distance and
+// predecessor access: distance(g, uid) and predecessor(g, uid). This is more flexible
+// than requiring a specific container, because the values can reside on a vertex property
+// or in an external container.
+//
+
+/// Concept: a callable returning a mutable reference to a per-vertex distance value
+template <class DF, class G>
+concept distance_fn_for = vertex_property_fn_for<DF, G>;
+
+/// Type alias: extracts the distance value type from a distance function's return type
+template <class DF, class G>
+using distance_fn_value_t = vertex_fn_value_t<DF, G>;
+
+/// Type alias: extracts the predecessor value type from a predecessor function's return type
+/// Concept: a callable returning a mutable reference to a per-vertex predecessor value
+template <class PF, class G>
+concept predecessor_fn_for = vertex_property_fn_for<PF, G>;
+
+template <class PF, class G>
+using predecessor_fn_value_t = vertex_fn_value_t<PF, G>;
 
 /// Null predecessor function — used when predecessor tracking is not needed.
 /// Detected at compile time via is_null_predecessor_fn_v to skip predecessor writes.
