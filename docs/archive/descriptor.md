@@ -115,6 +115,7 @@ Edges in the graph can be stored in various ways depending on graph structure:
       - The type MUST have at least 2 members (accessible via tuple protocol or pair interface)
       - The first element serves as the vertex ID (key)
       - This can be checked using `std::tuple_size<value_type>::value >= 2` or by requiring `.first` and `.second` members
+  - **Index-only iterator** (e.g., `iota_view<size_t>::iterator`): Used for graphs with no physical vertex container. Satisfies `index_only_vertex<Iter>`. `inner_value()` and `underlying_value()` are not available (constrained out by `container_backed_vertex`). The canonical alias `index_iterator` is provided.
 - MUST have a single member variable that:
   - MUST be `size_t index` when the iterator is a random access iterator
   - MUST be the iterator type itself when the iterator is a forward iterator (non-random access)
@@ -139,16 +140,11 @@ Edges in the graph can be stored in various ways depending on graph structure:
   - First parameter: the underlying edge container's iterator type
   - Second parameter: the vertex iterator type
 - MUST have two member variables:
-  - First member: MUST be `size_t index` (for edge index) when the edge iterator is a random access iterator, or the edge iterator type itself when the edge iterator is a forward/bidirectional iterator (non-random access)
+  - First member: MUST be the edge iterator type (`EdgeIter`). Unlike vertex descriptors which may use `size_t` for index-only graphs, edge descriptors always store the iterator directly since edges always have physical containers.
   - Second member: MUST be a `vertex_descriptor` (instantiated with the vertex iterator type from the second template parameter) representing the source vertex
-- The edge descriptor identifies both WHERE the edge is stored (via first member) and WHICH vertex it originates from (via second member)
-- MUST provide a public `value()` member function that returns the underlying edge storage handle:
-  - When the edge iterator is random access: `value()` MUST return the stored `size_t` index
-  - When the edge iterator is forward/bidirectional: `value()` MUST return the stored edge iterator
-  - Return type SHOULD be the exact type of the underlying first member (copy by value)
-- MUST provide pre-increment and post-increment operators whose behavior mirrors the underlying edge storage:
-  - For random access iterators: increment operations MUST advance the `size_t` index by one while leaving the source `vertex_descriptor` unchanged
-  - For forward/bidirectional iterators: increment operations MUST advance the stored edge iterator while leaving the source `vertex_descriptor` unchanged
+- The edge descriptor identifies both WHERE the edge is stored (via iterator) and WHICH vertex it originates from (via source vertex descriptor)
+- MUST provide a public `value()` member function that returns the stored edge iterator
+- MUST provide pre-increment and post-increment operators that advance the stored edge iterator while leaving the source `vertex_descriptor` unchanged
 - Directed/undirected semantics are determined by the graph structure, not by the descriptor itself
 - MUST be efficiently passable by value
 - MUST integrate with std::hash for unordered containers
@@ -163,8 +159,7 @@ Both `vertex_descriptor` and `edge_descriptor` MUST provide specialized function
   - Random access containers (vector): returns reference to the element at index
   - Bidirectional containers (map): returns reference to the pair<key, value>
 - **For edge_descriptor**:
-  - Random access containers: returns reference to the edge element at index
-  - Forward/bidirectional containers: returns reference to the edge element via iterator dereference
+  - Returns reference to the edge element via iterator dereference (always iterator-based)
 - **Return type**: MUST use `decltype(auto)` to preserve cv-qualifiers and reference category
 - **Signature**: `template<typename Container> decltype(auto) underlying_value(Container& container) const noexcept`
 - **Const overload**: MUST provide const version accepting `const Container&`
@@ -276,11 +271,10 @@ This applies to ALL return statements in value-access functions:
 ### Phase 2: Edge Descriptors
 1. Implement edge descriptor template with:
    - Two template parameters (edge container iterator and vertex iterator)
-   - First member variable: conditional based on edge iterator category (size_t for random access, iterator for forward/bidirectional)
+   - First member variable: the edge iterator (`EdgeIter`) — always stores the iterator directly
    - Second member variable: vertex_descriptor instantiated with the vertex iterator type (represents source vertex)
-   - Proper std::random_access_iterator and std::forward_iterator concept constraints
-   - Pre/post increment operators consistent with underlying storage semantics
-   - `value()` member function returning the underlying edge index or iterator
+   - Pre/post increment operators that advance the edge iterator
+   - `value()` member function returning the stored edge iterator
    - `source()` member function returning the source vertex_descriptor
    - `target_id()` member function that extracts target vertex ID from edge data (handles int, pair.first, tuple[0], custom types)
 2. Implement `edge_descriptor_view` that adapts both per-vertex adjacency storage and global edge storage while yielding descriptors, modelling a forward-only view, and (SHOULD) deriving from `std::ranges::view_interface`
@@ -606,7 +600,7 @@ decltype(auto) inner_value(const Container& container) const noexcept;
 - ✅ Phase 1: Vertex descriptors with conditional storage (index for random access, iterator for bidirectional)
 - ✅ Phase 1: Vertex descriptor views with forward-only iteration
 - ✅ Phase 1: Comprehensive vertex descriptor tests (all passing)
-- ✅ Phase 2: Edge descriptors with source tracking and conditional storage
+- ✅ Phase 2: Edge descriptors with source tracking (always iterator-based storage)
 - ✅ Phase 2: Edge descriptor views with forward-only iteration
 - ✅ Phase 2: `target_id()` function for extracting target vertex IDs from edge data
 - ✅ Phase 2: Comprehensive edge descriptor tests (all passing)

@@ -27,6 +27,8 @@ are used internally by both the inner value and storage pattern concepts.
 | `pair_like<T>` | Has `std::tuple_size<T>::value >= 2` and supports `std::get<0>`, `std::get<1>` (tuple protocol) |
 | `has_first_second<T>` | Has `.first` and `.second` members |
 | `pair_like_value<T>` | `pair_like<T> \|\| has_first_second<T>` — disjunction of both |
+| `index_only_vertex<Iter>` | Random-access iterator with integral, non-reference value (e.g., `iota_view` iterator) — no physical container |
+| `container_backed_vertex<Iter>` | `vertex_iterator<Iter> && !index_only_vertex<Iter>` — iterator into a real container |
 
 ```cpp
 // Used to constrain keyed_vertex_type, pair_value_vertex_pattern, etc.
@@ -125,6 +127,11 @@ stored and extracted:
 | `direct_vertex_type<Iter>` | Random-access | `std::size_t` (the index) | `container[index]` |
 | `keyed_vertex_type<Iter>` | Forward, pair-like value | Key type (`.first`) | `(*iter).first` for ID, `.second` for data |
 
+`direct_vertex_type` includes both container-backed iterators (e.g.,
+`vector::iterator`) and index-only iterators (`index_iterator`). Use
+`index_only_vertex<Iter>` or `container_backed_vertex<Iter>` to
+distinguish between the two.
+
 ```cpp
 // Disjunction
 template <typename Iter>
@@ -220,8 +227,8 @@ Constrained by `vertex_iterator<VertexIter>`.
 |----------|---------|-------------|
 | `value()` | `storage_type` | The raw storage: index (`size_t`) or iterator |
 | `vertex_id()` | `decltype(auto)` | Vertex ID — index by value for direct, `const&` to key for keyed |
-| `underlying_value(Container&)` | `decltype(auto)` | Full container element (`container[i]` or `*iter`); const overload provided |
-| `inner_value(Container&)` | `decltype(auto)` | Vertex data excluding the key (`.second` for maps, whole value for vectors); const overload provided |
+| `underlying_value(Container&)` | `decltype(auto)` | Full container element (`container[i]` or `*iter`); const overload provided. Requires `container_backed_vertex<VertexIter>`. |
+| `inner_value(Container&)` | `decltype(auto)` | Vertex data excluding the key (`.second` for maps, whole value for vectors); const overload provided. Requires `container_backed_vertex<VertexIter>`. |
 | `operator++()` / `operator++(int)` | `vertex_descriptor&` / `vertex_descriptor` | Pre/post-increment |
 | `operator<=>` / `operator==` | | Defaulted three-way and equality comparison |
 
@@ -274,9 +281,13 @@ objects on-the-fly. Inherits from `std::ranges::view_interface`.
 ### Deduction Guides
 
 ```cpp
-vertex_descriptor_view(Container&)       -> vertex_descriptor_view<typename Container::iterator>;
-vertex_descriptor_view(const Container&) -> vertex_descriptor_view<typename Container::const_iterator>;
+vertex_descriptor_view(Container&)       -> vertex_descriptor_view<std::ranges::iterator_t<Container&>>;
+vertex_descriptor_view(const Container&) -> vertex_descriptor_view<std::ranges::iterator_t<const Container&>>;
 ```
+
+Using `std::ranges::iterator_t<>` instead of `Container::iterator` allows
+deduction to work with views (e.g. `iota_view`) that lack nested
+`iterator`/`const_iterator` typedefs.
 
 ### Range Traits
 
@@ -297,6 +308,37 @@ void process_vertices(/* ... */) {
     } else if constexpr (keyed_vertex_type<VertexIter>) {
         // Map-based: iterator dereferencing, flexible key types
     }
+}
+```
+
+---
+
+## Index-Only Aliases
+
+For graphs without a physical vertex container (e.g., `compressed_graph`,
+implicit graphs), the library provides canonical aliases:
+
+| Alias | Definition |
+|-------|------------|
+| `index_iterator` | `std::ranges::iterator_t<std::ranges::iota_view<size_t, size_t>>` |
+| `index_vertex_descriptor` | `vertex_descriptor<index_iterator>` |
+| `index_vertex_descriptor_view` | `vertex_descriptor_view<index_iterator>` |
+
+These descriptors store only a `size_t` index. `vertex_id()` and `value()`
+work normally. `inner_value()` and `underlying_value()` are not available
+(constrained out by `container_backed_vertex`).
+
+```cpp
+#include <graph/graph.hpp>
+
+// Create descriptor for vertex 42 — no container needed
+graph::index_vertex_descriptor vd{42uz};
+assert(vd.vertex_id() == 42);
+
+// Iterate over a range of vertex IDs
+graph::index_vertex_descriptor_view view(std::size_t{0}, std::size_t{100});
+for (auto desc : view) {
+    // desc.vertex_id() yields 0, 1, ..., 99
 }
 ```
 

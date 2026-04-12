@@ -139,11 +139,10 @@ static_assert(edge_pattern_type_v<CustomEdge> == edge_pattern::custom);
 The `target_id()` function in `edge_descriptor` uses these patterns to extract the target vertex ID:
 
 ```cpp
-template<typename EdgeContainer>
-constexpr auto target_id(const EdgeContainer& edges) const noexcept {
+constexpr auto target_id() const noexcept {
     using edge_value_type = typename std::iterator_traits<EdgeIter>::value_type;
     
-    const auto& edge_value = /* get edge from container */;
+    const auto& edge_value = *edge_storage_;  // Always dereference iterator
     
     if constexpr (std::integral<edge_value_type>) {
         return edge_value;  // Simple: value is target ID
@@ -159,6 +158,10 @@ constexpr auto target_id(const EdgeContainer& edges) const noexcept {
     }
 }
 ```
+
+`edge_descriptor` always stores the edge iterator directly (never `size_t`),
+so `target_id()` simply dereferences the stored iterator — no container
+re-navigation needed.
 
 ## Use Cases
 

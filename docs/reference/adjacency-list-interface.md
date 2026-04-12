@@ -205,7 +205,7 @@ over the underlying container's iterator/index representation.
 | Descriptor | Description |
 |------------|-------------|
 | `vertex_descriptor` | Wraps a vertex iterator or index. Provides `vertex_id()` and `inner_value()`. |
-| `edge_descriptor` | Wraps an edge iterator or index. Provides `target_id()`, `source_id()`, and `inner_value()`. |
+| `edge_descriptor` | Wraps an edge iterator. Provides `target_id()`, `source_id()`, and `inner_value()`. |
 
 **Properties:** equality comparison, ordering (if supported), copy/assignment,
 default construction, `inner_value()` accessor.

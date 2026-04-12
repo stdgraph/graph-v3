@@ -287,6 +287,8 @@ for full documentation.
 | `direct_vertex_type<Iter>` | Random-access, index-based vertex |
 | `keyed_vertex_type<Iter>` | Forward, key-based vertex |
 | `vertex_iterator<Iter>` | Either direct or keyed |
+| `index_only_vertex<Iter>` | Random-access with integral, non-reference value (no physical container) |
+| `container_backed_vertex<Iter>` | `vertex_iterator` that is not index-only (backed by a real container) |
 | `random_access_vertex_pattern<Iter>` | Inner value: return whole element |
 | `pair_value_vertex_pattern<Iter>` | Inner value: return `.second` |
 | `whole_value_vertex_pattern<Iter>` | Inner value: return `*iter` |

@@ -138,7 +138,7 @@ TEST_CASE("source_id(g,uv) - vector<vector<tuple<...>>> multi-property edges", "
 // Test: Native Edge Member Function
 // =============================================================================
 
-namespace native_edge_member_test {
+namespace source_id_native_edge_test {
 // Custom edge type with source_id() member function
 struct CustomEdge {
   int    source;
@@ -154,10 +154,10 @@ struct CustomEdge {
 struct CustomGraph {
   std::vector<std::vector<CustomEdge>> adjacency_list = {{{0, 1, 1.5}, {0, 2, 2.5}}, {{1, 3, 3.5}}, {}};
 };
-} // namespace native_edge_member_test
+} // namespace source_id_native_edge_test
 
 TEST_CASE("source_id(g,uv) - native edge member function", "[source_id][cpo][member][native]") {
-  using namespace native_edge_member_test;
+  using namespace source_id_native_edge_test;
   CustomGraph g;
 
   auto verts = vertices(g.adjacency_list);
@@ -185,7 +185,7 @@ TEST_CASE("source_id(g,uv) - native edge member function", "[source_id][cpo][mem
 }
 
 TEST_CASE("source_id(g,uv) - native edge member priority over descriptor", "[source_id][cpo][member][priority]") {
-  using namespace native_edge_member_test;
+  using namespace source_id_native_edge_test;
 
   // Even though CustomEdge has a .source field that descriptor would extract,
   // the source_id() member function should take priority

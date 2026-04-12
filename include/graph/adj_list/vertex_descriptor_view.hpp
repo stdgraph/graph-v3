@@ -148,10 +148,10 @@ private:
 
 // Deduction guides
 template <typename Container>
-vertex_descriptor_view(Container&) -> vertex_descriptor_view<typename Container::iterator>;
+vertex_descriptor_view(Container&) -> vertex_descriptor_view<std::ranges::iterator_t<Container&>>;
 
 template <typename Container>
-vertex_descriptor_view(const Container&) -> vertex_descriptor_view<typename Container::const_iterator>;
+vertex_descriptor_view(const Container&) -> vertex_descriptor_view<std::ranges::iterator_t<const Container&>>;
 
 /// Vertex descriptor view for index-only graphs (no physical vertex container).
 using index_vertex_descriptor_view = vertex_descriptor_view<index_iterator>;

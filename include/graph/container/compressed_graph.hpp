@@ -1084,14 +1084,7 @@ public: // Friend functions
   template <typename G>
   requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
   [[nodiscard]] friend constexpr auto vertices(G&& g) noexcept {
-    // Index-only vertex descriptor: no physical vertex container, just size_t IDs
-    using vertex_iter_type = index_iterator;
-
-    if (g.empty()) {
-      return vertex_descriptor_view<vertex_iter_type>(static_cast<std::size_t>(0), static_cast<std::size_t>(0));
-    }
-
-    return vertex_descriptor_view<vertex_iter_type>(static_cast<std::size_t>(0), static_cast<std::size_t>(g.size()));
+    return std::ranges::iota_view<std::size_t, std::size_t>(0, g.num_vertices());
   }
 
   /**
@@ -1235,15 +1228,16 @@ public: // Friend functions
     // Check bounds
     if (vid >= g.size()) {
       // Return empty view
-      return edge_desc_view(static_cast<std::size_t>(0), static_cast<std::size_t>(0), source_vd);
+      auto col_begin = g.col_index_.begin();
+      return edge_desc_view(col_begin, col_begin, source_vd);
     }
 
     // Get the edge range for this vertex from row_index_
     auto start_idx = static_cast<std::size_t>(g.row_index_[vid].index);
     auto end_idx   = static_cast<std::size_t>(g.row_index_[vid + 1].index);
 
-    // Return view over the edge range
-    return edge_desc_view(start_idx, end_idx, source_vd);
+    // Return view over the edge range using iterators
+    return edge_desc_view(g.col_index_.begin() + static_cast<std::ptrdiff_t>(start_idx), g.col_index_.begin() + static_cast<std::ptrdiff_t>(end_idx), source_vd);
   }
 
   /**
@@ -1262,9 +1256,8 @@ public: // Friend functions
   template <typename G, typename EdgeDesc>
   requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
   [[nodiscard]] friend constexpr auto target_id(G&& g, const EdgeDesc& uv) noexcept {
-    // Edge descriptor's value() returns the edge index into col_index_
-    auto edge_idx = uv.value();
-    return g.col_index_[edge_idx].index;
+    // Edge descriptor's value() returns an iterator into col_index_
+    return uv.value()->index;
   }
 
   /**
@@ -1367,11 +1360,8 @@ public: // Friend functions
   template <typename G, typename E>
   requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base> && (!std::is_void_v<EV>)
   [[nodiscard]] friend constexpr decltype(auto) edge_value(G&& g, const E& uv) noexcept {
-    if constexpr (std::is_const_v<std::remove_reference_t<G>>) {
-      return g.edge_value(static_cast<vertex_id_type>(uv.value()));
-    } else {
-      return g.edge_value(static_cast<vertex_id_type>(uv.value()));
-    }
+    // Edge descriptor's value() is an iterator into col_index_; compute the offset for edge_value lookup
+    return g.edge_value(static_cast<vertex_id_type>(uv.value() - g.col_index_.begin()));
   }
 
   /**
