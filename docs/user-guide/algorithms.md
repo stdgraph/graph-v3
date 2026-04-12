@@ -110,6 +110,7 @@ All headers are under `include/graph/algorithm/`.
 | [Articulation Points](algorithms/articulation_points.md) | `articulation_points.hpp` | Cut vertices whose removal disconnects the graph | O(V+E) | O(V) |
 | [Biconnected Components](algorithms/biconnected_components.md) | `biconnected_components.hpp` | Maximal 2-connected subgraphs (Hopcroft-Tarjan) | O(V+E) | O(V+E) |
 | [Connected Components](algorithms/connected_components.md) | `connected_components.hpp` | Undirected CC, directed SCC (Kosaraju), union-find (afforest) | O(V+E) | O(V) |
+| [Tarjan SCC](algorithms/tarjan_scc.md) | `tarjan_scc.hpp` | Single-pass directed SCC via low-link values | O(V+E) | O(V) |
 
 **Minimum Spanning Trees**
 
@@ -145,6 +146,7 @@ All headers are under `include/graph/algorithm/`.
 | [Maximal Independent Set](algorithms/mis.md) | Analytics | `mis.hpp` | O(V+E) | O(V) |
 | [Prim MST](algorithms/mst.md#prims-algorithm) | MST | `mst.hpp` | O(E log V) | O(V) |
 | [Topological Sort](algorithms/topological_sort.md) | Traversal | `topological_sort.hpp` | O(V+E) | O(V) |
+| [Tarjan SCC](algorithms/tarjan_scc.md) | Components | `tarjan_scc.hpp` | O(V+E) | O(V) |
 | [Triangle Count](algorithms/triangle_count.md) | Analytics | `tc.hpp` | O(m^{3/2}) | O(1) |
 
 ---
