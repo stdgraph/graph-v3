@@ -50,10 +50,13 @@ using adj_list::find_vertex;
  * @tparam ComponentFn Callable providing per-vertex component ID access:
  *                     (const G&, vertex_id_t<G>) -> ComponentID&. Must satisfy
  *                     vertex_property_fn_for<ComponentFn, G>.
+ * @tparam Alloc       Allocator type for the internal SCC stack and DFS stack storage.
+ *                     Defaults to std::allocator<std::byte>.
  *
  * @param g         The directed graph to analyze
  * @param component Callable providing per-vertex component access: component(g, uid) -> ComponentID&.
  *                  For containers: wrap with container_value_fn(component).
+ * @param alloc     Allocator instance used for the internal SCC stack and DFS stack (default: Alloc())
  *
  * @return Number of strongly connected components found
  *
@@ -127,10 +130,12 @@ using adj_list::find_vertex;
  * @see connected_components For undirected graphs
  */
 template <adjacency_list G,
-          class          ComponentFn>
+          class          ComponentFn,
+          class          Alloc = std::allocator<std::byte>>
 requires vertex_property_fn_for<ComponentFn, G>
 size_t tarjan_scc(G&&           g,         // graph
-                  ComponentFn&& component  // out: strongly connected component assignment
+                  ComponentFn&& component, // out: strongly connected component assignment
+                  const Alloc&  alloc = Alloc()
 ) {
   using vid_t = vertex_id_t<G>;
   using CT    = vertex_fn_value_t<ComponentFn, G>;
@@ -155,7 +160,8 @@ size_t tarjan_scc(G&&           g,         // graph
   size_t cid   = 0;
 
   // Tarjan's stack: vertices in the current DFS path and pending SCC assignment
-  std::stack<vid_t> scc_stack;
+  using VidAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<vid_t>;
+  std::stack<vid_t, std::deque<vid_t, VidAlloc>> scc_stack{std::deque<vid_t, VidAlloc>(VidAlloc(alloc))};
 
   // Iterative DFS: store edge iterators per frame to avoid re-scanning adjacency lists
   using edge_iter_t = std::ranges::iterator_t<decltype(edges(g, std::declval<const vid_t&>()))>;
@@ -166,7 +172,8 @@ size_t tarjan_scc(G&&           g,         // graph
     edge_iter_t it_end;
   };
 
-  std::stack<dfs_frame> dfs;
+  using FrameAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<dfs_frame>;
+  std::stack<dfs_frame, std::deque<dfs_frame, FrameAlloc>> dfs{std::deque<dfs_frame, FrameAlloc>(FrameAlloc(alloc))};
 
   // Outer loop: handle disconnected graphs
   for (auto [start] : views::basic_vertexlist(g)) {

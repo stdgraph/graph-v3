@@ -75,7 +75,8 @@ Key properties of the output:
 ## Signature
 
 ```cpp
-void biconnected_components(G&& g, OuterContainer& components);
+void biconnected_components(G&& g, OuterContainer& components,
+    const Alloc& alloc = Alloc());
 ```
 
 Where `OuterContainer` is typically `std::vector<std::vector<vertex_id_t<G>>>`.
@@ -86,6 +87,7 @@ Where `OuterContainer` is typically `std::vector<std::vector<vertex_id_t<G>>>`.
 |-----------|-------------|
 | `g` | Graph satisfying `adjacency_list` |
 | `components` | Output container of containers. Each inner container holds vertex IDs in one biconnected component. Cleared and refilled by the algorithm. |
+| `alloc` | Allocator for internal stack storage. Default: `std::allocator<std::byte>{}`. |
 
 ## Supported Graph Properties
 

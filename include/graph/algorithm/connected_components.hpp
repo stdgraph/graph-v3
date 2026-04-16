@@ -63,11 +63,15 @@ using adj_list::target_id;
  * @tparam ComponentFn Callable providing per-vertex component ID access:
  *                     (const G&, vertex_id_t<G>) -> ComponentID&. Must satisfy
  *                     vertex_property_fn_for<ComponentFn, G>.
+ * @tparam Alloc       Allocator type for internal finish-order vector and DFS stacks.
+ *                     Defaults to std::allocator<std::byte>.
  * 
  * @param g The directed graph to analyze
  * @param g_t The transpose of graph g (edges reversed)
  * @param component Callable providing per-vertex component access: component(g, uid) -> ComponentID&.
  *                  For containers: wrap with container_value_fn(c).
+ * @param alloc     Allocator instance used for the internal finish-order vector and DFS stacks
+ *                  (default: Alloc())
  * 
  * @return void. Results are stored in the component output parameter.
  * 
@@ -138,11 +142,13 @@ using adj_list::target_id;
  */
 template <adjacency_list G,
           adjacency_list GT,
-          class          ComponentFn>
+          class          ComponentFn,
+          class          Alloc = std::allocator<std::byte>>
 requires vertex_property_fn_for<ComponentFn, G>
 void kosaraju(G&&           g,         // graph
               GT&&          g_t,       // graph transpose
-              ComponentFn&& component  // out: strongly connected component assignment
+              ComponentFn&& component, // out: strongly connected component assignment
+              const Alloc&  alloc = Alloc()
 ) {
   using CT = vertex_fn_value_t<ComponentFn, G>;
   auto visited = make_vertex_property_map<std::remove_reference_t<G>, bool>(g, false);
@@ -152,7 +158,8 @@ void kosaraju(G&&           g,         // graph
   }
   // Order stores vertex IDs (not descriptors) because the second pass
   // operates on g_t which has different descriptors than g.
-  std::vector<vertex_id_t<G>> order;
+  using VidAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<vertex_id_t<G>>;
+  std::vector<vertex_id_t<G>, VidAlloc> order{VidAlloc(alloc)};
 
   // Store a reference to avoid forwarding reference issues in lambda
   auto& g_ref = g;
@@ -162,8 +169,10 @@ void kosaraju(G&&           g,         // graph
   // Stack stores vertex descriptors — 8-byte iterators, no string copies,
   // and O(1) vertex_id extraction via vertex_id(g, descriptor).
   using vertex_desc = vertex_t<std::remove_reference_t<G>>;
+  using PairAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<std::pair<vertex_desc, bool>>;
   auto dfs_finish_order = [&](vertex_desc start) {
-    std::stack<std::pair<vertex_desc, bool>> stack; // (vertex, children_visited)
+    std::stack<std::pair<vertex_desc, bool>, std::deque<std::pair<vertex_desc, bool>, PairAlloc>>
+          stack{std::deque<std::pair<vertex_desc, bool>, PairAlloc>(PairAlloc(alloc))}; // (vertex, children_visited)
     stack.push({start, false});
     visited[vertex_id(g_ref, start)] = true;
 
@@ -199,12 +208,14 @@ void kosaraju(G&&           g,         // graph
   // Second pass: DFS on transpose graph in reverse finish order
   // Each DFS tree in this pass corresponds to exactly one SCC
   using gt_vertex_desc = vertex_t<std::remove_reference_t<GT>>;
+  using GtVDescAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<gt_vertex_desc>;
   size_t                    cid = 0;
   std::ranges::reverse_view reverse{order};
   for (auto& uid : reverse) {
     if (component(g, uid) == std::numeric_limits<CT>::max()) {
       // Manual iterative DFS on transpose graph using descriptors
-      std::stack<gt_vertex_desc> dfs_stack;
+      std::stack<gt_vertex_desc, std::deque<gt_vertex_desc, GtVDescAlloc>>
+            dfs_stack{std::deque<gt_vertex_desc, GtVDescAlloc>(GtVDescAlloc(alloc))};
       dfs_stack.push(*find_vertex(g_t, uid));
       component(g, uid) = cid;
 
@@ -240,10 +251,14 @@ void kosaraju(G&&           g,         // graph
  * @tparam ComponentFn Callable providing per-vertex component ID access:
  *                     (const G&, vertex_id_t<G>) -> ComponentID&. Must satisfy
  *                     vertex_property_fn_for<ComponentFn, G>.
+ * @tparam Alloc       Allocator type for internal finish-order vector and DFS stacks.
+ *                     Defaults to std::allocator<std::byte>.
  * 
  * @param g The directed bidirectional graph to analyze
  * @param component Callable providing per-vertex component access: component(g, uid) -> ComponentID&.
  *                  For containers: wrap with container_value_fn(c).
+ * @param alloc     Allocator instance used for the internal finish-order vector and DFS stacks
+ *                  (default: Alloc())
  * 
  * @return void. Results are stored in the component output parameter.
  * 
@@ -284,10 +299,12 @@ void kosaraju(G&&           g,         // graph
  * @see kosaraju(G&&, GT&&, Component&) For non-bidirectional graphs
  */
 template <bidirectional_adjacency_list G,
-          class                        ComponentFn>
+          class                        ComponentFn,
+          class                        Alloc = std::allocator<std::byte>>
 requires vertex_property_fn_for<ComponentFn, G>
 void kosaraju(G&&           g,         // bidirectional graph
-              ComponentFn&& component  // out: strongly connected component assignment
+              ComponentFn&& component, // out: strongly connected component assignment
+              const Alloc&  alloc = Alloc()
 ) {
   using CT = vertex_fn_value_t<ComponentFn, G>;
   auto visited = make_vertex_property_map<std::remove_reference_t<G>, bool>(g, false);
@@ -297,14 +314,17 @@ void kosaraju(G&&           g,         // bidirectional graph
   }
   // Both passes use the same graph, so descriptors are valid throughout.
   using vertex_desc = vertex_t<std::remove_reference_t<G>>;
-  std::vector<vertex_desc> order;
+  using VDescAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<vertex_desc>;
+  std::vector<vertex_desc, VDescAlloc> order{VDescAlloc(alloc)};
 
   auto& g_ref = g;
 
   // First pass: iterative DFS to compute finish times (same as two-graph version)
   // Stack stores vertex descriptors — lightweight, no string copies.
+  using PairAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<std::pair<vertex_desc, bool>>;
   auto dfs_finish_order = [&](vertex_desc start) {
-    std::stack<std::pair<vertex_desc, bool>> stack;
+    std::stack<std::pair<vertex_desc, bool>, std::deque<std::pair<vertex_desc, bool>, PairAlloc>>
+          stack{std::deque<std::pair<vertex_desc, bool>, PairAlloc>(PairAlloc(alloc))};
     stack.push({start, false});
     visited[vertex_id(g_ref, start)] = true;
 
@@ -341,7 +361,8 @@ void kosaraju(G&&           g,         // bidirectional graph
     auto uid = vertex_id(g_ref, u);
     if (component(g, uid) == std::numeric_limits<CT>::max()) {
       // Manual iterative DFS using in_edges + source_id, storing descriptors
-      std::stack<vertex_desc> dfs_stack;
+      std::stack<vertex_desc, std::deque<vertex_desc, VDescAlloc>>
+            dfs_stack{std::deque<vertex_desc, VDescAlloc>(VDescAlloc(alloc))};
       dfs_stack.push(u);
       component(g, uid) = cid;
 
@@ -377,10 +398,13 @@ void kosaraju(G&&           g,         // bidirectional graph
  * @tparam ComponentFn Callable providing per-vertex component ID access:
  *                     (const G&, vertex_id_t<G>) -> ComponentID&. Must satisfy
  *                     vertex_property_fn_for<ComponentFn, G>.
+ * @tparam Alloc       Allocator type for the internal DFS stack storage.
+ *                     Defaults to std::allocator<std::byte>.
  * 
  * @param g The graph to analyze (treated as undirected)
  * @param component Callable providing per-vertex component access: component(g, uid) -> ComponentID&.
  *                  For containers: wrap with container_value_fn(c).
+ * @param alloc     Allocator instance used for the internal DFS stack (default: Alloc())
  * 
  * @return Number of connected components found
  * 
@@ -452,10 +476,12 @@ void kosaraju(G&&           g,         // bidirectional graph
  * @see afforest For faster parallel-friendly alternative
  */
 template <adjacency_list G,
-          class          ComponentFn>
+          class          ComponentFn,
+          class          Alloc = std::allocator<std::byte>>
 requires vertex_property_fn_for<ComponentFn, G>
 size_t connected_components(G&&           g,         // graph
-                            ComponentFn&& component  // out: connected component assignment
+                            ComponentFn&& component, // out: connected component assignment
+                            const Alloc&  alloc = Alloc()
 ) {
   using CT = vertex_fn_value_t<ComponentFn, G>;
   // Initialize all components as unvisited
@@ -466,7 +492,8 @@ size_t connected_components(G&&           g,         // graph
   // Stack of vertex descriptors — lightweight (8 bytes), avoids string copies,
   // and lets us call views::incidence(g, descriptor) without find_vertex on pop.
   using vertex_desc = vertex_t<std::remove_reference_t<G>>;
-  std::stack<vertex_desc> S;
+  using VDescAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<vertex_desc>;
+  std::stack<vertex_desc, std::deque<vertex_desc, VDescAlloc>> S{std::deque<vertex_desc, VDescAlloc>(VDescAlloc(alloc))};
   CT                      cid = 0; // Current component ID
   for (auto&& [uid, u] : views::vertexlist(g)) {
     if (component(g, uid) < std::numeric_limits<CT>::max()) {

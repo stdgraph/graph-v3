@@ -83,7 +83,8 @@ sorting, strongly connected components, and many other graph analyses.
 
 ```cpp
 void depth_first_search(G&& g, const vertex_id_t<G>& source,
-    Visitor&& visitor = empty_visitor());
+    Visitor&& visitor = empty_visitor(),
+    const Alloc& alloc = Alloc());
 ```
 
 ## Parameters
@@ -93,6 +94,7 @@ void depth_first_search(G&& g, const vertex_id_t<G>& source,
 | `g` | Graph satisfying `adjacency_list` |
 | `source` | Source vertex ID to start DFS from |
 | `visitor` | Optional visitor struct with callback methods (see below). Default: `empty_visitor{}`. |
+| `alloc` | Allocator for internal stack storage. Default: `std::allocator<std::byte>{}`. |
 
 ## Visitor Events
 

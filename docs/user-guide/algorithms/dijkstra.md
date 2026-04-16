@@ -86,7 +86,8 @@ constexpr void dijkstra_shortest_paths(G&& g, const Sources& sources,
     WF&& weight = /* default returns 1 */,
     Visitor&& visitor = empty_visitor(),
     Compare&& compare = less<>{},
-    Combine&& combine = plus<>{});
+    Combine&& combine = plus<>{},
+    const Alloc& alloc = Alloc());
 
 // Single-source, distances + predecessors
 constexpr void dijkstra_shortest_paths(G&& g, const vertex_id_t<G>& source,
@@ -94,7 +95,8 @@ constexpr void dijkstra_shortest_paths(G&& g, const vertex_id_t<G>& source,
     WF&& weight = /* default returns 1 */,
     Visitor&& visitor = empty_visitor(),
     Compare&& compare = less<>{},
-    Combine&& combine = plus<>{});
+    Combine&& combine = plus<>{},
+    const Alloc& alloc = Alloc());
 
 // Multi-source, distances only
 constexpr void dijkstra_shortest_distances(G&& g, const Sources& sources,
@@ -102,7 +104,8 @@ constexpr void dijkstra_shortest_distances(G&& g, const Sources& sources,
     WF&& weight = /* default returns 1 */,
     Visitor&& visitor = empty_visitor(),
     Compare&& compare = less<>{},
-    Combine&& combine = plus<>{});
+    Combine&& combine = plus<>{},
+    const Alloc& alloc = Alloc());
 
 // Single-source, distances only
 constexpr void dijkstra_shortest_distances(G&& g, const vertex_id_t<G>& source,
@@ -110,7 +113,8 @@ constexpr void dijkstra_shortest_distances(G&& g, const vertex_id_t<G>& source,
     WF&& weight = /* default returns 1 */,
     Visitor&& visitor = empty_visitor(),
     Compare&& compare = less<>{},
-    Combine&& combine = plus<>{});
+    Combine&& combine = plus<>{},
+    const Alloc& alloc = Alloc());
 ```
 
 ## Parameters
@@ -125,6 +129,7 @@ constexpr void dijkstra_shortest_distances(G&& g, const vertex_id_t<G>& source,
 | `visitor` | Optional visitor struct with callback methods (see below). Default: `empty_visitor{}`. |
 | `compare` | Comparison function for distance values. Default: `std::less<>{}`. |
 | `combine` | Combine function for distance + weight. Default: `std::plus<>{}`. |
+| `alloc` | Allocator for internal priority queue storage. Default: `std::allocator<std::byte>{}`. |
 
 ## Visitor Events
 

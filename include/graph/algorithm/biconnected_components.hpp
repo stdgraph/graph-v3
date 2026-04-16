@@ -57,6 +57,8 @@ using adj_list::find_vertex;
  * @tparam G               The graph type. Must satisfy adjacency_list concept.
  * @tparam OuterContainer  A container of containers for the output components.
  *                         Typically std::vector<std::vector<vertex_id_t<G>>>.
+ * @tparam Alloc           Allocator type for internal edge stack and DFS stack storage.
+ *                         Defaults to std::allocator<std::byte>.
  *
  * @param g           The graph to process. Callers must supply both directions of each
  *                    undirected edge.
@@ -64,6 +66,8 @@ using adj_list::find_vertex;
  *                    component found. Articulation-point vertices appear in multiple inner
  *                    containers. No ordering guarantee on the order of components or vertex
  *                    IDs within a component.
+ * @param alloc       Allocator instance used for the internal edge stack and DFS stack
+ *                    (default: Alloc())
  *
  * @return void. Results are stored in the components output parameter.
  *
@@ -141,8 +145,8 @@ using adj_list::find_vertex;
  * }
  * ```
  */
-template <adjacency_list G, class OuterContainer>
-void biconnected_components(G&& g, OuterContainer& components) {
+template <adjacency_list G, class OuterContainer, class Alloc = std::allocator<std::byte>>
+void biconnected_components(G&& g, OuterContainer& components, const Alloc& alloc = Alloc()) {
   using vid_t      = vertex_id_t<G>;
   using inner_type = typename OuterContainer::value_type;
 
@@ -163,7 +167,8 @@ void biconnected_components(G&& g, OuterContainer& components) {
   // When a biconnected component boundary is detected, edges are popped to
   // extract the vertex set of that component.
   using edge_pair = std::pair<vid_t, vid_t>;
-  std::stack<edge_pair> edge_stk;
+  using EdgePairAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<edge_pair>;
+  std::stack<edge_pair, std::deque<edge_pair, EdgePairAlloc>> edge_stk{std::deque<edge_pair, EdgePairAlloc>(EdgePairAlloc(alloc))};
 
   // Deduce the iterator type for edge ranges returned by edges(g, uid).
   // edge_descriptor_view iterators store the underlying edge_storage (an
@@ -182,7 +187,8 @@ void biconnected_components(G&& g, OuterContainer& components) {
     bool        parent_edge_skipped;
   };
 
-  std::stack<dfs_frame> stk;
+  using FrameAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<dfs_frame>;
+  std::stack<dfs_frame, std::deque<dfs_frame, FrameAlloc>> stk{std::deque<dfs_frame, FrameAlloc>(FrameAlloc(alloc))};
 
   // Helper: pop edges from edge_stk until (u, v) is popped (inclusive).
   // Collect unique vertex IDs and push_back as a new component.

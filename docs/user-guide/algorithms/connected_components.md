@@ -81,7 +81,8 @@ vertex v.
 ### `connected_components` — undirected
 
 ```cpp
-size_t connected_components(G&& g, ComponentFn&& component);
+size_t connected_components(G&& g, ComponentFn&& component,
+    const Alloc& alloc = Alloc());
 ```
 
 DFS-based algorithm for undirected graphs. Returns the number of connected
@@ -91,10 +92,12 @@ component ID (0-based).
 ### `kosaraju` — strongly connected components
 
 ```cpp
-void kosaraju(G&& g, GT&& g_transpose, ComponentFn&& component);
+void kosaraju(G&& g, GT&& g_transpose, ComponentFn&& component,
+    const Alloc& alloc = Alloc());
 
 // Bidirectional overload — no transpose graph needed
-void kosaraju(G&& g, ComponentFn&& component);
+void kosaraju(G&& g, ComponentFn&& component,
+    const Alloc& alloc = Alloc());
 ```
 
 Kosaraju's two-pass DFS algorithm for directed graphs. Fills
@@ -126,6 +129,7 @@ rounds are performed before falling back to full edge iteration. Call
 | `g_transpose` | Transpose graph (for `kosaraju` and `afforest` with transpose). Must satisfy `adjacency_list`. |
 | `component` | For `connected_components` and `kosaraju`: callable `(const G&, vertex_id_t<G>) -> ComponentID&` returning a mutable reference. For containers: wrap with `container_value_fn(comp)`. Must satisfy `vertex_property_fn_for<ComponentFn, G>`. For `afforest`: a subscriptable container (`vector` or `unordered_map`), still using the container API. |
 | `neighbor_rounds` | Number of neighbor-sampling rounds for `afforest` (default: 2) |
+| `alloc` | Allocator for internal stack storage (`connected_components` and `kosaraju` only). Default: `std::allocator<std::byte>{}`. |
 
 **Return value (`connected_components` only):** `size_t` — number of connected
 components. `kosaraju` and `afforest` return `void`.

@@ -162,20 +162,23 @@ namespace detail {
  * 
  * Performs iterative DFS from a source vertex, collecting finish order and detecting cycles.
  * 
- * @tparam G Graph type
- * @tparam ColorMap Vertex property map type for colors
- * @param g The graph
- * @param source Starting vertex ID
- * @param color Color map for tracking vertex state
+ * @tparam G          Graph type
+ * @tparam ColorMap   Vertex property map type for colors
+ * @tparam Alloc      Allocator type for the internal DFS stack.
+ * @param g           The graph
+ * @param source      Starting vertex ID
+ * @param color       Color map for tracking vertex state
  * @param finish_order Vector to collect vertices in finish order
- * @param has_cycle Flag set to true if cycle detected
+ * @param has_cycle   Flag set to true if cycle detected
+ * @param alloc       Allocator instance used for the internal DFS stack
  */
-  template <adjacency_list G, typename ColorMap>
+  template <adjacency_list G, typename ColorMap, class Alloc>
   void topological_sort_dfs_visit(const G&                     g,
                                   const vertex_id_t<G>&        source,
                                   ColorMap&                    color,
-                                  std::vector<vertex_id_t<G>>& finish_order,
-                                  bool&                        has_cycle) {
+                                  auto&                        finish_order,
+                                  bool&                        has_cycle,
+                                  const Alloc&                 alloc) {
 
     using Color = TopoColor;
     using id_type = vertex_id_t<G>;
@@ -193,7 +196,8 @@ namespace detail {
     // Discover source and push its stack frame
     color[source] = Color::Gray;
 
-    std::stack<StackFrame> S;
+    using FrameAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<StackFrame>;
+    std::stack<StackFrame, std::deque<StackFrame, FrameAlloc>> S{std::deque<StackFrame, FrameAlloc>(FrameAlloc(alloc))};
     {
       auto inc = basic_incidence(g, source);
       S.push({source, std::ranges::begin(inc), std::ranges::end(inc)});
@@ -242,10 +246,14 @@ namespace detail {
  * @tparam G              Graph type satisfying adjacency_list concept.
  * @tparam Sources         Input range of source vertex IDs.
  * @tparam OutputIterator  Output iterator for writing vertex IDs in topological order.
+ * @tparam Alloc           Allocator type for the internal finish-order vector and DFS stack.
+ *                         Defaults to std::allocator<std::byte>.
  * 
  * @param g       The directed graph to sort.
  * @param sources Range of starting vertex IDs for traversal.
  * @param result  Output iterator where vertex IDs are written in topological order.
+ * @param alloc   Allocator instance used for the internal DFS stack and finish-order vector
+ *                (default: Alloc())
  * 
  * @return true if reachable subgraph is acyclic, false if cycle detected.
  * 
@@ -302,17 +310,20 @@ namespace detail {
  * @see topological_sort(const G&, OutputIterator) for full-graph variant
  * @see topological_sort(const G&, vertex_id_t<G>, OutputIterator) for single-source variant
  */
-template <adjacency_list G, std::ranges::input_range Sources, class OutputIterator>
+template <adjacency_list G, std::ranges::input_range Sources, class OutputIterator,
+          class Alloc = std::allocator<std::byte>>
 requires std::convertible_to<std::ranges::range_value_t<Sources>, vertex_id_t<G>> &&
          std::output_iterator<OutputIterator, vertex_id_t<G>>
-bool topological_sort(const G& g, const Sources& sources, OutputIterator result) {
+bool topological_sort(const G& g, const Sources& sources, OutputIterator result,
+                      const Alloc& alloc = Alloc()) {
   using id_type = vertex_id_t<G>;
   using Color   = detail::TopoColor;
 
   // Lazy init: index graphs get a sized vector (value-init → White=0),
   // mapped graphs get an empty reserved map (absent key → White via get).
   auto color = make_vertex_property_map<std::remove_reference_t<G>, Color>(g);
-  std::vector<id_type> finish_order;
+  using IdAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<id_type>;
+  std::vector<id_type, IdAlloc> finish_order{IdAlloc(alloc)};
   finish_order.reserve(num_vertices(g));
 
   bool has_cycle = false;
@@ -320,7 +331,7 @@ bool topological_sort(const G& g, const Sources& sources, OutputIterator result)
   // Run DFS from each source (skipping already-visited vertices)
   for (auto source : sources) {
     if (vertex_property_map_get(color, source, Color::White) == Color::White) {
-      detail::topological_sort_dfs_visit(g, source, color, finish_order, has_cycle);
+      detail::topological_sort_dfs_visit(g, source, color, finish_order, has_cycle, alloc);
       if (has_cycle) {
         return false; // Cycle detected
       }
@@ -341,10 +352,12 @@ bool topological_sort(const G& g, const Sources& sources, OutputIterator result)
  * 
  * @tparam G              Graph type satisfying adjacency_list concept.
  * @tparam OutputIterator  Output iterator for writing vertex IDs in topological order.
+ * @tparam Alloc           Allocator type for internal storage. Defaults to std::allocator<std::byte>.
  * 
  * @param g       The directed graph to sort.
  * @param source  Starting vertex ID for traversal.
  * @param result  Output iterator where vertex IDs are written in topological order.
+ * @param alloc   Allocator instance forwarded to the multi-source version (default: Alloc())
  * 
  * @return true if reachable subgraph is acyclic, false if cycle detected.
  * 
@@ -388,12 +401,13 @@ bool topological_sort(const G& g, const Sources& sources, OutputIterator result)
  * @see topological_sort(const G&, OutputIterator) for full-graph variant
  * @see topological_sort(const G&, const Sources&, OutputIterator) for multi-source variant
  */
-template <adjacency_list G, class OutputIterator>
+template <adjacency_list G, class OutputIterator, class Alloc = std::allocator<std::byte>>
 requires std::output_iterator<OutputIterator, vertex_id_t<G>>
-bool topological_sort(const G& g, const vertex_id_t<G>& source, OutputIterator result) {
+bool topological_sort(const G& g, const vertex_id_t<G>& source, OutputIterator result,
+                      const Alloc& alloc = Alloc()) {
   // Delegate to multi-source version with single source
   std::array<vertex_id_t<G>, 1> sources = {source};
-  return topological_sort(g, sources, result);
+  return topological_sort(g, sources, result, alloc);
 }
 
 /**
@@ -404,9 +418,12 @@ bool topological_sort(const G& g, const vertex_id_t<G>& source, OutputIterator r
  * 
  * @tparam G              Graph type satisfying adjacency_list concept.
  * @tparam OutputIterator  Output iterator for writing vertex IDs in topological order.
+ * @tparam Alloc           Allocator type for internal storage. Defaults to std::allocator<std::byte>.
  * 
  * @param g       The directed graph to sort.
  * @param result  Output iterator where vertex IDs are written in topological order.
+ * @param alloc   Allocator instance used for the internal finish-order vector and DFS stack
+ *                (default: Alloc())
  * 
  * @return true if graph is acyclic, false if cycle detected.
  * 
@@ -454,16 +471,17 @@ bool topological_sort(const G& g, const vertex_id_t<G>& source, OutputIterator r
  * @see topological_sort(const G&, vertex_id_t<G>, OutputIterator) for single-source variant
  * @see topological_sort(const G&, const Sources&, OutputIterator) for multi-source variant
  */
-template <adjacency_list G, class OutputIterator>
+template <adjacency_list G, class OutputIterator, class Alloc = std::allocator<std::byte>>
 requires std::output_iterator<OutputIterator, vertex_id_t<G>>
-bool topological_sort(const G& g, OutputIterator result) {
+bool topological_sort(const G& g, OutputIterator result, const Alloc& alloc = Alloc()) {
   using id_type = vertex_id_t<G>;
   using Color   = detail::TopoColor;
 
   // Lazy init: index graphs get a sized vector (value-init → White=0),
   // mapped graphs get an empty reserved map (absent key → White via get).
   auto color = make_vertex_property_map<std::remove_reference_t<G>, Color>(g);
-  std::vector<id_type> finish_order;
+  using IdAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<id_type>;
+  std::vector<id_type, IdAlloc> finish_order{IdAlloc(alloc)};
   finish_order.reserve(num_vertices(g));
 
   bool has_cycle = false;
@@ -472,7 +490,7 @@ bool topological_sort(const G& g, OutputIterator result) {
   for (auto v : vertices(g)) {
     id_type vid = vertex_id(g, v);
     if (vertex_property_map_get(color, vid, Color::White) == Color::White) {
-      detail::topological_sort_dfs_visit(g, vid, color, finish_order, has_cycle);
+      detail::topological_sort_dfs_visit(g, vid, color, finish_order, has_cycle, alloc);
       if (has_cycle) {
         return false; // Cycle detected
       }

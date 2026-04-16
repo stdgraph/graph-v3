@@ -292,8 +292,8 @@ struct disjoint_element {
   size_t count = 0;     ///< Rank for union-by-rank (approximate tree depth)
 };
 
-template <class VId>
-using disjoint_vector = std::vector<disjoint_element<VId>>;
+template <class VId, class Alloc = std::allocator<disjoint_element<VId>>>
+using disjoint_vector = std::vector<disjoint_element<VId>, Alloc>;
 
 /**
  * @brief Find the root of the set containing a vertex.
@@ -309,8 +309,8 @@ using disjoint_vector = std::vector<disjoint_element<VId>>;
  * 
  * **Complexity:** O(α(V)) amortized, where α is the inverse Ackermann function (effectively constant)
  */
-template <class VId>
-VId disjoint_find(disjoint_vector<VId>& subsets, VId vtx) {
+template <class VId, class Alloc>
+VId disjoint_find(disjoint_vector<VId, Alloc>& subsets, VId vtx) {
   // Phase 1: Find the root by following parent pointers
   VId parent = subsets[vtx].id;
   while (parent != subsets[parent].id) {
@@ -341,8 +341,8 @@ VId disjoint_find(disjoint_vector<VId>& subsets, VId vtx) {
  * 
  * **Complexity:** O(α(V)) amortized with path compression
  */
-template <class VId>
-void disjoint_union(disjoint_vector<VId>& subsets, VId u, VId v) {
+template <class VId, class Alloc>
+void disjoint_union(disjoint_vector<VId, Alloc>& subsets, VId u, VId v) {
   // Find root representatives of both vertices
   VId u_root = disjoint_find(subsets, u);
   VId v_root = disjoint_find(subsets, v);
@@ -377,8 +377,8 @@ void disjoint_union(disjoint_vector<VId>& subsets, VId u, VId v) {
  * 
  * **Complexity:** O(α(V)) amortized
  */
-template <class VId>
-bool disjoint_union_find(disjoint_vector<VId>& subsets, VId u, VId v) {
+template <class VId, class Alloc>
+bool disjoint_union_find(disjoint_vector<VId, Alloc>& subsets, VId u, VId v) {
   // Find root representatives of both vertices
   VId u_root = disjoint_find(subsets, u);
   VId v_root = disjoint_find(subsets, v);
@@ -459,11 +459,14 @@ struct has_edge<T, decltype(declval<T>().edge, void())> : true_type { };*/
  * Processes edges in sorted order by weight, using union-find to detect cycles.
  * Uses default comparison (operator<) for minimum spanning tree.
  * 
- * @tparam IELR Input edge list range type.
- * @tparam OELR Output edge list range type.
+ * @tparam IELR  Input edge list range type.
+ * @tparam OELR  Output edge list range type.
+ * @tparam Alloc Allocator type for internal edge copy and disjoint-set storage.
+ *               Defaults to std::allocator<std::byte>.
  * 
- * @param e Input edge list with source_id, target_id, and value members.
- * @param t Output edge list for MST edges. Must support push_back() and reserve().
+ * @param e     Input edge list with source_id, target_id, and value members.
+ * @param t     Output edge list for MST edges. Must support push_back() and reserve().
+ * @param alloc Allocator instance used for internal edge copy and disjoint-set (default: Alloc())
  * 
  * @return std::pair<EV, size_t> with total MST weight and number of connected components.
  * 
@@ -505,9 +508,11 @@ struct has_edge<T, decltype(declval<T>().edge, void())> : true_type { };*/
  * auto [total_weight, num_components] = kruskal(edges, mst);
  * ```
  */
-template <x_index_edgelist_range IELR, x_index_edgelist_range OELR>
-auto kruskal(IELR&& e, OELR&& t) {
-  return kruskal(e, t, [](auto&& i, auto&& j) { return i < j; });
+template <x_index_edgelist_range IELR, x_index_edgelist_range OELR,
+          class Alloc = std::allocator<std::byte>>
+requires requires(Alloc a, std::size_t n) { a.allocate(n); }
+auto kruskal(IELR&& e, OELR&& t, const Alloc& alloc = Alloc()) {
+  return kruskal(e, t, [](auto&& i, auto&& j) { return i < j; }, alloc);
 }
 
 /**
@@ -519,10 +524,13 @@ auto kruskal(IELR&& e, OELR&& t) {
  * @tparam IELR      Input edge list range type.
  * @tparam OELR      Output edge list range type.
  * @tparam CompareOp Comparison operator type.
+ * @tparam Alloc     Allocator type for internal edge copy and disjoint-set storage.
+ *                   Defaults to std::allocator<std::byte>.
  * 
  * @param e       Input edge list with source_id, target_id, and value members.
  * @param t       Output edge list for spanning tree edges. Must support push_back() and reserve().
  * @param compare Comparison function: compare(ev1, ev2) returns true if ev1 should be processed first.
+ * @param alloc   Allocator instance used for internal edge copy and disjoint-set (default: Alloc())
  * 
  * @return std::pair<EV, size_t> with total weight and number of connected components.
  * 
@@ -562,10 +570,12 @@ auto kruskal(IELR&& e, OELR&& t) {
  * auto [total_weight, components] = kruskal(edges, max_st, std::greater<int>{});
  * ```
  */
-template <x_index_edgelist_range IELR, x_index_edgelist_range OELR, class CompareOp>
-auto kruskal(IELR&&    e,      // graph
-             OELR&&    t,      // tree
-             CompareOp compare // edge value comparator
+template <x_index_edgelist_range IELR, x_index_edgelist_range OELR, class CompareOp,
+          class Alloc = std::allocator<std::byte>>
+auto kruskal(IELR&&      e,       // graph
+             OELR&&      t,       // tree
+             CompareOp   compare, // edge value comparator
+             const Alloc& alloc = Alloc()
 ) {
   using edge_data = range_value_t<IELR>;
   using VId       = remove_const_t<typename edge_data::source_id_type>;
@@ -578,7 +588,9 @@ auto kruskal(IELR&&    e,      // graph
   }
 
   // Copy edges to allow sorting without modifying input
-  std::vector<tuple<VId, VId, EV>> e_copy;
+  using TupleType = tuple<VId, VId, EV>;
+  using TupleAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<TupleType>;
+  std::vector<TupleType, TupleAlloc> e_copy{TupleAlloc(alloc)};
   std::ranges::transform(e, back_inserter(e_copy),
                          [](auto&& ed) { return std::make_tuple(ed.source_id, ed.target_id, ed.value); });
 
@@ -597,7 +609,8 @@ auto kruskal(IELR&&    e,      // graph
   std::ranges::sort(e_copy, outer_compare);
 
   // Initialize disjoint-set: each vertex starts in its own set
-  disjoint_vector<VId> subsets(N + 1); // Size N+1 to accommodate vertices 0 through N
+  using DElemAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<disjoint_element<VId>>;
+  disjoint_vector<VId, DElemAlloc> subsets(N + 1, disjoint_element<VId>{}, DElemAlloc(alloc)); // Size N+1 to accommodate vertices 0 through N
   for (VId uid = 0; uid <= N; ++uid) {
     subsets[uid].id    = uid; // Each vertex is its own parent (root)
     subsets[uid].count = 0;   // Initial rank is 0
@@ -635,11 +648,14 @@ auto kruskal(IELR&&    e,      // graph
  * 
  * Memory-efficient variant that sorts the input edge list directly instead of copying.
  * 
- * @tparam IELR Input edge list range type (must be permutable).
- * @tparam OELR Output edge list range type.
+ * @tparam IELR  Input edge list range type (must be permutable).
+ * @tparam OELR  Output edge list range type.
+ * @tparam Alloc Allocator type for the internal disjoint-set storage.
+ *               Defaults to std::allocator<std::byte>.
  * 
- * @param e Input edge list (will be sorted by edge weight).
- * @param t Output edge list for MST edges.
+ * @param e     Input edge list (will be sorted by edge weight).
+ * @param t     Output edge list for MST edges.
+ * @param alloc Allocator instance used for the internal disjoint-set (default: Alloc())
  * 
  * @return std::pair<EV, size_t> with total MST weight and number of connected components.
  * 
@@ -674,10 +690,11 @@ auto kruskal(IELR&&    e,      // graph
  * **Remarks:**
  * - Use when input edge list is no longer needed in original order
  */
-template <x_index_edgelist_range IELR, x_index_edgelist_range OELR>
-requires std::permutable<iterator_t<IELR>>
-auto inplace_kruskal(IELR&& e, OELR&& t) {
-  return inplace_kruskal(e, t, [](auto&& i, auto&& j) { return i < j; });
+template <x_index_edgelist_range IELR, x_index_edgelist_range OELR,
+          class Alloc = std::allocator<std::byte>>
+requires std::permutable<iterator_t<IELR>> && requires(Alloc a, std::size_t n) { a.allocate(n); }
+auto inplace_kruskal(IELR&& e, OELR&& t, const Alloc& alloc = Alloc()) {
+  return inplace_kruskal(e, t, [](auto&& i, auto&& j) { return i < j; }, alloc);
 }
 
 /**
@@ -689,10 +706,13 @@ auto inplace_kruskal(IELR&& e, OELR&& t) {
  * @tparam IELR      Input edge list range type (must be permutable).
  * @tparam OELR      Output edge list range type.
  * @tparam CompareOp Comparison operator type.
+ * @tparam Alloc     Allocator type for the internal disjoint-set storage.
+ *                   Defaults to std::allocator<std::byte>.
  * 
  * @param e       Input edge list (will be sorted by comparison function).
  * @param t       Output edge list for spanning tree edges.
  * @param compare Comparison function for edge values.
+ * @param alloc   Allocator instance used for the internal disjoint-set (default: Alloc())
  * 
  * @return std::pair<EV, size_t> with total weight and number of connected components.
  * 
@@ -725,11 +745,13 @@ auto inplace_kruskal(IELR&& e, OELR&& t) {
  * - Time: O(E log E) — dominated by edge sorting
  * - Space: O(V) for disjoint-set structure (no edge copy)
  */
-template <x_index_edgelist_range IELR, x_index_edgelist_range OELR, class CompareOp>
+template <x_index_edgelist_range IELR, x_index_edgelist_range OELR, class CompareOp,
+          class Alloc = std::allocator<std::byte>>
 requires std::permutable<iterator_t<IELR>>
-auto inplace_kruskal(IELR&&    e,      // graph
-                     OELR&&    t,      // tree
-                     CompareOp compare // edge value comparator
+auto inplace_kruskal(IELR&&      e,       // graph
+                     OELR&&      t,       // tree
+                     CompareOp   compare, // edge value comparator
+                     const Alloc& alloc = Alloc()
 ) {
   using edge_data = range_value_t<IELR>;
   using VId       = remove_const_t<typename edge_data::source_id_type>;
@@ -762,7 +784,8 @@ auto inplace_kruskal(IELR&&    e,      // graph
   }
 
   // Initialize disjoint-set: each vertex starts in its own set
-  disjoint_vector<VId> subsets(N + 1); // Size N+1 to accommodate vertices 0 through N
+  using DElemAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<disjoint_element<VId>>;
+  disjoint_vector<VId, DElemAlloc> subsets(N + 1, disjoint_element<VId>{}, DElemAlloc(alloc)); // Size N+1 to accommodate vertices 0 through N
   for (VId uid = 0; uid <= N; ++uid) {
     subsets[uid].id    = uid; // Each vertex is its own parent (root)
     subsets[uid].count = 0;   // Initial rank is 0
@@ -807,6 +830,8 @@ auto inplace_kruskal(IELR&&    e,      // graph
  * @tparam WeightFn      Function type returning lvalue ref to edge weight for a vertex.
  * @tparam WF            Edge weight function type. Defaults to edge_value(g, uv).
  * @tparam CompareOp     Comparison operator type. Defaults to less<>.
+ * @tparam Alloc         Allocator type for the internal priority queue storage.
+ *                       Defaults to std::allocator<std::byte>.
  * 
  * @param g           The graph to process.
  * @param seed        Starting vertex for MST growth.
@@ -814,6 +839,7 @@ auto inplace_kruskal(IELR&&    e,      // graph
  * @param predecessor Function predecessor(g, uid) -> vertex_id&: returns lvalue ref to predecessor for vertex uid.
  * @param weight_fn   Edge weight function (default: edge_value).
  * @param compare     Comparison for edge weights (default: less<>).
+ * @param alloc       Allocator instance forwarded to dijkstra_shortest_paths (default: Alloc())
  * 
  * @return Total weight of the spanning tree.
  * 
@@ -869,7 +895,8 @@ template <adjacency_list G,
           class          WeightFn,
           class          PredecessorFn,
           class WF = function<distance_fn_value_t<WeightFn, G>(const std::remove_reference_t<G>&, const edge_t<G>&)>,
-          class CompareOp = less<distance_fn_value_t<WeightFn, G>>>
+          class CompareOp = less<distance_fn_value_t<WeightFn, G>>,
+          class Alloc     = std::allocator<std::byte>>
 requires distance_fn_for<WeightFn, G> &&
          is_arithmetic_v<distance_fn_value_t<WeightFn, G>> &&
          predecessor_fn_for<PredecessorFn, G> &&
@@ -882,7 +909,8 @@ auto prim(G&&                   g,           // graph
                 [](const auto& gr, const edge_t<G>& uv) {
                   return edge_value(gr, uv);
                 }, // default weight_fn(g, uv) -> edge_value(g, uv)
-          CompareOp             compare = less<distance_fn_value_t<WeightFn, G>>() // edge value comparator
+          CompareOp    compare = less<distance_fn_value_t<WeightFn, G>>(), // edge value comparator
+          const Alloc& alloc   = Alloc()
 ) {
   using edge_value_type = distance_fn_value_t<WeightFn, G>;
 
@@ -895,7 +923,7 @@ auto prim(G&&                   g,           // graph
                           std::forward<WeightFn>(weight),
                           std::forward<PredecessorFn>(predecessor),
                           std::forward<WF>(weight_fn), empty_visitor(),
-                          std::forward<CompareOp>(compare), prim_combine);
+                          std::forward<CompareOp>(compare), prim_combine, alloc);
 
   // Calculate total MST weight by summing edge weights
   edge_value_type total_weight = edge_value_type{};
