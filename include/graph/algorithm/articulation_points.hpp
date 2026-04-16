@@ -46,9 +46,11 @@ using adj_list::find_vertex;
  *
  * @tparam G          The graph type. Must satisfy adjacency_list concept.
  * @tparam Iter       The output iterator type. Must be output_iterator<vertex_id_t<G>>.
+ * @tparam Alloc      Allocator type for internal DFS stack storage. Defaults to std::allocator<std::byte>.
  *
  * @param g           The graph. Callers must supply both directions of each undirected edge.
  * @param cut_vertices The output iterator where articulation point vertex IDs will be written.
+ * @param alloc       Allocator instance used for the internal DFS stack (default: Alloc())
  *
  * @return void. Articulation point IDs are written to the output iterator.
  *
@@ -115,9 +117,9 @@ using adj_list::find_vertex;
  * // result contains {1, 2} (in some order)
  * ```
  */
-template <adjacency_list G, class Iter>
+template <adjacency_list G, class Iter, class Alloc = std::allocator<std::byte>>
 requires std::output_iterator<Iter, vertex_id_t<G>>
-void articulation_points(G&& g, Iter cut_vertices) {
+void articulation_points(G&& g, Iter cut_vertices, const Alloc& alloc = Alloc()) {
   using vid_t = vertex_id_t<G>;
 
   const size_t N = num_vertices(g);
@@ -154,7 +156,8 @@ void articulation_points(G&& g, Iter cut_vertices) {
     bool        parent_edge_skipped;
   };
 
-  std::stack<dfs_frame> stk;
+  using FrameAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<dfs_frame>;
+  std::stack<dfs_frame, std::deque<dfs_frame, FrameAlloc>> stk{std::deque<dfs_frame, FrameAlloc>(FrameAlloc(alloc))};
 
   // Outer loop: handle disconnected graphs
   for (auto [start] : views::basic_vertexlist(g)) {

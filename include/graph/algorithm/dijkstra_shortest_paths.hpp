@@ -47,18 +47,20 @@ using adj_list::index_vertex_range;
  * Distance and predecessor are accessed through functions distance(g, uid) and predecessor(g, uid)
  * respectively, enabling the values to reside on vertex properties or in external containers.
  * 
- * @tparam G            The graph type. Must satisfy adjacency_list concept.
- * @tparam Sources      Input range of source vertex IDs.
- * @tparam DistanceFn   Function returning a mutable reference to a per-vertex distance value:
- *                      (const G&, vertex_id_t<G>) -> Distance&. Must return an arithmetic type.
+ * @tparam G             The graph type. Must satisfy adjacency_list concept.
+ * @tparam Sources       Input range of source vertex IDs.
+ * @tparam DistanceFn    Function returning a mutable reference to a per-vertex distance value:
+ *                       (const G&, vertex_id_t<G>) -> Distance&. Must return an arithmetic type.
  * @tparam PredecessorFn Function returning a mutable reference to a per-vertex predecessor value:
- *                      (const G&, vertex_id_t<G>) -> PredecessorValue&. Can use _null_predecessor
- *                      if path reconstruction is not needed.
- * @tparam WF           Edge weight function. Defaults to returning 1 for all edges (unweighted).
- * @tparam Visitor      Visitor type with callbacks for algorithm events. Defaults to empty_visitor.
- *                      Visitor calls are optimized away if not used.
- * @tparam Compare      Comparison function for distance values. Defaults to less<>.
- * @tparam Combine      Function to combine distances and weights. Defaults to plus<>.
+ *                       (const G&, vertex_id_t<G>) -> PredecessorValue&. Can use _null_predecessor
+ *                       if path reconstruction is not needed.
+ * @tparam WF            Edge weight function. Defaults to returning 1 for all edges (unweighted).
+ * @tparam Visitor       Visitor type with callbacks for algorithm events. Defaults to empty_visitor.
+ *                       Visitor calls are optimized away if not used.
+ * @tparam Compare       Comparison function for distance values. Defaults to less<>.
+ * @tparam Combine       Function to combine distances and weights. Defaults to plus<>.
+ * @tparam Alloc         Allocator type for the internal priority queue storage.
+ *                       Defaults to std::allocator<std::byte>.
  * 
  * @param g            The graph to process.
  * @param sources      Range of source vertex IDs to start from.
@@ -68,6 +70,7 @@ using adj_list::index_vertex_range;
  * @param visitor      Visitor for algorithm events (discover, examine, relax, finish).
  * @param compare      Distance comparison function: (Distance, Distance) -> bool.
  * @param combine      Distance combination function: (Distance, Weight) -> Distance.
+ * @param alloc        Allocator instance used for the internal priority queue (default: Alloc())
  * 
  * @return void. Results are stored via the distance and predecessor functions.
  * 
@@ -174,7 +177,8 @@ template <
       class WF = function<distance_fn_value_t<DistanceFn, G>(const std::remove_reference_t<G>&, const edge_t<G>&)>,
       class Visitor = empty_visitor,
       class Compare = less<distance_fn_value_t<DistanceFn, G>>,
-      class Combine = plus<distance_fn_value_t<DistanceFn, G>>>
+      class Combine = plus<distance_fn_value_t<DistanceFn, G>>,
+      class Alloc   = std::allocator<std::byte>>
 requires distance_fn_for<DistanceFn, G> &&                                //
          predecessor_fn_for<PredecessorFn, G> &&                          //
          convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&              //
@@ -190,7 +194,8 @@ constexpr void dijkstra_shortest_paths(
             }, // default weight(g, uv) -> 1
       Visitor&& visitor = empty_visitor(),
       Compare&& compare = less<distance_fn_value_t<DistanceFn, G>>(),
-      Combine&& combine = plus<distance_fn_value_t<DistanceFn, G>>()) {
+      Combine&& combine = plus<distance_fn_value_t<DistanceFn, G>>(),
+      const Alloc& alloc = Alloc()) {
   using graph_type    = std::remove_reference_t<G>;
   using id_type       = vertex_id_t<graph_type>;
   using distance_type = distance_fn_value_t<DistanceFn, G>;
@@ -233,8 +238,9 @@ constexpr void dijkstra_shortest_paths(
   auto qcompare = [&compare](const weighted_vertex& a, const weighted_vertex& b) {
     return compare(b.weight, a.weight); // min-heap: pop lowest weight first
   };
-  using Queue = std::priority_queue<weighted_vertex, std::vector<weighted_vertex>, decltype(qcompare)>;
-  Queue queue(qcompare);
+  using WVAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<weighted_vertex>;
+  using Queue = std::priority_queue<weighted_vertex, std::vector<weighted_vertex, WVAlloc>, decltype(qcompare)>;
+  Queue queue(qcompare, std::vector<weighted_vertex, WVAlloc>(WVAlloc(alloc)));
 
   // (The optimizer removes this loop if on_initialize_vertex() is empty.)
   if constexpr (has_on_initialize_vertex<graph_type, Visitor> || has_on_initialize_vertex_id<graph_type, Visitor>) {
@@ -334,7 +340,9 @@ constexpr void dijkstra_shortest_paths(
  * 
  * Convenience overload for single source vertex. See multi-source version for full documentation.
  * 
+ * @tparam Alloc Allocator type for internal priority queue storage. Defaults to std::allocator<std::byte>.
  * @param source Single source vertex ID instead of range.
+ * @param alloc  Allocator instance forwarded to the multi-source version (default: Alloc())
  * 
  * @see dijkstra_shortest_paths (multi-source overload)
  */
@@ -345,7 +353,8 @@ template <
       class WF = function<distance_fn_value_t<DistanceFn, G>(const std::remove_reference_t<G>&, const edge_t<G>&)>,
       class Visitor = empty_visitor,
       class Compare = less<distance_fn_value_t<DistanceFn, G>>,
-      class Combine = plus<distance_fn_value_t<DistanceFn, G>>>
+      class Combine = plus<distance_fn_value_t<DistanceFn, G>>,
+      class Alloc   = std::allocator<std::byte>>
 requires distance_fn_for<DistanceFn, G> &&                                //
          predecessor_fn_for<PredecessorFn, G> &&                          //
          basic_edge_weight_function<G, WF, distance_fn_value_t<DistanceFn, G>, Compare, Combine>
@@ -360,9 +369,10 @@ constexpr void dijkstra_shortest_paths(
             }, // default weight(g, uv) -> 1
       Visitor&& visitor = empty_visitor(),
       Compare&& compare = less<distance_fn_value_t<DistanceFn, G>>(),
-      Combine&& combine = plus<distance_fn_value_t<DistanceFn, G>>()) {
+      Combine&& combine = plus<distance_fn_value_t<DistanceFn, G>>(),
+      const Alloc& alloc = Alloc()) {
   dijkstra_shortest_paths(g, subrange(&source, (&source + 1)), distance, predecessor, weight,
-                          forward<Visitor>(visitor), forward<Compare>(compare), forward<Combine>(combine));
+                          forward<Visitor>(visitor), forward<Compare>(compare), forward<Combine>(combine), alloc);
 }
 
 /**
@@ -378,6 +388,8 @@ constexpr void dijkstra_shortest_paths(
  * @tparam Visitor      Visitor type with callbacks for algorithm events. Defaults to empty_visitor.
  * @tparam Compare      Comparison function for distance values. Defaults to less<>.
  * @tparam Combine      Function to combine distances and weights. Defaults to plus<>.
+ * @tparam Alloc        Allocator type for the internal priority queue storage.
+ *                      Defaults to std::allocator<std::byte>.
  * 
  * @param g            The graph to process.
  * @param sources      Range of source vertex IDs to start from.
@@ -386,6 +398,7 @@ constexpr void dijkstra_shortest_paths(
  * @param visitor      Visitor for algorithm events (discover, examine, relax, finish).
  * @param compare      Distance comparison function: (Distance, Distance) -> bool.
  * @param combine      Distance combination function: (Distance, Weight) -> Distance.
+ * @param alloc        Allocator instance forwarded to dijkstra_shortest_paths (default: Alloc())
  * 
  * @return void. Results are stored via the distance function.
  * 
@@ -403,7 +416,8 @@ template <
       class WF = function<distance_fn_value_t<DistanceFn, G>(const std::remove_reference_t<G>&, const edge_t<G>&)>,
       class Visitor = empty_visitor,
       class Compare = less<distance_fn_value_t<DistanceFn, G>>,
-      class Combine = plus<distance_fn_value_t<DistanceFn, G>>>
+      class Combine = plus<distance_fn_value_t<DistanceFn, G>>,
+      class Alloc   = std::allocator<std::byte>>
 requires distance_fn_for<DistanceFn, G> &&                                                //
          convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&                              //
          basic_edge_weight_function<G, WF, distance_fn_value_t<DistanceFn, G>, Compare, Combine>
@@ -417,9 +431,10 @@ constexpr void dijkstra_shortest_distances(
             }, // default weight(g, uv) -> 1
       Visitor&& visitor = empty_visitor(),
       Compare&& compare = less<distance_fn_value_t<DistanceFn, G>>(),
-      Combine&& combine = plus<distance_fn_value_t<DistanceFn, G>>()) {
+      Combine&& combine = plus<distance_fn_value_t<DistanceFn, G>>(),
+      const Alloc& alloc = Alloc()) {
   dijkstra_shortest_paths(g, sources, distance, _null_predecessor, forward<WF>(weight), forward<Visitor>(visitor),
-                          forward<Compare>(compare), forward<Combine>(combine));
+                          forward<Compare>(compare), forward<Combine>(combine), alloc);
 }
 
 /**
@@ -427,7 +442,11 @@ constexpr void dijkstra_shortest_distances(
  * 
  * Convenience overload for single source vertex without predecessor tracking.
  * 
+ * @tparam Alloc Allocator type for the internal priority queue storage.
+ *               Defaults to std::allocator<std::byte>.
+ * 
  * @param source Single source vertex ID instead of range.
+ * @param alloc  Allocator instance forwarded to dijkstra_shortest_paths (default: Alloc())
  * 
  * @see dijkstra_shortest_distances(G&&, const Sources&, Distances&, WF&&, Visitor&&, Compare&&, Combine&&)
  */
@@ -437,7 +456,8 @@ template <
       class WF = function<distance_fn_value_t<DistanceFn, G>(const std::remove_reference_t<G>&, const edge_t<G>&)>,
       class Visitor = empty_visitor,
       class Compare = less<distance_fn_value_t<DistanceFn, G>>,
-      class Combine = plus<distance_fn_value_t<DistanceFn, G>>>
+      class Combine = plus<distance_fn_value_t<DistanceFn, G>>,
+      class Alloc   = std::allocator<std::byte>>
 requires distance_fn_for<DistanceFn, G> &&                                                //
          basic_edge_weight_function<G, WF, distance_fn_value_t<DistanceFn, G>, Compare, Combine>
 constexpr void dijkstra_shortest_distances(
@@ -450,9 +470,10 @@ constexpr void dijkstra_shortest_distances(
             }, // default weight(g, uv) -> 1
       Visitor&& visitor = empty_visitor(),
       Compare&& compare = less<distance_fn_value_t<DistanceFn, G>>(),
-      Combine&& combine = plus<distance_fn_value_t<DistanceFn, G>>()) {
+      Combine&& combine = plus<distance_fn_value_t<DistanceFn, G>>(),
+      const Alloc& alloc = Alloc()) {
   dijkstra_shortest_paths(g, subrange(&source, (&source + 1)), distance, _null_predecessor, forward<WF>(weight),
-                          forward<Visitor>(visitor), forward<Compare>(compare), forward<Combine>(combine));
+                          forward<Visitor>(visitor), forward<Compare>(compare), forward<Combine>(combine), alloc);
 }
 
 } // namespace graph

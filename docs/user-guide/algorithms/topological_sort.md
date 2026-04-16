@@ -83,13 +83,16 @@ Three overloads cover different use cases:
 
 ```cpp
 // Full-graph topological sort
-bool topological_sort(const G& g, OutputIterator result);
+bool topological_sort(const G& g, OutputIterator result,
+    const Alloc& alloc = Alloc());
 
 // Single-source topological sort
-bool topological_sort(const G& g, const vertex_id_t<G>& source, OutputIterator result);
+bool topological_sort(const G& g, const vertex_id_t<G>& source, OutputIterator result,
+    const Alloc& alloc = Alloc());
 
 // Multi-source topological sort
-bool topological_sort(const G& g, const Sources& sources, OutputIterator result);
+bool topological_sort(const G& g, const Sources& sources, OutputIterator result,
+    const Alloc& alloc = Alloc());
 ```
 
 > **Note:** Topological sort takes `const G&` (not a forwarding reference), unlike
@@ -102,6 +105,7 @@ bool topological_sort(const G& g, const Sources& sources, OutputIterator result)
 | `g` | Graph satisfying `adjacency_list` (taken by `const&`) |
 | `source` / `sources` | Source vertex ID or range of source vertex IDs |
 | `result` | Output iterator receiving vertex IDs in topological order |
+| `alloc` | Allocator for internal stack storage. Default: `std::allocator<std::byte>{}`. |
 
 **Return value:** `true` if the graph is a DAG (valid ordering produced),
 `false` if a cycle was detected.

@@ -75,11 +75,13 @@ integer-indexed) and map-based (sparse vertex ID) graphs are supported.
 ```cpp
 // Multi-source BFS
 void breadth_first_search(G&& g, const Sources& sources,
-    Visitor&& visitor = empty_visitor());
+    Visitor&& visitor = empty_visitor(),
+    const Alloc& alloc = Alloc());
 
 // Single-source BFS
 void breadth_first_search(G&& g, const vertex_id_t<G>& source,
-    Visitor&& visitor = empty_visitor());
+    Visitor&& visitor = empty_visitor(),
+    const Alloc& alloc = Alloc());
 ```
 
 ## Parameters
@@ -89,6 +91,7 @@ void breadth_first_search(G&& g, const vertex_id_t<G>& source,
 | `g` | Graph satisfying `adjacency_list` |
 | `source` / `sources` | Source vertex ID or range of source vertex IDs |
 | `visitor` | Optional visitor struct with callback methods (see below). Default: `empty_visitor{}`. |
+| `alloc` | Allocator for internal queue storage. Default: `std::allocator<std::byte>{}`. |
 
 ## Visitor Events
 

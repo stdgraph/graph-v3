@@ -52,12 +52,14 @@ using adj_list::find_vertex;
  * Gray (discovered, in progress) -> Black (finished). This three-color scheme 
  * enables precise classification of every edge encountered during traversal.
  * 
- * @tparam G Graph type satisfying adjacency_list concept
+ * @tparam G       Graph type satisfying adjacency_list concept
  * @tparam Visitor Visitor type with optional callback methods
+ * @tparam Alloc   Allocator type for internal stack storage. Defaults to std::allocator<std::byte>.
  * 
- * @param g The graph to traverse (forwarding reference)
- * @param source Starting vertex ID
+ * @param g       The graph to traverse (forwarding reference)
+ * @param source  Starting vertex ID
  * @param visitor Visitor object to receive traversal events (default: empty_visitor)
+ * @param alloc   Allocator instance used for the internal DFS stack (default: Alloc())
  * 
  * @return void. Results delivered via visitor callbacks.
  * 
@@ -161,10 +163,11 @@ using adj_list::find_vertex;
  * @see breadth_first_search BFS algorithm for shortest-path traversal
  */
 
-template <adjacency_list G, class Visitor = empty_visitor>
+template <adjacency_list G, class Visitor = empty_visitor, class Alloc = std::allocator<std::byte>>
 void depth_first_search(G&&                   g,      // graph
                         const vertex_id_t<G>& source, // starting vertex_id
-                        Visitor&&             visitor = empty_visitor()) {
+                        Visitor&&             visitor = empty_visitor(),
+                        const Alloc&          alloc   = Alloc()) {
   using id_type = vertex_id_t<G>;
 
   // Vertex color states for DFS
@@ -219,7 +222,8 @@ void depth_first_search(G&&                   g,      // graph
     visitor.on_discover_vertex(g, source);
   }
 
-  std::stack<StackFrame> S;
+  using FrameAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<StackFrame>;
+  std::stack<StackFrame, std::deque<StackFrame, FrameAlloc>> S{std::deque<StackFrame, FrameAlloc>(FrameAlloc(alloc))};
   {
     auto inc = views::incidence(g, *find_vertex(g, source));
     S.push({source, std::ranges::begin(inc), std::ranges::end(inc)});

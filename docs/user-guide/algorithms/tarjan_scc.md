@@ -58,7 +58,8 @@ only **one DFS pass**, making it simpler to use when a transpose is unavailable.
 ## Algorithm
 
 ```cpp
-size_t tarjan_scc(G&& g, ComponentFn&& component);
+size_t tarjan_scc(G&& g, ComponentFn&& component,
+    const Alloc& alloc = Alloc());
 ```
 
 Single-pass iterative DFS using low-link values. Fills `component(g, uid)` with
@@ -70,6 +71,7 @@ the SCC ID for each vertex and returns the total number of SCCs.
 |-----------|-------------|
 | `g` | Graph satisfying `adjacency_list` |
 | `component` | Callable `(const G&, vertex_id_t<G>) -> ComponentID&` returning a mutable reference. For containers: wrap with `container_value_fn(comp)`. Must satisfy `vertex_property_fn_for<ComponentFn, G>`. |
+| `alloc` | Allocator for internal stack storage. Default: `std::allocator<std::byte>{}`. |
 
 **Return value:** `size_t` — number of strongly connected components.
 

@@ -68,7 +68,8 @@ the order is unspecified.
 ## Signature
 
 ```cpp
-void articulation_points(G&& g, OutputIterator cut_vertices);
+void articulation_points(G&& g, OutputIterator cut_vertices,
+    const Alloc& alloc = Alloc());
 ```
 
 ## Parameters
@@ -77,6 +78,7 @@ void articulation_points(G&& g, OutputIterator cut_vertices);
 |-----------|-------------|
 | `g` | Graph satisfying `adjacency_list` |
 | `cut_vertices` | Output iterator receiving vertex IDs of articulation points. Each vertex appears exactly once. |
+| `alloc` | Allocator for internal stack storage. Default: `std::allocator<std::byte>{}`. |
 
 ## Supported Graph Properties
 

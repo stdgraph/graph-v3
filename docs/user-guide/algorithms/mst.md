@@ -91,14 +91,18 @@ in-place to save memory).
 
 ```cpp
 // Copy-sort: input edge list is not modified
-auto kruskal(EdgeList& edges, OutputIterator tree);
+auto kruskal(EdgeList& edges, OutputIterator tree,
+    const Alloc& alloc = Alloc());
 
-auto kruskal(EdgeList& edges, OutputIterator tree, Compare compare);
+auto kruskal(EdgeList& edges, OutputIterator tree, Compare compare,
+    const Alloc& alloc = Alloc());
 
 // In-place sort: sorts edges in-place for lower memory usage
-auto inplace_kruskal(EdgeList& edges, OutputIterator tree);
+auto inplace_kruskal(EdgeList& edges, OutputIterator tree,
+    const Alloc& alloc = Alloc());
 
-auto inplace_kruskal(EdgeList& edges, OutputIterator tree, Compare compare);
+auto inplace_kruskal(EdgeList& edges, OutputIterator tree, Compare compare,
+    const Alloc& alloc = Alloc());
 ```
 
 **Returns** `std::pair<EV, size_t>` — total MST weight and number of connected
@@ -111,6 +115,7 @@ components.
 | `edges` | Range of edge descriptors with `.source_id`, `.target_id`, `.value` |
 | `tree` | Output iterator receiving MST edges |
 | `compare` | Edge-value comparator. Default: `std::less<>{}`. Use `std::greater<>{}` for max spanning tree. |
+| `alloc` | Allocator for internal union-find storage (`inplace_kruskal`) or edge copy + union-find (`kruskal`). Default: `std::allocator<std::byte>{}`. |
 
 ## Prim's Algorithm
 
@@ -125,7 +130,8 @@ auto prim(G&& g,
     const vertex_id_t<G>& seed,
     WeightFn&& weight, PredecessorFn&& predecessor,
     WF weight_fn = edge_value(g, uv),
-    Compare compare = std::less<>{});
+    Compare compare = std::less<>{},
+    const Alloc& alloc = Alloc());
 ```
 
 **Returns** the total MST weight.
@@ -140,6 +146,7 @@ auto prim(G&& g,
 | `predecessor` | Callable `(const G&, vertex_id_t<G>) -> P&` returning a mutable reference to the per-vertex predecessor. For containers: wrap with `container_value_fn(pred)`. Must satisfy `predecessor_fn_for<PredecessorFn, G>`. |
 | `weight_fn` | Callable `WF(g, uv)` returning edge weight. Default: `edge_value(g, uv)`. |
 | `compare` | Comparator for weight values (default: `std::less<>{}`) |
+| `alloc` | Allocator for internal priority queue storage. Default: `std::allocator<std::byte>{}`. |
 
 ## Edge Descriptor
 

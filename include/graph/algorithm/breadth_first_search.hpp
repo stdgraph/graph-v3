@@ -49,13 +49,15 @@ using adj_list::find_vertex;
  * from any source are discovered in the first wave, making this useful for multi-source
  * shortest path problems and parallel/concurrent reachability analysis.
  * 
- * @tparam G Graph type satisfying adjacency_list concept
+ * @tparam G       Graph type satisfying adjacency_list concept
  * @tparam Sources Input range of source vertex IDs
  * @tparam Visitor Visitor type with optional callback methods
+ * @tparam Alloc   Allocator type for internal queue storage. Defaults to std::allocator<std::byte>.
  * 
- * @param g The graph to traverse (forwarding reference)
+ * @param g       The graph to traverse (forwarding reference)
  * @param sources Range of starting vertex IDs
  * @param visitor Visitor object to receive traversal events (default: empty_visitor)
+ * @param alloc   Allocator instance used for the internal FIFO queue (default: Alloc())
  * 
  * @return void. Results delivered via visitor callbacks.
  * 
@@ -153,15 +155,18 @@ using adj_list::find_vertex;
  * @see views::vertices_bfs BFS view for range-based traversal
  * @see connected_components For component detection using BFS
  */
-template <adjacency_list G, std::ranges::input_range Sources, class Visitor = empty_visitor>
+template <adjacency_list G, std::ranges::input_range Sources, class Visitor = empty_visitor,
+          class Alloc = std::allocator<std::byte>>
 requires std::convertible_to<std::ranges::range_value_t<Sources>, vertex_id_t<G>>
 void breadth_first_search(G&&            g, // graph
                           const Sources& sources,
-                          Visitor&&      visitor = empty_visitor()) {
+                          Visitor&&      visitor = empty_visitor(),
+                          const Alloc&   alloc   = Alloc()) {
   using id_type = vertex_id_t<G>;
 
   // Initialize BFS data structures
-  std::queue<id_type> Q;                                    // FIFO queue for level-order traversal
+  using IdAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<id_type>;
+  std::queue<id_type, std::deque<id_type, IdAlloc>> Q{std::deque<id_type, IdAlloc>(IdAlloc(alloc))}; // FIFO queue for level-order traversal
   auto                visited = make_vertex_property_map<G, bool>(g, false); // Track visited vertices to prevent cycles
 
   // Initialize all source vertices
@@ -229,12 +234,14 @@ void breadth_first_search(G&&            g, // graph
  * Convenience wrapper for BFS starting from a single source vertex.
  * Delegates to the multi-source version by wrapping the source in a std::array.
  * 
- * @tparam G Graph type satisfying adjacency_list concept
+ * @tparam G      Graph type satisfying adjacency_list concept
  * @tparam Visitor Visitor type with optional callback methods
+ * @tparam Alloc   Allocator type for internal queue storage. Defaults to std::allocator<std::byte>.
  * 
- * @param g The graph to traverse (forwarding reference)
- * @param source Starting vertex ID
+ * @param g       The graph to traverse (forwarding reference)
+ * @param source  Starting vertex ID
  * @param visitor Visitor object to receive traversal events (default: empty_visitor)
+ * @param alloc   Allocator instance forwarded to the multi-source version (default: Alloc())
  * 
  * @return void. Results delivered via visitor callbacks.
  * 
@@ -262,13 +269,14 @@ void breadth_first_search(G&&            g, // graph
  * @see breadth_first_search(G&&, Sources&&, Visitor&&) Multi-source version
  * @see views::vertices_bfs BFS view for range-based traversal
  */
-template <adjacency_list G, class Visitor = empty_visitor>
+template <adjacency_list G, class Visitor = empty_visitor, class Alloc = std::allocator<std::byte>>
 void breadth_first_search(G&&                      g,      // graph
                           const vertex_id_t<G>&    source, // starting vertex_id
-                          Visitor&&                visitor = empty_visitor()) {
+                          Visitor&&                visitor = empty_visitor(),
+                          const Alloc&             alloc   = Alloc()) {
   // Wrap single source in array and delegate to multi-source version
   std::array<vertex_id_t<G>, 1> sources{source};
-  breadth_first_search(std::forward<G>(g), sources, std::forward<Visitor>(visitor));
+  breadth_first_search(std::forward<G>(g), sources, std::forward<Visitor>(visitor), alloc);
 }
 
 } // namespace graph
