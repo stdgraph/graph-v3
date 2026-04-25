@@ -17,7 +17,8 @@ A comprehensive analysis of the Boost Graph Library (BGL) and graph-v3, identify
 9. [Graph I/O & Serialization](#9-graph-io--serialization)
 10. [Graph Generators](#10-graph-generators)
 11. [API Pattern Migration Guide](#11-api-pattern-migration-guide)
-12. [Recommended Extensions & Roadmap](#12-recommended-extensions--roadmap)
+12. [Adapting an Existing BGL Graph for graph-v3](#12-adapting-an-existing-bgl-graph-for-graph-v3)
+13. [Recommended Extensions & Roadmap](#13-recommended-extensions--roadmap)
 
 ---
 
@@ -682,7 +683,222 @@ auto first_10 = vertices_dfs(g, source) | std::views::take(10);
 
 ---
 
-## 12. Recommended Extensions & Roadmap
+## 12. Adapting an Existing BGL Graph for graph-v3
+
+This section describes how to make an existing `boost::adjacency_list` (or any BGL-modelling type) usable as input to graph-v3 algorithms and views, **without rewriting the storage**. The goal is incremental migration: keep the BGL container, expose graph-v3 CPOs on top of it.
+
+### 12.1 What graph-v3 Requires
+
+graph-v3 dispatches everything through CPOs and a small set of concepts. The minimum surface to satisfy `graph::adjacency_list<G>` is:
+
+| CPO | Purpose | Required for |
+|-----|---------|--------------|
+| `vertices(g)` | Range of vertex descriptors | All algorithms |
+| `edges(g, u)` | Out-edge range for vertex `u` | All algorithms |
+| `target_id(g, uv)` | Target vertex id of an edge | All algorithms |
+| `vertex_id(g, u)` | Id of a vertex descriptor | Most algorithms (auto-derivable for indexed graphs) |
+| `num_vertices(g)` | Vertex count | Algorithms that pre-size storage (Dijkstra, BFS) |
+| `source_id(g, uv)` | Source vertex id | Sourced-edge algorithms (Kruskal, edge-list views) |
+| `in_edges(g, u)` | In-edge range | `bidirectional_adjacency_list` only |
+| `vertex_value(g, u)` / `edge_value(g, uv)` | Bundled property access | Algorithms that read interior properties |
+
+There is **no `graph_traits` to specialise**. A CPO is satisfied in one of three ways, in priority order:
+
+1. A member function on `G` (e.g. `g.vertices()`).
+2. A free function found by ADL in the namespace of `G` (e.g. `vertices(g)` in namespace `boost`).
+3. A built-in default that works when `G` matches a recognised pattern (e.g. random-access range of inner ranges of integers).
+
+For BGL types you will use **option 2**: add free functions in `namespace boost`. ADL will find them because `boost::adjacency_list` lives in that namespace.
+
+### 12.2 Recommended Layout
+
+Put the adapter in its own header, included **before** any graph-v3 algorithm header that will be invoked on a BGL graph:
+
+```cpp
+// my_project/bgl_adapter.hpp
+#pragma once
+
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/properties.hpp>
+#include <graph/graph.hpp>
+#include <ranges>
+```
+
+All adapter functions go inside `namespace boost { ... }` so ADL picks them up.
+
+### 12.3 Minimal Adapter for `boost::adjacency_list`
+
+The example below adapts `boost::adjacency_list<vecS, vecS, directedS, VBundle, EBundle>` — the most common BGL configuration. It is the analogue of graph-v3's `vov_graph_traits`-backed `dynamic_graph`.
+
+```cpp
+namespace boost {
+
+// --- vertices(g) -----------------------------------------------------------
+// Return a range of vertex descriptors. For vecS storage these are integers
+// 0..num_vertices(g)-1. graph-v3 wraps the result in vertex_descriptor_view
+// automatically when needed.
+template <class OutEdgeS, class VertexS, class DirS,
+          class VBundle, class EBundle, class GBundle, class EdgeListS>
+auto vertices(adjacency_list<OutEdgeS, VertexS, DirS,
+                             VBundle, EBundle, GBundle, EdgeListS>& g) {
+    auto [first, last] = ::boost::vertices(g);          // BGL free function
+    return std::ranges::subrange(first, last);
+}
+
+template <class... Ts>
+auto vertices(const adjacency_list<Ts...>& g) {
+    auto [first, last] = ::boost::vertices(g);
+    return std::ranges::subrange(first, last);
+}
+
+// --- num_vertices(g) -------------------------------------------------------
+// BGL already provides this; nothing to do — ADL finds boost::num_vertices.
+
+// --- edges(g, u) -----------------------------------------------------------
+// graph-v3's edges(g, u) is BGL's out_edges(u, g).
+template <class... Ts>
+auto edges(adjacency_list<Ts...>& g,
+           typename graph_traits<adjacency_list<Ts...>>::vertex_descriptor u) {
+    auto [first, last] = ::boost::out_edges(u, g);
+    return std::ranges::subrange(first, last);
+}
+
+template <class... Ts>
+auto edges(const adjacency_list<Ts...>& g,
+           typename graph_traits<adjacency_list<Ts...>>::vertex_descriptor u) {
+    auto [first, last] = ::boost::out_edges(u, g);
+    return std::ranges::subrange(first, last);
+}
+
+// --- target_id(g, uv) / source_id(g, uv) -----------------------------------
+// For vecS storage, vertex_descriptor IS the vertex id.
+template <class... Ts>
+auto target_id(const adjacency_list<Ts...>& g,
+               typename graph_traits<adjacency_list<Ts...>>::edge_descriptor uv) {
+    return ::boost::target(uv, g);
+}
+
+template <class... Ts>
+auto source_id(const adjacency_list<Ts...>& g,
+               typename graph_traits<adjacency_list<Ts...>>::edge_descriptor uv) {
+    return ::boost::source(uv, g);
+}
+
+// --- vertex_id(g, u) -------------------------------------------------------
+// For vecS storage the descriptor is its own id.
+template <class... Ts>
+auto vertex_id(const adjacency_list<Ts...>& /*g*/,
+               typename graph_traits<adjacency_list<Ts...>>::vertex_descriptor u) {
+    return u;   // identity for integer descriptors
+}
+
+} // namespace boost
+```
+
+With just these five functions, a `boost::adjacency_list<vecS, vecS, directedS>` satisfies `graph::index_adjacency_list` and can be passed to BFS, DFS, and topological sort.
+
+### 12.4 Bidirectional Graphs
+
+For algorithms that need in-edges (e.g. transposed traversals), add:
+
+```cpp
+namespace boost {
+
+template <class... Ts>
+auto in_edges(adjacency_list<Ts...>& g,
+              typename graph_traits<adjacency_list<Ts...>>::vertex_descriptor u) {
+    auto [first, last] = ::boost::in_edges(u, g);     // requires bidirectionalS
+    return std::ranges::subrange(first, last);
+}
+
+} // namespace boost
+```
+
+This only compiles when the underlying graph is `bidirectionalS`.
+
+### 12.5 Property Access
+
+BGL graphs expose properties three different ways. graph-v3 reads them through `vertex_value(g, u)` / `edge_value(g, uv)` CPOs, plus user-supplied callables for algorithm-specific maps (e.g. weight).
+
+**Bundled properties (recommended).** When the BGL graph is declared with bundled types, expose them directly:
+
+```cpp
+namespace boost {
+
+template <class... Ts>
+decltype(auto) vertex_value(adjacency_list<Ts...>& g,
+                            typename graph_traits<adjacency_list<Ts...>>::vertex_descriptor u) {
+    return g[u];     // returns reference to bundled VBundle
+}
+
+template <class... Ts>
+decltype(auto) edge_value(adjacency_list<Ts...>& g,
+                          typename graph_traits<adjacency_list<Ts...>>::edge_descriptor uv) {
+    return g[uv];    // returns reference to bundled EBundle
+}
+
+} // namespace boost
+```
+
+**Interior properties (`property<weight_t, double>`).** Do **not** wrap with `vertex_value` / `edge_value`. Instead, supply a per-algorithm projection:
+
+```cpp
+auto wmap   = ::boost::get(::boost::edge_weight, g);
+auto weight = [&](auto e) -> double { return ::boost::get(wmap, e); };
+
+graph::dijkstra_shortest_paths(g, {source}, distances, predecessors, weight);
+```
+
+**Exterior property maps.** Pass them as ordinary lambdas — graph-v3 algorithms accept any invocable taking an edge or vertex descriptor.
+
+### 12.6 Other BGL Container Configurations
+
+| BGL `OutEdgeS` / `VertexS` | Vertex descriptor | Adapter notes |
+|----------------------------|-------------------|---------------|
+| `vecS` / `vecS` | integer | Adapter above works as-is. |
+| `listS` / `vecS` | integer (vertex), pointer-like (edge) | Adapter above works; descriptors still index into vertex table. |
+| `vecS` / `listS` | opaque (pointer) | `vertex_id` cannot be the descriptor itself; build an external `unordered_map<vertex_descriptor, std::size_t>` and have `vertex_id` look up there. Algorithms then see a non-integer id; only `mapped_adjacency_list` algorithms apply. |
+| `setS` / `vecS` | integer | Works; out-edge range is sorted. |
+| `hash_setS` / `vecS` | integer | Works; out-edge range is unordered. |
+
+For non-`vecS` `VertexS`, prefer copying the graph into a graph-v3 container at the migration boundary rather than maintaining an id-mapping adapter.
+
+### 12.7 Verifying the Adapter
+
+After writing the adapter, confirm the concepts compile:
+
+```cpp
+#include "my_project/bgl_adapter.hpp"
+
+using BGLGraph = boost::adjacency_list<
+    boost::vecS, boost::vecS, boost::directedS,
+    /*VBundle*/ MyVertex, /*EBundle*/ MyEdge>;
+
+static_assert(graph::adjacency_list<BGLGraph>);
+static_assert(graph::index_adjacency_list<BGLGraph>);
+// For bidirectionalS:
+// static_assert(graph::bidirectional_adjacency_list<BGLGraph>);
+```
+
+If the assertions pass, all graph-v3 algorithms constrained on `index_adjacency_list` will accept the BGL graph.
+
+### 12.8 Migration Workflow
+
+1. Drop in the adapter header — no source changes to existing BGL code.
+2. Pick one new code path (e.g. a new analytics pass) and write it against graph-v3 CPOs, taking the existing BGL graph as input.
+3. As tests cover more code paths, port BGL call sites one at a time using the API mappings in [Section 11](#11-api-pattern-migration-guide).
+4. Once all algorithm call sites are ported, replace the BGL container with `graph::dynamic_graph` (or another graph-v3 container) and remove the adapter.
+
+### 12.9 Limitations
+
+- The adapter exposes the BGL graph as **read-only** to graph-v3. Mutation must continue to go through BGL APIs (`add_vertex`, `add_edge`).
+- `partition_id`, `num_partitions`, and other multi-partition CPOs are not provided; graph-v3 defaults to a single partition, which is correct for plain BGL graphs.
+- Algorithms that require `ranges::sized_range` on `edges(g, u)` (rare) need the BGL graph to use a sized out-edge container (`vecS`, `setS`).
+- If `vertex_descriptor` is a pointer or opaque type, the integer-id assumption in `vertex_id` / `target_id` does not hold; see §12.6.
+
+---
+
+## 13. Recommended Extensions & Roadmap
 
 ### Phase 1: Critical Migration Enablers (High Priority)
 
