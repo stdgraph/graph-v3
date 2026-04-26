@@ -33,8 +33,14 @@
 
 #include "dijkstra_fixtures.hpp"
 
+#ifdef BENCH_BGL
+#  include "bgl_dijkstra_fixtures.hpp"
+#endif
+
 #include <algorithm>
 #include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 #include <limits>
 #include <vector>
 
@@ -200,6 +206,138 @@ BENCHMARK(BM_Dijkstra_VoV_ER_Sparse_Idx4)->Arg(1'000'000)->Complexity();
 BENCHMARK(BM_Dijkstra_CSR_BA)      ->Arg(1'000'000)->Complexity();
 BENCHMARK(BM_Dijkstra_CSR_BA_Idx4)->Arg(1'000'000)->Complexity();
 #endif
+
+// ---------------------------------------------------------------------------
+// BGL comparison benchmarks (Phase 4.3)
+//
+// Enabled with -DDIJKSTRA_BENCH_BGL=ON -DBGL_INCLUDE_DIR=/path/to/boost.
+// Topologically identical graphs are built from the same edge_list, so the
+// BGL and graph-v3 numbers can be compared directly.
+//
+// BGL uses dijkstra_shortest_paths_no_color_map_no_init for fairness:
+// caller pre-initialises distances; no color-map allocation inside the
+// timed region (matches graph-v3's no-init semantics).
+// ---------------------------------------------------------------------------
+
+#ifdef BENCH_BGL
+
+#define DEFINE_BGL_DIJKSTRA_BM(NAME, GRAPH_T, MAKE_FN, EDGE_EXPR, N_EXPR)            \
+  static void NAME(benchmark::State& state) {                                        \
+    const auto n = static_cast<graph::benchmark::vertex_id_t>(state.range(0));       \
+    const auto edges = (EDGE_EXPR);                                                  \
+    GRAPH_T    g     = graph::benchmark::MAKE_FN(edges, (N_EXPR));                   \
+    std::vector<double> dist(boost::num_vertices(g),                                 \
+                              std::numeric_limits<double>::max());                   \
+    for (auto _ : state) {                                                           \
+      state.PauseTiming();                                                           \
+      std::fill(dist.begin(), dist.end(), std::numeric_limits<double>::max());       \
+      dist[0] = 0.0;                                                                  \
+      state.ResumeTiming();                                                          \
+      graph::benchmark::run_bgl_dijkstra(g, 0u, dist);                                \
+      benchmark::DoNotOptimize(dist.data());                                         \
+    }                                                                                \
+    state.SetComplexityN(state.range(0));                                            \
+  }
+
+DEFINE_BGL_DIJKSTRA_BM(BM_Dijkstra_BGL_CSR_ER_Sparse,
+                       graph::benchmark::bgl_csr_graph_t, make_bgl_csr,
+                       ER_EDGES(n), n)
+DEFINE_BGL_DIJKSTRA_BM(BM_Dijkstra_BGL_CSR_Grid,
+                       graph::benchmark::bgl_csr_graph_t, make_bgl_csr,
+                       graph::benchmark::grid_2d(GRID_SQRT(n), GRID_SQRT(n)),
+                       GRID_SQRT(n) * GRID_SQRT(n))
+DEFINE_BGL_DIJKSTRA_BM(BM_Dijkstra_BGL_CSR_BA,
+                       graph::benchmark::bgl_csr_graph_t, make_bgl_csr,
+                       graph::benchmark::barabasi_albert(n, 4), n)
+DEFINE_BGL_DIJKSTRA_BM(BM_Dijkstra_BGL_CSR_Path,
+                       graph::benchmark::bgl_csr_graph_t, make_bgl_csr,
+                       graph::benchmark::path_graph(n), n)
+
+DEFINE_BGL_DIJKSTRA_BM(BM_Dijkstra_BGL_Adj_ER_Sparse,
+                       graph::benchmark::bgl_adj_graph_t, make_bgl_adj,
+                       ER_EDGES(n), n)
+DEFINE_BGL_DIJKSTRA_BM(BM_Dijkstra_BGL_Adj_Grid,
+                       graph::benchmark::bgl_adj_graph_t, make_bgl_adj,
+                       graph::benchmark::grid_2d(GRID_SQRT(n), GRID_SQRT(n)),
+                       GRID_SQRT(n) * GRID_SQRT(n))
+DEFINE_BGL_DIJKSTRA_BM(BM_Dijkstra_BGL_Adj_BA,
+                       graph::benchmark::bgl_adj_graph_t, make_bgl_adj,
+                       graph::benchmark::barabasi_albert(n, 4), n)
+DEFINE_BGL_DIJKSTRA_BM(BM_Dijkstra_BGL_Adj_Path,
+                       graph::benchmark::bgl_adj_graph_t, make_bgl_adj,
+                       graph::benchmark::path_graph(n), n)
+
+BENCHMARK(BM_Dijkstra_BGL_CSR_ER_Sparse)->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_BGL_CSR_Grid)     ->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_BGL_CSR_BA)       ->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_BGL_CSR_Path)     ->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_BGL_Adj_ER_Sparse)->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_BGL_Adj_Grid)     ->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_BGL_Adj_BA)       ->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_BGL_Adj_Path)     ->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+
+// ---------------------------------------------------------------------------
+// Cross-library distance correctness check.
+//
+// Runs once at startup before benchmarks begin. For each topology, builds
+// the same edge list with both libraries, runs Dijkstra from vertex 0,
+// and asserts the resulting distance vectors match. Differences indicate
+// a wrapper or property-map bug rather than a real performance signal.
+// ---------------------------------------------------------------------------
+
+namespace {
+
+bool check_bgl_distance_parity() {
+  using namespace graph::benchmark;
+  constexpr vertex_id_t n = 1024;
+
+  auto check = [&](const auto& edges) {
+    const std::size_t nv = static_cast<std::size_t>(n);
+
+    // graph-v3
+    auto g3 = make_csr(edges, n);
+    std::vector<double> d3(nv, std::numeric_limits<double>::max());
+    graph::dijkstra_shortest_distances(
+          g3, vertex_id_t{0}, graph::container_value_fn(d3),
+          weight_fn, graph::empty_visitor{},
+          std::less<double>{}, std::plus<double>{},
+          graph::use_default_heap{}, std::allocator<std::byte>{});
+
+    // BGL
+    auto g_bgl = make_bgl_csr(edges, n);
+    std::vector<double> d_bgl(nv, std::numeric_limits<double>::max());
+    d_bgl[0] = 0.0;
+    run_bgl_dijkstra(g_bgl, vertex_id_t{0}, d_bgl);
+
+    if (d3.size() != d_bgl.size()) return false;
+    for (std::size_t i = 0; i < nv; ++i) {
+      // Both write infinity for unreachable; otherwise distances must agree
+      // exactly (same edge weights, same compare/combine).
+      if (d3[i] != d_bgl[i]) return false;
+    }
+    return true;
+  };
+
+  bool ok = true;
+  ok &= check(erdos_renyi(n, 8.0 / static_cast<double>(n)));
+  ok &= check(barabasi_albert(n, 4));
+  ok &= check(path_graph(n));
+  return ok;
+}
+
+const bool kBglParityChecked = [] {
+  if (!check_bgl_distance_parity()) {
+    std::fprintf(stderr,
+                 "FATAL: BGL vs graph-v3 distance parity check failed; "
+                 "benchmarks would compare incorrect results.\n");
+    std::abort();
+  }
+  return true;
+}();
+
+} // namespace
+
+#endif // BENCH_BGL
 
 // ---------------------------------------------------------------------------
 // Entry point

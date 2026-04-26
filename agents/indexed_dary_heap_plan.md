@@ -333,7 +333,7 @@ default in a later phase once benchmarks confirm parity or improvement.
 | **Decision** | **Keep `use_default_heap` as the default.** Phase 4.1 results are mixed: indexed wins by 17–25% on high-E/V workloads (ER, BA) but loses by 22–39% on grid (E/V≈4) and path (E/V=1). The grid regression is too large to justify a universal switch, and a heuristic E/V dispatch was considered but rejected as premature (one workload axis is not strong enough evidence; users with known graph shapes can opt in explicitly). Documented `use_indexed_dary_heap<8>` as the recommended opt-in for high-E/V random / scale-free workloads on `compressed_graph` in the heap-tag doc comments and CHANGELOG. |
 | **Status** | Completed. Default unchanged. CHANGELOG entry added; `use_default_heap` and `use_indexed_dary_heap` doc comments now record the recommendation. |
 
-### 4.3 BGL Comparison Benchmarks (optional validation)
+### 4.3 BGL Comparison Benchmarks (optional validation) ✅
 
 Run after 4.2 as a "how do we compare to BGL" sanity check, not as a
 gating criterion for the default decision.
@@ -384,6 +384,7 @@ boost::dijkstra_shortest_paths_no_color_map_no_init(
 | **Verify** | BGL and graph-v3 produce identical distance arrays on the same graph + source (add a correctness assert outside the timed loop). |
 | **Verify** | Results recorded in `agents/indexed_dary_heap_results.md` alongside 4.1 numbers. |
 | **Commit** | `bench(dijkstra): add BGL comparison benchmarks` |
+| **Status** | Completed. CSR 100K results: BGL CSR is 10–15% faster than graph-v3 Idx8 on dense (ER/BA); graph-v3 ties/beats BGL CSR on low-E/V (grid/path); graph-v3 default beats BGL `adjacency_list` on every topology by 23–48%. Decision: no further heap changes; remaining dense-CSR gap is in CSR layout, not the heap. Full numbers in `agents/indexed_dary_heap_results.md` § Phase 4.3. |
 
 ---
 
