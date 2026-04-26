@@ -195,3 +195,144 @@ Build with: `cmake -DDIJKSTRA_BENCH_BGL=ON -DBGL_INCLUDE_DIR=/path/to/boost`.
   Phase 4.2 decision (default = `use_default_heap`, opt-in `use_indexed_dary_heap<8>`)
   remains the right configuration. Future work, if the dense-CSR gap matters
   to a user, is in CSR layout, not in the heap.
+
+### Phase 4.3a — Apples-to-apples re-run with Idx4 (resolves Open Q6)
+
+BGL's `dijkstra_shortest_paths` hard-codes `d_ary_heap_indirect<Vertex, 4, ...>`
+(see `boost/graph/dijkstra_shortest_paths.hpp`). The Phase 4.3 table compared
+against graph-v3 Idx8, leaving open whether the dense-CSR gap was an arity
+artefact. Re-run on the same machine, n = 100 000, 3-run averages of CPU time
+(`--benchmark_min_time=2s`):
+
+| Topology | graph-v3 Idx4 | graph-v3 Idx8 | BGL CSR | Idx4 vs BGL | Idx8 vs BGL |
+|----------|--------------:|--------------:|--------:|-----------:|-----------:|
+| ER Sparse (E/V≈8) | 22.77 ms | 22.38 ms | 21.14 ms | +7.7% | +5.9% |
+| BA (E/V≈8)        | 21.99 ms | 21.02 ms | 20.10 ms | +9.4% | +4.6% |
+| Grid (E/V≈4)      |  8.64 ms |  8.77 ms |  6.33 ms | +36.5% | +38.5% |
+| Path (E/V=1)      |  0.330 ms| 0.329 ms | 0.287 ms | +15.0% | +14.6% |
+
+**Findings**
+
+- **Arity is not the bottleneck.** Switching to Idx4 (apples-to-apples with
+  BGL) does not narrow the gap: ER and BA stay within 1–3 percentage points
+  of the Idx8 number; Grid is unchanged at ~37%; Path is unchanged at ~15%.
+  On BA, Idx8 is actually a touch faster than Idx4 (+4.6% vs +9.4%) — BA's
+  power-law degree distribution rewards wider arity (fewer levels per
+  decrease-key on high-degree hubs).
+- **The gap is uniform across topologies that exercise the heap very
+  differently.** Grid (uniform degree 4, predictable heap pattern) shows the
+  biggest absolute gap (36–38%). If the heap were the bottleneck the gap
+  would track topology, not be uniform across them.
+- **Suspect: weight-map indirection in the relax loop.** BGL's
+  `get(&edge_prop::weight, g)` typically resolves to a raw `Weight*` indexed
+  by edge offset (zero indirection). graph-v3's `edge_value(g, uv)`
+  goes through the iterator's `value()` accessor on the `compressed_graph`'s
+  edge-property storage, which may add a level of pointer-chasing or block
+  auto-vectorisation. Verifying this requires `perf stat -e
+  L1-dcache-load-misses,branch-misses` or `perf record` profiling and is
+  out of scope for this plan.
+- **Recommendation: no further heap work.** The Phase 4.2 decision stands
+  (default = `use_default_heap`, opt-in `use_indexed_dary_heap<D>`). For
+  dense workloads on CSR, prefer Idx8 over Idx4 (consistently 1–5
+  percentage points faster on ER and BA at n = 100 K). If the dense-CSR
+  gap to BGL becomes important to a user, the next investigation belongs
+  in `compressed_graph`'s edge-value access path, not in the heap.
+
+---
+
+## Phase 4.3b — CSR access-path profiling (Phase 1 of `csr_edge_value_perf_plan.md`)
+
+Captured: 2026-04-26  
+Goal: Quantify how the Idx4-vs-BGL CSR gap scales with `n`, to discriminate between
+work-bound (constant per-edge overhead) and memory-bound (gap widens with `n` as the
+working set spills out of cache) hypotheses.
+
+### Setup
+
+| Knob | Value |
+|------|-------|
+| Binary | `build/linux-gcc-release/benchmark/algorithms/benchmark_dijkstra` |
+| Flags | `--benchmark_min_time=2s` |
+| Pinning | `taskset -c 4` (single physical core) |
+| Runs | 5 (median CPU time reported) |
+| Sizes | `n ∈ {10 000, 100 000}` (only sizes registered by the benchmark) |
+| Topologies | BA, ER_Sparse, Grid (4-regular), Path |
+
+Working-set fit (vertices × 4B + edges × ~16B):
+- `n = 10 000`, BA/ER (~10 edges/v): ~0.6 MB → fits in L2 (1.28 MB) ✅
+- `n = 100 000`, BA/ER: ~6 MB → spills to L3 (25 MB) ✅
+- `n = 100 000`, Grid (4 edges/v): ~2.4 MB → fits in L3 ✅
+- All sizes fit in L3.
+
+### 1.1 Multi-size baseline (median of 5 runs, CPU ns)
+
+| Topology | n | Idx4 | Idx8 | BGL_CSR | Idx4/BGL | Idx8/BGL |
+|----------|---:|------:|------:|---------:|---------:|---------:|
+| BA        | 10 000 |  1 185 000 |  1 179 420 |    990 450 | **1.196×** | 1.191× |
+| ER_Sparse | 10 000 |  1 192 860 |  1 169 130 |    987 541 | **1.208×** | 1.184× |
+| Grid      | 10 000 |    624 630 |    628 727 |    454 421 | **1.375×** | 1.384× |
+| Path      | 10 000 |     33 531 |     33 760 |     28 204 | **1.189×** | 1.197× |
+| BA        | 100 000 | 23 651 400 | 22 222 500 | 21 449 200 | **1.103×** | 1.036× |
+| ER_Sparse | 100 000 | 23 318 800 | 23 397 300 | 22 184 000 | **1.051×** | 1.055× |
+| Grid      | 100 000 |  8 701 240 |  8 909 080 |  6 359 360 | **1.368×** | 1.401× |
+| Path      | 100 000 |    336 510 |    332 385 |    289 129 | **1.164×** | 1.150× |
+
+### Scaling table — does the Idx4-vs-BGL gap grow with `n`?
+
+| Topology  | gap @ 10 K | gap @ 100 K | Δ (pp) |
+|-----------|-----------:|------------:|-------:|
+| BA        |     1.196× |      1.103× |  −9.4  |
+| ER_Sparse |     1.208× |      1.051× | −15.7  |
+| Grid      |     1.375× |      1.368× |  −0.6  |
+| Path      |     1.189× |      1.164× |  −2.5  |
+
+### Interpretation
+
+- The Idx4-vs-BGL gap **does not grow** with `n` for any topology, even as the working
+  set crosses from L2 (10 K) to L3 (100 K). For BA and ER it actually **shrinks** by
+  9–16 percentage points, consistent with a fixed setup/initialisation cost
+  (allocator warmup, position-map alloc, vector grow) being amortised over the larger
+  workload.
+- This is **inconsistent with a memory-bound hypothesis** (suspect 2: cold edge_value
+  cache lines, suspect 5: prefetch). If the gap were caused by extra cache traffic
+  per edge it would widen with `n`, not stay flat or shrink.
+- The Grid topology shows the **most stable** gap (~1.37× at both sizes). Grid is
+  4-regular with a deterministic stencil pattern, so it has the cleanest per-edge
+  signal and the smallest overhead-amortisation effect. **This is the topology to
+  focus subsequent profiling on.**
+- **Working hypothesis after Phase 1.1**: the gap is **work-bound** — extra
+  instructions executed per edge in the relax inner loop (suspect 1: pointer-subtract
+  + extra load to reach `edge_value_`, suspect 3: `target_id` two-hop, or suspect 4:
+  `compressed_graph::find_vertex`). Phase 1.2/1.3 (perf counters + perf annotate) are
+  needed to confirm by checking `instructions/edge` and miss rates.
+
+### 1.2 Hardware counters — **DEFERRED**
+
+`/usr/lib/linux-tools-6.8.0-110/perf` is installed but Linux PMC events are
+`<not supported>` under this WSL2 kernel. Enabling requires
+`nestedVirtualization=true` in `%UserProfile%\.wslconfig` followed by
+`wsl --shutdown`. Once available, the counters to capture are:
+
+```
+perf stat -e cycles,instructions,L1-dcache-load-misses,LLC-load-misses,\
+  branch-misses,branch-instructions \
+  taskset -c 4 ./benchmark_dijkstra \
+  --benchmark_filter='^BM_Dijkstra_(CSR_Grid_Idx4|BGL_CSR_Grid)/100000$' \
+  --benchmark_min_time=2s
+```
+
+Compute and tabulate: IPC, cycles/edge, loads/edge, L1-D miss rate, LLC miss
+rate, branch-miss rate. Repeat for `ER_Sparse` to confirm.
+
+**Predicted outcome (from 1.1):** Idx4 will show *more instructions/edge* with
+*similar miss rates* — the work-bound signature.
+
+### 1.3 perf record + annotate — **DEFERRED** (same WSL2 PMC limitation)
+
+### Verdict (preliminary, pending 1.2/1.3 confirmation)
+
+**Memory-bound hypothesis ruled out by the scaling test.** The flat-or-shrinking
+gap across an L2→L3 transition leaves only the work-bound suspects from the plan:
+1, 3, and 4. Phase 2 (disassembly diff) of `csr_edge_value_perf_plan.md` can
+proceed in parallel with 1.2/1.3 and may itself be sufficient to identify the
+extra-instruction site.

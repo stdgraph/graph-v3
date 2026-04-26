@@ -493,17 +493,62 @@ only if Prim becomes a measured bottleneck.
    prevent the compiler from unrolling the inner child-comparison loop (the hot path
    in `sift_down`), eliminating the main performance advantage of d-ary heaps over a
    standard binary heap. Rationale is documented in `indexed_dary_heap.hpp`.
-3. **`Compare` indirection cost.** The heap calls `compare_(distance_(a), distance_(b))`
+3. ~~**`Compare` indirection cost.** The heap calls `compare_(distance_(a), distance_(b))`
    twice per sift-down step (one comparator call per child + one against the parent).
-   For trivial `DistanceFn` (vector lookup) this should inline; verify in benchmarks.
-4. **Visitor `on_examine_vertex` semantics on multi-source seeding.** The current
+   For trivial `DistanceFn` (vector lookup) this should inline; verify in benchmarks.~~
+   **Resolved:** Disassembly of the release `benchmark_dijkstra` binary
+   (compressed_graph + `use_indexed_dary_heap<4>` + `std::less<double>` + `container_value_fn<vector<double>>`)
+   shows the `run` lambda — which contains the inlined `sift_up_`, `sift_down_`,
+   `push_or_decrease`, `pop`, and the Dijkstra relax loop — has **zero `call`
+   instructions to `compare_` or `distance_`** in the hot path.
+
+   Verified at both `-O3` and `-O2`:
+
+   | Metric (run lambda body, CSR + Idx4) | -O3 | -O2 |
+   |---|---:|---:|
+   | `call` instructions to `compare_` / `distance_` / `std::less` | 0 | 0 |
+   | `call`s present (all cold: vector grow / new / delete / memcpy) | 2 | 24 |
+   | `ucomisd` comparison sites | 8 | 8 |
+   | Out-of-line `sift_up_` / `sift_down_` / `std::less<double>::operator()` symbols in object | none | none |
+
+   At -O3 the only call-outs are to `std::vector::_M_realloc_append`; at -O2
+   the call-outs expand to direct `operator new` / `operator delete` /
+   `memcpy` (8 each, from the heap-vector growth path) but the comparison
+   sites themselves remain pure `ucomisd` against direct base+index*8 loads
+   from the distance buffer (e.g. `movsd (%r8,%r9,8),%xmm1`). GCC fully
+   inlines `heap_distfn` (the capturing lambda) → `container_value_fn::operator()`
+   → `vector::operator[]` to a raw `double*` indexed load and reduces
+   `std::less<double>::operator()` to a bare compare at both optimisation
+   levels. The functional-style `compare_(distance_(a), distance_(b))`
+   abstraction has zero runtime cost for trivial `DistanceFn` / `Compare`
+   types, which is the only configuration the benchmarks measure.
+4. ~~**Visitor `on_examine_vertex` semantics on multi-source seeding.** The current
    multi-source code seeds N vertices into the queue. With the indexed heap, the
    first pop of each source is the settled pop (no re-pushes possible since
-   distance is already 0). Confirm visitor semantics are unchanged.
-5. **Should the new heap live in `graph/detail/` or be promoted to `graph/container/`?**
+   distance is already 0). Confirm visitor semantics are unchanged.~~
+   **Resolved:** Confirmed by inspection and by a parity test
+   (`dijkstra(indexed_heap) - multi-source visitor parity vs default heap`,
+   `tests/algorithms/test_dijkstra_indexed_heap.cpp`). With non-negative
+   weights every source is pushed at distance 0 and is finalized on its
+   first pop (no later relax can lower distance below 0), so on every path
+   each vertex fires `on_discover_vertex`, `on_examine_vertex`, and
+   `on_finish_vertex` exactly once. The default heap achieves this via its
+   stale-pop skip at the top of the main loop (documented at
+   `dijkstra_shortest_paths.hpp` lines 343–355); the indexed heap achieves
+   it structurally because true decrease-key means the heap never contains
+   duplicates. Test verifies all four counters (`examine`, `finish`,
+   `discover`, `relaxed`, `not_relaxed`) agree byte-for-byte across
+   `use_default_heap{}`, `use_indexed_dary_heap<4>{}`, and
+   `use_indexed_dary_heap<8>{}` on the CLRS graph with sources `{0, 3}`.
+5. ~~**Should the new heap live in `graph/detail/` or be promoted to `graph/container/`?**
    Defer the decision — start in `detail/` and promote only if external code finds it
-   useful.
-6. **Why is graph-v3 CSR slower than BGL CSR?** Phase 4.3 shows BGL's
+   useful.~~ **Resolved:** Keep `indexed_dary_heap` in `graph/detail/`. It is an
+   implementation detail of `dijkstra_shortest_paths` (and now `prim`), selected
+   internally via the `use_indexed_dary_heap<D>` heap-tag selector. Users do not
+   instantiate or name the heap type directly, so there is no benefit to exposing
+   it in the public `graph/container/` namespace. Revisit only if a future external
+   use case appears.
+6. ~~**Why is graph-v3 CSR slower than BGL CSR?** Phase 4.3 shows BGL's
    `compressed_sparse_row_graph` is 10–15% faster than graph-v3 + Idx8 on dense
    graphs (ER/BA). However the comparison is not arity-equivalent: BGL's
    `d_ary_heap_indirect` is hard-coded to arity 4 (`d_ary_heap_indirect<Vertex, 4, ...>`
@@ -517,7 +562,33 @@ only if Prim becomes a measured bottleneck.
    accessor that may add a level of indirection or prevent auto-vectorisation;
    (b) cache-line alignment differences in the CSR adjacency arrays.
    Resolving this fully would require profiling (perf/vtune) and is out of scope
-   for the current plan.
+   for the current plan.~~
+   **Resolved:** Re-ran on the same machine, n = 100 K, 3-run averages of CPU
+   time. Full table in `indexed_dary_heap_results.md` § "Phase 4.3a — Apples-to-apples
+   re-run with Idx4". Summary:
+
+   | Topology | Idx4 vs BGL CSR | Idx8 vs BGL CSR |
+   |---|---:|---:|
+   | ER Sparse | +7.7% | +5.9% |
+   | BA        | +9.4% | +4.6% |
+   | Grid      | +36.5% | +38.5% |
+   | Path      | +15.0% | +14.6% |
+
+   **Arity is not the bottleneck.** Switching to Idx4 (apples-to-apples with
+   BGL's hard-coded arity-4) does not narrow the gap on any topology — Idx4 and
+   Idx8 are within 1–3 percentage points of each other, and on BA Idx8 is
+   actually slightly faster (power-law graphs reward wider arity on high-degree
+   hubs). The gap is largest on Grid (~37%), which has the most predictable
+   heap-access pattern of any topology — if the heap were the bottleneck Grid
+   would have the *smallest* gap, not the largest. The remaining gap is in
+   the relax loop's edge-value access, not the heap. Most plausible cause is
+   BGL's `get(&edge_prop::weight, g)` resolving to a raw `Weight*` indexed by
+   edge offset, vs graph-v3's `edge_value(g, uv)` going through an iterator
+   `value()` accessor on `compressed_graph`'s edge-property storage. Confirming
+   and fixing this requires `perf stat` / `perf record` profiling on
+   `compressed_graph` and is out of scope for this plan. **No further heap
+   changes recommended.** For dense CSR workloads, prefer Idx8 over Idx4
+   (consistently 1–5 percentage points faster).
 
 ---
 

@@ -127,6 +127,62 @@ TEST_CASE("dijkstra(indexed_heap) - multi-source CLRS", "[algorithm][dijkstra][i
   for (auto d : distance) CHECK(d != infinite_distance<int>());
 }
 
+// Resolves Open Question 4: confirm that with multi-source seeding, the
+// indexed-heap path fires on_examine_vertex / on_finish_vertex / on_discover
+// the same number of times as the default-heap path. With non-negative
+// weights, every source is pushed at distance 0 and finalized on its first
+// pop (no later relax can lower distance below 0), so the visitor sees each
+// vertex exactly once on both paths.
+TEST_CASE("dijkstra(indexed_heap) - multi-source visitor parity vs default heap",
+          "[algorithm][dijkstra][indexed_heap]") {
+  using Graph = vov_weighted;
+  auto g = clrs_dijkstra_graph<Graph>();
+  const auto N = num_vertices(g);
+  std::vector<vertex_id_t<Graph>> sources = {0, 3};
+
+  auto run = [&](auto heap_tag) {
+    std::vector<int>                distance(N);
+    std::vector<vertex_id_t<Graph>> predecessor(N);
+    init_shortest_paths(g, distance, predecessor);
+    CountingVisitor v{};
+    dijkstra_shortest_paths(g, sources,
+                            container_value_fn(distance),
+                            container_value_fn(predecessor),
+                            [](const auto& gr, const auto& uv) { return edge_value(gr, uv); },
+                            v,
+                            std::less<int>{},
+                            std::plus<int>{},
+                            heap_tag);
+    return std::tuple{v, distance};
+  };
+
+  auto [v_def,  d_def ] = run(use_default_heap{});
+  auto [v_idx4, d_idx4] = run(use_indexed_dary_heap<4>{});
+  auto [v_idx8, d_idx8] = run(use_indexed_dary_heap<8>{});
+
+  // Distances must agree (sanity).
+  CHECK(d_def == d_idx4);
+  CHECK(d_def == d_idx8);
+
+  // Visitor parity. Each vertex examined / finished exactly once; each
+  // vertex (incl. each source) discovered exactly once.
+  CHECK(v_def.examine  == static_cast<int>(N));
+  CHECK(v_def.finish   == static_cast<int>(N));
+  CHECK(v_def.discover == static_cast<int>(N));
+
+  CHECK(v_idx4.examine  == v_def.examine);
+  CHECK(v_idx4.finish   == v_def.finish);
+  CHECK(v_idx4.discover == v_def.discover);
+  CHECK(v_idx4.relaxed  == v_def.relaxed);
+  CHECK(v_idx4.not_relaxed == v_def.not_relaxed);
+
+  CHECK(v_idx8.examine  == v_def.examine);
+  CHECK(v_idx8.finish   == v_def.finish);
+  CHECK(v_idx8.discover == v_def.discover);
+  CHECK(v_idx8.relaxed  == v_def.relaxed);
+  CHECK(v_idx8.not_relaxed == v_def.not_relaxed);
+}
+
 TEST_CASE("dijkstra(indexed_heap) - distances-only overload",
           "[algorithm][dijkstra][indexed_heap]") {
   using Graph = vov_weighted;
