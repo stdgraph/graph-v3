@@ -29,3 +29,7 @@ CMakeUserPresets.json
 # Test outputs
 Testing/
 *.log
+
+# Benchmark data (large graph files downloaded separately — see benchmark/data/README.md)
+benchmark/data/*.txt
+benchmark/data/*.gz

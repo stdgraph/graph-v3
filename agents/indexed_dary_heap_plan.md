@@ -79,21 +79,83 @@ the new heap the default.
 | **Action** | Confirm the full test suite is green on the branch base. |
 | **Verify** | `cd build/linux-gcc-debug && ctest --output-on-failure` — all tests pass |
 
-### 0.2 Capture Baseline Benchmarks
+### 0.2 Benchmark Fixtures
+
+The fixtures must isolate three orthogonal axes: **scale**, **topology**,
+and **weight distribution**. Decrease-key matters most where many edges
+trigger relaxation, so topology selection is more important than raw size.
+
+#### Synthetic generators (primary — cheap, reproducible, deterministic with seed)
+
+| Generator | Purpose | Why it matters for d-ary heap |
+|-----------|---------|-------------------------------|
+| **Erdős–Rényi G(n, p)** | Random sparse/dense baseline | Tunable E/V ratio; "average case" |
+| **2D grid** | Spatial structure | Many short paths converge → moderate re-relaxation |
+| **Barabási–Albert (power-law)** | Hub-heavy | High-degree hubs cause heavy decrease-key traffic — where indexed heap should win biggest |
+| **Watts–Strogatz small-world** | Realistic mixed | Local + long-range edges; intermediate case |
+| **Path / cycle / complete** | Edge cases | Sanity bounds (no decreases vs. all decreases) |
+
+**Scale sweep:** V ∈ {10³, 10⁴, 10⁵, 10⁶} (and 10⁷ where memory permits).
+**Density sweep:** E/V ∈ {2, 8, 32} for Erdős–Rényi.
+**Weight distributions:** uniform random (default), exponential (drives more
+decrease-key calls due to heavy left tail), constant 1 (BFS-equivalent floor).
+
+#### Graph container types
+
+Use **`compressed_graph`** as the primary benchmark container. Its CSR
+layout (contiguous edge storage, no per-vertex indirection) minimizes
+graph-traversal overhead so that heap operation cost is a larger fraction
+of total runtime — making differences between heap implementations easier
+to measure. Dijkstra never modifies the graph, so the read-only restriction
+is not a concern.
+
+Also include **`dynamic_graph` (vov-backed)** in a secondary sweep to
+confirm that wins on `compressed_graph` hold under a realistic dynamic
+container and to serve as a regression baseline for typical user code.
+
+Do not benchmark mapped containers here — that is covered in Phase 3.
+
+#### Real-world graphs (validation — pick 2 to confirm synthetic conclusions)
+
+| Source | Suggested graph | Why |
+|--------|-----------------|-----|
+| **SNAP** | `roadNet-CA` (1.9M V, 5.5M E) | Classic Dijkstra benchmark; spatial / planar |
+| **SNAP** | `web-Google` (875K V, 5M E) | Web-link topology; mixed degree distribution |
+
+DIMACS USA road network (24M V) and Graph500 RMAT are deferred — only
+worth the infrastructure if Phase 4 results are ambiguous.
+
+#### Benchmark protocol
+
+| Concern | Approach |
+|---------|----------|
+| Generation cost | Build the graph in `SetUp()` / `state.PauseTiming()`, run Dijkstra in the timed region |
+| Source variance | Run from N random sources per graph (e.g., N=8) and average |
+| Metric beyond time | Report **relaxation count** alongside time — distinguishes heap-implementation wins from visitor-semantics bugs |
+| CPU stability | Disable frequency scaling (`cpupower frequency-set -g performance`) to meet CV < 5% target |
+| Caching of fixtures | Real-world graphs cached under `benchmark/data/` (gitignored); document fetch URLs in a README |
 
 | Item | Detail |
 |------|--------|
-| **Action** | Record current Dijkstra benchmark numbers. |
-| **Read** | `benchmark/algorithms/` for existing Dijkstra benchmarks |
-| **Verify** | Save numbers to `agents/indexed_dary_heap_baseline.md` (gitignored or committed as reference). If no Dijkstra benchmark exists, create one in 0.3. |
+| **Create** | `benchmark/algorithms/dijkstra_fixtures.hpp` (generators + loaders) |
+| **Create** | `benchmark/data/README.md` (fetch instructions for SNAP graphs) |
+| **Verify** | Each fixture produces a deterministic graph for a given seed; relaxation counts are stable across runs. |
 
 ### 0.3 Add Dijkstra Benchmark (if missing)
 
 | Item | Detail |
 |------|--------|
-| **Action** | Ensure a Google Benchmark target exercises Dijkstra over (a) sparse random graph, (b) dense random graph, (c) grid graph, each at multiple V sizes. |
+| **Action** | Ensure a Google Benchmark target exercises Dijkstra over the fixtures defined in 0.2. |
 | **Create** | `benchmark/algorithms/benchmark_dijkstra.cpp` if not present |
 | **Verify** | Benchmark builds and produces stable numbers across runs (CV < 5%). |
+
+### 0.4 Capture Baseline Benchmarks
+
+| Item | Detail |
+|------|--------|
+| **Action** | Record current Dijkstra benchmark numbers before any heap changes. |
+| **Read** | `benchmark/algorithms/benchmark_dijkstra.cpp` |
+| **Verify** | Save numbers to `agents/indexed_dary_heap_baseline.md` (committed as reference). |
 
 ---
 
@@ -267,6 +329,58 @@ default in a later phase once benchmarks confirm parity or improvement.
 | **Modify** | Default heap parameter, plus a CHANGELOG entry. |
 | **Verify** | Full test suite still green. Benchmarks regenerated. |
 | **Commit** | `perf(dijkstra): switch default heap to indexed d-ary` (or document why not) |
+
+### 4.3 BGL Comparison Benchmarks (optional validation)
+
+Run after 4.2 as a "how do we compare to BGL" sanity check, not as a
+gating criterion for the default decision.
+
+#### Setup
+
+BGL is already available at `/home/phil/dev_graph/boost/`. Since it is
+header-only, add an `include_directories` entry in
+`benchmark/CMakeLists.txt` — no linking required.
+
+Create `benchmark/algorithms/bgl_dijkstra_fixtures.hpp` as a companion to
+`dijkstra_fixtures.hpp`. It builds BGL equivalents from the same edge-list
+generators so that both libraries operate on topologically identical graphs:
+
+| graph-v3 container | BGL equivalent |
+|--------------------|----------------|
+| `compressed_graph` | `compressed_sparse_row_graph<directedS, …, EdgeWeight>` |
+| `dynamic_graph` (vov) | `adjacency_list<vecS, vecS, directedS, …, EdgeWeight>` |
+
+#### Invocation wrapper
+
+BGL Dijkstra uses property maps; a thin (~20-line) wrapper per container
+type handles construction and invocation:
+
+```cpp
+// Use the no_init + no_color_map variant to match graph-v3's semantics:
+// caller pre-initialises distances; no color map allocation.
+boost::dijkstra_shortest_paths_no_color_map_no_init(
+    bg, source,
+    boost::predecessor_map(boost::make_iterator_property_map(pred.begin(), get(boost::vertex_index, bg)))
+        .distance_map(boost::make_iterator_property_map(dist.begin(), get(boost::vertex_index, bg)))
+        .weight_map(get(&EdgeProp::weight, bg)));
+```
+
+#### Fairness rules
+
+| Concern | Rule |
+|---------|------|
+| **Init cost** | Use `_no_init` for BGL and pre-initialise distances before the timed region for both libraries — so neither pays init cost inside the timer. |
+| **Compiler flags** | Both compiled with `-O3 -march=native`; confirm BGL headers are not accidentally included from a debug install. |
+| **Heap difference** | BGL uses a d-ary heap (d=4) with decrease-key internally. Before Phase 4 graph-v3 will likely lose on dense graphs; after Phase 4 expect rough parity. Document this expectation in the results. |
+| **Property-map overhead** | BGL's extra indirection layer may give graph-v3 a small constant advantage even at heap parity. Note it in the analysis. |
+
+| Item | Detail |
+|------|--------|
+| **Create** | `benchmark/algorithms/bgl_dijkstra_fixtures.hpp` |
+| **Modify** | `benchmark/algorithms/benchmark_dijkstra.cpp` — add BGL variants alongside existing benchmarks |
+| **Verify** | BGL and graph-v3 produce identical distance arrays on the same graph + source (add a correctness assert outside the timed loop). |
+| **Verify** | Results recorded in `agents/indexed_dary_heap_results.md` alongside 4.1 numbers. |
+| **Commit** | `bench(dijkstra): add BGL comparison benchmarks` |
 
 ---
 
