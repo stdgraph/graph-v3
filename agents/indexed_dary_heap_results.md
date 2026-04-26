@@ -336,3 +336,107 @@ gap across an L2→L3 transition leaves only the work-bound suspects from the pl
 1, 3, and 4. Phase 2 (disassembly diff) of `csr_edge_value_perf_plan.md` can
 proceed in parallel with 1.2/1.3 and may itself be sufficient to identify the
 extra-instruction site.
+
+---
+
+## Phase 4.3b (Windows) — VTune software-mode hotspots, Grid_Idx4/100K (MSVC)
+
+Captured: 2026-04-26
+Binary: `build/windows-msvc-relwithdebinfo/benchmark/algorithms/benchmark_dijkstra.exe`
+(MSVC 19.50.35729, `/O2 /Ob2 /Zi` from `windows-msvc-relwithdebinfo` preset)
+Tool: Intel VTune Profiler 2025.10.0 (build 631836), `-collect hotspots -knob sampling-mode=sw`
+Result dir: `build/vtune/hotspots_grid_idx4_100k_msvc_001` (raw .vtune dir, gitignored)
+Command: `benchmark_dijkstra.exe --benchmark_filter=^BM_Dijkstra_CSR_Grid_Idx4/100000$ --benchmark_min_time=15s --benchmark_repetitions=1`
+CPU: Intel Alder Lake-S, 12C / 20T, base 3.61 GHz; 30 s sample window.
+
+### Why software-mode (no µarch breakdown yet)
+
+VTune's hardware event-based sampling (`-collect uarch-exploration`) needs
+either the SEP sampling driver installed or the collector running as
+Administrator. The current Windows session has neither, so this run uses
+user-mode sampling. Result: per-function and per-source-line CPU-time
+attribution, but **no Front-End / Bad-Speculation / Back-End-Memory /
+Retiring breakdown**. The µarch run is deferred — see "Next" at the end.
+
+### Top hotspots (function level)
+
+| Rank | CPU time | % of total | Symbol |
+|------|---------:|-----------:|--------|
+| 1 | 9088 ms | 31.2 % | `indexed_dary_heap<...,vector_position_map,4,...>::sift_down_` |
+| 2 | 3692 ms | 12.7 % | `std::less<double>::operator()` (1st copy) |
+| 3 | 2768 ms |  9.5 % | `container_value_fn<vector<double>>::operator()` |
+| 4 | 1511 ms |  5.2 % | `vector<double>::operator[]` (distance buffer) |
+| 5 | 1294 ms |  4.4 % | dijkstra `relax_target` lambda body |
+| 6 | 1277 ms |  4.4 % | `incidence_view::iterator::operator*` |
+| 7 |  926 ms |  3.2 % | `std::less<double>::operator()` (2nd copy) |
+| 8 |  783 ms |  2.7 % | `vector_iterator<csr_col<uint>>::operator++` |
+| 9 |  751 ms |  2.6 % | dijkstra `run` lambda body |
+| 10 |  704 ms |  2.4 % | `indexed_dary_heap<...>::sift_up_` |
+| 11 |  478 ms |  1.6 % | `std::less<double>::operator()` (3rd copy) |
+| 12 |  461 ms |  1.6 % | `vector<unsigned int>::operator[]` |
+
+Total of the twelve = 23.7 s out of 30 s observed CPU time = **79 %** of the work.
+
+### Top source lines (where the cycles actually go)
+
+| CPU time | File:Line | What it is |
+|---------:|-----------|------------|
+| 5417 ms | `type_traits:2388` | (libstdc++ MSVC STL `std::less::operator()` impl) |
+| 5309 ms | `indexed_dary_heap.hpp:228` | `sift_down_` inner child-comparison loop |
+| 3549 ms | `traversal_common.hpp:188` | `container_value_fn::operator()` returning `c[uid]` |
+| 2332 ms | `indexed_dary_heap.hpp:234` | `sift_down_` "smallest child vs k" check |
+| 1526 ms | `vector:1934` | `vector<double>::operator[]` |
+| 1277 ms | `incidence.hpp:180` | edge descriptor materialisation |
+|  925 ms | `indexed_dary_heap.hpp:238` | `sift_down_` `i = best` advance |
+|  818 ms | `dijkstra_shortest_paths.hpp:252` | `w_uv = weight(g, uv)` in relax lambda |
+|  783 ms | `vector:287`  | iterator `operator++` |
+|  655 ms | `indexed_dary_heap.hpp:185` | `place_` writing `heap_[i] = k` |
+|  386 ms | `dijkstra_shortest_paths.hpp:465` | `relax_target(uv, uid)` call site |
+
+### Headline finding — **MSVC is not inlining what GCC inlined**
+
+The Linux/GCC analysis (Open Question 3 in this document) verified by
+disassembly that under both `-O3` and `-O2`:
+
+- `std::less<double>::operator()` collapses to a single `ucomisd`.
+- `container_value_fn::operator()` collapses to a `double*` indexed load.
+- `sift_up_` / `sift_down_` are fully inlined into the run lambda.
+
+Under MSVC `/O2` on the same source, **none of those collapses happen**:
+
+- `std::less<double>::operator()` appears as **three distinct callable
+  symbols** consuming **5096 ms = 17.5 %** of total CPU time.
+- `container_value_fn::operator()` is a real call (2768 ms = 9.5 %).
+- `sift_down_` is a real, non-inlined function consuming 9088 ms = **31.2 %**
+  on its own. Combined with `sift_up_` and the heap update path, indexed-heap
+  bookkeeping eats over a third of the workload.
+
+This **revises the Phase 4.3a diagnosis on MSVC** (the original was
+GCC-specific):
+
+- On GCC the heap is fully inlined and the residual gap to BGL is in the
+  edge-value access path (`edge_value(g, uv)` → `edge_value_[k]`).
+- On MSVC the heap `sift_down_` alone outweighs everything else — and three
+  copies of `std::less` not being merged is a known MSVC ABI behaviour
+  (each lambda capturing the comparator gets its own instantiation).
+
+### Implications for the original perf plan
+
+| Item from `csr_edge_value_perf_plan.md` | Status under MSVC |
+|---|---|
+| Phase 1.4 verdict — work-bound vs memory-bound | Software sampling can't classify; needs HW counters. |
+| Open Q3 — `compare_(distance_(...))` collapses | **Holds for GCC, fails for MSVC.** Multiple `std::less` symbols visible. |
+| Phase 2 — disassembly comparison | Even more important now: MSVC asm of `sift_down_` is the first thing to look at. |
+| Phase 4 candidate fix #1 — offset-aware `edge_value` | Less promising on MSVC (the heap dominates, not the edge access). |
+| Phase 4 candidate fix #2 — `incidence` fast path | Still relevant; `incidence_view::iterator::operator*` is 1277 ms. |
+| New MSVC-specific candidate | **Force-inline / hoist the comparator.** `__forceinline` or a wrapper that takes the captured `std::less<double>` by value and inlines its operator. |
+| New MSVC-specific candidate | **Inline `sift_down_`.** Annotate with `__forceinline` on MSVC; with arity 4 the body is small enough that this is profitable. Verify by re-profiling. |
+
+### Next
+
+| Step | What | Why |
+|---|---|---|
+| 1 | Re-run as Administrator (or install SEP driver) with `-collect uarch-exploration` | Get Front-End / Back-End-Memory / Retiring breakdown — confirms whether the call overhead is back-end-core (real work) or back-end-memory (data stalls). |
+| 2 | Disassemble `sift_down_` at MSVC `/O2` (VS Disassembly window from a debug-attached run) | Confirm the function is genuinely a separate call frame, not a thunk that just shows up in symbol-time accounting. |
+| 3 | Spike `__forceinline` on `sift_down_`, `sift_up_`, `less_than_`, `place_` | Cheap experiment; rerun the same hotspots collection and compare. If the heap symbols disappear from the top-12 and total time drops, this is the win. |
+| 4 | Only after the heap is inlined, retry the GCC-style edge-value-access investigation in `csr_edge_value_perf_plan.md` | The original diagnosis assumed an inlined heap; that assumption is invalid on MSVC until step 3. |
