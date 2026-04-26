@@ -9,7 +9,8 @@
  * itself is measured.
  *
  * Benchmark naming convention:
- *   BM_Dijkstra_<Container>_<Topology>
+ *   BM_Dijkstra_<Container>_<Topology>           — default heap (priority_queue)
+ *   BM_Dijkstra_<Container>_<Topology>_Idx<D>    — indexed d-ary heap, arity D
  *   Container : CSR  (compressed_graph)
  *               VoV  (dynamic_graph / vov)
  *   Topology  : ER_Sparse   Erdős–Rényi, E/V ≈ 8
@@ -20,8 +21,8 @@
  * Compile-time macro DIJKSTRA_BENCH_LARGE enables the 1 000 000-vertex
  * tier (disabled by default to keep CI times reasonable).
  *
- * Results are saved by the Phase 0.4 script to
- *   agents/indexed_dary_heap_baseline.md
+ * Phase 0.4 baseline results: agents/indexed_dary_heap_baseline.md
+ * Phase 4.1 comparative results: agents/indexed_dary_heap_results.md
  */
 
 #include <benchmark/benchmark.h>
@@ -60,7 +61,8 @@ constexpr auto weight_fn = [](const auto& g, const auto& uv) {
 } // namespace
 
 // ---------------------------------------------------------------------------
-// Macro: define a Dijkstra benchmark for a given container and graph builder.
+// Macro: define a Dijkstra benchmark for a given container, graph builder,
+//        and heap tag.
 //
 // Parameters:
 //   NAME       — benchmark function name  (e.g. BM_Dijkstra_CSR_ER_Sparse)
@@ -68,9 +70,10 @@ constexpr auto weight_fn = [](const auto& g, const auto& uv) {
 //   MAKE_FN    — graph::benchmark::make_csr or make_vov
 //   EDGE_EXPR  — expression producing edge_list, may use vertex_id_t n
 //   N_EXPR     — expression for num_vertices to pass to MAKE_FN (usually n)
+//   HEAP_TAG   — use_default_heap{} or use_indexed_dary_heap<D>{}
 // ---------------------------------------------------------------------------
 
-#define DEFINE_DIJKSTRA_BM(NAME, GRAPH_T, MAKE_FN, EDGE_EXPR, N_EXPR)               \
+#define DEFINE_DIJKSTRA_BM(NAME, GRAPH_T, MAKE_FN, EDGE_EXPR, N_EXPR, HEAP_TAG)     \
   static void NAME(benchmark::State& state) {                                        \
     const auto n = static_cast<graph::benchmark::vertex_id_t>(state.range(0));       \
     /* Build graph outside the timed loop */                                         \
@@ -85,101 +88,104 @@ constexpr auto weight_fn = [](const auto& g, const auto& uv) {
       state.ResumeTiming();                                                          \
       graph::dijkstra_shortest_distances(                                            \
             g, graph::benchmark::vertex_id_t{0}, graph::container_value_fn(dist),   \
-            weight_fn);                                                              \
+            weight_fn, graph::empty_visitor{},                                       \
+            std::less<double>{}, std::plus<double>{},                                \
+            std::allocator<std::byte>{}, HEAP_TAG);                                  \
       benchmark::DoNotOptimize(dist.data());                                        \
     }                                                                                \
     state.SetComplexityN(state.range(0));                                            \
   }
 
+// Convenience shorthands for the four heap variants.
+#define DEF_BM_DEFAULT(NAME, GT, MK, EE, NE)  DEFINE_DIJKSTRA_BM(NAME, GT, MK, EE, NE, graph::use_default_heap{})
+#define DEF_BM_IDX2(NAME, GT, MK, EE, NE)     DEFINE_DIJKSTRA_BM(NAME, GT, MK, EE, NE, graph::use_indexed_dary_heap<2>{})
+#define DEF_BM_IDX4(NAME, GT, MK, EE, NE)     DEFINE_DIJKSTRA_BM(NAME, GT, MK, EE, NE, graph::use_indexed_dary_heap<4>{})
+#define DEF_BM_IDX8(NAME, GT, MK, EE, NE)     DEFINE_DIJKSTRA_BM(NAME, GT, MK, EE, NE, graph::use_indexed_dary_heap<8>{})
+
 // ---------------------------------------------------------------------------
 // Erdős–Rényi, E/V ≈ 8  (p = 8/n)
 // ---------------------------------------------------------------------------
 
-DEFINE_DIJKSTRA_BM(
-      BM_Dijkstra_CSR_ER_Sparse,
-      graph::benchmark::csr_graph_t,
-      make_csr,
-      graph::benchmark::erdos_renyi(n, 8.0 / n),
-      n)
+#define ER_EDGES(n)   graph::benchmark::erdos_renyi(n, 8.0 / n)
+#define GRID_SQRT(n)  static_cast<graph::benchmark::vertex_id_t>(std::sqrt(static_cast<double>(n)))
 
-DEFINE_DIJKSTRA_BM(
-      BM_Dijkstra_VoV_ER_Sparse,
-      graph::benchmark::vov_graph_t,
-      make_vov,
-      graph::benchmark::erdos_renyi(n, 8.0 / n),
-      n)
+DEF_BM_DEFAULT(BM_Dijkstra_CSR_ER_Sparse,       graph::benchmark::csr_graph_t, make_csr, ER_EDGES(n), n)
+DEF_BM_IDX2   (BM_Dijkstra_CSR_ER_Sparse_Idx2,  graph::benchmark::csr_graph_t, make_csr, ER_EDGES(n), n)
+DEF_BM_IDX4   (BM_Dijkstra_CSR_ER_Sparse_Idx4,  graph::benchmark::csr_graph_t, make_csr, ER_EDGES(n), n)
+DEF_BM_IDX8   (BM_Dijkstra_CSR_ER_Sparse_Idx8,  graph::benchmark::csr_graph_t, make_csr, ER_EDGES(n), n)
 
-BENCHMARK(BM_Dijkstra_CSR_ER_Sparse)->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
-BENCHMARK(BM_Dijkstra_VoV_ER_Sparse)->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+DEF_BM_DEFAULT(BM_Dijkstra_VoV_ER_Sparse,       graph::benchmark::vov_graph_t, make_vov, ER_EDGES(n), n)
+DEF_BM_IDX4   (BM_Dijkstra_VoV_ER_Sparse_Idx4,  graph::benchmark::vov_graph_t, make_vov, ER_EDGES(n), n)
+
+BENCHMARK(BM_Dijkstra_CSR_ER_Sparse)      ->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_CSR_ER_Sparse_Idx2)->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_CSR_ER_Sparse_Idx4)->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_CSR_ER_Sparse_Idx8)->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_VoV_ER_Sparse)     ->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_VoV_ER_Sparse_Idx4)->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
 
 // ---------------------------------------------------------------------------
 // 2D grid  (rows = cols = sqrt(n), E/V ≈ 4)
 // ---------------------------------------------------------------------------
 
-DEFINE_DIJKSTRA_BM(
-      BM_Dijkstra_CSR_Grid,
-      graph::benchmark::csr_graph_t,
-      make_csr,
-      graph::benchmark::grid_2d(
-            static_cast<graph::benchmark::vertex_id_t>(std::sqrt(static_cast<double>(n))),
-            static_cast<graph::benchmark::vertex_id_t>(std::sqrt(static_cast<double>(n)))),
-      static_cast<graph::benchmark::vertex_id_t>(std::sqrt(static_cast<double>(n))) *
-            static_cast<graph::benchmark::vertex_id_t>(std::sqrt(static_cast<double>(n))))
+DEF_BM_DEFAULT(BM_Dijkstra_CSR_Grid,      graph::benchmark::csr_graph_t, make_csr,
+               graph::benchmark::grid_2d(GRID_SQRT(n), GRID_SQRT(n)), GRID_SQRT(n) * GRID_SQRT(n))
+DEF_BM_IDX2   (BM_Dijkstra_CSR_Grid_Idx2, graph::benchmark::csr_graph_t, make_csr,
+               graph::benchmark::grid_2d(GRID_SQRT(n), GRID_SQRT(n)), GRID_SQRT(n) * GRID_SQRT(n))
+DEF_BM_IDX4   (BM_Dijkstra_CSR_Grid_Idx4, graph::benchmark::csr_graph_t, make_csr,
+               graph::benchmark::grid_2d(GRID_SQRT(n), GRID_SQRT(n)), GRID_SQRT(n) * GRID_SQRT(n))
+DEF_BM_IDX8   (BM_Dijkstra_CSR_Grid_Idx8, graph::benchmark::csr_graph_t, make_csr,
+               graph::benchmark::grid_2d(GRID_SQRT(n), GRID_SQRT(n)), GRID_SQRT(n) * GRID_SQRT(n))
 
-DEFINE_DIJKSTRA_BM(
-      BM_Dijkstra_VoV_Grid,
-      graph::benchmark::vov_graph_t,
-      make_vov,
-      graph::benchmark::grid_2d(
-            static_cast<graph::benchmark::vertex_id_t>(std::sqrt(static_cast<double>(n))),
-            static_cast<graph::benchmark::vertex_id_t>(std::sqrt(static_cast<double>(n)))),
-      static_cast<graph::benchmark::vertex_id_t>(std::sqrt(static_cast<double>(n))) *
-            static_cast<graph::benchmark::vertex_id_t>(std::sqrt(static_cast<double>(n))))
+DEF_BM_DEFAULT(BM_Dijkstra_VoV_Grid,      graph::benchmark::vov_graph_t, make_vov,
+               graph::benchmark::grid_2d(GRID_SQRT(n), GRID_SQRT(n)), GRID_SQRT(n) * GRID_SQRT(n))
+DEF_BM_IDX4   (BM_Dijkstra_VoV_Grid_Idx4, graph::benchmark::vov_graph_t, make_vov,
+               graph::benchmark::grid_2d(GRID_SQRT(n), GRID_SQRT(n)), GRID_SQRT(n) * GRID_SQRT(n))
 
-BENCHMARK(BM_Dijkstra_CSR_Grid)->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
-BENCHMARK(BM_Dijkstra_VoV_Grid)->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_CSR_Grid)      ->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_CSR_Grid_Idx2)->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_CSR_Grid_Idx4)->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_CSR_Grid_Idx8)->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_VoV_Grid)     ->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_VoV_Grid_Idx4)->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
 
 // ---------------------------------------------------------------------------
 // Barabási–Albert, m=4  (E/V ≈ 8, heavy hub traffic)
 // ---------------------------------------------------------------------------
 
-DEFINE_DIJKSTRA_BM(
-      BM_Dijkstra_CSR_BA,
-      graph::benchmark::csr_graph_t,
-      make_csr,
-      graph::benchmark::barabasi_albert(n, 4),
-      n)
+DEF_BM_DEFAULT(BM_Dijkstra_CSR_BA,      graph::benchmark::csr_graph_t, make_csr, graph::benchmark::barabasi_albert(n, 4), n)
+DEF_BM_IDX2   (BM_Dijkstra_CSR_BA_Idx2, graph::benchmark::csr_graph_t, make_csr, graph::benchmark::barabasi_albert(n, 4), n)
+DEF_BM_IDX4   (BM_Dijkstra_CSR_BA_Idx4, graph::benchmark::csr_graph_t, make_csr, graph::benchmark::barabasi_albert(n, 4), n)
+DEF_BM_IDX8   (BM_Dijkstra_CSR_BA_Idx8, graph::benchmark::csr_graph_t, make_csr, graph::benchmark::barabasi_albert(n, 4), n)
 
-DEFINE_DIJKSTRA_BM(
-      BM_Dijkstra_VoV_BA,
-      graph::benchmark::vov_graph_t,
-      make_vov,
-      graph::benchmark::barabasi_albert(n, 4),
-      n)
+DEF_BM_DEFAULT(BM_Dijkstra_VoV_BA,      graph::benchmark::vov_graph_t, make_vov, graph::benchmark::barabasi_albert(n, 4), n)
+DEF_BM_IDX4   (BM_Dijkstra_VoV_BA_Idx4, graph::benchmark::vov_graph_t, make_vov, graph::benchmark::barabasi_albert(n, 4), n)
 
-BENCHMARK(BM_Dijkstra_CSR_BA)->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
-BENCHMARK(BM_Dijkstra_VoV_BA)->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_CSR_BA)      ->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_CSR_BA_Idx2)->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_CSR_BA_Idx4)->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_CSR_BA_Idx8)->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_VoV_BA)     ->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_VoV_BA_Idx4)->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
 
 // ---------------------------------------------------------------------------
 // Path graph  (E/V = 1, minimum decrease-key)
 // ---------------------------------------------------------------------------
 
-DEFINE_DIJKSTRA_BM(
-      BM_Dijkstra_CSR_Path,
-      graph::benchmark::csr_graph_t,
-      make_csr,
-      graph::benchmark::path_graph(n),
-      n)
+DEF_BM_DEFAULT(BM_Dijkstra_CSR_Path,      graph::benchmark::csr_graph_t, make_csr, graph::benchmark::path_graph(n), n)
+DEF_BM_IDX2   (BM_Dijkstra_CSR_Path_Idx2, graph::benchmark::csr_graph_t, make_csr, graph::benchmark::path_graph(n), n)
+DEF_BM_IDX4   (BM_Dijkstra_CSR_Path_Idx4, graph::benchmark::csr_graph_t, make_csr, graph::benchmark::path_graph(n), n)
+DEF_BM_IDX8   (BM_Dijkstra_CSR_Path_Idx8, graph::benchmark::csr_graph_t, make_csr, graph::benchmark::path_graph(n), n)
 
-DEFINE_DIJKSTRA_BM(
-      BM_Dijkstra_VoV_Path,
-      graph::benchmark::vov_graph_t,
-      make_vov,
-      graph::benchmark::path_graph(n),
-      n)
+DEF_BM_DEFAULT(BM_Dijkstra_VoV_Path,      graph::benchmark::vov_graph_t, make_vov, graph::benchmark::path_graph(n), n)
+DEF_BM_IDX4   (BM_Dijkstra_VoV_Path_Idx4, graph::benchmark::vov_graph_t, make_vov, graph::benchmark::path_graph(n), n)
 
-BENCHMARK(BM_Dijkstra_CSR_Path)->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
-BENCHMARK(BM_Dijkstra_VoV_Path)->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_CSR_Path)      ->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_CSR_Path_Idx2)->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_CSR_Path_Idx4)->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_CSR_Path_Idx8)->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_VoV_Path)     ->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
+BENCHMARK(BM_Dijkstra_VoV_Path_Idx4)->RangeMultiplier(10)->Range(1'000, 100'000)->Complexity();
 
 // ---------------------------------------------------------------------------
 // Optional large-scale tier  (V = 1 000 000)
@@ -187,10 +193,12 @@ BENCHMARK(BM_Dijkstra_VoV_Path)->RangeMultiplier(10)->Range(1'000, 100'000)->Com
 // ---------------------------------------------------------------------------
 
 #ifdef DIJKSTRA_BENCH_LARGE
-BENCHMARK(BM_Dijkstra_CSR_ER_Sparse)->Arg(1'000'000)->Complexity();
-BENCHMARK(BM_Dijkstra_VoV_ER_Sparse)->Arg(1'000'000)->Complexity();
-BENCHMARK(BM_Dijkstra_CSR_BA)->Arg(1'000'000)->Complexity();
-BENCHMARK(BM_Dijkstra_VoV_BA)->Arg(1'000'000)->Complexity();
+BENCHMARK(BM_Dijkstra_CSR_ER_Sparse)      ->Arg(1'000'000)->Complexity();
+BENCHMARK(BM_Dijkstra_CSR_ER_Sparse_Idx4)->Arg(1'000'000)->Complexity();
+BENCHMARK(BM_Dijkstra_VoV_ER_Sparse)     ->Arg(1'000'000)->Complexity();
+BENCHMARK(BM_Dijkstra_VoV_ER_Sparse_Idx4)->Arg(1'000'000)->Complexity();
+BENCHMARK(BM_Dijkstra_CSR_BA)      ->Arg(1'000'000)->Complexity();
+BENCHMARK(BM_Dijkstra_CSR_BA_Idx4)->Arg(1'000'000)->Complexity();
 #endif
 
 // ---------------------------------------------------------------------------
