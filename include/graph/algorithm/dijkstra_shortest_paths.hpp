@@ -33,6 +33,10 @@ namespace graph {
  *
  * Default selector for `dijkstra_shortest_paths`. Lazy-deletion priority queue;
  * heap may grow to O(E) and stale entries are skipped at pop time.
+ *
+ * Recommended for: sparse graphs (E/V ≲ 4), grid-like topologies, path/tree
+ * graphs, and any workload with low decrease-key pressure. Phase 4 benchmarks
+ * showed this path wins by 20–40% on grid (E/V≈4) and path (E/V=1) workloads.
  */
 struct use_default_heap {};
 
@@ -42,6 +46,14 @@ struct use_default_heap {};
  * Heap size is bounded by O(V); no stale pops. Supports both index_vertex_range
  * graphs (dense vector_position_map) and mapped containers / hashable non-dense
  * vertex ids (assoc_position_map).
+ *
+ * Recommended for: dense or hub-heavy graphs (E/V ≳ 8) where many edges trigger
+ * relaxation. Phase 4 benchmarks at 100K vertices on `compressed_graph`:
+ * Erdős–Rényi (E/V≈8) −25%, Barabási–Albert (E/V≈8) −17% with `Arity=8`.
+ * Loses 20–40% on grid/path workloads where decrease-key is rare.
+ *
+ * `Arity=8` is the recommended setting on x86_64 for high-E/V workloads;
+ * `Arity=4` matches Boost's `d_ary_heap_indirect`.
  *
  * @tparam Arity Children per node (default 4 — matches Boost's d_ary_heap_indirect).
  */

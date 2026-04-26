@@ -314,14 +314,15 @@ default in a later phase once benchmarks confirm parity or improvement.
 
 ## Phase 4 — Benchmarks & Default Selection
 
-### 4.1 Comparative Benchmarks
+### 4.1 Comparative Benchmarks ✅
 
 | Item | Detail |
 |------|--------|
 | **Action** | Run the Phase 0.3 benchmarks against (a) `priority_queue` path, (b) `indexed_dary_heap<2>`, (c) `indexed_dary_heap<4>`, (d) `indexed_dary_heap<8>`. Record results in `agents/indexed_dary_heap_results.md`. |
 | **Verify** | Numbers stable across at least 3 runs. |
+| **Status** | Completed in commit `fac4085`. Full numbers in `agents/indexed_dary_heap_results.md`. |
 
-### 4.2 Decide Default
+### 4.2 Decide Default ✅
 
 | Item | Detail |
 |------|--------|
@@ -329,6 +330,8 @@ default in a later phase once benchmarks confirm parity or improvement.
 | **Modify** | Default heap parameter, plus a CHANGELOG entry. |
 | **Verify** | Full test suite still green. Benchmarks regenerated. |
 | **Commit** | `perf(dijkstra): switch default heap to indexed d-ary` (or document why not) |
+| **Decision** | **Keep `use_default_heap` as the default.** Phase 4.1 results are mixed: indexed wins by 17–25% on high-E/V workloads (ER, BA) but loses by 22–39% on grid (E/V≈4) and path (E/V=1). The grid regression is too large to justify a universal switch, and a heuristic E/V dispatch was considered but rejected as premature (one workload axis is not strong enough evidence; users with known graph shapes can opt in explicitly). Documented `use_indexed_dary_heap<8>` as the recommended opt-in for high-E/V random / scale-free workloads on `compressed_graph` in the heap-tag doc comments and CHANGELOG. |
+| **Status** | Completed. Default unchanged. CHANGELOG entry added; `use_default_heap` and `use_indexed_dary_heap` doc comments now record the recommendation. |
 
 ### 4.3 BGL Comparison Benchmarks (optional validation)
 
