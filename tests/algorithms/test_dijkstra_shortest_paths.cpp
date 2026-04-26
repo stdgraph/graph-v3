@@ -337,24 +337,33 @@ TEST_CASE("dijkstra_shortest_paths - negative edge weight throws", "[algorithm][
                   std::out_of_range);
 }
 
-TEST_CASE("dijkstra_shortest_paths - infinite weight edge triggers logic_error", "[algorithm][dijkstra_shortest_paths][error]") {
+TEST_CASE("dijkstra_shortest_paths - infinite weight edge leaves vertex unreachable",
+          "[algorithm][dijkstra_shortest_paths][error]") {
   using Graph         = vov_weighted;
   using distance_type = int;
 
   // When the edge weight equals the infinity sentinel, combine(0, INF) = INF which is
-  // NOT strictly less than INF, so relax_target returns false for an undiscovered vertex.
-  // The algorithm treats this as an internal invariant violation and throws std::logic_error.
+  // NOT strictly less than INF, so relax_target returns false. The neighbor remains
+  // undiscovered (distance stays at INF) and the edge is treated as not relaxed.
+  // This matches BGL semantics: no spurious "internal invariant" exception is thrown
+  // when a custom Compare/Combine combination cannot improve over the infinity sentinel.
   auto                            g = path_graph_4_weighted<Graph>(); // 0->1->2->3
   std::vector<distance_type>      distances(num_vertices(g));
   std::vector<vertex_id_t<Graph>> predecessor(num_vertices(g));
   init_shortest_paths(g, distances, predecessor);
 
   const auto INF = infinite_distance<distance_type>();
-  CHECK_THROWS_AS(dijkstra_shortest_paths(g, vertex_id_t<Graph>(0),
-                                          container_value_fn(distances),
-                                          container_value_fn(predecessor),
-                                          [INF](const auto&, const auto&) { return INF; }),
-                  std::logic_error);
+  CHECK_NOTHROW(dijkstra_shortest_paths(g, vertex_id_t<Graph>(0),
+                                        container_value_fn(distances),
+                                        container_value_fn(predecessor),
+                                        [INF](const auto&, const auto&) { return INF; }));
+
+  // Source has distance 0; all other vertices remain unreachable (distance == INF)
+  // because every edge weight is INF and relaxation cannot improve the sentinel.
+  CHECK(distances[0] == 0);
+  for (vertex_id_t<Graph> v = 1; v < num_vertices(g); ++v) {
+    CHECK(distances[v] == INF);
+  }
 }
 
 TEST_CASE("dijkstra_shortest_paths - on_edge_not_relaxed visitor callback", "[algorithm][dijkstra_shortest_paths][visitor]") {
