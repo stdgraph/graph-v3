@@ -23,6 +23,31 @@ in the **relax loop's edge-value access path** — i.e. between
 
 This document plans an investigation with no implementation commitments yet.
 
+### Side observation — MSVC vs GCC, same machine (2026-04-26)
+
+`agents/indexed_dary_heap_baseline_msvc.md` captures the same `benchmark_dijkstra`
+suite under MSVC 19.50 (Visual Studio 18.5.1, x64 Release) on the same Titania
+host. Most CSR rows agree with the GCC numbers within ±10 %, with one striking
+exception:
+
+| Topology @ 100K | Heap | GCC ns | MSVC ns | MSVC ÷ GCC |
+|---|---|---:|---:|---:|
+| Path | Default | 268,708 | 1,331,743 | **4.96×** |
+| Path | Idx4 | 326,018 | 498,438 | 1.53× |
+| Path | Idx8 | 327,820 | 491,302 | 1.50× |
+
+MSVC's `std::priority_queue` codegen is **~5×** slower than libstdc++'s on the
+Path workload (no decrease-key, single-source linear chain). Switching to the
+indexed heap collapses the toolchain gap to ~1.5×, so the slowdown is in
+MSVC's heap implementation, not in graph-v3's CPO/visitor scaffolding.
+
+This is **not** the gap this plan is trying to close (we're chasing the
+graph-v3 vs BGL CSR gap on a single toolchain), but it is worth flagging:
+any VTune profile run under this plan must be compared against MSVC numbers
+for the same toolchain — never cross-compared against the Linux/GCC baseline
+in `indexed_dary_heap_baseline.md`. The MSVC baseline is the anchor for
+Phase 1 (Windows) below.
+
 ---
 
 ## What the access path actually does today
