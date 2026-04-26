@@ -923,7 +923,7 @@ auto prim(G&&                   g,           // graph
                           std::forward<WeightFn>(weight),
                           std::forward<PredecessorFn>(predecessor),
                           std::forward<WF>(weight_fn), empty_visitor(),
-                          std::forward<CompareOp>(compare), prim_combine, alloc);
+                          std::forward<CompareOp>(compare), prim_combine, use_default_heap{}, alloc);
 
   // Calculate total MST weight by summing edge weights
   edge_value_type total_weight = edge_value_type{};

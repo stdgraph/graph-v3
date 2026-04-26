@@ -90,7 +90,7 @@ constexpr auto weight_fn = [](const auto& g, const auto& uv) {
             g, graph::benchmark::vertex_id_t{0}, graph::container_value_fn(dist),   \
             weight_fn, graph::empty_visitor{},                                       \
             std::less<double>{}, std::plus<double>{},                                \
-            std::allocator<std::byte>{}, HEAP_TAG);                                  \
+            HEAP_TAG, std::allocator<std::byte>{});                                  \
       benchmark::DoNotOptimize(dist.data());                                        \
     }                                                                                \
     state.SetComplexityN(state.range(0));                                            \

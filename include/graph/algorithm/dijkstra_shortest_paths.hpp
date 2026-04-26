@@ -215,8 +215,8 @@ template <
       class Visitor = empty_visitor,
       class Compare = less<distance_fn_value_t<DistanceFn, G>>,
       class Combine = plus<distance_fn_value_t<DistanceFn, G>>,
-      class Alloc   = std::allocator<std::byte>,
-      class Heap    = use_default_heap>
+      class Heap    = use_default_heap,
+      class Alloc   = std::allocator<std::byte>>
 requires distance_fn_for<DistanceFn, G> &&                                //
          predecessor_fn_for<PredecessorFn, G> &&                          //
          convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&              //
@@ -233,8 +233,8 @@ constexpr void dijkstra_shortest_paths(
       Visitor&& visitor = empty_visitor(),
       Compare&& compare = less<distance_fn_value_t<DistanceFn, G>>(),
       Combine&& combine = plus<distance_fn_value_t<DistanceFn, G>>(),
-      const Alloc& alloc = Alloc(),
-      Heap          /*heap_tag*/ = Heap{}) {
+      Heap          /*heap_tag*/ = Heap{},
+      const Alloc&  alloc        = Alloc()) {
   using graph_type    = std::remove_reference_t<G>;
   using id_type       = vertex_id_t<graph_type>;
   using distance_type = distance_fn_value_t<DistanceFn, G>;
@@ -548,8 +548,8 @@ template <
       class Visitor = empty_visitor,
       class Compare = less<distance_fn_value_t<DistanceFn, G>>,
       class Combine = plus<distance_fn_value_t<DistanceFn, G>>,
-      class Alloc   = std::allocator<std::byte>,
-      class Heap    = use_default_heap>
+      class Heap    = use_default_heap,
+      class Alloc   = std::allocator<std::byte>>
 requires distance_fn_for<DistanceFn, G> &&                                //
          predecessor_fn_for<PredecessorFn, G> &&                          //
          basic_edge_weight_function<G, WF, distance_fn_value_t<DistanceFn, G>, Compare, Combine>
@@ -565,11 +565,11 @@ constexpr void dijkstra_shortest_paths(
       Visitor&& visitor = empty_visitor(),
       Compare&& compare = less<distance_fn_value_t<DistanceFn, G>>(),
       Combine&& combine = plus<distance_fn_value_t<DistanceFn, G>>(),
-      const Alloc& alloc = Alloc(),
-      Heap         heap_tag = Heap{}) {
+      Heap         heap_tag = Heap{},
+      const Alloc& alloc    = Alloc()) {
   dijkstra_shortest_paths(g, subrange(&source, (&source + 1)), distance, predecessor, weight,
-                          forward<Visitor>(visitor), forward<Compare>(compare), forward<Combine>(combine), alloc,
-                          heap_tag);
+                          forward<Visitor>(visitor), forward<Compare>(compare), forward<Combine>(combine),
+                          heap_tag, alloc);
 }
 
 /**
@@ -614,8 +614,8 @@ template <
       class Visitor = empty_visitor,
       class Compare = less<distance_fn_value_t<DistanceFn, G>>,
       class Combine = plus<distance_fn_value_t<DistanceFn, G>>,
-      class Alloc   = std::allocator<std::byte>,
-      class Heap    = use_default_heap>
+      class Heap    = use_default_heap,
+      class Alloc   = std::allocator<std::byte>>
 requires distance_fn_for<DistanceFn, G> &&                                                //
          convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&                              //
          basic_edge_weight_function<G, WF, distance_fn_value_t<DistanceFn, G>, Compare, Combine>
@@ -630,10 +630,10 @@ constexpr void dijkstra_shortest_distances(
       Visitor&& visitor = empty_visitor(),
       Compare&& compare = less<distance_fn_value_t<DistanceFn, G>>(),
       Combine&& combine = plus<distance_fn_value_t<DistanceFn, G>>(),
-      const Alloc& alloc = Alloc(),
-      Heap         heap_tag = Heap{}) {
+      Heap         heap_tag = Heap{},
+      const Alloc& alloc    = Alloc()) {
   dijkstra_shortest_paths(g, sources, distance, _null_predecessor, forward<WF>(weight), forward<Visitor>(visitor),
-                          forward<Compare>(compare), forward<Combine>(combine), alloc, heap_tag);
+                          forward<Compare>(compare), forward<Combine>(combine), heap_tag, alloc);
 }
 
 /**
@@ -656,8 +656,8 @@ template <
       class Visitor = empty_visitor,
       class Compare = less<distance_fn_value_t<DistanceFn, G>>,
       class Combine = plus<distance_fn_value_t<DistanceFn, G>>,
-      class Alloc   = std::allocator<std::byte>,
-      class Heap    = use_default_heap>
+      class Heap    = use_default_heap,
+      class Alloc   = std::allocator<std::byte>>
 requires distance_fn_for<DistanceFn, G> &&                                                //
          basic_edge_weight_function<G, WF, distance_fn_value_t<DistanceFn, G>, Compare, Combine>
 constexpr void dijkstra_shortest_distances(
@@ -671,11 +671,11 @@ constexpr void dijkstra_shortest_distances(
       Visitor&& visitor = empty_visitor(),
       Compare&& compare = less<distance_fn_value_t<DistanceFn, G>>(),
       Combine&& combine = plus<distance_fn_value_t<DistanceFn, G>>(),
-      const Alloc& alloc = Alloc(),
-      Heap         heap_tag = Heap{}) {
+      Heap         heap_tag = Heap{},
+      const Alloc& alloc    = Alloc()) {
   dijkstra_shortest_paths(g, subrange(&source, (&source + 1)), distance, _null_predecessor, forward<WF>(weight),
-                          forward<Visitor>(visitor), forward<Compare>(compare), forward<Combine>(combine), alloc,
-                          heap_tag);
+                          forward<Visitor>(visitor), forward<Compare>(compare), forward<Combine>(combine),
+                          heap_tag, alloc);
 }
 
 } // namespace graph

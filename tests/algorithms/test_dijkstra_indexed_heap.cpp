@@ -70,8 +70,8 @@ TEST_CASE("dijkstra(indexed_heap) - CLRS example matches default heap",
                           empty_visitor{},
                           std::less<int>{},
                           std::plus<int>{},
-                          std::allocator<std::byte>{},
-                          use_indexed_dary_heap<4>{});
+                          use_indexed_dary_heap<4>{},
+                          std::allocator<std::byte>{});
 
   for (size_t i = 0; i < clrs_dijkstra_results::distances_from_0.size(); ++i) {
     CHECK(distance[i] == clrs_dijkstra_results::distances_from_0[i]);
@@ -93,8 +93,8 @@ TEST_CASE("dijkstra(indexed_heap) - path graph", "[algorithm][dijkstra][indexed_
                           empty_visitor{},
                           std::less<int>{},
                           std::plus<int>{},
-                          std::allocator<std::byte>{},
-                          use_indexed_dary_heap<>{});
+                          use_indexed_dary_heap<>{},
+                          std::allocator<std::byte>{});
 
   for (size_t i = 0; i < path_graph_4_results::num_vertices; ++i) {
     CHECK(distance[i] == path_graph_4_results::distances[i]);
@@ -118,8 +118,8 @@ TEST_CASE("dijkstra(indexed_heap) - multi-source CLRS", "[algorithm][dijkstra][i
                           empty_visitor{},
                           std::less<int>{},
                           std::plus<int>{},
-                          std::allocator<std::byte>{},
-                          use_indexed_dary_heap<>{});
+                          use_indexed_dary_heap<>{},
+                          std::allocator<std::byte>{});
 
   // Both sources start at distance 0; every vertex is reachable.
   CHECK(distance[0] == 0);
@@ -141,8 +141,8 @@ TEST_CASE("dijkstra(indexed_heap) - distances-only overload",
                               empty_visitor{},
                               std::less<int>{},
                               std::plus<int>{},
-                              std::allocator<std::byte>{},
-                              use_indexed_dary_heap<>{});
+                              use_indexed_dary_heap<>{},
+                              std::allocator<std::byte>{});
 
   for (size_t i = 0; i < clrs_dijkstra_results::distances_from_0.size(); ++i) {
     CHECK(distance[i] == clrs_dijkstra_results::distances_from_0[i]);
@@ -165,11 +165,11 @@ TEST_CASE("dijkstra(indexed_heap) - arity 2 and arity 8 produce same distances",
   dijkstra_shortest_paths(g, vertex_id_t<Graph>(0),
                           container_value_fn(d2), container_value_fn(p2),
                           wt, empty_visitor{}, std::less<int>{}, std::plus<int>{},
-                          std::allocator<std::byte>{}, use_indexed_dary_heap<2>{});
+                          use_indexed_dary_heap<2>{}, std::allocator<std::byte>{});
   dijkstra_shortest_paths(g, vertex_id_t<Graph>(0),
                           container_value_fn(d8), container_value_fn(p8),
                           wt, empty_visitor{}, std::less<int>{}, std::plus<int>{},
-                          std::allocator<std::byte>{}, use_indexed_dary_heap<8>{});
+                          use_indexed_dary_heap<8>{}, std::allocator<std::byte>{});
 
   CHECK(d2 == d8);
 }
@@ -197,13 +197,13 @@ TEST_CASE("dijkstra(indexed_heap) - visitor call counts match default heap",
                           container_value_fn(d_def), container_value_fn(p_def),
                           wt, v_default,
                           std::less<int>{}, std::plus<int>{},
-                          std::allocator<std::byte>{}, use_default_heap{});
+                          use_default_heap{}, std::allocator<std::byte>{});
 
   dijkstra_shortest_paths(g, vertex_id_t<Graph>(0),
                           container_value_fn(d_idx), container_value_fn(p_idx),
                           wt, v_indexed,
                           std::less<int>{}, std::plus<int>{},
-                          std::allocator<std::byte>{}, use_indexed_dary_heap<>{});
+                          use_indexed_dary_heap<>{}, std::allocator<std::byte>{});
 
   // Distances must agree.
   CHECK(d_def == d_idx);
@@ -243,12 +243,12 @@ TEST_CASE("dijkstra(indexed_heap) - visitor parity on path graph",
                           container_value_fn(d_def), container_value_fn(p_def),
                           wt, v_default,
                           std::less<int>{}, std::plus<int>{},
-                          std::allocator<std::byte>{}, use_default_heap{});
+                          use_default_heap{}, std::allocator<std::byte>{});
   dijkstra_shortest_paths(g, vertex_id_t<Graph>(0),
                           container_value_fn(d_idx), container_value_fn(p_idx),
                           wt, v_indexed,
                           std::less<int>{}, std::plus<int>{},
-                          std::allocator<std::byte>{}, use_indexed_dary_heap<>{});
+                          use_indexed_dary_heap<>{}, std::allocator<std::byte>{});
 
   CHECK(d_def == d_idx);
   CHECK(v_default.discover    == v_indexed.discover);
@@ -276,7 +276,7 @@ TEST_CASE("dijkstra(indexed_heap) - throws on out-of-range source",
               container_value_fn(distance),
               [](const auto& gr, const auto& uv) { return edge_value(gr, uv); },
               empty_visitor{}, std::less<int>{}, std::plus<int>{},
-              std::allocator<std::byte>{}, use_indexed_dary_heap<>{}),
+              use_indexed_dary_heap<>{}, std::allocator<std::byte>{}),
         std::out_of_range);
 }
 
@@ -315,12 +315,12 @@ TEMPLATE_TEST_CASE("dijkstra(indexed_heap) - sparse CLRS matches default heap",
   dijkstra_shortest_paths(g, id_type(exp.s),
                           container_value_fn(d_def), container_value_fn(p_def),
                           wt, empty_visitor{}, std::less<int>{}, std::plus<int>{},
-                          std::allocator<std::byte>{}, use_default_heap{});
+                          use_default_heap{}, std::allocator<std::byte>{});
 
   dijkstra_shortest_paths(g, id_type(exp.s),
                           container_value_fn(d_idx), container_value_fn(p_idx),
                           wt, empty_visitor{}, std::less<int>{}, std::plus<int>{},
-                          std::allocator<std::byte>{}, use_indexed_dary_heap<>{});
+                          use_indexed_dary_heap<>{}, std::allocator<std::byte>{});
 
   // Distances must agree with the textbook results and across heap paths.
   for (size_t i = 0; i < exp.num_vertices; ++i) {
@@ -348,10 +348,10 @@ TEMPLATE_TEST_CASE("dijkstra(indexed_heap) - sparse visitor parity",
 
   dijkstra_shortest_distances(g, id_type(exp.s), container_value_fn(d_def),
                               wt, v_default, std::less<int>{}, std::plus<int>{},
-                              std::allocator<std::byte>{}, use_default_heap{});
+                              use_default_heap{}, std::allocator<std::byte>{});
   dijkstra_shortest_distances(g, id_type(exp.s), container_value_fn(d_idx),
                               wt, v_indexed, std::less<int>{}, std::plus<int>{},
-                              std::allocator<std::byte>{}, use_indexed_dary_heap<>{});
+                              use_indexed_dary_heap<>{}, std::allocator<std::byte>{});
 
   CHECK(v_default.discover    == v_indexed.discover);
   CHECK(v_default.examine     == v_indexed.examine);
@@ -405,12 +405,12 @@ TEST_CASE("dijkstra(indexed_heap) - string vertex IDs (CLRS topology)",
   dijkstra_shortest_paths(g, source,
                           container_value_fn(d_def), container_value_fn(p_def),
                           wt, empty_visitor{}, std::less<int>{}, std::plus<int>{},
-                          std::allocator<std::byte>{}, use_default_heap{});
+                          use_default_heap{}, std::allocator<std::byte>{});
 
   dijkstra_shortest_paths(g, source,
                           container_value_fn(d_idx), container_value_fn(p_idx),
                           wt, empty_visitor{}, std::less<int>{}, std::plus<int>{},
-                          std::allocator<std::byte>{}, use_indexed_dary_heap<>{});
+                          use_indexed_dary_heap<>{}, std::allocator<std::byte>{});
 
   // Textbook distances from CLRS Figure 24.6.
   CHECK(d_idx["s"] == 0);
