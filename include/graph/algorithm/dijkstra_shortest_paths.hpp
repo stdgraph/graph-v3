@@ -215,9 +215,13 @@ constexpr void dijkstra_shortest_paths(
     // Negative weights are not allowed for Dijkstra's algorithm.
     // Use the user-supplied compare against zero so this works for any ordering
     // (including unsigned and user-defined distance types), matching BGL semantics.
-    if (compare(w_uv, zero_distance<distance_type>())) {
-      throw std::out_of_range(
-            std::format("dijkstra_shortest_paths: invalid negative edge weight of '{}' encountered", w_uv));
+    // For unsigned integral weight types, no value can be "less than zero" under any
+    // sensible ordering, so the runtime check is elided entirely.
+    if constexpr (!(std::is_integral_v<weight_type> && std::is_unsigned_v<weight_type>)) {
+      if (compare(w_uv, zero_distance<distance_type>())) {
+        throw std::out_of_range(
+              std::format("dijkstra_shortest_paths: invalid negative edge weight of '{}' encountered", w_uv));
+      }
     }
 
     if (compare(combine(d_u, w_uv), d_v)) {
