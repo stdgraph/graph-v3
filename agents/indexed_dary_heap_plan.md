@@ -388,33 +388,111 @@ boost::dijkstra_shortest_paths_no_color_map_no_init(
 
 ---
 
-## Phase 5 — Reuse for Prim's MST (optional follow-up)
+## Phase 5 — Reuse for Prim's MST ✅
 
-### 5.1 Audit Prim's Implementation
-
-| Item | Detail |
-|------|--------|
-| **Read** | `include/graph/algorithm/mst.hpp` (or wherever Prim lives) |
-| **Action** | Identify whether Prim has the same lazy-deletion pattern. If yes, plan a parallel migration. |
-| **Verify** | N/A (planning only). |
-
-### 5.2 Apply Indexed Heap to Prim
+### 5.1 Audit Prim's Implementation ✅
 
 | Item | Detail |
 |------|--------|
-| **Action** | Mirror Phase 2 for Prim: opt-in selector → integrate → benchmark → switch default. |
-| **Verify** | MST test suite green. |
-| **Commit** | `perf(mst): indexed d-ary heap path for Prim` |
+| **Read** | `include/graph/algorithm/mst.hpp` |
+| **Action** | Identify whether Prim has the same lazy-deletion pattern. |
+| **Finding** | `prim()` is a thin wrapper over `dijkstra_shortest_paths` with a custom `prim_combine` lambda that returns `w_uv` instead of `d_u + w_uv`. There is no separate priority queue and no lazy-deletion code in `mst.hpp`. The intent was that Prim would inherit any heap improvements made to Dijkstra "for free". |
+
+### 5.2 Apply Indexed Heap to Prim ✅ Implemented via Option 1
+
+**Status:** Completed. The implementation attempt surfaced a pre-existing
+latent Prim correctness bug (described under "Root cause" below). Phase 5
+landed Option 1 of the two fixes considered in 5.2; Option 2 is documented
+below as a future optimization.
+
+#### Symptom that exposed the bug
+
+A new test `prim - indexed d-ary heap parity` over an 8-vertex weighted
+undirected graph (correct MST weight = 18, verified by Kruskal):
+
+- Default-heap `prim()` returned total weight **13** (wrong; corrupts
+  `weight[]` after vertex finalization).
+- Indexed-heap `prim()` aborted with `vector::operator[](npos)` from
+  `indexed_dary_heap::sift_up_` because `decrease(v)` was invoked on a
+  vertex `v` that had already been popped (position == `npos`).
+
+#### Root cause
+
+`dijkstra_shortest_paths` relies on the Dijkstra invariant: with non-negative
+weights and `combine = plus`, distance is monotonic, so a finalized vertex
+can never be relaxed again. The relax step therefore omits a "skip if
+finalized" guard.
+
+Prim's combine `(d_u, w_uv) -> w_uv` breaks that invariant: the priority of
+a vertex is just the cheapest currently-known incident edge, which is **not**
+monotonic in the order vertices are popped. After `v` is finalized with
+`weight[v] = w_uv`, a later-popped neighbor `y` may present an edge `y → v`
+with `w_yv < weight[v]`. The relax succeeds, corrupts `weight[v]` (which is
+the *output* MST tree-edge weight), and then:
+
+- Default heap: re-pushes `v`; the stale-pop check
+  `compare(distance, w) = compare(w_yv, w_yv) = false`, so `v` is examined a
+  second time and its outgoing edges are re-relaxed. Garbage MST weight.
+- Indexed heap: calls `decrease(v)` on a finalized `v` whose position is
+  `npos` → out-of-bounds vector access → SIGABRT.
+
+The existing trivial Prim tests (triangles, 4-vertex paths, single-cluster
+sparse graphs) never trigger the post-finalization re-relax case, so the
+bug had been latent.
+
+#### Fix applied — Option 1 (guard inside `prim()` only)
+
+Wrap `weight_fn` so it returns `+infinity` for any vertex already in a
+`finalized` set maintained by a Prim-specific visitor's `on_finish_vertex`.
+The wrapped weight makes the relax test
+`compare(combine(d_u, w_uv), weight[v])` evaluate to
+`compare(infinity, weight[v]) = false`, suppressing both the corrupting
+update and the spurious `decrease`.
+
+Storage is dispatched on `adj_list::index_vertex_range<G>`:
+
+- Dense / contiguous-id graphs (e.g. `vector<vector<...>>`): `std::vector<bool>`
+  indexed by id. ~1 bit per vertex; one predictable branch and bit-load per
+  edge in the inner loop.
+- Sparse / mapped-id graphs: `std::unordered_set<vertex_id_t<G>>`. One hash
+  lookup per edge, used only when the dense path is not viable.
+
+The `Heap` template parameter is now exposed on `prim()`, so callers can
+opt into `use_indexed_dary_heap<D>{}` (Phase 4.2 recommendation for dense /
+scale-free workloads).
+
+#### Option 2 — standalone Prim (deferred)
+
+Reimplementing `prim()` as a first-class algorithm (no Dijkstra reuse) would
+remove the `combine`-lambda hack and the `distance[]` array that Dijkstra
+maintains shadow-style for Prim's use. Expected gains are roughly **5–10%**
+on dense graphs (one fewer `combine` call and one fewer indirection in the
+relax loop, no shadow distance writes), with no asymptotic change — both
+remain `O(E log V)`. Cost: a second algorithm body to maintain and to keep
+in lockstep with future Dijkstra heap work. Not pursued in Phase 5; revisit
+only if Prim becomes a measured bottleneck.
+
+#### Action
+
+| Item | Detail |
+|------|--------|
+| **Action** | Implemented Option 1 in `mst.hpp`; exposed `Heap` template parameter on `prim()` defaulting to `use_default_heap{}`. |
+| **Verify** | New regression test `prim - indexed d-ary heap parity` (test_mst.cpp): 8-vertex graph, MST = 18 cross-checked against Kruskal. Default heap, `use_indexed_dary_heap<4>{}`, and `use_indexed_dary_heap<8>{}` all return 18 with matching `weight[]` arrays. Full ctest: 4848/4848 pass. |
+| **Commit** | `fix(mst): correct Prim post-finalization re-relax + add heap selector (Phase 5)` |
 
 ---
 
 ## Open Questions
 
-1. **PositionMap ownership.** Owned by the heap (simplest, allocates per call), or
+1. ~~**PositionMap ownership.** Owned by the heap (simplest, allocates per call), or
    passed in (zero-allocation for repeated calls, more API surface)? Default to
-   owned-by-heap for the first cut.
-2. **Arity as runtime vs compile-time.** Compile-time only — runtime would lose
-   the constexpr unrolling that justifies d-ary heaps in the first place.
+   owned-by-heap for the first cut.~~ **Resolved:** PositionMap is owned by the heap.
+2. ~~**Arity as runtime vs compile-time.** Compile-time only — runtime would lose
+   the constexpr unrolling that justifies d-ary heaps in the first place.~~ **Resolved:**
+   Arity is a compile-time `std::size_t` template parameter. A runtime arity would
+   prevent the compiler from unrolling the inner child-comparison loop (the hot path
+   in `sift_down`), eliminating the main performance advantage of d-ary heaps over a
+   standard binary heap. Rationale is documented in `indexed_dary_heap.hpp`.
 3. **`Compare` indirection cost.** The heap calls `compare_(distance_(a), distance_(b))`
    twice per sift-down step (one comparator call per child + one against the parent).
    For trivial `DistanceFn` (vector lookup) this should inline; verify in benchmarks.
@@ -425,6 +503,21 @@ boost::dijkstra_shortest_paths_no_color_map_no_init(
 5. **Should the new heap live in `graph/detail/` or be promoted to `graph/container/`?**
    Defer the decision — start in `detail/` and promote only if external code finds it
    useful.
+6. **Why is graph-v3 CSR slower than BGL CSR?** Phase 4.3 shows BGL's
+   `compressed_sparse_row_graph` is 10–15% faster than graph-v3 + Idx8 on dense
+   graphs (ER/BA). However the comparison is not arity-equivalent: BGL's
+   `d_ary_heap_indirect` is hard-coded to arity 4 (`d_ary_heap_indirect<Vertex, 4, ...>`
+   in `boost/graph/dijkstra_shortest_paths.hpp`), while the Phase 4.3 table used
+   graph-v3 Idx8. The benchmark already has an Idx4 variant; re-running the
+   comparison with `BM_Dijkstra_CSR_*_Idx4` vs `BM_Dijkstra_BGL_CSR_*` would give
+   an apples-to-apples heap comparison and may narrow or close the gap.
+   Remaining candidate causes if a gap persists: (a) BGL's
+   `get(&bgl_edge_prop::weight, g)` weight-map may compile to a raw pointer stride
+   with zero indirection, while graph-v3 edge values go through an `edge_value()`
+   accessor that may add a level of indirection or prevent auto-vectorisation;
+   (b) cache-line alignment differences in the CSR adjacency arrays.
+   Resolving this fully would require profiling (perf/vtune) and is out of scope
+   for the current plan.
 
 ---
 

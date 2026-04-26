@@ -194,17 +194,30 @@
  * **Performance Notes:**
  * 
  * **Prim's Priority Queue:**
- * This implementation uses a binary heap (std::priority_queue) which provides O(E log V)
- * complexity. While Fibonacci heap implementations achieve better theoretical complexity
- * O(E + V log V), they have significantly higher constant factors and more complex
- * bookkeeping. In practice:
- * - **Binary heap is faster** for most real-world graphs (used here)
- * - **Fibonacci heap** only wins for extremely dense graphs where E ≈ V² 
- *   and the improved amortized decrease-key operation dominates
- * - **Simple array** (O(V²)) is fastest for complete graphs where E = V(V-1)/2
- * 
- * Benchmark testing shows binary heap is optimal for graphs with 100-100,000 vertices
- * and typical densities (E = O(V) to O(V^1.5)).
+ * `prim()` is implemented as a thin wrapper over `dijkstra_shortest_paths`,
+ * so it inherits the same `Heap` template parameter:
+ *
+ * - `use_default_heap` (default): `std::priority_queue` with lazy deletion.
+ *   Provides O(E log V). Good general-purpose choice.
+ * - `use_indexed_dary_heap<D>`: indexed d-ary heap with true O(log_D V)
+ *   decrease-key. Recommended opt-in for high-E/V random / scale-free
+ *   workloads on `compressed_graph` (typically `D = 8`); see Dijkstra
+ *   Phase 4 results.
+ *
+ * Implementation note: because Prim's relaxation criterion is
+ * `compare(w_uv, weight[v])` rather than Dijkstra's
+ * `compare(d_u + w_uv, distance[v])`, Prim does not satisfy the
+ * monotonicity invariant Dijkstra's main loop assumes. `prim()` therefore
+ * maintains a small `std::vector<bool> finalized(V)` and wraps `weight_fn`
+ * so finalized targets report `+infinity`, which prevents the relax step
+ * from corrupting `weight[]` (the MST output) or calling `decrease()` on
+ * a vertex that has already been popped. See
+ * `agents/indexed_dary_heap_plan.md` § Phase 5.2 for the full discussion
+ * and the standalone-Prim alternative ("Option 2").
+ *
+ * Fibonacci heap implementations achieve O(E + V log V) but have higher
+ * constant factors and are not used here. A simple array (O(V²)) is fastest
+ * only for complete graphs.
  * 
  * ---
  * 
@@ -257,6 +270,8 @@
 #include "graph/algorithm/dijkstra_shortest_paths.hpp"
 #include <queue>
 #include <format>
+#include <vector>
+#include <unordered_set>
 
 #ifndef GRAPH_MST_HPP
 #  define GRAPH_MST_HPP
@@ -896,6 +911,7 @@ template <adjacency_list G,
           class          PredecessorFn,
           class WF = function<distance_fn_value_t<WeightFn, G>(const std::remove_reference_t<G>&, const edge_t<G>&)>,
           class CompareOp = less<distance_fn_value_t<WeightFn, G>>,
+          class Heap      = use_default_heap,
           class Alloc     = std::allocator<std::byte>>
 requires distance_fn_for<WeightFn, G> &&
          is_arithmetic_v<distance_fn_value_t<WeightFn, G>> &&
@@ -909,21 +925,104 @@ auto prim(G&&                   g,           // graph
                 [](const auto& gr, const edge_t<G>& uv) {
                   return edge_value(gr, uv);
                 }, // default weight_fn(g, uv) -> edge_value(g, uv)
-          CompareOp    compare = less<distance_fn_value_t<WeightFn, G>>(), // edge value comparator
-          const Alloc& alloc   = Alloc()
+          CompareOp    compare  = less<distance_fn_value_t<WeightFn, G>>(), // edge value comparator
+          Heap         heap_tag = Heap{},                                   // heap selector (use_default_heap or use_indexed_dary_heap<D>)
+          const Alloc& alloc    = Alloc()
 ) {
   using edge_value_type = distance_fn_value_t<WeightFn, G>;
+  using id_type         = vertex_id_t<G>;
 
   // Prim's combine: ignore accumulated distance, use edge weight directly.
   // This transforms Dijkstra's relaxation check from compare(d_u + w, d_v)
   // to compare(w, d_v), which is exactly Prim's criterion.
   auto prim_combine = [](edge_value_type /*d_u*/, edge_value_type w_uv) -> edge_value_type { return w_uv; };
 
-  dijkstra_shortest_paths(g, seed,
-                          std::forward<WeightFn>(weight),
-                          std::forward<PredecessorFn>(predecessor),
-                          std::forward<WF>(weight_fn), empty_visitor(),
-                          std::forward<CompareOp>(compare), prim_combine, use_default_heap{}, alloc);
+  // ---------------------------------------------------------------------
+  // Prim correctness shim ("Option 1" in indexed_dary_heap_plan.md § 5.2).
+  //
+  // Dijkstra's main loop relies on the monotonicity invariant:
+  //   with non-negative weights and combine = plus, a finalized vertex's
+  //   distance can never be improved later.
+  // It therefore omits a "skip if finalized" guard in the relax step.
+  //
+  // Prim's combine (return w_uv, ignoring d_u) breaks that invariant:
+  // a finalized vertex v carries weight[v] = w_xv (the cheapest tree-edge
+  // found before v was popped). A later-popped neighbor y may present an
+  // edge y -> v with w_yv < weight[v]; relaxing it would *overwrite* the
+  // MST output (weight[] is the result, not a working distance), and with
+  // the indexed heap would call decrease() on a vertex whose heap position
+  // is npos -> out-of-bounds.
+  //
+  // Fix: track which vertices have been finalized and force weight_fn to
+  // report +infinity for any edge whose target is already finalized. The
+  // relax then computes compare(infinite, weight[v]) = false and the edge
+  // is skipped. This is correct for Prim because by definition a finalized
+  // vertex is already in the MST and cannot accept a cheaper tree-edge.
+  //
+  // The bitset add ~1 bit per vertex of memory and one predictable
+  // branch + bit-load per edge in the inner loop. See "Option 2" in the
+  // plan for a faster but more invasive standalone-Prim alternative.
+  //
+  // Storage strategy: for graphs with index_vertex_range (dense integer
+  // ids in [0, num_vertices)), a std::vector<bool> indexed by id is fast
+  // and cache-friendly. For sparse / mapped graphs whose ids are not
+  // contiguous (or not integral), an unordered_set is used instead.
+  // ---------------------------------------------------------------------
+  using GraphT = std::remove_reference_t<G>;
+  if constexpr (adj_list::index_vertex_range<GraphT>) {
+    std::vector<bool> finalized(num_vertices(g), false);
+
+    struct prim_finish_visitor {
+      std::vector<bool>* finalized_ptr;
+      void on_finish_vertex(const GraphT& /*gr*/, const id_type& uid) const {
+        (*finalized_ptr)[static_cast<std::size_t>(uid)] = true;
+      }
+    };
+    prim_finish_visitor visitor{&finalized};
+
+    auto wf_ref = std::ref(weight_fn);
+    auto guarded_weight_fn = [&finalized, wf_ref](
+          const GraphT& gr, const edge_t<G>& uv) -> edge_value_type {
+      const id_type vid = target_id(gr, uv);
+      if (finalized[static_cast<std::size_t>(vid)]) {
+        return infinite_distance<edge_value_type>();
+      }
+      return wf_ref.get()(gr, uv);
+    };
+
+    dijkstra_shortest_paths(g, seed,
+                            std::forward<WeightFn>(weight),
+                            std::forward<PredecessorFn>(predecessor),
+                            guarded_weight_fn, visitor,
+                            std::forward<CompareOp>(compare), prim_combine, heap_tag, alloc);
+  } else {
+    std::unordered_set<id_type> finalized;
+    finalized.reserve(num_vertices(g));
+
+    struct prim_finish_visitor {
+      std::unordered_set<id_type>* finalized_ptr;
+      void on_finish_vertex(const GraphT& /*gr*/, const id_type& uid) const {
+        finalized_ptr->insert(uid);
+      }
+    };
+    prim_finish_visitor visitor{&finalized};
+
+    auto wf_ref = std::ref(weight_fn);
+    auto guarded_weight_fn = [&finalized, wf_ref](
+          const GraphT& gr, const edge_t<G>& uv) -> edge_value_type {
+      const id_type vid = target_id(gr, uv);
+      if (finalized.contains(vid)) {
+        return infinite_distance<edge_value_type>();
+      }
+      return wf_ref.get()(gr, uv);
+    };
+
+    dijkstra_shortest_paths(g, seed,
+                            std::forward<WeightFn>(weight),
+                            std::forward<PredecessorFn>(predecessor),
+                            guarded_weight_fn, visitor,
+                            std::forward<CompareOp>(compare), prim_combine, heap_tag, alloc);
+  }
 
   // Calculate total MST weight by summing edge weights
   edge_value_type total_weight = edge_value_type{};

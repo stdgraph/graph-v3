@@ -53,6 +53,17 @@ namespace graph::detail {
 // indexed_dary_heap
 // ---------------------------------------------------------------------------
 
+// Arity is intentionally a compile-time template parameter, not a runtime value.
+// The performance benefit of a d-ary heap over a binary heap comes from
+// reducing tree height (fewer cache misses on decrease-key) while keeping the
+// inner child-scan loop tight enough to fit in registers.  That inner loop
+// iterates over exactly Arity children in sift_down and is the hottest path
+// during Dijkstra.  A compile-time Arity allows the compiler to fully unroll
+// it, elide the loop counter, and apply SIMD optimisations.  A runtime arity
+// would turn it into a variable-count loop and forfeit those gains.
+// The default Arity=4 minimises the product (d / log2 d) on typical
+// Dijkstra workloads; see Boost.Graph's d_ary_heap_indirect and the
+// analysis in agents/indexed_dary_heap_plan.md § Open Questions.
 template <class Key,
           class DistanceFn,
           class Compare,
