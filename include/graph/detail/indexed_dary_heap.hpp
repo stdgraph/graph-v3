@@ -84,6 +84,7 @@
 #endif
 
 
+namespace graph::detail {
 
 // ---------------------------------------------------------------------------
 // indexed_dary_heap
@@ -240,7 +241,7 @@ private:
   // one write per level vs. a naive swap loop.
   // -----------------------------------------------------------------------
 
-  GRAPH_DETAIL_FORCE_INLINE void sift_up_(size_type i) {
+  void sift_up_(size_type i) {
     if (i == 0) return;
     const Key k = heap_[i];
     while (i > 0) {
@@ -254,7 +255,7 @@ private:
     place_(i, k);
   }
 
-  GRAPH_DETAIL_FORCE_INLINE void sift_down_(size_type i) {
+  void sift_down_(size_type i) {
     const size_type n = heap_.size();
     if (n == 0) return;
     const Key k = heap_[i];
