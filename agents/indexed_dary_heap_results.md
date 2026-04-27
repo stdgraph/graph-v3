@@ -440,3 +440,99 @@ GCC-specific):
 | 2 | Disassemble `sift_down_` at MSVC `/O2` (VS Disassembly window from a debug-attached run) | Confirm the function is genuinely a separate call frame, not a thunk that just shows up in symbol-time accounting. |
 | 3 | Spike `__forceinline` on `sift_down_`, `sift_up_`, `less_than_`, `place_` | Cheap experiment; rerun the same hotspots collection and compare. If the heap symbols disappear from the top-12 and total time drops, this is the win. |
 | 4 | Only after the heap is inlined, retry the GCC-style edge-value-access investigation in `csr_edge_value_perf_plan.md` | The original diagnosis assumed an inlined heap; that assumption is invalid on MSVC until step 3. |
+
+---
+
+## Phase 4.3c — `GRAPH_DETAIL_FORCE_INLINE` spike results (MSVC, Grid_Idx4/100K)
+
+**Date:** 2026-04-27  
+**Branch:** `indexed-dary-heap`  
+**Build:** `windows-msvc-relwithdebinfo` (`/O2 /Ob2 /Zi`)  
+**VTune result:** `vtune/hotspots_grid_idx4_100k_msvc_004`  
+**Filter:** `BM_Dijkstra_CSR_Grid_Idx4/100000`, `--benchmark_min_time=15s`  
+**Collector:** software-mode sampling (~29 s wall-clock, 28.58 s CPU collected)
+
+### Changes applied
+
+```
+// GRAPH_DETAIL_FORCE_INLINE macro (MSVC → __forceinline, GCC/Clang → [[gnu::always_inline]] inline)
+// Applied to:
+//   place_()      — single write-point for heap_[i] + position map update
+//   less_than_()  — comparator choke point; sift_up_ / sift_down_ now call this
+//                   instead of compare_(distance_(a), distance_(b)) directly
+// NOT applied to sift_up_ / sift_down_ (bodies too large; would bloat call sites)
+// NOT applied to parent_of_ / first_child_of_ (static constexpr — always inlined)
+```
+
+### Top-15 hotspot comparison (CPU time, seconds)
+
+| Rank | Baseline (004 pre-spike / result 001) | CPU (s) | % | Post-spike (result 004) | CPU (s) | % | Δ % |
+|------|---------------------------------------|---------|---|-------------------------|---------|---|-----|
+| 1  | `heap::sift_down_`                      | 9.09 | 31.2 | `heap::sift_down_`                       | 8.99 | 31.5 | ≈0   |
+| 2  | `std::less<double>::operator()` (×1)    | 3.69 | 12.7 | `std::less<double>::operator()` (×1)    | 3.93 | 13.8 | +1.1 |
+| 3  | `container_value_fn::operator()`        | 2.77 |  9.5 | `container_value_fn::operator()`        | 2.86 | 10.0 | +0.5 |
+| 4  | `vector<double>::operator[]`            | —    |   — | `vector<double>::operator[]`            | 1.98 |  6.9 | new  |
+| 5  | dijkstra `relax` lambda                 | 1.28 |  4.4 | dijkstra lambda                         | 1.23 |  4.3 | ≈0   |
+| 6  | `incidence_view` iterator               | 1.28 |  4.4 | `std::less` (2nd copy)                  | 0.86 |  3.0 | —    |
+| 7  | `std::less` (2nd copy)                  | 0.93 |  3.2 | `incidence_view` iterator               | 0.83 |  2.9 | ≈0   |
+| 8  | `heap::sift_up_`                        | 0.80 |  2.7 | `heap::sift_up_`                        | 0.80 |  2.8 | ≈0   |
+| 9–15 | (various vector/iterator helpers)     | —    |  —  | (similar mix)                           | —    |  —  | ≈0   |
+
+### Interpretation
+
+**The spike had no measurable effect.** The profile is essentially identical:
+
+- `sift_down_` remains the top symbol at ~31 % whether or not `less_than_` / `place_` are force-inlined.
+- `std::less<double>::operator()` still appears as multiple separate call frames (~17 % combined).
+- `container_value_fn::operator()` is still a real non-inlined call (~10 %).
+
+This means **MSVC is not honouring `__forceinline` on `less_than_` and `place_` when called from inside `sift_down_`**, which is itself a separate, non-inlined function. The root cause is that `sift_down_` is not inlined into its call sites — so its callee force-inline annotations are local to its own body and do not collapse the full chain that GCC collapses.
+
+### Revised diagnosis
+
+The key missing piece is inlining `sift_down_` (and `sift_up_`) into the Dijkstra run-lambda. Until that happens, `__forceinline` on the inner helpers only affects calls *within* the sift body, which may already be inlined there; it does not help the outer symbol boundary.
+
+---
+
+## Phase 4.3d — `GRAPH_DETAIL_FORCE_INLINE` on `sift_down_` + `sift_up_` (MSVC)
+
+**Date:** 2026-04-27  
+**VTune result:** `vtune/hotspots_grid_idx4_100k_msvc_005`  
+**Change:** Added `GRAPH_DETAIL_FORCE_INLINE` to `sift_down_` and `sift_up_` declarations.  
+**Total CPU collected:** 28.38 s (vs 28.58 s in 004 — effectively identical)
+
+### Top-15 hotspots (result 005)
+
+| Rank | Function | CPU (s) | % |
+|------|----------|---------|---|
+| 1  | `heap::sift_down_`                          | 9.44 | 33.2 |
+| 2  | `std::less<double>::operator()` (1st)       | 4.09 | 14.4 |
+| 3  | `container_value_fn::operator()`            | 2.50 |  8.8 |
+| 4  | `vector<double>::operator[]`                | 1.61 |  5.7 |
+| 5  | dijkstra relax lambda                       | 1.25 |  4.4 |
+| 6  | `std::less<double>::operator()` (2nd)       | 1.06 |  3.7 |
+| 7  | `incidence_view` iterator `operator*`       | 0.92 |  3.2 |
+| 8  | `vector<unsigned>::operator[]`              | 0.67 |  2.4 |
+| 9  | `heap::sift_up_`                            | 0.57 |  2.0 |
+| 10 | `vector<unsigned>::push_back`               | 0.42 |  1.5 |
+| 11 | `heap::place_`                              | 0.33 |  1.1 |
+| 12 | `container_value_fn::operator()` (2nd)      | 0.31 |  1.1 |
+| 13 | `_Vector_iterator::operator++`              | 0.28 |  1.0 |
+| 14 | `vector<unsigned>::size`                    | 0.28 |  1.0 |
+| 15 | `heap::pop`                                 | 0.27 |  1.0 |
+
+### Interpretation
+
+**`__forceinline` on `sift_down_` is also ineffective.** MSVC silently ignores the annotation — `sift_down_` still appears as a distinct 9.4 s (33.2%) real call frame. The profile is statistically indistinguishable from results 004 (pre-sift annotation). MSVC's inliner is making a size-based refusal that `__forceinline` does not override for a function of this complexity when the call site is itself a complex template instantiation.
+
+**Key conclusion:** `__forceinline` / `[[gnu::always_inline]]` annotations alone are not sufficient to close the MSVC vs GCC inlining gap for `sift_down_`. A different approach is needed.
+
+### Candidate next approaches
+
+| Priority | Approach | Rationale |
+|----------|----------|-----------|
+| **High** | Increase `/Ob` (inline depth) — try `/Ob3` (available MSVC 19.26+) in the CMake release preset | Raises MSVC's inline budget per call site; may allow `sift_down_` to be inlined where `/Ob2` refuses |
+| High | Measure actual wall-clock ns before/after any change (not just symbol attribution) | Profile attribution is secondary; the benchmark median is the ground truth |
+| Medium | Manually hoist the `sift_down_` body into the Dijkstra run-lambda (proof-of-concept) | Establishes whether MSVC *can* produce the inlined shape at all and what the ceiling win is |
+| Medium | Profile with `/O2 /Ob3` release build and compare hotspot table | If `sift_down_` disappears from profile → the `/Ob` budget is the blocker |
+| Low | Elevate VTune `uarch-exploration` (admin / SEP driver) | Front-End/Back-End breakdown is only useful once the symbol boundary is resolved |

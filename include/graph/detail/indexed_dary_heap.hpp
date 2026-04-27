@@ -47,7 +47,43 @@
 #include <utility>
 #include <vector>
 
-namespace graph::detail {
+// ---------------------------------------------------------------------------
+// GRAPH_DETAIL_FORCE_INLINE
+//
+// Force-inline attribute applied to the heap's hot helpers: less_than_,
+// place_, sift_up_, sift_down_.
+//
+// Background (Phase 4.3b, agents/indexed_dary_heap_results.md):
+// VTune software-mode hotspots on MSVC /O2 showed sift_down_ as a distinct
+// 31% call frame, with std::less<double>::operator() appearing as three
+// separate non-inlined copies and container_value_fn::operator() as a real
+// call — together ~50% of CPU time on Grid_Idx4/100K.
+//
+// Investigation (Phases 4.3c–d):
+// - Annotating only less_than_/place_ (result 004): no effect — the outer
+//   sift_down_ call frame still dominates; inner force-inline is local to
+//   the sift body and does not collapse the outer boundary.
+// - Annotating sift_down_/sift_up_ as well (result 005): also no effect —
+//   MSVC silently ignores __forceinline on functions of this complexity
+//   regardless of the annotation when the call site is a large template
+//   instantiation. The /O2 /Ob2 inline budget is the real blocker.
+//
+// The annotations are kept as-is because:
+//   (a) They are a no-op on GCC/Clang (already inlined at -O2+).
+//   (b) They document intent and may become effective with /Ob3 or a
+//       future MSVC version.
+//   (c) The next investigative step is to try /Ob3 in the release preset
+//       (see agents/indexed_dary_heap_results.md Phase 4.3d next steps).
+// ---------------------------------------------------------------------------
+#if defined(_MSC_VER)
+#  define GRAPH_DETAIL_FORCE_INLINE __forceinline
+#elif defined(__GNUC__) || defined(__clang__)
+#  define GRAPH_DETAIL_FORCE_INLINE [[gnu::always_inline]] inline
+#else
+#  define GRAPH_DETAIL_FORCE_INLINE inline
+#endif
+
+
 
 // ---------------------------------------------------------------------------
 // indexed_dary_heap
@@ -181,13 +217,18 @@ private:
 
   /// Place @c k at index @c i and update the position map. Single point of
   /// truth for `heap_[i] = k` — guarantees position_ stays consistent.
+  GRAPH_DETAIL_FORCE_INLINE
   void place_(size_type i, const Key& k) {
     heap_[i] = k;
     position_.set_position(k, i);
   }
 
-  /// Strict-less wrapper using the user's Compare on distances.
-  [[nodiscard]] bool less_than_(const Key& a, const Key& b) const {
+  /// Strict-less wrapper using the user's Compare on distances. Every sift
+  /// loop calls through here so that one inlining decision (this function)
+  /// is enough to collapse the entire comparator chain to a single compare
+  /// instruction — see GRAPH_DETAIL_FORCE_INLINE rationale above.
+  [[nodiscard]] GRAPH_DETAIL_FORCE_INLINE
+  bool less_than_(const Key& a, const Key& b) const {
     return compare_(distance_(a), distance_(b));
   }
 
@@ -199,12 +240,12 @@ private:
   // one write per level vs. a naive swap loop.
   // -----------------------------------------------------------------------
 
-  void sift_up_(size_type i) {
+  GRAPH_DETAIL_FORCE_INLINE void sift_up_(size_type i) {
     if (i == 0) return;
     const Key k = heap_[i];
     while (i > 0) {
       const size_type p = parent_of_(i);
-      if (!compare_(distance_(k), distance_(heap_[p]))) {
+      if (!less_than_(k, heap_[p])) {
         break;
       }
       place_(i, heap_[p]); // move parent down into the hole
@@ -213,7 +254,7 @@ private:
     place_(i, k);
   }
 
-  void sift_down_(size_type i) {
+  GRAPH_DETAIL_FORCE_INLINE void sift_down_(size_type i) {
     const size_type n = heap_.size();
     if (n == 0) return;
     const Key k = heap_[i];
@@ -226,12 +267,12 @@ private:
       const size_type last  = (first + Arity < n) ? first + Arity : n;
       size_type       best  = first;
       for (size_type c = first + 1; c < last; ++c) {
-        if (compare_(distance_(heap_[c]), distance_(heap_[best]))) {
+        if (less_than_(heap_[c], heap_[best])) {
           best = c;
         }
       }
 
-      if (!compare_(distance_(heap_[best]), distance_(k))) {
+      if (!less_than_(heap_[best], k)) {
         break; // k is no greater than its smallest child → done
       }
       place_(i, heap_[best]); // promote the smallest child into the hole
