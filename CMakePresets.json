@@ -89,8 +89,10 @@
       "inherits": "windows-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob3 /DNDEBUG",
         "BUILD_TESTS": "ON",
-        "BUILD_EXAMPLES": "ON"
+        "BUILD_EXAMPLES": "ON",
+        "BUILD_BENCHMARKS": "ON"
       }
     },
     {

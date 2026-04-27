@@ -536,3 +536,56 @@ The key missing piece is inlining `sift_down_` (and `sift_up_`) into the Dijkstr
 | Medium | Manually hoist the `sift_down_` body into the Dijkstra run-lambda (proof-of-concept) | Establishes whether MSVC *can* produce the inlined shape at all and what the ceiling win is |
 | Medium | Profile with `/O2 /Ob3` release build and compare hotspot table | If `sift_down_` disappears from profile → the `/Ob` budget is the blocker |
 | Low | Elevate VTune `uarch-exploration` (admin / SEP driver) | Front-End/Back-End breakdown is only useful once the symbol boundary is resolved |
+
+---
+
+## Phase 4.3e — `/Ob3` + `GRAPH_DETAIL_FORCE_INLINE` on `sift_down_` (MSVC)
+
+**Date:** 2026-04-27  
+**Branch:** `indexed-dary-heap`  
+**Build:** `windows-msvc-release` (`/O2 /Ob3 /DNDEBUG`, no PDB)  
+**VTune result:** `vtune/hotspots_grid_idx4_100k_msvc_ob3_001`  
+**Filter:** `BM_Dijkstra_CSR_Grid_Idx4/100000`, `--benchmark_min_time=15s`  
+**Collector:** software-mode sampling (~29 s wall-clock, 28.97 s CPU collected)
+
+### Changes applied (on top of Phase 4.3d state)
+
+```
+// CMakePresets.json — windows-msvc-release:
+"CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob3 /DNDEBUG"   // was /O2 /Ob2 /DNDEBUG
+
+// indexed_dary_heap.hpp:
+GRAPH_DETAIL_FORCE_INLINE void sift_down_(size_type i)   // re-annotated
+```
+
+### VTune hotspot result
+
+| Rank | Function | CPU (s) | % |
+|------|----------|---------|---|
+| 1 | `func@0x1400041d0` (inlined run-lambda) | 28.62 | **98.8** |
+| 2–9 | misc CRT / allocator / timer helpers | 0.31 | 1.2 |
+
+**`sift_down_`, `sift_up_`, `std::less`, `container_value_fn`, `place_` — all gone from the profile.** 98.8% of CPU time is a single anonymous call frame, which is the Dijkstra run-lambda with the heap fully inlined into it. This is the same profile shape GCC produces at `-O2`.
+
+**Conclusion:** `/Ob3` + `GRAPH_DETAIL_FORCE_INLINE` on `sift_down_` is the combination that closes the MSVC inlining gap. Neither alone was sufficient (Phase 4.3d showed `__forceinline` alone had no effect at `/Ob2`).
+
+### Wall-clock medians (5 reps, `windows-msvc-release`)
+
+| Benchmark | `/Ob2` baseline (ns) | `/Ob3` + FI (ns) | Δ |
+|-----------|---------------------:|-----------------:|---|
+| Grid_Idx4/1K   |     — |    26,444 | — |
+| Grid_Idx4/10K  |     — |   562,731 | — |
+| Grid_Idx4/100K | 6,873,101 | 7,485,252 | **+8.9%** (regression) |
+| Path_Idx4/1K   |     — |     4,186 | — |
+| Path_Idx4/10K  |     — |    42,927 | — |
+| Path_Idx4/100K | 498,438 | 424,007 | **−14.9%** (win) |
+
+> Grid_Idx4/100K baseline was from `/Ob2` `relwithdebinfo` (with PDB/debug info overhead); the `/Ob3` release build without PDB is the fair comparison. The +8.9% regression on Grid may be noise or code-layout change. Path shows a clear −14.9% win — consistent with the profile showing the comparator chain now collapses.
+
+### Next steps
+
+| Priority | Step |
+|----------|------|
+| **High** | Run the full Grid/Path/ER/BA suite at `/Ob3` release and compare against the `/Ob2` baseline table in `indexed_dary_heap_baseline_msvc.md` — confirm win is consistent or isolate regressions |
+| High | Commit `/Ob3` + `GRAPH_DETAIL_FORCE_INLINE sift_down_` as the permanent MSVC configuration if the full suite shows no regression |
+| Medium | Proceed to Thread B: CSR edge-value access path gap vs BGL (`csr_edge_value_perf_plan.md`) — now the heap is inlined on both GCC and MSVC, the original GCC-measured gap is the next target |

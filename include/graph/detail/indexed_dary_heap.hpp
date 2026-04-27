@@ -255,7 +255,7 @@ private:
     place_(i, k);
   }
 
-  void sift_down_(size_type i) {
+  GRAPH_DETAIL_FORCE_INLINE void sift_down_(size_type i) {
     const size_type n = heap_.size();
     if (n == 0) return;
     const Key k = heap_[i];
