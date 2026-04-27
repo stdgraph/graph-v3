@@ -37,3 +37,6 @@ benchmark/data/*.gz
 # VTune profiler raw collections + CSV exports
 build/vtune/
 vtune/
+
+# Perf-tooling artifacts (bench JSON, disassembly captures, hotspot CSVs)
+artifacts/
