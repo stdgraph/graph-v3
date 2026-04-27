@@ -226,3 +226,67 @@ ER/BA/Grid/Path/100K table.
 - Prefetch tuning is fragile and machine-specific; if it lands it must be
   benchmarked on at least two different µarch generations before being
   enabled by default.
+
+---
+
+## Phase 1.1 — Reproduce on Windows MSVC (`windows-msvc-profile`, 2026-04-27)
+
+**Build:** `windows-msvc-profile` preset (`/O2 /Ob3 /Zi /DNDEBUG`, `/DEBUG`
+linker, `DIJKSTRA_BENCH_BGL=ON`, BGL at `D:/dev_graph/boost`).
+**Methodology:** core 0 pinning, priority `High`, 5 reps, median, 2 s min
+benchmark time. Same machine (Titania) as the Linux baseline.
+
+### Results — graph-v3 Idx4 vs BGL CSR @ n = 100K
+
+| Topology   | graph-v3 Idx4 (ns) | BGL CSR (ns) | graph-v3 vs BGL |
+|------------|-------------------:|-------------:|----------------:|
+| ER Sparse  |        20,147,385  |  32,849,012  | **−38.7 %** ✅   |
+| Grid       |         7,203,305  |  10,927,450  | **−34.1 %** ✅   |
+| BA         |        20,446,214  |  32,326,378  | **−36.7 %** ✅   |
+| Path       |           394,793  |   1,101,341  | **−64.1 %** ✅   |
+
+CV ≤ 5 % on every row except Path/Idx4 (10.3 % — single noisy run; absolute
+delta is well outside any plausible CV band).
+
+### Comparison with the original Phase 4.3a baseline (Linux GCC, 2025)
+
+| Topology   | Phase 4.3a Idx4 vs BGL (Linux GCC) | Phase 1.1 Idx4 vs BGL (Windows MSVC, today) |
+|------------|-----------------------------------:|--------------------------------------------:|
+| ER Sparse  | **+7.7 %** (graph-v3 slower)       | **−38.7 %** (graph-v3 faster)               |
+| Grid       | **+36.5 %** (graph-v3 slower)      | **−34.1 %** (graph-v3 faster)               |
+| BA         | **+9.4 %** (graph-v3 slower)       | **−36.7 %** (graph-v3 faster)               |
+| Path       | **+15.0 %** (graph-v3 slower)      | **−64.1 %** (graph-v3 faster)               |
+
+### Interpretation
+
+The motivating gap (graph-v3 7–37 % slower than BGL on Linux GCC) does **not
+reproduce on Windows MSVC**: under MSVC `/O2 /Ob3` graph-v3 is 34–64 %
+*faster* than BGL on every topology. Two non-exclusive explanations:
+
+1. **Toolchain-dependent codegen.** GCC may inline BGL's `get(weight, g)`
+   property-map machinery (heavy template specialization on tag dispatch)
+   more aggressively than MSVC, while MSVC at `/Ob3` collapses graph-v3's
+   `views::incidence` + `edge_value(g, uv)` chain — the exact path Phase
+   4.3e proved is now fully inlined under MSVC profile flags.
+2. **Code drift since 4.3a.** The `indexed-dary-heap` branch contains
+   significant work to the access path since 4.3a was captured:
+   - `5085c60` Edge desc (#23)
+   - `7645a19` Simplify traversal_common.hpp by unifying property function concepts (#22)
+   - `1c871a8` Phase 2: Add basic_incidence; refactor incidence uid overloads
+   - `aa95fe0` feat: add target_id to incidence_view return type
+   These specifically reduce the cost of the `views::incidence` +
+   `edge_value` chain that the perf plan identified as the suspect.
+
+### Decision
+
+The plan's premise (graph-v3 slower than BGL on CSR) is **not currently
+reproducible on this toolchain**. Three branches of follow-up work, in
+priority order:
+
+| Priority | Action | Rationale |
+|----------|--------|-----------|
+| **High** | Re-run Phase 4.3a / Phase 1.1 under Linux GCC on the same host | The original gap was a Linux-GCC-only phenomenon. Confirm whether the recent code drift (5085c60, 7645a19, 1c871a8, aa95fe0) closed it under GCC too. If yes → plan complete. If no → original investigation (Phases 1.2–4) still has work. |
+| Medium | Cross-compare BGL itself: GCC vs MSVC on the same machine | If BGL gets dramatically faster under GCC than MSVC (and graph-v3 is roughly toolchain-neutral), the "gap" was always a BGL property-map advantage on GCC, not a graph-v3 deficit. |
+| **Now** | Phase 2 disassembly on MSVC (next section) | Even though the gap is reversed, the plan's original Phase 2 instrumentation still tells us *why* graph-v3 wins on MSVC. Cheap with the profile preset's PDB. |
+
+
