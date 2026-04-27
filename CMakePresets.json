@@ -85,11 +85,10 @@
     {
       "name": "windows-msvc-release",
       "displayName": "Windows MSVC Release",
-      "description": "Windows development build with MSVC (Release)",
+      "description": "Windows development build with MSVC (Release; default flags /O2 /Ob2 /DNDEBUG)",
       "inherits": "windows-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob3 /DNDEBUG",
         "BUILD_TESTS": "ON",
         "BUILD_EXAMPLES": "ON",
         "BUILD_BENCHMARKS": "ON"
@@ -98,12 +97,23 @@
     {
       "name": "windows-msvc-relwithdebinfo",
       "displayName": "Windows MSVC RelWithDebInfo",
-      "description": "Windows optimized build with debug info",
+      "description": "Windows optimized build with debug info (default MSVC RelWithDebInfo flags: /O2 /Ob1 /Zi /DNDEBUG)",
       "inherits": "windows-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "BUILD_TESTS": "ON",
         "BUILD_EXAMPLES": "ON"
+      }
+    },
+    {
+      "name": "windows-msvc-profile",
+      "displayName": "Windows MSVC Profile (release codegen + /Ob3 + PDB)",
+      "description": "Investigation-only build: /O2 /Ob3 /Zi /DNDEBUG + /DEBUG linker. Maximum inlining (/Ob3) so VTune sees the inlined hot path; PDB so symbols and source attribution work. Do NOT use for production timing comparisons \u2014 use windows-msvc-release for those.",
+      "inherits": "windows-msvc-release",
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob3 /Zi /DNDEBUG",
+        "CMAKE_EXE_LINKER_FLAGS_RELEASE": "/DEBUG",
+        "CMAKE_SHARED_LINKER_FLAGS_RELEASE": "/DEBUG"
       }
     },
     {
