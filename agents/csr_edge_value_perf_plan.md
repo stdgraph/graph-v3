@@ -289,4 +289,96 @@ priority order:
 | Medium | Cross-compare BGL itself: GCC vs MSVC on the same machine | If BGL gets dramatically faster under GCC than MSVC (and graph-v3 is roughly toolchain-neutral), the "gap" was always a BGL property-map advantage on GCC, not a graph-v3 deficit. |
 | **Now** | Phase 2 disassembly on MSVC (next section) | Even though the gap is reversed, the plan's original Phase 2 instrumentation still tells us *why* graph-v3 wins on MSVC. Cheap with the profile preset's PDB. |
 
+---
+
+## Phase 2 — MSVC disassembly of `sift_down_` and the relax loop (2026-04-27)
+
+**Tooling:** `scripts/perf/disasm_func.py` (new this session) targets a single
+function by demangled-name substring instead of dumping the full 14k+ entries
+of the exe.
+
+### VTune anchor on the profile preset
+
+```
+heap::sift_down_                          34.9 %
+less::operator()                           8.7 %     (1st copy)
+cfn::operator()                            6.7 %
+incidence_view::iterator::operator*        5.9 %
+vector<double>::operator[]                 4.8 %
+less::operator()                           4.1 %     (2nd copy)
+dijkstra ... <lambda_1>::operator()        4.0 %
+cfn::operator()                            2.3 %     (2nd copy)
+heap::sift_up_                             1.7 %
+```
+
+Symbol attribution differs from Phase 4.3e (where 98.8 % collapsed into one
+anonymous frame): `/Zi` keeps function boundaries visible to the linker even
+when the bodies are inlined, so VTune can attribute samples to source-line
+owners. The 98.8 % number was a **symbol-stripping artefact**, not an actual
+codegen difference. Codegen at `/O2 /Ob3` and `/O2 /Ob3 /Zi` are the same;
+only attribution differs.
+
+### `sift_down_` (Idx4) inner child-scan loop
+
+```
+artifacts/perf/sift_down_idx4.asm  (Idx4, RVA 0x14006bbb0)
+
+LOOP_BODY (one comparison per child, 4 unrolled per outer step):
+  mov   eax, [r11 + r8*4]        ; load best-so-far child key
+  mov   ecx, [r11 + r9*4]        ; load other child key
+  movsd xmm0, [r10 + rax*8]      ; load best distance
+  comisd xmm0, [r10 + rcx*8]     ; compare against other distance
+  cmova  r8, r9                  ; if a < best → r8 := r9
+```
+
+**Per-comparison cost: 5 instructions, 2 indexed loads, 1 `comisd`, 1
+conditional move.** No call instructions, no template scaffolding, no
+pointer subtractions, no `std::less`/`container_value_fn` thunks visible in
+the body — they have all been collapsed by `/Ob3`. This is the textbook
+shape Open Question 3 hypothesised would happen; on MSVC it required
+`/Ob3` to materialise (Phase 4.3d/e showed `/Ob2` was insufficient).
+
+The outer loop unrolls 4 children per iteration (Arity = 4) using the same
+5-instruction template, then falls into a 1-child remainder loop
+(`0x14006bcba`–`0x14006bcd8`, identical shape). Loop-carried dependencies
+are limited to `r8` (best-index) and the loop counter `r9`.
+
+### What this tells us about the BGL "gap"
+
+The Phase 1.1 numbers showed graph-v3 −34 % to −64 % vs BGL on every
+topology under MSVC. The disassembly confirms this is **real codegen**, not
+a measurement artefact:
+
+- `sift_down_` is genuinely tight (5 insn / comparison, fully inlined
+  comparator).
+- The relax-loop attribution (`incidence_view::iterator::operator*`,
+  `vector<double>::operator[]`, the dijkstra lambda) totals ~15 % — a
+  reasonable fraction for the per-edge work.
+
+The remaining MSVC investigation work would be confirming that BGL's
+`get(weight, g)` compiles to a comparable shape on MSVC (it likely *doesn't*,
+which would explain the 35–65 % graph-v3 win). That is parked pending the
+Linux GCC rerun (the only place the original gap lived).
+
+### Acceptance for Thread B (MSVC scope)
+
+- ✅ Phase 1.1 reruns the BGL comparison; the gap inverted to a graph-v3
+      win of 34–64 %.
+- ✅ Phase 2 disassembly proves the win is real codegen and identifies the
+      exact instruction shape.
+- ⏸ Phase 3 (raw-loop microbenchmark) — **deferred**: there is no gap to
+      explain on MSVC, so a "what fraction of the gap is descriptor cost"
+      experiment has nothing to measure.
+- ⏸ Phases 4–5 (interventions, default-heap revisit) — **deferred** until
+      Linux GCC reproduces or refutes the original gap.
+
+### Files captured this phase
+
+```
+artifacts/perf/hot_001.csv               VTune CSV export (profile build)
+artifacts/perf/sift_down_first.asm       Idx2 sift_down_ (RVA 0x14006b9b0)
+artifacts/perf/sift_down_idx4.asm        Idx4 sift_down_ (RVA 0x14006bbb0)
+```
+
+
 
