@@ -157,3 +157,76 @@ recommendations** — they are baseline numbers for the next phase
 (Phase 4.3b on Windows: VTune Microarchitecture Exploration of the relax
 loop). Their purpose is to anchor every later VTune number to a known-good
 point so we can tell "this VTune sample reflects a representative run".
+
+---
+
+## `/Ob3` results — Phase 4.3e (2026-04-27)
+
+Build: `windows-msvc-release` with `CMAKE_CXX_FLAGS_RELEASE=/O2 /Ob3 /DNDEBUG`  
+`indexed_dary_heap.hpp`: `sift_down_` annotated `GRAPH_DETAIL_FORCE_INLINE`  
+Same methodology: 5 reps, median, core 0, priority High.
+
+### ER Sparse, E/V ≈ 8
+
+| Heap | 1K ns | 10K ns | 100K ns | vs /Ob2 at 100K |
+|------|------:|-------:|--------:|----------------:|
+| Default | 77,657 | 1,336,662 | 26,533,738 | ≈0 % |
+| Idx2 | 54,785 | 1,171,990 | 26,154,649 | −1.0 % |
+| Idx4 | 50,190 | 1,020,621 | 20,572,087 | **−2.6 %** |
+| Idx8 | 80,134 | 1,248,033 | 23,112,681 | +4.0 % |
+
+### 2D Grid, E/V ≈ 4
+
+| Heap | 1K ns | 10K ns | 100K ns | vs /Ob2 at 100K |
+|------|------:|-------:|--------:|----------------:|
+| Default | 25,203 | 537,223 | 6,323,796 | +2.2 % |
+| Idx2 | 24,694 | 579,034 | 7,490,114 | +8.1 % |
+| Idx4 | 28,244 | 606,708 | 7,440,434 | +8.2 % |
+| Idx8 | 35,770 | 723,495 | 8,859,656 | +7.4 % |
+
+### Barabási–Albert, m=4, E/V ≈ 8
+
+| Heap | 1K ns | 10K ns | 100K ns | vs /Ob2 at 100K |
+|------|------:|-------:|--------:|----------------:|
+| Default | 91,214 | 1,422,637 | 27,633,036 | +9.3 % |
+| Idx2 | 60,420 | 1,209,414 | 26,769,593 | +5.6 % |
+| Idx4 | 54,289 | 1,068,178 | 20,839,074 | +6.3 % |
+| Idx8 | 87,263 | 1,348,705 | 23,320,973 | +5.1 % |
+
+### Path, E/V = 1
+
+| Heap | 1K ns | 10K ns | 100K ns | vs /Ob2 at 100K |
+|------|------:|-------:|--------:|----------------:|
+| Default | 14,059 | 138,226 | 1,401,957 | +5.3 % |
+| Idx2 | 4,555 | 44,408 | 463,958 | **−4.5 %** |
+| Idx4 | 4,829 | 44,297 | 460,474 | **−7.6 %** |
+| Idx8 | 4,700 | 44,029 | 461,246 | **−6.1 %** |
+
+### Summary: /Ob3 vs /Ob2 at 100K
+
+| Topology | Heap | /Ob2 ns | /Ob3 ns | Δ |
+|----------|------|--------:|--------:|---|
+| ER Sparse | Default | 26,655,249 | 26,533,738 | ≈0 % |
+| ER Sparse | Idx4 | 21,124,883 | 20,572,087 | −2.6 % |
+| Grid | Default | 6,190,532 | 6,323,796 | +2.2 % |
+| Grid | Idx4 | 6,873,101 | 7,440,434 | +8.2 % ⚠ |
+| BA | Default | 25,268,386 | 27,633,036 | +9.3 % ⚠ |
+| BA | Idx4 | 19,603,770 | 20,839,074 | +6.3 % ⚠ |
+| Path | Default | 1,331,743 | 1,401,957 | +5.3 % |
+| Path | Idx4 | 498,438 | 460,474 | **−7.6 %** ✅ |
+
+### Interpretation
+
+- **Path indexed heap wins** (−4.5 % to −7.6 %): this is the workload where
+  the VTune profile showed the most comparator-chain overhead — `/Ob3`
+  collapses it and delivers a measurable wall-clock improvement.
+- **Grid and BA show regressions (+6–9 %)**: the inlined `sift_down_` body
+  expands the run-lambda significantly on these topologies (larger working
+  set, more icache pressure, different branch predictor behaviour). The
+  `/Ob2` code-layout was better for these cases.
+- **ER Sparse is essentially neutral** (within noise).
+- **Net verdict**: `/Ob3` + `GRAPH_DETAIL_FORCE_INLINE` on `sift_down_` is
+  **not a universal win**. It helps Path (the inlining-bottlenecked case)
+  but regresses Grid/BA (icache-sensitive cases). Reverting `sift_down_`
+  annotation and keeping `/Ob3` only for the flag-level benefit (without
+  force-inline on the loop body) is the next thing to try.
