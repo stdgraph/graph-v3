@@ -18,6 +18,8 @@ add_executable(test_algorithms
     test_jaccard.cpp
     test_scc_bidirectional.cpp
     test_tarjan_scc.cpp
+    test_indexed_dary_heap.cpp
+    test_dijkstra_indexed_heap.cpp
 )
 
 target_link_libraries(test_algorithms

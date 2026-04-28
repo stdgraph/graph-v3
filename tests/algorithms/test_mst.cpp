@@ -633,3 +633,59 @@ TEMPLATE_TEST_CASE("prim - sparse invalid seed throws",
                        container_value_fn(predecessor)),
                   std::out_of_range);
 }
+
+// =============================================================================
+// Prim's Algorithm — indexed d-ary heap parity (Phase 5)
+// =============================================================================
+
+TEST_CASE("prim - indexed d-ary heap parity", "[algorithm][mst][prim][indexed_heap]") {
+  using Graph = vov_weighted;
+  using id_t  = vertex_id_t<Graph>;
+
+  // 8-vertex weighted undirected graph that triggers post-finalization
+  // re-relaxation (the case that exposed the original Prim correctness bug).
+  // MST weight = 18 (verified by Kruskal cross-check below).
+  Graph g({{0, 1, 4}, {1, 0, 4}, {0, 2, 1}, {2, 0, 1}, {1, 2, 2}, {2, 1, 2},
+           {1, 3, 5}, {3, 1, 5}, {2, 3, 8}, {3, 2, 8}, {2, 4, 10},{4, 2, 10},
+           {3, 4, 2}, {4, 3, 2}, {3, 5, 6}, {5, 3, 6}, {4, 5, 3}, {5, 4, 3},
+           {4, 6, 9}, {6, 4, 9}, {5, 6, 7}, {6, 5, 7}, {5, 7, 1}, {7, 5, 1},
+           {6, 7, 4}, {7, 6, 4}});
+
+  const auto N = num_vertices(g);
+
+  auto run = [&](auto heap_tag) {
+    std::vector<id_t> predecessor(N);
+    std::vector<int>  weight(N);
+    init_shortest_paths(g, weight, predecessor);
+    auto total = prim(g, id_t{0},
+                      container_value_fn(weight),
+                      container_value_fn(predecessor),
+                      [](const auto& gr, const auto& uv) { return edge_value(gr, uv); },
+                      std::less<int>(),
+                      heap_tag);
+    return std::make_tuple(total, predecessor, weight);
+  };
+
+  auto [total_def,  pred_def,  wt_def ] = run(graph::use_default_heap{});
+  auto [total_idx4, pred_idx4, wt_idx4] = run(graph::use_indexed_dary_heap<4>{});
+  auto [total_idx8, pred_idx8, wt_idx8] = run(graph::use_indexed_dary_heap<8>{});
+
+  // Cross-check the absolute MST weight against Kruskal on the same edges.
+  using Edge = simple_edge<uint32_t, int>;
+  std::vector<Edge> edges = {
+      {0, 1, 4}, {0, 2, 1}, {1, 2, 2}, {1, 3, 5}, {2, 3, 8}, {2, 4, 10},
+      {3, 4, 2}, {3, 5, 6}, {4, 5, 3}, {4, 6, 9}, {5, 6, 7}, {5, 7, 1},
+      {6, 7, 4}};
+  std::vector<Edge> mst;
+  graph::kruskal(edges, mst);
+  const int kruskal_weight = total_weight(mst);
+
+  REQUIRE(kruskal_weight == 18);   // sanity
+  REQUIRE(total_def      == 18);   // Prim default heap matches Kruskal
+  REQUIRE(total_def      == total_idx4); // and matches indexed Idx4
+  REQUIRE(total_def      == total_idx8); // and matches indexed Idx8
+
+  // Per-vertex tree-edge weights must agree (predecessor may differ when ties).
+  REQUIRE(wt_def == wt_idx4);
+  REQUIRE(wt_def == wt_idx8);
+}

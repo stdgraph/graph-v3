@@ -1,0 +1,33 @@
+# Linux/GCC capture manifest, parallels agents/perf_capture_manifest.txt.
+#
+# Differences from the MSVC manifest:
+#   - Demangled-name shape is the GCC/Itanium one, not MSVC.
+#   - GCC uses `Nul` (unsigned long) for non-type template args, not `Nu`.
+#   - GCC inlines the sift_down_/sift_up_ helpers AND BGL's
+#     preserve_heap_property_down/up entirely into the dijkstra body.
+#     There are no standalone bodies for those, so this manifest captures
+#     the enclosing dijkstra body instead — that is where the inlined
+#     instructions actually live, and that is what is directly comparable
+#     across toolchains.
+#   - graph-v3's dijkstra body lives inside an inner `{lambda(auto:1&)#1}::
+#     operator()` (the heap-using closure) — that closure is the body
+#     comparable to BGL's `dijkstra_shortest_paths_no_color_map_no_init`,
+#     which under GCC is fully inlined into `graph::benchmark::run_bgl_dijkstra`.
+#   - Sizes from `nm --print-size` are honoured; the length here is a fallback.
+#
+# Run via:
+#   python3 scripts/perf/objdump_capture.py \
+#     --exe build/linux-gcc-release/benchmark/algorithms/benchmark_dijkstra \
+#     --manifest agents/perf_capture_manifest_linux.txt \
+#     --out-dir artifacts/perf/linux_gcc
+
+# --- graph-v3 dijkstra bodies (heap is fully inlined into these) ---
+dijkstra_csr_idx2      0x800  use_indexed_dary_heap<2ul>   operator()  compressed_graph
+dijkstra_csr_idx4      0x800  use_indexed_dary_heap<4ul>   operator()  compressed_graph
+dijkstra_csr_idx8      0x800  use_indexed_dary_heap<8ul>   operator()  compressed_graph
+dijkstra_vov_idx4      0x800  use_indexed_dary_heap<4ul>   operator()  dynamic_graph
+
+# --- BGL dijkstra body (preserve_heap_property_{down,up} are inlined here) ---
+dijkstra_bgl_csr       0x900  run_bgl_dijkstra            compressed_sparse_row_graph
+dijkstra_bgl_adj       0x900  run_bgl_dijkstra            adjacency_list
+

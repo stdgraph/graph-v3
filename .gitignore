@@ -29,3 +29,18 @@ CMakeUserPresets.json
 # Test outputs
 Testing/
 *.log
+
+# Benchmark data (large graph files downloaded separately — see benchmark/data/README.md)
+benchmark/data/*.txt
+benchmark/data/*.gz
+
+# VTune profiler raw collections + CSV exports
+build/vtune/
+vtune/
+
+# Perf-tooling artifacts (bench JSON, disassembly captures, hotspot CSVs)
+artifacts/
+
+# Python bytecode caches
+__pycache__/
+*.pyc

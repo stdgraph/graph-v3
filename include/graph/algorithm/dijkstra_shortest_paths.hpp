@@ -15,15 +15,52 @@
 #include "graph/graph.hpp"
 #include "graph/algorithm/traversal_common.hpp"
 #include "graph/adj_list/vertex_property_map.hpp"
+#include "graph/detail/indexed_dary_heap.hpp"
+#include "graph/detail/heap_position_map.hpp"
 
 #include <queue>
 #include <ranges>
 #include <format>
+#include <type_traits>
 
 #ifndef GRAPH_DIJKSTRA_SHORTEST_PATHS_HPP
 #  define GRAPH_DIJKSTRA_SHORTEST_PATHS_HPP
 
 namespace graph {
+
+/**
+ * @brief Heap-selector tag: use the historical std::priority_queue path.
+ *
+ * Default selector for `dijkstra_shortest_paths`. Lazy-deletion priority queue;
+ * heap may grow to O(E) and stale entries are skipped at pop time.
+ *
+ * Recommended for: sparse graphs (E/V ≲ 4), grid-like topologies, path/tree
+ * graphs, and any workload with low decrease-key pressure. Phase 4 benchmarks
+ * showed this path wins by 20–40% on grid (E/V≈4) and path (E/V=1) workloads.
+ */
+struct use_default_heap {};
+
+/**
+ * @brief Heap-selector tag: use the indexed d-ary heap with true decrease-key.
+ *
+ * Heap size is bounded by O(V); no stale pops. Supports both index_vertex_range
+ * graphs (dense vector_position_map) and mapped containers / hashable non-dense
+ * vertex ids (assoc_position_map).
+ *
+ * Recommended for: dense or hub-heavy graphs (E/V ≳ 8) where many edges trigger
+ * relaxation. Phase 4 benchmarks at 100K vertices on `compressed_graph`:
+ * Erdős–Rényi (E/V≈8) −25%, Barabási–Albert (E/V≈8) −17% with `Arity=8`.
+ * Loses 20–40% on grid/path workloads where decrease-key is rare.
+ *
+ * `Arity=8` is the recommended setting on x86_64 for high-E/V workloads;
+ * `Arity=4` matches Boost's `d_ary_heap_indirect`.
+ *
+ * @tparam Arity Children per node (default 4 — matches Boost's d_ary_heap_indirect).
+ */
+template <std::size_t Arity = 4>
+struct use_indexed_dary_heap {
+  static constexpr std::size_t arity = Arity;
+};
 
 // Import CPOs and types for use in algorithms
 using adj_list::vertices;
@@ -178,6 +215,7 @@ template <
       class Visitor = empty_visitor,
       class Compare = less<distance_fn_value_t<DistanceFn, G>>,
       class Combine = plus<distance_fn_value_t<DistanceFn, G>>,
+      class Heap    = use_default_heap,
       class Alloc   = std::allocator<std::byte>>
 requires distance_fn_for<DistanceFn, G> &&                                //
          predecessor_fn_for<PredecessorFn, G> &&                          //
@@ -195,7 +233,8 @@ constexpr void dijkstra_shortest_paths(
       Visitor&& visitor = empty_visitor(),
       Compare&& compare = less<distance_fn_value_t<DistanceFn, G>>(),
       Combine&& combine = plus<distance_fn_value_t<DistanceFn, G>>(),
-      const Alloc& alloc = Alloc()) {
+      Heap          /*heap_tag*/ = Heap{},
+      const Alloc&  alloc        = Alloc()) {
   using graph_type    = std::remove_reference_t<G>;
   using id_type       = vertex_id_t<graph_type>;
   using distance_type = distance_fn_value_t<DistanceFn, G>;
@@ -234,28 +273,7 @@ constexpr void dijkstra_shortest_paths(
     return false;
   };
 
-  // Define and initialize the priority queue for Dijkstra's algorithm. We use a min-heap based on distance.
-  //
-  // NOTE: std::priority_queue lacks a decrease-key operation, so when a vertex's distance
-  // improves we re-insert it (lazy deletion). The earlier entry becomes stale and is
-  // skipped at pop time (see the stale-pop check in the main loop). This keeps the code
-  // simple but allows the heap to grow to O(E) entries in the worst case.
-  //
-  // A future optimization is to replace this with an indexed d-ary heap supporting true
-  // decrease-key (matching Boost's d_ary_heap_indirect with d=4). That would cap heap
-  // size at O(V), eliminate stale pops, and typically improve cache behavior. See
-  // agents/indexed_dary_heap_plan.md for the design and migration plan.
-  struct weighted_vertex {
-    vertex_t<graph_type> vertex_desc = {};
-    distance_type        weight      = distance_type();
-  };
-  auto qcompare = [&compare](const weighted_vertex& a, const weighted_vertex& b) {
-    return compare(b.weight, a.weight); // min-heap: pop lowest weight first
-  };
-  using WVAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<weighted_vertex>;
-  using Queue = std::priority_queue<weighted_vertex, std::vector<weighted_vertex, WVAlloc>, decltype(qcompare)>;
-  Queue queue(qcompare, std::vector<weighted_vertex, WVAlloc>(WVAlloc(alloc)));
-
+  // Initialize-vertex visitor callbacks (shared across heap implementations).
   // (The optimizer removes this loop if on_initialize_vertex() is empty.)
   if constexpr (has_on_initialize_vertex<graph_type, Visitor> || has_on_initialize_vertex_id<graph_type, Visitor>) {
     for (auto&& [uid, u] : views::vertexlist(g)) {
@@ -267,86 +285,248 @@ constexpr void dijkstra_shortest_paths(
     }
   }
 
-  // Seed the queue with the initial vertice(s)
-  for (auto&& seed_id : sources) {
-    auto seed_it = find_vertex(g, seed_id);
-    if (seed_it == std::ranges::end(vertices(g))) {
-      throw std::out_of_range(std::format("dijkstra_shortest_paths: source vertex id '{}' is out of range", seed_id));
+  // ---------------------------------------------------------------------
+  // Heap-implementation dispatch.
+  //
+  // - use_default_heap         : std::priority_queue with lazy deletion.
+  // - use_indexed_dary_heap<d> : indexed d-ary heap with true decrease-key
+  //                              (heap size bounded by O(V)).
+  //
+  // Both branches honour identical visitor semantics: on_examine_vertex and
+  // on_finish_vertex fire exactly once per reachable vertex; on_edge_relaxed
+  // and on_edge_not_relaxed fire exactly once per outgoing edge of every
+  // examined vertex.
+  // ---------------------------------------------------------------------
+  if constexpr (std::is_same_v<Heap, use_default_heap>) {
+    // -----------------------------------------------------------------
+    // std::priority_queue path (legacy / default).
+    //
+    // std::priority_queue lacks a decrease-key operation, so when a vertex's
+    // distance improves we re-insert it (lazy deletion). The earlier entry
+    // becomes stale and is skipped at pop time. This keeps the code simple
+    // but allows the heap to grow to O(E) entries in the worst case.
+    // -----------------------------------------------------------------
+    struct weighted_vertex {
+      vertex_t<graph_type> vertex_desc = {};
+      distance_type        weight      = distance_type();
+    };
+    auto qcompare = [&compare](const weighted_vertex& a, const weighted_vertex& b) {
+      return compare(b.weight, a.weight); // min-heap: pop lowest weight first
+    };
+    using WVAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<weighted_vertex>;
+    using Queue = std::priority_queue<weighted_vertex, std::vector<weighted_vertex, WVAlloc>, decltype(qcompare)>;
+    Queue queue(qcompare, std::vector<weighted_vertex, WVAlloc>(WVAlloc(alloc)));
+
+    // Seed the queue with the initial vertice(s)
+    for (auto&& seed_id : sources) {
+      auto seed_it = find_vertex(g, seed_id);
+      if (seed_it == std::ranges::end(vertices(g))) {
+        throw std::out_of_range(std::format("dijkstra_shortest_paths: source vertex id '{}' is out of range", seed_id));
+      }
+      vertex_t<graph_type> seed = *seed_it;
+
+      distance(g, seed_id) = zero; // mark seed_id as discovered
+      queue.push({seed, zero});
+      if constexpr (has_on_discover_vertex<graph_type, Visitor>) {
+        visitor.on_discover_vertex(g, seed);
+      } else if constexpr (has_on_discover_vertex_id<graph_type, Visitor>) {
+        visitor.on_discover_vertex(g, seed_id);
+      }
     }
-    vertex_t<graph_type> seed = *seed_it;
 
-    distance(g, seed_id) = zero; // mark seed_id as discovered
-    queue.push({seed, zero});
-    if constexpr (has_on_discover_vertex<graph_type, Visitor>) {
-      visitor.on_discover_vertex(g, seed);
-    } else if constexpr (has_on_discover_vertex_id<graph_type, Visitor>) {
-      visitor.on_discover_vertex(g, seed_id);
-    }
-  }
+    // Main loop to process the queue
+    while (!queue.empty()) {
+      auto [u, w] = queue.top();
+      queue.pop();
+      const id_type uid = vertex_id(g, u);
 
-  // Main loop to process the queue
-  while (!queue.empty()) {
-    auto [u, w] = queue.top();
-    queue.pop();
-    const id_type uid = vertex_id(g, u);
-
-    // Skip stale queue entries: because std::priority_queue lacks decrease-key,
-    // we re-insert vertices when their distance is improved. The earlier (larger)
-    // entry is still in the heap and must be ignored when popped. This also
-    // ensures on_examine_vertex / on_finish_vertex fire exactly once per vertex,
-    // matching BGL visitor semantics.
-    if (compare(distance(g, uid), w)) {
-      continue;
-    }
-
-    if constexpr (has_on_examine_vertex<graph_type, Visitor>) {
-      visitor.on_examine_vertex(g, u);
-    } else     if constexpr (has_on_examine_vertex_id<graph_type, Visitor>) {
-      visitor.on_examine_vertex(g, uid);
-    }
-
-    // Process all outgoing edges from the current vertex
-    for (auto&& [vid, uv] : views::incidence(g, u)) {
-      if constexpr (has_on_examine_edge<graph_type, Visitor>) {
-        visitor.on_examine_edge(g, uv);
+      // Skip stale queue entries: because std::priority_queue lacks decrease-key,
+      // we re-insert vertices when their distance is improved. The earlier (larger)
+      // entry is still in the heap and must be ignored when popped. This also
+      // ensures on_examine_vertex / on_finish_vertex fire exactly once per vertex,
+      // matching BGL visitor semantics.
+      if (compare(distance(g, uid), w)) {
+        continue;
       }
 
-      // Use the user-supplied comparator for "undiscovered" detection so that
-      // custom Compare orderings remain consistent (matches BGL's
-      // !distance_compare(neighbor_distance, infinity)).
-      const bool is_neighbor_undiscovered = !compare(distance(g, vid), infinite);
-      const bool was_edge_relaxed         = relax_target(uv, uid);
+      if constexpr (has_on_examine_vertex<graph_type, Visitor>) {
+        visitor.on_examine_vertex(g, u);
+      } else if constexpr (has_on_examine_vertex_id<graph_type, Visitor>) {
+        visitor.on_examine_vertex(g, uid);
+      }
 
-      if (was_edge_relaxed) {
-        if constexpr (has_on_edge_relaxed<graph_type, Visitor>) {
-          visitor.on_edge_relaxed(g, uv);
+      // Process all outgoing edges from the current vertex
+      for (auto&& [vid, uv] : views::incidence(g, u)) {
+        if constexpr (has_on_examine_edge<graph_type, Visitor>) {
+          visitor.on_examine_edge(g, uv);
         }
-        vertex_t<graph_type> v = target(g, uv);
-        if (is_neighbor_undiscovered) {
-          if constexpr (has_on_discover_vertex<graph_type, Visitor>) {
-            visitor.on_discover_vertex(g, v);
-          } else if constexpr (has_on_discover_vertex_id<graph_type, Visitor>) {
-            visitor.on_discover_vertex(g, vid);
+
+        // Use the user-supplied comparator for "undiscovered" detection so that
+        // custom Compare orderings remain consistent (matches BGL's
+        // !distance_compare(neighbor_distance, infinity)).
+        const bool is_neighbor_undiscovered = !compare(distance(g, vid), infinite);
+        const bool was_edge_relaxed         = relax_target(uv, uid);
+
+        if (was_edge_relaxed) {
+          if constexpr (has_on_edge_relaxed<graph_type, Visitor>) {
+            visitor.on_edge_relaxed(g, uv);
+          }
+          vertex_t<graph_type> v = target(g, uv);
+          if (is_neighbor_undiscovered) {
+            if constexpr (has_on_discover_vertex<graph_type, Visitor>) {
+              visitor.on_discover_vertex(g, v);
+            } else if constexpr (has_on_discover_vertex_id<graph_type, Visitor>) {
+              visitor.on_discover_vertex(g, vid);
+            }
+          }
+          queue.push({v, distance(g, vid)});
+        } else {
+          if constexpr (has_on_edge_not_relaxed<graph_type, Visitor>) {
+            visitor.on_edge_not_relaxed(g, uv);
           }
         }
-        queue.push({v, distance(g, vid)});
-      } else {
-        if constexpr (has_on_edge_not_relaxed<graph_type, Visitor>) {
-          visitor.on_edge_not_relaxed(g, uv);
+      }
+
+      // The stale-pop skip at the top of the loop guarantees we only reach this
+      // point on the settled (final) pop of u, so on_examine_vertex and
+      // on_finish_vertex are each called exactly once per reachable vertex,
+      // matching BGL visitor semantics.
+      if constexpr (has_on_finish_vertex<graph_type, Visitor>) {
+        visitor.on_finish_vertex(g, u);
+      } else if constexpr (has_on_finish_vertex_id<graph_type, Visitor>) {
+        visitor.on_finish_vertex(g, uid);
+      }
+    } // while(!queue.empty())
+  } else {
+    // -----------------------------------------------------------------
+    // indexed d-ary heap path.
+    //
+    // True decrease-key: at most one heap entry per vertex (size <= V).
+    // No stale pops. Vertex distances are read live via DistanceFn so the
+    // heap order tracks the current best-known distance.
+    //
+    // The position-map adapter is selected at compile time:
+    //
+    //   - index_vertex_range<G>  : vector_position_map (dense O(V) array).
+    //   - mapped containers / non-dense ids
+    //                            : assoc_position_map  (unordered_map).
+    //
+    // The vector adapter is faster (no hashing, contiguous storage) but
+    // requires vertex ids in [0, num_vertices(g)). Mapped containers
+    // (mov, mod, uov, ...) and any graph whose vertex_id_t is non-integral
+    // fall through to the associative adapter automatically.
+    // -----------------------------------------------------------------
+    constexpr std::size_t arity = Heap::arity;
+
+    // Live distance lookup for the heap (reads, never writes).
+    auto heap_distfn = [&g, &distance](const id_type& k) -> const distance_type& {
+      return distance(g, k);
+    };
+
+    // Seed + main loop, generic over the heap type so the dense and sparse
+    // position-map branches share a single body.
+    auto run = [&](auto& heap) {
+      // Seed the heap with the initial vertice(s).
+      for (auto&& seed_id : sources) {
+        auto seed_it = find_vertex(g, seed_id);
+        if (seed_it == std::ranges::end(vertices(g))) {
+          throw std::out_of_range(
+                std::format("dijkstra_shortest_paths: source vertex id '{}' is out of range", seed_id));
+        }
+
+        distance(g, seed_id) = zero; // mark seed_id as discovered
+        heap.push(static_cast<id_type>(seed_id));
+        if constexpr (has_on_discover_vertex<graph_type, Visitor>) {
+          visitor.on_discover_vertex(g, *seed_it);
+        } else if constexpr (has_on_discover_vertex_id<graph_type, Visitor>) {
+          visitor.on_discover_vertex(g, seed_id);
         }
       }
-    }
 
-    // The stale-pop skip at the top of the loop guarantees we only reach this
-    // point on the settled (final) pop of u, so on_examine_vertex and
-    // on_finish_vertex are each called exactly once per reachable vertex,
-    // matching BGL visitor semantics.
-    if constexpr (has_on_finish_vertex<graph_type, Visitor>) {
-      visitor.on_finish_vertex(g, u);
-    } else if constexpr (has_on_finish_vertex_id<graph_type, Visitor>) {
-      visitor.on_finish_vertex(g, uid);
+      // Main loop. With true decrease-key there are no stale entries: every
+      // pop yields the next finalized vertex.
+      while (!heap.empty()) {
+        const id_type uid = heap.top();
+        heap.pop();
+        vertex_t<graph_type> u = *find_vertex(g, uid);
+
+        if constexpr (has_on_examine_vertex<graph_type, Visitor>) {
+          visitor.on_examine_vertex(g, u);
+        } else if constexpr (has_on_examine_vertex_id<graph_type, Visitor>) {
+          visitor.on_examine_vertex(g, uid);
+        }
+
+        for (auto&& [vid, uv] : views::incidence(g, u)) {
+          if constexpr (has_on_examine_edge<graph_type, Visitor>) {
+            visitor.on_examine_edge(g, uv);
+          }
+
+          const bool is_neighbor_undiscovered = !compare(distance(g, vid), infinite);
+          const bool was_edge_relaxed         = relax_target(uv, uid);
+
+          if (was_edge_relaxed) {
+            if constexpr (has_on_edge_relaxed<graph_type, Visitor>) {
+              visitor.on_edge_relaxed(g, uv);
+            }
+            if (is_neighbor_undiscovered) {
+              if constexpr (has_on_discover_vertex<graph_type, Visitor>) {
+                vertex_t<graph_type> v = target(g, uv);
+                visitor.on_discover_vertex(g, v);
+              } else if constexpr (has_on_discover_vertex_id<graph_type, Visitor>) {
+                visitor.on_discover_vertex(g, vid);
+              }
+              heap.push(vid);
+            } else {
+              // v has finite distance and was just improved; under Dijkstra's
+              // non-negative-weight invariant a finalized vertex cannot be
+              // relaxed, so v must still be in the heap.
+              heap.decrease(vid);
+            }
+          } else {
+            if constexpr (has_on_edge_not_relaxed<graph_type, Visitor>) {
+              visitor.on_edge_not_relaxed(g, uv);
+            }
+          }
+        }
+
+        if constexpr (has_on_finish_vertex<graph_type, Visitor>) {
+          visitor.on_finish_vertex(g, u);
+        } else if constexpr (has_on_finish_vertex_id<graph_type, Visitor>) {
+          visitor.on_finish_vertex(g, uid);
+        }
+      } // while(!heap.empty())
+    };
+
+    using HeapAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<id_type>;
+
+    if constexpr (adj_list::index_vertex_range<graph_type>) {
+      // ---- Dense path: vector_position_map ----
+      // The position vector uses the default allocator; the user-supplied
+      // Alloc is forwarded only to the heap's internal storage (matching the
+      // documented role of Alloc as "internal priority queue storage").
+      std::vector<std::size_t> positions(num_vertices(g), detail::vector_position_map::npos);
+      using HeapT = detail::indexed_dary_heap<id_type, decltype(heap_distfn), Compare,
+                                              detail::vector_position_map, arity, HeapAlloc>;
+      HeapT heap(heap_distfn, compare,
+                 detail::vector_position_map{positions},
+                 HeapAlloc(alloc));
+      run(heap);
+    } else {
+      // ---- Sparse / mapped path: assoc_position_map ----
+      static_assert(adj_list::hashable_vertex_id<graph_type>,
+                    "use_indexed_dary_heap requires either index_vertex_range<G> or a "
+                    "hashable vertex_id_t<G> for the associative position-map adapter.");
+
+      using PMap = detail::assoc_position_map<id_type>;
+      typename PMap::map_type positions;
+      positions.reserve(num_vertices(g));
+
+      using HeapT = detail::indexed_dary_heap<id_type, decltype(heap_distfn), Compare,
+                                              PMap, arity, HeapAlloc>;
+      HeapT heap(heap_distfn, compare, PMap{positions}, HeapAlloc(alloc));
+      run(heap);
     }
-  } // while(!queue.empty())
+  } // if constexpr Heap dispatch
 }
 
 /**
@@ -368,6 +548,7 @@ template <
       class Visitor = empty_visitor,
       class Compare = less<distance_fn_value_t<DistanceFn, G>>,
       class Combine = plus<distance_fn_value_t<DistanceFn, G>>,
+      class Heap    = use_default_heap,
       class Alloc   = std::allocator<std::byte>>
 requires distance_fn_for<DistanceFn, G> &&                                //
          predecessor_fn_for<PredecessorFn, G> &&                          //
@@ -384,9 +565,11 @@ constexpr void dijkstra_shortest_paths(
       Visitor&& visitor = empty_visitor(),
       Compare&& compare = less<distance_fn_value_t<DistanceFn, G>>(),
       Combine&& combine = plus<distance_fn_value_t<DistanceFn, G>>(),
-      const Alloc& alloc = Alloc()) {
+      Heap         heap_tag = Heap{},
+      const Alloc& alloc    = Alloc()) {
   dijkstra_shortest_paths(g, subrange(&source, (&source + 1)), distance, predecessor, weight,
-                          forward<Visitor>(visitor), forward<Compare>(compare), forward<Combine>(combine), alloc);
+                          forward<Visitor>(visitor), forward<Compare>(compare), forward<Combine>(combine),
+                          heap_tag, alloc);
 }
 
 /**
@@ -431,6 +614,7 @@ template <
       class Visitor = empty_visitor,
       class Compare = less<distance_fn_value_t<DistanceFn, G>>,
       class Combine = plus<distance_fn_value_t<DistanceFn, G>>,
+      class Heap    = use_default_heap,
       class Alloc   = std::allocator<std::byte>>
 requires distance_fn_for<DistanceFn, G> &&                                                //
          convertible_to<range_value_t<Sources>, vertex_id_t<G>> &&                              //
@@ -446,9 +630,10 @@ constexpr void dijkstra_shortest_distances(
       Visitor&& visitor = empty_visitor(),
       Compare&& compare = less<distance_fn_value_t<DistanceFn, G>>(),
       Combine&& combine = plus<distance_fn_value_t<DistanceFn, G>>(),
-      const Alloc& alloc = Alloc()) {
+      Heap         heap_tag = Heap{},
+      const Alloc& alloc    = Alloc()) {
   dijkstra_shortest_paths(g, sources, distance, _null_predecessor, forward<WF>(weight), forward<Visitor>(visitor),
-                          forward<Compare>(compare), forward<Combine>(combine), alloc);
+                          forward<Compare>(compare), forward<Combine>(combine), heap_tag, alloc);
 }
 
 /**
@@ -471,6 +656,7 @@ template <
       class Visitor = empty_visitor,
       class Compare = less<distance_fn_value_t<DistanceFn, G>>,
       class Combine = plus<distance_fn_value_t<DistanceFn, G>>,
+      class Heap    = use_default_heap,
       class Alloc   = std::allocator<std::byte>>
 requires distance_fn_for<DistanceFn, G> &&                                                //
          basic_edge_weight_function<G, WF, distance_fn_value_t<DistanceFn, G>, Compare, Combine>
@@ -485,9 +671,11 @@ constexpr void dijkstra_shortest_distances(
       Visitor&& visitor = empty_visitor(),
       Compare&& compare = less<distance_fn_value_t<DistanceFn, G>>(),
       Combine&& combine = plus<distance_fn_value_t<DistanceFn, G>>(),
-      const Alloc& alloc = Alloc()) {
+      Heap         heap_tag = Heap{},
+      const Alloc& alloc    = Alloc()) {
   dijkstra_shortest_paths(g, subrange(&source, (&source + 1)), distance, _null_predecessor, forward<WF>(weight),
-                          forward<Visitor>(visitor), forward<Compare>(compare), forward<Combine>(combine), alloc);
+                          forward<Visitor>(visitor), forward<Compare>(compare), forward<Combine>(combine),
+                          heap_tag, alloc);
 }
 
 } // namespace graph

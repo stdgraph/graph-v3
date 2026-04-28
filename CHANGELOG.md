@@ -3,6 +3,9 @@
 ## [Unreleased]
 
 ### Added
+- **Indexed d-ary heap for Dijkstra** (`detail/indexed_dary_heap.hpp`) — opt-in O(V)-bounded heap with true decrease-key, parameterized by arity. Selected via the new `use_indexed_dary_heap<Arity>` heap-selector tag on `dijkstra_shortest_paths` / `dijkstra_shortest_distances`. Supports both dense graphs (via `vector_position_map`) and mapped / hashable-vertex-id graphs (via `assoc_position_map`).
+- `use_default_heap` and `use_indexed_dary_heap<Arity>` heap-selector tags. **`use_default_heap` remains the default** — it wins on grid (E/V≈4) and path (E/V=1) workloads. Use `use_indexed_dary_heap<8>` for high-E/V random / scale-free graphs on `compressed_graph`, where Phase 4 benchmarks measured −25% (Erdős–Rényi) and −17% (Barabási–Albert) at 100K vertices vs. the default. See `agents/indexed_dary_heap_results.md` for full numbers.
+- `vector_position_map` / `assoc_position_map` adapters (`detail/heap_position_map.hpp`) used by the indexed heap.
 - **Tarjan's SCC algorithm** (`tarjan_scc.hpp`) — single-pass O(V+E) strongly connected components using iterative DFS with low-link values; no transpose graph needed
 - 17 new Tarjan SCC tests (`test_tarjan_scc.cpp`)
 - **Mapped (sparse) graph algorithm support** — all 14 algorithms now accept `adjacency_list<G>` (both index and map-based containers)
