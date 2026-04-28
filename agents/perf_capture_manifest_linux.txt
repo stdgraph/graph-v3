@@ -2,10 +2,17 @@
 #
 # Differences from the MSVC manifest:
 #   - Demangled-name shape is the GCC/Itanium one, not MSVC.
-#   - GCC's std::less<double>::operator() shows up as `std::less<double>::operator()`.
-#   - BGL's d_ary_heap_indirect typically has its sift methods inlined so the
-#     symbol may not exist as a standalone body; the algorithm body
-#     dijkstra_shortest_paths_no_color_map_no_init absorbs it.
+#   - GCC uses `Nul` (unsigned long) for non-type template args, not `Nu`.
+#   - GCC inlines the sift_down_/sift_up_ helpers AND BGL's
+#     preserve_heap_property_down/up entirely into the dijkstra body.
+#     There are no standalone bodies for those, so this manifest captures
+#     the enclosing dijkstra body instead — that is where the inlined
+#     instructions actually live, and that is what is directly comparable
+#     across toolchains.
+#   - graph-v3's dijkstra body lives inside an inner `{lambda(auto:1&)#1}::
+#     operator()` (the heap-using closure) — that closure is the body
+#     comparable to BGL's `dijkstra_shortest_paths_no_color_map_no_init`,
+#     which under GCC is fully inlined into `graph::benchmark::run_bgl_dijkstra`.
 #   - Sizes from `nm --print-size` are honoured; the length here is a fallback.
 #
 # Run via:
@@ -14,22 +21,13 @@
 #     --manifest agents/perf_capture_manifest_linux.txt \
 #     --out-dir artifacts/perf/linux_gcc
 
-# --- graph-v3 heap sift_down_ in both backends ---
-sift_down_csr_idx2     0x300  use_indexed_dary_heap<2u>   sift_down_   compressed_graph
-sift_down_csr_idx4     0x300  use_indexed_dary_heap<4u>   sift_down_   compressed_graph
-sift_down_csr_idx8     0x300  use_indexed_dary_heap<8u>   sift_down_   compressed_graph
-sift_down_vov_idx4     0x300  use_indexed_dary_heap<4u>   sift_down_   dynamic_graph
-sift_up_csr_idx4       0x180  use_indexed_dary_heap<4u>   sift_up_     compressed_graph
+# --- graph-v3 dijkstra bodies (heap is fully inlined into these) ---
+dijkstra_csr_idx2      0x800  use_indexed_dary_heap<2ul>   operator()  compressed_graph
+dijkstra_csr_idx4      0x800  use_indexed_dary_heap<4ul>   operator()  compressed_graph
+dijkstra_csr_idx8      0x800  use_indexed_dary_heap<8ul>   operator()  compressed_graph
+dijkstra_vov_idx4      0x800  use_indexed_dary_heap<4ul>   operator()  dynamic_graph
 
-# --- BGL counterparts (likely inlined under GCC; fallback to algorithm body) ---
-bgl_dary_sift_down_csr 0x500  preserve_heap_property_down  d_ary_heap_indirect
-bgl_dary_sift_up_csr   0x300  preserve_heap_property_up    d_ary_heap_indirect
+# --- BGL dijkstra body (preserve_heap_property_{down,up} are inlined here) ---
+dijkstra_bgl_csr       0x900  run_bgl_dijkstra            compressed_sparse_row_graph
+dijkstra_bgl_adj       0x900  run_bgl_dijkstra            adjacency_list
 
-# --- per-edge work ---
-container_value_fn:0   0x100  container_value_fn          operator
-
-# --- main Dijkstra bodies ---
-dijkstra_csr_idx2      0x500  graph::dijkstra_shortest_paths.*compressed_graph   use_indexed_dary_heap<2u>
-dijkstra_csr_idx4      0x500  graph::dijkstra_shortest_paths.*compressed_graph   use_indexed_dary_heap<4u>
-dijkstra_csr_idx8      0x500  graph::dijkstra_shortest_paths.*compressed_graph   use_indexed_dary_heap<8u>
-dijkstra_bgl_csr       0x800  dijkstra_shortest_paths_no_color_map_no_init       compressed_sparse_row

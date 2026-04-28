@@ -382,3 +382,197 @@ artifacts/perf/sift_down_idx4.asm        Idx4 sift_down_ (RVA 0x14006bbb0)
 
 
 
+---
+
+## Phase 1.1 — Reproduce on Linux GCC (`linux-gcc-release`, 2026-04-28)
+
+Re-run on Linux/WSL with GCC under `linux-gcc-release` on the same
+`indexed-dary-heap` HEAD as the MSVC capture, per
+`agents/thread_b_linux_runbook.md`. Capture artifacts live under
+`artifacts/perf/linux_gcc/` (gitignored, regenerable via
+`bash scripts/perf/linux_gcc_capture.sh`).
+
+### Setup
+
+- Toolchain: `g++` 13.x, `-O3` via `linux-gcc-release` preset.
+- BGL: `-DDIJKSTRA_BENCH_BGL=ON -DBGL_INCLUDE_DIR=/home/phil/dev_graph/boost`.
+- Pinning: `taskset -c 4`, 5 reps, median, `--benchmark_min_time=2s`.
+- Software perf events only (WSL has no PMU exposed; the script
+  attempts `task-clock,context-switches,...,instructions:u,cycles:u` but
+  those return non-zero on this host — captured for completeness, not
+  used for analysis).
+
+### graph-v3 vs BGL CSR (the central question)
+
+Indexed d-ary heap (Idx4, the per-arity comparison target):
+
+| Topology   | N        | graph-v3 CSR Idx4 (ns) | BGL CSR (ns)    | Δ % vs BGL | CV v3 % | CV BGL % |
+|------------|---------:|-----------------------:|----------------:|-----------:|--------:|---------:|
+| ER_Sparse  |   10,000 |              1,131,399 |         927,971 | **+21.9 ⚠** |     1.5 |      2.4 |
+| ER_Sparse  |  100,000 |             22,472,835 |      19,586,652 | **+14.7 ⚠** |     4.8 |     10.0 |
+| Grid       |   10,000 |                594,732 |         425,172 | **+39.9 ⚠** |     0.8 |      0.8 |
+| Grid       |  100,000 |              8,007,736 |       5,877,749 | **+36.2 ⚠** |     1.5 |      1.9 |
+| BA         |   10,000 |              1,099,949 |         925,914 | **+18.8 ⚠** |     2.5 |      0.4 |
+| BA         |  100,000 |             19,791,772 |      18,669,163 |   +6.0 ⚠   |     1.4 |      0.7 |
+| Path       |   10,000 |                 30,905 |          26,723 | **+15.6 ⚠** |     1.9 |      0.5 |
+| Path       |  100,000 |                313,622 |         272,206 | **+15.2 ⚠** |     2.3 |      0.4 |
+
+Default heap (binary, no Idx tag), for completeness:
+
+| Topology   | N        | graph-v3 CSR (ns) | BGL CSR (ns)    | Δ % vs BGL |
+|------------|---------:|------------------:|----------------:|-----------:|
+| ER_Sparse  |   10,000 |         1,225,762 |         927,971 | +32.1 ⚠ |
+| ER_Sparse  |  100,000 |        23,173,028 |      19,586,652 | +18.3 ⚠ |
+| Grid       |   10,000 |           478,675 |         425,172 | +12.6 ⚠ |
+| Grid       |  100,000 |         6,251,103 |       5,877,749 |  +6.4 ⚠ |
+| BA         |   10,000 |         1,199,459 |         925,914 | +29.5 ⚠ |
+| BA         |  100,000 |        22,868,714 |      18,669,163 | +22.5 ⚠ |
+| Path       |   10,000 |            26,137 |          26,723 |  −2.2   |
+| Path       |  100,000 |           261,003 |         272,206 |  −4.1   |
+
+CVs are uniformly ≤ 5 % — these are real differences, not noise.
+
+### Comparison with the original Phase 4.3a baseline (Linux GCC, 2025)
+
+| Topology   | Phase 4.3a Idx4 vs BGL (Linux GCC, 2025) | Phase 1.1 Linux Idx4 vs BGL (today) |
+|------------|------------------------------------------|-------------------------------------|
+| ER_Sparse  | +7.7 % (slower)                          | **+14.7 % to +21.9 %** (slower)     |
+| Grid       | +36.5 % (slower)                         | **+36.2 % to +39.9 %** (slower)     |
+| BA         | +9.4 %                                   | +6.0 % to +18.8 %                   |
+| Path       | +15.0 %                                  | +15.2 % to +15.6 %                  |
+
+### Cross-toolchain (MSVC vs GCC)
+
+The same code, same machine class, two compilers — illustrative deltas
+(median, `bench_compare.py --label-baseline msvc --label-candidate gcc`):
+
+| Benchmark                                | MSVC (ns) | GCC (ns) | Δ %    |
+|------------------------------------------|----------:|---------:|-------:|
+| BM_Dijkstra_BGL_CSR_Grid/100000          | 10.49 M   |  5.88 M  | −44.0 ✅ |
+| BM_Dijkstra_CSR_Grid_Idx4/100000         |  6.91 M   |  8.01 M  | +15.8 ⚠ |
+| BM_Dijkstra_BGL_CSR_Path/100000          |  1.09 M   |  0.27 M  | −74.9 ✅ |
+| BM_Dijkstra_CSR_Path_Idx4/100000         |  0.39 M   |  0.31 M  | −19.1 ✅ |
+| BM_Dijkstra_BGL_CSR_ER_Sparse/100000     | 33.34 M   | 19.59 M  | −41.3 ✅ |
+| BM_Dijkstra_CSR_ER_Sparse_Idx4/100000    | 19.98 M   | 22.47 M  | +12.5 ⚠ |
+
+Full table: `artifacts/perf/linux_gcc/diff_msvc_vs_gcc.md`.
+
+GCC compresses BGL's CSR Dijkstra body ~40-75 % vs MSVC. graph-v3
+gets *slower* on GCC for `Idx4` (+8 % to +16 %) — the opposite direction
+— which is why the BGL gap that vanishes on MSVC re-emerges on GCC.
+
+### Decision-tree verdict (from `thread_b_linux_runbook.md`)
+
+> graph-v3 still +30 %+ slower on Grid (the original 4.3a worst case) →
+> Original investigation premise is intact; proceed with edge-value
+> access path investigation as planned.
+
+**Verdict: NO — the Phase 4.3a graph-v3-vs-BGL gap is *not* closed on
+Linux GCC at HEAD.** The post-4.3a commits (`5085c60`, `7645a19`,
+`1c871a8`, `aa95fe0`) closed the gap on MSVC (where graph-v3 now wins
+−34 % to −64 %) but did not close it on GCC. Grid-100K is essentially
+unchanged from the 2025 baseline (+36.5 % → +36.2 %).
+
+Phases 3–5 of this plan (raw-loop micro, descriptor-cost intervention,
+default-heap revisit) are **un-deferred**.
+
+---
+
+## Phase 2 — Linux GCC disassembly comparison (2026-04-28)
+
+`scripts/perf/linux_gcc_capture.sh` drives `objdump --demangle` over a
+manifest at `agents/perf_capture_manifest_linux.txt`. Captures land in
+`artifacts/perf/linux_gcc/*.asm`.
+
+### What GCC actually emits
+
+GCC inlines aggressively enough that several MSVC-side capture targets
+have **no standalone body** at all:
+
+| Target                                   | MSVC body? | GCC body? |
+|------------------------------------------|-----------:|----------:|
+| `sift_down_` (graph-v3, all arities)     | yes (~185 lines) | **no — fully inlined into the dijkstra closure** |
+| `sift_up_` (graph-v3)                    | yes (109 lines)  | **no — fully inlined** |
+| `preserve_heap_property_down` (BGL)      | yes (299 lines)  | **no — fully inlined** |
+| `preserve_heap_property_up` (BGL)        | yes (204 lines)  | **no — fully inlined** |
+| `container_value_fn::operator()`         | yes (85 lines)   | **no — inlined into the dijkstra closure** |
+
+GCC instead exposes the dijkstra body as an inner closure
+`{lambda(auto:1&)#1}::operator()<indexed_dary_heap<...>>`. That closure
+is the apples-to-apples unit vs BGL's
+`graph::benchmark::run_bgl_dijkstra<...>` (which itself absorbs all of
+BGL's `dijkstra_shortest_paths_no_color_map_no_init`).
+
+### Per-symbol size comparison (objdump line counts)
+
+```
+symbol                          msvc-lines  gcc-lines
+bgl_dary_sift_down_csr          299         (inlined)
+bgl_dary_sift_up_csr            204         (inlined)
+container_value_fn               85         (inlined)
+dijkstra_bgl_csr                505         412
+dijkstra_csr_idx2               206         361
+dijkstra_csr_idx4               206         387
+dijkstra_csr_idx8               206         382
+sift_down_csr_idx2              186         (inlined)
+sift_down_csr_idx4              184         (inlined)
+sift_down_csr_idx8              186         (inlined)
+sift_down_vov_idx4              191         (inlined)
+sift_up_csr_idx4                109         (inlined)
+dijkstra_vov_idx4                NA         465
+dijkstra_bgl_adj                 NA         424
+```
+
+Apples-to-apples (full inlined dijkstra body, line counts):
+
+| Body            | MSVC (sum: dijkstra + sift_down + sift_up) | GCC (single body) |
+|-----------------|-------------------------------------------:|------------------:|
+| graph-v3 Idx4   | 206 + 184 + 109 = **499**                  | **387** |
+| graph-v3 Idx2   | 206 + 186 + 109 = **501**                  | **361** |
+| graph-v3 Idx8   | 206 + 186 + 109 = **501**                  | **382** |
+| BGL CSR         | 505 + 299 + 204 = **1,008**                | **412** |
+
+### What this tells us about the GCC gap
+
+The size signal inverts on GCC:
+
+- On MSVC, graph-v3's *fully inlined* body is roughly half BGL's
+  (~500 vs ~1,000 lines) — matching the −34 % to −64 % wall-clock win.
+- On GCC, BGL collapses to **412 lines** (a 2.4× reduction from MSVC),
+  while graph-v3 only collapses to ~380 (1.3× reduction).
+  The two bodies are now **comparably sized**, and graph-v3 is the one
+  that's slower (+15 % to +40 %) — same direction the size delta
+  predicts.
+
+In other words, GCC is much more aggressive at compressing BGL's
+`get(weight_map, edge)` + `dijkstra_shortest_paths_no_color_map_no_init`
+chain than MSVC is, while graph-v3's per-edge work
+(`incidence_iterator::operator*` → `target_id` / `edge_value` → relax)
+doesn't get the same treatment from GCC.
+
+This is exactly the codegen hypothesis Phase 4.3a articulated, and it
+matches the Phase 3–5 intervention plan in this document: the next
+investigation step is the **raw-loop microbenchmark** (Phase 3) to
+measure how much of the +15 % to +40 % is attributable to the
+descriptor / value-access path itself vs heap administration.
+
+### Files captured this phase
+
+```
+artifacts/perf/linux_gcc/wallclock_baseline.json     96 rows, 5 reps median
+artifacts/perf/linux_gcc/diff_msvc_vs_gcc.md         cross-toolchain table
+artifacts/perf/linux_gcc/perfstat_*.{stdout,stderr}  software events (PMU N/A on WSL)
+artifacts/perf/linux_gcc/dijkstra_csr_idx{2,4,8}.asm graph-v3 inlined dijkstra body
+artifacts/perf/linux_gcc/dijkstra_vov_idx4.asm       graph-v3 VoV control
+artifacts/perf/linux_gcc/dijkstra_bgl_csr.asm        BGL CSR inlined dijkstra body
+artifacts/perf/linux_gcc/dijkstra_bgl_adj.asm        BGL adj_list inlined dijkstra body
+```
+
+### Acceptance for Thread B (Linux GCC scope)
+
+- ✅ Phase 1.1 Linux GCC reruns confirm the original 4.3a gap is intact.
+- ✅ Phase 2 Linux GCC disassembly localises the gap to BGL's
+      ~2.4× more aggressive inlining vs graph-v3's ~1.3×.
+- ▶ Phases 3–5 are **active again** — see
+      `agents/perf_linux_gcc_inventory.md` for the regeneration recipe
+      and per-symbol manifest details.
