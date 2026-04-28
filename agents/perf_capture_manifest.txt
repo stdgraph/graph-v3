@@ -1,0 +1,48 @@
+# Capture manifest for Phase 2/3 of csr_edge_value_perf_plan.md.
+#
+# Each non-comment, non-blank line: <basename> <length_hex> <regex> [substrings...]
+#   - <regex>  is matched against the demangled symbol name (use this for
+#              patterns containing < or > to avoid cmd redirection issues).
+#   - subsequent substrings are AND-filtered after the regex.
+#
+# These artefacts give the Linux/GCC investigation a per-symbol reference
+# baseline to compare against. WSL has no hardware counters, so disassembly
+# diffs replace the perf-stat workflow.
+#
+# Run with:
+#   python scripts/perf/capture_asm.py \
+#     --exe build/windows-msvc-profile/benchmark/algorithms/benchmark_dijkstra.exe \
+#     --manifest agents/perf_capture_manifest.txt \
+#     --out-dir artifacts/perf/msvc_profile
+
+# --- heap sift_down_ in both graph backends ---
+sift_down_csr_idx2     0x300  use_indexed_dary_heap.2.   sift_down_   compressed_graph
+sift_down_csr_idx4     0x300  use_indexed_dary_heap.4.   sift_down_   compressed_graph
+sift_down_csr_idx8     0x300  use_indexed_dary_heap.8.   sift_down_   compressed_graph
+sift_down_vov_idx4     0x300  use_indexed_dary_heap.4.   sift_down_   dynamic_graph
+
+# --- heap sift_up_ for completeness (much smaller) ---
+sift_up_csr_idx4       0x180  use_indexed_dary_heap.4.   sift_up_     compressed_graph
+
+# --- BGL counterparts (for parity with future GCC results) ---
+# Boost's d_ary_heap_indirect uses preserve_heap_property_{down,up} methods.
+# Two instantiations each: [0] is for compressed_sparse_row (vertex id u32),
+# [1] is for adjacency_list (vertex id u64). We want the CSR one.
+bgl_dary_sift_down_csr:0   0x500  preserve_heap_property_down   d_ary_heap_indirect
+bgl_dary_sift_up_csr:0     0x300  preserve_heap_property_up     d_ary_heap_indirect
+
+# --- per-edge work suspects identified by VTune ---
+# (vtune ranked these 4-6 in Phase 2 hotspot table)
+# NOTE: incidence_view::iterator::operator* has no standalone body in this
+# build - MSVC inlined it everywhere; only @ILT thunks remain. The behaviour
+# is captured inside dijkstra_csr_idx{2,4,8} below.
+container_value_fn:0   0x100  container_value_fn         operator
+
+# --- the main Dijkstra body (CSR + Idx{2,4,8}) - the actual relax loop lives here ---
+# All three Dijkstra entries match the same regex; pick by --pick if needed.
+dijkstra_csr_idx2:0    0x320  ^graph::dijkstra_shortest_paths.*compressed_graph   use_indexed_dary_heap
+dijkstra_csr_idx4:1    0x320  ^graph::dijkstra_shortest_paths.*compressed_graph   use_indexed_dary_heap
+dijkstra_csr_idx8:2    0x320  ^graph::dijkstra_shortest_paths.*compressed_graph   use_indexed_dary_heap
+
+# --- BGL Dijkstra equivalent for direct comparison ---
+dijkstra_bgl_csr       0x800  dijkstra_shortest_paths_no_color_map_no_init        compressed_sparse_row

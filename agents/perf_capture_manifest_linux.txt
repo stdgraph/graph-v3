@@ -1,0 +1,35 @@
+# Linux/GCC capture manifest, parallels agents/perf_capture_manifest.txt.
+#
+# Differences from the MSVC manifest:
+#   - Demangled-name shape is the GCC/Itanium one, not MSVC.
+#   - GCC's std::less<double>::operator() shows up as `std::less<double>::operator()`.
+#   - BGL's d_ary_heap_indirect typically has its sift methods inlined so the
+#     symbol may not exist as a standalone body; the algorithm body
+#     dijkstra_shortest_paths_no_color_map_no_init absorbs it.
+#   - Sizes from `nm --print-size` are honoured; the length here is a fallback.
+#
+# Run via:
+#   python3 scripts/perf/objdump_capture.py \
+#     --exe build/linux-gcc-release/benchmark/algorithms/benchmark_dijkstra \
+#     --manifest agents/perf_capture_manifest_linux.txt \
+#     --out-dir artifacts/perf/linux_gcc
+
+# --- graph-v3 heap sift_down_ in both backends ---
+sift_down_csr_idx2     0x300  use_indexed_dary_heap<2u>   sift_down_   compressed_graph
+sift_down_csr_idx4     0x300  use_indexed_dary_heap<4u>   sift_down_   compressed_graph
+sift_down_csr_idx8     0x300  use_indexed_dary_heap<8u>   sift_down_   compressed_graph
+sift_down_vov_idx4     0x300  use_indexed_dary_heap<4u>   sift_down_   dynamic_graph
+sift_up_csr_idx4       0x180  use_indexed_dary_heap<4u>   sift_up_     compressed_graph
+
+# --- BGL counterparts (likely inlined under GCC; fallback to algorithm body) ---
+bgl_dary_sift_down_csr 0x500  preserve_heap_property_down  d_ary_heap_indirect
+bgl_dary_sift_up_csr   0x300  preserve_heap_property_up    d_ary_heap_indirect
+
+# --- per-edge work ---
+container_value_fn:0   0x100  container_value_fn          operator
+
+# --- main Dijkstra bodies ---
+dijkstra_csr_idx2      0x500  graph::dijkstra_shortest_paths.*compressed_graph   use_indexed_dary_heap<2u>
+dijkstra_csr_idx4      0x500  graph::dijkstra_shortest_paths.*compressed_graph   use_indexed_dary_heap<4u>
+dijkstra_csr_idx8      0x500  graph::dijkstra_shortest_paths.*compressed_graph   use_indexed_dary_heap<8u>
+dijkstra_bgl_csr       0x800  dijkstra_shortest_paths_no_color_map_no_init       compressed_sparse_row

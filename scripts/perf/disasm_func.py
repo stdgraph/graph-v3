@@ -1,171 +1,80 @@
 #!/usr/bin/env python3
 """
-disasm_func.py — find a function in an exe by demangled name substring,
-                 then dump only that function's disassembly via dumpbin.
+disasm_func.py - disassemble one function from a Windows exe.
 
-Phase 2 (csr_edge_value_perf_plan.md) needs to disassemble the inlined
-Dijkstra run-lambda. `dumpbin /disasm` on the full benchmark exe produces
-hundreds of thousands of lines and most are unrelated; this script
-demangles the symbol table, picks the matching symbol, and dumps only that
-function's bytes (using `dumpbin /disasm:bytes /range:`).
+Selects a function by --pattern (substring) and/or --regex (full Python re),
+then dumps just that function's bytes via dumpbin /range.
 
-Requires `dumpbin.exe` to be on PATH (run from a vcvars64 shell).
+The symbol index is cached on disk by sym_index.py, so repeated invocations
+on the same exe are near-instant after the first call.
+
+Avoid putting raw '<' or '>' on a Windows command line: cmd treats them as
+redirection. Use --regex with escaped angle brackets instead, e.g.:
+    --regex 'use_indexed_dary_heap<4>'
 
 Example:
     python scripts/perf/disasm_func.py \
         --exe build/windows-msvc-profile/benchmark/algorithms/benchmark_dijkstra.exe \
-        --pattern "dijkstra_shortest_paths" --pattern "Idx4" --pattern "Grid" \
-        --out artifacts/relax_grid_idx4.asm
+        --regex 'use_indexed_dary_heap<4>' --pattern sift_down_ \
+        --out artifacts/perf/sift_down_idx4.asm
 """
 
 from __future__ import annotations
 
 import argparse
-import re
-import shutil
-import subprocess
 import sys
-from dataclasses import dataclass
 from pathlib import Path
 
-
-@dataclass
-class Symbol:
-    name: str
-    rva: int                  # virtual address relative to image base
-    section: str = ""
-
-    def __repr__(self) -> str:
-        return f"Symbol(rva=0x{self.rva:x}, name={self.name[:60]}…)"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from sym_index import (  # noqa: E402
+    disasm_range,
+    filter_symbols,
+    index_functions,
+)
 
 
-# dumpbin /symbols line for a static symbol typically looks like:
-#   00B 00000000 SECT3  notype ()    External     | ?run@dijkstra_shortest_paths@graph@@...
-# but we don't get RVAs from /symbols. /headers + /disasm is what gives RVAs.
-# Easiest path: parse `dumpbin /disasm:nobytes` and find the function entry
-# lines, which look like:
-#   ?run@... (graph::dijkstra_shortest_paths<...>):
-#   0000000140002340: ...
-_FUNC_HEADER_RE = re.compile(r"^(?P<name>[^\s].*?):\s*$")
-_ADDR_RE        = re.compile(r"^\s*(?P<addr>[0-9A-Fa-f]{8,16}):\s")
-
-
-def find_dumpbin() -> Path:
-    p = shutil.which("dumpbin")
-    if not p:
-        raise SystemExit(
-            "dumpbin not on PATH — run from a vcvars64 shell, "
-            "or invoke via: cmd /c \"vcvars64.bat && python ...\""
-        )
-    return Path(p)
-
-
-def index_functions(exe: Path) -> list[Symbol]:
-    """Run `dumpbin /disasm:nobytes` and extract (name, RVA) for every function entry."""
-    dumpbin = find_dumpbin()
-    proc = subprocess.run(
-        [str(dumpbin), "/disasm:nobytes", "/nologo", str(exe)],
-        capture_output=True, text=True, errors="replace",
-    )
-    if proc.returncode != 0:
-        sys.stderr.write(proc.stderr)
-        raise SystemExit(f"dumpbin failed ({proc.returncode})")
-
-    syms: list[Symbol] = []
-    pending_name: str | None = None
-    for line in proc.stdout.splitlines():
-        if not line:
-            pending_name = None
-            continue
-        if pending_name is None:
-            m = _FUNC_HEADER_RE.match(line)
-            # Heuristic: a function header is a non-indented line ending in ':' that is
-            # NOT itself an address line. We accept anything that doesn't start with a hex
-            # address followed by ':'.
-            if m and not _ADDR_RE.match(line):
-                candidate = m.group("name").strip()
-                # Section dividers also end in ':'; ignore obvious ones.
-                if not candidate.startswith("Dump of") and "0x" not in candidate.split()[0]:
-                    pending_name = candidate
-            continue
-        # First address line after the header gives us the RVA.
-        m = _ADDR_RE.match(line)
-        if m:
-            try:
-                rva = int(m.group("addr"), 16)
-                syms.append(Symbol(name=pending_name, rva=rva))
-            except ValueError:
-                pass
-            pending_name = None
-    return syms
-
-
-def filter_symbols(syms: list[Symbol], patterns: list[str]) -> list[Symbol]:
-    return [s for s in syms if all(p in s.name for p in patterns)]
-
-
-def disasm_range(exe: Path, start: int, end: int) -> str:
-    """Run `dumpbin /disasm /range:` for a single function."""
-    dumpbin = find_dumpbin()
-    proc = subprocess.run(
-        [str(dumpbin), "/disasm", "/nologo",
-         f"/range:0x{start:x},0x{end:x}", str(exe)],
-        capture_output=True, text=True, errors="replace",
-    )
-    if proc.returncode != 0:
-        sys.stderr.write(proc.stderr)
-        raise SystemExit(f"dumpbin /range failed ({proc.returncode})")
-    return proc.stdout
+def _truncate(name: str, n: int) -> str:
+    return name if len(name) <= n else name[:n] + "\u2026"
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--exe", type=Path, required=True)
-    ap.add_argument("--pattern", action="append", required=True,
-                    help="substring that must appear in the demangled symbol "
-                         "(may be given multiple times — all must match).")
-    ap.add_argument("--list-only", action="store_true",
-                    help="Print matching symbols and exit; do not disassemble.")
-    ap.add_argument("--length", type=lambda s: int(s, 0), default=0x1000,
-                    help="Bytes to dump from the symbol's RVA (default 0x1000).")
-    ap.add_argument("--match-index", type=int, default=0,
-                    help="0-based index into the matched-symbols list (default 0).")
-    ap.add_argument("--out", type=Path, help="Write disassembly to this file (default stdout).")
+    ap.add_argument("--pattern", action="append", default=[],
+                    help="substring filter (multiple = AND).")
+    ap.add_argument("--regex", action="append", default=[],
+                    help="Python regex filter (multiple = AND). Use this for patterns with angle brackets.")
+    ap.add_argument("--list-only", action="store_true")
+    ap.add_argument("--length", type=lambda s: int(s, 0), default=0x1000)
+    ap.add_argument("--match-index", type=int, default=0)
+    ap.add_argument("--rebuild-cache", action="store_true")
+    ap.add_argument("--out", type=Path)
+    ap.add_argument("--no-truncate", action="store_true")
     args = ap.parse_args()
 
     if not args.exe.exists():
         raise SystemExit(f"exe not found: {args.exe}")
+    if not args.pattern and not args.regex:
+        raise SystemExit("need at least one --pattern or --regex")
 
-    print(f"indexing functions in {args.exe.name} ...", file=sys.stderr)
-    syms = index_functions(args.exe)
-    print(f"  {len(syms)} function entries indexed", file=sys.stderr)
-
-    matches = filter_symbols(syms, args.pattern)
+    syms = index_functions(args.exe, force_rebuild=args.rebuild_cache)
+    matches = filter_symbols(syms, args.pattern, args.regex)
     if not matches:
-        sys.stderr.write(f"no symbols matched all of: {args.pattern}\n")
+        sys.stderr.write(f"no symbols matched: patterns={args.pattern} regexes={args.regex}\n")
         return 1
 
-    print(f"matches ({len(matches)}):", file=sys.stderr)
-    for s in matches[:20]:
-        snippet = (s.name[:120] + "…") if len(s.name) > 121 else s.name
-        print(f"  0x{s.rva:x}  {snippet}", file=sys.stderr)
-    if len(matches) > 20:
-        print(f"  ... +{len(matches) - 20} more", file=sys.stderr)
+    print(f"matches ({len(matches)} of {len(syms)} indexed):", file=sys.stderr)
+    for i, s in enumerate(matches[:30]):
+        name = s.name if args.no_truncate else _truncate(s.name, 200)
+        print(f"  [{i}] 0x{s.rva:x}  {name}", file=sys.stderr)
+    if len(matches) > 30:
+        print(f"  ... +{len(matches) - 30} more", file=sys.stderr)
 
     if args.list_only:
         return 0
 
     if args.match_index >= len(matches):
-        raise SystemExit(
-            f"--match-index {args.match_index} out of range (have {len(matches)} matches)"
-        )
-    if len(matches) > 1:
-        print(
-            f"info: {len(matches)} matches; disassembling index {args.match_index}. "
-            "Refine --pattern or use --match-index to pick another.",
-            file=sys.stderr,
-        )
-
+        raise SystemExit(f"--match-index {args.match_index} out of range (have {len(matches)})")
     sym = matches[args.match_index]
     asm = disasm_range(args.exe, sym.rva, sym.rva + args.length)
     if args.out:

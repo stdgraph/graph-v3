@@ -40,3 +40,7 @@ vtune/
 
 # Perf-tooling artifacts (bench JSON, disassembly captures, hotspot CSVs)
 artifacts/
+
+# Python bytecode caches
+__pycache__/
+*.pyc
