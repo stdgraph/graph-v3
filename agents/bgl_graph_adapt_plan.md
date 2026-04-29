@@ -590,13 +590,16 @@ cmake --build build && ./build/examples/bgl_adaptor_example
 
 | Phase | Description                         | Status      |
 |-------|-------------------------------------|-------------|
-| 0     | Project scaffolding                 | Not started |
-| 1     | C++20 iterator wrapper              | Not started |
-| 2     | graph_adaptor and core CPOs         | Not started |
-| 3     | Concept satisfaction verification   | Not started |
-| 4     | Property bridge                     | Not started |
-| 5     | View integration tests              | Not started |
-| 6     | Dijkstra end-to-end                 | Not started |
-| 7     | Bidirectional and undirected        | Not started |
-| 8     | compressed_sparse_row_graph         | Not started |
+| 0     | Project scaffolding                 | ✅ Complete |
+| 1     | C++20 iterator wrapper              | ✅ Complete |
+| 2     | graph_adaptor and core CPOs         | ✅ Complete |
+| 3     | Concept satisfaction verification   | ✅ Complete |
+| 4     | Property bridge                     | ✅ Complete |
+| 5     | View integration tests              | ✅ Complete |
+| 6     | Dijkstra end-to-end                 | ✅ Complete |
+| 7     | Bidirectional and undirected         | ✅ Complete |
+| 8     | compressed_sparse_row_graph         | ✅ Complete |
 | 9     | Documentation and example           | Not started |
+
+**Last verified:** 2026-04-29 — 34 test cases, 107 assertions, all passing.
+Build requires `-DTEST_BGL_ADAPTOR=ON` and Boost headers.
