@@ -3,6 +3,7 @@
 #include <concepts>
 #include <functional>
 #include <type_traits>
+#include <unordered_map>
 #include <vector>
 
 namespace graph::bgl {
@@ -92,6 +93,30 @@ struct vertex_vector_property_fn {
 template <typename T>
 auto make_vertex_id_property_fn(std::vector<T>& vec) {
   return vertex_vector_property_fn<T>{&vec};
+}
+
+// ── Vertex-keyed map property function ──────────────────────────────────────
+//
+// For graphs with non-integral vertex IDs (e.g. BGL listS/setS where
+// vertex_descriptor is void*), wraps any associative container (map,
+// unordered_map, etc.) into a function object usable as a graph-v3 vertex
+// property function.
+
+template <typename Map>
+struct vertex_map_property_fn {
+  Map* storage;
+
+  template <typename G, typename VId>
+  auto& operator()(const G&, const VId& uid) const {
+    return (*storage)[uid];
+  }
+};
+
+/// Create a vertex property function from any associative container
+/// (std::map, std::unordered_map, etc.) keyed by vertex ID.
+template <typename Map>
+auto make_vertex_map_property_fn(Map& map) {
+  return vertex_map_property_fn<Map>{&map};
 }
 
 } // namespace graph::bgl

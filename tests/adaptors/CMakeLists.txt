@@ -48,6 +48,7 @@ if(TEST_BGL_ADAPTOR)
     test_bgl_dijkstra.cpp
     test_bgl_bidirectional.cpp
     test_bgl_csr.cpp
+    test_bgl_non_vecs.cpp
   )
 
   target_link_libraries(graph3_bgl_adaptor_tests

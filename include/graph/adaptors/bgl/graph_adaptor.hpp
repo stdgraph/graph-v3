@@ -5,7 +5,68 @@
 #include <boost/graph/graph_traits.hpp>
 
 #include <concepts>
+#include <cstddef>
+#include <iterator>
 #include <ranges>
+#include <type_traits>
+#include <utility>
+
+// ── Keyed vertex iterator adaptor ───────────────────────────────────────────
+// For non-vecS BGL graphs, vertex_descriptor is void*. graph-v3's descriptor
+// framework requires either random_access_iterator (direct_vertex_type) or
+// forward_iterator with pair-like value_type (keyed_vertex_type).
+// This adaptor wraps a BGL vertex_iterator to yield std::pair<VD, std::monostate>,
+// satisfying keyed_vertex_type so vertex_descriptor_view can be constructed.
+
+namespace graph::bgl::detail {
+
+/// Value type for the keyed adaptor: pair<vertex_descriptor, monostate>.
+/// get<0> is the vertex ID (void*); get<1> is unused padding.
+template <typename VD>
+using keyed_vertex_value = std::pair<VD, std::monostate>;
+
+/// Forward iterator adaptor that wraps a BGL vertex_iterator and yields
+/// keyed_vertex_value on dereference.
+template <typename BGLVertexIter>
+class bgl_keyed_vertex_iterator {
+public:
+  using bgl_vd_type       = typename std::iterator_traits<BGLVertexIter>::value_type;
+  using value_type        = keyed_vertex_value<bgl_vd_type>;
+  using difference_type   = std::ptrdiff_t;
+  using iterator_category = std::forward_iterator_tag;
+  using pointer           = const value_type*;
+  using reference         = value_type;
+
+  constexpr bgl_keyed_vertex_iterator() noexcept = default;
+  constexpr explicit bgl_keyed_vertex_iterator(BGLVertexIter it) noexcept : it_(it) {}
+
+  [[nodiscard]] value_type operator*() const { return value_type{*it_, std::monostate{}}; }
+
+  bgl_keyed_vertex_iterator& operator++() {
+    ++it_;
+    return *this;
+  }
+  bgl_keyed_vertex_iterator operator++(int) {
+    auto tmp = *this;
+    ++it_;
+    return tmp;
+  }
+
+  [[nodiscard]] bool operator==(const bgl_keyed_vertex_iterator& other) const { return it_ == other.it_; }
+
+private:
+  BGLVertexIter it_{};
+};
+
+/// Sized subrange alias for bgl_keyed_vertex_iterator.
+/// The sized subrange satisfies std::ranges::sized_range, which
+/// vertex_descriptor_view requires for non-random-access iterators.
+template <typename BGLVertexIter>
+using bgl_vertex_range = std::ranges::subrange<bgl_keyed_vertex_iterator<BGLVertexIter>,
+                                               bgl_keyed_vertex_iterator<BGLVertexIter>,
+                                               std::ranges::subrange_kind::sized>;
+
+} // namespace graph::bgl::detail
 
 // ── ADL call helpers ────────────────────────────────────────────────────────
 // These MUST live outside namespace graph. graph-v3 defines CPO objects named
@@ -21,6 +82,11 @@ namespace graph_bgl_adl {
 template <typename G>
 auto call_num_vertices(const G& g) -> decltype(num_vertices(g)) {
   return num_vertices(g);
+}
+
+template <typename G>
+auto call_vertices(const G& g) -> decltype(vertices(g)) {
+  return vertices(g);
 }
 
 template <typename V, typename G>
@@ -57,11 +123,21 @@ auto call_source(const E& e, const G& g) -> decltype(source(e, g)) {
 
 namespace graph::bgl {
 
+// ── Trait: is vertex_descriptor integral (vecS) or opaque (listS/setS)? ─────
+
+template <typename G>
+inline constexpr bool has_integral_vertex_id_v =
+    std::integral<typename boost::graph_traits<G>::vertex_descriptor>;
+
 // ── graph_adaptor ───────────────────────────────────────────────────────────
 
 /// Non-owning wrapper that adapts a BGL graph for use with graph-v3 CPOs.
-/// The adapted graph satisfies `adjacency_list` and `index_adjacency_list`
-/// once the appropriate BGL graph header is included by the caller.
+///
+/// For BGL graphs with integral vertex descriptors (vecS): satisfies
+/// `adjacency_list` and `index_adjacency_list`.
+///
+/// For BGL graphs with opaque vertex descriptors (listS, setS): satisfies
+/// `adjacency_list` only (vertex IDs are non-integral).
 template <typename BGL_Graph>
 class graph_adaptor {
   BGL_Graph* g_;
@@ -84,12 +160,24 @@ graph_adaptor(G&) -> graph_adaptor<G>;
 
 // ── ADL free functions (found by graph-v3 CPOs) ────────────────────────────
 
-/// vertices CPO (Tier 2: ADL) — returns iota range, CPO auto-wraps in vertex_descriptor_view.
+/// vertices CPO (Tier 2: ADL).
+/// For vecS: returns iota range (integral IDs).
+/// For listS/setS: returns a bgl_vertex_range (keyed pair adaptor) that satisfies
+/// the vertex_iterator concept required by vertex_descriptor_view.
 template <typename G>
 auto vertices(const graph_adaptor<G>& ga) {
-  using vid_t = typename boost::graph_traits<G>::vertex_descriptor;
-  auto n = graph_bgl_adl::call_num_vertices(ga.bgl_graph());
-  return std::views::iota(vid_t{0}, static_cast<vid_t>(n));
+  if constexpr (has_integral_vertex_id_v<G>) {
+    using vid_t = typename boost::graph_traits<G>::vertex_descriptor;
+    auto n = graph_bgl_adl::call_num_vertices(ga.bgl_graph());
+    return std::views::iota(vid_t{0}, static_cast<vid_t>(n));
+  } else {
+    using bgl_viter = typename boost::graph_traits<G>::vertex_iterator;
+    using keyed_iter = detail::bgl_keyed_vertex_iterator<bgl_viter>;
+    auto [first, last] = graph_bgl_adl::call_vertices(ga.bgl_graph());
+    auto n = graph_bgl_adl::call_num_vertices(ga.bgl_graph());
+    return detail::bgl_vertex_range<bgl_viter>(keyed_iter(first), keyed_iter(last),
+                                               static_cast<std::size_t>(n));
+  }
 }
 
 /// num_vertices CPO (Tier 2: ADL).

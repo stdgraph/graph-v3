@@ -128,10 +128,68 @@ auto fn = graph::bgl::make_bgl_lvalue_property_map_fn(
 | `adjacency_list<vecS, vecS, bidirectionalS, ...>` | ✅ Full | Includes `in_edges` support |
 | `adjacency_list<vecS, vecS, undirectedS, ...>` | ✅ Full | `in_edges` delegates to `out_edges` |
 | `compressed_sparse_row_graph<directedS, ...>` | ✅ Full | High-performance CSR; verified with Dijkstra |
-| `adjacency_list<listS, ...>` | ❌ Not supported | Non-integral vertex descriptors |
-| `adjacency_list<setS, ...>` | ❌ Not supported | Non-integral vertex descriptors |
+| `adjacency_list<*, listS, *, ...>` | ✅ Supported | Non-integral vertex IDs; use `unordered_map` storage |
+| `adjacency_list<*, setS, *, ...>` | ✅ Supported | Non-integral vertex IDs; use `unordered_map` storage |
 
-The adaptor requires BGL graphs with integral vertex descriptors (typically `vecS` for the vertex container).
+**Note on non-vecS graphs:** When the vertex container is `listS` or `setS`, BGL vertex descriptors are `void*` (opaque pointers). The adaptor handles this transparently — vertices iteration, edges, source/target all work. However, algorithms requiring per-vertex storage (Dijkstra, BFS, etc.) cannot use `std::vector` indexed by vertex ID. Use `make_vertex_map_property_fn` with `std::unordered_map` instead.
+
+---
+
+## Non-vecS Graphs (listS / setS)
+
+For BGL graphs using `listS` or `setS` as the vertex container, vertex descriptors are opaque `void*` pointers rather than integers. The adaptor supports these graphs with a few differences:
+
+### Construction and Iteration
+
+```cpp
+#include <graph/adaptors/bgl/graph_adaptor.hpp>
+#include <graph/adaptors/bgl/property_bridge.hpp>
+#include <boost/graph/adjacency_list.hpp>
+
+struct EdgeProp { double weight; };
+
+// listS for vertex container — vertex descriptors are void*
+using BGL_Graph = boost::adjacency_list<boost::vecS, boost::listS, boost::directedS,
+                                         boost::no_property, EdgeProp>;
+BGL_Graph bgl_g;
+auto v0 = boost::add_vertex(bgl_g);
+auto v1 = boost::add_vertex(bgl_g);
+boost::add_edge(v0, v1, EdgeProp{3.14}, bgl_g);
+
+auto g = graph::bgl::graph_adaptor(bgl_g);
+
+// Works exactly like vecS graphs:
+for (auto u : graph::vertices(g)) {
+  for (auto uv : graph::edges(g, u)) {
+    // vertex_id returns void* for non-vecS
+    std::cout << graph::vertex_id(g, u) << " -> " << graph::target_id(g, uv) << "\n";
+  }
+}
+```
+
+### Per-Vertex Storage with `unordered_map`
+
+Since vertex IDs are `void*` (not integers), you cannot index a `std::vector` by vertex ID. Instead, use `std::unordered_map<void*, T>` with `make_vertex_map_property_fn`:
+
+```cpp
+using vid_t = boost::graph_traits<BGL_Graph>::vertex_descriptor;  // void*
+
+std::unordered_map<vid_t, double> dist;
+std::unordered_map<vid_t, vid_t>  pred;
+
+// Initialize all vertices
+for (auto u : graph::vertices(g)) {
+  auto vid = graph::vertex_id(g, u);
+  dist[vid] = std::numeric_limits<double>::max();
+  pred[vid] = vid;
+}
+
+auto dist_fn = graph::bgl::make_vertex_map_property_fn(dist);
+auto pred_fn = graph::bgl::make_vertex_map_property_fn(pred);
+
+// Use with algorithms
+dist_fn(g, source_vertex) = 0.0;
+```
 
 ---
 
@@ -195,13 +253,15 @@ for (auto u : graph::vertices(g)) {
 | `make_bgl_edge_weight_fn(pm)` | Edge weight function | Dijkstra, Bellman-Ford |
 | `make_bgl_readable_property_map_fn(pm, key_extractor)` | Generic readable fn | Any edge/vertex property |
 | `make_bgl_lvalue_property_map_fn(pm, key_extractor)` | Writable fn (lvalue ref) | Mutable properties |
-| `make_vertex_id_property_fn(vec)` | Vertex-indexed fn | Distance, predecessor vectors |
+| `make_vertex_id_property_fn(vec)` | Vertex-indexed fn | Distance, predecessor vectors (vecS only) |
+| `make_vertex_map_property_fn(map)` | Map-based vertex fn | Distance, predecessor for non-vecS graphs |
 
 ---
 
 ## Known Limitations
 
-- **Vertex container must be `vecS`** — The adaptor assumes integral vertex descriptors (indices 0..n-1). Graphs using `listS`, `setS`, or `hash_setS` for the vertex container have non-integral descriptors and are not supported.
+- **Non-vecS graphs require `unordered_map` storage** — Algorithms that need per-vertex data (distances, predecessors) cannot use `std::vector` indexing for `listS`/`setS` graphs. Use `make_vertex_map_property_fn` with `std::unordered_map<void*, T>`.
+- **Non-vecS graphs do not satisfy `index_adjacency_list`** — Only the `adjacency_list` concept is satisfied when vertex IDs are non-integral.
 - **No `vertex_value` or `edge_value` CPO** — The adaptor does not define these CPOs. Access BGL properties through the property bridge functions or directly via BGL's `get()`.
 - **No graph mutation** — `add_vertex`, `add_edge`, `remove_vertex`, `remove_edge` are not adapted. Mutate through the underlying BGL graph directly.
 - **Boost headers required** — The adaptor headers include `<boost/graph/graph_traits.hpp>`. Callers must have Boost headers available.
