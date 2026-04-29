@@ -18,6 +18,7 @@
 - [Containers](user-guide/containers.md) — `dynamic_graph`, `compressed_graph`, `undirected_adjacency_list`, 27 trait combinations
 - [Views](user-guide/views.md) — lazy traversal views (breadth-first search, depth-first search, topological sort, etc.)
 - [Adaptors](user-guide/adaptors.md) — non-owning graph wrappers (`filtered_graph`, BGL adaptor)
+- [BGL Adaptor](user-guide/bgl-adaptor.md) — use graph-v3 on Boost.Graph data structures
 - [Bidirectional Access](user-guide/bidirectional-access.md) — incoming edges, reverse traversal, `in_edge_accessor`
 - [Algorithms](user-guide/algorithms.md) — Dijkstra and Bellman-Ford shortest-paths, minimal spanning tree, connected components, and more
 - [Graph I/O](user-guide/io.md) — read and write DOT (GraphViz), GraphML (XML), and JSON formats

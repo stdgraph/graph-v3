@@ -812,6 +812,14 @@ auto first_10 = vertices_dfs(g, source) | std::views::take(10);
 
 This section describes how to make an existing `boost::adjacency_list` (or any BGL-modelling type) usable as input to graph-v3 algorithms and views, **without rewriting the storage**. The goal is incremental migration: keep the BGL container, expose graph-v3 CPOs on top of it.
 
+> **✅ Library-provided adaptor available.** graph-v3 now ships a ready-to-use adaptor in `include/graph/adaptors/bgl/`:
+> - `graph_adaptor.hpp` — one-line wrapper (`graph::bgl::graph_adaptor(bgl_g)`)
+> - `bgl_edge_iterator.hpp` — C++20 iterator wrapper for BGL iterators
+> - `property_bridge.hpp` — factory functions bridging BGL property maps to graph-v3 function objects
+>
+> See the [BGL Adaptor User Guide](../../docs/user-guide/bgl-adaptor.md) and [examples/bgl_adaptor_example.cpp](../../examples/bgl_adaptor_example.cpp) for usage.
+> The manual approach described below remains useful for understanding the CPO dispatch mechanism or for adapting non-standard BGL types.
+
 ### 12.1 What graph-v3 Requires
 
 graph-v3 dispatches everything through CPOs and a small set of concepts. The minimum surface to satisfy `graph::adjacency_list<G>` is:

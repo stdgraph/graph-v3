@@ -599,7 +599,7 @@ cmake --build build && ./build/examples/bgl_adaptor_example
 | 6     | Dijkstra end-to-end                 | ✅ Complete |
 | 7     | Bidirectional and undirected         | ✅ Complete |
 | 8     | compressed_sparse_row_graph         | ✅ Complete |
-| 9     | Documentation and example           | Not started |
+| 9     | Documentation and example           | ✅ Complete |
 
-**Last verified:** 2026-04-29 — 34 test cases, 107 assertions, all passing.
-Build requires `-DTEST_BGL_ADAPTOR=ON` and Boost headers.
+**All phases complete.** Last verified: 2026-04-29 — 34 test cases, 107 assertions, all passing.
+Build requires `-DTEST_BGL_ADAPTOR=ON` and Boost headers. Example requires `-DBUILD_BGL_EXAMPLES=ON`.
