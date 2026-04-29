@@ -1142,11 +1142,11 @@ The scores below are directional editorial estimates, not audited counts.
 | **Ordering/bandwidth** | 8 algorithms | 0 | 0% |
 | **Layout** | 5 algorithms | 0 | 0% |
 | **Graph adaptors** | 5 adaptors | 1 (transpose) | 20% |
-| **Graph I/O** | 5 formats | 3 | 60% |
-| **Graph generators** | 6 generators | 0 | 0% |
+| **Graph I/O** | 5 formats | 3 (DOT, GraphML, JSON) | 60% |
+| **Graph generators** | 6 generators | 4 (path, grid, Erdős–Rényi, Barabási–Albert) | 67% |
 | **Visitors** | 5 types + composable adaptors | Concept-checked visitors | 75% |
 | **Graph mutation** | Full `MutableGraph` concept | Partial (undirected only) | 40% |
 
-**Overall estimated BGL API coverage: ~30%**
+**Overall estimated BGL API coverage: ~33%**
 
-The 30% that exists is architecturally superior (C++20, ranges, concepts, CPOs, zero-config), and the library includes novel features (lazy traversal views, triangle counting, label propagation, Jaccard similarity) not found in BGL. The primary migration barrier is breadth of algorithm and utility coverage.
+The coverage that exists is architecturally superior (C++20, ranges, concepts, CPOs, zero-config), and the library includes novel features (lazy traversal views, triangle counting, label propagation, Jaccard similarity) not found in BGL. The primary migration barrier is breadth of algorithm and utility coverage.
