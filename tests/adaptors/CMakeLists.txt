@@ -1,4 +1,15 @@
-# BGL adaptor tests
+# ── Filtered graph adaptor tests (no external dependencies) ──────────────────
+
+add_executable(graph3_filtered_graph_tests
+  test_filtered_graph.cpp
+)
+
+target_link_libraries(graph3_filtered_graph_tests
+  PRIVATE graph3 Catch2::Catch2WithMain)
+
+add_test(NAME graph3_filtered_graph_tests COMMAND graph3_filtered_graph_tests)
+
+# ── BGL adaptor tests ────────────────────────────────────────────────────────
 # Requires Boost headers. Reuse BGL_INCLUDE_DIR resolution from benchmark/.
 option(TEST_BGL_ADAPTOR "Build BGL adaptor tests (requires Boost headers)" OFF)
 
