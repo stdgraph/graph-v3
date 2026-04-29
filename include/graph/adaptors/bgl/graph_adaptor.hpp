@@ -33,6 +33,16 @@ auto call_out_edges(V v, const G& g) -> decltype(out_edges(v, g)) {
   return out_edges(v, g);
 }
 
+template <typename V, typename G>
+auto call_in_edges(V v, G& g) -> decltype(in_edges(v, g)) {
+  return in_edges(v, g);
+}
+
+template <typename V, typename G>
+auto call_in_edges(V v, const G& g) -> decltype(in_edges(v, g)) {
+  return in_edges(v, g);
+}
+
 template <typename E, typename G>
 auto call_target(const E& e, const G& g) -> decltype(target(e, g)) {
   return target(e, g);
@@ -100,6 +110,29 @@ template <typename G, typename U>
 auto edges(const graph_adaptor<G>& ga, const U& u) {
   auto [first, last] = graph_bgl_adl::call_out_edges(u.vertex_id(), ga.bgl_graph());
   using iter_t = bgl_edge_iterator<typename boost::graph_traits<G>::out_edge_iterator>;
+  return std::ranges::subrange(iter_t(first), iter_t(last));
+}
+
+/// in_edges CPO (Tier 2: ADL `in_edges(g, u)`) — enabled for bidirectional and undirected BGL graphs.
+/// For bidirectional: wraps BGL in_edge_iterator.
+/// For undirected: BGL in_edges() is the same as out_edges(), using in_edge_iterator.
+template <typename G, typename U>
+auto in_edges(graph_adaptor<G>& ga, const U& u)
+  requires std::is_convertible_v<typename boost::graph_traits<G>::traversal_category,
+                                 boost::bidirectional_graph_tag>
+{
+  auto [first, last] = graph_bgl_adl::call_in_edges(u.vertex_id(), ga.bgl_graph());
+  using iter_t = bgl_edge_iterator<typename boost::graph_traits<G>::in_edge_iterator>;
+  return std::ranges::subrange(iter_t(first), iter_t(last));
+}
+
+template <typename G, typename U>
+auto in_edges(const graph_adaptor<G>& ga, const U& u)
+  requires std::is_convertible_v<typename boost::graph_traits<G>::traversal_category,
+                                 boost::bidirectional_graph_tag>
+{
+  auto [first, last] = graph_bgl_adl::call_in_edges(u.vertex_id(), ga.bgl_graph());
+  using iter_t = bgl_edge_iterator<typename boost::graph_traits<G>::in_edge_iterator>;
   return std::ranges::subrange(iter_t(first), iter_t(last));
 }
 
