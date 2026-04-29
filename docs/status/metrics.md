@@ -20,7 +20,9 @@
 | Adaptors | 2 | `filtered_graph`, BGL `graph_adaptor` |
 | Containers | 3 | `dynamic_graph`, `compressed_graph`, `undirected_adjacency_list` |
 | Trait combinations | 27 | `include/graph/container/traits/` |
-| Test count | 4849 | `ctest --preset linux-gcc-debug` (100% pass, 2026-04-29) |
+| Generators | 4 | path, grid, Erdős–Rényi, Barabási–Albert (`include/graph/generators/`) |
+| I/O formats | 3 | DOT, GraphML, JSON (`include/graph/io/`) |
+| Test count | 4874 | `ctest --preset linux-gcc-debug` (100% pass, 2026-04-29) |
 | C++ standard | C++20 | `CMakeLists.txt` line 26 |
 | Line coverage | 96.0% (3613 / 3764) | `docs/status/coverage.md` (2026-02-22) |
 | Function coverage | 91.8% (29030 / 31639) | `docs/status/coverage.md` (2026-02-22) |
