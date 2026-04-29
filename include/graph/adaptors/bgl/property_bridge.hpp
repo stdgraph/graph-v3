@@ -61,8 +61,8 @@ auto make_bgl_lvalue_property_map_fn(PropertyMap pm, KeyExtractor key_extractor)
 
 struct edge_key_extractor {
   template <typename EdgeDescriptor>
-  decltype(auto) operator()(const EdgeDescriptor& uv) const {
-    return *uv.value();
+  auto operator()(const EdgeDescriptor& uv) const {
+    return *uv.value();  // return by value — uv.value() may be a temporary iterator
   }
 };
 

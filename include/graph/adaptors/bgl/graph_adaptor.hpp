@@ -139,14 +139,14 @@ auto in_edges(const graph_adaptor<G>& ga, const U& u)
 /// target_id CPO (Tier 2: ADL) — extracts BGL edge from descriptor, calls BGL target.
 template <typename G, typename UV>
 auto target_id(const graph_adaptor<G>& ga, const UV& uv) {
-  const auto& bgl_edge = *uv.value();
+  auto bgl_edge = *uv.value();  // copy — uv.value() may be a temporary iterator
   return graph_bgl_adl::call_target(bgl_edge, ga.bgl_graph());
 }
 
 /// source_id CPO (Tier 3: ADL) — extracts BGL edge from descriptor, calls BGL source.
 template <typename G, typename UV>
 auto source_id(const graph_adaptor<G>& ga, const UV& uv) {
-  const auto& bgl_edge = *uv.value();
+  auto bgl_edge = *uv.value();  // copy — uv.value() may be a temporary iterator
   return graph_bgl_adl::call_source(bgl_edge, ga.bgl_graph());
 }
 
