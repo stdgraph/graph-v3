@@ -13,7 +13,7 @@
 
 [![C++ Standard](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.cppreference.com/w/cpp/20)
 [![License](https://img.shields.io/badge/license-BSL--1.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-4405%20passing-brightgreen.svg)](docs/status/metrics.md)
+[![Tests](https://img.shields.io/badge/tests-4849%20passing-brightgreen.svg)](docs/status/metrics.md)
 
 ---
 
@@ -24,10 +24,11 @@
 - **Works with your graphs** — Bring your own graph. `std::vector<std::vector<int>>` and `std::map<int, std::list<std::pair<int,double>>>` are also valid graphs out of the box.
 - **14 algorithms** — Dijkstra, Bellman-Ford, BFS, DFS, topological sort, connected components, Tarjan SCC, articulation points, biconnected components, MST, triangle counting, MIS, label propagation, Jaccard coefficient
 - **7 lazy views** — vertexlist, edgelist, incidence, neighbors, BFS, DFS, topological sort — all composable with range adaptors
+- **2 graph adaptors** — `filtered_graph` (vertex/edge predicate filtering), BGL interop adaptor
 - **Bidirectional edge access** — `in_edges`, `in_degree`, reverse BFS/DFS/topological sort via `in_edge_accessor`
 - **Customization Point Objects (CPOs)** — adapt existing data structures without modifying them
 - **3 containers, 27 trait combinations** — `dynamic_graph`, `compressed_graph`, `undirected_adjacency_list` with mix-and-match vertex/edge storage
-- **4405 tests passing** — comprehensive Catch2 test suite
+- **4849 tests passing** — comprehensive Catch2 test suite
 
 ---
 
@@ -98,6 +99,7 @@ Both share a common descriptor system and customization-point interface.
 |----------|-----------------|---------|
 | **Algorithms** | Dijkstra, Bellman-Ford, BFS, DFS, topological sort, connected components, Tarjan SCC, articulation points, biconnected components, MST, triangle counting, MIS, label propagation, Jaccard | [Algorithm reference](docs/status/implementation_matrix.md#algorithms) |
 | **Views** | vertexlist, edgelist, incidence, neighbors, BFS, DFS, topological sort | [View reference](docs/status/implementation_matrix.md#views) |
+| **Adaptors** | `filtered_graph`, BGL `graph_adaptor` | [Adaptor reference](docs/user-guide/adaptors.md) |
 | **Containers** | `dynamic_graph` (27 trait combos), `compressed_graph` (CSR), `undirected_adjacency_list` | [Container reference](docs/status/implementation_matrix.md#containers) |
 | **CPOs** | 19 customization point objects (vertices, edges, target_id, vertex_value, edge_value, …) | [CPO reference](docs/reference/cpo-reference.md) |
 | **Concepts** | 9 graph concepts (edge, vertex, adjacency_list, …) | [Concepts reference](docs/reference/concepts.md) |
@@ -195,4 +197,4 @@ Distributed under the [Boost Software License 1.0](LICENSE).
 ---
 
 <!-- Status counts pinned to docs/status/metrics.md -->
-**Status:** 4405 / 4405 tests passing · 13 algorithms · 7 views · 3 containers · 27 trait combinations · C++20 · BSL-1.0
+**Status:** 4849 / 4849 tests passing · 13 algorithms · 7 views · 2 adaptors · 3 containers · 27 trait combinations · C++20 · BSL-1.0

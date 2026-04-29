@@ -22,6 +22,22 @@ See [CPO Reference](reference/cpo-reference.md) for the full list of customizati
 
 ---
 
+### Can I filter vertices or edges without copying?
+
+Yes. The `filtered_graph` adaptor wraps any graph and filters vertices/edges by predicate
+at traversal time. It's non-owning and zero-copy — views and algorithms see only the
+vertices/edges that pass your predicates.
+
+```cpp
+#include <graph/adaptors/filtered_graph.hpp>
+auto fg = filtered_graph(g, keep_all{}, [](auto&& uv) { return weight(uv) < 10; });
+dijkstra_shortest_paths(fg, source, distances, predecessors, weight_fn);
+```
+
+See [Adaptors](user-guide/adaptors.md) for full usage details and BGL interop.
+
+---
+
 ### How do I add edge weights?
 
 Edge weights are modeled as **edge values**. You can attach values to edges in several ways:

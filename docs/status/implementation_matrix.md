@@ -51,6 +51,21 @@
 | Topological sort (vertices + edges) | `topological_sort.hpp` | Search |
 | Transpose adaptor | `transpose.hpp` | Adaptor |
 
+---
+
+## Adaptors
+
+2 graph adaptors in `include/graph/adaptors/`:
+
+| Adaptor | Header | Description |
+|---------|--------|-------------|
+| `filtered_graph` | `adaptors/filtered_graph.hpp` | Non-owning wrapper filtering vertices/edges by predicate |
+| BGL graph adaptor | `adaptors/bgl/graph_adaptor.hpp` | Adapts Boost.Graph types for use with graph-v3 |
+
+Supporting headers:
+- `adaptors/bgl/bgl_edge_iterator.hpp` — C++20 iterator wrapper for BGL iterators
+- `adaptors/bgl/property_bridge.hpp` — Bridge BGL property maps to graph-v3 value functions
+
 Infrastructure headers (not user views): `view_concepts.hpp`, `adaptors.hpp`, `basic_views.hpp`, `search_base.hpp`, `edge_accessor.hpp`.
 
 ---

@@ -3,6 +3,14 @@
 ## [Unreleased]
 
 ### Added
+- **`filtered_graph` adaptor** (`adaptors/filtered_graph.hpp`) — non-owning wrapper that filters vertices and edges by predicate during traversal. Satisfies `adjacency_list` so all views and algorithms work transparently on the filtered subgraph. Uses self-contained `filtering_iterator` to avoid `std::views::filter` iterator dangling issues.
+- **BGL graph adaptor** (`adaptors/bgl/graph_adaptor.hpp`) — adapts Boost.Graph types for use with graph-v3 CPOs, views, and algorithms. Includes `bgl_edge_iterator.hpp` (C++20 iterator wrapper) and `property_bridge.hpp` (BGL property maps → graph-v3 value functions). Supports adjacency_list, CSR, and bidirectional BGL graphs.
+- `graph::adaptors::keep_all` — sentinel predicate (accepts everything, zero-overhead)
+- `graph::adaptors::filtering_iterator` — self-contained forward iterator with predicate stored in `std::optional` (custom assignment for lambda non-assignability)
+- `graph::adaptors::filtered_vertices(fg)` — lazy filtered vertex iteration convenience function
+- `graph::bgl::graph_adaptor` with CTAD, `graph_bgl_adl` namespace for ADL dispatch
+- `graph::bgl::make_bgl_edge_weight_fn`, `make_vertex_id_property_fn` — property bridge factories
+- 5 filtered_graph tests + 34 BGL adaptor test cases (107 assertions)
 - **Indexed d-ary heap for Dijkstra** (`detail/indexed_dary_heap.hpp`) — opt-in O(V)-bounded heap with true decrease-key, parameterized by arity. Selected via the new `use_indexed_dary_heap<Arity>` heap-selector tag on `dijkstra_shortest_paths` / `dijkstra_shortest_distances`. Supports both dense graphs (via `vector_position_map`) and mapped / hashable-vertex-id graphs (via `assoc_position_map`).
 - `use_default_heap` and `use_indexed_dary_heap<Arity>` heap-selector tags. **`use_default_heap` remains the default** — it wins on grid (E/V≈4) and path (E/V=1) workloads. Use `use_indexed_dary_heap<8>` for high-E/V random / scale-free graphs on `compressed_graph`, where Phase 4 benchmarks measured −25% (Erdős–Rényi) and −17% (Barabási–Albert) at 100K vertices vs. the default. See `agents/indexed_dary_heap_results.md` for full numbers.
 - `vector_position_map` / `assoc_position_map` adapters (`detail/heap_position_map.hpp`) used by the indexed heap.

@@ -621,6 +621,10 @@ still use it with all library views and algorithms by overriding the graph CPOs 
 This gives maximum flexibility — your storage layout, indexing scheme, and memory management
 remain unchanged while the library operates on them through the CPO interface.
 
+> **Tip:** If you want to filter vertices or edges of an existing graph, or interoperate with
+> Boost.Graph types, see [Adaptors](adaptors.md) for ready-made non-owning wrappers that
+> require no CPO overrides.
+
 ### Which CPOs to override
 
 At minimum, provide ADL overloads for these core CPOs in your type's namespace:
