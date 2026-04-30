@@ -80,6 +80,8 @@ automatically; map-based containers (`map`, `unordered_map`) satisfy
 
 All graph operations are **Customization Point Objects (CPOs)** that resolve in
 three tiers: custom member → ADL free function → built-in default.
+Some CPOs extend this chain; `num_vertices(g)` for example checks
+`size(vertices(g))` before falling back to `size(g)`.
 
 ### Structure CPOs
 

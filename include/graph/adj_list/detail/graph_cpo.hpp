@@ -1352,7 +1352,10 @@ namespace _cpo_impls {
   // =========================================================================
 
   namespace _num_vertices {
-    enum class _St { _none, _member, _adl, _ranges };
+    // Use the public vertices CPO (already declared above)
+    using _cpo_instances::vertices;
+
+    enum class _St { _none, _member, _adl, _vertices_size, _ranges };
 
     // Check for g.num_vertices() member function
     template <typename G>
@@ -1366,6 +1369,12 @@ namespace _cpo_impls {
       { num_vertices(g) } -> std::integral;
     };
 
+    // Check if vertices(g) returns a sized_range (uses the vertices CPO)
+    template <typename G>
+    concept _has_vertices_size = requires(const G& g) {
+      { vertices(g) } -> std::ranges::sized_range;
+    };
+
     // Check if graph is a sized_range (default)
     template <typename G>
     concept _has_ranges = std::ranges::sized_range<G>;
@@ -1376,6 +1385,8 @@ namespace _cpo_impls {
         return {_St::_member, noexcept(std::declval<const G&>().num_vertices())};
       } else if constexpr (_has_adl<G>) {
         return {_St::_adl, noexcept(num_vertices(std::declval<const G&>()))};
+      } else if constexpr (_has_vertices_size<G>) {
+        return {_St::_vertices_size, noexcept(std::ranges::size(vertices(std::declval<const G&>())))};
       } else if constexpr (_has_ranges<G>) {
         return {_St::_ranges, noexcept(std::ranges::size(std::declval<const G&>()))};
       } else {
@@ -1392,12 +1403,14 @@ namespace _cpo_impls {
       /**
              * @brief Get the number of vertices in the graph
              * 
-             * Resolution order (three-tier approach):
+             * Resolution order (four-tier approach):
              * 1. g.num_vertices() - Member function (highest priority)
-             * 2. num_vertices(g) - ADL (medium priority)
-             * 3. std::ranges::size(g) - Ranges default (lowest priority)
+             * 2. num_vertices(g) - ADL (high priority)
+             * 3. std::ranges::size(vertices(g)) - Vertices range size (medium priority)
+             * 4. std::ranges::size(g) - Ranges default (lowest priority)
              * 
-             * The default implementation works for any sized_range (vector, deque, map, etc.)
+             * The default implementations work for any graph whose vertices(g) returns
+             * a sized_range, or any graph that is itself a sized_range.
              * Custom graph types can override by providing a member function or ADL function.
              * 
              * @tparam G Graph type
@@ -1414,6 +1427,8 @@ namespace _cpo_impls {
           return g.num_vertices();
         } else if constexpr (_Choice<_G>._Strategy == _St::_adl) {
           return num_vertices(g);
+        } else if constexpr (_Choice<_G>._Strategy == _St::_vertices_size) {
+          return std::ranges::size(vertices(g));
         } else if constexpr (_Choice<_G>._Strategy == _St::_ranges) {
           return std::ranges::size(g);
         }
@@ -1468,12 +1483,14 @@ namespace _cpo_impls {
       /**
              * @brief Get the number of vertices in the graph
              * 
-             * Resolution order (three-tier approach):
+             * Resolution order (four-tier approach):
              * 1. g.num_vertices() - Member function (highest priority)
-             * 2. num_vertices(g) - ADL (medium priority)
-             * 3. std::ranges::size(g) - Ranges default (lowest priority)
+             * 2. num_vertices(g) - ADL (high priority)
+             * 3. std::ranges::size(vertices(g)) - Vertices range size (medium priority)
+             * 4. std::ranges::size(g) - Ranges default (lowest priority)
              * 
-             * The default implementation works for any sized_range (vector, deque, map, etc.)
+             * The default implementations work for any graph whose vertices(g) returns
+             * a sized_range, or any graph that is itself a sized_range.
              * Custom graph types can override by providing a member function or ADL function.
              * 
              * @tparam G Graph type
@@ -1490,6 +1507,8 @@ namespace _cpo_impls {
           return g.num_vertices();
         } else if constexpr (_Choice<_G>._Strategy == _St::_adl) {
           return num_vertices(g);
+        } else if constexpr (_Choice<_G>._Strategy == _St::_vertices_size) {
+          return std::ranges::size(vertices(g));
         } else if constexpr (_Choice<_G>._Strategy == _St::_ranges) {
           return std::ranges::size(g);
         }

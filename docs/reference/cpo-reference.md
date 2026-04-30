@@ -142,6 +142,15 @@ Returns the number of vertices.
 | **Default** | `ranges::size(vertices(g))` |
 | **Complexity** | O(1) |
 
+**Resolution order for `num_vertices(g)`:**
+
+1. `g.num_vertices()` — member function
+2. ADL `num_vertices(g)` — free function in graph's namespace
+3. `std::ranges::size(vertices(g))` — size of the vertex range (works for any graph that provides `vertices(g)` returning a `sized_range`)
+4. `std::ranges::size(g)` — graph is itself a `std::ranges::sized_range`
+
+Most graphs need no override: tier 3 fires automatically whenever `vertices(g)` is defined and returns a sized range (e.g. `vertex_descriptor_view` over a `std::vector`).
+
 ---
 
 ## Edge CPOs
@@ -439,15 +448,18 @@ Returns the number of partitions.
 
 ## Resolution Order
 
-Every CPO follows the same three-step customization point protocol:
+Most CPOs follow a three-step customization point protocol:
 
 1. **Member function**: `g.cpo_name(args...)` or `uv.cpo_name(args...)`
 2. **ADL function**: unqualified `cpo_name(args...)` found via argument-dependent lookup
 3. **Default**: library-provided fallback (if available)
 
-The `edge_value` and `target_id` CPOs have an extended resolution chain that
-also checks for data members (`.value`, `.target_id`) and tuple-like access
-(`get<N>`).
+Some CPOs have extended resolution chains:
+
+- **`num_vertices(g)`** adds a tier between ADL and the graph-as-range fallback:
+  3. `std::ranges::size(vertices(g))` — vertex range size (fires for any graph that provides `vertices(g)`)
+  4. `std::ranges::size(g)` — graph is itself a `sized_range`
+- **`edge_value`** and **`target_id`** also check for data members (`.value`, `.target_id`) and tuple-like access (`get<N>`).
 
 ---
 

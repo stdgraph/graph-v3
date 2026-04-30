@@ -568,7 +568,7 @@ The following CPOs are implemented (or planned) for the Graph Container Interfac
 | `target_id(g, uv)` | `(G&, edge_t)` | `vertex_id_t<G>` | **yes** | pattern extraction (integral/pair/tuple) |
 | `source_id(g, uv)` | `(G&, edge_t)` | `vertex_id_t<G>` | **yes** | descriptor source |
 | `find_vertex(g, uid)` | `(G&, vertex_id_t)` | `vertex_iterator_t<G>` | no | `begin(vertices(g)) + uid` |
-| `num_vertices(g)` | `(const G&)` | `integral` | no | `ranges::size(vertices(g))` |
+| `num_vertices(g)` | `(const G&)` | `integral` | no | `ranges::size(vertices(g))` (4-tier: member → ADL → `size(vertices(g))` → `size(g)`) |
 | `num_edges(g)` | `(const G&)` | `integral` | no | sum of `distance(edges(g,u))` |
 | `degree(g, u)` | `(const G&, vertex_t)` | `integral` | no | `ranges::size(edges(g,u))` |
 | `target(g, uv)` | `(G&, edge_t)` | `vertex_t<G>` | no | `*find_vertex(g, target_id(g,uv))` |
