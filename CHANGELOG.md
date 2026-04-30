@@ -40,6 +40,17 @@
   - `weight_dist` enum (`uniform` U[1,100], `exponential` Exp(0.1)+1, `constant_one`) — passed to all generators (`generators/common.hpp`)
   - `edge_list<VId, EV>` / `edge_entry<VId, EV>` type aliases; all generators accept a `VId` template parameter (default `uint32_t`) for large graphs (`generators/common.hpp`)
   - 6 generator tests covering basic properties, weight distributions, and `uint64_t` vertex IDs
+- **AdaptingThirdPartyGraph example** (`examples/AdaptingThirdPartyGraph/adapting_a_third_party_graph.cpp`) — demonstrates how to wrap an existing third-party graph type with graph-v3 CPO friend functions (vertices, edges, target_id, vertex_value, edge_value, find_vertex) so all views and algorithms work without modifying the original type
+- **PageRank example** (`examples/PageRank/`) — placeholder for a PageRank implementation; PageRank was removed from the standard algorithm list because there is no single common implementation
+- **CppCon 2021 examples** (`examples/CppCon2021/`) — four standalone programs refactored from graph-v2 to graph-v3:
+  - `graphs.cpp` — basic vertex/edge traversal and graph construction
+  - `bacon.cpp` — Kevin Bacon six-degrees problem using BFS
+  - `ospf.cpp` — OSPF-style shortest-path routing with Dijkstra
+  - `imdb.cpp` — IMDB actor/movie graph with BFS and path reconstruction
+- **CppCon 2022 examples** (`examples/CppCon2022/`) — Germany routes graph demo refactored from graph-v2 to graph-v3:
+  - `rr_adaptor.hpp` — generic range-of-ranges graph adaptor; exposes graph-v3 CPO interface (vertices, edges, target_id, vertex_value, edge_value, find_vertex) using descriptor-based friend functions; data members declared before friend trailing-return-type declarations to satisfy C++ class scope rules
+  - `graphviz_output.hpp` — Graphviz `.gv` file writers using vertexlist, incidence, and edges_dfs views
+  - `germany_routes_example.cpp` — builds a Germany routes graph, traverses it, and runs Dijkstra twice (segment count and km distance)
 
 ### Changed
 - **`edge_descriptor` simplified to iterator-only storage** — removed the `conditional_t<random_access_iterator, size_t, EdgeIter>` dual-storage path; edges always store the iterator directly since edges always have physical containers. Eliminates 38 `if constexpr` branches across 6 files (~500 lines removed).

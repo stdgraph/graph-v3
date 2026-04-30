@@ -23,6 +23,7 @@
 - [Algorithms](user-guide/algorithms.md) — Dijkstra and Bellman-Ford shortest-paths, minimal spanning tree, connected components, and more
 - [Graph I/O](user-guide/io.md) — read and write DOT (GraphViz), GraphML (XML), and JSON formats
 - [Generators](user-guide/generators.md) — synthetic graph generators (path, grid, Erdős–Rényi, Barabási–Albert)
+- [Examples](examples.md) — complete working programs (third-party adaptation, CppCon 2021/2022 demos, Dijkstra, MST, BGL adaptor)
 
 ## Reference
 
