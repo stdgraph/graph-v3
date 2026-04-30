@@ -11,6 +11,7 @@ target_link_libraries(dijkstra_example PRIVATE graph3)
 target_include_directories(dijkstra_example PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_subdirectory(CppCon2021)
+add_subdirectory(CppCon2022)
 
 # BGL adaptor example (requires Boost headers)
 option(BUILD_BGL_EXAMPLES "Build BGL adaptor examples (requires Boost headers)" OFF)
