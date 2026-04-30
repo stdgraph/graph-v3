@@ -389,7 +389,10 @@ For the full guide, see **[Bidirectional Access](user-guide/bidirectional-access
 - **[Edge Lists User Guide](user-guide/edge-lists.md)** — edge patterns, vertex ID types
 - **[Views](user-guide/views.md)** — BFS, DFS, topological sort, incidence, neighbors
 - **[Bidirectional Access](user-guide/bidirectional-access.md)** — incoming edges, reverse traversal
+- **[Adaptors](user-guide/adaptors.md)** — `filtered_graph`, BGL interop adaptor
 - **[Container Guide](user-guide/containers.md)** — `dynamic_graph`, `compressed_graph`, `undirected_adjacency_list`
+- **[Graph I/O](user-guide/io.md)** — read/write DOT, GraphML, and JSON formats
+- **[Generators](user-guide/generators.md)** — synthetic graph generators for testing and benchmarking
 - **[Algorithm Reference](status/implementation_matrix.md#algorithms)** — all 13 algorithms
 - **[Migration from v2](migration-from-v2.md)** — what changed from graph-v2
 - **[FAQ](FAQ.md)** — common questions

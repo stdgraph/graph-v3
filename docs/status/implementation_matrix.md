@@ -51,6 +51,21 @@
 | Topological sort (vertices + edges) | `topological_sort.hpp` | Search |
 | Transpose adaptor | `transpose.hpp` | Adaptor |
 
+---
+
+## Adaptors
+
+2 graph adaptors in `include/graph/adaptors/`:
+
+| Adaptor | Header | Description |
+|---------|--------|-------------|
+| `filtered_graph` | `adaptors/filtered_graph.hpp` | Non-owning wrapper filtering vertices/edges by predicate |
+| BGL graph adaptor | `adaptors/bgl/graph_adaptor.hpp` | Adapts Boost.Graph types for use with graph-v3 |
+
+Supporting headers:
+- `adaptors/bgl/bgl_edge_iterator.hpp` — C++20 iterator wrapper for BGL iterators
+- `adaptors/bgl/property_bridge.hpp` — Bridge BGL property maps to graph-v3 value functions
+
 Infrastructure headers (not user views): `view_concepts.hpp`, `adaptors.hpp`, `basic_views.hpp`, `search_base.hpp`, `edge_accessor.hpp`.
 
 ---
@@ -131,6 +146,37 @@ Naming convention: `{vertex}o{edge}_graph_traits.hpp`
 
 ---
 
+## Generators
+
+4 graph generators in `include/graph/generators/`:
+
+| Generator | Header | Description |
+|-----------|--------|-------------|
+| Path graph | `generators/path.hpp` | Linear chain: 0 → 1 → … → n-1 |
+| Grid graph | `generators/grid.hpp` | 2D lattice with right/down edges |
+| Erdős–Rényi | `generators/erdos_renyi.hpp` | Random G(n, p) model |
+| Barabási–Albert | `generators/barabasi_albert.hpp` | Preferential attachment (scale-free) |
+
+Test file: `tests/generators/test_generators.cpp`
+
+---
+
+## Graph I/O
+
+3 I/O formats in `include/graph/io/`:
+
+| Format | Header | Writer | Reader | Description |
+|--------|--------|--------|--------|-------------|
+| DOT (GraphViz) | `io/dot.hpp` | `write_dot()` | `read_dot()` | Most common graph visualization format |
+| GraphML (XML) | `io/graphml.hpp` | `write_graphml()` | `read_graphml()` | XML-based graph interchange |
+| JSON | `io/json.hpp` | `write_json()` | `read_json()` | JGF-inspired JSON format |
+
+Shared utilities: `io/detail/common.hpp` (concepts: `formattable`, `has_vertex_value`, `has_edge_value`)
+
+Test file: `tests/io/test_io.cpp`
+
+---
+
 ## Umbrella Headers
 
 | Header | Includes | Status |
@@ -138,6 +184,8 @@ Naming convention: `{vertex}o{edge}_graph_traits.hpp`
 | `graph/graph.hpp` | Core types, concepts, traits, views, containers | Verified |
 | `graph/views.hpp` | All views + CPOs | Verified |
 | `graph/algorithms.hpp` | All 13 algorithm headers | Verified (fixed Phase 0) |
+| `graph/generators.hpp` | All 4 generator headers | Verified |
+| `graph/io.hpp` | All 3 I/O format headers | Verified |
 
 ---
 
@@ -150,6 +198,8 @@ Naming convention: `{vertex}o{edge}_graph_traits.hpp`
 | `graph::edge_list::` | Edge list concepts, traits, descriptors |
 | `graph::views::` | Graph views (vertexlist, edgelist, neighbors, BFS, DFS, etc.) |
 | `graph::container::` | Concrete graph containers |
+| `graph::generators::` | Synthetic graph generators |
+| `graph::io::` | Graph I/O (DOT, GraphML, JSON) |
 | `graph::detail::` | Internal implementation details |
 
 ---

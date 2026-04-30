@@ -38,10 +38,9 @@ graph-v3 is a ground-up C++20 redesign targeting ISO standardization (P3126–P3
 
 **Key gaps requiring attention for BGL migration:**
 - Dozens of missing algorithms across flow, matching, coloring, planarity, isomorphism, centrality, layout, and related areas
-- No `filtered_graph` adaptor (concept-preserving view)
 - No `subgraph` hierarchy with descriptor mapping
-- No graph I/O (GraphML, DOT, DIMACS, METIS)
-- No graph generators (Erdos-Renyi, small-world, PLOD, R-MAT, mesh)
+- No graph I/O (DIMACS, METIS)
+- Graph generators partially implemented (Erdős-Rényi, Barabási-Albert, grid, path available; Watts-Strogatz, R-MAT still missing)
 - `dynamic_graph` lacks individual mutation (`add_vertex`, `add_edge`, `remove_vertex`, `remove_edge`)
 - No `adjacency_matrix` container
 - No `copy_graph` utility with cross-type and property mapping support
@@ -436,39 +435,33 @@ auto vis = make_visitor(
 | BGL Adaptor | graph-v3 Equivalent | Gap Analysis |
 |-------------|---------------------|--------------|
 | **`reverse_graph<G>`** | `transpose_view<G>` | ✅ Functional equivalent; cleaner CPO-based design |
-| **`filtered_graph<G, EP, VP>`** | ❌ None | 🔴 **Critical gap** — see below |
+| **`filtered_graph<G, EP, VP>`** | ✅ `filtered_graph` adaptor (`<graph/adaptors/filtered_graph.hpp>`) | Vertex/edge predicate filtering; satisfies `adjacency_list` |
 | **`subgraph<G>`** | ❌ None | 🟡 Test helper `extract_subgraph()` creates independent copies only |
 | **`labeled_graph<G, Label>`** | ❌ None | 🟡 Use map-based `dynamic_graph` with string keys |
 | **`graph_as_tree<G>`** | ❌ None | 🟢 Low priority |
 | **`vector_as_graph`** | ✅ Native — `vector<vector<int>>` works via CPOs | graph-v3 is superior here |
 | **`matrix_as_graph`** | ❌ None | 🟢 Low priority |
 
-### Filtered Graph — Critical Gap
+### Filtered Graph — Implemented
 
-`filtered_graph` is one of BGL's most-used adaptors. It creates a zero-cost view over an existing graph that hides vertices and/or edges based on predicates, while preserving all graph concepts.
+`filtered_graph` is available at `<graph/adaptors/filtered_graph.hpp>`. It creates a non-owning view over an existing graph that hides vertices and/or edges based on predicates, while satisfying `adjacency_list<G>` so it can be passed directly to all algorithms.
 
-**Current graph-v3 workaround:**
 ```cpp
-// Filter edges manually via ranges
-for (auto [tid, uv] : incidence(g, u) | std::views::filter(pred)) { ... }
+#include <graph/adaptors/filtered_graph.hpp>
+using namespace graph::adaptors;
+
+// Filter edges by weight, keep all vertices:
+auto fg = filtered_graph(g, keep_all{}, [&](auto&& uv) { return edge_value(g, uv) < 10.0; });
+dijkstra_shortest_paths(fg, {source}, distances, predecessors, weight_fn);
+
+// Filter vertices only:
+auto fg2 = filtered_graph(g, [](auto uid) { return uid != 5; }, keep_all{});
 ```
 
-**Problem:** This doesn't produce a type that satisfies `adjacency_list<G>` — it can't be passed to algorithms.
-
-**Recommended implementation for graph-v3:**
-```cpp
-template <adjacency_list G, 
-          class EdgePred = keep_all, 
-          class VertexPred = keep_all>
-class filtered_graph_view {
-    G* g_;
-    EdgePred edge_pred_;
-    VertexPred vertex_pred_;
-    // Implement all CPOs: vertices(), edges(), vertex_id(), target_id(), etc.
-    // Filter vertices() and edges(g,u) through predicates
-    // Ensure: edge visible iff edge_pred(uv) && vertex_pred(source) && vertex_pred(target)
-};
-```
+Key design details:
+- Uses `filtering_iterator` (not `std::views::filter`) to avoid dangling — predicate stored in `std::optional` with custom assignment for lambda non-assignability.
+- `keep_all{}` sentinel predicate is zero-overhead.
+- Delegates `begin()`/`end()`/`size()`/`operator[]` to underlying graph for vertex access.
 
 ### graph-v3 Views with No BGL Equivalent
 
@@ -493,51 +486,177 @@ graph-v3's lazy view system is a significant advancement over BGL:
 
 | Format | BGL | graph-v3 | Priority |
 |--------|-----|----------|----------|
-| **DOT / GraphViz** | `read_graphviz()`, `write_graphviz()` | ❌ None | 🔴 High — most common format |
-| **GraphML (XML)** | `read_graphml()`, `write_graphml()` | ❌ None | 🟡 Medium |
+| **DOT / GraphViz** | `read_graphviz()`, `write_graphviz()` | ✅ `write_dot()`, `read_dot()` | 🔴 High — most common format |
+| **GraphML (XML)** | `read_graphml()`, `write_graphml()` | ✅ `write_graphml()`, `read_graphml()` | 🟡 Medium |
 | **DIMACS** | `read_dimacs_max_flow()`, `write_dimacs_max_flow()` | ❌ None | 🟡 Medium (needed for flow algorithms) |
 | **METIS** | `metis_reader` class | ❌ None | 🟢 Low |
 | **Adjacency List Text** | `operator<<` / `operator>>` | ❌ None | 🟢 Low |
-| **JSON** | None | ❌ None | 🟡 Medium (modern format) |
+| **JSON** | None | ✅ `write_json()`, `read_json()` | 🟡 Medium (modern format) |
 
-**Recommendation:** Implement DOT and GraphML as the first I/O formats. These cover the vast majority of BGL user needs. Design the I/O layer as generic free functions taking any `adjacency_list<G>`:
+**Recommendation:** Implement DOT and GraphML as the first I/O formats. These cover the vast majority of BGL user needs. Design the I/O layer as generic free functions taking any `adjacency_list<G>`.
+
+### Proposed DOT API — `std::format`-Based
+
+The DOT writer should leverage `std::format` (C++20) for type-safe value serialization. This avoids inventing a new extension point — users who specialize `std::formatter<T>` get DOT output for free.
+
+**Design: auto-format with opt-in override.**
 
 ```cpp
-// Proposed API
-void write_dot(ostream& os, const adjacency_list auto& g, 
-               auto vertex_label_fn = {}, auto edge_label_fn = {});
-auto read_dot(istream& is) -> dynamic_graph<...>;
+#include <graph/io/dot.hpp>
 
-void write_graphml(ostream& os, const adjacency_list auto& g, ...);
-auto read_graphml(istream& is) -> dynamic_graph<...>;
+// (A) Zero-config default: auto-detects formattable VV/EV types.
+//     Emits [label="<formatted value>"] when std::formattable<VV> / std::formattable<EV>.
+//     Omits attributes when VV=void or type is not formattable.
+void write_dot(ostream& os, const adjacency_list auto& g);
+
+// (B) User-supplied attribute functions override the default.
+//     vertex_attr_fn: (const G&, vertex_id_t<G>) -> string   e.g. R"([label="A", color="red"])"
+//     edge_attr_fn:   (const G&, edge_t<G>)      -> string   e.g. R"([weight=3.14])"
+void write_dot(ostream& os, const adjacency_list auto& g,
+               auto vertex_attr_fn,
+               auto edge_attr_fn);
+
+// Read into a dynamic_graph (vertex/edge values parsed from DOT attributes).
+auto read_dot(istream& is) -> dynamic_graph<...>;
+```
+
+**Implementation strategy for the default (A):**
+
+```cpp
+template <adjacency_list G>
+void write_dot(ostream& os, const G& g) {
+  os << "digraph {\n";
+  for (auto&& [uid, u] : vertexlist(g)) {
+    os << "  " << uid;
+    if constexpr (has_vertex_value<G> && std::formattable<vertex_value_t<G>, char>) {
+      os << std::format(" [label=\"{}\"]", vertex_value(g, u));
+    }
+    os << ";\n";
+    for (auto&& [tid, uv] : incidence(g, u)) {
+      os << "  " << uid << " -> " << tid;
+      if constexpr (has_edge_value<G> && std::formattable<edge_value_t<G>, char>) {
+        os << std::format(" [label=\"{}\"]", edge_value(g, uv));
+      }
+      os << ";\n";
+    }
+  }
+  os << "}\n";
+}
+```
+
+**Comparison with BGL's approach:**
+
+| Aspect | BGL | Proposed graph-v3 |
+|--------|-----|-------------------|
+| Value → string | `dynamic_properties` + per-property converters | `std::format` via `std::formatter<T>` specialization |
+| Customization | Verbose `dp.property("name", get(&VP::name, g))` for each field | Single `vertex_attr_fn` / `edge_attr_fn` callable |
+| Zero-config | No — must register properties explicitly | Yes — auto-formats if `std::formattable<VV>` |
+| Multiple attributes | Each registered separately | User returns full attribute string, or formats struct members |
+| Type safety | Runtime string conversion | Compile-time `std::formattable` concept check |
+
+**Struct with multiple fields** — user provides a formatter or attribute function:
+
+```cpp
+struct CityVertex { std::string name; double population; };
+
+// Option 1: specialize std::formatter<CityVertex> — auto-picked up by write_dot
+template<> struct std::formatter<CityVertex> : std::formatter<std::string> {
+  auto format(const CityVertex& v, auto& ctx) const {
+    return std::format_to(ctx.out(), "{} (pop: {:.0f})", v.name, v.population);
+  }
+};
+write_dot(cout, g);  // uses formatter automatically
+
+// Option 2: explicit attribute function for full DOT control
+write_dot(cout, g,
+  [&](const auto& g, auto uid) {
+    auto& v = vertex_value(g, vertices(g)[uid]);
+    return std::format(R"([label="{}", population="{:.0f}"])", v.name, v.population);
+  },
+  [&](const auto& g, auto uv) {
+    return std::format(R"([weight="{:.2f}"])", edge_value(g, uv));
+  });
+```
+
+### Proposed GraphML API
+
+```cpp
+#include <graph/io/graphml.hpp>
+
+// Write — property names inferred from struct member names (requires reflection
+// or explicit property registration). Simpler initial version: single label only.
+void write_graphml(ostream& os, const adjacency_list auto& g);
+void write_graphml(ostream& os, const adjacency_list auto& g,
+                   auto vertex_properties_fn, auto edge_properties_fn);
+
+// Read — returns dynamic_graph with string-valued vertex/edge properties.
+auto read_graphml(istream& is) -> dynamic_graph<std::string, std::string>;
 ```
 
 ---
 
 ## 10. Graph Generators
 
-### BGL Generators — All Missing from graph-v3
+### BGL Generators vs. graph-v3
 
-| Generator | BGL Header | Use Case | Priority |
+| Generator | BGL Header | graph-v3 | Priority |
 |-----------|-----------|----------|----------|
-| **Erdos-Renyi G(n,p)** | `erdos_renyi_generator.hpp` | Random graphs for testing | 🔴 High |
-| **Erdos-Renyi G(n,m)** | (same) | Fixed edge count | 🔴 High |
-| **Small World (Watts-Strogatz)** | `small_world_generator.hpp` | Social network models | 🟡 Medium |
-| **PLOD (Power-Law Out-Degree)** | `plod_generator.hpp` | Scale-free networks | 🟡 Medium |
-| **R-MAT** | `rmat_graph_generator.hpp` | Synthetic benchmarks | 🟡 Medium |
-| **Mesh/Grid** | `mesh_graph_generator.hpp` | Structured grids | 🟡 Medium |
-| **SSCA#2** | `ssca_graph_generator.hpp` | Benchmark graphs | 🟢 Low |
-| **Complete Graph K(n)** | — (manual) | Testing | 🟢 Low |
+| **Erdős-Rényi G(n,p)** | `erdos_renyi_generator.hpp` | ✅ `<graph/generators/erdos_renyi.hpp>` | ✅ Done |
+| **Erdos-Renyi G(n,m)** | (same) | ❌ Not available | 🟡 Medium |
+| **Barabási–Albert (preferential attachment)** | — | ✅ `<graph/generators/barabasi_albert.hpp>` | ✅ Done |
+| **2D Grid (4-connected)** | `mesh_graph_generator.hpp` | ✅ `<graph/generators/grid.hpp>` | ✅ Done |
+| **Path graph** | — | ✅ `<graph/generators/path.hpp>` | ✅ Done |
+| **Small World (Watts-Strogatz)** | `small_world_generator.hpp` | ❌ Not available | 🟡 Medium |
+| **PLOD (Power-Law Out-Degree)** | `plod_generator.hpp` | ❌ Not available (use Barabási–Albert) | 🟡 Medium |
+| **R-MAT** | `rmat_graph_generator.hpp` | ❌ Not available | 🟡 Medium |
+| **SSCA#2** | `ssca_graph_generator.hpp` | ❌ Not available | 🟢 Low |
+| **Complete Graph K(n)** | — (manual) | ❌ Not available | 🟢 Low |
 
-**Recommendation:** Implement generators as functions returning edge ranges (not graph objects), following graph-v3's range-centric philosophy:
+### graph-v3 Generator API
+
+Generators live in `<graph/generators.hpp>` (umbrella) or individual headers under `include/graph/generators/`. All return a `std::vector<copyable_edge_t<VId, double>>` sorted by source_id, suitable for loading into any graph container via `load_edges()`.
 
 ```cpp
-// Proposed API — returns a range of edge_descriptor<VId>
-auto generate_erdos_renyi(size_t n, double p, auto& rng) -> generator<edge_descriptor<uint32_t>>;
-auto generate_small_world(size_t n, size_t k, double beta, auto& rng) -> generator<edge_descriptor<uint32_t>>;
+#include <graph/generators.hpp>
+using namespace graph::generators;
+
+// Erdős–Rényi G(n,p) — O(E) geometric-skip algorithm (Batagelj & Brandes 2005)
+auto er = erdos_renyi(10'000u, 8.0 / 10'000);    // ~80K directed edges
+
+// 2D grid — bidirectional 4-connected, E/V ≈ 4
+auto grid = grid_2d(100u, 100u);                  // 10K vertices, ~40K edges
+
+// Barabási–Albert — scale-free / power-law degree distribution
+auto ba = barabasi_albert(10'000u, 4u);           // E/V ≈ 8
+
+// Path — 0 → 1 → 2 → … → (n−1), minimum-traffic baseline
+auto path = path_graph(1'000u);                   // 999 edges
+
+// Load into any container:
+compressed_graph<double> g;
+g.load_edges(er, std::identity{}, 10'000u);
 ```
 
-This allows loading into any graph container type via the existing `load_edges` mechanism.
+**Template parameter:** All generators accept `VId` as a template parameter (defaults to `uint32_t`):
+```cpp
+auto edges = erdos_renyi<uint64_t>(1'000'000ULL, 0.00001);
+```
+
+**Weight distributions:** Each generator accepts a `weight_dist` enum:
+- `weight_dist::uniform` — U[1, 100] (default)
+- `weight_dist::exponential` — Exp(0.1) + 1
+- `weight_dist::constant_one` — always 1.0
+
+### Remaining Gaps
+
+To achieve full BGL parity, the following generators are still needed:
+
+| Generator | Notes |
+|-----------|-------|
+| Erdős-Rényi G(n,m) | Fixed edge count variant; wrap existing G(n,p) with rejection or Fisher-Yates |
+| Watts-Strogatz small world | Ring lattice + random rewiring |
+| R-MAT | Recursive matrix; important for Graph500 benchmarks |
+| Complete graph K(n) | Trivial to implement |
 
 ---
 
@@ -653,7 +772,13 @@ filtered_graph<Graph, decltype(ep)> fg(g, ep);
 dijkstra_shortest_paths(fg, s, ...);
 ```
 
-**graph-v3:** ❌ No direct equivalent. Must construct a new graph with filtered edges.
+**graph-v3:**
+```cpp
+#include <graph/adaptors/filtered_graph.hpp>
+auto ep = [&](auto&& uv) { return edge_value(g, uv) > 5.0; };
+auto fg = graph::adaptors::filtered_graph(g, graph::adaptors::keep_all{}, ep);
+dijkstra_shortest_paths(fg, {s}, dist_fn, pred_fn, weight_fn);
+```
 
 #### Pattern 7: Reverse/Transpose Graph
 
@@ -686,6 +811,14 @@ auto first_10 = vertices_dfs(g, source) | std::views::take(10);
 ## 12. Adapting an Existing BGL Graph for graph-v3
 
 This section describes how to make an existing `boost::adjacency_list` (or any BGL-modelling type) usable as input to graph-v3 algorithms and views, **without rewriting the storage**. The goal is incremental migration: keep the BGL container, expose graph-v3 CPOs on top of it.
+
+> **✅ Library-provided adaptor available.** graph-v3 now ships a ready-to-use adaptor in `include/graph/adaptors/bgl/`:
+> - `graph_adaptor.hpp` — one-line wrapper (`graph::bgl::graph_adaptor(bgl_g)`)
+> - `bgl_edge_iterator.hpp` — C++20 iterator wrapper for BGL iterators
+> - `property_bridge.hpp` — factory functions bridging BGL property maps to graph-v3 function objects
+>
+> See the [BGL Adaptor User Guide](../../docs/user-guide/bgl-adaptor.md) and [examples/bgl_adaptor_example.cpp](../../examples/bgl_adaptor_example.cpp) for usage.
+> The manual approach described below remains useful for understanding the CPO dispatch mechanism or for adapting non-standard BGL types.
 
 ### 12.1 What graph-v3 Requires
 
@@ -1017,11 +1150,11 @@ The scores below are directional editorial estimates, not audited counts.
 | **Ordering/bandwidth** | 8 algorithms | 0 | 0% |
 | **Layout** | 5 algorithms | 0 | 0% |
 | **Graph adaptors** | 5 adaptors | 1 (transpose) | 20% |
-| **Graph I/O** | 5 formats | 0 | 0% |
-| **Graph generators** | 6 generators | 0 | 0% |
+| **Graph I/O** | 5 formats | 3 (DOT, GraphML, JSON) | 60% |
+| **Graph generators** | 6 generators | 4 (path, grid, Erdős–Rényi, Barabási–Albert) | 67% |
 | **Visitors** | 5 types + composable adaptors | Concept-checked visitors | 75% |
 | **Graph mutation** | Full `MutableGraph` concept | Partial (undirected only) | 40% |
 
-**Overall estimated BGL API coverage: ~30%**
+**Overall estimated BGL API coverage: ~33%**
 
-The 30% that exists is architecturally superior (C++20, ranges, concepts, CPOs, zero-config), and the library includes novel features (lazy traversal views, triangle counting, label propagation, Jaccard similarity) not found in BGL. The primary migration barrier is breadth of algorithm and utility coverage.
+The coverage that exists is architecturally superior (C++20, ranges, concepts, CPOs, zero-config), and the library includes novel features (lazy traversal views, triangle counting, label propagation, Jaccard similarity) not found in BGL. The primary migration barrier is breadth of algorithm and utility coverage.

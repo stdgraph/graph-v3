@@ -4,7 +4,7 @@
 
 # graph-v3 Documentation
 
-> A modern C++20 graph library — 13 algorithms, 7 lazy views, 3 containers, bidirectional edge access, 4405+ tests.
+> A modern C++20 graph library — 13 algorithms, 7 lazy views, 2 adaptors, 3 containers, 4 generators, 3 I/O formats, bidirectional edge access, 4874+ tests.
 
 </td>
 </tr></table>
@@ -17,8 +17,12 @@
 - [Edge Lists](user-guide/edge-lists.md) — flat sourced-edge model, concepts, patterns
 - [Containers](user-guide/containers.md) — `dynamic_graph`, `compressed_graph`, `undirected_adjacency_list`, 27 trait combinations
 - [Views](user-guide/views.md) — lazy traversal views (breadth-first search, depth-first search, topological sort, etc.)
+- [Adaptors](user-guide/adaptors.md) — non-owning graph wrappers (`filtered_graph`, BGL adaptor)
+- [BGL Adaptor](user-guide/bgl-adaptor.md) — use graph-v3 on Boost.Graph data structures
 - [Bidirectional Access](user-guide/bidirectional-access.md) — incoming edges, reverse traversal, `in_edge_accessor`
 - [Algorithms](user-guide/algorithms.md) — Dijkstra and Bellman-Ford shortest-paths, minimal spanning tree, connected components, and more
+- [Graph I/O](user-guide/io.md) — read and write DOT (GraphViz), GraphML (XML), and JSON formats
+- [Generators](user-guide/generators.md) — synthetic graph generators (path, grid, Erdős–Rényi, Barabási–Albert)
 
 ## Reference
 

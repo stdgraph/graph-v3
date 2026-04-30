@@ -96,6 +96,17 @@ All adjacency list descriptor and CPO support headers reach **100% line coverage
 | `edge_list/edge_list_descriptor.hpp` | 15 / 16 | 93.8% | 21 / 21 | 100.0% |
 | `graph_data.hpp` | 0 / 2 | 0.0% | 0 / 2 | 0.0% |
 
+### Adaptors (`adaptors/`)
+
+| File | Lines Hit / Total | Line % | Funcs Hit / Total | Func % |
+|------|-------------------|--------|-------------------|--------|
+| `filtered_graph.hpp` | — | — | — | — |
+| `bgl/graph_adaptor.hpp` | — | — | — | — |
+| `bgl/bgl_edge_iterator.hpp` | — | — | — | — |
+| `bgl/property_bridge.hpp` | — | — | — | — |
+
+> Coverage data for adaptors not yet collected (BGL adaptor requires external Boost headers).
+
 ---
 
 ## Coverage Gaps

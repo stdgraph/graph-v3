@@ -61,6 +61,12 @@ graph-v3/
 │   │   ├── edge_list.hpp
 │   │   ├── edge_list_descriptor.hpp
 │   │   └── edge_list_traits.hpp
+│   ├── adaptors/                      # Graph adaptors (non-owning wrappers)
+│   │   ├── filtered_graph.hpp         # Vertex/edge filtering adaptor
+│   │   └── bgl/                       # Boost.Graph interop
+│   │       ├── graph_adaptor.hpp      # Main BGL adaptor
+│   │       ├── bgl_edge_iterator.hpp  # C++20 iterator for BGL
+│   │       └── property_bridge.hpp    # BGL property maps → value functions
 │   └── views/                         # Lazy range views
 │       ├── vertexlist.hpp
 │       ├── edgelist.hpp
@@ -214,6 +220,7 @@ Tests mirror the source structure:
 | `tests/algorithms/` | One test file per algorithm (Dijkstra, BFS, DFS, …) |
 | `tests/container/` | Container conformance — all 27 trait combinations |
 | `tests/edge_list/` | Edge list model tests |
+| `tests/adaptors/` | Adaptor tests — filtered_graph, BGL graph_adaptor |
 | `tests/views/` | View iteration and composition |
 | `tests/common/` | Shared test utilities and helpers |
 
