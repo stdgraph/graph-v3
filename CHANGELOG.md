@@ -24,6 +24,22 @@
 - `is_sparse_vertex_container_v<G>` trait for compile-time graph type dispatch
 - Map-based graph test fixtures (`map_graph_fixtures.hpp`) with sparse vertex IDs
 - 456 new algorithm tests for sparse graph types (4343 → 4799)
+- **Graph I/O** (`<graph/io/>`) — read/write support for three formats:
+  - `write_dot(os, g)` / `write_dot(os, g, vertex_attr_fn, edge_attr_fn)` — DOT/GraphViz writer; auto-formats vertex/edge values when `std::formattable`, emits user-supplied attribute strings otherwise (`io/dot.hpp`)
+  - `read_dot(is) -> dot_graph` — DOT parser returning a lightweight `dot_graph` structure with string-keyed vertex/edge attributes (`io/dot.hpp`)
+  - `write_graphml(os, g)` / `write_graphml(os, g, vertex_properties_fn, edge_properties_fn)` — GraphML (XML) writer with optional property key declarations (`io/graphml.hpp`)
+  - `read_graphml(is) -> graphml_graph` — GraphML parser returning a `graphml_graph` structure with per-vertex/per-edge attribute maps (`io/graphml.hpp`)
+  - `write_json(os, g, indent = 2)` / `write_json(os, g, vertex_attr_fn, edge_attr_fn, indent)` — JSON writer; `indent=0` for compact single-line output (`io/json.hpp`)
+  - `read_json(is) -> json_graph` — JSON parser returning a `json_graph` structure with string-valued attribute maps (`io/json.hpp`)
+  - 19 I/O tests covering write, read, and roundtrip for all three formats
+- **Graph generators** (`<graph/generators/>`) — produce `edge_list<VId, EV>` sorted by source, loadable into any container via `load_edges()`:
+  - `erdos_renyi(n, p, seed, dist)` — G(n,p) random directed graph using the Batagelj–Brandes geometric-skip algorithm; O(E) time (`generators/erdos_renyi.hpp`)
+  - `grid_2d(rows, cols, seed, dist)` — bidirectional 4-connected grid graph; E/V ≈ 4 (`generators/grid.hpp`)
+  - `barabasi_albert(n, m, seed, dist)` — preferential-attachment scale-free graph; E/V ≈ 2m (`generators/barabasi_albert.hpp`)
+  - `path_graph(n, seed, dist)` — directed path 0 → 1 → … → n−1; E = n−1 (`generators/path.hpp`)
+  - `weight_dist` enum (`uniform` U[1,100], `exponential` Exp(0.1)+1, `constant_one`) — passed to all generators (`generators/common.hpp`)
+  - `edge_list<VId, EV>` / `edge_entry<VId, EV>` type aliases; all generators accept a `VId` template parameter (default `uint32_t`) for large graphs (`generators/common.hpp`)
+  - 6 generator tests covering basic properties, weight distributions, and `uint64_t` vertex IDs
 
 ### Changed
 - **`edge_descriptor` simplified to iterator-only storage** — removed the `conditional_t<random_access_iterator, size_t, EdgeIter>` dual-storage path; edges always store the iterator directly since edges always have physical containers. Eliminates 38 `if constexpr` branches across 6 files (~500 lines removed).
