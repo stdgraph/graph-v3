@@ -25,6 +25,115 @@ using namespace std::string_literals;
 using namespace std::string_view_literals;
 using namespace graph;
 
+// simple BFS on an unweighted graph with integral vertex ids
+// costars[actor_id] = vector of pre-computed co-star actor_ids
+void bacon1() {
+  // actors only
+  using vid_t              = size_t; // vertex id type
+  constexpr vid_t infinity = std::numeric_limits<vid_t>::max();
+  const vid_t     seed     = static_cast<vid_t>(std::ranges::find(actors, "Kevin Bacon") - begin(actors));
+
+  using G = vector<vector<vid_t>>;
+  G costars{{1, 5, 6}, {7, 10, 0, 5, 12}, {4, 3, 11}, {2, 11}, {8, 9, 2, 12}, {0, 1},
+            {7, 0},    {6, 1, 10},        {4, 9},     {4, 8},  {7, 1},        {2, 3},
+            {1, 4}};
+
+  vector<vid_t> bacon_number(size(actors), infinity);
+  bacon_number[seed] = 0;
+
+  // Evaluate Bacon numbers via BFS from source. The graph is unweighted, so the shortest
+  for (auto&& [uv] : graph::views::edges_bfs(costars, seed)) {
+    auto uid          = source_id(costars, uv);
+    auto vid          = target_id(costars, uv);
+    bacon_number[vid] = bacon_number[uid] + 1;
+  }
+
+  // Print results. Bacon number is the length of the shortest path from the seed actor to each actor.
+  for (vid_t uid = 0; uid < size(actors); ++uid) {
+    if (bacon_number[uid] == infinity)
+      cout << actors[uid] << " has Bacon number infinity\n";
+    else
+      cout << actors[uid] << " has Bacon number " << bacon_number[uid] << '\n';
+  }
+}
+
+// This outputs the bacon2() graph contents for debugging
+#if 0
+  // Show the bipartite structure: each vertex with its kind and neighbors.
+  for (auto&& u : vertices(g)) {
+    const auto& uid  = vertex_id(g, u);
+    const auto& uval = vertex_value(g, u);
+    const char* kind = (uval == vertex_kind::movie) ? "movie" : "actor";
+    cout << '[' << kind << "] " << uid << '\n';
+    for (auto&& uv : edges(g, u)) {
+      cout << "    -> " << target_id(g, uv) << '\n';
+    }
+  }
+  cout << '\n';
+#endif
+
+// sparse & non-integral vertex id
+// bipartite graph: movies <-> actors; edges link each actor to every film they appeared in (and back)
+void bacon2() {
+  using namespace graph::container;
+
+  // A vertex is either a movie or an actor.
+  enum class vertex_kind { movie, actor };
+  using vertex_val_t = vertex_kind;
+
+  // Vertex id is the movie/actor name (string). Vertices are stored in an
+  // std::unordered_map (hash-based) via the uol traits (unordered_map + list).
+  using traits_t = uol_graph_traits<void,         // edge value
+                                    vertex_val_t, // vertex value
+                                    void,         // graph value
+                                    string,       // vertex id
+                                    false>;       // not bidirectional
+  using G        = dynamic_adjacency_graph<traits_t>;
+  G g;
+
+  // Load all movie and actor vertices.
+  using vertex_data_t = copyable_vertex_t<string, vertex_val_t>;
+  g.load_vertices(movies, [](const string& title) -> vertex_data_t { return {title, vertex_kind::movie}; });
+  g.load_vertices(actors, [](const string& name) -> vertex_data_t { return {name, vertex_kind::actor}; });
+
+  // Edges from movies_actors. 
+  // Add both directions so a BFS from an actor can reach co-stars via the movies they share.
+  using edge_data_t   = copyable_edge_t<string, void>;
+  g.load_edges(movies_actors, [](const auto& e) -> edge_data_t { auto& [title, name] = e; return {title, name}; });
+  g.load_edges(movies_actors, [](const auto& e) -> edge_data_t { auto& [title, name] = e; return {name, title}; });
+
+  // Compute Bacon numbers via the edges_bfs view from "Kevin Bacon".
+  // The graph uses string vertex ids (unordered_map-based); edges_bfs now
+  // dispatches its visited tracker on the id type — std::unordered_set for
+  // non-integral ids, std::vector<bool> for integral ids — so the same
+  // view works for both dense and sparse graphs.
+  //
+  // Because the graph is bipartite (actor <-> movie), each co-star step
+  // traverses two edges (actor -> movie -> actor); an actor's Bacon number
+  // is depth/2.
+  using VDesc = vertex_t<G>;
+  std::unordered_map<VDesc, std::size_t> depth;
+
+  VDesc seed  = *find_vertex(g, "Kevin Bacon"s);
+  depth[seed] = 0;
+  for (auto&& [uv] : graph::views::edges_bfs(g, seed)) {
+    const vertex_id_t<G>&  u_id = source_id(g, uv);   // const string& — stable ref into the edge descriptor
+    vertex_t<G>            v    = *find_vertex(g, target_id(g, uv));
+    vertex_t<G>            u    = *find_vertex(g, u_id);
+    depth[v]                    = depth[u] + 1;
+  }
+
+  // Print results. Bacon number is the length of the shortest path from the seed actor 
+  // to each actor, divided by 2 for the bipartite graph.
+  for (const string& a : actors) {
+    auto it = depth.find(*find_vertex(g, a));
+    if (it == depth.end())
+      cout << a << " has Bacon number infinity\n";
+    else
+      cout << a << " has Bacon number " << (it->second / 2) << '\n';
+  }
+}
+
 // ── Domain types for bacon3 ──────────────────────────────────────────────────
 // Defined at file scope so that std::hash can be specialised (local classes
 // cannot appear as the subject of a std::hash specialisation because namespace
@@ -68,121 +177,6 @@ struct hash<actor> {
 };
 } // namespace std
 
-// simple BFS on an unweighted graph with integral vertex ids
-void bacon1() {
-  // actors only
-  using vid_t              = size_t; // vertex id type
-  constexpr vid_t infinity = std::numeric_limits<vid_t>::max();
-  const vid_t     seed     = static_cast<vid_t>(std::ranges::find(actors, "Kevin Bacon") - begin(actors));
-
-  using G = vector<vector<vid_t>>;
-  G costars{{1, 5, 6}, {7, 10, 0, 5, 12}, {4, 3, 11}, {2, 11}, {8, 9, 2, 12}, {0, 1},
-            {7, 0},    {6, 1, 10},        {4, 9},     {4, 8},  {7, 1},        {2, 3},
-            {1, 4}};
-
-  vector<vid_t> bacon_number(size(actors), infinity);
-  bacon_number[seed] = 0;
-
-  // Evaluate Bacon numbers via BFS from source. The graph is unweighted, so the shortest
-  for (auto&& [uv] : graph::views::edges_bfs(costars, seed)) {
-    auto uid          = source_id(costars, uv);
-    auto vid          = target_id(costars, uv);
-    bacon_number[vid] = bacon_number[uid] + 1;
-  }
-
-  // Print results. Bacon number is the length of the shortest path from the seed actor to each actor.
-  for (vid_t uid = 0; uid < size(actors); ++uid) {
-    if (bacon_number[uid] == infinity)
-      cout << actors[uid] << " has Bacon number infinity\n";
-    else
-      cout << actors[uid] << " has Bacon number " << bacon_number[uid] << '\n';
-  }
-}
-
-// sparse & non-integral vertex id
-void bacon2() {
-  using namespace graph::container;
-
-  // A vertex is either a movie or an actor.
-  enum class vertex_kind { movie, actor };
-  using vertex_val_t = vertex_kind;
-
-  // Vertex id is the movie/actor name (std::string). Vertices are stored in an
-  // std::unordered_map (hash-based) via the uol traits (unordered_map + list).
-  using traits_t = uol_graph_traits<void,         // edge value
-                                    vertex_val_t, // vertex value
-                                    void,         // graph value
-                                    std::string,  // vertex id
-                                    false>;       // not bidirectional
-  using G        = dynamic_adjacency_graph<traits_t>;
-
-  using vertex_data_t = copyable_vertex_t<std::string, vertex_val_t>;
-  using edge_data_t   = copyable_edge_t<std::string, void>;
-
-  G g;
-
-  // Load all movie and actor vertices.
-  g.load_vertices(movies, [](const std::string& m) -> vertex_data_t { return {m, vertex_kind::movie}; });
-  g.load_vertices(actors, [](const std::string& a) -> vertex_data_t { return {a, vertex_kind::actor}; });
-
-  // Edges from movies_actors. Add both directions so a BFS from an actor can
-  // reach co-stars via the movies they share.
-  g.load_edges(movies_actors, [](const auto& e) -> edge_data_t {
-    auto& [m, a] = e;
-    return {m, a};
-  });
-  g.load_edges(movies_actors, [](const auto& e) -> edge_data_t {
-    auto& [m, a] = e;
-    return {a, m};
-  });
-
-#if 0
-  // Show the bipartite structure: each vertex with its kind and neighbors.
-  for (auto&& u : vertices(g)) {
-    const auto& uid  = vertex_id(g, u);
-    const auto& uval = vertex_value(g, u);
-    const char* kind = (uval == vertex_kind::movie) ? "movie" : "actor";
-    cout << '[' << kind << "] " << uid << '\n';
-    for (auto&& uv : edges(g, u)) {
-      cout << "    -> " << target_id(g, uv) << '\n';
-    }
-  }
-  cout << '\n';
-#endif
-
-  // Compute Bacon numbers via the edges_bfs view from "Kevin Bacon".
-  // The graph uses string vertex ids (unordered_map-based); edges_bfs now
-  // dispatches its visited tracker on the id type — std::unordered_set for
-  // non-integral ids, std::vector<bool> for integral ids — so the same
-  // view works for both dense and sparse graphs.
-  //
-  // Because the graph is bipartite (actor <-> movie), each co-star step
-  // traverses two edges (actor -> movie -> actor); an actor's Bacon number
-  // is depth/2.
-  using VDesc = vertex_t<G>;
-  std::unordered_map<VDesc, std::size_t> depth;
-
-  VDesc seed  = *find_vertex(g, "Kevin Bacon"s);
-  depth[seed] = 0;
-
-  for (auto&& [uv] : graph::views::edges_bfs(g, seed)) {
-    auto u_id = source_id(g, uv);
-    auto v    = *find_vertex(g, target_id(g, uv));
-    auto u    = *find_vertex(g, u_id);
-    depth[v]  = depth[u] + 1;
-  }
-
-  for (const std::string& a : actors) {
-    auto it = depth.find(*find_vertex(g, a));
-    if (it == depth.end())
-      cout << a << " has Bacon number infinity\n";
-    else
-      // Divide by 2: the bipartite graph counts both actor→movie and movie→actor
-      // hops, so depth 2 = Bacon number 1 (one shared movie).
-      cout << a << " has Bacon number " << (it->second / 2) << '\n';
-  }
-}
-
 void bacon3() {
   using namespace graph::container;
 
@@ -202,7 +196,7 @@ void bacon3() {
   //                            film and carries the movie object as its value.
   //                            bacon_number = BFS depth directly.
   //
-  //   Vertex id:  std::string   — human-readable name; uol_graph_traits
+  //   Vertex id:  string   — human-readable name; uol_graph_traits
   //                               (unordered_map); visited tracker → unordered_set.
   //               size_t        — dense integer; vector<bool> bitset tracker;
   //                               fastest BFS; bipartite needs offset encoding.
@@ -213,10 +207,10 @@ void bacon3() {
   // ┌──────┬──────────────────────────┬──────────────┬──────────────────────────────────────┐
   // │      │ Topology                 │ Vertex id    │ Graph trait / notes                  │
   // ├──────┼──────────────────────────┼──────────────┼──────────────────────────────────────┤
-  // │  1   │ Bipartite (movie↔actor)  │ std::string  │ uol_graph_traits (unordered_map+list)│
+  // │  1   │ Bipartite (movie↔actor)  │ string  │ uol_graph_traits (unordered_map+list)│
   // │  2   │ Bipartite (movie↔actor)  │ size_t       │ vol_graph_traits (vector+list)       │
   // │  3   │ Bipartite (movie↔actor)  │ variant_t    │ mol_graph_traits (map+list)  ◄──here │
-  // │  4   │ Co-star   (actor↔actor)  │ std::string  │ uol_graph_traits                     │
+  // │  4   │ Co-star   (actor↔actor)  │ string  │ uol_graph_traits                     │
   // │  5   │ Co-star   (actor↔actor)  │ size_t       │ vol_graph_traits                     │
   // └──────┴──────────────────────────┴──────────────┴──────────────────────────────────────┘
 
@@ -268,11 +262,11 @@ void bacon3() {
 
   G3 g;
   // Load movie vertices — each variant_t{movie{title}} is the map key.
-  g.load_vertices(movies, [](const std::string& m) -> VD3 {
+  g.load_vertices(movies, [](const string& m) -> VD3 {
     return {variant_t{movie{m}}};
   });
   // Load actor vertices.
-  g.load_vertices(actors, [](const std::string& a) -> VD3 {
+  g.load_vertices(actors, [](const string& a) -> VD3 {
     return {variant_t{actor{a}}};
   });
   // Bipartite edges (both directions) from movies_actors.

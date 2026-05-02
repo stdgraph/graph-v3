@@ -215,14 +215,26 @@ public:
   constexpr dynamic_edge_target& operator=(dynamic_edge_target&&)      = default;
 
 public:
-  constexpr vertex_id_type target_id() const { return target_id_; }
+  [[nodiscard]] constexpr decltype(auto) target_id() const noexcept {
+    if constexpr (std::integral<vertex_id_type>) {
+      return target_id_;    // integral: return by value
+    } else {
+      return (target_id_);  // non-trivial: return const ref to stored member
+    }
+  }
 
 private:
   vertex_id_type target_id_ = vertex_id_type();
 
 private:
   // target_id(g,uv) - ADL customization point for CPO
-  friend constexpr vertex_id_type target_id(const graph_type& g, const edge_type& uv) noexcept { return uv.target_id_; }
+  friend constexpr decltype(auto) target_id(const graph_type& g, const edge_type& uv) noexcept {
+    if constexpr (std::integral<vertex_id_type>) {
+      return uv.target_id_;    // integral: return by value
+    } else {
+      return (uv.target_id_);  // non-trivial: return const ref to stored member
+    }
+  }
 
   // target(g,uv) - returns the target vertex
   // friend constexpr vertex_type& target(graph_type& g, edge_type& uv) noexcept {

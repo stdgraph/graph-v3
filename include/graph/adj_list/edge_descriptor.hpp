@@ -129,13 +129,16 @@ public:
      * Only available when EdgeDirection is out_edge_tag.
      */
   template <typename VertexData>
-  [[nodiscard]] constexpr auto target_id(const VertexData& /*vertex_data*/) const noexcept
+  [[nodiscard]] constexpr decltype(auto) target_id(const VertexData& /*vertex_data*/) const noexcept
   requires(is_out_edge) {
     using edge_value_type = typename std::iterator_traits<EdgeIter>::value_type;
 
     const auto& edge_val = *edge_storage_;
 
-    // Extract target ID from edge value based on its type
+    // Extract target ID from edge value based on its type.
+    // Uses decltype(auto) so the return type of each branch is propagated faithfully:
+    // integral edge values (raw adjacency lists) return by const-ref to the stored int;
+    // non-trivial edge types (dynamic_graph) return const VId& from target_id() below.
     if constexpr (std::integral<edge_value_type>) {
       return edge_val;
     } else if constexpr (requires { edge_val.second.target_id(); }) {
