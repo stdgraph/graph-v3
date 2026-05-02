@@ -2,13 +2,16 @@
 #include "graph/views/bfs.hpp"
 #include "graph/container/dynamic_graph.hpp"
 #include "graph/container/traits/uol_graph_traits.hpp"
+#include "graph/container/traits/mol_graph_traits.hpp"
 #include "imdb-graph.hpp"
 
 #include <functional>
 #include <iostream>
+#include <map>
 #include <unordered_map>
 #include <queue>
 #include <string>
+#include <string_view>
 #include <vector>
 #include <ranges>
 #include <variant>
@@ -16,8 +19,54 @@
 
 using std::cout;
 using std::vector;
+using std::string;
 using namespace std::ranges;
+using namespace std::string_literals;
+using namespace std::string_view_literals;
 using namespace graph;
+
+// ── Domain types for bacon3 ──────────────────────────────────────────────────
+// Defined at file scope so that std::hash can be specialised (local classes
+// cannot appear as the subject of a std::hash specialisation because namespace
+// std can only be extended at namespace scope).
+
+class movie {
+public:
+  movie() = default; // required by graph vertex storage (value_ = value_type())
+  movie(const string& title) : title_(title) {}
+  const string& title() const { return title_; }
+  // Enables std::variant<monostate,movie,actor>::operator< and std::hash<variant_t>
+  auto operator<=>(const movie& o) const { return title_ <=> o.title_; }
+  bool operator==(const movie& o)  const { return title_ == o.title_; }
+protected:
+  string title_;
+};
+
+class actor {
+public:
+  actor() = default;
+  actor(const string& name) : name_(name) {}
+  const string& name() const { return name_; }
+  auto operator<=>(const actor& o) const { return name_ <=> o.name_; }
+  bool operator==(const actor& o)  const { return name_ == o.name_; }
+protected:
+  string name_;
+};
+
+namespace std {
+template <>
+struct hash<movie> {
+  size_t operator()(const movie& m) const noexcept {
+    return hash<string>{}(m.title());
+  }
+};
+template <>
+struct hash<actor> {
+  size_t operator()(const actor& a) const noexcept {
+    return hash<string>{}(a.name());
+  }
+};
+} // namespace std
 
 // simple BFS on an unweighted graph with integral vertex ids
 void bacon1() {
@@ -54,11 +103,9 @@ void bacon1() {
 void bacon2() {
   using namespace graph::container;
 
-  // A vertex is either a movie or an actor. Use distinct wrapper types so
-  // std::variant can discriminate them at runtime.
-  struct movie_v {};
-  struct actor_v {};
-  using vertex_val_t = std::variant<movie_v, actor_v>;
+  // A vertex is either a movie or an actor.
+  enum class vertex_kind { movie, actor };
+  using vertex_val_t = vertex_kind;
 
   // Vertex id is the movie/actor name (std::string). Vertices are stored in an
   // std::unordered_map (hash-based) via the uol traits (unordered_map + list).
@@ -75,8 +122,8 @@ void bacon2() {
   G g;
 
   // Load all movie and actor vertices.
-  g.load_vertices(movies, [](const std::string& m) -> vertex_data_t { return {m, vertex_val_t{movie_v{}}}; });
-  g.load_vertices(actors, [](const std::string& a) -> vertex_data_t { return {a, vertex_val_t{actor_v{}}}; });
+  g.load_vertices(movies, [](const std::string& m) -> vertex_data_t { return {m, vertex_kind::movie}; });
+  g.load_vertices(actors, [](const std::string& a) -> vertex_data_t { return {a, vertex_kind::actor}; });
 
   // Edges from movies_actors. Add both directions so a BFS from an actor can
   // reach co-stars via the movies they share.
@@ -94,7 +141,7 @@ void bacon2() {
   for (auto&& u : vertices(g)) {
     const auto& uid  = vertex_id(g, u);
     const auto& uval = vertex_value(g, u);
-    const char* kind = std::holds_alternative<movie_v>(uval) ? "movie" : "actor";
+    const char* kind = (uval == vertex_kind::movie) ? "movie" : "actor";
     cout << '[' << kind << "] " << uid << '\n';
     for (auto&& uv : edges(g, u)) {
       cout << "    -> " << target_id(g, uv) << '\n';
@@ -115,7 +162,7 @@ void bacon2() {
   using VDesc = vertex_t<G>;
   std::unordered_map<VDesc, std::size_t> depth;
 
-  VDesc seed  = *find_vertex(g, std::string{"Kevin Bacon"});
+  VDesc seed  = *find_vertex(g, "Kevin Bacon"s);
   depth[seed] = 0;
 
   for (auto&& [uv] : graph::views::edges_bfs(g, seed)) {
@@ -125,7 +172,7 @@ void bacon2() {
     depth[v]  = depth[u] + 1;
   }
 
-  for (const auto& a : actors) {
+  for (const std::string& a : actors) {
     auto it = depth.find(*find_vertex(g, a));
     if (it == depth.end())
       cout << a << " has Bacon number infinity\n";
@@ -136,11 +183,136 @@ void bacon2() {
   }
 }
 
+void bacon3() {
+  using namespace graph::container;
+
+  // movie and actor are defined at file scope (see above) so that std::hash
+  // can be specialised — a requirement of the BFS visited tracker when
+  // variant_t is used as the vertex id with mol_graph_traits.
+
+  // ── Design Options ──────────────────────────────────────────────────────────
+  //
+  // movies_actors encodes a bipartite relationship between movies and actors.
+  // Two independent choices produce four concrete designs:
+  //
+  //   Topology:   Bipartite  — movies AND actors are vertices; edges link each
+  //                            actor to every film they appeared in (and back).
+  //                            bacon_number = BFS depth / 2.
+  //               Co-star    — actors only; an edge links two actors who share a
+  //                            film and carries the movie object as its value.
+  //                            bacon_number = BFS depth directly.
+  //
+  //   Vertex id:  std::string   — human-readable name; uol_graph_traits
+  //                               (unordered_map); visited tracker → unordered_set.
+  //               size_t        — dense integer; vector<bool> bitset tracker;
+  //                               fastest BFS; bipartite needs offset encoding.
+  //               variant_t     — domain object IS the key; mol_graph_traits
+  //                               (std::map); requires operator<=> on movie/actor.
+  //                               Movies sort before actors (by variant index).
+  //
+  // ┌──────┬──────────────────────────┬──────────────┬──────────────────────────────────────┐
+  // │      │ Topology                 │ Vertex id    │ Graph trait / notes                  │
+  // ├──────┼──────────────────────────┼──────────────┼──────────────────────────────────────┤
+  // │  1   │ Bipartite (movie↔actor)  │ std::string  │ uol_graph_traits (unordered_map+list)│
+  // │  2   │ Bipartite (movie↔actor)  │ size_t       │ vol_graph_traits (vector+list)       │
+  // │  3   │ Bipartite (movie↔actor)  │ variant_t    │ mol_graph_traits (map+list)  ◄──here │
+  // │  4   │ Co-star   (actor↔actor)  │ std::string  │ uol_graph_traits                     │
+  // │  5   │ Co-star   (actor↔actor)  │ size_t       │ vol_graph_traits                     │
+  // └──────┴──────────────────────────┴──────────────┴──────────────────────────────────────┘
+
+  // ── variant_t as vertex id ──────────────────────────────────────────────────
+  //
+  // std::variant<A,B,C>::operator< is defined by the standard (C++17):
+  //   1. A valueless variant is less than any non-valueless variant.
+  //   2. If indices differ, the variant with the lower index is less.
+  //   3. If indices match, the contained values are compared with <.
+  //
+  // So monostate < movie < actor (by index order), and within each alternative
+  // objects are compared by title/name respectively via the operator<=> above.
+  //
+  // mol_graph_traits uses std::map<VId, vertex_type> which requires only
+  // operator< on VId — no hash needed.  Because variant_t is now the key,
+  // vertex_value_type can be void: the domain object is already the key.
+  //
+  // Trade-off vs. string key:
+  //   + find_vertex(g, movie{"Top Gun"}) is a single O(log V) map lookup.
+  //   + No string↔object mapping needed; the variant directly identifies
+  //     whether a vertex is a movie or an actor.
+  //   − Requires operator<=> on the domain classes (non-intrusive alternatives
+  //     are also possible — see the custom comparator note below).
+  //   − std::map lookup (O(log V)) is slower than unordered_map (O(1) avg).
+  //
+  // Custom comparator alternative (no changes to movie/actor):
+  //   If modifying the domain classes is not allowed, mol_graph_traits cannot
+  //   be used as-is (it passes VId directly to std::map with default less<>).
+  //   Instead, a specialisation of std::less<variant_t> or a custom Traits
+  //   struct that parameterises the map comparator would be required.
+  //   That is straightforward but out-of-scope here since the member variables
+  //   (and by extension the class names) are retained and operator<=> only
+  //   adds a public interface without changing the member layout.
+
+  // std::monostate is still listed first for default-constructibility in
+  // internal graph storage, but in practice every vertex holds movie or actor.
+  using variant_t = std::variant<std::monostate, movie, actor>;
+
+  using traits3 = mol_graph_traits<void,       // edge value — void (bipartite)
+                                   void,       // vertex value — void (key IS the object)
+                                   void,       // graph value
+                                   variant_t,  // vertex id = the domain object
+                                   false>;     // not bidirectional
+  using G3 = dynamic_adjacency_graph<traits3>;
+
+  // Type aliases for load_vertices / load_edges
+  using VD3 = copyable_vertex_t<variant_t, void>;
+  using ED3 = copyable_edge_t<variant_t, void>;
+
+  G3 g;
+  // Load movie vertices — each variant_t{movie{title}} is the map key.
+  g.load_vertices(movies, [](const std::string& m) -> VD3 {
+    return {variant_t{movie{m}}};
+  });
+  // Load actor vertices.
+  g.load_vertices(actors, [](const std::string& a) -> VD3 {
+    return {variant_t{actor{a}}};
+  });
+  // Bipartite edges (both directions) from movies_actors.
+  g.load_edges(movies_actors, [](const auto& e) -> ED3 {
+    return {variant_t{movie{std::get<0>(e)}}, variant_t{actor{std::get<1>(e)}}}; // movie → actor
+  });
+  g.load_edges(movies_actors, [](const auto& e) -> ED3 {
+    return {variant_t{actor{std::get<1>(e)}}, variant_t{movie{std::get<0>(e)}}}; // actor → movie
+  });
+
+  // BFS from Kevin Bacon — seed is a vertex descriptor found by variant_t key.
+  using VDesc = vertex_t<G3>;
+  std::map<VDesc, std::size_t> depth; // map because VDesc needs operator<
+
+  VDesc seed = *find_vertex(g, variant_t{actor{"Kevin Bacon"}});
+  depth[seed] = 0;
+
+  for (auto&& [uv] : graph::views::edges_bfs(g, seed)) {
+    auto u   = *find_vertex(g, source_id(g, uv));
+    auto v   = *find_vertex(g, target_id(g, uv));
+    depth[v] = depth[u] + 1;
+  }
+
+  // Print results — extract the actor name from the variant key.
+  for (const auto& a : actors) {
+    auto it = depth.find(*find_vertex(g, variant_t{actor{a}}));
+    if (it == depth.end())
+      cout << a << " has Bacon number infinity\n";
+    else
+      cout << a << " has Bacon number " << (it->second / 2) << '\n';
+  }
+}
+
 
 int main() {
   cout << "\n--- bacon1 ---\n";
   bacon1();
   cout << "\n--- bacon2 ---\n";
   bacon2();
+  cout << "\n--- bacon3 ---\n";
+  bacon3();
   return 0;
 }
