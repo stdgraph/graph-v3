@@ -51,7 +51,7 @@ std::vector<std::tuple<std::string, std::string>> movies_actors{
     {"A Few Good Men", "Jack Nicholson"},
     {"What Lies Beneath", "Harrison Ford"},
     {"What Lies Beneath", "Kevin Bacon"},
-    {"Top Gun", "Tom  Cruise"},
+    {"Top Gun", "Tom Cruise"},
     {"Top Gun", "Kelly McGillis"},
     {"Witness", "Harrison Ford"},
     {"Witness", "Kelly McGillis"},

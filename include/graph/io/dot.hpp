@@ -14,6 +14,7 @@
 
 #include <graph/graph.hpp>
 #include <graph/io/detail/common.hpp>
+#include <graph/views/edgelist.hpp>
 
 #include <format>
 #include <istream>
@@ -42,6 +43,18 @@ namespace detail {
     return out;
   }
 
+  /// Format a vertex id as a DOT-quoted identifier.
+  /// Always quotes so that ids with embedded spaces or special characters are
+  /// valid DOT.  Quoting a plain integer ("1") is also valid DOT — Graphviz
+  /// treats it identically to the unquoted form.
+  template <typename T>
+  std::string dot_id(const T& id) {
+    if constexpr (std::integral<T>)
+      return std::format("{}", id);
+    else
+      return '"' + dot_escape(std::format("{}", id)) + '"';
+  }
+
 } // namespace detail
 
 // ---------------------------------------------------------------------------
@@ -63,30 +76,33 @@ template <adj_list::adjacency_list G>
 void write_dot(std::ostream& os, const G& g, std::string_view graph_name = "G") {
   os << "digraph " << graph_name << " {\n";
 
+  // Emit all vertex declarations first so that every node has explicit
+  // attributes before any edge statement can implicitly create it with
+  // default attributes.
   for (auto u : vertices(g)) {
     auto uid = vertex_id(g, u);
-    os << "  " << uid;
+    os << "  " << detail::dot_id(uid);
 
     if constexpr (detail::has_vertex_value<const G>) {
       using VV = std::remove_cvref_t<decltype(graph::vertex_value(g, u))>;
       if constexpr (detail::formattable<VV>) {
-        os << " [label=\"" << detail::dot_escape(std::format("{}", graph::vertex_value(g, u))) << "\"]";
+        os << " [label=" << detail::dot_id(graph::vertex_value(g, u)) << "]";
       }
     }
     os << ";\n";
+  }
 
-    for (auto uv : edges(g, u)) {
-      auto tid = target_id(g, uv);
-      os << "  " << uid << " -> " << tid;
+  // Then emit all edges.
+  for (auto [sid, tid, uv] : views::edgelist(g)) {
+    os << "  " << detail::dot_id(sid) << " -> " << detail::dot_id(tid);
 
-      if constexpr (detail::has_edge_value<const G>) {
-        using EV = std::remove_cvref_t<decltype(graph::edge_value(g, uv))>;
-        if constexpr (detail::formattable<EV>) {
-          os << " [label=\"" << detail::dot_escape(std::format("{}", graph::edge_value(g, uv))) << "\"]";
-        }
+    if constexpr (detail::has_edge_value<const G>) {
+      using EV = std::remove_cvref_t<decltype(graph::edge_value(g, uv))>;
+      if constexpr (detail::formattable<EV>) {
+        os << " [label=" << detail::dot_id(graph::edge_value(g, uv)) << "]";
       }
-      os << ";\n";
     }
+    os << ";\n";
   }
 
   os << "}\n";
@@ -115,26 +131,29 @@ void write_dot(std::ostream& os, const G& g,
                std::string_view graph_name = "G") {
   os << "digraph " << graph_name << " {\n";
 
+  // Emit all vertex declarations first so that every node has explicit
+  // attributes before any edge statement can implicitly create it with
+  // default attributes.
   for (auto u : vertices(g)) {
     auto uid = vertex_id(g, u);
-    os << "  " << uid;
+    os << "  " << detail::dot_id(uid);
 
     auto vattr = vertex_attr(g, uid);
     if (!vattr.empty()) {
       os << " " << vattr;
     }
     os << ";\n";
+  }
 
-    for (auto uv : edges(g, u)) {
-      auto tid = target_id(g, uv);
-      os << "  " << uid << " -> " << tid;
+  // Then emit all edges.
+  for (auto [sid, tid, uv] : views::edgelist(g)) {
+    os << "  " << detail::dot_id(sid) << " -> " << detail::dot_id(tid);
 
-      auto eattr = edge_attr(g, uid, tid, uv);
-      if (!eattr.empty()) {
-        os << " " << eattr;
-      }
-      os << ";\n";
+    auto eattr = edge_attr(g, sid, tid, uv);
+    if (!eattr.empty()) {
+      os << " " << eattr;
     }
+    os << ";\n";
   }
 
   os << "}\n";
