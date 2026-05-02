@@ -16,4 +16,5 @@ target_link_libraries(bglws_france_routes PRIVATE graph3)
 target_include_directories(bglws_france_routes PRIVATE ${BGLWS_INCLUDE_DIRS})
 target_compile_features(bglws_france_routes PRIVATE cxx_std_20)
 target_compile_definitions(bglws_france_routes PRIVATE
-    BGLWS_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/graphs")
+    BGLWS_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/graphs"
+    BGLWS_OUTPUT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/output")

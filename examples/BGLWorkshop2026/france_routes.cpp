@@ -14,6 +14,7 @@
 #include <fstream>
 #include <iostream>
 #include <regex>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -49,10 +50,13 @@ struct load_result {
   std::unordered_map<string, vid_t> city_id; // name -> vertex id
 };
 
-// Load france_routes.json and return the graph with the city name-to-id map.
-// Cities are assigned contiguous integer IDs in the order they appear in "cities".
-// Each route object becomes a directed edge carrying a route_t value.
-load_result load(const string& filename = BGLWS_DATA_DIR "/france_routes.json") {
+// Forward declarations
+load_result load(const string& filename = BGLWS_DATA_DIR "/france_routes.json");
+void        run (const string& filename = BGLWS_DATA_DIR "/france_routes.json");
+void        dot (const string& dot_filename  = BGLWS_OUTPUT_DIR "/france_routes.dot",
+                 const string& json_filename = BGLWS_DATA_DIR   "/france_routes.json");
+
+load_result load(const string& filename) {
   std::ifstream f(filename);
   if (!f)
     throw std::runtime_error("Cannot open file: "s + filename);
@@ -111,7 +115,7 @@ load_result load(const string& filename = BGLWS_DATA_DIR "/france_routes.json") 
   return {std::move(g), std::move(city_id)};
 }
 
-void run(const string& filename = BGLWS_DATA_DIR "/france_routes.json") {
+void run(const string& filename) {
   using G = graph_t;
   auto [g, city_id] = load(filename);
 
@@ -179,9 +183,45 @@ void run(const string& filename = BGLWS_DATA_DIR "/france_routes.json") {
   cout << "  Total: " << distances[dest_id] << " km\n";
 }
 
+void dot(const string& dot_filename, const string& json_filename) {
+  auto [g, city_id] = load(json_filename);
+
+  auto city_name = [&](vid_t uid) -> string {
+    return vertex_value(g, *find_vertex(g, uid));
+  };
+
+  std::ofstream out(dot_filename);
+  if (!out)
+    throw std::runtime_error("Cannot open output file: "s + dot_filename);
+
+  out << "graph FranceRoutes {\n";
+
+  for (auto u : vertices(g)) {
+    vid_t uid = vertex_id(g, u);
+    out << "  " << uid << " [label=\"" << city_name(uid) << "\"];\n";
+  }
+
+  // Emit each undirected edge once: use the copy where sid < tid so that
+  // both Paris->Dijon and Dijon->Paris collapse to a single line.
+  std::set<std::pair<vid_t, vid_t>> emitted;
+  for (auto [sid, tid, uv] : views::edgelist(g)) {
+    auto key = std::make_pair(std::min(sid, tid), std::max(sid, tid));
+    if (emitted.insert(key).second) {
+      const route_t& r = edge_value(g, uv);
+      out << "  " << sid << " -- " << tid
+          << " [label=\"" << r.distance_km << " km\\n(" << r.road << ")\""
+          << ", weight=" << r.distance_km << "];\n";
+    }
+  }
+
+  out << "}\n";
+  cout << "Wrote " << dot_filename << '\n';
+}
+
 } // namespace france
 
 int main() {
   france::run();
+  france::dot();
   return 0;
 }

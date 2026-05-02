@@ -6,18 +6,21 @@
 #include "imdb-graph.hpp"
 
 #include "graph/io/dot.hpp"
+#include <algorithm>
+#include <format>
 #include <fstream>
 #include <functional>
+#include <iomanip>
 #include <iostream>
 #include <map>
-#include <unordered_map>
 #include <queue>
+#include <ranges>
+#include <set>
 #include <string>
 #include <string_view>
-#include <vector>
-#include <ranges>
+#include <unordered_map>
 #include <variant>
-#include <algorithm>
+#include <vector>
 
 using std::cout;
 using std::vector;
@@ -159,27 +162,45 @@ void run() {
 // bipartite graph with string vertex ids — loads the same graph as run() and
 // writes it to a Graphviz DOT file.  Vertices are coloured by kind (movie/actor)
 // and actors are labelled with their Bacon number.
+// Edges are deduplicated so the bidirectional pairs collapse to single undirected lines.
 void dot(const string& filename = BGLWS_OUTPUT_DIR "/bacon2.dot") {
   using G = graph_t;
   auto [g, depth] = eval();
 
-  // Write DOT via write_dot() with per-vertex attribute callbacks.
-  // Movies as yellow boxes; actors as blue ellipses labelled with Bacon number.
-  std::ofstream dot_file(filename);
-  graph::io::write_dot(dot_file, g,
-    [&depth](const G& g_, const string& uid) -> string {
-      auto         it_v     = find_vertex(g_, uid);
-      bool         is_actor = (vertex_value(g_, *it_v) == vertex_kind::actor);
-      const string esc      = graph::io::detail::dot_escape(uid);
-      if (is_actor) {
-        auto   it_d = depth.find(uid);
-        string bn   = (it_d != depth.end()) ? std::to_string(it_d->second / 2) : "inf";
-        return std::format("[shape=ellipse, style=filled, fillcolor=lightblue, label=\"{}\\n({})\"]", esc, bn);
-      }
-      return std::format("[shape=box, style=filled, fillcolor=lightyellow, label=\"{}\"]", esc);
-    },
-    [](const G&, const string&, const string&, const auto&) -> string { return {}; },
-    "BaconNumbers");
+  std::ofstream out(filename);
+  if (!out)
+    throw std::runtime_error("Cannot open: " + filename);
+
+  out << "graph BaconNumbers {\n";
+
+  // Vertices: actors as blue ellipses with Bacon number; movies as yellow boxes.
+  for (auto u : vertices(g)) {
+    const string& uid      = vertex_id(g, u);
+    bool          is_actor = (vertex_value(g, u) == vertex_kind::actor);
+    const string  esc      = graph::io::detail::dot_escape(uid);
+    if (is_actor) {
+      auto   it_d = depth.find(uid);
+      string bn   = (it_d != depth.end()) ? std::to_string(it_d->second / 2) : "inf";
+      out << "  " << std::quoted(uid)
+          << std::format(" [shape=ellipse, style=filled, fillcolor=lightblue, label=\"{}\\n({})\"",
+                         esc, bn)
+          << "];\n";
+    } else {
+      out << "  " << std::quoted(uid)
+          << std::format(" [shape=box, style=filled, fillcolor=lightyellow, label=\"{}\"]", esc)
+          << ";\n";
+    }
+  }
+
+  // Edges: emit each undirected pair once using min/max on string keys.
+  std::set<std::pair<string, string>> emitted;
+  for (auto [sid, tid, uv] : graph::views::edgelist(g)) {
+    auto key = (sid < tid) ? std::make_pair(sid, tid) : std::make_pair(tid, sid);
+    if (emitted.insert(key).second)
+      out << "  " << std::quoted(sid) << " -- " << std::quoted(tid) << ";\n";
+  }
+
+  out << "}\n";
   cout << "Wrote " << filename << '\n';
 }
 
