@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <graph/views/search_base.hpp>
+#include <string>
 
 using namespace graph::views;
 
@@ -165,4 +166,47 @@ TEST_CASE("visited_tracker with custom allocator", "[views][search_base]") {
   REQUIRE(tracker.size() == 5);
   tracker.mark_visited(2);
   REQUIRE(tracker.is_visited(2));
+}
+
+TEST_CASE("visited_tracker - string key uses unordered_set path", "[search_base][non_integral]") {
+  // String is not integral and has no value() returning integral, so the
+  // tracker must use the unordered_set branch.
+  visited_tracker<std::string> tracker(0); // num_vertices ignored for hash path
+
+  SECTION("initial state is unvisited") {
+    REQUIRE_FALSE(tracker.is_visited("a"));
+    REQUIRE_FALSE(tracker.is_visited("z"));
+  }
+
+  SECTION("mark_visited and is_visited") {
+    tracker.mark_visited("alice");
+    REQUIRE(tracker.is_visited("alice"));
+    REQUIRE_FALSE(tracker.is_visited("bob"));
+  }
+
+  SECTION("multiple marks") {
+    tracker.mark_visited("x");
+    tracker.mark_visited("y");
+    tracker.mark_visited("z");
+    REQUIRE(tracker.is_visited("x"));
+    REQUIRE(tracker.is_visited("y"));
+    REQUIRE(tracker.is_visited("z"));
+    REQUIRE_FALSE(tracker.is_visited("w"));
+  }
+
+  SECTION("reset clears all") {
+    tracker.mark_visited("a");
+    tracker.mark_visited("b");
+    tracker.reset();
+    REQUIRE_FALSE(tracker.is_visited("a"));
+    REQUIRE_FALSE(tracker.is_visited("b"));
+  }
+
+  SECTION("unmark_visited removes entry") {
+    tracker.mark_visited("a");
+    tracker.mark_visited("b");
+    tracker.unmark_visited("a");
+    REQUIRE_FALSE(tracker.is_visited("a"));
+    REQUIRE(tracker.is_visited("b"));
+  }
 }

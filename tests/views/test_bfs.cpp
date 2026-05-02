@@ -1,12 +1,18 @@
 #include <catch2/catch_test_macros.hpp>
 #include <graph/views/bfs.hpp>
+#include <graph/container/dynamic_graph.hpp>
+#include <graph/container/traits/uol_graph_traits.hpp>
 #include <vector>
 #include <algorithm>
 #include <set>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
 
 using namespace graph;
 using namespace graph::views;
 using namespace graph::adj_list;
+using namespace graph::container;
 
 TEST_CASE("vertices_bfs - basic traversal", "[bfs][vertices]") {
   // Create simple tree: 0 -> [1, 2], 1 -> [3, 4]
@@ -711,4 +717,183 @@ TEST_CASE("edges_bfs - depth/size with value function", "[bfs][edges][depth]") {
 
   REQUIRE(bfs.depth() == 2);       // Depth is 2
   REQUIRE(bfs.num_visited() == 3); // 3 edges
+}
+
+// ===========================================================================
+// Non-integral (string) vertex id helpers
+// ===========================================================================
+
+/// Directed graph with string vertex ids, no values.
+using StrGraph = dynamic_adjacency_graph<uol_graph_traits<void, void, void, std::string, false>>;
+
+/// Build a StrGraph from vertex names and an edge list.
+static StrGraph make_graph(const std::vector<std::string>&                        vertex_names,
+                           const std::vector<std::pair<std::string, std::string>>& edges) {
+  using VD = copyable_vertex_t<std::string, void>;
+  using ED = copyable_edge_t<std::string, void>;
+
+  StrGraph g;
+  g.load_vertices(vertex_names, [](const std::string& name) -> VD { return {name}; });
+  g.load_edges(edges, [](const auto& e) -> ED { return {e.first, e.second}; });
+  return g;
+}
+
+/// Collect vertex ids in traversal order.
+template <typename Range>
+static std::vector<std::string> collect_vertex_ids(StrGraph& g, Range&& rng) {
+  std::vector<std::string> ids;
+  for (auto [v] : rng)
+    ids.push_back(std::string(vertex_id(g, v)));
+  return ids;
+}
+
+/// Collect source/target id pairs in traversal order.
+template <typename Range>
+static std::vector<std::pair<std::string, std::string>> collect_edge_ids(StrGraph& g, Range&& rng) {
+  std::vector<std::pair<std::string, std::string>> pairs;
+  for (auto [uv] : rng)
+    pairs.emplace_back(std::string(source_id(g, uv)), std::string(target_id(g, uv)));
+  return pairs;
+}
+
+// ===========================================================================
+// Non-integral vertex id tests
+// ===========================================================================
+
+TEST_CASE("vertices_bfs - string vertex ids", "[bfs][vertices][non_integral]") {
+  //  a -> b -> d
+  //  a -> c -> d
+  auto g = make_graph({"a", "b", "c", "d"},
+                      {{"a", "b"}, {"a", "c"}, {"b", "d"}, {"c", "d"}});
+
+  SECTION("visits all reachable vertices exactly once") {
+    auto ids = collect_vertex_ids(g, vertices_bfs(g, std::string{"a"}));
+    REQUIRE(ids.size() == 4);
+    std::unordered_set<std::string> id_set(ids.begin(), ids.end());
+    REQUIRE(id_set == std::unordered_set<std::string>{"a", "b", "c", "d"});
+  }
+
+  SECTION("seed is visited first") {
+    auto ids = collect_vertex_ids(g, vertices_bfs(g, std::string{"a"}));
+    REQUIRE(ids[0] == "a");
+  }
+
+  SECTION("level-order: b and c before d") {
+    auto ids   = collect_vertex_ids(g, vertices_bfs(g, std::string{"a"}));
+    auto pos_b = std::find(ids.begin(), ids.end(), "b") - ids.begin();
+    auto pos_c = std::find(ids.begin(), ids.end(), "c") - ids.begin();
+    auto pos_d = std::find(ids.begin(), ids.end(), "d") - ids.begin();
+    REQUIRE(pos_b < pos_d);
+    REQUIRE(pos_c < pos_d);
+  }
+
+  SECTION("isolated leaf is only vertex when used as seed") {
+    auto ids = collect_vertex_ids(g, vertices_bfs(g, std::string{"d"}));
+    REQUIRE(ids == std::vector<std::string>{"d"});
+  }
+
+  SECTION("seed given as vertex descriptor") {
+    auto seed = *find_vertex(g, std::string{"a"});
+    auto ids  = collect_vertex_ids(g, vertices_bfs(g, seed));
+    REQUIRE(ids.size() == 4);
+    REQUIRE(ids[0] == "a");
+  }
+}
+
+TEST_CASE("vertices_bfs - string ids with value function", "[bfs][vertices][non_integral]") {
+  auto g = make_graph({"a", "b", "c"}, {{"a", "b"}, {"b", "c"}});
+
+  auto vvf = [](const StrGraph& g2, vertex_t<StrGraph> v) {
+    return std::string(vertex_id(g2, v));
+  };
+
+  std::vector<std::pair<std::string, std::string>> result;
+  for (auto [v, val] : vertices_bfs(g, std::string{"a"}, vvf)) {
+    result.emplace_back(std::string(vertex_id(g, v)), val);
+  }
+
+  REQUIRE(result.size() == 3);
+  for (auto& [id, val] : result)
+    REQUIRE(id == val);
+}
+
+TEST_CASE("edges_bfs - string vertex ids", "[bfs][edges][non_integral]") {
+  //  a -> b -> c
+  //       b -> d
+  auto g = make_graph({"a", "b", "c", "d"},
+                      {{"a", "b"}, {"b", "c"}, {"b", "d"}});
+
+  SECTION("yields exactly the tree edges") {
+    auto pairs = collect_edge_ids(g, edges_bfs(g, std::string{"a"}));
+    REQUIRE(pairs.size() == 3);
+    std::set<std::pair<std::string, std::string>> edge_set(pairs.begin(), pairs.end());
+    REQUIRE(edge_set.count({"a", "b"}) == 1);
+    REQUIRE(edge_set.count({"b", "c"}) == 1);
+    REQUIRE(edge_set.count({"b", "d"}) == 1);
+  }
+
+  SECTION("first tree edge has seed as source") {
+    auto pairs = collect_edge_ids(g, edges_bfs(g, std::string{"a"}));
+    REQUIRE(pairs[0].first == "a");
+    REQUIRE(pairs[0].second == "b");
+  }
+
+  SECTION("seed given as descriptor") {
+    auto seed  = *find_vertex(g, std::string{"a"});
+    auto pairs = collect_edge_ids(g, edges_bfs(g, seed));
+    REQUIRE(pairs.size() == 3);
+  }
+
+  SECTION("no edges from isolated seed") {
+    auto pairs = collect_edge_ids(g, edges_bfs(g, std::string{"c"}));
+    REQUIRE(pairs.empty());
+  }
+}
+
+TEST_CASE("edges_bfs - string ids with value function", "[bfs][edges][non_integral]") {
+  auto g = make_graph({"a", "b", "c"}, {{"a", "b"}, {"b", "c"}});
+
+  auto evf = [](const StrGraph& g2, auto uv) {
+    return std::string(target_id(g2, uv));
+  };
+
+  std::vector<std::string> targets;
+  for (auto [uv, val] : edges_bfs(g, std::string{"a"}, evf)) {
+    targets.push_back(std::string(target_id(g, uv)));
+    REQUIRE(val == targets.back());
+  }
+
+  REQUIRE(targets.size() == 2);
+}
+
+TEST_CASE("vertices_bfs cancel_branch - string ids", "[bfs][cancel][non_integral]") {
+  //  a -> b -> c
+  //  a -> d
+  auto g = make_graph({"a", "b", "c", "d"},
+                      {{"a", "b"}, {"b", "c"}, {"a", "d"}});
+
+  SECTION("cancel_branch at b prevents visiting c") {
+    std::vector<std::string> ids;
+    auto bfs_view = vertices_bfs(g, std::string{"a"});
+    for (auto [v] : bfs_view) {
+      auto id = std::string(vertex_id(g, v));
+      ids.push_back(id);
+      if (id == "b")
+        bfs_view.cancel(cancel_search::cancel_branch);
+    }
+    REQUIRE(std::find(ids.begin(), ids.end(), "c") == ids.end());
+    REQUIRE(std::find(ids.begin(), ids.end(), "d") != ids.end());
+  }
+
+  SECTION("cancel_all stops traversal immediately") {
+    std::vector<std::string> ids;
+    auto bfs_view = vertices_bfs(g, std::string{"a"});
+    for (auto [v] : bfs_view) {
+      auto id = std::string(vertex_id(g, v));
+      ids.push_back(id);
+      if (id == "a")
+        bfs_view.cancel(cancel_search::cancel_all);
+    }
+    REQUIRE(ids == std::vector<std::string>{"a"});
+  }
 }

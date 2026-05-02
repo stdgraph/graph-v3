@@ -164,8 +164,28 @@ public:
   }
 
   // Comparison operators (C++20 spaceship operator)
-  [[nodiscard]] auto operator<=>(const vertex_descriptor&) const noexcept = default;
-  [[nodiscard]] bool operator==(const vertex_descriptor&) const noexcept  = default;
+  //
+  // Random access (vector/deque): order by the size_t index — cheap.
+  // Bidirectional but not random access (map/set): order by vertex_id, since
+  //   the map/set already requires its key to be ordered. The iterators of
+  //   these containers themselves have no ordering, so we cannot use storage_.
+  // Forward only (unordered_map/forward_list): no <=> declared — there is no
+  //   meaningful order. Equality is still well-defined via the iterator.
+  [[nodiscard]] auto operator<=>(const vertex_descriptor& rhs) const noexcept
+  requires (std::random_access_iterator<VertexIter> ||
+            std::bidirectional_iterator<VertexIter>)
+  {
+    if constexpr (std::random_access_iterator<VertexIter>) {
+      return storage_ <=> rhs.storage_;
+    } else {
+      // map/set iterators: order by key
+      return std::compare_three_way{}(vertex_id(), rhs.vertex_id());
+    }
+  }
+
+  [[nodiscard]] bool operator==(const vertex_descriptor& rhs) const noexcept {
+    return storage_ == rhs.storage_;
+  }
 
 private:
   storage_type storage_;

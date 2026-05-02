@@ -26,17 +26,20 @@ This section compares graph-v3 with BGL
 
 General Syntax differences
 - Graph data: actors, directors, and movies
+  - Show graph image
 - Problem(s): six degrees of Kevin Bacon
-  - Bacon number (Dijkstra's shortest paths)
-  - Shortest path between persons x and y (Dijkstra or BFS with early exit)
-- Examples
-  - graph construction
-  - vertex & edge iteration, views
-  - properties
-  - non-integral & sparse vertex ids
   - Bacon number
+- Example 1
+  - graph construction
+  - edge iteration, views
+  - Bacon number
+- Example 2
+  - non-integral & sparse vertex ids
 
-### Transportation Network
+### French Roads
+  - properties
+
+
   - Dijkstra
 
 ### Performance comparison
