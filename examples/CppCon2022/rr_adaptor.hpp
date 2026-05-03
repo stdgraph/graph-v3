@@ -157,13 +157,11 @@ private:
   // edges(g, u) — u is a v3 vertex_descriptor; use u.vertex_id() to index.
   // Trailing return type acts as SFINAE guard.
   template <class VDesc>
-  friend auto edges(graph_type& g, const VDesc& u)
-        -> decltype(std::views::all(g.vertices_[u.vertex_id()])) {
+  friend auto edges(graph_type& g, const VDesc& u) {
     return std::views::all(g.vertices_[u.vertex_id()]);
   }
   template <class VDesc>
-  friend auto edges(const graph_type& g, const VDesc& u)
-        -> decltype(std::views::all(g.vertices_[u.vertex_id()])) {
+  friend auto edges(const graph_type& g, const VDesc& u) {
     return std::views::all(g.vertices_[u.vertex_id()]);
   }
 
@@ -284,13 +282,11 @@ private:
   }
 
   template <class VDesc>
-  friend auto edges(graph_type& g, const VDesc& u)
-        -> decltype(std::views::all(g.vertices_[u.vertex_id()])) {
+  friend auto edges(graph_type& g, const VDesc& u) {
     return std::views::all(g.vertices_[u.vertex_id()]);
   }
   template <class VDesc>
-  friend auto edges(const graph_type& g, const VDesc& u)
-        -> decltype(std::views::all(g.vertices_[u.vertex_id()])) {
+    friend auto edges(const graph_type& g, const VDesc& u) {
     return std::views::all(g.vertices_[u.vertex_id()]);
   }
 
