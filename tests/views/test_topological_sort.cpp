@@ -1,13 +1,19 @@
 #include <catch2/catch_test_macros.hpp>
 #include <graph/views/topological_sort.hpp>
+#include <graph/container/dynamic_graph.hpp>
+#include <graph/container/traits/uol_graph_traits.hpp>
 #include <vector>
+#include <algorithm>
 #include <unordered_set>
+#include <unordered_map>
 #include <map>
 #include <set>
+#include <string>
 
 using namespace graph;
 using namespace graph::adj_list;
 using namespace graph::views;
+using namespace graph::container;
 
 TEST_CASE("vertices_topological_sort - simple DAG", "[topo][vertices]") {
   using Graph = std::vector<std::vector<int>>;
@@ -1413,4 +1419,116 @@ TEST_CASE("edges_topological_sort - cancel preserves num_visited accuracy", "[to
   // After cancel, we got edges from first 2 source vertices but
   // the second one's count happens when we'd advance past it
   // The exact count depends on when cancel fires relative to advance
+}
+
+// ===========================================================================
+// Non-integral (string) vertex id helpers
+// ===========================================================================
+
+/// Directed graph with string vertex ids, no values.
+using StrGraph = dynamic_adjacency_graph<uol_graph_traits<void, void, void, std::string, false>>;
+
+/// Build a StrGraph from vertex names and an edge list.
+static StrGraph make_graph(const std::vector<std::string>&                        vertex_names,
+                           const std::vector<std::pair<std::string, std::string>>& edges) {
+  using VD = copyable_vertex_t<std::string, void>;
+  using ED = copyable_edge_t<std::string, void>;
+
+  StrGraph g;
+  g.load_vertices(vertex_names, [](const std::string& name) -> VD { return {name}; });
+  g.load_edges(edges, [](const auto& e) -> ED { return {e.first, e.second}; });
+  return g;
+}
+
+/// Collect vertex ids in traversal order.
+template <typename Range>
+static std::vector<std::string> collect_vertex_ids(StrGraph& g, Range&& rng) {
+  std::vector<std::string> ids;
+  for (auto [v] : rng)
+    ids.push_back(std::string(vertex_id(g, v)));
+  return ids;
+}
+
+/// Collect source/target id pairs in traversal order.
+template <typename Range>
+static std::vector<std::pair<std::string, std::string>> collect_edge_ids(StrGraph& g, Range&& rng) {
+  std::vector<std::pair<std::string, std::string>> pairs;
+  for (auto [uv] : rng)
+    pairs.emplace_back(std::string(source_id(g, uv)), std::string(target_id(g, uv)));
+  return pairs;
+}
+
+// ===========================================================================
+// Non-integral vertex id tests
+// ===========================================================================
+
+TEST_CASE("vertices_topological_sort - string vertex ids", "[topo][vertices][non_integral]") {
+  // DAG:  a -> b -> d
+  //       a -> c -> d
+  //       b -> c
+  auto g = make_graph({"a", "b", "c", "d"},
+                      {{"a", "b"}, {"a", "c"}, {"b", "c"}, {"b", "d"}, {"c", "d"}});
+
+  SECTION("visits all vertices") {
+    auto ids = collect_vertex_ids(g, vertices_topological_sort(g));
+    REQUIRE(ids.size() == 4);
+    std::unordered_set<std::string> id_set(ids.begin(), ids.end());
+    REQUIRE(id_set == std::unordered_set<std::string>{"a", "b", "c", "d"});
+  }
+
+  SECTION("topological ordering respected") {
+    auto ids = collect_vertex_ids(g, vertices_topological_sort(g));
+    auto pos = [&](const std::string& s) {
+      return std::find(ids.begin(), ids.end(), s) - ids.begin();
+    };
+    REQUIRE(pos("a") < pos("b"));
+    REQUIRE(pos("a") < pos("c"));
+    REQUIRE(pos("b") < pos("c"));
+    REQUIRE(pos("b") < pos("d"));
+    REQUIRE(pos("c") < pos("d"));
+  }
+}
+
+TEST_CASE("vertices_topological_sort - string ids with value function", "[topo][vertices][non_integral]") {
+  auto g = make_graph({"a", "b", "c"}, {{"a", "b"}, {"a", "c"}, {"b", "c"}});
+
+  auto vvf = [](const StrGraph& g2, vertex_t<StrGraph> v) {
+    return std::string(vertex_id(g2, v));
+  };
+
+  std::vector<std::pair<std::string, std::string>> result;
+  for (auto [v, val] : vertices_topological_sort(g, vvf)) {
+    result.emplace_back(std::string(vertex_id(g, v)), val);
+  }
+
+  REQUIRE(result.size() == 3);
+  for (auto& [id, val] : result)
+    REQUIRE(id == val);
+}
+
+TEST_CASE("vertices_topological_sort - cycle detection with string ids", "[topo][vertices][non_integral]") {
+  // Cycle: a -> b -> c -> a
+  auto g = make_graph({"a", "b", "c"}, {{"a", "b"}, {"b", "c"}, {"c", "a"}});
+
+  auto result = vertices_topological_sort_safe(g);
+  REQUIRE_FALSE(result.has_value()); // cycle detected
+  auto cycle_vid = std::string(vertex_id(g, result.error()));
+  REQUIRE((cycle_vid == "a" || cycle_vid == "b" || cycle_vid == "c"));
+}
+
+TEST_CASE("edges_topological_sort - string vertex ids", "[topo][edges][non_integral]") {
+  // DAG: a -> b -> c
+  auto g = make_graph({"a", "b", "c"}, {{"a", "b"}, {"b", "c"}});
+
+  SECTION("yields all edges in topological order") {
+    auto pairs = collect_edge_ids(g, edges_topological_sort(g));
+    REQUIRE(pairs.size() == 2);
+    std::set<std::pair<std::string, std::string>> edge_set(pairs.begin(), pairs.end());
+    REQUIRE(edge_set.count({"a", "b"}) == 1);
+    REQUIRE(edge_set.count({"b", "c"}) == 1);
+
+    auto it_ab = std::find(pairs.begin(), pairs.end(), std::make_pair(std::string{"a"}, std::string{"b"}));
+    auto it_bc = std::find(pairs.begin(), pairs.end(), std::make_pair(std::string{"b"}, std::string{"c"}));
+    REQUIRE(it_ab < it_bc);
+  }
 }

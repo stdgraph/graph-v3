@@ -23,20 +23,31 @@ Header: `<graph/adj_list/adjacency_list_concepts.hpp>`
 ### Concept Hierarchy
 
 ```
-edge<G, E>
-└── out_edge_range<R, G>
-    └── vertex<G, V>
-        └── vertex_range<R, G>
-            ├── index_vertex_range<G>
-            └── mapped_vertex_range<G>
-            └── adjacency_list<G>           ← required by all algorithms
-                ├── index_adjacency_list<G>
-                │   ├── ordered_vertex_edges<G>
-                │   └── index_bidirectional_adjacency_list<G>
-                ├── mapped_adjacency_list<G>
-                │   └── mapped_bidirectional_adjacency_list<G>
-                └── bidirectional_adjacency_list<G>
+Primitives
+  edge<G, E>  ·  vertex<G, V>  ·  hashable_vertex_id<G>
+
+Ranges  (parameterised on a range type R)
+  out_edge_range<R, G>          requires edge<G, E>
+  in_edge_range<R, G>           requires edge<G, E>
+  vertex_range<R, G>            requires vertex<G, V>
+
+Vertex range specialisations
+  index_vertex_range<G>         vertex_range with integral IDs
+  mapped_vertex_range<G>        vertex_range + hashable_vertex_id
+
+Core graph concepts
+  adjacency_list<G>             vertex_range + out_edge_range          ← required by all algorithms
+  ordered_vertex_edges<G>       adjacency_list with edges sorted by target_id
+  bidirectional_adjacency_list<G>   adjacency_list + in_edge_range
+
+Compound concepts
+  index_adjacency_list<G>                       adjacency_list + index_vertex_range
+  mapped_adjacency_list<G>                      adjacency_list + mapped_vertex_range
+  index_bidirectional_adjacency_list<G>         bidirectional_adjacency_list + index_vertex_range
+  mapped_bidirectional_adjacency_list<G>        bidirectional_adjacency_list + mapped_vertex_range
 ```
+
+![Adjacency List Concept Hierarchy](../assets/adjacency_list_concepts.svg)
 
 ### `edge<G, E>`
 
@@ -199,6 +210,8 @@ reverse BFS/DFS/topological-sort views.
 ## Edge List Concepts
 
 Header: `<graph/edge_list/edge_list.hpp>`
+
+![Edge List Concept Hierarchy](../assets/edge_list_concepts.svg)
 
 ### `basic_sourced_edgelist<EL>`
 

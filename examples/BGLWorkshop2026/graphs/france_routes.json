@@ -1,0 +1,53 @@
+{
+  "cities": [
+    "Paris", "Lille", "Strasbourg", "Lyon", "Marseille", "Nice",
+    "Toulouse", "Bordeaux", "Nantes", "Rennes", "Montpellier", "Dijon"
+  ],
+  "routes": [
+    { "from": "Paris", "to": "Lille",       "distance_km": 225, "route": "A1" },
+    { "from": "Paris", "to": "Rennes",     "distance_km": 350, "route": "A11 → N157" },
+    { "from": "Paris", "to": "Nantes",     "distance_km": 385, "route": "A11" },
+    { "from": "Paris", "to": "Dijon",      "distance_km": 315, "route": "A5 → A31" },
+    { "from": "Paris", "to": "Strasbourg", "distance_km": 490, "route": "A4" },
+
+    { "from": "Lille", "to": "Paris",      "distance_km": 225, "route": "A1" },
+
+    { "from": "Rennes", "to": "Paris",     "distance_km": 350, "route": "A11 → N157" },
+    { "from": "Rennes", "to": "Nantes",    "distance_km": 110, "route": "N137" },
+
+    { "from": "Nantes", "to": "Paris",     "distance_km": 385, "route": "A11" },
+    { "from": "Nantes", "to": "Rennes",    "distance_km": 110, "route": "N137" },
+    { "from": "Nantes", "to": "Bordeaux",  "distance_km": 345, "route": "A83 → A10" },
+
+    { "from": "Bordeaux", "to": "Nantes",   "distance_km": 345, "route": "A83 → A10" },
+    { "from": "Bordeaux", "to": "Toulouse", "distance_km": 245, "route": "A62" },
+
+    { "from": "Toulouse", "to": "Bordeaux",    "distance_km": 245, "route": "A62" },
+    { "from": "Toulouse", "to": "Montpellier", "distance_km": 240, "route": "A61 → A9" },
+    { "from": "Toulouse", "to": "Lyon",        "distance_km": 540, "route": "A61 → A7" },
+
+    { "from": "Montpellier", "to": "Toulouse",  "distance_km": 240, "route": "A61 → A9" },
+    { "from": "Montpellier", "to": "Marseille", "distance_km": 170, "route": "A9 → A7" },
+
+    { "from": "Marseille", "to": "Montpellier", "distance_km": 170, "route": "A9 → A7" },
+    { "from": "Marseille", "to": "Lyon",        "distance_km": 315, "route": "A7" },
+    { "from": "Marseille", "to": "Nice",        "distance_km": 200, "route": "A8" },
+
+    { "from": "Nice", "to": "Marseille", "distance_km": 200, "route": "A8" },
+    { "from": "Nice", "to": "Lyon",      "distance_km": 470, "route": "A8 → A7" },
+
+    { "from": "Lyon", "to": "Dijon",      "distance_km": 195, "route": "A6" },
+    { "from": "Lyon", "to": "Marseille",  "distance_km": 315, "route": "A7" },
+    { "from": "Lyon", "to": "Nice",       "distance_km": 470, "route": "A7 → A8" },
+    { "from": "Lyon", "to": "Strasbourg", "distance_km": 490, "route": "A36" },
+    { "from": "Lyon", "to": "Toulouse",   "distance_km": 540, "route": "A7 → A61" },
+
+    { "from": "Dijon", "to": "Paris",      "distance_km": 315, "route": "A31 → A5" },
+    { "from": "Dijon", "to": "Lyon",       "distance_km": 195, "route": "A6" },
+    { "from": "Dijon", "to": "Strasbourg", "distance_km": 335, "route": "A36" },
+
+    { "from": "Strasbourg", "to": "Paris",    "distance_km": 490, "route": "A4" },
+    { "from": "Strasbourg", "to": "Dijon",    "distance_km": 335, "route": "A36" },
+    { "from": "Strasbourg", "to": "Lyon",     "distance_km": 490, "route": "A36" }
+  ]
+}

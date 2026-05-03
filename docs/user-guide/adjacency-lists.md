@@ -74,12 +74,16 @@ All library algorithms require `adjacency_list`. Index-based containers
 automatically; map-based containers (`map`, `unordered_map`) satisfy
 `mapped_adjacency_list`. Both are accepted by every algorithm.
 
+![Adjacency List Concept Hierarchy](../assets/adjacency_list_concepts.svg)
+
 ---
 
 ## 3. Accessing Graph Structure — CPOs
 
 All graph operations are **Customization Point Objects (CPOs)** that resolve in
 three tiers: custom member → ADL free function → built-in default.
+Some CPOs extend this chain; `num_vertices(g)` for example checks
+`size(vertices(g))` before falling back to `size(g)`.
 
 ### Structure CPOs
 

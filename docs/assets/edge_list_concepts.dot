@@ -1,0 +1,30 @@
+// Concept hierarchy for graph::edge_list
+// Generate image: dot -Tsvg edge_list_concepts.dot -o edge_list_concepts.svg
+
+digraph EdgeListConceptHierarchy {
+    rankdir = TB
+    node [shape=box, style="filled,rounded", fontname="Helvetica", fontsize=11]
+    edge [fontname="Helvetica", fontsize=9]
+
+    // ── Primitive concepts ────────────────────────────────────────────────────
+
+    node [fillcolor="#cce5ff"]  // light blue
+
+    basic_sourced_edgelist [label="basic_sourced_edgelist<EL>\ninput_range\n!range-of-ranges\nsource_id · target_id\n(compatible return types)"]
+
+    // ── Refinements ───────────────────────────────────────────────────────────
+
+    node [fillcolor="#d4edda"]  // light green
+
+    basic_sourced_index_edgelist [label="basic_sourced_index_edgelist<EL>\nbasic_sourced_edgelist\n+ integral source_id\n+ integral target_id"]
+
+    has_edge_value [label="has_edge_value<EL>\nbasic_sourced_edgelist\n+ edge_value(el, uv)"]
+
+    // ── Edges ─────────────────────────────────────────────────────────────────
+
+    basic_sourced_edgelist -> basic_sourced_index_edgelist
+    basic_sourced_edgelist -> has_edge_value
+
+    // ── Rank hints ────────────────────────────────────────────────────────────
+    { rank=same; basic_sourced_index_edgelist; has_edge_value }
+}

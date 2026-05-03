@@ -2,6 +2,8 @@
 
 A comprehensive analysis of the Boost Graph Library (BGL) and graph-v3, identifying gaps, migration paths, and recommended extensions to enable a smooth upgrade transition.
 
+> **Last reviewed:** 2026-05-03 against `include/graph/` source tree.
+
 ---
 
 ## Table of Contents
@@ -35,17 +37,21 @@ graph-v3 is a ground-up C++20 redesign targeting ISO standardization (P3126–P3
 - `vertex_property_map` auto-selects `vector` vs `unordered_map` based on graph type
 - Lazy search views (`vertices_bfs`, `edges_dfs`) composable with `std::views`
 - `transpose_view` is a zero-cost adaptor (no wrapper descriptor types)
+- `filtered_graph` adaptor (vertex/edge predicates) modelling `adjacency_list`
+- Ready-to-use BGL adaptor (`graph::bgl::graph_adaptor`) for incremental migration
+- Three I/O formats already implemented (DOT, GraphML, JSON)
 
 **Key gaps requiring attention for BGL migration:**
 - Dozens of missing algorithms across flow, matching, coloring, planarity, isomorphism, centrality, layout, and related areas
 - No `subgraph` hierarchy with descriptor mapping
-- No graph I/O (DIMACS, METIS)
-- Graph generators partially implemented (Erdős-Rényi, Barabási-Albert, grid, path available; Watts-Strogatz, R-MAT still missing)
-- `dynamic_graph` lacks individual mutation (`add_vertex`, `add_edge`, `remove_vertex`, `remove_edge`)
+- No DIMACS or METIS I/O
+- Graph generators partially implemented (Erdős-Rényi G(n,p), Barabási-Albert, 2D grid, path available; Watts-Strogatz, R-MAT, complete graph still missing)
+- `dynamic_graph` lacks individual mutation (`add_vertex`, `add_edge`, `remove_vertex`, `remove_edge`); `undirected_adjacency_list` provides `create_vertex` / `create_edge` / `erase_edge` but no `erase_vertex`
 - No `adjacency_matrix` container
 - No `copy_graph` utility with cross-type and property mapping support
 - No `labeled_graph` adaptor (string labels → vertex mapping)
 - No named parameter interface (BGL users must learn new positional API)
+- No composable visitor adaptors (`make_visitor(...)` factory)
 
 ---
 
@@ -233,9 +239,9 @@ dijkstra_shortest_paths(g, {s}, container_value_fn(dist), ...);
 | **Dijkstra** | `dijkstra_shortest_paths(g, s, weight_map(w).distance_map(d).predecessor_map(p))` | `dijkstra_shortest_paths(g, sources, dist_fn, pred_fn, weight_fn, visitor)` | graph-v3: function-object properties, multi-source, custom compare/combine |
 | **Bellman-Ford** | `bellman_ford_shortest_paths(g, N, weight_map(w).distance_map(d))` | `bellman_ford_shortest_paths(g, sources, dist_fn, pred_fn, weight_fn, visitor)` | Similar; graph-v3 detects negative cycles via visitor |
 | **Kruskal MST** | `kruskal_minimum_spanning_tree(g, back_inserter(mst))` | `kruskal(edges, mst_output)` | graph-v3 works on edge lists directly; also `inplace_kruskal` |
-| **Prim MST** | `prim_minimum_spanning_tree(g, pmap)` | `prim(g, mst_output, weight_fn)` | Similar interface |
+| **Prim MST** | `prim_minimum_spanning_tree(g, pmap)` | `prim(g, source, mst_output, weight_fn)` | graph-v3 takes a source; thin wrapper over `dijkstra_shortest_paths` |
 | **Connected Components** | `connected_components(g, comp_map)` | `connected_components(g, comp_fn)` | graph-v3 uses function objects |
-| **Strong Components** | `strong_components(g, comp_map)` | `kosaraju(g, comp_fn)` + `tarjan_scc(g, comp_fn)` | graph-v3 has both Kosaraju and Tarjan |
+| **Strong Components** | `strong_components(g, comp_map)` | `kosaraju(g, comp_fn)` + `tarjan_scc(g, comp_fn)` | graph-v3 has both Kosaraju and Tarjan; `tarjan_scc.hpp` is **not** in `algorithms.hpp` umbrella (include directly) |
 | **Biconnected Components** | `biconnected_components(g, comp_map)` | `biconnected_components(g, output)` | Similar |
 | **Topological Sort** | `topological_sort(g, back_inserter(order))` | `topological_sort(g, output_iter)` | Both use output iterators; graph-v3 returns bool (cycle detection) |
 | **Articulation Points** | `articulation_points(g, back_inserter(art))` | `articulation_points(g, output_iter)` | Similar |
@@ -348,13 +354,13 @@ dijkstra_shortest_paths(g, {s}, container_value_fn(dist), ...);
 
 ### Algorithms in graph-v3 but NOT in BGL
 
-| Algorithm | Notes |
-|-----------|-------|
-| **Jaccard Coefficient** | Similarity metric for adjacent vertex neighborhoods |
-| **Label Propagation** | Community detection algorithm |
-| **Maximal Independent Set** | Greedy MIS |
-| **Triangle Count** | `triangle_count()` and `directed_triangle_count()` |
-| **Afforest** | Parallel-friendly connected components (Sutton et al.) |
+| Algorithm | Header | Notes |
+|-----------|--------|-------|
+| **Jaccard Coefficient** | `jaccard.hpp` | Similarity metric for adjacent vertex neighborhoods |
+| **Label Propagation** | `label_propagation.hpp` | Community detection algorithm |
+| **Maximal Independent Set** | `mis.hpp` | Greedy MIS |
+| **Triangle Count** | `tc.hpp` | `triangle_count()` and `directed_triangle_count()` |
+| **Afforest** | `connected_components.hpp` | Parallel-friendly connected components (Sutton et al.) |
 
 ---
 
@@ -414,9 +420,9 @@ breadth_first_search(g, {s}, my_visitor{});
 
 **Missing events:** `non_tree_edge`, `gray_target`, `black_target` are BFS-specific events that distinguish edge targets by color state. These could be added to graph-v3's BFS visitor concept if needed for migration.
 
-### Composable Visitor Adaptors — Gap
+### Composable Visitor Adaptors — Gap (still open)
 
-BGL provides reusable event visitor adaptors (`predecessor_recorder`, `distance_recorder`, `time_stamper`, `property_writer`) that can be composed via `std::pair` chaining. graph-v3 has no equivalent — users write monolithic visitor structs. This is less composable but also less complex.
+BGL provides reusable event visitor adaptors (`predecessor_recorder`, `distance_recorder`, `time_stamper`, `property_writer`) that can be composed via `std::pair` chaining. graph-v3 has no equivalent — users write monolithic visitor structs. As of 2026-05, no `make_visitor(...)` factory or pre-built event adaptors are available.
 
 **Recommendation:** Consider providing lambda-based visitor construction:
 ```cpp
@@ -493,9 +499,11 @@ graph-v3's lazy view system is a significant advancement over BGL:
 | **Adjacency List Text** | `operator<<` / `operator>>` | ❌ None | 🟢 Low |
 | **JSON** | None | ✅ `write_json()`, `read_json()` | 🟡 Medium (modern format) |
 
-**Recommendation:** Implement DOT and GraphML as the first I/O formats. These cover the vast majority of BGL user needs. Design the I/O layer as generic free functions taking any `adjacency_list<G>`.
+**Status:** DOT, GraphML, and JSON readers/writers are implemented and shipped. Headers live under `include/graph/io/` (`dot.hpp`, `graphml.hpp`, `json.hpp`). Reader functions return type-tagged graph objects (`dot_graph`, `graphml_graph`, `json_graph`) suitable for use with all graph-v3 algorithms.
 
-### Proposed DOT API — `std::format`-Based
+**Recommendation:** Implement DIMACS next — needed for the standard max-flow benchmark suite once flow algorithms land. METIS and adjacency-list text are low priority.
+
+### DOT API — `std::format`-Based (implemented)
 
 The DOT writer should leverage `std::format` (C++20) for type-safe value serialization. This avoids inventing a new extension point — users who specialize `std::formatter<T>` get DOT output for free.
 
@@ -578,7 +586,7 @@ write_dot(cout, g,
   });
 ```
 
-### Proposed GraphML API
+### GraphML API (implemented)
 
 ```cpp
 #include <graph/io/graphml.hpp>
@@ -1040,13 +1048,14 @@ These items block migration for the largest number of BGL users:
 | Item | Type | Effort | Rationale |
 |------|------|--------|-----------|
 | **Individual mutation on directed graph** | Container | High | `add_vertex()`, `add_edge()`, `remove_vertex()`, `remove_edge()` on `dynamic_graph`. Most BGL code builds graphs incrementally. |
-| **`filtered_graph_view`** | Adaptor | Medium | Preserves `adjacency_list` concept; enables algorithm composition on subsets |
+| **`erase_vertex` on `undirected_adjacency_list`** | Container | Medium | Currently only `erase_edge` is supported on the mutation-friendly container |
 | **A\* Search** | Algorithm | Medium | Heavily used in pathfinding, robotics, game AI |
-| **DOT format read/write** | I/O | Medium | Primary graph interchange format |
-| **Erdos-Renyi generator** | Generator | Low | Essential for testing and benchmarking |
 | **`copy_graph` utility** | Utility | Low | Cross-type graph copy with property mapping |
 | **Betweenness Centrality** | Algorithm | Medium | Core network analysis metric |
 | **PageRank** | Algorithm | Low | Widely used iterative algorithm |
+| **DIMACS read/write** | I/O | Low | Required for max-flow benchmark suites |
+
+> **Done since the previous revision of this plan:** `filtered_graph` adaptor, DOT/GraphML/JSON I/O, Erdős-Rényi / Barabási-Albert / 2D grid / path generators, `kosaraju` + `tarjan_scc`, `afforest`, library-shipped BGL adaptor (`include/graph/adaptors/bgl/`).
 
 ### Phase 2: Common Algorithm Coverage
 
@@ -1061,7 +1070,7 @@ These items block migration for the largest number of BGL users:
 | **Transitive Closure/Reduction** | Algorithm | Medium | DAG analysis |
 | **Core Numbers (k-core)** | Algorithm | Medium | Network analysis |
 | **Cuthill-McKee Ordering** | Algorithm | Medium | Sparse matrix bandwidth reduction |
-| **GraphML read/write** | I/O | Medium | XML-based interchange |
+| **DIMACS I/O** | I/O | Low | Needed for flow algorithm benchmarks |
 
 ### Phase 3: Advanced Features
 
@@ -1083,8 +1092,7 @@ These items block migration for the largest number of BGL users:
 
 | Item | Type | Effort | Rationale |
 |------|------|--------|-----------|
-| **DIMACS I/O** | I/O | Low | Needed for flow algorithm benchmarks |
-| **JSON I/O** | I/O | Medium | Modern interchange format |
+| **METIS I/O** | I/O | Low | Legacy partitioning format |
 | **Parallel algorithms** | Algorithm | High | Parallel BFS, CC, PageRank |
 | **`grid_graph`** | Container | Medium | Implicit N-dimensional grid |
 | **Condensation graph** | Algorithm | Low | DAG from SCC |
@@ -1149,7 +1157,7 @@ The scores below are directional editorial estimates, not audited counts.
 | **Isomorphism** | 3 algorithms | 0 | 0% |
 | **Ordering/bandwidth** | 8 algorithms | 0 | 0% |
 | **Layout** | 5 algorithms | 0 | 0% |
-| **Graph adaptors** | 5 adaptors | 1 (transpose) | 20% |
+| **Graph adaptors** | 5 adaptors | 3 (transpose, filtered, BGL adaptor) | 60% |
 | **Graph I/O** | 5 formats | 3 (DOT, GraphML, JSON) | 60% |
 | **Graph generators** | 6 generators | 4 (path, grid, Erdős–Rényi, Barabási–Albert) | 67% |
 | **Visitors** | 5 types + composable adaptors | Concept-checked visitors | 75% |

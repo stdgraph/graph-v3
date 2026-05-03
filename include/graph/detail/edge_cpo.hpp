@@ -320,7 +320,7 @@ namespace _cpo_impls {
              * @return Source vertex ID (type depends on graph's vertex_id_t)
              */
       template <typename G, typename E>
-      [[nodiscard]] constexpr auto operator()(G&& g, const E& uv) const
+      [[nodiscard]] constexpr decltype(auto) operator()(G&& g, const E& uv) const
             noexcept(_Choice<std::remove_cvref_t<G>, std::remove_cvref_t<E>>._No_throw)
       requires(_Choice<std::remove_cvref_t<G>, std::remove_cvref_t<E>>._Strategy != _St::_none)
       {

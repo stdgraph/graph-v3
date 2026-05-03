@@ -215,14 +215,26 @@ public:
   constexpr dynamic_edge_target& operator=(dynamic_edge_target&&)      = default;
 
 public:
-  constexpr vertex_id_type target_id() const { return target_id_; }
+  [[nodiscard]] constexpr decltype(auto) target_id() const noexcept {
+    if constexpr (std::integral<vertex_id_type>) {
+      return target_id_;    // integral: return by value
+    } else {
+      return (target_id_);  // non-trivial: return const ref to stored member
+    }
+  }
 
 private:
   vertex_id_type target_id_ = vertex_id_type();
 
 private:
   // target_id(g,uv) - ADL customization point for CPO
-  friend constexpr vertex_id_type target_id(const graph_type& g, const edge_type& uv) noexcept { return uv.target_id_; }
+  friend constexpr decltype(auto) target_id(const graph_type&, const edge_type& uv) noexcept {
+    if constexpr (std::integral<vertex_id_type>) {
+      return uv.target_id_;    // integral: return by value
+    } else {
+      return (uv.target_id_);  // non-trivial: return const ref to stored member
+    }
+  }
 
   // target(g,uv) - returns the target vertex
   // friend constexpr vertex_type& target(graph_type& g, edge_type& uv) noexcept {
@@ -747,16 +759,42 @@ private: // CPO properties
     return edge_descriptor_view<edge_iter_t, vertex_iter_t, in_edge_tag>(in_edges_ref, u);
   }
 
-  // friend constexpr typename edges_type::iterator
-  // find_vertex_edge(graph_type& g, vertex_id_type uid, vertex_id_type vid) {
-  //   return std::ranges::find(g[uid].edges_,
-  //                            [&g, &vid](const edge_type& uv) -> bool { return target_id(g, uv) == vid; });
-  // }
-  // friend constexpr typename edges_type::const_iterator
-  // find_vertex_edge(const graph_type& g, vertex_id_type uid, vertex_id_type vid) {
-  //   return std::ranges::find(g[uid].edges_,
-  //                            [&g, &vid](const edge_type& uv) -> bool { return target_id(g, uv) == vid; });
-  // }
+  // ADL friend for find_vertex_edge(g, u, vid) — vertex descriptor + target vertex id.
+  // Uses O(log n) map::find / O(1) unordered_map::find for associative edge containers
+  // (e.g. vom_graph_traits / voum_graph_traits), and O(n) linear scan otherwise.
+  // The CPO resolves find_vertex_edge(g, uid, vid) (both ids) through this automatically
+  // via the _default uidvid tier: find_vertex(g, uid) → u → this overload.
+  template <typename U>
+  requires vertex_descriptor_type<U>
+  [[nodiscard]] friend constexpr auto find_vertex_edge(graph_type& g, const U& u, vertex_id_type vid) noexcept {
+    using vertex_iter_t = typename U::iterator_type;
+    auto&         edges_ref = u.inner_value(g).edges_;
+    using edge_iter_t       = decltype(edges_ref.begin());
+    using edge_desc         = adj_list::edge_descriptor<edge_iter_t, vertex_iter_t>;
+    if constexpr (requires { edges_ref.find(vid); }) {
+      return edge_desc{edges_ref.find(vid), u};
+    } else {
+      return edge_desc{std::ranges::find_if(edges_ref,
+                                            [&vid](const auto& e) { return e.target_id() == vid; }),
+                       u};
+    }
+  }
+
+  template <typename U>
+  requires vertex_descriptor_type<U>
+  [[nodiscard]] friend constexpr auto find_vertex_edge(const graph_type& g, const U& u, vertex_id_type vid) noexcept {
+    using vertex_iter_t  = typename U::iterator_type;
+    const auto& edges_ref = u.inner_value(g).edges_;
+    using edge_iter_t     = decltype(edges_ref.begin());
+    using edge_desc       = adj_list::edge_descriptor<edge_iter_t, vertex_iter_t>;
+    if constexpr (requires { edges_ref.find(vid); }) {
+      return edge_desc{edges_ref.find(vid), u};
+    } else {
+      return edge_desc{std::ranges::find_if(edges_ref,
+                                            [&vid](const auto& e) { return e.target_id() == vid; }),
+                       u};
+    }
+  }
 };
 
 

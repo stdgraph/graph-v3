@@ -13,6 +13,8 @@ running an algorithm, and working with edge lists.
 
 > [← Back to Documentation Index](index.md)
 
+> **See also:** [Examples](examples.md) — complete programs demonstrating adaptation, traversal, shortest paths, and more.
+
 ---
 
 ## 1. Requirements

@@ -16,6 +16,7 @@
 - [Incoming Edge Views](#incoming-edge-views) — in_incidence, in_neighbors
 - [Simplified Views (basic\_)](#simplified-views-basic_) — id-only variants
 - [Search Views](#search-views) — DFS, BFS, topological sort
+- [Non-Integral Vertex IDs](#non-integral-vertex-ids) — string-keyed and map-backed graphs
 - [Reverse Search (Accessor Parameter)](#reverse-search-accessor-parameter) — BFS/DFS/topo over incoming edges
 - [Range Adaptor Syntax](#range-adaptor-syntax)
 - [Value Functions](#value-functions)
@@ -341,9 +342,13 @@ auto edges_dfs(G&& g, Seed seed, EVF&& evf, Alloc alloc);
 
 **Iterator category**: input (single-pass).
 
+**Graph requirements**: satisfies the `adjacency_list` concept.  Works with
+any vertex descriptor type — including non-integral ids such as
+`std::string` (see [Non-Integral Vertex IDs](#non-integral-vertex-ids)).
+
 **Example**:
 ```cpp
-// DFS from vertex 0
+// DFS from vertex 0 (index-based graph)
 for (auto [v] : views::vertices_dfs(g, 0)) {
     std::cout << "DFS visited: " << vertex_id(g, v) << "\n";
 }
@@ -390,9 +395,13 @@ auto edges_bfs(G&& g, Seed seed, EVF&& evf, Alloc alloc);
 
 **Iterator category**: input (single-pass).
 
+**Graph requirements**: satisfies the `adjacency_list` concept.  Works with
+any vertex descriptor type — including non-integral ids such as
+`std::string` (see [Non-Integral Vertex IDs](#non-integral-vertex-ids)).
+
 **Example**:
 ```cpp
-// BFS from vertex 0
+// BFS from vertex 0 (index-based graph)
 for (auto [v] : views::vertices_bfs(g, 0)) {
     std::cout << "BFS level order: " << vertex_id(g, v) << "\n";
 }
@@ -441,6 +450,11 @@ auto edges_topological_sort_safe(G&& g);       // returns tl::expected<view, ver
 
 **Iterator category**: forward (multi-pass).
 
+**Graph requirements**: satisfies the `adjacency_list` concept; intended for
+directed graphs.  Works with any vertex descriptor type — including
+non-integral ids such as `std::string`
+(see [Non-Integral Vertex IDs](#non-integral-vertex-ids)).
+
 **Example**:
 ```cpp
 // Topological order
@@ -462,10 +476,71 @@ if (result) {
         // Process vertices in topological order
     }
 } else {
-    auto cycle_vertex = result.error();  // vertex that closes the back edge
-    std::cerr << "Graph has a cycle involving vertex " << cycle_vertex << "\n";
+    auto cycle_vertex = result.error();  // vertex descriptor closing the back edge
+    // For string-keyed graphs: vertex_id(g, cycle_vertex) gives the key
+    std::cerr << "Graph has a cycle\n";
 }
 ```
+
+---
+
+### Non-Integral Vertex IDs
+
+All three search views (BFS, DFS, topological sort) work with graphs whose
+vertex descriptors are **not** reducible to an integer index — for example,
+graphs keyed by `std::string` via `uol_graph_traits` (unordered-map vertices
++ list edges).
+
+The internal `visited_tracker` selects its storage strategy at compile time:
+
+| Vertex descriptor | Storage | Cost |
+|-------------------|---------|------|
+| Integral type (`size_t`, `int`, …) | `std::vector<bool>` bitset | O(V) bits, O(1) ops |
+| Descriptor with `.value()` returning integral (e.g. vector-backed iterator) | `std::vector<bool>` bitset | O(V) bits, O(1) ops |
+| Anything else (e.g. map/unordered_map iterator, `std::string` key) | `std::unordered_set<Vertex>` | O(visited) space, O(1) amortised ops |
+
+For topological sort, the recursion stack used by cycle detection (`_safe`
+variants) uses the same adaptive strategy.
+
+**Example — BFS on a string-keyed graph**:
+```cpp
+#include <graph/container/dynamic_graph.hpp>
+#include <graph/container/traits/uol_graph_traits.hpp>
+#include <graph/views/bfs.hpp>
+
+using namespace graph;
+using namespace graph::views;
+
+// unordered_map<string,…> vertices, list<…> edges
+using StrGraph = dynamic_adjacency_graph<
+    uol_graph_traits<void, void, void, std::string, false>>;
+
+StrGraph g;
+auto a = find_vertex(g, "a");
+auto b = find_vertex(g, "b");
+auto c = find_vertex(g, "c");
+// ... add edges ...
+
+// Seed is a vertex descriptor — no integer id required
+for (auto [v] : vertices_bfs(g, a)) {
+    std::cout << vertex_id(g, v) << "\n";  // prints string keys
+}
+```
+
+**Example — cycle detection on a string-keyed DAG**:
+```cpp
+auto result = vertices_topological_sort_safe(g);
+if (!result) {
+    // result.error() is a vertex descriptor; use vertex_id() to get the key
+    std::cerr << "Cycle at: " << vertex_id(g, result.error()) << "\n";
+}
+```
+
+> **Note:** The seed for BFS and DFS can be either a vertex descriptor *or*
+> a vertex id.  For string-keyed graphs, pass a descriptor obtained from
+> `find_vertex()` or directly from a prior iteration.
+
+---
 
 ## Reverse Search (Accessor Parameter)
 
@@ -678,12 +753,12 @@ auto dfs = g | vertices_dfs(0);  // Allocates visited tracker
 | incidence | O(1) | References graph |
 | neighbors | O(1) | References graph |
 | edgelist | O(1) | References graph |
-| vertices_dfs | O(V) | Visited tracker + stack |
-| edges_dfs | O(V) | Visited tracker + stack |
-| vertices_bfs | O(V) | Visited tracker + queue |
-| edges_bfs | O(V) | Visited tracker + queue |
-| vertices_topological_sort | O(V) | Visited tracker + result |
-| edges_topological_sort | O(V) | Visited tracker + result |
+| vertices_dfs | O(V) | Visited tracker (bitset or hash set) + stack |
+| edges_dfs | O(V) | Visited tracker (bitset or hash set) + stack |
+| vertices_bfs | O(V) | Visited tracker (bitset or hash set) + queue |
+| edges_bfs | O(V) | Visited tracker (bitset or hash set) + queue |
+| vertices_topological_sort | O(V) | Visited tracker + post-order result vector |
+| edges_topological_sort | O(V) | Visited tracker + post-order result vector |
 | in_incidence | O(1) | References graph |
 | in_neighbors | O(1) | References graph |
 

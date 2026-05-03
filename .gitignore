@@ -1,4 +1,6 @@
-# Build directories
+# Example output files
+examples/**/output/*
+!examples/**/output/.gitkeep
 build/
 build*/
 cmake-build-*/

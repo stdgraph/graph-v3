@@ -2,9 +2,17 @@
 add_executable(basic_usage basic_usage.cpp)
 target_link_libraries(basic_usage PRIVATE graph3)
 
+add_executable(adapting_third_party_graph
+    AdaptingThirdPartyGraph/adapting_a_third_party_graph.cpp)
+target_link_libraries(adapting_third_party_graph PRIVATE graph3)
+
 add_executable(dijkstra_example dijkstra_clrs_example.cpp)
 target_link_libraries(dijkstra_example PRIVATE graph3)
 target_include_directories(dijkstra_example PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_subdirectory(CppCon2021)
+add_subdirectory(CppCon2022)
+add_subdirectory(BGLWorkshop2026)
 
 # BGL adaptor example (requires Boost headers)
 option(BUILD_BGL_EXAMPLES "Build BGL adaptor examples (requires Boost headers)" OFF)

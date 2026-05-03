@@ -23,7 +23,7 @@
 - [Roadmap](#roadmap)
 
 ## Overview
-
+ 
 All graph-v3 algorithms require a graph satisfying the `adjacency_list<G>`
 concept. This supports two families of vertex storage:
 

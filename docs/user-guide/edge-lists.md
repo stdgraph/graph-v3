@@ -61,6 +61,8 @@ The distinction between `basic_sourced_edgelist` and
 ID type (including `std::string`), while the index variant requires integral
 IDs. Most graph algorithms require integral IDs for fast vertex lookup.
 
+![Edge List Concept Hierarchy](../assets/edge_list_concepts.svg)
+
 ---
 
 ## 3. Edge Patterns
