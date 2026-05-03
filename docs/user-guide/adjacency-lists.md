@@ -74,6 +74,8 @@ All library algorithms require `adjacency_list`. Index-based containers
 automatically; map-based containers (`map`, `unordered_map`) satisfy
 `mapped_adjacency_list`. Both are accepted by every algorithm.
 
+![Adjacency List Concept Hierarchy](../assets/adjacency_list_concepts.svg)
+
 ---
 
 ## 3. Accessing Graph Structure — CPOs
