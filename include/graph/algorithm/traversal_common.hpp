@@ -347,16 +347,16 @@ class _null_range_type : public std::vector<size_t> {
 
 public:
   _null_range_type() noexcept(noexcept(Allocator())) = default;
-  explicit _null_range_type(const Allocator& alloc) noexcept {}
-  _null_range_type(Base::size_type count, const T& value, const Allocator& alloc = Allocator()) {}
-  explicit _null_range_type(Base::size_type count, const Allocator& alloc = Allocator()) {}
+  explicit _null_range_type([[maybe_unused]] const Allocator&) noexcept {}
+  _null_range_type([[maybe_unused]] Base::size_type count, [[maybe_unused]] const T& value, const Allocator& = Allocator()) {}
+  explicit _null_range_type([[maybe_unused]] Base::size_type count, const Allocator& = Allocator()) {}
   template <class InputIt>
-  _null_range_type(InputIt first, InputIt last, const Allocator& alloc = Allocator()) {}
-  _null_range_type(const _null_range_type& other) : Base() {}
-  _null_range_type(const _null_range_type& other, const Allocator& alloc) {}
-  _null_range_type(_null_range_type&& other) noexcept {}
-  _null_range_type(_null_range_type&& other, const Allocator& alloc) {}
-  _null_range_type(std::initializer_list<T> init, const Allocator& alloc = Allocator()) {}
+  _null_range_type([[maybe_unused]] InputIt first, [[maybe_unused]] InputIt last, const Allocator& = Allocator()) {}
+  _null_range_type(const _null_range_type&) : Base() {}
+  _null_range_type(const _null_range_type&, const Allocator&) {}
+  _null_range_type(_null_range_type&&) noexcept {}
+  _null_range_type(_null_range_type&&, const Allocator&) {}
+  _null_range_type(std::initializer_list<T>, const Allocator& = Allocator()) {}
 };
 
 /// Global instance of the null range used when predecessor tracking is not needed

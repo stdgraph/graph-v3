@@ -35,12 +35,13 @@ General Syntax differences
   - Bacon number
 - Example 2
   - non-integral & sparse vertex ids
+  - building & constructing the bipartite graph
 
 ### French Roads
+  - Dijkstra shortest_paths & shortest_distances
   - properties
-
-
-  - Dijkstra
+    - internal: city_name, route_distance
+    - container_value_fn(distances)
 
 ### Performance comparison
 - P3337 

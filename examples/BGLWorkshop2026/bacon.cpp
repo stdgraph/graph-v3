@@ -164,7 +164,6 @@ void run() {
 // and actors are labelled with their Bacon number.
 // Edges are deduplicated so the bidirectional pairs collapse to single undirected lines.
 void dot(const string& filename = BGLWS_OUTPUT_DIR "/bacon2.dot") {
-  using G = graph_t;
   auto [g, depth] = eval();
 
   std::ofstream out(filename);

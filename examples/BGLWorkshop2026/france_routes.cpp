@@ -34,10 +34,11 @@ using namespace std::string_literals;
 
 namespace france {
 
-using vid_t = uint32_t;
+using vid_t  = size_t; // changing this may require the use of static_cast to avoid warnings
+using dist_t = int;    // distance in km
 
 struct route_t {
-  int    distance_km = 0;
+  dist_t distance_km = 0;
   string road;              // e.g. "A1", "A11 -> N157"
 };
 
@@ -78,7 +79,7 @@ load_result load(const string& filename) {
               end = std::sregex_iterator{};
          it != end; ++it) {
       string name            = (*it)[1].str();
-      city_id[name]          = static_cast<vid_t>(city_names.size());
+      city_id[name]          = city_names.size();
       city_names.push_back(name);
     }
   }
@@ -87,7 +88,7 @@ load_result load(const string& filename) {
   using vertex_data = copyable_vertex_t<vid_t, string>;
   vector<vertex_data> vv;
   vv.reserve(city_names.size());
-  for (vid_t i = 0; i < static_cast<vid_t>(city_names.size()); ++i)
+  for (vid_t i = 0; i < city_names.size(); ++i)
     vv.push_back({i, city_names[i]});
 
   graph_t g;
@@ -98,7 +99,7 @@ load_result load(const string& filename) {
   static const std::regex route_re(
       R"re(\{\s*"from"\s*:\s*"([^"]+)"\s*,\s*"to"\s*:\s*"([^"]+)"\s*,\s*"distance_km"\s*:\s*(\d+)\s*,\s*"route"\s*:\s*"([^"]+)"\s*\})re");
 
-  using edge_data = copyable_edge_t<vid_t, route_t>;
+  using edge_data = copyable_edge_t<vid_t, route_t>; // target vertex id + route info
   vector<edge_data> edges;
 
   for (auto it  = std::sregex_iterator(content.begin(), content.end(), route_re),
@@ -107,7 +108,7 @@ load_result load(const string& filename) {
     auto& m    = *it;
     vid_t src  = city_id.at(m[1].str());
     vid_t tgt  = city_id.at(m[2].str());
-    int   dist = std::stoi(m[3].str());
+    dist_t dist = std::stoi(m[3].str());
     edges.push_back({src, tgt, route_t{dist, m[4].str()}});
   }
 
@@ -116,78 +117,83 @@ load_result load(const string& filename) {
 }
 
 void run(const string& filename) {
-  using G = graph_t;
   auto [g, city_id] = load(filename);
 
-  // Helper: city name from vertex id.
-  auto city_name = [&](vid_t uid) -> string {
-    return vertex_value(g, *find_vertex(g, uid));
+  // Vertex & edge properties
+  auto city_name = [&](const auto& g2, vid_t u) -> string {
+    return vertex_value(g2, *find_vertex(g2, u));
+  };
+  auto route_distance = [](const auto& g2, const auto& uv) -> dist_t {
+    return edge_value(g2, uv).distance_km;
+  };
+  auto route_road = [](const auto& g2, const auto& uv) -> string {
+    return edge_value(g2, uv).road;
   };
 
+  // ── Evaluate shortest paths from source ────────────────────────────────────
   const vid_t source_id = city_id.at("Paris");
 
   // Distance and predecessor vectors indexed by vertex id.
-  vector<int>            distances(num_vertices(g));
-  vector<vertex_id_t<G>> predecessors(num_vertices(g));
+  vector<dist_t> distances(num_vertices(g));
+  vector<vid_t>  predecessors(num_vertices(g));
   init_shortest_paths(g, distances, predecessors);
 
   dijkstra_shortest_paths(g, source_id,
                           container_value_fn(distances),
                           container_value_fn(predecessors),
-                          [](const auto& g2, const auto& uv) {
-                            return edge_value(g2, uv).distance_km;
-                          });
+                          route_distance);
 
   // ── Print all distances, sorted nearest-first ──────────────────────────────
-  vector<std::pair<int, vid_t>> by_dist;
-  by_dist.reserve(num_vertices(g));
-  for (vid_t uid = 0; uid < static_cast<vid_t>(num_vertices(g)); ++uid) {
-    if (uid != source_id)
-      by_dist.emplace_back(distances[uid], uid);
-  }
-  std::ranges::sort(by_dist); // sort by (distance, uid) — default pair comparison
+  {
+    vector<std::pair<dist_t, vid_t>> by_dist;
+    by_dist.reserve(num_vertices(g));
+    for (vid_t uid = 0; uid < num_vertices(g); ++uid) {
+        if (uid != source_id)
+        by_dist.emplace_back(distances[uid], uid);
+    }
+    std::ranges::sort(by_dist); // sort by (distance, uid) — default pair comparison
 
-  cout << "Shortest road distances from " << city_name(source_id) << ":\n";
-  for (auto& [d, uid] : by_dist) {
-    if (d == infinite_distance<int>())
-      cout << "  " << city_name(uid) << ": unreachable\n";
-    else
-      cout << "  " << city_name(uid) << ": " << d << " km\n";
+    cout << "Shortest road distances from " << city_name(g, source_id) << ":\n";
+    for (auto& [d, uid] : by_dist) {
+        if (d == infinite_distance<dist_t>())
+        cout << "  " << city_name(g, uid) << ": unreachable\n";
+        else
+        cout << "  " << city_name(g, uid) << ": " << d << " km\n";
+    }
   }
 
   // ── Reconstruct shortest path from Paris to Nice ────────────────────────────
-  const vid_t dest_id = city_id.at("Nice");
-  cout << "\nShortest path: " << city_name(source_id) << " -> " << city_name(dest_id) << "\n";
+  {
+    const vid_t dest_id = city_id.at("Nice");
+    cout << "\nShortest path: " << city_name(g, source_id) << " -> " << city_name(g, dest_id) << "\n";
 
-  vector<vertex_id_t<G>> path;
-  for (auto cur = static_cast<vertex_id_t<G>>(dest_id);
-       cur != static_cast<vertex_id_t<G>>(source_id);
-       cur = predecessors[cur]) {
-    if (path.size() >= num_vertices(g)) {
-      cout << "  (no path found)\n";
-      return;
+    vector<vid_t> path;
+    for (vid_t cur = dest_id; cur != source_id; cur = predecessors[cur]) {
+      if (path.size() >= num_vertices(g)) {
+        cout << "  (no path found)\n";
+        return;
+      }
+      path.push_back(cur);
     }
-    path.push_back(cur);
-  }
-  path.push_back(source_id);
-  std::ranges::reverse(path);
+    path.push_back(source_id);
+    std::ranges::reverse(path);
 
-  for (size_t i = 0; i + 1 < path.size(); ++i) {
-    vid_t      from_id = static_cast<vid_t>(path[i]);
-    vid_t      to_id   = static_cast<vid_t>(path[i + 1]);
-    auto       uv      = find_vertex_edge(g, from_id, to_id);
-    const route_t& r   = edge_value(g, uv);
-    cout << "  " << city_name(from_id) << " -> " << city_name(to_id)
-         << "  (" << r.distance_km << " km, " << r.road << ")\n";
+    for (size_t i = 0; i + 1 < path.size(); ++i) {
+        vid_t      from_id = path[i];
+        vid_t      to_id   = path[i + 1];
+        auto uv = find_vertex_edge(g, from_id, to_id);
+        cout << "  " << city_name(g, from_id) << " -> " << city_name(g, to_id)
+            << "  (" << route_distance(g, uv) << " km, " << route_road(g, uv) << ")\n";
+    }
+    cout << "  Total: " << distances[dest_id] << " km\n";
   }
-  cout << "  Total: " << distances[dest_id] << " km\n";
 }
 
 void dot(const string& dot_filename, const string& json_filename) {
   auto [g, city_id] = load(json_filename);
 
-  auto city_name = [&](vid_t uid) -> string {
-    return vertex_value(g, *find_vertex(g, uid));
+  auto city_name = [&](vertex_t<graph_t> u) -> string {
+    return vertex_value(g, u);
   };
 
   std::ofstream out(dot_filename);
@@ -197,8 +203,7 @@ void dot(const string& dot_filename, const string& json_filename) {
   out << "graph FranceRoutes {\n";
 
   for (auto u : vertices(g)) {
-    vid_t uid = vertex_id(g, u);
-    out << "  " << uid << " [label=\"" << city_name(uid) << "\"];\n";
+    out << "  " << vertex_id(g, u) << " [label=\"" << city_name(u) << "\"];\n";
   }
 
   // Emit each undirected edge once: use the copy where sid < tid so that

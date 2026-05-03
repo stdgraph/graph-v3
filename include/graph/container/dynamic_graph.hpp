@@ -228,7 +228,7 @@ private:
 
 private:
   // target_id(g,uv) - ADL customization point for CPO
-  friend constexpr decltype(auto) target_id(const graph_type& g, const edge_type& uv) noexcept {
+  friend constexpr decltype(auto) target_id(const graph_type&, const edge_type& uv) noexcept {
     if constexpr (std::integral<vertex_id_type>) {
       return uv.target_id_;    // integral: return by value
     } else {
