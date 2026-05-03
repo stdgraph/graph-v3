@@ -23,6 +23,7 @@
 #include "graph/algorithm/traversal_common.hpp"
 #include "graph/adj_list/vertex_property_map.hpp"
 
+#include <array>
 #include <queue>
 #include <ranges>
 #include <limits>
