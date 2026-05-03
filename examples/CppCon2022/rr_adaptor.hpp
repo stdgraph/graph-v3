@@ -260,6 +260,8 @@ public:
   }
 
 private:
+  vertices_range vertices_;
+
   void push(edges_range& edges, const edge_type& val) {
     if constexpr (graph::container::has_push_back<edges_range>)
       edges.push_back(val);
@@ -312,6 +314,4 @@ private:
     return std::get<1>(to_tuple(*uv.value()));
   }
 
-private:
-  vertices_range vertices_;
 };
