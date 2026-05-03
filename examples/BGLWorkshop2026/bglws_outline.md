@@ -29,11 +29,11 @@ General Syntax differences
   - Show graph image
 - Problem(s): six degrees of Kevin Bacon
   - Bacon number
-- Example 1
+- bacon1
   - graph construction
   - edge iteration, views
   - Bacon number
-- Example 2
+- bacon2
   - non-integral & sparse vertex ids
   - building & constructing the bipartite graph
 

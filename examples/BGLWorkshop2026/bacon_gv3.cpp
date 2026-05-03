@@ -1,4 +1,5 @@
 #include "graph/graph.hpp"
+#include "graph/algorithm/breadth_first_search.hpp"
 #include "graph/views/bfs.hpp"
 #include "graph/container/dynamic_graph.hpp"
 #include "graph/container/traits/uol_graph_traits.hpp"
@@ -41,13 +42,13 @@ void run() {
   // actors only
   using vid_t              = size_t; // vertex id type
   constexpr vid_t infinity = std::numeric_limits<vid_t>::max();
-  const vid_t     seed     = static_cast<vid_t>(std::ranges::find(actors, "Kevin Bacon") - begin(actors));
 
   using G = vector<vector<vid_t>>;
   G costars{{1, 5, 6}, {7, 10, 0, 5, 12}, {4, 3, 11}, {2, 11}, {8, 9, 2, 12}, {0, 1},
             {7, 0},    {6, 1, 10},        {4, 9},     {4, 8},  {7, 1},        {2, 3},
             {1, 4}};
 
+  const vid_t   seed = static_cast<vid_t>(std::ranges::find(actors, "Kevin Bacon") - begin(actors));
   vector<vid_t> bacon_number(size(actors), infinity);
   bacon_number[seed] = 0;
 
@@ -59,6 +60,48 @@ void run() {
   }
 
   // Print results. Bacon number is the length of the shortest path from the seed actor to each actor.
+  for (vid_t uid = 0; uid < size(actors); ++uid) {
+    if (bacon_number[uid] == infinity)
+      cout << actors[uid] << " has Bacon number infinity\n";
+    else
+      cout << actors[uid] << " has Bacon number " << bacon_number[uid] << '\n';
+  }
+}
+
+// Same as run() but uses graph::breadth_first_search with a visitor instead of the
+// edges_bfs range view.  The visitor's on_examine_edge callback fires for every edge
+// examined; guard on infinity ensures only the first (tree) edge sets the depth.
+
+// Visitor for run2(): on_examine_edge fires for every edge (u → v) before the
+// visited check, so guarding on infinity replicates BGL's on_tree_edge behaviour.
+// Declared at namespace scope so the template member is legal.
+using costars_t = vector<vector<size_t>>;
+struct BaconDepthVisitor {
+  vector<size_t>& depth;
+  template <class G, class E>
+  void on_examine_edge(const G& g, const E& uv) {
+    auto uid = source_id(g, uv);
+    auto vid = target_id(g, uv);
+    if (depth[vid] == std::numeric_limits<size_t>::max())
+      depth[vid] = depth[uid] + 1;
+  }
+};
+
+void run1b() {
+  using vid_t              = size_t;
+  constexpr vid_t infinity = std::numeric_limits<vid_t>::max();
+  const vid_t     seed     = static_cast<vid_t>(std::ranges::find(actors, "Kevin Bacon") - begin(actors));
+
+  using G = vector<vector<vid_t>>;
+  G costars{{1, 5, 6}, {7, 10, 0, 5, 12}, {4, 3, 11}, {2, 11}, {8, 9, 2, 12}, {0, 1},
+            {7, 0},    {6, 1, 10},        {4, 9},     {4, 8},  {7, 1},        {2, 3},
+            {1, 4}};
+
+  vector<vid_t> bacon_number(size(actors), infinity);
+  bacon_number[seed] = 0;
+
+  graph::breadth_first_search(costars, seed, BaconDepthVisitor{bacon_number});
+
   for (vid_t uid = 0; uid < size(actors); ++uid) {
     if (bacon_number[uid] == infinity)
       cout << actors[uid] << " has Bacon number infinity\n";
@@ -380,6 +423,8 @@ void run() {
 int main() {
   cout << "\n--- bacon1 ---\n";
   bacon1::run();
+  cout << "\n--- bacon1b (visitor) ---\n";
+  bacon1::run1b();
   cout << "\n--- bacon2 ---\n";
   bacon2::run();
   cout << "\n--- bacon2_dot ---\n";

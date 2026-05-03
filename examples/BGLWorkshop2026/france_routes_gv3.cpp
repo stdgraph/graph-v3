@@ -148,7 +148,7 @@ void run(const string& filename) {
     vector<std::pair<dist_t, vid_t>> by_dist;
     by_dist.reserve(num_vertices(g));
     for (vid_t uid = 0; uid < num_vertices(g); ++uid) {
-        if (uid != source_id)
+      if (uid != source_id)
         by_dist.emplace_back(distances[uid], uid);
     }
     std::ranges::sort(by_dist); // sort by (distance, uid) — default pair comparison
