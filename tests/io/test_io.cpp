@@ -25,9 +25,9 @@ using weighted_graph_t = container::dynamic_graph<double, void, void, uint32_t, 
 static weighted_graph_t make_test_graph() {
   // Triangle: 0->1 (1.5), 0->2 (2.5), 1->2 (3.5)
   using edge_t = graph::copyable_edge_t<uint32_t, double>;
-  std::vector<edge_t> edges = {{0, 1, 1.5}, {0, 2, 2.5}, {1, 2, 3.5}};
+  std::vector<edge_t> edge_list = {{0, 1, 1.5}, {0, 2, 2.5}, {1, 2, 3.5}};
   weighted_graph_t g;
-  g.load_edges(edges, std::identity{}, uint32_t{3});
+  g.load_edges(edge_list, std::identity{}, uint32_t{3});
   return g;
 }
 
@@ -37,9 +37,9 @@ using plain_graph_t = container::dynamic_graph<void, void, void, uint32_t, false
 
 static plain_graph_t make_plain_graph() {
   using edge_t = graph::copyable_edge_t<uint32_t, void>;
-  std::vector<edge_t> edges = {{0, 1}, {0, 2}, {1, 2}, {2, 0}};
+  std::vector<edge_t> edge_list = {{0, 1}, {0, 2}, {1, 2}, {2, 0}};
   plain_graph_t g;
-  g.load_edges(edges, std::identity{}, uint32_t{3});
+  g.load_edges(edge_list, std::identity{}, uint32_t{3});
   return g;
 }
 

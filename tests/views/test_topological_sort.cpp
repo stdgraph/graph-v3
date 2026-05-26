@@ -150,7 +150,7 @@ TEST_CASE("vertices_topological_sort - complex DAG", "[topo][vertices]") {
 
   auto pos = [&](int vid) { return std::find(order.begin(), order.end(), vid) - order.begin(); };
 
-  // Verify all edges point forward in the ordering
+  // Verify all edge_pairs point forward in the ordering
   REQUIRE(pos(0) < pos(1));
   REQUIRE(pos(0) < pos(2));
   REQUIRE(pos(0) < pos(3));
@@ -207,7 +207,7 @@ TEST_CASE("vertices_topological_sort - disconnected components", "[topo][vertice
   REQUIRE(pos(4) < pos(5));
 }
 
-TEST_CASE("vertices_topological_sort - all edges point forward", "[topo][vertices]") {
+TEST_CASE("vertices_topological_sort - all edge_pairs point forward", "[topo][vertices]") {
   using Graph = std::vector<std::vector<int>>;
   // Random DAG structure
   Graph g = {
@@ -232,7 +232,7 @@ TEST_CASE("vertices_topological_sort - all edges point forward", "[topo][vertice
     position[static_cast<std::size_t>(order[i])] = i;
   }
 
-  // Verify ALL edges point forward
+  // Verify ALL edge_pairs point forward
   for (std::size_t u = 0; u < g.size(); ++u) {
     for (int v_id : g[u]) {
       REQUIRE(position[u] < position[static_cast<std::size_t>(v_id)]);
@@ -307,11 +307,11 @@ TEST_CASE("vertices_topological_sort VVF - num_visited tracks iteration progress
   REQUIRE(topo.size() == 4);
 }
 
-TEST_CASE("edges_topological_sort - num_visited tracks source vertices step-by-step", "[topo][edges]") {
+TEST_CASE("edges_topological_sort - num_visited tracks source vertices step-by-step", "[topo][edge_pairs]") {
   using Graph = std::vector<std::vector<int>>;
   // 0->1, 0->2, 1->2
   Graph g = {
-        {1, 2}, // 0: 2 outgoing edges
+        {1, 2}, // 0: 2 outgoing edge_pairs
         {2},    // 1: 1 outgoing edge
         {}      // 2: 0 outgoing edges (leaf)
   };
@@ -321,20 +321,20 @@ TEST_CASE("edges_topological_sort - num_visited tracks source vertices step-by-s
   // Before iteration: nothing consumed
   REQUIRE(topo_edges.num_visited() == 0);
 
-  // Iterate all edges
+  // Iterate all edge_pairs
   int edge_count = 0;
   for ([[maybe_unused]] auto entry : topo_edges) {
     ++edge_count;
   }
 
-  // num_visited counts source vertices whose edges have been fully yielded.
-  // After exhausting all 3 edges, all source vertices are processed.
-  REQUIRE(edge_count == 3); // 3 edges total
-  // The graph has 3 vertices; all have been processed (some had edges, some didn't)
+  // num_visited counts source vertices whose edge_pairs have been fully yielded.
+  // After exhausting all 3 edge_pairs, all source vertices are processed.
+  REQUIRE(edge_count == 3); // 3 edge_pairs total
+  // The graph has 3 vertices; all have been processed (some had edge_pairs, some didn't)
   REQUIRE(topo_edges.num_visited() == 3);
 }
 
-TEST_CASE("edges_topological_sort - num_visited zero before iteration", "[topo][edges]") {
+TEST_CASE("edges_topological_sort - num_visited zero before iteration", "[topo][edge_pairs]") {
   using Graph = std::vector<std::vector<int>>;
   Graph g     = {{1, 2}, {2}, {}};
 
@@ -346,9 +346,9 @@ TEST_CASE("edges_topological_sort - num_visited zero before iteration", "[topo][
   (void)it; // suppress unused warning
 }
 
-TEST_CASE("edges_topological_sort - num_visited on all-leaf graph (no edges)", "[topo][edges]") {
+TEST_CASE("edges_topological_sort - num_visited on all-leaf graph (no edge_pairs)", "[topo][edge_pairs]") {
   using Graph = std::vector<std::vector<int>>;
-  // All isolated vertices, no edges at all
+  // All isolated vertices, no edge_pairs at all
   Graph g = {
         {}, // 0
         {}, // 1
@@ -360,21 +360,21 @@ TEST_CASE("edges_topological_sort - num_visited on all-leaf graph (no edges)", "
   // Before iteration: must be 0 even though graph has vertices
   REQUIRE(topo_edges.num_visited() == 0);
 
-  // No edges to iterate
+  // No edge_pairs to iterate
   int edge_count = 0;
   for ([[maybe_unused]] auto entry : topo_edges) {
     ++edge_count;
   }
 
   REQUIRE(edge_count == 0);
-  // No edges were yielded, so no source vertices were "processed"
+  // No edge_pairs were yielded, so no source vertices were "processed"
   REQUIRE(topo_edges.num_visited() == 0);
 }
 
-TEST_CASE("edges_topological_sort - num_visited with leading edgeless vertices", "[topo][edges]") {
+TEST_CASE("edges_topological_sort - num_visited with leading edgeless vertices", "[topo][edge_pairs]") {
   using Graph = std::vector<std::vector<int>>;
   // Topo order might put leaf vertices first (depending on DFS order).
-  // Graph: 0 has no edges, 1->2
+  // Graph: 0 has no edge_pairs, 1->2
   Graph g = {
         {},  // 0 (isolated)
         {2}, // 1->2
@@ -383,7 +383,7 @@ TEST_CASE("edges_topological_sort - num_visited with leading edgeless vertices",
 
   auto topo_edges = edges_topological_sort(g);
 
-  // Even if vertex 0 comes first in topo order (no edges),
+  // Even if vertex 0 comes first in topo order (no edge_pairs),
   // constructor must NOT inflate count_
   REQUIRE(topo_edges.num_visited() == 0);
 
@@ -396,7 +396,7 @@ TEST_CASE("edges_topological_sort - num_visited with leading edgeless vertices",
   REQUIRE(topo_edges.num_visited() > 0);
 }
 
-TEST_CASE("edges_topological_sort - num_visited on empty graph", "[topo][edges]") {
+TEST_CASE("edges_topological_sort - num_visited on empty graph", "[topo][edge_pairs]") {
   using Graph = std::vector<std::vector<int>>;
   Graph g;
 
@@ -410,7 +410,7 @@ TEST_CASE("edges_topological_sort - num_visited on empty graph", "[topo][edges]"
   REQUIRE(topo_edges.num_visited() == 0);
 }
 
-TEST_CASE("edges_topological_sort EVF - num_visited tracks source vertices", "[topo][edges]") {
+TEST_CASE("edges_topological_sort EVF - num_visited tracks source vertices", "[topo][edge_pairs]") {
   using Graph = std::vector<std::vector<int>>;
   Graph g     = {{1, 2}, {2}, {}};
   auto  evf   = [](const auto& gr, auto e) { return static_cast<int>(target_id(gr, e)); };
@@ -428,7 +428,7 @@ TEST_CASE("edges_topological_sort EVF - num_visited tracks source vertices", "[t
   REQUIRE(topo_edges.num_visited() == 3);
 }
 
-TEST_CASE("edges_topological_sort EVF - num_visited zero before iteration", "[topo][edges]") {
+TEST_CASE("edges_topological_sort EVF - num_visited zero before iteration", "[topo][edge_pairs]") {
   using Graph = std::vector<std::vector<int>>;
   Graph g     = {{1}, {2}, {}};
   auto  evf   = [](const auto& gr, auto e) { return static_cast<int>(target_id(gr, e)); };
@@ -439,7 +439,7 @@ TEST_CASE("edges_topological_sort EVF - num_visited zero before iteration", "[to
   (void)it;
 }
 
-TEST_CASE("edges_topological_sort EVF - num_visited on all-leaf graph", "[topo][edges]") {
+TEST_CASE("edges_topological_sort EVF - num_visited on all-leaf graph", "[topo][edge_pairs]") {
   using Graph = std::vector<std::vector<int>>;
   Graph g     = {{}, {}, {}};
   auto  evf   = [](const auto& gr, auto e) { return static_cast<int>(target_id(gr, e)); };
@@ -500,7 +500,7 @@ TEST_CASE("vertices_topological_sort - num_visited with post-increment", "[topo]
 
 TEST_CASE("vertices_topological_sort - num_visited on single vertex graph", "[topo][vertices]") {
   using Graph = std::vector<std::vector<int>>;
-  Graph g     = {{}}; // Single vertex, no edges
+  Graph g     = {{}}; // Single vertex, no edge_pairs
 
   auto topo = vertices_topological_sort(g);
   REQUIRE(topo.num_visited() == 0);
@@ -600,27 +600,27 @@ TEST_CASE("vertices_topological_sort - wide DAG", "[topo][vertices]") {
 // edges_topological_sort tests
 //===========================================================================
 
-TEST_CASE("edges_topological_sort - simple DAG", "[topo][edges]") {
+TEST_CASE("edges_topological_sort - simple DAG", "[topo][edge_pairs]") {
   using Graph = std::vector<std::vector<int>>;
   // 0 -> 1 -> 2
   Graph g = {{1}, {2}, {}};
 
-  std::vector<std::pair<int, int>> edges;
+  std::vector<std::pair<int, int>> edge_pairs;
   for (auto [e] : edges_topological_sort(g)) {
-    edges.emplace_back(source_id(g, e), target_id(g, e));
+    edge_pairs.emplace_back(source_id(g, e), target_id(g, e));
   }
 
-  REQUIRE(edges.size() == 2);
-  REQUIRE(edges[0] == std::make_pair(0, 1));
-  REQUIRE(edges[1] == std::make_pair(1, 2));
+  REQUIRE(edge_pairs.size() == 2);
+  REQUIRE(edge_pairs[0] == std::make_pair(0, 1));
+  REQUIRE(edge_pairs[1] == std::make_pair(1, 2));
 
   // Verify sources follow topological order
-  for (std::size_t i = 1; i < edges.size(); ++i) {
-    REQUIRE(edges[i - 1].first <= edges[i].first);
+  for (std::size_t i = 1; i < edge_pairs.size(); ++i) {
+    REQUIRE(edge_pairs[i - 1].first <= edge_pairs[i].first);
   }
 }
 
-TEST_CASE("edges_topological_sort - diamond DAG", "[topo][edges]") {
+TEST_CASE("edges_topological_sort - diamond DAG", "[topo][edge_pairs]") {
   using Graph = std::vector<std::vector<int>>;
   //    0
   /*
@@ -648,7 +648,7 @@ TEST_CASE("edges_topological_sort - diamond DAG", "[topo][edges]") {
   REQUIRE(edge_map[2].count(3) == 1);
 }
 
-TEST_CASE("edges_topological_sort - structured binding with value", "[topo][edges]") {
+TEST_CASE("edges_topological_sort - structured binding with value", "[topo][edge_pairs]") {
   using Graph = std::vector<std::vector<int>>;
   // 0 -> 1 -> 2
   Graph g = {{1}, {2}, {}};
@@ -664,7 +664,7 @@ TEST_CASE("edges_topological_sort - structured binding with value", "[topo][edge
   }
 }
 
-TEST_CASE("edges_topological_sort - value function receives descriptor", "[topo][edges]") {
+TEST_CASE("edges_topological_sort - value function receives descriptor", "[topo][edge_pairs]") {
   using Graph = std::vector<std::vector<int>>;
   // 0 -> 1 -> 2
   Graph g = {{1}, {2}, {}};
@@ -680,7 +680,7 @@ TEST_CASE("edges_topological_sort - value function receives descriptor", "[topo]
   REQUIRE(edge_ids[1] == 12); // 1*10 + 2
 }
 
-TEST_CASE("edges_topological_sort - complex DAG", "[topo][edges]") {
+TEST_CASE("edges_topological_sort - complex DAG", "[topo][edge_pairs]") {
   using Graph = std::vector<std::vector<int>>;
   //    0
   /*
@@ -712,7 +712,7 @@ TEST_CASE("edges_topological_sort - complex DAG", "[topo][edges]") {
     vertex_positions[vertex_id(g, v)] = pos++;
   }
 
-  // Now verify edges follow topological order (sources before targets)
+  // Now verify edge_pairs follow topological order (sources before targets)
   for (auto [e] : edges_topological_sort(g)) {
     auto src = source_id(g, e);
     auto tgt = target_id(g, e);
@@ -728,22 +728,22 @@ TEST_CASE("edges_topological_sort - complex DAG", "[topo][edges]") {
   REQUIRE(seen_edges.size() == 8);
 }
 
-TEST_CASE("edges_topological_sort - disconnected components", "[topo][edges]") {
+TEST_CASE("edges_topological_sort - disconnected components", "[topo][edge_pairs]") {
   using Graph = std::vector<std::vector<int>>;
   // 0 -> 1    2 -> 3
   Graph g = {{1}, {}, {3}, {}};
 
-  std::set<std::pair<int, int>> edges;
+  std::set<std::pair<int, int>> edge_pairs;
   for (auto [e] : edges_topological_sort(g)) {
-    edges.emplace(source_id(g, e), target_id(g, e));
+    edge_pairs.emplace(source_id(g, e), target_id(g, e));
   }
 
-  REQUIRE(edges.size() == 2);
-  REQUIRE(edges.count({0, 1}) == 1);
-  REQUIRE(edges.count({2, 3}) == 1);
+  REQUIRE(edge_pairs.size() == 2);
+  REQUIRE(edge_pairs.count({0, 1}) == 1);
+  REQUIRE(edge_pairs.count({2, 3}) == 1);
 }
 
-TEST_CASE("edges_topological_sort - empty graph", "[topo][edges]") {
+TEST_CASE("edges_topological_sort - empty graph", "[topo][edge_pairs]") {
   using Graph = std::vector<std::vector<int>>;
   Graph g;
 
@@ -755,7 +755,7 @@ TEST_CASE("edges_topological_sort - empty graph", "[topo][edges]") {
   REQUIRE(count == 0);
 }
 
-TEST_CASE("edges_topological_sort - graph with no edges", "[topo][edges]") {
+TEST_CASE("edges_topological_sort - graph with no edge_pairs", "[topo][edge_pairs]") {
   using Graph = std::vector<std::vector<int>>;
   // Three isolated vertices
   Graph g = {{}, {}, {}};
@@ -773,7 +773,7 @@ TEST_CASE("edges_topological_sort - graph with no edges", "[topo][edges]") {
 //===========================================================================
 // NOTE: Current implementation does not explicitly detect or reject cycles.
 // On graphs with cycles, topological_sort produces an ordering, but it is
-// NOT a valid topological ordering (some edges will point backward).
+// NOT a valid topological ordering (some edge_pairs will point backward).
 // These tests document the current behavior.
 //===========================================================================
 
@@ -886,40 +886,40 @@ TEST_CASE("vertices_topological_sort - multiple cycles", "[topo][vertices][cycle
   REQUIRE(vertices_seen.size() == 4);
 }
 
-TEST_CASE("edges_topological_sort - simple cycle", "[topo][edges][cycles]") {
+TEST_CASE("edges_topological_sort - simple cycle", "[topo][edge_pairs][cycles]") {
   using Graph = std::vector<std::vector<int>>;
   // Cycle: 0 -> 1 -> 2 -> 0
   Graph g = {{1}, {2}, {0}};
 
-  std::vector<std::pair<int, int>> edges;
+  std::vector<std::pair<int, int>> edge_pairs;
   for (auto [e] : edges_topological_sort(g)) {
-    edges.emplace_back(source_id(g, e), target_id(g, e));
+    edge_pairs.emplace_back(source_id(g, e), target_id(g, e));
   }
 
-  // All 3 edges should be present
-  REQUIRE(edges.size() == 3);
+  // All 3 edge_pairs should be present
+  REQUIRE(edge_pairs.size() == 3);
 
-  // Verify all edges present
-  std::set<std::pair<int, int>> edge_set(edges.begin(), edges.end());
+  // Verify all edge_pairs present
+  std::set<std::pair<int, int>> edge_set(edge_pairs.begin(), edge_pairs.end());
   REQUIRE(edge_set.count({0, 1}) == 1);
   REQUIRE(edge_set.count({1, 2}) == 1);
   REQUIRE(edge_set.count({2, 0}) == 1);
 }
 
-TEST_CASE("edges_topological_sort - self-loop", "[topo][edges][cycles]") {
+TEST_CASE("edges_topological_sort - self-loop", "[topo][edge_pairs][cycles]") {
   using Graph = std::vector<std::vector<int>>;
   // Self-loop: 0 -> 0
   Graph g = {{0}};
 
-  std::vector<std::pair<int, int>> edges;
+  std::vector<std::pair<int, int>> edge_pairs;
   for (auto [e] : edges_topological_sort(g)) {
-    edges.emplace_back(source_id(g, e), target_id(g, e));
+    edge_pairs.emplace_back(source_id(g, e), target_id(g, e));
   }
 
   // Self-loop edge should be present
-  REQUIRE(edges.size() == 1);
-  REQUIRE(edges[0].first == 0);
-  REQUIRE(edges[0].second == 0);
+  REQUIRE(edge_pairs.size() == 1);
+  REQUIRE(edge_pairs[0].first == 0);
+  REQUIRE(edge_pairs[0].second == 0);
 }
 
 TEST_CASE("topological_sort - cycle detection documentation", "[topo][cycles][.][documentation]") {
@@ -929,7 +929,7 @@ TEST_CASE("topological_sort - cycle detection documentation", "[topo][cycles][.]
   // - topological_sort does NOT detect or reject cycles
   // - On cyclic graphs, it produces an ordering that includes all vertices
   // - The ordering is NOT a valid topological sort
-  // - Some edges will point "backward" (from later to earlier positions)
+  // - Some edge_pairs will point "backward" (from later to earlier positions)
   //
   // RATIONALE:
   // - DFS-based implementation visits all reachable vertices
@@ -1069,7 +1069,7 @@ TEST_CASE("vertices_topological_sort_safe - diamond DAG", "[topo][vertices][safe
   REQUIRE(order[3] == 3);
 }
 
-TEST_CASE("edges_topological_sort_safe - valid DAG", "[topo][edges][safe]") {
+TEST_CASE("edges_topological_sort_safe - valid DAG", "[topo][edge_pairs][safe]") {
   using Graph = std::vector<std::vector<int>>;
   // Simple DAG: 0 -> 1 -> 2
   Graph g = {{1}, {2}, {}};
@@ -1078,17 +1078,17 @@ TEST_CASE("edges_topological_sort_safe - valid DAG", "[topo][edges][safe]") {
 
   REQUIRE(result.has_value());
 
-  std::vector<std::pair<int, int>> edges;
+  std::vector<std::pair<int, int>> edge_pairs;
   for (auto [e] : result.value()) {
-    edges.emplace_back(source_id(g, e), target_id(g, e));
+    edge_pairs.emplace_back(source_id(g, e), target_id(g, e));
   }
 
-  REQUIRE(edges.size() == 2);
-  REQUIRE(edges[0] == std::make_pair(0, 1));
-  REQUIRE(edges[1] == std::make_pair(1, 2));
+  REQUIRE(edge_pairs.size() == 2);
+  REQUIRE(edge_pairs[0] == std::make_pair(0, 1));
+  REQUIRE(edge_pairs[1] == std::make_pair(1, 2));
 }
 
-TEST_CASE("edges_topological_sort_safe - detects cycle", "[topo][edges][safe]") {
+TEST_CASE("edges_topological_sort_safe - detects cycle", "[topo][edge_pairs][safe]") {
   using Graph = std::vector<std::vector<int>>;
   // Cycle: 0 -> 1 -> 2 -> 0
   Graph g = {{1}, {2}, {0}};
@@ -1099,7 +1099,7 @@ TEST_CASE("edges_topological_sort_safe - detects cycle", "[topo][edges][safe]") 
   REQUIRE(vertex_id(g, result.error()) == 0);
 }
 
-TEST_CASE("edges_topological_sort_safe - with value function", "[topo][edges][safe]") {
+TEST_CASE("edges_topological_sort_safe - with value function", "[topo][edge_pairs][safe]") {
   using Graph = std::vector<std::vector<int>>;
   // DAG: 0 -> 1 -> 2
   Graph g = {{1}, {2}, {}};
@@ -1263,7 +1263,7 @@ TEST_CASE("vertices_topological_sort_view<G, VVF> - cancel_branch treated as can
   REQUIRE(count == 1);
 }
 
-TEST_CASE("edges_topological_sort - cancel(cancel_all) stops iteration", "[topo][edges][cancel]") {
+TEST_CASE("edges_topological_sort - cancel(cancel_all) stops iteration", "[topo][edge_pairs][cancel]") {
   using Graph = std::vector<std::vector<int>>;
   // 0 -> 1, 0 -> 2, 1 -> 3, 2 -> 3
   Graph g = {{1, 2}, {3}, {3}, {}};
@@ -1283,7 +1283,7 @@ TEST_CASE("edges_topological_sort - cancel(cancel_all) stops iteration", "[topo]
   REQUIRE(view.cancel() == cancel_search::cancel_all);
 }
 
-TEST_CASE("edges_topological_sort - cancel_branch treated as cancel_all", "[topo][edges][cancel]") {
+TEST_CASE("edges_topological_sort - cancel_branch treated as cancel_all", "[topo][edge_pairs][cancel]") {
   using Graph = std::vector<std::vector<int>>;
   Graph g     = {{1, 2}, {3}, {3}, {}};
 
@@ -1300,7 +1300,7 @@ TEST_CASE("edges_topological_sort - cancel_branch treated as cancel_all", "[topo
   REQUIRE(edge_count == 1);
 }
 
-TEST_CASE("edges_topological_sort - cancel before iteration yields nothing", "[topo][edges][cancel]") {
+TEST_CASE("edges_topological_sort - cancel before iteration yields nothing", "[topo][edge_pairs][cancel]") {
   using Graph = std::vector<std::vector<int>>;
   Graph g     = {{1, 2}, {3}, {3}, {}};
 
@@ -1316,7 +1316,7 @@ TEST_CASE("edges_topological_sort - cancel before iteration yields nothing", "[t
   REQUIRE(view.num_visited() == 0);
 }
 
-TEST_CASE("edges_topological_sort_view<G, EVF> - cancel(cancel_all) stops iteration", "[topo][edges][cancel]") {
+TEST_CASE("edges_topological_sort_view<G, EVF> - cancel(cancel_all) stops iteration", "[topo][edge_pairs][cancel]") {
   using Graph = std::vector<std::vector<int>>;
   Graph g     = {{1, 2}, {3}, {3}, {}};
 
@@ -1336,7 +1336,7 @@ TEST_CASE("edges_topological_sort_view<G, EVF> - cancel(cancel_all) stops iterat
   REQUIRE(view.cancel() == cancel_search::cancel_all);
 }
 
-TEST_CASE("edges_topological_sort_view<G, EVF> - cancel_branch treated as cancel_all", "[topo][edges][cancel]") {
+TEST_CASE("edges_topological_sort_view<G, EVF> - cancel_branch treated as cancel_all", "[topo][edge_pairs][cancel]") {
   using Graph = std::vector<std::vector<int>>;
   Graph g     = {{1, 2}, {3}, {3}, {}};
 
@@ -1368,7 +1368,7 @@ TEST_CASE("vertices_topological_sort - cancel on empty graph is safe", "[topo][v
   REQUIRE(count == 0);
 }
 
-TEST_CASE("edges_topological_sort - cancel on empty graph is safe", "[topo][edges][cancel]") {
+TEST_CASE("edges_topological_sort - cancel on empty graph is safe", "[topo][edge_pairs][cancel]") {
   using Graph = std::vector<std::vector<int>>;
   Graph g;
 
@@ -1404,7 +1404,7 @@ TEST_CASE("vertices_topological_sort - cancel preserves num_visited accuracy", "
   REQUIRE(view.size() == 6);
 }
 
-TEST_CASE("edges_topological_sort - cancel preserves num_visited accuracy", "[topo][edges][cancel]") {
+TEST_CASE("edges_topological_sort - cancel preserves num_visited accuracy", "[topo][edge_pairs][cancel]") {
   using Graph = std::vector<std::vector<int>>;
   // 0 -> 1 -> 2 -> 3  (each vertex has exactly one edge)
   Graph g = {{1}, {2}, {3}, {}};
@@ -1420,8 +1420,8 @@ TEST_CASE("edges_topological_sort - cancel preserves num_visited accuracy", "[to
   }
 
   REQUIRE(edge_count == 2);
-  // num_visited counts source vertices whose edges were fully yielded
-  // After cancel, we got edges from first 2 source vertices but
+  // num_visited counts source vertices whose edge_pairs were fully yielded
+  // After cancel, we got edge_pairs from first 2 source vertices but
   // the second one's count happens when we'd advance past it
   // The exact count depends on when cancel fires relative to advance
 }
@@ -1435,13 +1435,13 @@ using StrGraph = dynamic_adjacency_graph<uol_graph_traits<void, void, void, std:
 
 /// Build a StrGraph from vertex names and an edge list.
 static StrGraph make_graph(const std::vector<std::string>&                        vertex_names,
-                           const std::vector<std::pair<std::string, std::string>>& edges) {
+                           const std::vector<std::pair<std::string, std::string>>& edge_pairs) {
   using VD = copyable_vertex_t<std::string, void>;
   using ED = copyable_edge_t<std::string, void>;
 
   StrGraph g;
   g.load_vertices(vertex_names, [](const std::string& name) -> VD { return {name}; });
-  g.load_edges(edges, [](const auto& e) -> ED { return {e.first, e.second}; });
+  g.load_edges(edge_pairs, [](const auto& e) -> ED { return {e.first, e.second}; });
   return g;
 }
 
@@ -1521,11 +1521,11 @@ TEST_CASE("vertices_topological_sort - cycle detection with string ids", "[topo]
   REQUIRE((cycle_vid == "a" || cycle_vid == "b" || cycle_vid == "c"));
 }
 
-TEST_CASE("edges_topological_sort - string vertex ids", "[topo][edges][non_integral]") {
+TEST_CASE("edges_topological_sort - string vertex ids", "[topo][edge_pairs][non_integral]") {
   // DAG: a -> b -> c
   auto g = make_graph({"a", "b", "c"}, {{"a", "b"}, {"b", "c"}});
 
-  SECTION("yields all edges in topological order") {
+  SECTION("yields all edge_pairs in topological order") {
     auto pairs = collect_edge_ids(g, edges_topological_sort(g));
     REQUIRE(pairs.size() == 2);
     std::set<std::pair<std::string, std::string>> edge_set(pairs.begin(), pairs.end());

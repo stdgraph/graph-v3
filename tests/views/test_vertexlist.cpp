@@ -232,9 +232,9 @@ TEST_CASE("vertexlist - deque-based graph", "[vertexlist][deque]") {
     });
 
     std::vector<int> targets;
-    for (auto [id, v, target] : vlist) {
+    for (auto [id, v, target_val] : vlist) {
       REQUIRE(id == v.vertex_id());
-      targets.push_back(target);
+      targets.push_back(target_val);
     }
 
     REQUIRE(targets == std::vector<int>{1, 2, 0});
@@ -419,7 +419,7 @@ TEST_CASE("vertexlist - weighted graph", "[vertexlist][weighted]") {
     auto vlist = vertexlist(g, [](const auto& gr, auto v) {
       // Sum of edge weights for this vertex
       double sum = 0.0;
-      for (auto [target, weight] : gr[v.vertex_id()]) {
+      for (auto [target_vid, weight] : gr[v.vertex_id()]) {
         sum += weight;
       }
       return sum;
@@ -554,7 +554,7 @@ TEST_CASE("vertexlist - vector vertices map edges", "[vertexlist][edge_map]") {
     auto vlist = vertexlist(g, [](const auto& gr, auto v) {
       // Sum of edge weights for this vertex
       double sum = 0.0;
-      for (auto& [target, weight] : gr[v.vertex_id()]) {
+      for (auto& [target_vid, weight] : gr[v.vertex_id()]) {
         sum += weight;
       }
       return sum;

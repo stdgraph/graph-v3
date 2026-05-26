@@ -30,6 +30,7 @@ target_link_libraries(test_algorithms
 
 # Discover and register tests
 catch_discover_tests(test_algorithms
+    DISCOVERY_MODE PRE_TEST
     TEST_PREFIX "algorithms."
     PROPERTIES
         LABELS "algorithms"

@@ -77,17 +77,17 @@ G extract_subgraph(const G& g, const std::vector<typename G::vertex_id_type>& ve
   std::vector<copyable_edge_t<VId, void>> subgraph_edges;
 
   for (auto&& v : vertices(g)) {
-    VId source_id = vertex_id(g, v);
-    if (included_vertices.contains(source_id)) {
+    VId src_vid = vertex_id(g, v);
+    if (included_vertices.contains(src_vid)) {
       for (auto&& e : edges(g, v)) {
         VId target_id_val = target_id(g, e);
         if (included_vertices.contains(target_id_val)) {
           if constexpr (std::is_integral_v<VId>) {
             // Remap IDs for integral types
-            subgraph_edges.push_back({id_mapping[source_id], id_mapping[target_id_val]});
+            subgraph_edges.push_back({id_mapping[src_vid], id_mapping[target_id_val]});
           } else {
             // Preserve string IDs
-            subgraph_edges.push_back({source_id, target_id_val});
+            subgraph_edges.push_back({src_vid, target_id_val});
           }
         }
       }
@@ -141,11 +141,11 @@ G reverse_edges(const G& g) {
   // Collect all edges and reverse them
   std::vector<copyable_edge_t<VId, void>> reversed_edges;
   for (auto&& v : vertices(g)) {
-    VId source_id = vertex_id(g, v);
+    VId src_vid = vertex_id(g, v);
     for (auto&& e : edges(g, v)) {
       VId target_id_val = target_id(g, e);
       // Reverse: target becomes source, source becomes target
-      reversed_edges.push_back({target_id_val, source_id});
+      reversed_edges.push_back({target_id_val, src_vid});
     }
   }
 
@@ -170,11 +170,11 @@ G filter_edges(const G& g, Pred predicate) {
   // Collect edges that satisfy the predicate
   std::vector<copyable_edge_t<VId, void>> filtered_edges;
   for (auto&& v : vertices(g)) {
-    VId source_id = vertex_id(g, v);
+    VId src_vid = vertex_id(g, v);
     for (auto&& e : edges(g, v)) {
       VId target_id_val = target_id(g, e);
-      if (predicate(source_id, target_id_val)) {
-        filtered_edges.push_back({source_id, target_id_val});
+      if (predicate(src_vid, target_id_val)) {
+        filtered_edges.push_back({src_vid, target_id_val});
       }
     }
   }

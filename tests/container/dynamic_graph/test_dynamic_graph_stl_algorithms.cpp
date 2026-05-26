@@ -207,7 +207,7 @@ TEST_CASE("for_each - sum edge values in mos graph", "[stl][6.2.1][for_each]") {
   REQUIRE(sum == 600);
 }
 
-TEST_CASE("for_each - collect edge target IDs in vov graph", "[stl][6.2.1][for_each]") {
+TEST_CASE("for_each - collect edge target_vid IDs in vov graph", "[stl][6.2.1][for_each]") {
   vov_void g({{0, 1}, {0, 2}, {1, 3}});
 
   std::vector<uint64_t> targets;
@@ -398,7 +398,7 @@ TEST_CASE("for_each - nested for_each with multiple graphs", "[stl][6.2.1][for_e
   REQUIRE(total_edges == 5);    // 2 from g1 + 3 from g2
 }
 
-TEST_CASE("for_each - maximum degree vertex", "[stl][6.2.1][for_each]") {
+TEST_CASE("for_each - maximum degree_count vertex", "[stl][6.2.1][for_each]") {
   vov_void g({{0, 1}, {0, 2}, {0, 3}, {1, 2}, {2, 3}});
 
   uint64_t max_degree_vertex = 0;
@@ -494,7 +494,7 @@ TEST_CASE("find_if - find vertex by value predicate in mos graph", "[stl][6.2.2]
   REQUIRE(vertex_value(g, *found) >= 200);
 }
 
-TEST_CASE("find_if - find vertex with specific degree", "[stl][6.2.2][find_if]") {
+TEST_CASE("find_if - find vertex with specific degree_count", "[stl][6.2.2][find_if]") {
   vov_void g({{0, 1}, {0, 2}, {1, 3}, {2, 3}});
 
   auto verts = vertices(g);
@@ -512,11 +512,11 @@ TEST_CASE("find_if - find isolated vertex", "[stl][6.2.2][find_if]") {
   auto it    = std::ranges::find_if(verts, [&g](auto&& v) { return std::ranges::distance(edges(g, v)) == 0; });
 
   REQUIRE(it != verts.end());
-  // Could find vertex 2, 3, or 4 (all have out-degree 0)
+  // Could find vertex 2, 3, or 4 (all have out-degree_count 0)
   REQUIRE(std::ranges::distance(edges(g, *it)) == 0);
 }
 
-TEST_CASE("find_if - find edge by target ID in vov graph", "[stl][6.2.2][find_if]") {
+TEST_CASE("find_if - find edge by target_vid ID in vov graph", "[stl][6.2.2][find_if]") {
   vov_void g({{0, 1}, {0, 2}, {0, 3}});
 
   auto v          = *vertices(g).begin();
@@ -527,7 +527,7 @@ TEST_CASE("find_if - find edge by target ID in vov graph", "[stl][6.2.2][find_if
   REQUIRE(target_id(g, *it) == 2);
 }
 
-TEST_CASE("find_if - find edge by target ID in mos graph", "[stl][6.2.2][find_if]") {
+TEST_CASE("find_if - find edge by target_vid ID in mos graph", "[stl][6.2.2][find_if]") {
   mos_void g({{"A", "B"}, {"A", "C"}, {"A", "D"}});
 
   auto v          = *vertices(g).begin();
@@ -584,7 +584,7 @@ TEST_CASE("find_if - find edge by value predicate in dofl graph", "[stl][6.2.2][
   REQUIRE(edge_value(g, *it) >= 10);
 }
 
-TEST_CASE("find_if - find edge with specific target value", "[stl][6.2.2][find_if]") {
+TEST_CASE("find_if - find edge with specific target_vid value", "[stl][6.2.2][find_if]") {
   vov_int_both g({{0, 1, 0}, {0, 2, 0}, {0, 3, 0}});
 
   // Set vertex values
@@ -602,10 +602,10 @@ TEST_CASE("find_if - find edge with specific target value", "[stl][6.2.2][find_i
 
   auto edge_range = edges(g, v0);
   auto it         = std::ranges::find_if(edge_range, [&g](auto&& e) {
-    auto target = target_id(g, e);
+    auto target_vid = target_id(g, e);
     // Find edge pointing to vertex with value 200
     for (auto&& v : vertices(g)) {
-      if (vertex_id(g, v) == target) {
+      if (vertex_id(g, v) == target_vid) {
         return vertex_value(g, v) == 200;
       }
     }
@@ -715,7 +715,7 @@ TEST_CASE("find_if_not - find vertex with value not matching", "[stl][6.2.2][fin
   REQUIRE(vertex_value(g, *it) % 4 != 0);
 }
 
-TEST_CASE("any_of - check if any vertex has high degree", "[stl][6.2.2][any_of]") {
+TEST_CASE("any_of - check if any vertex has high degree_count", "[stl][6.2.2][any_of]") {
   vov_void g({{0, 1}, {0, 2}, {0, 3}, {1, 2}});
 
   bool has_high_degree =
@@ -781,12 +781,12 @@ TEST_CASE("none_of - check if no vertex has negative value", "[stl][6.2.2][none_
   REQUIRE(none_negative);
 }
 
-TEST_CASE("search - find sequence of target IDs in edge list", "[stl][6.2.2][search]") {
+TEST_CASE("search - find sequence of target_vid IDs in edge list", "[stl][6.2.2][search]") {
   vov_void g({{0, 1}, {0, 2}, {0, 3}, {0, 4}});
 
   auto v = *vertices(g).begin();
 
-  // Collect target IDs
+  // Collect target_vid IDs
   std::vector<uint64_t> targets;
   for (auto&& e : edges(g, v)) {
     targets.push_back(target_id(g, e));
@@ -804,7 +804,7 @@ TEST_CASE("search - sequence not found returns end", "[stl][6.2.2][search]") {
 
   auto v = *vertices(g).begin();
 
-  // Collect target IDs
+  // Collect target_vid IDs
   std::vector<uint64_t> targets;
   for (auto&& e : edges(g, v)) {
     targets.push_back(target_id(g, e));
@@ -838,7 +838,7 @@ TEST_CASE("count_if - count vertices with specific property (vov)", "[stl][6.2.3
   REQUIRE(count == 2); // Vertices with values 20 and 30
 }
 
-TEST_CASE("count_if - count vertices with out-degree > 0 (dofl)", "[stl][6.2.3][count_if]") {
+TEST_CASE("count_if - count vertices with out-degree_count > 0 (dofl)", "[stl][6.2.3][count_if]") {
   dofl_void g({{0, 1}, {0, 2}, {1, 3}});
   g.resize_vertices(5);
 
@@ -848,13 +848,13 @@ TEST_CASE("count_if - count vertices with out-degree > 0 (dofl)", "[stl][6.2.3][
   REQUIRE(count == 2); // Vertices 0 and 1 have edges
 }
 
-TEST_CASE("count_if - count vertices by degree threshold (vov)", "[stl][6.2.3][count_if]") {
+TEST_CASE("count_if - count vertices by degree_count threshold (vov)", "[stl][6.2.3][count_if]") {
   vov_void g({{0, 1}, {0, 2}, {0, 3}, {1, 2}});
 
-  // Count vertices with out-degree >= 2
+  // Count vertices with out-degree_count >= 2
   auto count = std::ranges::count_if(vertices(g), [&g](auto&& v) { return std::ranges::distance(edges(g, v)) >= 2; });
 
-  REQUIRE(count == 1); // Only vertex 0 has degree >= 2 (degree 3)
+  REQUIRE(count == 1); // Only vertex 0 has degree_count >= 2 (degree_count 3)
 }
 
 TEST_CASE("count_if - count vertices with ID in range (mos)", "[stl][6.2.3][count_if]") {
@@ -891,12 +891,12 @@ TEST_CASE("count_if - count edges with value above threshold (vov)", "[stl][6.2.
   REQUIRE(count == 2); // Edges with values 20 and 30
 }
 
-TEST_CASE("count_if - count edges by target range (dofl)", "[stl][6.2.3][count_if]") {
+TEST_CASE("count_if - count edges by target_vid range (dofl)", "[stl][6.2.3][count_if]") {
   dofl_int_edges g({{0, 1, 100}, {0, 5, 200}, {0, 10, 300}});
 
   auto v = *vertices(g).begin();
 
-  // Count edges with target ID >= 5
+  // Count edges with target_vid ID >= 5
   auto count = std::ranges::count_if(edges(g, v), [&g](auto&& e) { return target_id(g, e) >= 5; });
 
   REQUIRE(count == 2); // Edges to vertices 5 and 10
@@ -932,7 +932,7 @@ TEST_CASE("count_if - count edges with both conditions (vov)", "[stl][6.2.3][cou
 
   auto v = *vertices(g).begin();
 
-  // Count edges with target ID > 1 AND value >= 20
+  // Count edges with target_vid ID > 1 AND value >= 20
   auto count =
         std::ranges::count_if(edges(g, v), [&g](auto&& e) { return target_id(g, e) > 1 && edge_value(g, e) >= 20; });
 
@@ -966,7 +966,7 @@ TEST_CASE("count - count edges to specific target (vov)", "[stl][6.2.3][count]")
 
   auto v = *vertices(g).begin();
 
-  // Extract target IDs
+  // Extract target_vid IDs
   std::vector<uint64_t> targets;
   for (auto&& e : edges(g, v)) {
     targets.push_back(target_id(g, e));
@@ -985,13 +985,13 @@ TEST_CASE("count_if - count isolated vertices (dofl)", "[stl][6.2.3][count_if]")
   REQUIRE(count == 4); // Vertices 2, 3, 4, 5 have no outgoing edges
 }
 
-TEST_CASE("count_if - count high-degree vertices (vov)", "[stl][6.2.3][count_if]") {
+TEST_CASE("count_if - count high-degree_count vertices (vov)", "[stl][6.2.3][count_if]") {
   vov_void g({{0, 1}, {0, 2}, {0, 3}, {0, 4}, {1, 2}, {1, 3}});
 
-  // Count vertices with out-degree >= 3
+  // Count vertices with out-degree_count >= 3
   auto count = std::ranges::count_if(vertices(g), [&g](auto&& v) { return std::ranges::distance(edges(g, v)) >= 3; });
 
-  REQUIRE(count == 1); // Only vertex 0 has degree >= 3 (degree 4)
+  REQUIRE(count == 1); // Only vertex 0 has degree_count >= 3 (degree_count 4)
 }
 
 TEST_CASE("count_if - empty graph returns zero (vov)", "[stl][6.2.3][count_if]") {
@@ -1011,15 +1011,15 @@ TEST_CASE("count_if - count with complex predicate (vov)", "[stl][6.2.3][count_i
   // Set vertex values: vertex 0 = 5, vertex 1 = 15, vertex 2 = 25, others = 0
   auto verts             = vertices(g);
   auto it                = verts.begin();
-  vertex_value(g, *it++) = 5;  // Vertex 0: value 5, out-degree 2
-  vertex_value(g, *it++) = 15; // Vertex 1: value 15, out-degree 1
-  vertex_value(g, *it++) = 25; // Vertex 2: value 25, out-degree 0
+  vertex_value(g, *it++) = 5;  // Vertex 0: value 5, out-degree_count 2
+  vertex_value(g, *it++) = 15; // Vertex 1: value 15, out-degree_count 1
+  vertex_value(g, *it++) = 25; // Vertex 2: value 25, out-degree_count 0
 
-  // Count vertices with value >= 10 AND out-degree > 0
+  // Count vertices with value >= 10 AND out-degree_count > 0
   auto count = std::ranges::count_if(
         vertices(g), [&g](auto&& v) { return vertex_value(g, v) >= 10 && std::ranges::distance(edges(g, v)) > 0; });
 
-  REQUIRE(count == 1); // Only vertex 1 (value 15, degree 1) matches both conditions
+  REQUIRE(count == 1); // Only vertex 1 (value 15, degree_count 1) matches both conditions
 }
 
 TEST_CASE("count_if - count edges with negative values (vov)", "[stl][6.2.3][count_if]") {
@@ -1097,7 +1097,7 @@ TEST_CASE("count_if - count using views::transform (vov)", "[stl][6.2.3][count_i
 
   auto v = *vertices(g).begin();
 
-  // Transform edges to target IDs, then count those >= 5
+  // Transform edges to target_vid IDs, then count those >= 5
   auto targets = edges(g, v) | std::views::transform([&g](auto&& e) { return target_id(g, e); });
 
   auto count = std::ranges::count_if(targets, [](auto tid) { return tid >= 5; });
@@ -1142,7 +1142,7 @@ TEST_CASE("count_if - count vertices with even IDs (vov)", "[stl][6.2.3][count_i
   REQUIRE(count == 5); // Vertices 0, 2, 4, 6, 8
 }
 
-TEST_CASE("count_if - count edges with target divisible by 3 (dofl)", "[stl][6.2.3][count_if]") {
+TEST_CASE("count_if - count edges with target_vid divisible by 3 (dofl)", "[stl][6.2.3][count_if]") {
   dofl_void g({{0, 1}, {0, 3}, {0, 6}, {0, 7}, {0, 9}});
 
   auto v = *vertices(g).begin();
@@ -1168,7 +1168,7 @@ TEST_CASE("transform - extract vertex IDs to vector (vov)", "[stl][6.2.4][transf
   REQUIRE(ids[2] == 2);
 }
 
-TEST_CASE("transform - extract edge target IDs to vector (vov)", "[stl][6.2.4][transform]") {
+TEST_CASE("transform - extract edge target_vid IDs to vector (vov)", "[stl][6.2.4][transform]") {
   vov_void g({{0, 1}, {0, 2}, {0, 3}});
 
   auto                v = *vertices(g).begin();
@@ -1255,7 +1255,7 @@ TEST_CASE("transform - filter then extract IDs (vov)", "[stl][6.2.4][transform][
   REQUIRE(even_targets[1] == 4);
 }
 
-TEST_CASE("transform - vertex degree to vector (dofl)", "[stl][6.2.4][transform]") {
+TEST_CASE("transform - vertex degree_count to vector (dofl)", "[stl][6.2.4][transform]") {
   dofl_void g({{0, 1}, {0, 2}, {1, 2}, {1, 3}});
 
   std::vector<size_t> degrees;
@@ -1292,7 +1292,7 @@ TEST_CASE("transform - combine vertex ID and value (vov)", "[stl][6.2.4][transfo
   REQUIRE(id_value_pairs[2].second == 300);
 }
 
-TEST_CASE("transform - edge source and target pairs (vov)", "[stl][6.2.4][transform]") {
+TEST_CASE("transform - edge source and target_vid pairs (vov)", "[stl][6.2.4][transform]") {
   vov_void g({{0, 1}, {0, 2}, {1, 2}});
 
   auto                                   v = *vertices(g).begin();
@@ -1410,11 +1410,11 @@ TEST_CASE("transform - compute vertex ID differences (vov)", "[stl][6.2.4][trans
   vov_void g({{0, 3}, {0, 5}, {0, 7}});
 
   auto   v         = *vertices(g).begin();
-  size_t source_id = vertex_id(g, v);
+  size_t src_vid = vertex_id(g, v);
 
   std::vector<size_t> differences;
   std::ranges::transform(edges(g, v), std::back_inserter(differences),
-                         [&g, source_id](auto&& e) { return target_id(g, e) - source_id; });
+                         [&g, src_vid](auto&& e) { return target_id(g, e) - src_vid; });
 
   REQUIRE(differences.size() == 3);
   REQUIRE(differences[0] == 3);
@@ -1483,7 +1483,7 @@ TEST_CASE("transform - create edge descriptors with values (dofl)", "[stl][6.2.4
   dofl_int_edges g({{0, 1, 100}, {0, 2, 200}});
 
   struct EdgeInfo {
-    size_t target;
+    size_t target_vid;
     int    value;
   };
 
@@ -1492,11 +1492,11 @@ TEST_CASE("transform - create edge descriptors with values (dofl)", "[stl][6.2.4
   std::ranges::transform(edges(g, v), std::back_inserter(edge_datas),
                          [&g](auto&& e) { return EdgeInfo{static_cast<size_t>(target_id(g, e)), edge_value(g, e)}; });
 
-  std::ranges::sort(edge_datas, {}, &EdgeInfo::target);
+  std::ranges::sort(edge_datas, {}, &EdgeInfo::target_vid);
   REQUIRE(edge_datas.size() == 2);
-  REQUIRE(edge_datas[0].target == size_t(1));
+  REQUIRE(edge_datas[0].target_vid == size_t(1));
   REQUIRE(edge_datas[0].value == 100);
-  REQUIRE(edge_datas[1].target == size_t(2));
+  REQUIRE(edge_datas[1].target_vid == size_t(2));
   REQUIRE(edge_datas[1].value == 200);
 }
 
@@ -1532,9 +1532,9 @@ TEST_CASE("transform - check if edges exist to specific targets (vov)", "[stl][6
   auto              v = *vertices(g).begin();
   std::vector<bool> target_checks;
 
-  for (size_t target : {1UL, 2UL, 3UL, 4UL, 5UL}) {
+  for (size_t target_vid : {1UL, 2UL, 3UL, 4UL, 5UL}) {
     auto found = std::ranges::any_of(edges(g, v),
-                                     [&g, target](auto&& e) { return target_id(g, e) == static_cast<size_t>(target); });
+                                     [&g, target_vid](auto&& e) { return target_id(g, e) == static_cast<size_t>(target_vid); });
     target_checks.push_back(found);
   }
 
@@ -1576,12 +1576,12 @@ TEST_CASE("transform - extract max edge value per vertex (vov)", "[stl][6.2.4][t
   std::vector<int> max_values;
   std::ranges::transform(vertices(g), std::back_inserter(max_values), [&g](auto&& v) {
     int  max_val   = std::numeric_limits<int>::min();
-    bool has_edges = false;
+    bool has_any_edges = false;
     for (auto&& e : edges(g, v)) {
       max_val   = std::max(max_val, edge_value(g, e));
-      has_edges = true;
+      has_any_edges = true;
     }
-    return has_edges ? max_val : 0;
+    return has_any_edges ? max_val : 0;
   });
 
   REQUIRE(max_values.size() == 4);
@@ -1612,25 +1612,25 @@ TEST_CASE("transform - concatenate vertex ID with value string (vov)", "[stl][6.
   REQUIRE(labels[2] == "V2:300");
 }
 
-TEST_CASE("transform - compute out-degree minus in-degree (vov)", "[stl][6.2.4][transform]") {
+TEST_CASE("transform - compute out-degree_count minus in-degree (vov)", "[stl][6.2.4][transform]") {
   vov_void g({{0, 1}, {0, 2}, {1, 2}, {2, 0}});
 
   std::vector<int> degree_diff;
   std::ranges::transform(vertices(g), std::back_inserter(degree_diff), [&g](auto&& v) {
-    size_t out_degree = static_cast<size_t>(std::ranges::distance(edges(g, v)));
+    size_t out_degree_count = static_cast<size_t>(std::ranges::distance(edges(g, v)));
 
-    // Count in-degree by checking all edges
-    size_t in_degree = 0;
+    // Count in-degree_count by checking all edges
+    size_t in_degree_count = 0;
     size_t v_id      = vertex_id(g, v);
     for (auto&& u : vertices(g)) {
       for (auto&& e : edges(g, u)) {
         if (target_id(g, e) == v_id) {
-          ++in_degree;
+          ++in_degree_count;
         }
       }
     }
 
-    return static_cast<int>(out_degree) - static_cast<int>(in_degree);
+    return static_cast<int>(out_degree_count) - static_cast<int>(in_degree_count);
   });
 
   REQUIRE(degree_diff.size() == 3);
@@ -1673,7 +1673,7 @@ TEST_CASE("transform - map vertices with complex struct (vov)", "[stl][6.2.4][tr
   struct VertexData {
     size_t id;
     int    value;
-    size_t degree;
+    size_t degree_count;
   };
 
   std::vector<VertexData> vertex_data;
@@ -1684,22 +1684,22 @@ TEST_CASE("transform - map vertices with complex struct (vov)", "[stl][6.2.4][tr
   REQUIRE(vertex_data.size() == 3);
   REQUIRE(vertex_data[0].id == 0);
   REQUIRE(vertex_data[0].value == 100);
-  REQUIRE(vertex_data[0].degree == 2);
+  REQUIRE(vertex_data[0].degree_count == 2);
   REQUIRE(vertex_data[1].id == 1);
   REQUIRE(vertex_data[1].value == 200);
-  REQUIRE(vertex_data[1].degree == 1);
+  REQUIRE(vertex_data[1].degree_count == 1);
   REQUIRE(vertex_data[2].id == 2);
   REQUIRE(vertex_data[2].value == 300);
-  REQUIRE(vertex_data[2].degree == 0);
+  REQUIRE(vertex_data[2].degree_count == 0);
 }
 //=============================================================================
 // Phase 6.2.5: std::ranges::sort (where applicable)
-// Tests sorting of edges by target ID and vertices by value
+// Tests sorting of edges by target_vid ID and vertices by value
 // Note: Only works with random access containers (vov, vod, mov, mod)
 // forward_list and list-based containers don't support random access
 //=============================================================================
 
-TEST_CASE("sort edge target IDs (vov)", "[stl][6.2.5][sort]") {
+TEST_CASE("sort edge target_vid IDs (vov)", "[stl][6.2.5][sort]") {
   using G = vov_void;
   G g({{0, 2}, {0, 1}, {0, 3}});
 
@@ -1715,7 +1715,7 @@ TEST_CASE("sort edge target IDs (vov)", "[stl][6.2.5][sort]") {
   REQUIRE(targets[2] == 3);
 }
 
-TEST_CASE("sort edge target IDs in descending order (vov)", "[stl][6.2.5][sort]") {
+TEST_CASE("sort edge target_vid IDs in descending order (vov)", "[stl][6.2.5][sort]") {
   using G = vov_void;
   G g({{0, 2}, {0, 1}, {0, 3}});
 
@@ -1810,12 +1810,12 @@ TEST_CASE("sort by vertex value with projection (vov)", "[stl][6.2.5][sort]") {
   REQUIRE(infos[2].value == 300);
 }
 
-TEST_CASE("sort edge infos by target then by value (vov)", "[stl][6.2.5][sort]") {
+TEST_CASE("sort edge infos by target_vid then by value (vov)", "[stl][6.2.5][sort]") {
   using G = vov_int_edges;
   G g({{0, 1, 50}, {0, 2, 30}, {0, 2, 10}, {0, 1, 20}});
 
   struct EdgeInfo {
-    vertex_id_t<G> target;
+    vertex_id_t<G> target_vid;
     int            value;
 
     auto operator<=>(const EdgeInfo&) const = default;
@@ -1829,13 +1829,13 @@ TEST_CASE("sort edge infos by target then by value (vov)", "[stl][6.2.5][sort]")
   std::ranges::sort(infos);
 
   REQUIRE(infos.size() == 4);
-  REQUIRE(infos[0].target == 1);
+  REQUIRE(infos[0].target_vid == 1);
   REQUIRE(infos[0].value == 20);
-  REQUIRE(infos[1].target == 1);
+  REQUIRE(infos[1].target_vid == 1);
   REQUIRE(infos[1].value == 50);
-  REQUIRE(infos[2].target == 2);
+  REQUIRE(infos[2].target_vid == 2);
   REQUIRE(infos[2].value == 10);
-  REQUIRE(infos[3].target == 2);
+  REQUIRE(infos[3].target_vid == 2);
   REQUIRE(infos[3].value == 30);
 }
 
@@ -1850,9 +1850,9 @@ TEST_CASE("sort degrees in ascending order (vov)", "[stl][6.2.5][sort]") {
   std::ranges::sort(degrees);
 
   REQUIRE(degrees.size() == 3);
-  REQUIRE(degrees[0] == 0); // vertex 2 has out-degree 0
-  REQUIRE(degrees[1] == 1); // vertex 1 has out-degree 1
-  REQUIRE(degrees[2] == 2); // vertex 0 has out-degree 2
+  REQUIRE(degrees[0] == 0); // vertex 2 has out-degree_count 0
+  REQUIRE(degrees[1] == 1); // vertex 1 has out-degree_count 1
+  REQUIRE(degrees[2] == 2); // vertex 0 has out-degree_count 2
 }
 
 TEST_CASE("sort combined vertex ID and value pairs (vov)", "[stl][6.2.5][sort]") {
@@ -1914,7 +1914,7 @@ TEST_CASE("stable_sort preserves relative order of equal elements (vov)", "[stl]
 
   struct EdgeData {
     size_t         insertion_order;
-    vertex_id_t<G> target;
+    vertex_id_t<G> target_vid;
     int            value;
   };
 
@@ -1930,13 +1930,13 @@ TEST_CASE("stable_sort preserves relative order of equal elements (vov)", "[stl]
   REQUIRE(data.size() == 5);
   // All edges with value 100 should appear first, in original order
   REQUIRE(data[0].value == 100);
-  REQUIRE(data[0].target == 1);
+  REQUIRE(data[0].target_vid == 1);
   REQUIRE(data[0].insertion_order == 0);
   REQUIRE(data[1].value == 100);
-  REQUIRE(data[1].target == 3);
+  REQUIRE(data[1].target_vid == 3);
   REQUIRE(data[1].insertion_order == 2);
   REQUIRE(data[2].value == 100);
-  REQUIRE(data[2].target == 5);
+  REQUIRE(data[2].target_vid == 5);
   REQUIRE(data[2].insertion_order == 4);
   REQUIRE(data[3].value == 200);
   REQUIRE(data[4].value == 300);
@@ -2052,7 +2052,7 @@ TEST_CASE("sort with both vertex and edge values (vov)", "[stl][6.2.5][sort]") {
   struct GraphData {
     uint64_t vid;
     int      vval;
-    uint64_t target;
+    uint64_t target_vid;
     int      eval;
   };
 
@@ -2148,7 +2148,7 @@ TEST_CASE("views::transform on vertices to extract IDs (vov)", "[stl][6.2.6][vie
   REQUIRE(id_vec[3] == 3);
 }
 
-TEST_CASE("views::transform on edges to extract target IDs (vov)", "[stl][6.2.6][views]") {
+TEST_CASE("views::transform on edges to extract target_vid IDs (vov)", "[stl][6.2.6][views]") {
   using G = vov_void;
   G g({{0, 1}, {0, 2}, {0, 3}});
 
@@ -2441,7 +2441,7 @@ TEST_CASE("views::transform with complex lambda (vov)", "[stl][6.2.6][views]") {
 
   struct EdgeInfo {
     uint64_t source;
-    uint64_t target;
+    uint64_t target_vid;
     int      value;
     int      doubled;
   };
@@ -2452,14 +2452,14 @@ TEST_CASE("views::transform with complex lambda (vov)", "[stl][6.2.6][views]") {
                 });
 
   std::vector<EdgeInfo> infos(result.begin(), result.end());
-  std::ranges::sort(infos, [](const auto& a, const auto& b) { return a.target < b.target; });
+  std::ranges::sort(infos, [](const auto& a, const auto& b) { return a.target_vid < b.target_vid; });
 
   REQUIRE(infos.size() == 2);
   REQUIRE(infos[0].source == 0);
-  REQUIRE(infos[0].target == 1);
+  REQUIRE(infos[0].target_vid == 1);
   REQUIRE(infos[0].value == 10);
   REQUIRE(infos[0].doubled == 20);
-  REQUIRE(infos[1].target == 2);
+  REQUIRE(infos[1].target_vid == 2);
   REQUIRE(infos[1].value == 20);
   REQUIRE(infos[1].doubled == 40);
 }
@@ -2638,7 +2638,7 @@ TEST_CASE("sum of all degrees equals edge count (vov)", "[stl][6.2.7][accumulate
   REQUIRE(edge_count == 5);
 }
 
-TEST_CASE("find max degree vertex (vov)", "[stl][6.2.7][accumulate]") {
+TEST_CASE("find max degree_count vertex (vov)", "[stl][6.2.7][accumulate]") {
   using G = vov_void;
   G g({{0, 1}, {0, 2}, {0, 3}, {1, 2}, {2, 3}});
 
@@ -2646,9 +2646,9 @@ TEST_CASE("find max degree vertex (vov)", "[stl][6.2.7][accumulate]") {
   size_t   max_degree    = 0;
 
   for (auto&& v : vertices(g)) {
-    size_t degree = static_cast<size_t>(std::ranges::distance(edges(g, v)));
-    if (degree > max_degree) {
-      max_degree    = degree;
+    size_t degree_count = static_cast<size_t>(std::ranges::distance(edges(g, v)));
+    if (degree_count > max_degree) {
+      max_degree    = degree_count;
       max_degree_id = vertex_id(g, v);
     }
   }
@@ -2657,7 +2657,7 @@ TEST_CASE("find max degree vertex (vov)", "[stl][6.2.7][accumulate]") {
   REQUIRE(max_degree == 3);
 }
 
-TEST_CASE("find min degree vertex (vov)", "[stl][6.2.7][accumulate]") {
+TEST_CASE("find min degree_count vertex (vov)", "[stl][6.2.7][accumulate]") {
   using G = vov_void;
   G g({{0, 1}, {0, 2}, {1, 2}, {2, 3}});
 
@@ -2665,9 +2665,9 @@ TEST_CASE("find min degree vertex (vov)", "[stl][6.2.7][accumulate]") {
   size_t   min_degree    = std::numeric_limits<size_t>::max();
 
   for (auto&& v : vertices(g)) {
-    size_t degree = static_cast<size_t>(std::ranges::distance(edges(g, v)));
-    if (degree < min_degree) {
-      min_degree    = degree;
+    size_t degree_count = static_cast<size_t>(std::ranges::distance(edges(g, v)));
+    if (degree_count < min_degree) {
+      min_degree    = degree_count;
       min_degree_id = vertex_id(g, v);
     }
   }
@@ -2724,7 +2724,7 @@ TEST_CASE("find edge with max value (vov)", "[stl][6.2.7][accumulate]") {
 
   struct EdgeRef {
     uint64_t source;
-    uint64_t target;
+    uint64_t target_vid;
     int      value;
   };
 
@@ -2741,7 +2741,7 @@ TEST_CASE("find edge with max value (vov)", "[stl][6.2.7][accumulate]") {
   }
 
   REQUIRE(max_edge.source == 0);
-  REQUIRE(max_edge.target == 2);
+  REQUIRE(max_edge.target_vid == 2);
   REQUIRE(max_edge.value == 50);
 }
 
@@ -2806,7 +2806,7 @@ TEST_CASE("product of vertex values (vov)", "[stl][6.2.7][accumulate]") {
   REQUIRE(product == 30); // 2 * 3 * 5
 }
 
-TEST_CASE("count vertices with degree > threshold (vov)", "[stl][6.2.7][accumulate]") {
+TEST_CASE("count vertices with degree_count > threshold (vov)", "[stl][6.2.7][accumulate]") {
   using G = vov_void;
   G g({{0, 1}, {0, 2}, {0, 3}, {1, 2}, {2, 3}});
 
@@ -2817,7 +2817,7 @@ TEST_CASE("count vertices with degree > threshold (vov)", "[stl][6.2.7][accumula
     }
   }
 
-  REQUIRE(count == 1); // vertex 0 has degree 3
+  REQUIRE(count == 1); // vertex 0 has degree_count 3
 }
 
 TEST_CASE("sum vertex values with filter (vov)", "[stl][6.2.7][accumulate]") {

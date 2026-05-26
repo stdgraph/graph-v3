@@ -40,9 +40,8 @@ template <class EV     = void,       // edge value type
           class VV     = void,       // vertex value type
           class GV     = void,       // graph value type
           class VId    = uint32_t,   // vertex id type
-          bool Sourced = false,      // store source_id on edges?
           bool Bidirectional = false, // maintain incoming-edge lists?
-          class Traits = vofl_graph_traits<EV, VV, GV, VId, Sourced>>
+          class Traits = vofl_graph_traits<EV, VV, GV, VId, Bidirectional>>
 class dynamic_graph;
 }
 ```
@@ -105,7 +104,6 @@ Complexity depends on the vertex container, the edge container, or neither.
 | `VV` | `void` | Vertex value type (`void` → no vertex values) |
 | `GV` | `void` | Graph value type (`void` → no graph value) |
 | `VId` | `uint32_t` | Vertex ID type (integral for indexed traits, any ordered/hashable type for map-based traits) |
-| `Sourced` | `false` | When `true`, each edge stores a source vertex ID. This does not affect the ability to use `source_id(g,uv)`. |
 | `Bidirectional` | `false` | When `true`, each vertex maintains an incoming-edge list, enabling `in_edges(g,u)`, `in_degree(g,u)`, `find_in_edge(g,...)`, and `contains_in_edge(g,...)`. Satisfies `bidirectional_adjacency_list<G>`. |
 | `Traits` | `vofl_graph_traits<…>` | Trait struct that defines the vertex and edge container types |
 
@@ -127,7 +125,23 @@ G g;
 ```
 
 The `dynamic_adjacency_graph<Traits>` alias extracts `EV`, `VV`, `GV`, `VId`,
-and `Sourced` from the traits struct, so you only need one template argument.
+and `Bidirectional` from the traits struct, so you only need one template argument.
+
+All built-in trait headers also provide a short graph alias named
+`{prefix}_graph`, where `{prefix}` matches the trait name prefix:
+
+```cpp
+#include <graph/container/traits/dod_graph_traits.hpp>
+
+using namespace graph::container;
+
+using G0 = dod_graph<>;                          // same as dod_graph_traits<>::graph_type
+using G1 = dod_graph<int, std::string>;          // EV=int, VV=string
+using G2 = dod_graph<void, void, void, uint32_t, true>; // bidirectional
+```
+
+This matches how traits are used in tests such as
+`tests/container/dynamic_graph/test_dynamic_graph_dod.cpp`.
 
 ### Trait combinations
 
@@ -197,13 +211,13 @@ All trait structs share the same template parameters:
 
 ```cpp
 template <class EV = void, class VV = void, class GV = void,
-          class VId = uint32_t, bool Sourced = false>
+          class VId = uint32_t, bool Bidirectional = false>
 struct vov_graph_traits { ... };
 ```
 
 Each defines:
 - `edge_value_type`, `vertex_value_type`, `graph_value_type`, `vertex_id_type`
-- `static constexpr bool sourced`
+- `static constexpr bool bidirectional`
 - `edge_type`, `vertex_type`, `graph_type`
 - `vertices_type` (e.g., `std::vector<vertex_type>`)
 - `edges_type` (e.g., `std::vector<edge_type>`)
@@ -244,21 +258,21 @@ namespace myapp {
 using namespace graph::container;
 
 template <class EV = void, class VV = void, class GV = void,
-          class VId = uint32_t, bool Sourced = false>
+          class VId = uint32_t, bool Bidirectional = false>
 struct flat_map_small_vec_traits {
   // --- Required type aliases ---
   using edge_value_type         = EV;
   using vertex_value_type       = VV;
   using graph_value_type        = GV;
   using vertex_id_type          = VId;
-  static constexpr bool sourced = Sourced;
+  static constexpr bool bidirectional = Bidirectional;
 
   // --- Edge, vertex, and graph types (always use dynamic_*) ---
-  using edge_type   = dynamic_edge<EV, VV, GV, VId, Sourced,
-                                   flat_map_small_vec_traits>;
-  using vertex_type = dynamic_vertex<EV, VV, GV, VId, Sourced,
+  using edge_type   = dynamic_out_edge<EV, VV, GV, VId, Bidirectional,
+                                       flat_map_small_vec_traits>;
+  using vertex_type = dynamic_vertex<EV, VV, GV, VId, Bidirectional,
                                      flat_map_small_vec_traits>;
-  using graph_type  = dynamic_graph<EV, VV, GV, VId, Sourced,
+  using graph_type  = dynamic_graph<EV, VV, GV, VId, Bidirectional,
                                     flat_map_small_vec_traits>;
 
   // --- Storage types (your custom containers) ---

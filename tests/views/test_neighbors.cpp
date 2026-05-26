@@ -430,9 +430,9 @@ TEST_CASE("neighbors - iterating all vertices", "[neighbors][all]") {
   std::vector<std::pair<std::size_t, std::size_t>> all_neighbors;
 
   for (auto [id, v] : vertexlist(g)) {
-    auto source_id = id;
+    auto source_vid = id;
     for (auto [tid, neighbor] : neighbors(g, v)) {
-      all_neighbors.emplace_back(source_id, tid);
+      all_neighbors.emplace_back(source_vid, tid);
     }
   }
 
@@ -505,9 +505,9 @@ TEST_CASE("neighbors - map vertices vector edges", "[neighbors][map]") {
     std::vector<std::pair<int, int>> all_neighbors;
 
     for (auto [id, v] : vertexlist(g)) {
-      auto source_id = id;
+      auto source_vid = id;
       for (auto [tid, neighbor] : neighbors(g, v)) {
-        all_neighbors.emplace_back(source_id, tid);
+        all_neighbors.emplace_back(source_vid, tid);
       }
     }
 
@@ -617,9 +617,9 @@ TEST_CASE("neighbors - map vertices map edges", "[neighbors][map][edge_map]") {
     std::vector<std::pair<int, int>> all_neighbors;
 
     for (auto [id, v] : vertexlist(g)) {
-      auto source_id = id;
+      auto source_vid = id;
       for (auto [tid, neighbor] : neighbors(g, v)) {
-        all_neighbors.emplace_back(source_id, tid);
+        all_neighbors.emplace_back(source_vid, tid);
       }
     }
 

@@ -78,4 +78,6 @@ if(MSVC)
 endif()
 
 # Register tests with CTest
-catch_discover_tests(graph3_container_tests)
+catch_discover_tests(graph3_container_tests
+    DISCOVERY_MODE PRE_TEST
+)

@@ -36,14 +36,16 @@ if(_bglws_bgl_inc)
     message(STATUS "BGLWorkshop2026: BGL headers at ${_bglws_bgl_inc}")
     add_executable(bglws_bacon_bgl bacon_bgl.cpp)
     target_link_libraries(bglws_bacon_bgl PRIVATE graph3)
-    target_include_directories(bglws_bacon_bgl PRIVATE ${BGLWS_INCLUDE_DIRS} ${_bglws_bgl_inc})
+    target_include_directories(bglws_bacon_bgl PRIVATE ${BGLWS_INCLUDE_DIRS})
+    target_include_directories(bglws_bacon_bgl SYSTEM PRIVATE ${_bglws_bgl_inc})
     target_compile_features(bglws_bacon_bgl PRIVATE cxx_std_20)
     target_compile_definitions(bglws_bacon_bgl PRIVATE
         BGLWS_OUTPUT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/output")
 
     add_executable(bglws_france_routes_bgl france_routes_bgl.cpp)
     target_link_libraries(bglws_france_routes_bgl PRIVATE graph3)
-    target_include_directories(bglws_france_routes_bgl PRIVATE ${BGLWS_INCLUDE_DIRS} ${_bglws_bgl_inc})
+    target_include_directories(bglws_france_routes_bgl PRIVATE ${BGLWS_INCLUDE_DIRS})
+    target_include_directories(bglws_france_routes_bgl SYSTEM PRIVATE ${_bglws_bgl_inc})
     target_compile_features(bglws_france_routes_bgl PRIVATE cxx_std_20)
     target_compile_definitions(bglws_france_routes_bgl PRIVATE
         BGLWS_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/graphs"

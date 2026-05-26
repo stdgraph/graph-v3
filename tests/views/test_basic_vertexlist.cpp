@@ -203,8 +203,8 @@ TEST_CASE("basic_vertexlist - deque-based graph", "[basic_vertexlist][deque]") {
     });
 
     std::vector<int> targets;
-    for (auto [uid, target] : vlist) {
-      targets.push_back(target);
+    for (auto [uid, target_val] : vlist) {
+      targets.push_back(target_val);
     }
 
     REQUIRE(targets == std::vector<int>{1, 2, 0});

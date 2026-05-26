@@ -142,9 +142,9 @@ bool is_weakly_connected(const G& g) {
     undirected_adj[vid]; // Ensure all vertices are in the map
 
     for (auto&& e : edges(g, v)) {
-      VId target = target_id(g, e);
-      undirected_adj[vid].insert(target);
-      undirected_adj[target].insert(vid); // Add reverse edge
+      VId target_vid = target_id(g, e);
+      undirected_adj[vid].insert(target_vid);
+      undirected_adj[target_vid].insert(vid); // Add reverse edge
     }
   }
 

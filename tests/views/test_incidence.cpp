@@ -67,8 +67,8 @@ TEST_CASE("incidence - vertex with single edge", "[incidence][single]") {
     auto ei = *it;
     // edge_data<void, false, edge_t<G>, void> has just an 'edge' member
     // For vov graph, edge_t<G> is an edge_descriptor
-    auto target = target_id(g, ei.edge);
-    REQUIRE(target == 1);
+    auto target_vid = target_id(g, ei.edge);
+    REQUIRE(target_vid == 1);
 
     ++it;
     REQUIRE(it == ilist.end());

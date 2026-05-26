@@ -679,8 +679,8 @@ TEST_CASE("bidir in_incidence view",
   SECTION("in_incidence by vertex id") {
     // vertex 2 has in-edges from 0 and 1
     std::set<uint32_t> sources;
-    const id_type target = 2;
-    for (auto [sid, ie] : graph::views::in_incidence(g, target)) {
+    const id_type target_vid = 2;
+    for (auto [sid, ie] : graph::views::in_incidence(g, target_vid)) {
       sources.insert(static_cast<uint32_t>(sid));
     }
     REQUIRE(sources == std::set<uint32_t>{0, 1});
@@ -688,8 +688,8 @@ TEST_CASE("bidir in_incidence view",
 
   SECTION("in_incidence with edge value function") {
     std::vector<int> weights;
-    const id_type target = 2;
-    for (auto [sid, ie] : graph::views::in_incidence(g, target)) {
+    const id_type target_vid = 2;
+    for (auto [sid, ie] : graph::views::in_incidence(g, target_vid)) {
       weights.push_back(edge_value(g, ie));
     }
     std::sort(weights.begin(), weights.end());
@@ -697,8 +697,8 @@ TEST_CASE("bidir in_incidence view",
   }
 
   SECTION("in_incidence on vertex with no in-edges") {
-    const id_type target = 0;
-    size_t count = static_cast<size_t>(std::ranges::distance(graph::views::in_incidence(g, target)));
+    const id_type target_vid = 0;
+    size_t count = static_cast<size_t>(std::ranges::distance(graph::views::in_incidence(g, target_vid)));
     REQUIRE(count == 0);
   }
 }
@@ -715,16 +715,16 @@ TEST_CASE("bidir in_neighbors view",
   SECTION("in_neighbors by vertex id") {
     // vertex 2 has in-neighbors 0 and 1
     std::set<uint32_t> nbrs;
-    const id_type target = 2;
-    for (auto [nid, nv] : graph::views::in_neighbors(g, target)) {
+    const id_type target_vid = 2;
+    for (auto [nid, nv] : graph::views::in_neighbors(g, target_vid)) {
       nbrs.insert(static_cast<uint32_t>(nid));
     }
     REQUIRE(nbrs == std::set<uint32_t>{0, 1});
   }
 
   SECTION("in_neighbors on vertex with no in-edges") {
-    const id_type target = 0;
-    size_t count = static_cast<size_t>(std::ranges::distance(graph::views::in_neighbors(g, target)));
+    const id_type target_vid = 0;
+    size_t count = static_cast<size_t>(std::ranges::distance(graph::views::in_neighbors(g, target_vid)));
     REQUIRE(count == 0);
   }
 }
@@ -739,8 +739,8 @@ TEST_CASE("bidir basic_in_incidence view",
   using id_type = graph::vertex_id_t<decltype(g)>;
 
   std::set<uint32_t> sources;
-  const id_type target = 2;
-  for (auto [sid] : graph::views::basic_in_incidence(g, target)) {
+  const id_type target_vid = 2;
+  for (auto [sid] : graph::views::basic_in_incidence(g, target_vid)) {
     sources.insert(static_cast<uint32_t>(sid));
   }
   REQUIRE(sources == std::set<uint32_t>{0, 1});
@@ -752,8 +752,8 @@ TEST_CASE("bidir basic_in_neighbors view",
   using id_type = graph::vertex_id_t<decltype(g)>;
 
   std::set<uint32_t> nbrs;
-  const id_type target = 2;
-  for (auto [nid] : graph::views::basic_in_neighbors(g, target)) {
+  const id_type target_vid = 2;
+  for (auto [nid] : graph::views::basic_in_neighbors(g, target_vid)) {
     nbrs.insert(static_cast<uint32_t>(nid));
   }
   REQUIRE(nbrs == std::set<uint32_t>{0, 1});

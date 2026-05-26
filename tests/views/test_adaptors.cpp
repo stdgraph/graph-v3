@@ -19,10 +19,10 @@ using std::ranges::size;
 using test_graph = std::vector<std::vector<int>>;
 
 inline auto make_test_graph() {
-  test_graph g(3); // 3 vertices
-  g[0] = {1, 2};   // vertex 0 connects to vertices 1 and 2
+  test_graph g(3); // 3 vertex_items
+  g[0] = {1, 2};   // vertex 0 connects to vertex_items 1 and 2
   g[1] = {2};      // vertex 1 connects to vertex 2
-  g[2] = {};       // vertex 2 has no outgoing edges
+  g[2] = {};       // vertex 2 has no outgoing edge_pairs
   return g;
 }
 
@@ -124,7 +124,7 @@ TEST_CASE("incidence adaptor - basic pipe syntax", "[adaptors][incidence]") {
   // Test basic pipe syntax: g | incidence(uid)
   auto view = g | incidence(0);
 
-  REQUIRE(size(view) == 2); // vertex 0 has 2 outgoing edges
+  REQUIRE(size(view) == 2); // vertex 0 has 2 outgoing edge_pairs
 
   std::vector<int> target_ids;
   for (auto [tid, e] : view) {
@@ -276,7 +276,7 @@ TEST_CASE("edgelist adaptor - basic pipe syntax", "[adaptors][edgelist]") {
     edge_pairs.emplace_back(sid, tid);
   }
 
-  REQUIRE(edge_pairs.size() == 3); // 3 edges total
+  REQUIRE(edge_pairs.size() == 3); // 3 edge_pairs total
   REQUIRE(edge_pairs == std::vector<std::pair<int, int>>{{0, 1}, {0, 2}, {1, 2}});
 }
 
@@ -330,7 +330,7 @@ TEST_CASE("edgelist adaptor - chaining with transform and filter", "[adaptors][e
     values.push_back(val);
   }
 
-  REQUIRE(values == std::vector{20, 20}); // Two edges with target ID 2
+  REQUIRE(values == std::vector{20, 20}); // Two edge_pairs with target ID 2
 }
 
 TEST_CASE("edgelist adaptor - direct call compatibility", "[adaptors][edgelist]") {
@@ -361,12 +361,12 @@ TEST_CASE("multiple views can be used independently with pipe syntax", "[adaptor
   auto g = make_test_graph();
 
   // Use multiple different adaptors on same graph
-  auto vertices       = g | vertexlist();
+  auto vertex_items       = g | vertexlist();
   auto edges_from_0   = g | incidence(0);
   auto neighbors_of_0 = g | neighbors(0);
   auto all_edges      = g | edgelist();
 
-  REQUIRE(size(vertices) == 3);
+  REQUIRE(size(vertex_items) == 3);
   REQUIRE(size(edges_from_0) == 2);
   REQUIRE(size(neighbors_of_0) == 2);
 
@@ -403,7 +403,7 @@ TEST_CASE("adaptors work with std::views algorithms", "[adaptors][composition]")
 TEST_CASE("complex chaining scenario", "[adaptors][composition]") {
   auto g = make_test_graph();
 
-  // Complex chain: get vertices, compute values, take first 2, transform values
+  // Complex chain: get vertex_items, compute values, take first 2, transform values
   // Pattern: use vertexlist() then std::views::transform for value computation
   auto view = g | vertexlist() | std::views::transform([&g](auto&& tuple) {
                 auto [id, v] = tuple;
@@ -434,7 +434,7 @@ TEST_CASE("vertices_dfs adaptor - basic pipe syntax", "[adaptors][dfs][vertices_
     visited.push_back(vertex_id(g, v));
   }
 
-  REQUIRE(visited.size() == 3); // All vertices reachable
+  REQUIRE(visited.size() == 3); // All vertex_items reachable
   REQUIRE(visited[0] == 0);     // Starts at seed
 }
 
@@ -478,14 +478,14 @@ TEST_CASE("edges_dfs adaptor - basic pipe syntax", "[adaptors][dfs][edges_dfs]")
   // Test basic pipe syntax: g | edges_dfs(seed)
   auto view = g | edges_dfs(0);
 
-  std::vector<std::pair<int, int>> edges;
+  std::vector<std::pair<int, int>> edge_pairs;
   for (auto [e] : view) {
-    edges.emplace_back(vertex_id(g, source(g, e)), vertex_id(g, target(g, e)));
+    edge_pairs.emplace_back(vertex_id(g, source(g, e)), vertex_id(g, target(g, e)));
   }
 
-  REQUIRE(edges.size() >= 2); // At least 2 edges traversed
+  REQUIRE(edge_pairs.size() >= 2); // At least 2 edge_pairs traversed
   // First edge should be from seed vertex 0
-  REQUIRE((edges[0].first == 0 || edges[1].first == 0));
+  REQUIRE((edge_pairs[0].first == 0 || edge_pairs[1].first == 0));
 }
 
 TEST_CASE("edges_dfs adaptor - with value function", "[adaptors][dfs][edges_dfs]") {
@@ -518,7 +518,7 @@ TEST_CASE("vertices_bfs adaptor - basic pipe syntax", "[adaptors][bfs][vertices_
     visited.push_back(vertex_id(g, v));
   }
 
-  REQUIRE(visited.size() == 3); // All vertices reachable
+  REQUIRE(visited.size() == 3); // All vertex_items reachable
   REQUIRE(visited[0] == 0);     // Starts at seed
 }
 
@@ -553,7 +553,7 @@ TEST_CASE("vertices_bfs adaptor - chaining with std::views", "[adaptors][bfs][ve
     visited.push_back(id);
   }
 
-  REQUIRE(visited.size() == 2); // Only vertices 1 and 2
+  REQUIRE(visited.size() == 2); // Only vertex_items 1 and 2
   REQUIRE(std::ranges::all_of(visited, [](int id) { return id > 0; }));
 }
 
@@ -563,14 +563,14 @@ TEST_CASE("edges_bfs adaptor - basic pipe syntax", "[adaptors][bfs][edges_bfs]")
   // Test basic pipe syntax: g | edges_bfs(seed)
   auto view = g | edges_bfs(0);
 
-  std::vector<std::pair<int, int>> edges;
+  std::vector<std::pair<int, int>> edge_pairs;
   for (auto [e] : view) {
-    edges.emplace_back(vertex_id(g, source(g, e)), vertex_id(g, target(g, e)));
+    edge_pairs.emplace_back(vertex_id(g, source(g, e)), vertex_id(g, target(g, e)));
   }
 
-  REQUIRE(edges.size() >= 2); // At least 2 edges traversed
-  // First edges should be from seed vertex 0
-  REQUIRE(edges[0].first == 0);
+  REQUIRE(edge_pairs.size() >= 2); // At least 2 edge_pairs traversed
+  // First edge_pairs should be from seed vertex 0
+  REQUIRE(edge_pairs[0].first == 0);
 }
 
 TEST_CASE("edges_bfs adaptor - with value function", "[adaptors][bfs][edges_bfs]") {
@@ -625,23 +625,23 @@ TEST_CASE("vertices_topological_sort adaptor - basic pipe syntax", "[adaptors][t
   auto g = make_test_graph();
 
   // Use pipe syntax
-  std::vector<int> vertices;
+  std::vector<int> vertex_items;
   for (auto [v] : g | vertices_topological_sort()) {
-    vertices.push_back(vertex_id(g, v));
+    vertex_items.push_back(vertex_id(g, v));
   }
 
-  // Should visit all vertices
-  REQUIRE(vertices.size() == num_vertices(g));
+  // Should visit all vertex_items
+  REQUIRE(vertex_items.size() == num_vertices(g));
 
   // Check topological order property: for each edge (u,v), u comes after v in the order
   // (reverse post-order means sources come after targets)
   std::unordered_map<int, size_t> pos;
-  for (size_t i = 0; i < vertices.size(); ++i) {
-    pos[vertices[i]] = i;
+  for (size_t i = 0; i < vertex_items.size(); ++i) {
+    pos[vertex_items[i]] = i;
   }
 
   for (auto [sid, tid, e] : g | edgelist()) {
-    // In topological sort, each vertex appears before all vertices it has edges to
+    // In topological sort, each vertex appears before all vertex_items it has edge_pairs to
     // so source comes before target: pos[sid] < pos[tid]
     REQUIRE(pos[sid] < pos[tid]);
   }
@@ -668,14 +668,14 @@ TEST_CASE("vertices_topological_sort adaptor - with value function", "[adaptors]
 TEST_CASE("edges_topological_sort adaptor - basic pipe syntax", "[adaptors][topological_sort]") {
   auto g = make_test_graph();
 
-  std::vector<std::pair<int, int>> edges;
+  std::vector<std::pair<int, int>> edge_pairs;
   for (auto [e] : g | edges_topological_sort()) {
     auto src = vertex_id(g, source(g, e));
     auto tgt = vertex_id(g, target(g, e));
-    edges.push_back({src, tgt});
+    edge_pairs.push_back({src, tgt});
   }
 
-  REQUIRE(edges.size() == num_edges(g));
+  REQUIRE(edge_pairs.size() == num_edges(g));
 }
 
 TEST_CASE("edges_topological_sort adaptor - with value function", "[adaptors][topological_sort]") {
@@ -752,7 +752,7 @@ TEST_CASE("complex chaining - multiple transforms", "[adaptors][chaining]") {
 TEST_CASE("complex chaining - filter and transform", "[adaptors][chaining]") {
   auto g = make_test_graph();
 
-  // Filter vertices, then transform the results
+  // Filter vertex_items, then transform the results
   std::vector<int> results;
   for (auto val : g | vertexlist() | std::views::transform([&g](auto info) {
                     auto [id, v] = info;
@@ -814,7 +814,7 @@ TEST_CASE("chaining with std::views::drop", "[adaptors][chaining]") {
   }
 
   REQUIRE(results.size() == 2);
-  // After dropping first element, should have vertices 1 and 2
+  // After dropping first element, should have vertex_items 1 and 2
 }
 
 TEST_CASE("chaining incidence with transforms", "[adaptors][chaining]") {
@@ -830,7 +830,7 @@ TEST_CASE("chaining incidence with transforms", "[adaptors][chaining]") {
     results.push_back(val);
   }
 
-  // Vertex 0's edges: 0->1, 0->2
+  // Vertex 0's edge_pairs: 0->1, 0->2
   // After filter (tgt < 2): only 0->1
   REQUIRE(results.size() == 1);
   REQUIRE(results[0] == 3); // 1 * 3
@@ -884,7 +884,7 @@ TEST_CASE("const correctness - const graph with chaining", "[adaptors][const]") 
 TEST_CASE("mixing different view types in chains", "[adaptors][chaining]") {
   auto g = make_test_graph();
 
-  // Get all neighbors of all vertices using chains
+  // Get all neighbors of all vertex_items using chains
   std::vector<int> all_neighbors;
   for (auto vid : g | vertexlist() | std::views::transform([&g](auto info) {
                     auto [id, v] = info;
@@ -914,7 +914,7 @@ TEST_CASE("search views - complex chaining with multiple filters", "[adaptors][c
     results.push_back(id);
   }
 
-  // All 3 vertices pass both filters, then +1 applied
+  // All 3 vertex_items pass both filters, then +1 applied
   REQUIRE(results.size() == 3);
   REQUIRE(results[0] == 1); // 0 + 1
 }
@@ -922,18 +922,18 @@ TEST_CASE("search views - complex chaining with multiple filters", "[adaptors][c
 TEST_CASE("edgelist chaining with reverse", "[adaptors][chaining]") {
   auto g = make_test_graph();
 
-  // Collect edges, reverse the order
-  std::vector<std::pair<int, int>> edges;
+  // Collect edge_pairs, reverse the order
+  std::vector<std::pair<int, int>> edge_pairs;
   auto                             edge_view = g | edgelist() | std::views::transform([&g](auto info) {
                      auto [sid, tid, e] = info;
                      return std::make_pair(sid, tid);
                    });
 
   for (auto edge : edge_view) {
-    edges.push_back(edge);
+    edge_pairs.push_back(edge);
   }
 
-  REQUIRE(edges.size() == 3);
+  REQUIRE(edge_pairs.size() == 3);
 }
 
 //=============================================================================
@@ -1122,16 +1122,16 @@ TEST_CASE("basic_edgelist adaptor - basic pipe syntax", "[adaptors][basic_edgeli
 
   auto view = g | basic_edgelist();
 
-  std::vector<std::pair<int, int>> edges;
+  std::vector<std::pair<int, int>> edge_pairs;
   for (auto [sid, tid] : view) {
-    edges.push_back({static_cast<int>(sid), static_cast<int>(tid)});
+    edge_pairs.push_back({static_cast<int>(sid), static_cast<int>(tid)});
   }
 
-  // edges: 0->1, 0->2, 1->2
-  REQUIRE(edges.size() == 3);
-  REQUIRE(edges[0] == std::pair{0, 1});
-  REQUIRE(edges[1] == std::pair{0, 2});
-  REQUIRE(edges[2] == std::pair{1, 2});
+  // edge_pairs: 0->1, 0->2, 1->2
+  REQUIRE(edge_pairs.size() == 3);
+  REQUIRE(edge_pairs[0] == std::pair{0, 1});
+  REQUIRE(edge_pairs[1] == std::pair{0, 2});
+  REQUIRE(edge_pairs[2] == std::pair{1, 2});
 }
 
 TEST_CASE("basic_edgelist adaptor - with value function", "[adaptors][basic_edgelist]") {
@@ -1153,14 +1153,14 @@ TEST_CASE("basic_edgelist adaptor - chaining with std::views::take", "[adaptors]
 
   auto view = g | basic_edgelist() | std::views::take(2);
 
-  std::vector<std::pair<int, int>> edges;
+  std::vector<std::pair<int, int>> edge_pairs;
   for (auto [sid, tid] : view) {
-    edges.push_back({static_cast<int>(sid), static_cast<int>(tid)});
+    edge_pairs.push_back({static_cast<int>(sid), static_cast<int>(tid)});
   }
 
-  REQUIRE(edges.size() == 2);
-  REQUIRE(edges[0] == std::pair{0, 1});
-  REQUIRE(edges[1] == std::pair{0, 2});
+  REQUIRE(edge_pairs.size() == 2);
+  REQUIRE(edge_pairs[0] == std::pair{0, 1});
+  REQUIRE(edge_pairs[1] == std::pair{0, 2});
 }
 
 TEST_CASE("basic_edgelist adaptor - direct call compatibility", "[adaptors][basic_edgelist]") {
@@ -1202,7 +1202,7 @@ static BiGraph make_bi_graph() {
 TEST_CASE("pipe: g | out_incidence(uid)", "[adaptors][out_incidence]") {
   auto bg   = make_bi_graph();
   auto view = bg | out_incidence(0u);
-  REQUIRE(size(view) == 2); // vertex 0 has 2 edges
+  REQUIRE(size(view) == 2); // vertex 0 has 2 edge_pairs
 
   // Also verify it matches the free-function factory
   auto ref = graph::views::out_incidence(bg, 0u);

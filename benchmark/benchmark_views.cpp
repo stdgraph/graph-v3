@@ -98,7 +98,7 @@ BENCHMARK(BM_Vertexlist_Iteration)->RangeMultiplier(2)->Range(100, 10000)->Compl
 // Benchmark: vertexlist with value function
 static void BM_Vertexlist_WithValueFunction(benchmark::State& state) {
   auto g   = create_random_graph(state.range(0), 5);
-  auto vvf = [](const auto& g, auto v) { return vertex_id(g, v); };
+  auto vvf = [](const auto& gr, auto v) { return vertex_id(gr, v); };
 
   for (auto _ : state) {
     size_t sum = 0;

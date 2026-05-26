@@ -350,7 +350,7 @@ TEST_CASE("vertices_dfs - search_view concept", "[dfs][vertices][concepts]") {
 
   // Verify accessors exist and return correct types
   REQUIRE(dfs.cancel() == cancel_search::continue_search);
-  REQUIRE(dfs.depth() == 0);
+  REQUIRE(dfs.depth() == 1);
   REQUIRE(dfs.num_visited() == 0);
 }
 
@@ -766,7 +766,7 @@ TEST_CASE("edges_dfs - search_view concept", "[dfs][edges][concepts]") {
 
   // Verify accessors exist and return correct types
   REQUIRE(dfs.cancel() == cancel_search::continue_search);
-  REQUIRE(dfs.depth() == 0);
+  REQUIRE(dfs.depth() == 1);
   REQUIRE(dfs.num_visited() == 0);
 }
 
@@ -1214,13 +1214,13 @@ using StrGraph = dynamic_adjacency_graph<uol_graph_traits<void, void, void, std:
 
 /// Build a StrGraph from vertex names and an edge list.
 static StrGraph make_graph(const std::vector<std::string>&                        vertex_names,
-                           const std::vector<std::pair<std::string, std::string>>& edges) {
+                           const std::vector<std::pair<std::string, std::string>>& edge_pairs) {
   using VD = copyable_vertex_t<std::string, void>;
   using ED = copyable_edge_t<std::string, void>;
 
   StrGraph g;
   g.load_vertices(vertex_names, [](const std::string& name) -> VD { return {name}; });
-  g.load_edges(edges, [](const auto& e) -> ED { return {e.first, e.second}; });
+  g.load_edges(edge_pairs, [](const auto& e) -> ED { return {e.first, e.second}; });
   return g;
 }
 

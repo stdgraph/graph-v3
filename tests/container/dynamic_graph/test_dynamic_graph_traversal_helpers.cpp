@@ -122,16 +122,16 @@ bool is_isolated(const G& g, const typename G::vertex_id_type& uid) {
  * @brief Count the number of self-loops in the graph
  * @tparam G Graph type
  * @param g The graph
- * @return Number of edges where source_id == target_id
+ * @return Number of edges where src_vid == target_id
  */
 template <typename G>
 size_t count_self_loops(const G& g) {
   size_t count = 0;
 
   for (auto&& vertex : vertices(g)) {
-    auto source_id = vertex_id(g, vertex);
+    auto src_vid = vertex_id(g, vertex);
     for (auto&& edge : edges(g, vertex)) {
-      if (target_id(g, edge) == source_id) {
+      if (target_id(g, edge) == src_vid) {
         ++count;
       }
     }
