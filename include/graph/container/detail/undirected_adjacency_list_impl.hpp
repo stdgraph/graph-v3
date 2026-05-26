@@ -573,10 +573,12 @@ template <typename EV,
           template <typename V, typename A> class VContainer,
           typename Alloc>
 ual_edge<EV, VV, GV, VId, VContainer, Alloc>::~ual_edge() noexcept {
-  vertex_edge_list_outward_link_type& outward_link = *static_cast<vertex_edge_list_outward_link_type*>(this);
+  [[maybe_unused]] vertex_edge_list_outward_link_type& outward_link =
+      *static_cast<vertex_edge_list_outward_link_type*>(this);
   assert(outward_link.prev() == nullptr && outward_link.next() == nullptr); // has edge been unlinked?
 
-  vertex_edge_list_inward_link_type& inward_link = *static_cast<vertex_edge_list_inward_link_type*>(this);
+  [[maybe_unused]] vertex_edge_list_inward_link_type& inward_link =
+      *static_cast<vertex_edge_list_inward_link_type*>(this);
   assert(inward_link.prev() == nullptr && inward_link.next() == nullptr); // has edge been unlinked?
 }
 

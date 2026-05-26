@@ -1,6 +1,6 @@
 # Comprehensive compiler warning configuration
 function(set_project_warnings target_name)
-    option(WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
+    option(WARNINGS_AS_ERRORS "Treat compiler warnings as errors" ON)
 
     set(MSVC_WARNINGS
         /W4     # High warning level
@@ -26,31 +26,72 @@ function(set_project_warnings target_name)
         /permissive- # standards conformance mode
     )
 
+    # The -Wno-* options are used to suppress specific warnings that are either not relevant or too noisy for this project.
+    # Further adjustments may be necessary based on the specific codebase and compiler versions used.
     set(CLANG_WARNINGS
         -Wall
         -Wextra
         -Wpedantic
-        -Wshadow
         -Wnon-virtual-dtor
         -Wold-style-cast
         -Wcast-align
         -Wunused
         -Woverloaded-virtual
-        -Wconversion
-        -Wsign-conversion
         -Wnull-dereference
         -Wdouble-promotion
         -Wformat=2
         -Wimplicit-fallthrough
+        -Wshadow
+        #-Wconversion
+        #-Wsign-conversion
+        -Wno-unused-parameter
+        -Wno-unused-variable
+        -Wno-mismatched-tags
+        -Wno-ignored-qualifiers
+        -Wno-deprecated-declarations
+        -Wno-unqualified-std-cast-call
+        -Wno-unused-lambda-capture
+        -Wno-unused-local-typedef
+        -Wno-self-assign-overloaded
+        -Wno-unneeded-internal-declaration
+        -Wno-unused-but-set-variable
+        -Wno-sign-compare
+        -Wno-old-style-cast
+        -Wno-double-promotion
+        -Wno-conversion
+        -Wno-sign-conversion
     )
 
     set(GCC_WARNINGS
-        ${CLANG_WARNINGS}
+        -Wall
+        -Wextra
+        -Wpedantic
+        -Wnon-virtual-dtor
+        -Wold-style-cast
+        -Wcast-align
+        -Wunused
+        -Woverloaded-virtual
+        -Wnull-dereference
+        -Wdouble-promotion
+        -Wformat=2
+        -Wimplicit-fallthrough
+        -Wshadow
+        #-Wconversion
+        #-Wsign-conversion
         -Wmisleading-indentation
         -Wduplicated-cond
-        -Wduplicated-branches
         -Wlogical-op
         -Wuseless-cast
+        -Wno-useless-cast
+        -Wno-old-style-cast
+        -Wno-unused-local-typedefs
+        -Wno-unused-but-set-variable
+        -Wno-sign-compare
+        -Wno-comment
+        -Wno-null-dereference
+        -Wno-deprecated-declarations
+        -Wno-conversion
+        -Wno-sign-conversion
     )
 
     if(WARNINGS_AS_ERRORS)

@@ -419,13 +419,12 @@ using namespace graph::test::map_fixtures;
 /// Generic convergence check for vertex property maps.
 template <typename G, typename Label>
 bool fully_converged_generic(G&& g, const Label& label) {
-  using vid_t = adj_list::vertex_id_t<std::remove_reference_t<G>>;
   auto  it    = vertices(g).begin();
-  auto  end   = vertices(g).end();
-  if (it == end)
+  auto  last  = vertices(g).end();
+  if (it == last)
     return true;
   auto first_label = label.find(vertex_id(g, *it))->second;
-  for (; it != end; ++it) {
+  for (; it != last; ++it) {
     if (label.find(vertex_id(g, *it))->second != first_label)
       return false;
   }
@@ -436,7 +435,6 @@ TEMPLATE_TEST_CASE("label_propagation - sparse single edge",
                    "[algorithm][label_propagation][sparse]",
                    SPARSE_VERTEX_TYPES) {
   using Graph = TestType;
-  using vid_t = adj_list::vertex_id_t<Graph>;
 
   // Bidirectional edge: 10-20
   Graph g({{10, 20, 1}, {20, 10, 1}});
@@ -457,7 +455,6 @@ TEMPLATE_TEST_CASE("label_propagation - sparse path all same label",
                    "[algorithm][label_propagation][sparse]",
                    SPARSE_VERTEX_TYPES) {
   using Graph = TestType;
-  using vid_t = adj_list::vertex_id_t<Graph>;
 
   // Bidirectional path: 10-20-30-40
   Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 1}, {30, 20, 1}, {30, 40, 1}, {40, 30, 1}});
@@ -478,7 +475,6 @@ TEMPLATE_TEST_CASE("label_propagation - sparse K4 majority wins",
                    "[algorithm][label_propagation][sparse]",
                    SPARSE_VERTEX_TYPES) {
   using Graph = TestType;
-  using vid_t = adj_list::vertex_id_t<Graph>;
 
   // K4: every pair connected bidirectionally
   Graph g({{10, 20, 1}, {10, 30, 1}, {10, 40, 1},
@@ -503,7 +499,6 @@ TEMPLATE_TEST_CASE("label_propagation - sparse disconnected",
                    "[algorithm][label_propagation][sparse]",
                    SPARSE_VERTEX_TYPES) {
   using Graph = TestType;
-  using vid_t = adj_list::vertex_id_t<Graph>;
 
   // Component 1: 10-20, Component 2: 30-40
   Graph g({{10, 20, 1}, {20, 10, 1}, {30, 40, 1}, {40, 30, 1}});
@@ -528,7 +523,6 @@ TEMPLATE_TEST_CASE("label_propagation - sparse empty_label propagation",
                    "[algorithm][label_propagation][sparse]",
                    SPARSE_VERTEX_TYPES) {
   using Graph = TestType;
-  using vid_t = adj_list::vertex_id_t<Graph>;
 
   // Bidirectional path: 10-20-30-40
   Graph g({{10, 20, 1}, {20, 10, 1}, {20, 30, 1}, {30, 20, 1}, {30, 40, 1}, {40, 30, 1}});

@@ -58,7 +58,7 @@ TEST_CASE("basic_incidence - single edge", "[basic_incidence][single]") {
 
   SECTION("with value function") {
     auto inc = basic_incidence(g, std::size_t(0),
-                               [](const auto& g, auto e) { return static_cast<int>(adj_list::target_id(g, e)); });
+                               [](const auto& gr, auto e) { return static_cast<int>(adj_list::target_id(gr, e)); });
 
     auto it = inc.begin();
     REQUIRE(it != inc.end());
@@ -106,7 +106,7 @@ TEST_CASE("basic_incidence - multiple edges", "[basic_incidence][multiple]") {
 
   SECTION("with value function") {
     auto inc = basic_incidence(g, std::size_t(0),
-                               [](const auto& g, auto e) { return static_cast<int>(adj_list::target_id(g, e)) * 10; });
+                               [](const auto& gr, auto e) { return static_cast<int>(adj_list::target_id(gr, e)) * 10; });
 
     std::vector<int> values;
     for (auto [tid, val] : inc) {
@@ -181,7 +181,7 @@ TEST_CASE("basic_incidence - deque-based graph", "[basic_incidence][deque]") {
 
   SECTION("with value function") {
     auto inc = basic_incidence(g, std::size_t(2),
-                               [](const auto& g, auto e) { return static_cast<int>(adj_list::target_id(g, e)); });
+                               [](const auto& gr, auto e) { return static_cast<int>(adj_list::target_id(gr, e)); });
 
     std::vector<int> targets;
     for (auto [tid, val] : inc) {
@@ -260,7 +260,7 @@ TEST_CASE("basic_incidence - value function types", "[basic_incidence][evf]") {
 
   SECTION("returning string") {
     auto inc = basic_incidence(g, std::size_t(0),
-                               [](const auto& g, auto e) { return "edge_to_" + std::to_string(adj_list::target_id(g, e)); });
+                               [](const auto& gr, auto e) { return "edge_to_" + std::to_string(adj_list::target_id(gr, e)); });
 
     std::vector<std::string> names;
     for (auto [tid, name] : inc) {
@@ -272,7 +272,7 @@ TEST_CASE("basic_incidence - value function types", "[basic_incidence][evf]") {
 
   SECTION("returning double") {
     auto inc = basic_incidence(g, std::size_t(0),
-                               [](const auto& g, auto e) { return static_cast<double>(adj_list::target_id(g, e)) * 1.5; });
+                               [](const auto& gr, auto e) { return static_cast<double>(adj_list::target_id(gr, e)) * 1.5; });
 
     std::vector<double> values;
     for (auto [tid, val] : inc) {
@@ -312,7 +312,7 @@ TEST_CASE("basic_incidence - undirected_adjacency_list", "[basic_incidence][undi
   }
 
   SECTION("basic_incidence(g, uid, evf) - with value function") {
-    auto inc = basic_incidence(g, 0u, [](const auto& g, auto e) { return edge_value(g, e); });
+    auto inc = basic_incidence(g, 0u, [](const auto& gr, auto e) { return edge_value(gr, e); });
 
     std::vector<int> weights;
     for (auto [tid, w] : inc) {

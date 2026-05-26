@@ -128,8 +128,8 @@ TEST_CASE("vertexlist - multiple vertices", "[vertexlist][multiple]") {
   }
 
   SECTION("structured binding - with value function") {
-    auto vlist = vertexlist(g, [](const auto& g, auto v) {
-      return g[v.vertex_id()].size(); // number of edges
+    auto vlist = vertexlist(g, [](const auto& gr, auto v) {
+      return gr[v.vertex_id()].size(); // number of edges
     });
 
     std::vector<std::size_t> edge_counts;
@@ -227,8 +227,8 @@ TEST_CASE("vertexlist - deque-based graph", "[vertexlist][deque]") {
   }
 
   SECTION("with value function") {
-    auto vlist = vertexlist(g, [](const auto& g, auto v) {
-      return g[v.vertex_id()].front(); // first edge target
+    auto vlist = vertexlist(g, [](const auto& gr, auto v) {
+      return gr[v.vertex_id()].front(); // first edge target
     });
 
     std::vector<int> targets;
@@ -416,10 +416,10 @@ TEST_CASE("vertexlist - weighted graph", "[vertexlist][weighted]") {
   }
 
   SECTION("value function can access edge data") {
-    auto vlist = vertexlist(g, [](const auto& g, auto v) {
+    auto vlist = vertexlist(g, [](const auto& gr, auto v) {
       // Sum of edge weights for this vertex
       double sum = 0.0;
-      for (auto [target, weight] : g[v.vertex_id()]) {
+      for (auto [target, weight] : gr[v.vertex_id()]) {
         sum += weight;
       }
       return sum;
@@ -452,7 +452,7 @@ TEST_CASE("vertexlist - std::ranges algorithms", "[vertexlist][algorithms]") {
   }
 
   SECTION("count_if") {
-    auto vlist = vertexlist(g, [](const auto& g, auto v) { return g[v.vertex_id()].size(); });
+    auto vlist = vertexlist(g, [](const auto& gr, auto v) { return gr[v.vertex_id()].size(); });
 
     auto count = std::ranges::count_if(vlist, [](auto vi) { return vi.value > 0; });
 
@@ -489,9 +489,9 @@ TEST_CASE("vertexlist - map vertices vector edges", "[vertexlist][map]") {
   }
 
   SECTION("with value function") {
-    auto vlist = vertexlist(g, [](const auto& g, auto v) {
+    auto vlist = vertexlist(g, [](const auto& gr, auto v) {
       // Return edge count for each vertex
-      return g.at(v.vertex_id()).size();
+      return gr.at(v.vertex_id()).size();
     });
 
     std::vector<std::size_t> edge_counts;
@@ -551,10 +551,10 @@ TEST_CASE("vertexlist - vector vertices map edges", "[vertexlist][edge_map]") {
   }
 
   SECTION("with value function accessing edge weights") {
-    auto vlist = vertexlist(g, [](const auto& g, auto v) {
+    auto vlist = vertexlist(g, [](const auto& gr, auto v) {
       // Sum of edge weights for this vertex
       double sum = 0.0;
-      for (auto& [target, weight] : g[v.vertex_id()]) {
+      for (auto& [target, weight] : gr[v.vertex_id()]) {
         sum += weight;
       }
       return sum;
@@ -600,7 +600,7 @@ TEST_CASE("vertexlist - map vertices map edges", "[vertexlist][map][edge_map]") 
   }
 
   SECTION("with value function") {
-    auto vlist = vertexlist(g, [](const auto& g, auto v) { return g.at(v.vertex_id()).size(); });
+    auto vlist = vertexlist(g, [](const auto& gr, auto v) { return gr.at(v.vertex_id()).size(); });
 
     std::vector<std::size_t> counts;
     for (auto [id, v, count] : vlist) {

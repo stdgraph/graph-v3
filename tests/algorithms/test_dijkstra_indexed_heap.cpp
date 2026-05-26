@@ -456,13 +456,13 @@ TEST_CASE("dijkstra(indexed_heap) - string vertex IDs (CLRS topology)",
 
   auto wt = [](const auto& gr, const auto& uv) { return edge_value(gr, uv); };
 
-  VId source{"s"};
-  dijkstra_shortest_paths(g, source,
+  VId start_vertex{"s"};
+  dijkstra_shortest_paths(g, start_vertex,
                           container_value_fn(d_def), container_value_fn(p_def),
                           wt, empty_visitor{}, std::less<int>{}, std::plus<int>{},
                           use_default_heap{}, std::allocator<std::byte>{});
 
-  dijkstra_shortest_paths(g, source,
+  dijkstra_shortest_paths(g, start_vertex,
                           container_value_fn(d_idx), container_value_fn(p_idx),
                           wt, empty_visitor{}, std::less<int>{}, std::plus<int>{},
                           use_indexed_dary_heap<>{}, std::allocator<std::byte>{});

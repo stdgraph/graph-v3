@@ -116,8 +116,8 @@ TEST_CASE("basic_vertexlist - multiple vertices", "[basic_vertexlist][multiple]"
   }
 
   SECTION("structured binding - with value function") {
-    auto vlist = basic_vertexlist(g, [](const auto& g, auto v) {
-      return g[v.vertex_id()].size(); // number of edges
+    auto vlist = basic_vertexlist(g, [](const auto& gr, auto v) {
+      return gr[v.vertex_id()].size(); // number of edges
     });
 
     std::vector<std::size_t> edge_counts;
@@ -198,8 +198,8 @@ TEST_CASE("basic_vertexlist - deque-based graph", "[basic_vertexlist][deque]") {
   }
 
   SECTION("with value function") {
-    auto vlist = basic_vertexlist(g, [](const auto& g, auto v) {
-      return g[v.vertex_id()].front();
+    auto vlist = basic_vertexlist(g, [](const auto& gr, auto v) {
+      return gr[v.vertex_id()].front();
     });
 
     std::vector<int> targets;
@@ -263,8 +263,8 @@ TEST_CASE("basic_vertexlist - map-based graph", "[basic_vertexlist][map]") {
   }
 
   SECTION("with value function") {
-    auto vlist = basic_vertexlist(g, [](const auto& g, auto v) {
-      return g.at(v.vertex_id()).size();
+    auto vlist = basic_vertexlist(g, [](const auto& gr, auto v) {
+      return gr.at(v.vertex_id()).size();
     });
 
     std::vector<std::size_t> edge_counts;
@@ -394,7 +394,7 @@ TEST_CASE("basic_vertexlist - id subrange", "[basic_vertexlist][subrange]") {
 
   SECTION("subrange with value function") {
     auto vlist = basic_vertexlist(g, std::size_t(1), std::size_t(4),
-                                 [](const auto& g, auto v) { return g[v.vertex_id()].size(); });
+                                 [](const auto& gr, auto v) { return gr[v.vertex_id()].size(); });
 
     REQUIRE(vlist.size() == 3);
 
@@ -494,7 +494,7 @@ TEST_CASE("vertexlist - descriptor subrange", "[vertexlist][subrange]") {
     auto last_u  = *std::ranges::next(std::ranges::begin(vr), 4);
 
     auto vlist = vertexlist(g, first_u, last_u,
-                            [](const auto& g, auto v) { return g[v.vertex_id()].size(); });
+                            [](const auto& gr, auto v) { return gr[v.vertex_id()].size(); });
 
     REQUIRE(vlist.size() == 3);
 

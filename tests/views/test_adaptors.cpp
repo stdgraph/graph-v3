@@ -51,7 +51,7 @@ TEST_CASE("vertexlist adaptor - with value function", "[adaptors][vertexlist]") 
   auto g = make_test_graph();
 
   // Test pipe syntax with value function: g | vertexlist(vvf)
-  auto vvf  = [](const auto& g, auto&& v) { return vertex_id(g, v) * 10; }; // Simple transform
+  auto vvf  = [](const auto& gr, auto&& v) { return vertex_id(gr, v) * 10; }; // Simple transform
   auto view = g | vertexlist(vvf);
 
   REQUIRE(size(view) == 3);
@@ -138,7 +138,7 @@ TEST_CASE("incidence adaptor - with value function", "[adaptors][incidence]") {
   auto g = make_test_graph();
 
   // Test pipe syntax with value function: g | incidence(uid, evf)
-  auto evf  = [](const auto& g, auto&& e) { return target_id(g, e) * 10; }; // Transform target ID
+  auto evf  = [](const auto& gr, auto&& e) { return target_id(gr, e) * 10; }; // Transform target ID
   auto view = g | incidence(0, evf);
 
   REQUIRE(size(view) == 2);
@@ -220,7 +220,7 @@ TEST_CASE("neighbors adaptor - with value function", "[adaptors][neighbors]") {
   auto g = make_test_graph();
 
   // Test pipe syntax with value function: g | neighbors(uid, vvf)
-  auto vvf  = [](const auto& g, auto&& v) { return vertex_id(g, v) * 10; };
+  auto vvf  = [](const auto& gr, auto&& v) { return vertex_id(gr, v) * 10; };
   auto view = g | neighbors(0, vvf);
 
   REQUIRE(size(view) == 2);
@@ -284,7 +284,7 @@ TEST_CASE("edgelist adaptor - with value function", "[adaptors][edgelist]") {
   auto g = make_test_graph();
 
   // Test pipe syntax with value function: g | edgelist(evf)
-  auto evf  = [](const auto& g, auto&& e) { return target_id(g, e) * 10; };
+  auto evf  = [](const auto& gr, auto&& e) { return target_id(gr, e) * 10; };
   auto view = g | edgelist(evf);
 
   std::vector<int> values;
@@ -442,7 +442,7 @@ TEST_CASE("vertices_dfs adaptor - with value function", "[adaptors][dfs][vertice
   auto g = make_test_graph();
 
   // Test pipe syntax with value function: g | vertices_dfs(seed, vvf)
-  auto vvf  = [](const auto& g, auto&& v) { return vertex_id(g, v) * 10; };
+  auto vvf  = [](const auto& gr, auto&& v) { return vertex_id(gr, v) * 10; };
   auto view = g | vertices_dfs(0, vvf);
 
   std::vector<int> values;
@@ -492,7 +492,7 @@ TEST_CASE("edges_dfs adaptor - with value function", "[adaptors][dfs][edges_dfs]
   auto g = make_test_graph();
 
   // Test pipe syntax with value function: g | edges_dfs(seed, evf)
-  auto evf  = [](const auto& g, auto&& e) { return target_id(g, e) * 10; };
+  auto evf  = [](const auto& gr, auto&& e) { return target_id(gr, e) * 10; };
   auto view = g | edges_dfs(0, evf);
 
   std::vector<int> values;
@@ -526,7 +526,7 @@ TEST_CASE("vertices_bfs adaptor - with value function", "[adaptors][bfs][vertice
   auto g = make_test_graph();
 
   // Test pipe syntax with value function: g | vertices_bfs(seed, vvf)
-  auto vvf  = [](const auto& g, auto&& v) { return vertex_id(g, v) * 10; };
+  auto vvf  = [](const auto& gr, auto&& v) { return vertex_id(gr, v) * 10; };
   auto view = g | vertices_bfs(0, vvf);
 
   std::vector<int> values;
@@ -577,7 +577,7 @@ TEST_CASE("edges_bfs adaptor - with value function", "[adaptors][bfs][edges_bfs]
   auto g = make_test_graph();
 
   // Test pipe syntax with value function: g | edges_bfs(seed, evf)
-  auto evf  = [](const auto& g, auto&& e) { return target_id(g, e) * 10; };
+  auto evf  = [](const auto& gr, auto&& e) { return target_id(gr, e) * 10; };
   auto view = g | edges_bfs(0, evf);
 
   std::vector<int> values;
@@ -650,7 +650,7 @@ TEST_CASE("vertices_topological_sort adaptor - basic pipe syntax", "[adaptors][t
 TEST_CASE("vertices_topological_sort adaptor - with value function", "[adaptors][topological_sort]") {
   auto g = make_test_graph();
 
-  auto vvf = [](const auto& g, auto v) { return vertex_id(g, v) * 10; };
+  auto vvf = [](const auto& gr, auto v) { return vertex_id(gr, v) * 10; };
 
   std::vector<std::pair<int, int>> results;
   for (auto [v, val] : g | vertices_topological_sort(vvf)) {
@@ -681,7 +681,7 @@ TEST_CASE("edges_topological_sort adaptor - basic pipe syntax", "[adaptors][topo
 TEST_CASE("edges_topological_sort adaptor - with value function", "[adaptors][topological_sort]") {
   auto g = make_test_graph();
 
-  auto evf = [](const auto& g, auto e) { return vertex_id(g, source(g, e)) + vertex_id(g, target(g, e)); };
+  auto evf = [](const auto& gr, auto e) { return vertex_id(gr, source(gr, e)) + vertex_id(gr, target(gr, e)); };
 
   std::vector<int> values;
   for (auto [e, val] : g | edges_topological_sort(evf)) {
@@ -958,7 +958,7 @@ TEST_CASE("basic_vertexlist adaptor - basic pipe syntax", "[adaptors][basic_vert
 TEST_CASE("basic_vertexlist adaptor - with value function", "[adaptors][basic_vertexlist]") {
   auto g = make_test_graph();
 
-  auto vvf  = [](const auto& g, auto&& v) { return static_cast<int>(vertex_id(g, v)) * 10; };
+  auto vvf  = [](const auto& gr, auto&& v) { return static_cast<int>(vertex_id(gr, v)) * 10; };
   auto view = g | basic_vertexlist(vvf);
 
   REQUIRE(size(view) == 3);
@@ -1017,7 +1017,7 @@ TEST_CASE("basic_incidence adaptor - basic pipe syntax", "[adaptors][basic_incid
 TEST_CASE("basic_incidence adaptor - with value function", "[adaptors][basic_incidence]") {
   auto g = make_test_graph();
 
-  auto evf  = [](const auto& g, auto&& e) { return static_cast<int>(target_id(g, e)) * 10; };
+  auto evf  = [](const auto& gr, auto&& e) { return static_cast<int>(target_id(gr, e)) * 10; };
   auto view = g | basic_incidence(0, evf);
 
   REQUIRE(size(view) == 2);
@@ -1076,7 +1076,7 @@ TEST_CASE("basic_neighbors adaptor - basic pipe syntax", "[adaptors][basic_neigh
 TEST_CASE("basic_neighbors adaptor - with value function", "[adaptors][basic_neighbors]") {
   auto g = make_test_graph();
 
-  auto vvf  = [](const auto& g, auto&& v) { return static_cast<int>(vertex_id(g, v)) * 10; };
+  auto vvf  = [](const auto& gr, auto&& v) { return static_cast<int>(vertex_id(gr, v)) * 10; };
   auto view = g | basic_neighbors(0, vvf);
 
   REQUIRE(size(view) == 2);
@@ -1137,7 +1137,7 @@ TEST_CASE("basic_edgelist adaptor - basic pipe syntax", "[adaptors][basic_edgeli
 TEST_CASE("basic_edgelist adaptor - with value function", "[adaptors][basic_edgelist]") {
   auto g = make_test_graph();
 
-  auto evf  = [](const auto& g, auto&& e) { return static_cast<int>(source_id(g, e) + target_id(g, e)); };
+  auto evf  = [](const auto& gr, auto&& e) { return static_cast<int>(source_id(gr, e) + target_id(gr, e)); };
   auto view = g | basic_edgelist(evf);
 
   std::vector<int> values;
@@ -1211,7 +1211,7 @@ TEST_CASE("pipe: g | out_incidence(uid)", "[adaptors][out_incidence]") {
 
 TEST_CASE("pipe: g | out_incidence(uid, evf)", "[adaptors][out_incidence]") {
   auto bg  = make_bi_graph();
-  auto evf = [](const auto& g, auto e) { return adj_list::edge_value(g, e); };
+  auto evf = [](const auto& gr, auto e) { return adj_list::edge_value(gr, e); };
   auto view = bg | out_incidence(0u, evf);
   REQUIRE(size(view) == 2);
 
@@ -1236,7 +1236,7 @@ TEST_CASE("pipe: g | in_incidence(uid)", "[adaptors][in_incidence]") {
 
 TEST_CASE("pipe: g | in_incidence(uid, evf)", "[adaptors][in_incidence]") {
   auto bg  = make_bi_graph();
-  auto evf = [](const auto& g, auto e) { return adj_list::edge_value(g, e); };
+  auto evf = [](const auto& gr, auto e) { return adj_list::edge_value(gr, e); };
   auto view = bg | in_incidence(0u, evf);
   REQUIRE(size(view) == 2);
 
@@ -1257,7 +1257,7 @@ TEST_CASE("pipe: g | basic_in_incidence(uid)", "[adaptors][basic_in_incidence]")
 
 TEST_CASE("pipe: g | basic_in_incidence(uid, evf)", "[adaptors][basic_in_incidence]") {
   auto bg  = make_bi_graph();
-  auto evf = [](const auto& g, auto e) { return adj_list::edge_value(g, e); };
+  auto evf = [](const auto& gr, auto e) { return adj_list::edge_value(gr, e); };
   auto view = bg | basic_in_incidence(0u, evf);
   REQUIRE(size(view) == 2);
 }

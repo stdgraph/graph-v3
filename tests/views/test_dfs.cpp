@@ -87,7 +87,7 @@ TEST_CASE("vertices_dfs - structured bindings", "[dfs][vertices][bindings]") {
   }
 
   SECTION("structured binding [v, val] with value function") {
-    auto dfs = vertices_dfs(g, 0, [](const auto& g, auto v) { return vertex_id(g, v) * 10; });
+    auto dfs = vertices_dfs(g, 0, [](const auto& gr, auto v) { return vertex_id(gr, v) * 10; });
 
     std::vector<std::pair<int, int>> results;
     for (auto [v, val] : dfs) {
@@ -135,7 +135,7 @@ TEST_CASE("vertices_dfs - value function types", "[dfs][vertices][vvf]") {
   Graph g     = {{1, 2}, {}, {}};
 
   SECTION("returning int") {
-    auto dfs = vertices_dfs(g, 0, [](const auto& g, auto v) { return static_cast<int>(vertex_id(g, v)); });
+    auto dfs = vertices_dfs(g, 0, [](const auto& gr, auto v) { return static_cast<int>(vertex_id(gr, v)); });
 
     int sum = 0;
     for (auto [v, val] : dfs) {
@@ -145,7 +145,7 @@ TEST_CASE("vertices_dfs - value function types", "[dfs][vertices][vvf]") {
   }
 
   SECTION("returning string") {
-    auto dfs = vertices_dfs(g, 0, [](const auto& g, auto v) { return "v" + std::to_string(vertex_id(g, v)); });
+    auto dfs = vertices_dfs(g, 0, [](const auto& gr, auto v) { return "v" + std::to_string(vertex_id(gr, v)); });
 
     std::vector<std::string> names;
     for (auto [v, name] : dfs) {
@@ -161,7 +161,7 @@ TEST_CASE("vertices_dfs - value function types", "[dfs][vertices][vvf]") {
   SECTION("capturing lambda") {
     int  multiplier = 5;
     auto dfs        = vertices_dfs(
-          g, 0, [multiplier](const auto& g, auto v) { return static_cast<int>(vertex_id(g, v)) * multiplier; });
+          g, 0, [multiplier](const auto& gr, auto v) { return static_cast<int>(vertex_id(gr, v)) * multiplier; });
 
     std::vector<int> values;
     for (auto [v, val] : dfs) {
@@ -350,8 +350,8 @@ TEST_CASE("vertices_dfs - search_view concept", "[dfs][vertices][concepts]") {
 
   // Verify accessors exist and return correct types
   REQUIRE(dfs.cancel() == cancel_search::continue_search);
-  REQUIRE(dfs.depth() >= 0);
-  REQUIRE(dfs.num_visited() >= 0);
+  REQUIRE(dfs.depth() == 0);
+  REQUIRE(dfs.num_visited() == 0);
 }
 
 // =============================================================================
@@ -573,7 +573,7 @@ TEST_CASE("edges_dfs - structured bindings", "[dfs][edges][bindings]") {
   }
 
   SECTION("structured binding [e, val] with value function") {
-    auto dfs = edges_dfs(g, 0, [](const auto& g, auto e) { return target_id(g, e) * 10; });
+    auto dfs = edges_dfs(g, 0, [](const auto& gr, auto e) { return target_id(gr, e) * 10; });
 
     std::vector<std::pair<int, int>> results;
     for (auto [e, val] : dfs) {
@@ -596,7 +596,7 @@ TEST_CASE("edges_dfs - value function types", "[dfs][edges][evf]") {
   Graph g     = {{1, 2}, {}, {}};
 
   SECTION("returning int") {
-    auto dfs = edges_dfs(g, 0, [](const auto& g, auto e) { return static_cast<int>(target_id(g, e)); });
+    auto dfs = edges_dfs(g, 0, [](const auto& gr, auto e) { return static_cast<int>(target_id(gr, e)); });
 
     int sum = 0;
     for (auto [e, val] : dfs) {
@@ -606,8 +606,8 @@ TEST_CASE("edges_dfs - value function types", "[dfs][edges][evf]") {
   }
 
   SECTION("returning string") {
-    auto dfs = edges_dfs(g, 0, [](const auto& g, auto e) {
-      return "e" + std::to_string(source_id(g, e)) + "_" + std::to_string(target_id(g, e));
+    auto dfs = edges_dfs(g, 0, [](const auto& gr, auto e) {
+      return "e" + std::to_string(source_id(gr, e)) + "_" + std::to_string(target_id(gr, e));
     });
 
     std::vector<std::string> names;
@@ -624,7 +624,7 @@ TEST_CASE("edges_dfs - value function types", "[dfs][edges][evf]") {
   SECTION("capturing lambda") {
     int  multiplier = 5;
     auto dfs        = edges_dfs(
-          g, 0, [multiplier](const auto& g, auto e) { return static_cast<int>(target_id(g, e)) * multiplier; });
+          g, 0, [multiplier](const auto& gr, auto e) { return static_cast<int>(target_id(gr, e)) * multiplier; });
 
     std::vector<int> values;
     for (auto [e, val] : dfs) {
@@ -766,8 +766,8 @@ TEST_CASE("edges_dfs - search_view concept", "[dfs][edges][concepts]") {
 
   // Verify accessors exist and return correct types
   REQUIRE(dfs.cancel() == cancel_search::continue_search);
-  REQUIRE(dfs.depth() >= 0);
-  REQUIRE(dfs.num_visited() >= 0);
+  REQUIRE(dfs.depth() == 0);
+  REQUIRE(dfs.num_visited() == 0);
 }
 
 // =============================================================================
@@ -842,7 +842,7 @@ TEST_CASE("edges_dfs - large linear graph", "[dfs][edges][performance]") {
   }
 
   int edge_count = 0;
-  for (auto [e] : edges_dfs(g, 0)) {
+  for ([[maybe_unused]] auto entry : edges_dfs(g, 0)) {
     ++edge_count;
   }
 
@@ -1186,7 +1186,7 @@ TEST_CASE("vertices_dfs - cancel with value function", "[dfs][vertices][cancel]"
   Graph g     = {{1, 2}, {3, 4}, {}, {}, {}};
 
   std::vector<std::pair<int, int>> results;
-  auto dfs = vertices_dfs(g, 0, [](const auto& g, auto v) { return static_cast<int>(vertex_id(g, v)) * 10; });
+  auto dfs = vertices_dfs(g, 0, [](const auto& gr, auto v) { return static_cast<int>(vertex_id(gr, v)) * 10; });
 
   for (auto [v, val] : dfs) {
     int vid = static_cast<int>(vertex_id(g, v));

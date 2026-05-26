@@ -17,6 +17,8 @@ using namespace graph::adj_list;
 // =============================================================================
 
 struct GraphWithDegree {
+  using vertex_id_type = size_t;
+
   std::vector<std::vector<int>> adj_list;
 
   GraphWithDegree(size_t n) : adj_list(n) {}
@@ -33,6 +35,8 @@ struct GraphWithDegree {
 
 namespace test_adl {
 struct GraphWithADLDegree {
+  using vertex_id_type = size_t;
+
   std::vector<std::vector<int>> adj_list;
 
   GraphWithADLDegree(size_t n) : adj_list(n) {}

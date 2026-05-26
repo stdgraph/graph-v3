@@ -236,7 +236,7 @@ TEST_CASE("edge_descriptor_view with vector - per-vertex adjacency", "[edge_desc
     std::size_t count = 0;
 
     for (auto ed : view) {
-      REQUIRE(ed.value() == edges_from_v5.begin() + count);
+      REQUIRE(ed.value() == std::ranges::next(edges_from_v5.begin(), static_cast<std::ptrdiff_t>(count)));
       REQUIRE(ed.source().value() == 5); // All have same source
       ++count;
     }

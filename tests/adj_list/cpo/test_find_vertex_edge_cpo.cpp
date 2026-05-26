@@ -27,6 +27,8 @@ using namespace graph::adj_list;
 // =============================================================================
 
 struct GraphWithFindEdgeMember {
+  using vertex_id_type = size_t;
+
   std::vector<std::vector<int>> adj_list;
 
   GraphWithFindEdgeMember(size_t n) : adj_list(n) {}
@@ -50,6 +52,8 @@ struct GraphWithFindEdgeMember {
 
 namespace test_adl {
 struct GraphWithADLFindEdge {
+  using vertex_id_type = size_t;
+
   std::vector<std::vector<int>> adj_list;
 
   GraphWithADLFindEdge(size_t n) : adj_list(n) {}
@@ -356,7 +360,7 @@ TEST_CASE("find_vertex_edge integrates with target() CPO", "[find_vertex_edge][c
   auto verts = vertices(graph);
   auto it    = verts.begin();
   auto v0    = *it++;
-  auto v1    = *it++;
+  ++it;
   auto v2    = *it;
 
   // Find edge 0 -> 2

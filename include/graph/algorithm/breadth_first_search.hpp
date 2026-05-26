@@ -272,11 +272,11 @@ void breadth_first_search(G&&            g, // graph
  */
 template <adjacency_list G, class Visitor = empty_visitor, class Alloc = std::allocator<std::byte>>
 void breadth_first_search(G&&                      g,      // graph
-                          const vertex_id_t<G>&    source, // starting vertex_id
+                          const vertex_id_t<G>&    start_vertex_id, // starting vertex_id
                           Visitor&&                visitor = empty_visitor(),
                           const Alloc&             alloc   = Alloc()) {
   // Wrap single source in array and delegate to multi-source version
-  std::array<vertex_id_t<G>, 1> sources{source};
+  std::array<vertex_id_t<G>, 1> sources{start_vertex_id};
   breadth_first_search(std::forward<G>(g), sources, std::forward<Visitor>(visitor), alloc);
 }
 

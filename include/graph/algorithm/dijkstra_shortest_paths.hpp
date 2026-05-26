@@ -246,7 +246,7 @@ constexpr void dijkstra_shortest_paths(
   // relaxing the target is the function of reducing the distance from the source to the target
   auto relax_target = [&g, &predecessor, &distance, &compare, &combine, &weight] //
         (const edge_t<graph_type>& uv, const vertex_id_t<graph_type>& uid) -> bool {
-    const id_type       vid  = target_id(g, uv);
+      const id_type       vid  = static_cast<id_type>(target_id(g, uv));
     const distance_type d_u  = distance(g, uid);
     const distance_type d_v  = distance(g, vid);
     const weight_type   w_uv = weight(g, uv);
@@ -555,11 +555,11 @@ requires distance_fn_for<DistanceFn, G> &&                                //
          basic_edge_weight_function<G, WF, distance_fn_value_t<DistanceFn, G>, Compare, Combine>
 constexpr void dijkstra_shortest_paths(
       G&&                   g,
-      const vertex_id_t<G>& source,
+  const vertex_id_t<G>& start_vertex_id,
       DistanceFn&&          distance,
       PredecessorFn&&       predecessor,
       WF&&                  weight =
-            [](const auto&, const edge_t<G>& uv) {
+            [](const auto&, const edge_t<G>&) {
               return distance_fn_value_t<DistanceFn, G>(1);
             }, // default weight(g, uv) -> 1
       Visitor&& visitor = empty_visitor(),
@@ -567,7 +567,7 @@ constexpr void dijkstra_shortest_paths(
       Combine&& combine = plus<distance_fn_value_t<DistanceFn, G>>(),
       Heap         heap_tag = Heap{},
       const Alloc& alloc    = Alloc()) {
-  dijkstra_shortest_paths(g, subrange(&source, (&source + 1)), distance, predecessor, weight,
+  dijkstra_shortest_paths(g, subrange(&start_vertex_id, (&start_vertex_id + 1)), distance, predecessor, weight,
                           forward<Visitor>(visitor), forward<Compare>(compare), forward<Combine>(combine),
                           heap_tag, alloc);
 }
@@ -624,7 +624,7 @@ constexpr void dijkstra_shortest_distances(
       const Sources& sources,
       DistanceFn&&   distance,
       WF&&           weight =
-            [](const auto&, const edge_t<G>& uv) {
+            [](const auto&, const edge_t<G>&) {
               return distance_fn_value_t<DistanceFn, G>(1);
             }, // default weight(g, uv) -> 1
       Visitor&& visitor = empty_visitor(),
@@ -662,10 +662,10 @@ requires distance_fn_for<DistanceFn, G> &&                                      
          basic_edge_weight_function<G, WF, distance_fn_value_t<DistanceFn, G>, Compare, Combine>
 constexpr void dijkstra_shortest_distances(
       G&&                   g,
-      const vertex_id_t<G>& source,
+  const vertex_id_t<G>& start_vertex_id,
       DistanceFn&&          distance,
       WF&&                  weight =
-            [](const auto&, const edge_t<G>& uv) {
+            [](const auto&, const edge_t<G>&) {
               return distance_fn_value_t<DistanceFn, G>(1);
             }, // default weight(g, uv) -> 1
       Visitor&& visitor = empty_visitor(),
@@ -673,7 +673,7 @@ constexpr void dijkstra_shortest_distances(
       Combine&& combine = plus<distance_fn_value_t<DistanceFn, G>>(),
       Heap         heap_tag = Heap{},
       const Alloc& alloc    = Alloc()) {
-  dijkstra_shortest_paths(g, subrange(&source, (&source + 1)), distance, _null_predecessor, forward<WF>(weight),
+  dijkstra_shortest_paths(g, subrange(&start_vertex_id, (&start_vertex_id + 1)), distance, _null_predecessor, forward<WF>(weight),
                           forward<Visitor>(visitor), forward<Compare>(compare), forward<Combine>(combine),
                           heap_tag, alloc);
 }

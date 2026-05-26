@@ -99,7 +99,7 @@ TEST_CASE("bidirectional_adjacency_list runtime validation",
   auto verts = vertices(g);
   auto it    = verts.begin();
   auto v0    = *it++;
-  auto v1    = *it++;
+  ++it;
   auto v2    = *it++;
 
   // Verify in_edges returns correct incoming edges

@@ -25,17 +25,20 @@ using namespace graph::test::algorithm;
 // Verify that the ordering is valid: for every edge (u,v), u appears before v
 template <typename G, typename Order>
 bool is_valid_topological_order(const G& g, const Order& order) {
+  using id_type = vertex_id_t<G>;
+
   // Build position map
-  std::unordered_map<uint32_t, size_t> position;
+  std::unordered_map<id_type, size_t> position;
   for (size_t i = 0; i < order.size(); ++i) {
-    position[order[i]] = i;
+    position[static_cast<id_type>(order[i])] = i;
   }
 
   // Check every edge
   for (auto uid : order) {
-    for (auto&& [vid] : views::basic_incidence(g, uid)) {
+    const id_type uid_key = static_cast<id_type>(uid);
+    for (auto&& [vid] : views::basic_incidence(g, uid_key)) {
       // If target is in the ordering, it must come after source
-      if (position.count(vid) && position[uid] >= position[vid]) {
+      if (position.count(vid) && position[uid_key] >= position[vid]) {
         return false;
       }
     }
@@ -92,8 +95,8 @@ TEST_CASE("topological_sort full-graph - disconnected components", "[algorithm][
   REQUIRE(is_valid_topological_order(g, order));
 
   // All vertices should be present
-  std::set<uint32_t> vertices(order.begin(), order.end());
-  REQUIRE(vertices.size() == 4);
+  std::set<uint32_t> vertex_set(order.begin(), order.end());
+  REQUIRE(vertex_set.size() == 4);
 }
 
 TEST_CASE("topological_sort full-graph - cycle detection", "[algorithm][topological_sort][full_graph][cycle]") {
@@ -135,8 +138,8 @@ TEST_CASE("topological_sort full-graph - complex DAG multiple paths", "[algorith
   REQUIRE(is_valid_topological_order(g, order));
 
   // Verify all vertices present
-  std::set<uint32_t> vertices(order.begin(), order.end());
-  REQUIRE(vertices == std::set<uint32_t>{0, 1, 2, 3});
+  std::set<uint32_t> vertex_set(order.begin(), order.end());
+  REQUIRE(vertex_set == std::set<uint32_t>{0, 1, 2, 3});
   REQUIRE(order.front() == 0);
   REQUIRE(order.back() == 3);
 }
@@ -714,16 +717,16 @@ TEMPLATE_TEST_CASE("topological_sort - sparse single-source DAG",
                    SPARSE_VERTEX_TYPES) {
   using Graph = TestType;
   auto g      = map_fixtures::dag_graph<Graph>();
-  auto source = map_fixtures::bfs_source<Graph>();
+  auto start_vertex = map_fixtures::bfs_source<Graph>();
 
   using vid_t = vertex_id_t<Graph>;
   std::vector<vid_t> order;
-  bool success = topological_sort(g, source, std::back_inserter(order));
+  bool success = topological_sort(g, start_vertex, std::back_inserter(order));
 
   REQUIRE(success);
   REQUIRE(order.size() == 4); // root reaches all 4 vertices in dag
   REQUIRE(is_valid_topo_order_generic(g, order));
-  REQUIRE(order.front() == source);
+  REQUIRE(order.front() == start_vertex);
 }
 
 TEMPLATE_TEST_CASE("topological_sort - sparse multi-source partial reachability",

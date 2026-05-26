@@ -119,7 +119,7 @@ private:
 
   // ── Private helpers ───────────────────────────────────────────────────────
   template <std::ranges::forward_range ERng, class EProj>
-  vertex_id_type max_vertex_id(const ERng& erng, const EProj& eproj) const {
+  vertex_id_type max_vertex_id(const ERng& erng, const EProj& /*eproj*/) const {
     vertex_id_type max_vid = 0;
     for (auto&& e : erng)
       max_vid = std::max(max_vid, std::max(e.source_id, e.target_id));
@@ -143,12 +143,12 @@ private:
   // find_vertex(g, uid) — construct a vertex_descriptor_view iterator
   // directly from the index.  For random-access backing the iterator stores
   // just a size_t, so it is safe to return from a temporary view.
-  friend auto find_vertex(graph_type& g, vertex_id_type uid) {
+  friend auto find_vertex(graph_type& /*g*/, vertex_id_type uid) {
     using Iter = std::ranges::iterator_t<vertices_range>;
     using VDV  = graph::adj_list::vertex_descriptor_view<Iter>;
     return typename VDV::iterator{static_cast<typename VDV::storage_type>(uid)};
   }
-  friend auto find_vertex(const graph_type& g, vertex_id_type uid) {
+  friend auto find_vertex(const graph_type& /*g*/, vertex_id_type uid) {
     using Iter = std::ranges::iterator_t<const vertices_range>;
     using VDV  = graph::adj_list::vertex_descriptor_view<Iter>;
     return typename VDV::iterator{static_cast<typename VDV::storage_type>(uid)};
@@ -171,7 +171,7 @@ private:
 
   // target_id(g, uv) — uv is an edge_descriptor; *uv.value() is the raw edge.
   template <class EDesc>
-  friend auto target_id(const graph_type& g, const EDesc& uv) noexcept
+  friend auto target_id(const graph_type& /*g*/, const EDesc& uv) noexcept
         -> decltype(static_cast<vertex_id_type>(std::get<0>(to_tuple(*uv.value())))) {
     return static_cast<vertex_id_type>(std::get<0>(to_tuple(*uv.value())));
   }
@@ -193,7 +193,7 @@ private:
     return std::get<1>(to_tuple(*uv.value()));
   }
   template <class EDesc>
-  friend auto edge_value(const graph_type& g, const EDesc& uv)
+  friend auto edge_value(const graph_type& /*g*/, const EDesc& uv)
         -> decltype(std::get<1>(to_tuple(*uv.value()))) {
     return std::get<1>(to_tuple(*uv.value()));
   }

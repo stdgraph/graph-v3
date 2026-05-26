@@ -76,7 +76,7 @@ TEST_CASE("incidence - vertex with single edge", "[incidence][single]") {
 
   SECTION("with value function") {
     auto v0    = vertex_t<Graph>{0};
-    auto ilist = incidence(g, v0, [](const auto& g, auto e) { return target_id(g, e) * 10; });
+    auto ilist = incidence(g, v0, [](const auto& gr, auto e) { return target_id(gr, e) * 10; });
 
     REQUIRE(ilist.size() == 1);
 
@@ -114,7 +114,7 @@ TEST_CASE("incidence - vertex with multiple edges", "[incidence][multiple]") {
 
   SECTION("with value function") {
     auto v1    = vertex_t<Graph>{1};
-    auto ilist = incidence(g, v1, [](const auto& g, auto e) { return static_cast<int>(target_id(g, e) * 100); });
+    auto ilist = incidence(g, v1, [](const auto& gr, auto e) { return static_cast<int>(target_id(gr, e) * 100); });
 
     std::vector<int> values;
     for (auto ei : ilist) {
@@ -137,7 +137,7 @@ TEST_CASE("incidence - vertex with multiple edges", "[incidence][multiple]") {
 
   SECTION("structured binding - with value function") {
     auto v0    = vertex_t<Graph>{0};
-    auto ilist = incidence(g, v0, [](const auto& g, auto e) { return target_id(g, e) + 100; });
+    auto ilist = incidence(g, v0, [](const auto& gr, auto e) { return target_id(gr, e) + 100; });
 
     std::vector<int> edge_targets;
     std::vector<int> values;
@@ -163,7 +163,7 @@ TEST_CASE("incidence - value function types", "[incidence][evf]") {
   auto  v0    = vertex_t<Graph>{0};
 
   SECTION("returning string") {
-    auto ilist = incidence(g, v0, [](const auto& g, auto e) { return "edge_to_" + std::to_string(target_id(g, e)); });
+    auto ilist = incidence(g, v0, [](const auto& gr, auto e) { return "edge_to_" + std::to_string(target_id(gr, e)); });
 
     std::vector<std::string> names;
     for (auto [tid, e, name] : ilist) {
@@ -174,7 +174,7 @@ TEST_CASE("incidence - value function types", "[incidence][evf]") {
   }
 
   SECTION("returning double") {
-    auto ilist = incidence(g, v0, [](const auto& g, auto e) { return static_cast<double>(target_id(g, e)) * 1.5; });
+    auto ilist = incidence(g, v0, [](const auto& gr, auto e) { return static_cast<double>(target_id(gr, e)) * 1.5; });
 
     std::vector<double> values;
     for (auto [tid, e, val] : ilist) {
@@ -188,7 +188,7 @@ TEST_CASE("incidence - value function types", "[incidence][evf]") {
   SECTION("capturing lambda") {
     int  multiplier = 7;
     auto ilist      = incidence(
-          g, v0, [multiplier](const auto& g, auto e) { return static_cast<int>(target_id(g, e) * multiplier); });
+          g, v0, [multiplier](const auto& gr, auto e) { return static_cast<int>(target_id(gr, e) * multiplier); });
 
     std::vector<int> values;
     for (auto [tid, e, val] : ilist) {
@@ -259,8 +259,8 @@ TEST_CASE("incidence - weighted graph", "[incidence][weighted]") {
 
   SECTION("value function accessing edge weight") {
     auto v0    = vertex_t<Graph>{0};
-    auto ilist = incidence(g, v0, [](const auto& g, auto e) {
-      return edge_value(g, e); // Get the weight
+    auto ilist = incidence(g, v0, [](const auto& gr, auto e) {
+      return edge_value(gr, e); // Get the weight
     });
 
     std::vector<double> weights;
@@ -292,7 +292,7 @@ TEST_CASE("incidence - range concepts", "[incidence][concepts]") {
   }
 
   SECTION("with value function") {
-    auto ilist = incidence(g, v0, [](const auto& g, auto e) { return target_id(g, e); });
+    auto ilist = incidence(g, v0, [](const auto& gr, auto e) { return target_id(gr, e); });
 
     STATIC_REQUIRE(std::ranges::input_range<decltype(ilist)>);
     STATIC_REQUIRE(std::ranges::forward_range<decltype(ilist)>);
@@ -502,8 +502,8 @@ TEST_CASE("incidence - map vertices vector edges", "[incidence][map]") {
     auto verts = vertices(g);
     auto v100  = *verts.begin();
 
-    auto ilist = incidence(g, v100, [](const auto& g, auto e) {
-      return target_id(g, e) - 100; // Offset from base
+    auto ilist = incidence(g, v100, [](const auto& gr, auto e) {
+      return target_id(gr, e) - 100; // Offset from base
     });
 
     std::vector<int> offsets;
@@ -560,7 +560,7 @@ TEST_CASE("incidence - vector vertices map edges", "[incidence][edge_map]") {
 
   SECTION("accessing edge weights via edge_value") {
     auto v0    = vertex_t<Graph>{0};
-    auto ilist = incidence(g, v0, [](const auto& g, auto e) { return edge_value(g, e); });
+    auto ilist = incidence(g, v0, [](const auto& gr, auto e) { return edge_value(gr, e); });
 
     std::vector<double> weights;
     for (auto [tid, e, w] : ilist) {
@@ -616,7 +616,7 @@ TEST_CASE("incidence - map vertices map edges", "[incidence][map][edge_map]") {
     auto verts = vertices(g);
     auto v10   = *verts.begin();
 
-    auto ilist = incidence(g, v10, [](const auto& g, auto e) { return edge_value(g, e); });
+    auto ilist = incidence(g, v10, [](const auto& gr, auto e) { return edge_value(gr, e); });
 
     std::vector<double> weights;
     for (auto [tid, e, w] : ilist) {
@@ -642,7 +642,7 @@ TEST_CASE("incidence - map vertices map edges", "[incidence][map][edge_map]") {
     std::vector<std::tuple<int, int, double>> all_edges;
 
     for (auto [id, v] : vertexlist(g)) {
-      for (auto [tid, e, w] : incidence(g, v, [](const auto& g, auto e) { return edge_value(g, e); })) {
+      for (auto [tid, e, w] : incidence(g, v, [](const auto& gr, auto e) { return edge_value(gr, e); })) {
         all_edges.emplace_back(source_id(g, e), tid, w);
       }
     }
@@ -740,7 +740,7 @@ TEST_CASE("incidence - undirected_adjacency_list basic", "[incidence][undirected
     auto v0_it = find_vertex(g, 0u);
     auto v0    = *v0_it;
 
-    auto inc = incidence(g, v0, [](const auto& g, auto e) { return edge_value(g, e); });
+    auto inc = incidence(g, v0, [](const auto& gr, auto e) { return edge_value(gr, e); });
 
     std::vector<int>          weights;
     std::vector<unsigned int> targets;
@@ -835,7 +835,7 @@ TEST_CASE("incidence - undirected_adjacency_list range algorithms", "[incidence]
   }
 
   SECTION("std::ranges::count_if - count edges with weight > 20") {
-    auto inc = incidence(g, v0, [](const auto& g, auto e) { return edge_value(g, e); });
+    auto inc = incidence(g, v0, [](const auto& gr, auto e) { return edge_value(gr, e); });
 
     auto count = std::ranges::count_if(inc, [](auto ei) { return ei.value > 20; });
 
@@ -843,7 +843,7 @@ TEST_CASE("incidence - undirected_adjacency_list range algorithms", "[incidence]
   }
 
   SECTION("std::ranges::for_each - sum weights") {
-    auto inc = incidence(g, v0, [](const auto& g, auto e) { return edge_value(g, e); });
+    auto inc = incidence(g, v0, [](const auto& gr, auto e) { return edge_value(gr, e); });
 
     int total_weight = 0;
     std::ranges::for_each(inc, [&total_weight](auto ei) { total_weight += ei.value; });
@@ -852,7 +852,7 @@ TEST_CASE("incidence - undirected_adjacency_list range algorithms", "[incidence]
   }
 
   SECTION("range-based for with structured bindings") {
-    auto inc = incidence(g, v0, [](const auto& g, auto e) { return std::to_string(edge_value(g, e)); });
+    auto inc = incidence(g, v0, [](const auto& gr, auto e) { return std::to_string(edge_value(gr, e)); });
 
     std::vector<std::string> weight_strs;
     for (auto [tid, e, w_str] : inc) {

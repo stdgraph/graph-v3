@@ -100,7 +100,7 @@ TEST_CASE("unified header - all search views accessible", "[unified][search_view
 TEST_CASE("unified header - value functions work", "[unified][value_functions]") {
   auto g = make_test_graph();
 
-  auto vvf = [](const auto& g, auto v) { return vertex_id(g, v) * 10; };
+  auto vvf = [](const auto& gr, auto v) { return vertex_id(gr, v) * 10; };
 
   std::vector<int> values;
   for (auto [id, v, val] : g | vertexlist(vvf)) {

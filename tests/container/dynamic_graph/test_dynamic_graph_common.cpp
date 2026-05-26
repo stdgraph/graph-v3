@@ -2251,10 +2251,7 @@ TEMPLATE_TEST_CASE("unordered edge loading",
   REQUIRE(g.size() == 6);
   // Verify vertex 5 exists and has edges
   auto&  v5         = g[5];
-  size_t edge_count = 0;
-  for (auto& e : v5.edges()) {
-    ++edge_count;
-  }
+  size_t edge_count = static_cast<size_t>(std::ranges::distance(v5.edges()));
   REQUIRE(edge_count >= 1);
 }
 

@@ -85,7 +85,7 @@ TEST_CASE("vertices_topological_sort - structured binding [v, val]", "[topo][ver
   Graph g     = {{1, 2}, {}, {}};
 
   auto topo =
-        vertices_topological_sort(g, [](const auto& g, auto v) { return static_cast<int>(vertex_id(g, v)) * 10; });
+      vertices_topological_sort(g, [](const auto& gr, auto v) { return static_cast<int>(vertex_id(gr, v)) * 10; });
 
   std::vector<int> values;
   for (auto [v, val] : topo) {
@@ -104,9 +104,9 @@ TEST_CASE("vertices_topological_sort - value function receives descriptor", "[to
   Graph g     = {{1}, {2}, {}};
 
   // Value function receives descriptor, not ID
-  auto topo = vertices_topological_sort(g, [](const auto& g, auto v) {
+  auto topo = vertices_topological_sort(g, [](const auto& gr, auto v) {
     // Can use vertex_id to convert descriptor to ID
-    return static_cast<int>(vertex_id(g, v)) * 100;
+    return static_cast<int>(vertex_id(gr, v)) * 100;
   });
 
   std::vector<int> values;
@@ -249,7 +249,7 @@ TEST_CASE("vertices_topological_sort - size accessor", "[topo][vertices]") {
   REQUIRE(topo.size() == 4);
 
   int count = 0;
-  for (auto [v] : topo) {
+  for ([[maybe_unused]] auto entry : topo) {
     ++count;
   }
 
@@ -323,7 +323,7 @@ TEST_CASE("edges_topological_sort - num_visited tracks source vertices step-by-s
 
   // Iterate all edges
   int edge_count = 0;
-  for (auto [e] : topo_edges) {
+  for ([[maybe_unused]] auto entry : topo_edges) {
     ++edge_count;
   }
 
@@ -362,7 +362,7 @@ TEST_CASE("edges_topological_sort - num_visited on all-leaf graph (no edges)", "
 
   // No edges to iterate
   int edge_count = 0;
-  for (auto [e] : topo_edges) {
+  for ([[maybe_unused]] auto entry : topo_edges) {
     ++edge_count;
   }
 
@@ -388,7 +388,7 @@ TEST_CASE("edges_topological_sort - num_visited with leading edgeless vertices",
   REQUIRE(topo_edges.num_visited() == 0);
 
   int edge_count = 0;
-  for (auto [e] : topo_edges) {
+  for ([[maybe_unused]] auto entry : topo_edges) {
     ++edge_count;
   }
 
@@ -403,7 +403,7 @@ TEST_CASE("edges_topological_sort - num_visited on empty graph", "[topo][edges]"
   auto topo_edges = edges_topological_sort(g);
   REQUIRE(topo_edges.num_visited() == 0);
 
-  for (auto [e] : topo_edges) {
+  for ([[maybe_unused]] auto entry : topo_edges) {
     REQUIRE(false); // Should not execute
   }
 
@@ -420,7 +420,7 @@ TEST_CASE("edges_topological_sort EVF - num_visited tracks source vertices", "[t
   REQUIRE(topo_edges.num_visited() == 0);
 
   int edge_count = 0;
-  for (auto [e, val] : topo_edges) {
+  for ([[maybe_unused]] auto entry : topo_edges) {
     ++edge_count;
   }
 
@@ -448,7 +448,7 @@ TEST_CASE("edges_topological_sort EVF - num_visited on all-leaf graph", "[topo][
   REQUIRE(topo_edges.num_visited() == 0);
 
   int edge_count = 0;
-  for (auto [e, val] : topo_edges) {
+  for ([[maybe_unused]] auto entry : topo_edges) {
     ++edge_count;
   }
 
@@ -521,7 +521,7 @@ TEST_CASE("vertices_topological_sort - num_visited on empty graph", "[topo][vert
   REQUIRE(topo.num_visited() == 0);
   REQUIRE(topo.size() == 0);
 
-  for (auto [v] : topo) {
+  for ([[maybe_unused]] auto entry : topo) {
     // Should not execute
     REQUIRE(false);
   }
@@ -623,9 +623,11 @@ TEST_CASE("edges_topological_sort - simple DAG", "[topo][edges]") {
 TEST_CASE("edges_topological_sort - diamond DAG", "[topo][edges]") {
   using Graph = std::vector<std::vector<int>>;
   //    0
-  //   / \
-    //  1   2
-  //   \ /
+  /*
+   *   / \
+   *  1   2
+   *   \ /
+   */
   //    3
   Graph g = {{1, 2}, {3}, {3}, {}};
 
@@ -652,7 +654,7 @@ TEST_CASE("edges_topological_sort - structured binding with value", "[topo][edge
   Graph g = {{1}, {2}, {}};
 
   std::vector<std::tuple<int, int, int>> edges_with_values;
-  for (auto [e, val] : edges_topological_sort(g, [](const auto&, auto ed) { return 42; })) {
+  for (auto [e, val] : edges_topological_sort(g, [](const auto&, auto) { return 42; })) {
     edges_with_values.emplace_back(source_id(g, e), target_id(g, e), val);
   }
 
@@ -669,7 +671,7 @@ TEST_CASE("edges_topological_sort - value function receives descriptor", "[topo]
 
   std::vector<int> edge_ids;
   for (auto [e, id] :
-       edges_topological_sort(g, [](const auto& g, auto ed) { return source_id(g, ed) * 10 + target_id(g, ed); })) {
+      edges_topological_sort(g, [](const auto& gr, auto ed) { return source_id(gr, ed) * 10 + target_id(gr, ed); })) {
     edge_ids.push_back(id);
   }
 
@@ -681,13 +683,15 @@ TEST_CASE("edges_topological_sort - value function receives descriptor", "[topo]
 TEST_CASE("edges_topological_sort - complex DAG", "[topo][edges]") {
   using Graph = std::vector<std::vector<int>>;
   //    0
-  //   / \
-    //  1   2
-  //  |\ /|
-  //  | X |
-  //  |/ \|
-  //  3   4
-  //   \ /
+  /*
+   *   / \
+   *  1   2
+   * |\ /|
+   * | X |
+   * |/ \|
+   * 3   4
+   *  \ /
+   */
   //    5
   Graph g = {
         {1, 2}, // 0
@@ -744,7 +748,7 @@ TEST_CASE("edges_topological_sort - empty graph", "[topo][edges]") {
   Graph g;
 
   int count = 0;
-  for (auto [e] : edges_topological_sort(g)) {
+  for ([[maybe_unused]] auto entry : edges_topological_sort(g)) {
     ++count;
   }
 
@@ -757,7 +761,7 @@ TEST_CASE("edges_topological_sort - graph with no edges", "[topo][edges]") {
   Graph g = {{}, {}, {}};
 
   int count = 0;
-  for (auto [e] : edges_topological_sort(g)) {
+  for ([[maybe_unused]] auto entry : edges_topological_sort(g)) {
     ++count;
   }
 
@@ -1002,7 +1006,7 @@ TEST_CASE("vertices_topological_sort_safe - with value function on DAG", "[topo]
   // DAG: 0 -> 1 -> 2
   Graph g = {{1}, {2}, {}};
 
-  auto result = vertices_topological_sort_safe(g, [](const auto&, auto v) { return 42; });
+  auto result = vertices_topological_sort_safe(g, [](const auto&, auto) { return 42; });
 
   REQUIRE(result.has_value());
 
@@ -1022,7 +1026,7 @@ TEST_CASE("vertices_topological_sort_safe - with value function on cycle", "[top
   // Cycle: 0 -> 1 -> 2 -> 0
   Graph g = {{1}, {2}, {0}};
 
-  auto result = vertices_topological_sort_safe(g, [](const auto&, auto v) { return 99; });
+  auto result = vertices_topological_sort_safe(g, [](const auto&, auto) { return 99; });
 
   REQUIRE(!result.has_value());
 }
@@ -1043,9 +1047,11 @@ TEST_CASE("vertices_topological_sort_safe - detects cycle with tail", "[topo][ve
 TEST_CASE("vertices_topological_sort_safe - diamond DAG", "[topo][vertices][safe]") {
   using Graph = std::vector<std::vector<int>>;
   //    0
-  //   / \
-    //  1   2
-  //   \ /
+  /*
+   *   / \
+   *  1   2
+   *   \ /
+   */
   //    3
   Graph g = {{1, 2}, {3}, {3}, {}};
 
@@ -1098,7 +1104,7 @@ TEST_CASE("edges_topological_sort_safe - with value function", "[topo][edges][sa
   // DAG: 0 -> 1 -> 2
   Graph g = {{1}, {2}, {}};
 
-  auto result = edges_topological_sort_safe(g, [](const auto&, auto e) { return 7; });
+  auto result = edges_topological_sort_safe(g, [](const auto&, auto) { return 7; });
 
   REQUIRE(result.has_value());
 

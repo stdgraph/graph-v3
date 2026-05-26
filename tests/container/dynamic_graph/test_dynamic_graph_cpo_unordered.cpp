@@ -680,7 +680,6 @@ TEMPLATE_TEST_CASE("unordered CPO edges(g, uid)", "[dynamic_graph][cpo][edges]",
   }
 
   SECTION("with edge values") {
-    using Graph_int_ev = typename Types::int_ev;
     Graph_int_ev g;
     g.resize_vertices(3);
 
@@ -722,7 +721,6 @@ TEMPLATE_TEST_CASE("unordered CPO edges(g, uid)", "[dynamic_graph][cpo][edges]",
   }
 
   SECTION("with parallel edges") {
-    using Graph_int_ev = typename Types::int_ev;
     Graph_int_ev g;
     g.resize_vertices(3);
 
@@ -743,7 +741,6 @@ TEMPLATE_TEST_CASE("unordered CPO edges(g, uid)", "[dynamic_graph][cpo][edges]",
   }
 
   SECTION("consistency with edges(g, u)") {
-    using Graph_int_ev = typename Types::int_ev;
     Graph_int_ev g;
     g.resize_vertices(4);
 

@@ -165,7 +165,7 @@ using adj_list::find_vertex;
 
 template <adjacency_list G, class Visitor = empty_visitor, class Alloc = std::allocator<std::byte>>
 void depth_first_search(G&&                   g,      // graph
-                        const vertex_id_t<G>& source, // starting vertex_id
+                        const vertex_id_t<G>& start_vertex_id, // starting vertex_id
                         Visitor&&             visitor = empty_visitor(),
                         const Alloc&          alloc   = Alloc()) {
   using id_type = vertex_id_t<G>;
@@ -188,23 +188,23 @@ void depth_first_search(G&&                   g,      // graph
 
   // Initialize source vertex
   if constexpr (has_on_initialize_vertex<G, Visitor>) {
-    visitor.on_initialize_vertex(g, *find_vertex(g, source));
+    visitor.on_initialize_vertex(g, *find_vertex(g, start_vertex_id));
   } else if constexpr (has_on_initialize_vertex_id<G, Visitor>) {
-    visitor.on_initialize_vertex(g, source);
+    visitor.on_initialize_vertex(g, start_vertex_id);
   }
 
   // Notify visitor that we're starting from this source
   if constexpr (has_on_start_vertex<G, Visitor>) {
-    auto src_vertex = *find_vertex(g, source);
+    auto src_vertex = *find_vertex(g, start_vertex_id);
     visitor.on_start_vertex(g, src_vertex);
   } else if constexpr (has_on_start_vertex_id<G, Visitor>) {
-    visitor.on_start_vertex(g, source);
+    visitor.on_start_vertex(g, start_vertex_id);
   }
 
   // Each stack frame stores a vertex and iterators into its incidence range,
   // simulating the call stack of recursive DFS for correct edge classification.
 
-  using inc_range_t    = decltype(views::incidence(g, *find_vertex(g, source)));
+  using inc_range_t    = decltype(views::incidence(g, *find_vertex(g, start_vertex_id)));
   using inc_iterator_t = std::ranges::iterator_t<inc_range_t>;
   using inc_sentinel_t = std::ranges::sentinel_t<inc_range_t>;
 
@@ -215,18 +215,18 @@ void depth_first_search(G&&                   g,      // graph
   };
 
   // Discover source and push its stack frame
-  color[source] = Color::Gray;
+  color[start_vertex_id] = Color::Gray;
   if constexpr (has_on_discover_vertex<G, Visitor>) {
-    visitor.on_discover_vertex(g, *find_vertex(g, source));
+    visitor.on_discover_vertex(g, *find_vertex(g, start_vertex_id));
   } else if constexpr (has_on_discover_vertex_id<G, Visitor>) {
-    visitor.on_discover_vertex(g, source);
+    visitor.on_discover_vertex(g, start_vertex_id);
   }
 
   using FrameAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<StackFrame>;
   std::stack<StackFrame, std::deque<StackFrame, FrameAlloc>> S{std::deque<StackFrame, FrameAlloc>(FrameAlloc(alloc))};
   {
-    auto inc = views::incidence(g, *find_vertex(g, source));
-    S.push({source, std::ranges::begin(inc), std::ranges::end(inc)});
+    auto inc = views::incidence(g, *find_vertex(g, start_vertex_id));
+    S.push({start_vertex_id, std::ranges::begin(inc), std::ranges::end(inc)});
   }
 
   while (!S.empty()) {
@@ -272,19 +272,19 @@ void depth_first_search(G&&                   g,      // graph
       }
       auto inc = views::incidence(g, *find_vertex(g, vid));
       S.push({vid, std::ranges::begin(inc), std::ranges::end(inc)});
-    } else if (target_color == Color::Gray) {
-      // Back edge: target is an ancestor still being processed (cycle)
-      if constexpr (has_on_back_edge<G, Visitor>) {
-        visitor.on_back_edge(g, uv);
-      }
-      if constexpr (has_on_finish_edge<G, Visitor>) {
-        visitor.on_finish_edge(g, uv);
-      }
     } else {
-      // Forward or cross edge: target is already finished (Black)
-      if constexpr (has_on_forward_or_cross_edge<G, Visitor>) {
-        visitor.on_forward_or_cross_edge(g, uv);
+      if (target_color == Color::Gray) {
+        // Back edge: target is an ancestor still being processed (cycle)
+        if constexpr (has_on_back_edge<G, Visitor>) {
+          visitor.on_back_edge(g, uv);
+        }
+      } else {
+        // Forward or cross edge: target is already finished (Black)
+        if constexpr (has_on_forward_or_cross_edge<G, Visitor>) {
+          visitor.on_forward_or_cross_edge(g, uv);
+        }
       }
+
       if constexpr (has_on_finish_edge<G, Visitor>) {
         visitor.on_finish_edge(g, uv);
       }

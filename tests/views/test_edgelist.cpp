@@ -859,7 +859,7 @@ TEST_CASE("edgelist - edge_list with string vertex IDs", "[edgelist][edge_list][
   }
 
   SECTION("with value function creating labels") {
-    auto elist = edgelist(el, [](auto& el, auto e) { return source_id(el, e) + "->" + target_id(el, e); });
+    auto elist = edgelist(el, [](auto& edge_list_ref, auto e) { return source_id(edge_list_ref, e) + "->" + target_id(edge_list_ref, e); });
 
     std::vector<std::string> labels;
     for (auto [sid, tid, e, label] : elist) {

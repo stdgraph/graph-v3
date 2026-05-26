@@ -31,16 +31,16 @@ class _null_range_type : public std::vector<size_t> {
 
 public:
   _null_range_type() noexcept(noexcept(Allocator())) = default;
-  explicit _null_range_type(const Allocator& alloc) noexcept {}
-  _null_range_type(Base::size_type count, const T& value, const Allocator& alloc = Allocator()) {}
-  explicit _null_range_type(Base::size_type count, const Allocator& alloc = Allocator()) {}
+  explicit _null_range_type(const Allocator& /*alloc*/) noexcept {}
+  _null_range_type(Base::size_type /*count*/, const T& /*value*/, const Allocator& /*alloc*/ = Allocator()) {}
+  explicit _null_range_type(Base::size_type /*count*/, const Allocator& /*alloc*/ = Allocator()) {}
   template <class InputIt>
-  _null_range_type(InputIt first, InputIt last, const Allocator& alloc = Allocator()) {}
-  _null_range_type(const _null_range_type& other) : Base() {}
-  _null_range_type(const _null_range_type& other, const Allocator& alloc) {}
-  _null_range_type(_null_range_type&& other) noexcept {}
-  _null_range_type(_null_range_type&& other, const Allocator& alloc) {}
-  _null_range_type(std::initializer_list<T> init, const Allocator& alloc = Allocator()) {}
+  _null_range_type(InputIt /*first*/, InputIt /*last*/, const Allocator& /*alloc*/ = Allocator()) {}
+  _null_range_type(const _null_range_type& /*other*/) : Base() {}
+  _null_range_type(const _null_range_type& /*other*/, const Allocator& /*alloc*/) {}
+  _null_range_type(_null_range_type&& /*other*/) noexcept {}
+  _null_range_type(_null_range_type&& /*other*/, const Allocator& /*alloc*/) {}
+  _null_range_type(std::initializer_list<T> /*init*/, const Allocator& /*alloc*/ = Allocator()) {}
 };
 
 inline static _null_range_type null_predecessors;
@@ -99,7 +99,7 @@ void dijkstra_clrs(
 
   // Remark(Andrew): Do we want to allow null distance?  What about if both are null?  Still run algorithm at all?
 
-  size_t N(num_vertices(g));
+  [[maybe_unused]] size_t N(num_vertices(g));
   assert(seed < N && seed >= 0);
 
   std::ranges::fill(distance, std::numeric_limits<weight_type>::max());
