@@ -773,7 +773,7 @@ template <typename EV,
           integral VId,
           template <typename V, typename A> class VContainer,
           typename Alloc>
-ual_vertex<EV, VV, GV, VId, VContainer, Alloc>::ual_vertex([[maybe_unused]] vertex_set&  vertices,
+ual_vertex<EV, VV, GV, VId, VContainer, Alloc>::ual_vertex([[maybe_unused]] vertex_set&  vertex_store,
                                                            [[maybe_unused]] vertex_index index) {}
 template <typename EV,
           typename VV,
@@ -781,7 +781,7 @@ template <typename EV,
           integral VId,
           template <typename V, typename A> class VContainer,
           typename Alloc>
-ual_vertex<EV, VV, GV, VId, VContainer, Alloc>::ual_vertex([[maybe_unused]] vertex_set&  vertices,
+ual_vertex<EV, VV, GV, VId, VContainer, Alloc>::ual_vertex([[maybe_unused]] vertex_set&  vertex_store,
                                                            [[maybe_unused]] vertex_index index,
                                                            const vertex_value_type&      val)
       : base_value_type(val) {}
@@ -791,7 +791,7 @@ template <typename EV,
           integral VId,
           template <typename V, typename A> class VContainer,
           typename Alloc>
-ual_vertex<EV, VV, GV, VId, VContainer, Alloc>::ual_vertex([[maybe_unused]] vertex_set&  vertices,
+ual_vertex<EV, VV, GV, VId, VContainer, Alloc>::ual_vertex([[maybe_unused]] vertex_set&  vertex_store,
                                                            [[maybe_unused]] vertex_index index,
                                                            vertex_value_type&&           val) noexcept
       : base_value_type(move(val)) {}
