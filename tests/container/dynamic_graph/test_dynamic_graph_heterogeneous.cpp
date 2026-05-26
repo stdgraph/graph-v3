@@ -1,5 +1,4 @@
 #include <catch2/catch_test_macros.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <graph/container/traits/vov_graph_traits.hpp>
 #include <graph/container/traits/mos_graph_traits.hpp>
 #include <graph/container/traits/dofl_graph_traits.hpp>
@@ -13,14 +12,14 @@ using namespace graph::adj_list;
 using namespace graph::container;
 
 // Type aliases for different graph types
-using vov_uint = dynamic_graph<void, void, void, uint64_t, false, vov_graph_traits<void, void, void, uint64_t, false>>;
+using vov_uint = vov_graph<void, void, void, uint64_t>;
 
 using mos_string =
-      dynamic_graph<void, void, void, std::string, false, mos_graph_traits<void, void, void, std::string, false>>;
+      mos_graph<void, void, void, std::string>;
 
-using dofl_int = dynamic_graph<void, void, void, int, false, dofl_graph_traits<void, void, void, int, false>>;
+using dofl_int = dofl_graph<void, void, void, int>;
 
-using dov_uint = dynamic_graph<void, void, void, uint64_t, false, dov_graph_traits<void, void, void, uint64_t, false>>;
+using dov_uint = dov_graph<void, void, void, uint64_t>;
 
 // Type alias for graph containers
 using copyable_edge_uint     = copyable_edge_t<uint64_t, void>;

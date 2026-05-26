@@ -15,7 +15,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <graph/graph.hpp>
 #include <graph/views/transpose.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <graph/container/traits/vov_graph_traits.hpp>
 #include <algorithm>
 #include <list>

@@ -12,7 +12,6 @@
 #include <vector>
 #include <limits>
 #include "graph/graph.hpp"
-#include "graph/container/dynamic_graph.hpp"
 #include "graph/container/traits/vol_graph_traits.hpp"
 #include "dijkstra_clrs.hpp"
 

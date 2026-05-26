@@ -7,7 +7,6 @@
  */
 
 #include <catch2/catch_test_macros.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <graph/container/traits/vov_graph_traits.hpp>
 #include <graph/container/traits/mos_graph_traits.hpp>
 #include <graph/container/traits/dofl_graph_traits.hpp>
@@ -27,39 +26,39 @@ using namespace graph::container;
 //==================================================================================================
 
 // Sequential container graphs (integral VId) - void values
-using vov_void = dynamic_graph<void, void, void, uint64_t, false, vov_graph_traits<void, void, void, uint64_t, false>>;
+using vov_void = vov_graph<void, void, void, uint64_t>;
 using dofl_void =
-      dynamic_graph<void, void, void, uint64_t, false, dofl_graph_traits<void, void, void, uint64_t, false>>;
-using dol_void = dynamic_graph<void, void, void, uint64_t, false, dol_graph_traits<void, void, void, uint64_t, false>>;
+      dofl_graph<void, void, void, uint64_t>;
+using dol_void = dol_graph<void, void, void, uint64_t>;
 
 // Sequential container graphs (integral VId) - int edges
 using vov_int_edges =
-      dynamic_graph<int, void, void, uint64_t, false, vov_graph_traits<int, void, void, uint64_t, false>>;
+      vov_graph<int, void, void, uint64_t>;
 using dofl_int_edges =
-      dynamic_graph<int, void, void, uint64_t, false, dofl_graph_traits<int, void, void, uint64_t, false>>;
+      dofl_graph<int, void, void, uint64_t>;
 
 // Sequential container graphs (integral VId) - int vertices
 using vov_int_verts =
-      dynamic_graph<void, int, void, uint64_t, false, vov_graph_traits<void, int, void, uint64_t, false>>;
+      vov_graph<void, int, void, uint64_t>;
 using dofl_int_verts =
-      dynamic_graph<void, int, void, uint64_t, false, dofl_graph_traits<void, int, void, uint64_t, false>>;
+      dofl_graph<void, int, void, uint64_t>;
 
 // Sequential container graphs (integral VId) - int edges and vertices
-using vov_int_both = dynamic_graph<int, int, void, uint64_t, false, vov_graph_traits<int, int, void, uint64_t, false>>;
+using vov_int_both = vov_graph<int, int, void, uint64_t>;
 using dofl_int_both =
-      dynamic_graph<int, int, void, uint64_t, false, dofl_graph_traits<int, int, void, uint64_t, false>>;
+      dofl_graph<int, int, void, uint64_t>;
 
 // Map-based graphs (string VId) - void values
 using mos_void =
-      dynamic_graph<void, void, void, std::string, false, mos_graph_traits<void, void, void, std::string, false>>;
+      mos_graph<void, void, void, std::string>;
 
 // Map-based graphs (string VId) - int edges
 using mos_int_edges =
-      dynamic_graph<int, void, void, std::string, false, mos_graph_traits<int, void, void, std::string, false>>;
+      mos_graph<int, void, void, std::string>;
 
 // Map-based graphs (string VId) - int vertices
 using mos_int_verts =
-      dynamic_graph<void, int, void, std::string, false, mos_graph_traits<void, int, void, std::string, false>>;
+      mos_graph<void, int, void, std::string>;
 
 //==================================================================================================
 // Helper Functions

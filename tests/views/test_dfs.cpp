@@ -6,7 +6,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <graph/views/dfs.hpp>
 #include <graph/views/vertexlist.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <graph/container/traits/uol_graph_traits.hpp>
 #include <vector>
 #include <deque>

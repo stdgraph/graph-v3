@@ -14,7 +14,6 @@
 #include <graph/views/dfs.hpp>
 #include <graph/views/topological_sort.hpp>
 #include <graph/views/edge_accessor.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <graph/container/traits/vov_graph_traits.hpp>
 #include <vector>
 #include <set>

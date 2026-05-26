@@ -13,7 +13,6 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <graph/algorithm/connected_components.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <graph/container/traits/vov_graph_traits.hpp>
 #include <graph/container/traits/vol_graph_traits.hpp>
 #include "../common/graph_fixtures.hpp"

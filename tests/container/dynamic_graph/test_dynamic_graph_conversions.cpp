@@ -1,6 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_template_test_macros.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <graph/container/traits/vov_graph_traits.hpp>
 #include <graph/container/traits/mos_graph_traits.hpp>
 #include <graph/container/traits/dofl_graph_traits.hpp>
@@ -15,12 +14,12 @@ using namespace graph::adj_list;
 using namespace graph::container;
 
 // Graph type aliases
-using vov_uint = dynamic_graph<void, void, void, uint64_t, false, vov_graph_traits<void, void, void, uint64_t, false>>;
+using vov_uint = vov_graph<void, void, void, uint64_t>;
 using mos_string =
-      dynamic_graph<void, void, void, std::string, false, mos_graph_traits<void, void, void, std::string, false>>;
-using vov_int = dynamic_graph<void, void, void, int, false, vov_graph_traits<void, void, void, int, false>>;
+      mos_graph<void, void, void, std::string>;
+using vov_int = vov_graph<void, void, void, int>;
 using dofl_uint =
-      dynamic_graph<void, void, void, uint64_t, false, dofl_graph_traits<void, void, void, uint64_t, false>>;
+      dofl_graph<void, void, void, uint64_t>;
 
 // ID mapper class: converts IDs from one type to another
 template <typename FromId, typename ToId>

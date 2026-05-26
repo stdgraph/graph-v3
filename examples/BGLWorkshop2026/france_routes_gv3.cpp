@@ -7,7 +7,6 @@
 //   - Reconstructing and printing shortest paths to each city
 
 #include "graph/algorithm/dijkstra_shortest_paths.hpp"
-#include "graph/container/dynamic_graph.hpp"
 #include "graph/container/traits/vom_graph_traits.hpp"
 
 #include <algorithm>

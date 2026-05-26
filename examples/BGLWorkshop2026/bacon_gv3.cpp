@@ -1,7 +1,6 @@
 #include "graph/graph.hpp"
 #include "graph/algorithm/breadth_first_search.hpp"
 #include "graph/views/bfs.hpp"
-#include "graph/container/dynamic_graph.hpp"
 #include "graph/container/traits/uol_graph_traits.hpp"
 #include "graph/container/traits/mol_graph_traits.hpp"
 #include "imdb-graph.hpp"

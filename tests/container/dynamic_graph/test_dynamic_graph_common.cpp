@@ -42,7 +42,6 @@
 #include <graph/container/traits/dol_graph_traits.hpp>
 #include <graph/container/traits/dov_graph_traits.hpp>
 #include <graph/container/traits/dod_graph_traits.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <graph/graph_data.hpp>
 #include <string>
 #include <vector>

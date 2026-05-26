@@ -17,7 +17,6 @@
 #include "../common/algorithm_test_types.hpp"
 #include "../common/map_graph_fixtures.hpp"
 #include <graph/adj_list/vertex_property_map.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <graph/container/traits/mov_graph_traits.hpp>
 
 #include <string>

@@ -25,7 +25,6 @@
 
 #include <graph/generators.hpp>
 #include <graph/container/compressed_graph.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <graph/container/traits/vov_graph_traits.hpp>
 
 namespace graph::benchmark {

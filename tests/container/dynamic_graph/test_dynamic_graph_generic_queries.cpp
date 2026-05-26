@@ -9,7 +9,6 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_template_test_macros.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <graph/container/traits/vov_graph_traits.hpp>
 #include <graph/container/traits/mos_graph_traits.hpp>
 #include <graph/container/traits/dofl_graph_traits.hpp>
@@ -160,15 +159,15 @@ bool is_empty(const G& g) {
 //==================================================================================================
 
 // Sequential container graphs (integral VId)
-using vov_void = dynamic_graph<void, void, void, uint64_t, false, vov_graph_traits<void, void, void, uint64_t, false>>;
+using vov_void = vov_graph<void, void, void, uint64_t>;
 using dofl_void =
-      dynamic_graph<void, void, void, uint64_t, false, dofl_graph_traits<void, void, void, uint64_t, false>>;
+      dofl_graph<void, void, void, uint64_t>;
 
 // Map-based graphs (string VId)
 using mos_void =
-      dynamic_graph<void, void, void, std::string, false, mos_graph_traits<void, void, void, std::string, false>>;
+      mos_graph<void, void, void, std::string>;
 using mous_void =
-      dynamic_graph<void, void, void, std::string, false, mous_graph_traits<void, void, void, std::string, false>>;
+      mous_graph<void, void, void, std::string>;
 
 //==================================================================================================
 // Phase 6.3.1: Generic Graph Queries Tests

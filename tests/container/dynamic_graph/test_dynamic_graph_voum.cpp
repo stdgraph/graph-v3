@@ -15,7 +15,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_template_test_macros.hpp>
 #include <graph/container/traits/voum_graph_traits.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -28,24 +27,19 @@ using namespace graph::container;
 
 // Type aliases for common test configurations
 using voum_void_void_void =
-      dynamic_graph<void, void, void, uint32_t, false, voum_graph_traits<void, void, void, uint32_t, false>>;
+      voum_graph<void, void, void>;
 using voum_int_void_void =
-      dynamic_graph<int, void, void, uint32_t, false, voum_graph_traits<int, void, void, uint32_t, false>>;
+      voum_graph<int, void, void>;
 using voum_void_int_void =
-      dynamic_graph<void, int, void, uint32_t, false, voum_graph_traits<void, int, void, uint32_t, false>>;
+      voum_graph<void, int, void>;
 using voum_int_int_void =
-      dynamic_graph<int, int, void, uint32_t, false, voum_graph_traits<int, int, void, uint32_t, false>>;
+      voum_graph<int, int, void>;
 using voum_void_void_int =
-      dynamic_graph<void, void, int, uint32_t, false, voum_graph_traits<void, void, int, uint32_t, false>>;
+      voum_graph<void, void, int>;
 using voum_int_int_int =
-      dynamic_graph<int, int, int, uint32_t, false, voum_graph_traits<int, int, int, uint32_t, false>>;
+      voum_graph<int, int, int>;
 
-using voum_string_string_string =
-      dynamic_graph<std::string,
-                    std::string,
-                    std::string,
-                    uint32_t,
-                    false, voum_graph_traits<std::string, std::string, std::string, uint32_t, false>>;
+using voum_string_string_string = voum_graph<std::string, std::string, std::string>;
 
 
 // Edge and vertex data types for loading

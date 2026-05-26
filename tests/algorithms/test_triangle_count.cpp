@@ -6,7 +6,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_template_test_macros.hpp>
 #include <graph/algorithm/tc.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <graph/container/undirected_adjacency_list.hpp>
 #include <graph/container/traits/vos_graph_traits.hpp>
 #include <graph/container/traits/uos_graph_traits.hpp>
@@ -18,7 +17,7 @@ using namespace graph;
 using namespace graph::container;
 
 // Graph type with sorted edges (required for triangle_count)
-using vos_void = dynamic_graph<void, void, void, uint32_t, false, vos_graph_traits<void, void, void, uint32_t, false>>;
+using vos_void = vos_graph<>;
 
 // Undirected adjacency list (automatically handles bidirectional edges)
 using ual_int = undirected_adjacency_list<int, int>;

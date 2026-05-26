@@ -3,17 +3,9 @@
 #include <deque>
 #include <forward_list>
 
+#include <graph/container/dynamic_graph.hpp>
+
 namespace graph::container {
-
-// Forward declarations
-template <class EV, class VV, class GV, class VId, bool Bidirectional, class Traits>
-class dynamic_out_edge;
-
-template <class EV, class VV, class GV, class VId, bool Bidirectional, class Traits>
-class dynamic_vertex;
-
-template <class EV, class VV, class GV, class VId, bool Bidirectional, class Traits>
-class dynamic_graph;
 
 // dofl_graph_traits
 //  Vertices: std::deque (stable iterators)
@@ -34,5 +26,9 @@ struct dofl_graph_traits {
   using vertices_type = std::deque<vertex_type>;
   using edges_type    = std::forward_list<edge_type>;
 };
+
+// Templated type alias for quick dofl_graph definition
+template <class EV = void, class VV = void, class GV = void, class VId = uint32_t, bool Bidirectional = false>
+using dofl_graph = dynamic_graph<EV, VV, GV, VId, Bidirectional, dofl_graph_traits<EV, VV, GV, VId, Bidirectional>>;
 
 } // namespace graph::container

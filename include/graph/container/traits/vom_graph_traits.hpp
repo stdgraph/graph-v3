@@ -3,17 +3,9 @@
 #include <vector>
 #include <map>
 
+#include <graph/container/dynamic_graph.hpp>
+
 namespace graph::container {
-
-// Forward declarations
-template <class EV, class VV, class GV, class VId, bool Bidirectional, class Traits>
-class dynamic_out_edge;
-
-template <class EV, class VV, class GV, class VId, bool Bidirectional, class Traits>
-class dynamic_vertex;
-
-template <class EV, class VV, class GV, class VId, bool Bidirectional, class Traits>
-class dynamic_graph;
 
 // vom_graph_traits
 //  Vertices: std::vector (contiguous; random access by vertex ID)
@@ -48,5 +40,9 @@ struct vom_graph_traits {
   using vertices_type = std::vector<vertex_type>;
   using edges_type    = std::map<VId, edge_type>; // Map keyed by target vertex ID
 };
+
+// Templated type alias for quick vom_graph definition
+template <class EV = void, class VV = void, class GV = void, class VId = uint32_t, bool Bidirectional = false>
+using vom_graph = dynamic_graph<EV, VV, GV, VId, Bidirectional, vom_graph_traits<EV, VV, GV, VId, Bidirectional>>;
 
 } // namespace graph::container

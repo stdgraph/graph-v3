@@ -3,17 +3,9 @@
 #include <deque>
 #include <unordered_set>
 
+#include <graph/container/dynamic_graph.hpp>
+
 namespace graph::container {
-
-// Forward declarations
-template <class EV, class VV, class GV, class VId, bool Bidirectional, class Traits>
-class dynamic_out_edge;
-
-template <class EV, class VV, class GV, class VId, bool Bidirectional, class Traits>
-class dynamic_vertex;
-
-template <class EV, class VV, class GV, class VId, bool Bidirectional, class Traits>
-class dynamic_graph;
 
 // dous_graph_traits
 //  Vertices: std::deque (stable iterators; random access by vertex ID)
@@ -51,5 +43,9 @@ struct dous_graph_traits {
   using vertices_type = std::deque<vertex_type>;
   using edges_type    = std::unordered_set<edge_type>;
 };
+
+// Templated type alias for quick dous_graph definition
+template <class EV = void, class VV = void, class GV = void, class VId = uint32_t, bool Bidirectional = false>
+using dous_graph = dynamic_graph<EV, VV, GV, VId, Bidirectional, dous_graph_traits<EV, VV, GV, VId, Bidirectional>>;
 
 } // namespace graph::container
