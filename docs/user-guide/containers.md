@@ -63,7 +63,7 @@ incoming-edge list, enabling the `in_edges`, `in_degree`, `find_in_edge`, and
 |----------|-------|
 | Vertex ID assignment | Contiguous (0 .. N-1) for `v`/`d` traits; sparse user-defined keys for `m`/`u` traits |
 | Vertex range | Random access (`v`/`d`), bidirectional (`m`), forward (`u`) |
-| Edge range per vertex | Random access (`v`/`d`), forward (`fl`/`us`), bidirectional (`l`/`s`/`em`) |
+| Edge range per vertex | Random access (`v`/`d`), forward (`fl`/`us`), bidirectional (`l`/`s`/`m`) |
 | Partitions | No |
 | Append vertices/edges | Yes |
 
@@ -127,21 +127,17 @@ G g;
 The `dynamic_adjacency_graph<Traits>` alias extracts `EV`, `VV`, `GV`, `VId`,
 and `Bidirectional` from the traits struct, so you only need one template argument.
 
-All built-in trait headers also provide a short graph alias named
-`{prefix}_graph`, where `{prefix}` matches the trait name prefix:
+Each traits header also provides a convenience graph alias that matches how tests
+are written (for example, `dod_graph` in `test_dynamic_graph_dod.cpp`):
 
 ```cpp
 #include <graph/container/traits/dod_graph_traits.hpp>
 
 using namespace graph::container;
 
-using G0 = dod_graph<>;                          // same as dod_graph_traits<>::graph_type
-using G1 = dod_graph<int, std::string>;          // EV=int, VV=string
-using G2 = dod_graph<void, void, void, uint32_t, true>; // bidirectional
+using G0 = dod_graph<>;                                      // EV=VV=GV=void
+using G1 = dod_graph<int, std::string, void, uint32_t, true>; // bidirectional
 ```
-
-This matches how traits are used in tests such as
-`tests/container/dynamic_graph/test_dynamic_graph_dod.cpp`.
 
 ### Trait combinations
 
@@ -254,7 +250,7 @@ the type aliases and constant shown below:
 
 namespace myapp {
 
-// Forward declarations required by dynamic_edge / dynamic_vertex / dynamic_graph
+// Forward declarations required by dynamic_out_edge / dynamic_vertex / dynamic_graph
 using namespace graph::container;
 
 template <class EV = void, class VV = void, class GV = void,
