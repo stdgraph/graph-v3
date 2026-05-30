@@ -132,9 +132,9 @@ void jaccard_coefficient(G&& g, OutOp out) {
   using nbr_set = std::unordered_set<vid_t>;
   auto nbrs     = make_vertex_property_map<std::remove_reference_t<G>, nbr_set>(g, nbr_set{});
 
-  for (auto [uid_raw] : views::basic_vertexlist(g)) {
+  for (auto&& [uid_raw] : views::basic_vertexlist(g)) {
     const vid_t uid = static_cast<vid_t>(uid_raw);
-    for (auto [tid_raw] : views::basic_incidence(g, uid)) {
+    for (auto&& [tid_raw] : views::basic_incidence(g, uid)) {
       const vid_t tid = static_cast<vid_t>(tid_raw);
       if (tid != uid) { // skip self-loops
         nbrs[uid].insert(tid);
