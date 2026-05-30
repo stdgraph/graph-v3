@@ -23,6 +23,9 @@
 #ifndef GRAPH_ALGORITHMS_HPP
 #define GRAPH_ALGORITHMS_HPP
 
+// Visitor Utilities
+#include "algorithm/visitor_factory.hpp"
+
 // Shortest Path Algorithms
 #include "algorithm/dijkstra_shortest_paths.hpp"
 #include "algorithm/bellman_ford_shortest_paths.hpp"

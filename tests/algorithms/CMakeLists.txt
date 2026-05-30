@@ -20,6 +20,7 @@ add_executable(test_algorithms
     test_tarjan_scc.cpp
     test_indexed_dary_heap.cpp
     test_dijkstra_indexed_heap.cpp
+    test_visitor_factory.cpp
 )
 
 target_link_libraries(test_algorithms

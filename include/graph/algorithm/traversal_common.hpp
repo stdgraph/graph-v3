@@ -20,7 +20,9 @@
 #pragma once
 
 #include <algorithm>
+#include <concepts>
 #include <numeric>
+#include <type_traits>
 #include <graph/detail/graph_using.hpp>
 #include <graph/graph_concepts.hpp>
 #include <graph/adj_list/vertex_property_map.hpp>
@@ -326,6 +328,34 @@ concept has_on_finish_edge = requires(Visitor& v, const G& g, const edge_t<G>& e
 
 /// Empty visitor type for algorithms that don't require custom callbacks
 struct empty_visitor {};
+
+//
+// Aggregate / strict visitor concepts
+//
+
+/// Concept satisfied when a visitor handles at least one recognized traversal event.
+/// This is the disjunction of every has_on_* visitor concept. It is used by valid_visitor
+/// to distinguish a deliberately empty visitor from one whose callbacks were misnamed.
+template <class G, class Visitor>
+concept has_any_visitor_event =                                                       //
+    has_on_initialize_vertex<G, Visitor> || has_on_initialize_vertex_id<G, Visitor> || //
+    has_on_discover_vertex<G, Visitor> || has_on_discover_vertex_id<G, Visitor> ||     //
+    has_on_examine_vertex<G, Visitor> || has_on_examine_vertex_id<G, Visitor> ||       //
+    has_on_finish_vertex<G, Visitor> || has_on_finish_vertex_id<G, Visitor> ||         //
+    has_on_start_vertex<G, Visitor> || has_on_start_vertex_id<G, Visitor> ||           //
+    has_on_examine_edge<G, Visitor> || has_on_edge_relaxed<G, Visitor> ||              //
+    has_on_edge_not_relaxed<G, Visitor> || has_on_edge_minimized<G, Visitor> ||        //
+    has_on_edge_not_minimized<G, Visitor> || has_on_tree_edge<G, Visitor> ||           //
+    has_on_back_edge<G, Visitor> || has_on_forward_or_cross_edge<G, Visitor> ||        //
+    has_on_finish_edge<G, Visitor>;
+
+/// Strict visitor concept: a type is a valid visitor for graph G if it is the empty_visitor
+/// sentinel or it provides at least one recognized on_* callback. This catches the common
+/// mistake of misspelling a callback name (e.g. on_discover_vertx), which would otherwise be
+/// silently ignored because each event is detected independently via the has_on_* concepts.
+template <class G, class Visitor>
+concept valid_visitor = std::same_as<std::remove_cvref_t<Visitor>, empty_visitor> || //
+                        has_any_visitor_event<G, Visitor>;
 
 /**
  * @brief A null range type for optional predecessor tracking in shortest path algorithms.

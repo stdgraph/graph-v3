@@ -236,6 +236,9 @@ constexpr void dijkstra_shortest_paths(
       Heap          /*heap_tag*/ = Heap{},
       const Alloc&  alloc        = Alloc()) {
   using graph_type    = std::remove_reference_t<G>;
+  static_assert(valid_visitor<graph_type, Visitor>,
+                "Visitor has no recognized on_* callbacks. Check for a misspelled event name "
+                "(e.g. on_discover_vertx), or pass graph::empty_visitor{} for no callbacks.");
   using id_type       = vertex_id_t<graph_type>;
   using pred_id_type  = predecessor_fn_value_t<PredecessorFn, G>;
   using distance_type = distance_fn_value_t<DistanceFn, G>;

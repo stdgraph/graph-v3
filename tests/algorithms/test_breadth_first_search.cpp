@@ -17,6 +17,32 @@ using namespace graph::test::fixtures;
 using namespace graph::test::algorithm;
 
 // =============================================================================
+// valid_visitor concept (strict visitor) compile-time checks
+// =============================================================================
+
+namespace {
+// Recognized callback -> valid visitor.
+struct GoodVisitor {
+  template <typename G, typename V>
+  void on_discover_vertex(const G&, const V&) {}
+};
+// Only a misspelled callback -> NOT a valid visitor.
+struct TypoVisitor {
+  template <typename G, typename V>
+  void on_discover_vertx(const G&, const V&) {} // typo: missing 'e'
+};
+} // namespace
+
+static_assert(valid_visitor<vov_void, empty_visitor>,
+              "empty_visitor must always be a valid visitor");
+static_assert(valid_visitor<vov_void, GoodVisitor>,
+              "visitor with a recognized on_* callback must be valid");
+static_assert(!valid_visitor<vov_void, TypoVisitor>,
+              "visitor with only a misspelled callback must be rejected");
+static_assert(!has_any_visitor_event<vov_void, TypoVisitor>,
+              "misspelled callback must not be detected as an event");
+
+// =============================================================================
 // Helper Types and Utilities
 // =============================================================================
 
