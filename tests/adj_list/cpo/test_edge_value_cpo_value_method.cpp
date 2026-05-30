@@ -17,7 +17,6 @@ constexpr VKey vertex_id(Iter it, const G& g) {
 TEST_CASE("edge_value CPO with .value() method", "[cpo][edge_value][value_method]") {
   undirected_adjacency_list<int, int> g({{0, 1, 100}});
   VKey                                k1 = 0;
-  VKey                                k2 = 1;
 
   SECTION("edge_value CPO works with undirected_adjacency_list edges") {
     // Get edge through vertex edge list
@@ -58,7 +57,6 @@ TEST_CASE("edge_value CPO with .value() method", "[cpo][edge_value][value_method
 TEST_CASE("edge_value CPO resolution priority", "[cpo][edge_value][priority]") {
   undirected_adjacency_list<int, int> g({{0, 1, 42}});
   VKey                                k1 = 0;
-  VKey                                k2 = 1;
 
   // Get edge
   auto& v       = g.vertices()[k1];

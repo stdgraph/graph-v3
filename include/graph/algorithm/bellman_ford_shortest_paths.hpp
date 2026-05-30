@@ -57,7 +57,7 @@ using adj_list::target_id;
  */
 template <adjacency_list G, class Predecessors, class OutputIterator>
 requires output_iterator<OutputIterator, vertex_id_t<G>>
-void find_negative_cycle(G&                              g,
+void find_negative_cycle(G&                              /*g*/,
                          const Predecessors&             predecessor,
                          const optional<vertex_id_t<G>>& cycle_vertex_id,
                          OutputIterator                  out_cycle) {
@@ -230,7 +230,7 @@ requires distance_fn_for<DistanceFn, G> &&                                //
       DistanceFn&&    distance,
       PredecessorFn&& predecessor,
       WF&&            weight =
-            [](const auto&, const edge_t<G>& uv) {
+            [](const auto&, const edge_t<G>&) {
               return distance_fn_value_t<DistanceFn, G>(1);
             }, // default weight(g, uv) -> 1
       Visitor&& visitor = empty_visitor(),
@@ -248,7 +248,7 @@ requires distance_fn_for<DistanceFn, G> &&                                //
   // relaxing the target is the function of reducing the distance from the source to the target
   auto relax_target = [&g, &predecessor, &distance, &compare, &combine] //
         (const edge_t<graph_type>& e, const vertex_id_t<graph_type>& uid, const weight_type& w_e) -> bool {
-    const id_type       vid = target_id(g, e);
+    const id_type       vid = static_cast<id_type>(target_id(g, e));
     const DistanceValue d_u = distance(g, uid);
     if (d_u == infinite)
       return false; // Cannot relax via unreachable vertex (also guards against overflow)
@@ -348,17 +348,17 @@ requires distance_fn_for<DistanceFn, G> &&                                //
          basic_edge_weight_function<G, WF, distance_fn_value_t<DistanceFn, G>, Compare, Combine>
 [[nodiscard]] constexpr optional<vertex_id_t<G>> bellman_ford_shortest_paths(
       G&&                   g,
-      const vertex_id_t<G>& source,
+  const vertex_id_t<G>& start_vertex_id,
       DistanceFn&&          distance,
       PredecessorFn&&       predecessor,
       WF&&                  weight =
-            [](const auto&, const edge_t<G>& uv) {
+            [](const auto&, const edge_t<G>&) {
               return distance_fn_value_t<DistanceFn, G>(1);
             }, // default weight(g, uv) -> 1
       Visitor&& visitor = empty_visitor(),
       Compare&& compare = less<distance_fn_value_t<DistanceFn, G>>(),
       Combine&& combine = plus<distance_fn_value_t<DistanceFn, G>>()) {
-  return bellman_ford_shortest_paths(g, subrange(&source, (&source + 1)), distance, predecessor, weight,
+  return bellman_ford_shortest_paths(g, subrange(&start_vertex_id, (&start_vertex_id + 1)), distance, predecessor, weight,
                                      forward<Visitor>(visitor), forward<Compare>(compare), forward<Combine>(combine));
 }
 
@@ -411,7 +411,7 @@ requires distance_fn_for<DistanceFn, G> &&                                //
       const Sources& sources,
       DistanceFn&&   distance,
       WF&&           weight =
-            [](const auto&, const edge_t<G>& uv) {
+            [](const auto&, const edge_t<G>&) {
               return distance_fn_value_t<DistanceFn, G>(1);
             }, // default weight(g, uv) -> 1
       Visitor&& visitor = empty_visitor(),
@@ -443,16 +443,16 @@ requires distance_fn_for<DistanceFn, G> &&                                //
          basic_edge_weight_function<G, WF, distance_fn_value_t<DistanceFn, G>, Compare, Combine>
 [[nodiscard]] constexpr optional<vertex_id_t<G>> bellman_ford_shortest_distances(
       G&&                   g,
-      const vertex_id_t<G>& source,
+  const vertex_id_t<G>& start_vertex_id,
       DistanceFn&&          distance,
       WF&&                  weight =
-            [](const auto&, const edge_t<G>& uv) {
+            [](const auto&, const edge_t<G>&) {
               return distance_fn_value_t<DistanceFn, G>(1);
             }, // default weight(g, uv) -> 1
       Visitor&& visitor = empty_visitor(),
       Compare&& compare = less<distance_fn_value_t<DistanceFn, G>>(),
       Combine&& combine = plus<distance_fn_value_t<DistanceFn, G>>()) {
-  return bellman_ford_shortest_paths(g, subrange(&source, (&source + 1)), distance, _null_predecessor,
+  return bellman_ford_shortest_paths(g, subrange(&start_vertex_id, (&start_vertex_id + 1)), distance, _null_predecessor,
                                      forward<WF>(weight), forward<Visitor>(visitor), forward<Compare>(compare),
                                      forward<Combine>(combine));
 }

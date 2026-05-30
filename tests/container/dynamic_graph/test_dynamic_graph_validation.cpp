@@ -17,7 +17,6 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_template_test_macros.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <graph/container/traits/vov_graph_traits.hpp>
 #include <graph/container/traits/mos_graph_traits.hpp>
 #include <graph/container/traits/dofl_graph_traits.hpp>
@@ -34,15 +33,15 @@ using namespace graph::adj_list;
 using namespace graph::container;
 
 // Type aliases for testing
-using vov_void = dynamic_graph<void, void, void, uint64_t, false, vov_graph_traits<void, void, void, uint64_t, false>>;
+using vov_void = vov_graph<void, void, void, uint64_t>;
 
 using mos_void =
-      dynamic_graph<void, void, void, std::string, false, mos_graph_traits<void, void, void, std::string, false>>;
+      mos_graph<void, void, void, std::string>;
 
 using dofl_void =
-      dynamic_graph<void, void, void, uint64_t, false, dofl_graph_traits<void, void, void, uint64_t, false>>;
+      dofl_graph<void, void, void, uint64_t>;
 
-using dov_void = dynamic_graph<void, void, void, uint64_t, false, dov_graph_traits<void, void, void, uint64_t, false>>;
+using dov_void = dov_graph<void, void, void, uint64_t>;
 
 // ============================================================================
 // Generic Validation Functions (CPO-based, simplified)
@@ -143,9 +142,9 @@ bool is_weakly_connected(const G& g) {
     undirected_adj[vid]; // Ensure all vertices are in the map
 
     for (auto&& e : edges(g, v)) {
-      VId target = target_id(g, e);
-      undirected_adj[vid].insert(target);
-      undirected_adj[target].insert(vid); // Add reverse edge
+      VId target_vid = target_id(g, e);
+      undirected_adj[vid].insert(target_vid);
+      undirected_adj[target_vid].insert(vid); // Add reverse edge
     }
   }
 

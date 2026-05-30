@@ -3,17 +3,9 @@
 #include <vector>
 #include <unordered_map>
 
+#include <graph/container/dynamic_graph.hpp>
+
 namespace graph::container {
-
-// Forward declarations
-template <class EV, class VV, class GV, class VId, bool Bidirectional, class Traits>
-class dynamic_out_edge;
-
-template <class EV, class VV, class GV, class VId, bool Bidirectional, class Traits>
-class dynamic_vertex;
-
-template <class EV, class VV, class GV, class VId, bool Bidirectional, class Traits>
-class dynamic_graph;
 
 // voum_graph_traits
 //  Vertices: std::vector (contiguous; random access by vertex ID)
@@ -52,5 +44,9 @@ struct voum_graph_traits {
   using vertices_type = std::vector<vertex_type>;
   using edges_type    = std::unordered_map<VId, edge_type>; // Hash map keyed by target vertex ID
 };
+
+// Templated type alias for quick voum_graph definition
+template <class EV = void, class VV = void, class GV = void, class VId = uint32_t, bool Bidirectional = false>
+using voum_graph = dynamic_graph<EV, VV, GV, VId, Bidirectional, voum_graph_traits<EV, VV, GV, VId, Bidirectional>>;
 
 } // namespace graph::container

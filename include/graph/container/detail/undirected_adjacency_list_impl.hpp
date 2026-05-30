@@ -573,10 +573,12 @@ template <typename EV,
           template <typename V, typename A> class VContainer,
           typename Alloc>
 ual_edge<EV, VV, GV, VId, VContainer, Alloc>::~ual_edge() noexcept {
-  vertex_edge_list_outward_link_type& outward_link = *static_cast<vertex_edge_list_outward_link_type*>(this);
+  [[maybe_unused]] vertex_edge_list_outward_link_type& outward_link =
+      *static_cast<vertex_edge_list_outward_link_type*>(this);
   assert(outward_link.prev() == nullptr && outward_link.next() == nullptr); // has edge been unlinked?
 
-  vertex_edge_list_inward_link_type& inward_link = *static_cast<vertex_edge_list_inward_link_type*>(this);
+  [[maybe_unused]] vertex_edge_list_inward_link_type& inward_link =
+      *static_cast<vertex_edge_list_inward_link_type*>(this);
   assert(inward_link.prev() == nullptr && inward_link.next() == nullptr); // has edge been unlinked?
 }
 
@@ -771,7 +773,7 @@ template <typename EV,
           integral VId,
           template <typename V, typename A> class VContainer,
           typename Alloc>
-ual_vertex<EV, VV, GV, VId, VContainer, Alloc>::ual_vertex([[maybe_unused]] vertex_set&  vertices,
+ual_vertex<EV, VV, GV, VId, VContainer, Alloc>::ual_vertex([[maybe_unused]] vertex_set&  vertex_store,
                                                            [[maybe_unused]] vertex_index index) {}
 template <typename EV,
           typename VV,
@@ -779,7 +781,7 @@ template <typename EV,
           integral VId,
           template <typename V, typename A> class VContainer,
           typename Alloc>
-ual_vertex<EV, VV, GV, VId, VContainer, Alloc>::ual_vertex([[maybe_unused]] vertex_set&  vertices,
+ual_vertex<EV, VV, GV, VId, VContainer, Alloc>::ual_vertex([[maybe_unused]] vertex_set&  vertex_store,
                                                            [[maybe_unused]] vertex_index index,
                                                            const vertex_value_type&      val)
       : base_value_type(val) {}
@@ -789,7 +791,7 @@ template <typename EV,
           integral VId,
           template <typename V, typename A> class VContainer,
           typename Alloc>
-ual_vertex<EV, VV, GV, VId, VContainer, Alloc>::ual_vertex([[maybe_unused]] vertex_set&  vertices,
+ual_vertex<EV, VV, GV, VId, VContainer, Alloc>::ual_vertex([[maybe_unused]] vertex_set&  vertex_store,
                                                            [[maybe_unused]] vertex_index index,
                                                            vertex_value_type&&           val) noexcept
       : base_value_type(move(val)) {}

@@ -1255,7 +1255,7 @@ public: // Friend functions
   */
   template <typename G, typename EdgeDesc>
   requires std::derived_from<std::remove_cvref_t<G>, compressed_graph_base>
-  [[nodiscard]] friend constexpr auto target_id(G&& g, const EdgeDesc& uv) noexcept {
+  [[nodiscard]] friend constexpr auto target_id(G&& /*g*/, const EdgeDesc& uv) noexcept {
     // Edge descriptor's value() returns an iterator into col_index_
     return uv.value()->index;
   }

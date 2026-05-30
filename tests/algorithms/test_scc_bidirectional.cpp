@@ -13,7 +13,6 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <graph/algorithm/connected_components.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <graph/container/traits/vov_graph_traits.hpp>
 #include <graph/container/traits/vol_graph_traits.hpp>
 #include "../common/graph_fixtures.hpp"
@@ -84,11 +83,11 @@ using bidir_vov_int = dynamic_graph<int, void, void, uint32_t, true,
 // =============================================================================
 
 template <typename Component>
-bool all_same_component(const Component& component, const std::vector<size_t>& vertices) {
-  if (vertices.empty())
+bool all_same_component(const Component& component, const std::vector<size_t>& vertex_ids) {
+  if (vertex_ids.empty())
     return true;
-  auto first_comp = component[vertices[0]];
-  return std::all_of(vertices.begin(), vertices.end(), [&](size_t v) { return component[v] == first_comp; });
+  auto first_comp = component[vertex_ids[0]];
+  return std::all_of(vertex_ids.begin(), vertex_ids.end(), [&](size_t v) { return component[v] == first_comp; });
 }
 
 template <typename Component>

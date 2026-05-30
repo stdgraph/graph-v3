@@ -166,7 +166,7 @@ TEST_CASE("source_id(g,uv) - native edge member function", "[source_id][cpo][mem
   SECTION("Native edge member function is called") {
     std::vector<int> sources;
     for (auto e : edges(g.adjacency_list, v0)) {
-      sources.push_back(static_cast<int>(source_id(g.adjacency_list, e)));
+      sources.push_back(source_id(g.adjacency_list, e));
     }
 
     // Should use CustomEdge::source_id() which returns source * 100

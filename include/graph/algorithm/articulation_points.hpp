@@ -120,7 +120,12 @@ using adj_list::find_vertex;
 template <adjacency_list G, class Iter, class Alloc = std::allocator<std::byte>>
 requires std::output_iterator<Iter, vertex_id_t<G>>
 void articulation_points(G&& g, Iter cut_vertices, const Alloc& alloc = Alloc()) {
-  using vid_t = vertex_id_t<G>;
+  using vid_t   = typename std::remove_cvref_t<G>::vertex_id_type;
+  using iter_t  = std::remove_cvref_t<Iter>;
+  using out_t   = std::conditional_t<
+        requires { typename iter_t::container_type::value_type; },
+        typename iter_t::container_type::value_type,
+        vid_t>;
 
   const size_t N = num_vertices(g);
   if (N == 0) {
@@ -161,13 +166,14 @@ void articulation_points(G&& g, Iter cut_vertices, const Alloc& alloc = Alloc())
 
   // Outer loop: handle disconnected graphs
   for (auto [start] : views::basic_vertexlist(g)) {
-    if (disc[start] != UNVISITED) {
+    const vid_t start_id = static_cast<vid_t>(start);
+    if (disc[start_id] != UNVISITED) {
       continue;
     }
 
-    disc[start] = low[start] = timer++;
-    auto start_edges = edges(g, start);
-    stk.push({start, std::ranges::begin(start_edges),
+    disc[start_id] = low[start_id] = timer++;
+    auto start_edges = edges(g, start_id);
+    stk.push({start_id, std::ranges::begin(start_edges),
               std::ranges::end(start_edges), false});
 
     while (!stk.empty()) {
@@ -187,7 +193,7 @@ void articulation_points(G&& g, Iter cut_vertices, const Alloc& alloc = Alloc())
           if (parent[par_uid].has_value()) {
             // Non-root rule: child v has low[v] >= disc[u]
             if (low[uid] >= disc[par_uid] && !emitted[par_uid]) {
-              *cut_vertices++  = par_uid;
+              *cut_vertices++  = static_cast<out_t>(par_uid);
               emitted[par_uid] = true;
             }
           }
@@ -195,7 +201,7 @@ void articulation_points(G&& g, Iter cut_vertices, const Alloc& alloc = Alloc())
         continue;
       }
 
-      vid_t vid = target_id(g, *it);
+      vid_t vid = static_cast<vid_t>(target_id(g, *it));
       ++it; // advance stored iterator for next resume
 
       // Skip self-loops
@@ -223,9 +229,9 @@ void articulation_points(G&& g, Iter cut_vertices, const Alloc& alloc = Alloc())
     }
 
     // Root rule: root is an articulation point iff it has >= 2 DFS children
-    if (child_count[start] >= 2 && !emitted[start]) {
-      *cut_vertices++ = start;
-      emitted[start]  = true;
+    if (child_count[start_id] >= 2 && !emitted[start_id]) {
+      *cut_vertices++ = static_cast<out_t>(start_id);
+      emitted[start_id]  = true;
     }
   }
 }

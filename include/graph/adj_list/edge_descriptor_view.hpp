@@ -42,8 +42,8 @@ public:
 
     constexpr iterator() noexcept = default;
 
-    constexpr iterator(edge_storage_type edge_pos, vertex_desc source) noexcept
-          : current_edge_(edge_pos), source_(source) {}
+        constexpr iterator(edge_storage_type edge_pos, vertex_desc src_vertex) noexcept
+          : current_edge_(edge_pos), source_(src_vertex) {}
 
     // Dereference returns edge descriptor by value (synthesized on-the-fly)
     [[nodiscard]] constexpr edge_desc operator*() const noexcept { return edge_desc{current_edge_, source_}; }
@@ -83,24 +83,24 @@ public:
      * @brief Construct view from edge storage range and source vertex
      * @param begin_val Starting edge iterator/index
      * @param end_val Ending edge iterator/index
-     * @param source Source vertex descriptor for all edges in this view
+      * @param src_vertex Source vertex descriptor for all edges in this view
      */
-  constexpr edge_descriptor_view(edge_storage_type begin_val, edge_storage_type end_val, vertex_desc source) noexcept
-        : begin_(begin_val), end_(end_val), source_(source) {
+    constexpr edge_descriptor_view(edge_storage_type begin_val, edge_storage_type end_val, vertex_desc src_vertex) noexcept
+        : begin_(begin_val), end_(end_val), source_(src_vertex) {
     size_ = static_cast<std::size_t>(std::distance(begin_val, end_val));
   }
 
   /**
      * @brief Construct view from non-const edge container and source vertex (per-vertex adjacency)
      * @param container The underlying edge container
-     * @param source The source vertex for all edges in this container
+    * @param src_vertex The source vertex for all edges in this container
      */
   template <typename Container>
   requires requires(Container& c) {
     { c.begin() } -> std::convertible_to<EdgeIter>;
     { c.end() } -> std::convertible_to<EdgeIter>;
   }
-  constexpr edge_descriptor_view(Container& container, vertex_desc source) noexcept : source_(source) {
+  constexpr edge_descriptor_view(Container& container, vertex_desc src_vertex) noexcept : source_(src_vertex) {
     begin_ = container.begin();
     end_   = container.end();
     if constexpr(std::ranges::sized_range<Container>) {
@@ -113,7 +113,7 @@ public:
   /**
      * @brief Construct view from const edge container and source vertex (per-vertex adjacency)
      * @param container The underlying const edge container
-     * @param source The source vertex for all edges in this container
+    * @param src_vertex The source vertex for all edges in this container
      * 
      * When constructed from a const container, the view will yield edge descriptors
      * that preserve const semantics through their underlying_value() and inner_value() methods.
@@ -123,7 +123,7 @@ public:
     { c.begin() } -> std::convertible_to<EdgeIter>;
     { c.end() } -> std::convertible_to<EdgeIter>;
   }
-  constexpr edge_descriptor_view(const Container& container, vertex_desc source) noexcept : source_(source) {
+  constexpr edge_descriptor_view(const Container& container, vertex_desc src_vertex) noexcept : source_(src_vertex) {
     begin_ = container.begin();
     end_   = container.end();
     if constexpr(std::ranges::sized_range<const Container>) {

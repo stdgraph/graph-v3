@@ -7,7 +7,6 @@
  */
 
 #include <catch2/catch_test_macros.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <graph/container/traits/vov_graph_traits.hpp>
 #include <graph/container/traits/vofl_graph_traits.hpp>
 #include <graph/container/traits/dol_graph_traits.hpp>
@@ -33,46 +32,46 @@ using namespace graph::container;
 //==================================================================================================
 
 // Sequential container graphs (integral VId) - void edges
-using vov_void = dynamic_graph<void, void, void, uint64_t, false, vov_graph_traits<void, void, void, uint64_t, false>>;
+using vov_void = vov_graph<void, void, void, uint64_t>;
 using vofl_void =
-      dynamic_graph<void, void, void, uint64_t, false, vofl_graph_traits<void, void, void, uint64_t, false>>;
-using dol_void = dynamic_graph<void, void, void, uint64_t, false, dol_graph_traits<void, void, void, uint64_t, false>>;
+      vofl_graph<void, void, void, uint64_t>;
+using dol_void = dol_graph<void, void, void, uint64_t>;
 using dofl_void =
-      dynamic_graph<void, void, void, uint64_t, false, dofl_graph_traits<void, void, void, uint64_t, false>>;
-using dov_void = dynamic_graph<void, void, void, uint64_t, false, dov_graph_traits<void, void, void, uint64_t, false>>;
+      dofl_graph<void, void, void, uint64_t>;
+using dov_void = dov_graph<void, void, void, uint64_t>;
 
 // Sequential container graphs (integral VId) - int edges
-using vov_int  = dynamic_graph<int, void, void, uint64_t, false, vov_graph_traits<int, void, void, uint64_t, false>>;
-using vofl_int = dynamic_graph<int, void, void, uint64_t, false, vofl_graph_traits<int, void, void, uint64_t, false>>;
-using dol_int  = dynamic_graph<int, void, void, uint64_t, false, dol_graph_traits<int, void, void, uint64_t, false>>;
-using dofl_int = dynamic_graph<int, void, void, uint64_t, false, dofl_graph_traits<int, void, void, uint64_t, false>>;
-using dov_int  = dynamic_graph<int, void, void, uint64_t, false, dov_graph_traits<int, void, void, uint64_t, false>>;
+using vov_int  = vov_graph<int, void, void, uint64_t>;
+using vofl_int = vofl_graph<int, void, void, uint64_t>;
+using dol_int  = dol_graph<int, void, void, uint64_t>;
+using dofl_int = dofl_graph<int, void, void, uint64_t>;
+using dov_int  = dov_graph<int, void, void, uint64_t>;
 
 // Map-based graphs (string VId) - void edges
 using mos_void =
-      dynamic_graph<void, void, void, std::string, false, mos_graph_traits<void, void, void, std::string, false>>;
+      mos_graph<void, void, void, std::string>;
 using mol_void =
-      dynamic_graph<void, void, void, std::string, false, mol_graph_traits<void, void, void, std::string, false>>;
+      mol_graph<void, void, void, std::string>;
 using mous_void =
-      dynamic_graph<void, void, void, std::string, false, mous_graph_traits<void, void, void, std::string, false>>;
+      mous_graph<void, void, void, std::string>;
 
 // Map-based graphs (string VId) - int edges
 using mos_int =
-      dynamic_graph<int, void, void, std::string, false, mos_graph_traits<int, void, void, std::string, false>>;
+      mos_graph<int, void, void, std::string>;
 using mol_int =
-      dynamic_graph<int, void, void, std::string, false, mol_graph_traits<int, void, void, std::string, false>>;
+      mol_graph<int, void, void, std::string>;
 using mous_int =
-      dynamic_graph<int, void, void, std::string, false, mous_graph_traits<int, void, void, std::string, false>>;
+      mous_graph<int, void, void, std::string>;
 
 // Set-based edge container graphs (integral VId) - void edges
-using vos_void = dynamic_graph<void, void, void, uint64_t, false, vos_graph_traits<void, void, void, uint64_t, false>>;
+using vos_void = vos_graph<void, void, void, uint64_t>;
 
 // Unordered set-based edge container graphs (integral VId) - void edges
 using vous_void =
-      dynamic_graph<void, void, void, uint64_t, false, vous_graph_traits<void, void, void, uint64_t, false>>;
+      vous_graph<void, void, void, uint64_t>;
 
 // Set-based edge container graphs (integral VId) - int edges
-using vos_int = dynamic_graph<int, void, void, uint64_t, false, vos_graph_traits<int, void, void, uint64_t, false>>;
+using vos_int = vos_graph<int, void, void, uint64_t>;
 
 // String edge value types
 using vov_string  = dynamic_graph<std::string,
@@ -141,7 +140,7 @@ TEST_CASE("Copy vov to vofl - void edges", "[integration][6.1.1]") {
     }
   }
 
-  // Load into target
+  // Load into dst_graph
   vofl_void target_graph;
   target_graph.load_edges(edge_list, std::identity{}, source_graph.size());
 
@@ -692,80 +691,80 @@ TEST_CASE("Copy mous to mos - preserves all data", "[integration][6.1.4]") {
 //==================================================================================================
 
 TEST_CASE("Empty vov to vov - void edges", "[integration][6.5.1][empty]") {
-  vov_void source;
+  vov_void src_graph;
 
   std::vector<graph::copyable_edge_t<uint64_t, void>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e)});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e)});
     }
   }
 
-  vov_void target;
-  target.load_edges(edge_list, std::identity{});
+  vov_void dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 0);
-  REQUIRE(count_edges(target) == 0);
+  REQUIRE(dst_graph.size() == 0);
+  REQUIRE(count_edges(dst_graph) == 0);
 }
 
 TEST_CASE("Empty vov to vofl - void edges", "[integration][6.5.1][empty]") {
-  vov_void source;
+  vov_void src_graph;
 
   std::vector<graph::copyable_edge_t<uint64_t, void>> edge_list;
 
-  vofl_void target;
-  target.load_edges(edge_list, std::identity{});
+  vofl_void dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 0);
-  REQUIRE(count_edges(target) == 0);
+  REQUIRE(dst_graph.size() == 0);
+  REQUIRE(count_edges(dst_graph) == 0);
 }
 
 TEST_CASE("Empty dov to dol - void edges", "[integration][6.5.1][empty]") {
-  dov_void source;
+  dov_void src_graph;
 
   std::vector<graph::copyable_edge_t<uint64_t, void>> edge_list;
 
-  dol_void target;
-  target.load_edges(edge_list, std::identity{});
+  dol_void dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 0);
-  REQUIRE(count_edges(target) == 0);
+  REQUIRE(dst_graph.size() == 0);
+  REQUIRE(count_edges(dst_graph) == 0);
 }
 
 TEST_CASE("Empty mos to mol - void edges", "[integration][6.5.1][empty]") {
-  mos_void source;
+  mos_void src_graph;
 
   std::vector<graph::copyable_edge_t<std::string, void>> edge_list;
 
-  mol_void target;
-  target.load_edges(edge_list, std::identity{});
+  mol_void dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 0);
-  REQUIRE(count_edges(target) == 0);
+  REQUIRE(dst_graph.size() == 0);
+  REQUIRE(count_edges(dst_graph) == 0);
 }
 
 TEST_CASE("Empty vov to vov - int edges", "[integration][6.5.1][empty]") {
-  vov_int source;
+  vov_int src_graph;
 
   std::vector<graph::copyable_edge_t<uint64_t, int>> edge_list;
 
-  vov_int target;
-  target.load_edges(edge_list, std::identity{});
+  vov_int dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 0);
-  REQUIRE(count_edges(target) == 0);
+  REQUIRE(dst_graph.size() == 0);
+  REQUIRE(count_edges(dst_graph) == 0);
 }
 
 TEST_CASE("Empty mos to mous - int edges", "[integration][6.5.1][empty]") {
-  mos_int source;
+  mos_int src_graph;
 
   std::vector<graph::copyable_edge_t<std::string, int>> edge_list;
 
-  mous_int target;
-  target.load_edges(edge_list, std::identity{});
+  mous_int dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 0);
-  REQUIRE(count_edges(target) == 0);
+  REQUIRE(dst_graph.size() == 0);
+  REQUIRE(count_edges(dst_graph) == 0);
 }
 
 TEST_CASE("Empty graph - vertices range empty", "[integration][6.5.1][empty]") {
@@ -892,77 +891,77 @@ TEST_CASE("Self-loop - mous with string IDs", "[integration][6.5.3][self_loop]")
 }
 
 TEST_CASE("Self-loop - copy vov to vofl preserves", "[integration][6.5.3][self_loop]") {
-  vov_void source({{0, 0}, {1, 1}});
+  vov_void src_graph({{0, 0}, {1, 1}});
 
   std::vector<graph::copyable_edge_t<uint64_t, void>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e)});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e)});
     }
   }
 
-  vofl_void target;
-  target.load_edges(edge_list, std::identity{});
+  vofl_void dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 2);
-  REQUIRE(count_edges(target) == 2);
+  REQUIRE(dst_graph.size() == 2);
+  REQUIRE(count_edges(dst_graph) == 2);
 
   for (uint64_t v = 0; v < 2; ++v) {
-    auto edge_rng = edges(target, v);
+    auto edge_rng = edges(dst_graph, v);
     REQUIRE(std::ranges::distance(edge_rng) == 1);
-    REQUIRE(target_id(target, *edge_rng.begin()) == v);
+    REQUIRE(target_id(dst_graph, *edge_rng.begin()) == v);
   }
 }
 
 TEST_CASE("Self-loop - copy vov to dov preserves", "[integration][6.5.3][self_loop]") {
-  vov_void source({{0, 0}, {1, 1}, {2, 2}});
+  vov_void src_graph({{0, 0}, {1, 1}, {2, 2}});
 
   std::vector<graph::copyable_edge_t<uint64_t, void>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e)});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e)});
     }
   }
 
-  dov_void target;
-  target.load_edges(edge_list, std::identity{});
+  dov_void dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 3);
-  REQUIRE(count_edges(target) == 3);
+  REQUIRE(dst_graph.size() == 3);
+  REQUIRE(count_edges(dst_graph) == 3);
 }
 
 TEST_CASE("Self-loop - copy mos to mol preserves", "[integration][6.5.3][self_loop]") {
-  mos_void source({{"a", "a"}, {"b", "b"}});
+  mos_void src_graph({{"a", "a"}, {"b", "b"}});
 
   std::vector<graph::copyable_edge_t<std::string, void>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e)});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e)});
     }
   }
 
-  mol_void target;
-  target.load_edges(edge_list, std::identity{});
+  mol_void dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 2);
-  REQUIRE(count_edges(target) == 2);
+  REQUIRE(dst_graph.size() == 2);
+  REQUIRE(count_edges(dst_graph) == 2);
 }
 
 TEST_CASE("Self-loop - copy mos to mous preserves", "[integration][6.5.3][self_loop]") {
-  mos_void source({{"x", "x"}, {"y", "y"}, {"z", "z"}});
+  mos_void src_graph({{"x", "x"}, {"y", "y"}, {"z", "z"}});
 
   std::vector<graph::copyable_edge_t<std::string, void>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e)});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e)});
     }
   }
 
-  mous_void target;
-  target.load_edges(edge_list, std::identity{});
+  mous_void dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 3);
-  REQUIRE(count_edges(target) == 3);
+  REQUIRE(dst_graph.size() == 3);
+  REQUIRE(count_edges(dst_graph) == 3);
 }
 
 TEST_CASE("Self-loop - vov with int edges", "[integration][6.5.3][self_loop]") {
@@ -1085,75 +1084,75 @@ TEST_CASE("Parallel edges - dol allows duplicates", "[integration][6.5.4][parall
 }
 
 TEST_CASE("Parallel edges - copy vov to vos deduplicates", "[integration][6.5.4][parallel]") {
-  vov_void source({{0, 1}, {0, 1}, {0, 1}});
+  vov_void src_graph({{0, 1}, {0, 1}, {0, 1}});
 
   std::vector<graph::copyable_edge_t<uint64_t, void>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e)});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e)});
     }
   }
 
-  vos_void target;
-  target.load_edges(edge_list, std::identity{});
+  vos_void dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 2);
-  REQUIRE(count_edges(target) == 1); // Deduplicated to 1 edge
-  REQUIRE(degree(target, 0) == 1);
+  REQUIRE(dst_graph.size() == 2);
+  REQUIRE(count_edges(dst_graph) == 1); // Deduplicated to 1 edge
+  REQUIRE(degree(dst_graph, 0) == 1);
 }
 
 TEST_CASE("Parallel edges - copy vofl to vos deduplicates", "[integration][6.5.4][parallel]") {
-  vofl_void source({{0, 1}, {0, 1}, {0, 2}, {0, 2}});
+  vofl_void src_graph({{0, 1}, {0, 1}, {0, 2}, {0, 2}});
 
   std::vector<graph::copyable_edge_t<uint64_t, void>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e)});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e)});
     }
   }
 
-  vos_void target;
-  target.load_edges(edge_list, std::identity{});
+  vos_void dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 3);
-  REQUIRE(count_edges(target) == 2); // 4 edges -> 2 unique edges
-  REQUIRE(degree(target, 0) == 2);
+  REQUIRE(dst_graph.size() == 3);
+  REQUIRE(count_edges(dst_graph) == 2); // 4 edges -> 2 unique edges
+  REQUIRE(degree(dst_graph, 0) == 2);
 }
 
 TEST_CASE("Parallel edges - copy vov to vous deduplicates", "[integration][6.5.4][parallel]") {
-  vov_void source({{0, 1}, {0, 1}, {1, 2}, {1, 2}, {1, 2}});
+  vov_void src_graph({{0, 1}, {0, 1}, {1, 2}, {1, 2}, {1, 2}});
 
   std::vector<graph::copyable_edge_t<uint64_t, void>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e)});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e)});
     }
   }
 
-  vous_void target;
-  target.load_edges(edge_list, std::identity{});
+  vous_void dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 3);
-  REQUIRE(count_edges(target) == 2); // 5 edges -> 2 unique
-  REQUIRE(degree(target, 0) == 1);
-  REQUIRE(degree(target, 1) == 1);
+  REQUIRE(dst_graph.size() == 3);
+  REQUIRE(count_edges(dst_graph) == 2); // 5 edges -> 2 unique
+  REQUIRE(degree(dst_graph, 0) == 1);
+  REQUIRE(degree(dst_graph, 1) == 1);
 }
 
 TEST_CASE("Parallel edges - copy dol to mos deduplicates", "[integration][6.5.4][parallel]") {
-  dol_void source({{0, 1}, {0, 1}, {0, 2}});
+  dol_void src_graph({{0, 1}, {0, 1}, {0, 2}});
 
   std::vector<graph::copyable_edge_t<std::string, void>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({std::to_string(vertex_id(source, v)), std::to_string(target_id(source, e))});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({std::to_string(vertex_id(src_graph, v)), std::to_string(target_id(src_graph, e))});
     }
   }
 
-  mos_void target;
-  target.load_edges(edge_list, std::identity{});
+  mos_void dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 3);
-  REQUIRE(count_edges(target) == 2); // 3 edges -> 2 unique
+  REQUIRE(dst_graph.size() == 3);
+  REQUIRE(count_edges(dst_graph) == 2); // 3 edges -> 2 unique
 }
 
 TEST_CASE("Parallel edges - vos has no duplicates", "[integration][6.5.4][parallel]") {
@@ -1180,54 +1179,54 @@ TEST_CASE("Parallel edges - mos has no duplicates", "[integration][6.5.4][parall
 }
 
 TEST_CASE("Parallel edges - copy vos to vov no duplicates", "[integration][6.5.4][parallel]") {
-  vos_void source({{0, 1}, {0, 2}});
+  vos_void src_graph({{0, 1}, {0, 2}});
 
   std::vector<graph::copyable_edge_t<uint64_t, void>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e)});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e)});
     }
   }
 
-  vov_void target;
-  target.load_edges(edge_list, std::identity{});
+  vov_void dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 3);
-  REQUIRE(count_edges(target) == 2); // Still no duplicates
+  REQUIRE(dst_graph.size() == 3);
+  REQUIRE(count_edges(dst_graph) == 2); // Still no duplicates
 }
 
 TEST_CASE("Parallel edges - copy vous to vofl no duplicates", "[integration][6.5.4][parallel]") {
-  vous_void source({{0, 1}, {0, 2}, {1, 2}});
+  vous_void src_graph({{0, 1}, {0, 2}, {1, 2}});
 
   std::vector<graph::copyable_edge_t<uint64_t, void>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e)});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e)});
     }
   }
 
-  vofl_void target;
-  target.load_edges(edge_list, std::identity{});
+  vofl_void dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 3);
-  REQUIRE(count_edges(target) == 3);
+  REQUIRE(dst_graph.size() == 3);
+  REQUIRE(count_edges(dst_graph) == 3);
 }
 
 TEST_CASE("Parallel edges - copy mos to mol no duplicates", "[integration][6.5.4][parallel]") {
-  mos_void source({{"a", "b"}, {"a", "c"}});
+  mos_void src_graph({{"a", "b"}, {"a", "c"}});
 
   std::vector<graph::copyable_edge_t<std::string, void>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e)});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e)});
     }
   }
 
-  mol_void target;
-  target.load_edges(edge_list, std::identity{});
+  mol_void dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 3);
-  REQUIRE(count_edges(target) == 2);
+  REQUIRE(dst_graph.size() == 3);
+  REQUIRE(count_edges(dst_graph) == 2);
 }
 
 TEST_CASE("Parallel edges - vov with int edges allows duplicates", "[integration][6.5.4][parallel]") {
@@ -1248,21 +1247,21 @@ TEST_CASE("Parallel edges - vov with int edges allows duplicates", "[integration
   REQUIRE(std::ranges::find(values, 30) != values.end());
 }
 
-TEST_CASE("Parallel edges - copy vov int to vos deduplicates by target", "[integration][6.5.4][parallel]") {
-  vov_int source({{0, 1, 10}, {0, 1, 20}, {0, 1, 30}});
+TEST_CASE("Parallel edges - copy vov int to vos deduplicates by dst_graph", "[integration][6.5.4][parallel]") {
+  vov_int src_graph({{0, 1, 10}, {0, 1, 20}, {0, 1, 30}});
 
   std::vector<graph::copyable_edge_t<uint64_t, int>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e), edge_value(source, e)});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e), edge_value(src_graph, e)});
     }
   }
 
-  vos_int target;
-  target.load_edges(edge_list, std::identity{});
+  vos_int dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 2);
-  REQUIRE(count_edges(target) == 1); // Deduplicated to 1 edge
+  REQUIRE(dst_graph.size() == 2);
+  REQUIRE(count_edges(dst_graph) == 1); // Deduplicated to 1 edge
                                      // Note: One of the edge values is kept (implementation-defined which one)
 }
 
@@ -1276,22 +1275,22 @@ TEST_CASE("Parallel edges - mixed regular and parallel", "[integration][6.5.4][p
 }
 
 TEST_CASE("Parallel edges - copy mixed to vos partial deduplication", "[integration][6.5.4][parallel]") {
-  vov_void source({{0, 1}, {0, 1}, {0, 2}, {1, 2}, {1, 2}});
+  vov_void src_graph({{0, 1}, {0, 1}, {0, 2}, {1, 2}, {1, 2}});
 
   std::vector<graph::copyable_edge_t<uint64_t, void>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e)});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e)});
     }
   }
 
-  vos_void target;
-  target.load_edges(edge_list, std::identity{});
+  vos_void dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 3);
-  REQUIRE(count_edges(target) == 3); // 5 edges -> 3 unique (0->1, 0->2, 1->2)
-  REQUIRE(degree(target, 0) == 2);
-  REQUIRE(degree(target, 1) == 1);
+  REQUIRE(dst_graph.size() == 3);
+  REQUIRE(count_edges(dst_graph) == 3); // 5 edges -> 3 unique (0->1, 0->2, 1->2)
+  REQUIRE(degree(dst_graph, 0) == 2);
+  REQUIRE(degree(dst_graph, 1) == 1);
 }
 
 TEST_CASE("Parallel edges - vofl self-loops can be parallel", "[integration][6.5.4][parallel]") {
@@ -1303,27 +1302,27 @@ TEST_CASE("Parallel edges - vofl self-loops can be parallel", "[integration][6.5
 }
 
 TEST_CASE("Parallel edges - copy vofl self-loops to vos deduplicates", "[integration][6.5.4][parallel]") {
-  vofl_void source({{0, 0}, {0, 0}});
+  vofl_void src_graph({{0, 0}, {0, 0}});
 
   std::vector<graph::copyable_edge_t<uint64_t, void>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e)});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e)});
     }
   }
 
-  vos_void target;
-  target.load_edges(edge_list, std::identity{});
+  vos_void dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 1);
-  REQUIRE(count_edges(target) == 1); // Self-loop deduplicated
-  REQUIRE(degree(target, 0) == 1);
+  REQUIRE(dst_graph.size() == 1);
+  REQUIRE(count_edges(dst_graph) == 1); // Self-loop deduplicated
+  REQUIRE(degree(dst_graph, 0) == 1);
 }
 
 TEST_CASE("Parallel edges - count unique edges in vov", "[integration][6.5.4][parallel]") {
   vov_void g({{0, 1}, {0, 1}, {0, 2}, {1, 0}, {1, 0}});
 
-  // Count unique (source, target) pairs
+  // Count unique (src_graph, dst_graph) pairs
   std::set<std::pair<uint64_t, uint64_t>> unique_edges;
   for (auto&& v : vertices(g)) {
     auto vid = vertex_id(g, v);
@@ -1341,383 +1340,383 @@ TEST_CASE("Parallel edges - count unique edges in vov", "[integration][6.5.4][pa
 //==================================================================================================
 
 TEST_CASE("Value conversion - int to string edge values", "[integration][6.5.5][conversion]") {
-  vov_int source({{0, 1, 42}, {1, 2, 99}});
+  vov_int src_graph({{0, 1, 42}, {1, 2, 99}});
 
   std::vector<graph::copyable_edge_t<uint64_t, std::string>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e), std::to_string(edge_value(source, e))});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e), std::to_string(edge_value(src_graph, e))});
     }
   }
 
-  vov_string target;
-  target.load_edges(edge_list, std::identity{});
+  vov_string dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 3);
-  REQUIRE(count_edges(target) == 2);
+  REQUIRE(dst_graph.size() == 3);
+  REQUIRE(count_edges(dst_graph) == 2);
 
-  auto edge_rng = edges(target, 0);
-  REQUIRE(edge_value(target, *edge_rng.begin()) == "42");
+  auto edge_rng = edges(dst_graph, 0);
+  REQUIRE(edge_value(dst_graph, *edge_rng.begin()) == "42");
 }
 
 TEST_CASE("Value conversion - string to int edge values", "[integration][6.5.5][conversion]") {
-  vov_string source({{0, 1, "123"}, {1, 2, "456"}});
+  vov_string src_graph({{0, 1, "123"}, {1, 2, "456"}});
 
   std::vector<graph::copyable_edge_t<uint64_t, int>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e), std::stoi(edge_value(source, e))});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e), std::stoi(edge_value(src_graph, e))});
     }
   }
 
-  vov_int target;
-  target.load_edges(edge_list, std::identity{});
+  vov_int dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 3);
-  REQUIRE(count_edges(target) == 2);
+  REQUIRE(dst_graph.size() == 3);
+  REQUIRE(count_edges(dst_graph) == 2);
 
-  auto edge_rng = edges(target, 0);
-  REQUIRE(edge_value(target, *edge_rng.begin()) == 123);
+  auto edge_rng = edges(dst_graph, 0);
+  REQUIRE(edge_value(dst_graph, *edge_rng.begin()) == 123);
 }
 
 TEST_CASE("Value conversion - void to int (default values)", "[integration][6.5.5][conversion]") {
-  vov_void source({{0, 1}, {1, 2}, {2, 0}});
+  vov_void src_graph({{0, 1}, {1, 2}, {2, 0}});
 
   std::vector<graph::copyable_edge_t<uint64_t, int>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
       edge_list.push_back({
-            vertex_id(source, v), target_id(source, e),
+            vertex_id(src_graph, v), target_id(src_graph, e),
             100 // Default value
       });
     }
   }
 
-  vov_int target;
-  target.load_edges(edge_list, std::identity{});
+  vov_int dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 3);
-  REQUIRE(count_edges(target) == 3);
+  REQUIRE(dst_graph.size() == 3);
+  REQUIRE(count_edges(dst_graph) == 3);
 
-  for (auto&& v : vertices(target)) {
-    for (auto&& e : edges(target, v)) {
-      REQUIRE(edge_value(target, e) == 100);
+  for (auto&& v : vertices(dst_graph)) {
+    for (auto&& e : edges(dst_graph, v)) {
+      REQUIRE(edge_value(dst_graph, e) == 100);
     }
   }
 }
 
 TEST_CASE("Value conversion - int to void (discard values)", "[integration][6.5.5][conversion]") {
-  vov_int source({{0, 1, 42}, {1, 2, 99}, {2, 0, 77}});
+  vov_int src_graph({{0, 1, 42}, {1, 2, 99}, {2, 0, 77}});
 
   std::vector<graph::copyable_edge_t<uint64_t, void>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e)});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e)});
     }
   }
 
-  vov_void target;
-  target.load_edges(edge_list, std::identity{});
+  vov_void dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 3);
-  REQUIRE(count_edges(target) == 3);
+  REQUIRE(dst_graph.size() == 3);
+  REQUIRE(count_edges(dst_graph) == 3);
 }
 
 TEST_CASE("Value conversion - transform int values (* 2)", "[integration][6.5.5][conversion]") {
-  vov_int source({{0, 1, 10}, {1, 2, 20}, {2, 0, 30}});
+  vov_int src_graph({{0, 1, 10}, {1, 2, 20}, {2, 0, 30}});
 
   std::vector<graph::copyable_edge_t<uint64_t, int>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e), edge_value(source, e) * 2});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e), edge_value(src_graph, e) * 2});
     }
   }
 
-  vov_int target;
-  target.load_edges(edge_list, std::identity{});
+  vov_int dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 3);
-  REQUIRE(count_edges(target) == 3);
+  REQUIRE(dst_graph.size() == 3);
+  REQUIRE(count_edges(dst_graph) == 3);
 
-  auto e0 = edges(target, 0);
-  REQUIRE(edge_value(target, *e0.begin()) == 20);
+  auto e0 = edges(dst_graph, 0);
+  REQUIRE(edge_value(dst_graph, *e0.begin()) == 20);
 }
 
 TEST_CASE("Value conversion - map graph int to string", "[integration][6.5.5][conversion]") {
-  mos_int source({{"a", "b", 1}, {"b", "c", 2}});
+  mos_int src_graph({{"a", "b", 1}, {"b", "c", 2}});
 
   std::vector<graph::copyable_edge_t<std::string, std::string>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e), std::to_string(edge_value(source, e))});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e), std::to_string(edge_value(src_graph, e))});
     }
   }
 
-  mos_string target;
-  target.load_edges(edge_list, std::identity{});
+  mos_string dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 3);
-  REQUIRE(count_edges(target) == 2);
+  REQUIRE(dst_graph.size() == 3);
+  REQUIRE(count_edges(dst_graph) == 2);
 
-  auto e_rng = edges(target, "a");
-  REQUIRE(edge_value(target, *e_rng.begin()) == "1");
+  auto e_rng = edges(dst_graph, "a");
+  REQUIRE(edge_value(dst_graph, *e_rng.begin()) == "1");
 }
 
 TEST_CASE("Value conversion - map graph void to int", "[integration][6.5.5][conversion]") {
-  mos_void source({{"a", "b"}, {"b", "c"}});
+  mos_void src_graph({{"a", "b"}, {"b", "c"}});
 
   std::vector<graph::copyable_edge_t<std::string, int>> edge_list;
   int                                                   counter = 1;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e), counter++});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e), counter++});
     }
   }
 
-  mos_int target;
-  target.load_edges(edge_list, std::identity{});
+  mos_int dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 3);
-  REQUIRE(count_edges(target) == 2);
+  REQUIRE(dst_graph.size() == 3);
+  REQUIRE(count_edges(dst_graph) == 2);
 }
 
 TEST_CASE("Value conversion - different trait types with conversion", "[integration][6.5.5][conversion]") {
-  vov_int source({{0, 1, 5}, {1, 2, 10}});
+  vov_int src_graph({{0, 1, 5}, {1, 2, 10}});
 
   std::vector<graph::copyable_edge_t<uint64_t, std::string>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
       edge_list.push_back(
-            {vertex_id(source, v), target_id(source, e), "value_" + std::to_string(edge_value(source, e))});
+            {vertex_id(src_graph, v), target_id(src_graph, e), "value_" + std::to_string(edge_value(src_graph, e))});
     }
   }
 
-  vofl_string target;
-  target.load_edges(edge_list, std::identity{});
+  vofl_string dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 3);
-  REQUIRE(count_edges(target) == 2);
+  REQUIRE(dst_graph.size() == 3);
+  REQUIRE(count_edges(dst_graph) == 2);
 }
 
 TEST_CASE("Value conversion - preserve structure discard values", "[integration][6.5.5][conversion]") {
-  vov_int source({{0, 1, 1}, {0, 2, 2}, {1, 2, 3}, {2, 0, 4}});
+  vov_int src_graph({{0, 1, 1}, {0, 2, 2}, {1, 2, 3}, {2, 0, 4}});
 
   std::vector<graph::copyable_edge_t<uint64_t, void>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e)});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e)});
     }
   }
 
-  vov_void target;
-  target.load_edges(edge_list, std::identity{});
+  vov_void dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == source.size());
-  REQUIRE(count_edges(target) == count_edges(source));
+  REQUIRE(dst_graph.size() == src_graph.size());
+  REQUIRE(count_edges(dst_graph) == count_edges(src_graph));
 }
 
 TEST_CASE("Value conversion - add default values to empty graph", "[integration][6.5.5][conversion]") {
-  vov_void source;
+  vov_void src_graph;
 
   std::vector<graph::copyable_edge_t<uint64_t, int>> edge_list;
 
-  vov_int target;
-  target.load_edges(edge_list, std::identity{});
+  vov_int dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 0);
-  REQUIRE(count_edges(target) == 0);
+  REQUIRE(dst_graph.size() == 0);
+  REQUIRE(count_edges(dst_graph) == 0);
 }
 
 TEST_CASE("Value conversion - convert with self-loops", "[integration][6.5.5][conversion]") {
-  vov_int source({{0, 0, 111}, {1, 1, 222}});
+  vov_int src_graph({{0, 0, 111}, {1, 1, 222}});
 
   std::vector<graph::copyable_edge_t<uint64_t, std::string>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e), std::to_string(edge_value(source, e))});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e), std::to_string(edge_value(src_graph, e))});
     }
   }
 
-  vov_string target;
-  target.load_edges(edge_list, std::identity{});
+  vov_string dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 2);
-  REQUIRE(count_edges(target) == 2);
+  REQUIRE(dst_graph.size() == 2);
+  REQUIRE(count_edges(dst_graph) == 2);
 
-  auto e0 = edges(target, 0);
-  REQUIRE(edge_value(target, *e0.begin()) == "111");
+  auto e0 = edges(dst_graph, 0);
+  REQUIRE(edge_value(dst_graph, *e0.begin()) == "111");
 }
 
 TEST_CASE("Value conversion - complex transformation", "[integration][6.5.5][conversion]") {
-  vov_int source({{0, 1, 10}, {1, 2, 20}, {2, 0, 30}});
+  vov_int src_graph({{0, 1, 10}, {1, 2, 20}, {2, 0, 30}});
 
   std::vector<graph::copyable_edge_t<uint64_t, int>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      int val = edge_value(source, e);
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      int val = edge_value(src_graph, e);
       edge_list.push_back({
-            vertex_id(source, v), target_id(source, e),
+            vertex_id(src_graph, v), target_id(src_graph, e),
             val * val // Square the value
       });
     }
   }
 
-  vov_int target;
-  target.load_edges(edge_list, std::identity{});
+  vov_int dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 3);
+  REQUIRE(dst_graph.size() == 3);
 
-  auto e0 = edges(target, 0);
-  REQUIRE(edge_value(target, *e0.begin()) == 100);
+  auto e0 = edges(dst_graph, 0);
+  REQUIRE(edge_value(dst_graph, *e0.begin()) == 100);
 
-  auto e1 = edges(target, 1);
-  REQUIRE(edge_value(target, *e1.begin()) == 400);
+  auto e1 = edges(dst_graph, 1);
+  REQUIRE(edge_value(dst_graph, *e1.begin()) == 400);
 }
 
 TEST_CASE("Value conversion - conditional transformation", "[integration][6.5.5][conversion]") {
-  vov_int source({{0, 1, 5}, {1, 2, 15}, {2, 0, 25}});
+  vov_int src_graph({{0, 1, 5}, {1, 2, 15}, {2, 0, 25}});
 
   std::vector<graph::copyable_edge_t<uint64_t, std::string>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      int val = edge_value(source, e);
-      edge_list.push_back({vertex_id(source, v), target_id(source, e), val >= 10 ? "high" : "low"});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      int val = edge_value(src_graph, e);
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e), val >= 10 ? "high" : "low"});
     }
   }
 
-  vov_string target;
-  target.load_edges(edge_list, std::identity{});
+  vov_string dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 3);
+  REQUIRE(dst_graph.size() == 3);
 
-  auto e0 = edges(target, 0);
-  REQUIRE(edge_value(target, *e0.begin()) == "low");
+  auto e0 = edges(dst_graph, 0);
+  REQUIRE(edge_value(dst_graph, *e0.begin()) == "low");
 
-  auto e1 = edges(target, 1);
-  REQUIRE(edge_value(target, *e1.begin()) == "high");
+  auto e1 = edges(dst_graph, 1);
+  REQUIRE(edge_value(dst_graph, *e1.begin()) == "high");
 }
 
 TEST_CASE("Value conversion - aggregation during copy", "[integration][6.5.5][conversion]") {
-  vov_int source({{0, 1, 10}, {1, 2, 20}, {2, 0, 30}});
+  vov_int src_graph({{0, 1, 10}, {1, 2, 20}, {2, 0, 30}});
 
   int                                                sum = 0;
   std::vector<graph::copyable_edge_t<uint64_t, int>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      sum += edge_value(source, e);
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      sum += edge_value(src_graph, e);
       edge_list.push_back({
-            vertex_id(source, v), target_id(source, e),
+            vertex_id(src_graph, v), target_id(src_graph, e),
             sum // Running sum
       });
     }
   }
 
-  vov_int target;
-  target.load_edges(edge_list, std::identity{});
+  vov_int dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 3);
+  REQUIRE(dst_graph.size() == 3);
   REQUIRE(sum == 60);
 }
 
 TEST_CASE("Value conversion - vofl to vov with transformation", "[integration][6.5.5][conversion]") {
-  vofl_int source({{0, 1, 1}, {1, 2, 2}});
+  vofl_int src_graph({{0, 1, 1}, {1, 2, 2}});
 
   std::vector<graph::copyable_edge_t<uint64_t, int>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e), edge_value(source, e) + 100});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e), edge_value(src_graph, e) + 100});
     }
   }
 
-  vov_int target;
-  target.load_edges(edge_list, std::identity{});
+  vov_int dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 3);
+  REQUIRE(dst_graph.size() == 3);
 
-  auto e0 = edges(target, 0);
-  REQUIRE(edge_value(target, *e0.begin()) == 101);
+  auto e0 = edges(dst_graph, 0);
+  REQUIRE(edge_value(dst_graph, *e0.begin()) == 101);
 }
 
 TEST_CASE("Value conversion - multiple edges same value conversion", "[integration][6.5.5][conversion]") {
-  vov_int source({{0, 1, 7}, {0, 2, 7}, {1, 2, 7}});
+  vov_int src_graph({{0, 1, 7}, {0, 2, 7}, {1, 2, 7}});
 
   std::vector<graph::copyable_edge_t<uint64_t, std::string>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
       edge_list.push_back(
-            {vertex_id(source, v), target_id(source, e), "lucky_" + std::to_string(edge_value(source, e))});
+            {vertex_id(src_graph, v), target_id(src_graph, e), "lucky_" + std::to_string(edge_value(src_graph, e))});
     }
   }
 
-  vov_string target;
-  target.load_edges(edge_list, std::identity{});
+  vov_string dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 3);
-  REQUIRE(count_edges(target) == 3);
+  REQUIRE(dst_graph.size() == 3);
+  REQUIRE(count_edges(dst_graph) == 3);
 
-  for (auto&& v : vertices(target)) {
-    for (auto&& e : edges(target, v)) {
-      REQUIRE(edge_value(target, e) == "lucky_7");
+  for (auto&& v : vertices(dst_graph)) {
+    for (auto&& e : edges(dst_graph, v)) {
+      REQUIRE(edge_value(dst_graph, e) == "lucky_7");
     }
   }
 }
 
 TEST_CASE("Value conversion - large values", "[integration][6.5.5][conversion]") {
-  vov_int source({{0, 1, 1000000}, {1, 2, 2000000}});
+  vov_int src_graph({{0, 1, 1000000}, {1, 2, 2000000}});
 
   std::vector<graph::copyable_edge_t<uint64_t, std::string>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e), std::to_string(edge_value(source, e))});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e), std::to_string(edge_value(src_graph, e))});
     }
   }
 
-  vov_string target;
-  target.load_edges(edge_list, std::identity{});
+  vov_string dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 3);
+  REQUIRE(dst_graph.size() == 3);
 
-  auto e0 = edges(target, 0);
-  REQUIRE(edge_value(target, *e0.begin()) == "1000000");
+  auto e0 = edges(dst_graph, 0);
+  REQUIRE(edge_value(dst_graph, *e0.begin()) == "1000000");
 }
 
 TEST_CASE("Value conversion - negative to positive", "[integration][6.5.5][conversion]") {
-  vov_int source({{0, 1, -10}, {1, 2, -20}});
+  vov_int src_graph({{0, 1, -10}, {1, 2, -20}});
 
   std::vector<graph::copyable_edge_t<uint64_t, int>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e), std::abs(edge_value(source, e))});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e), std::abs(edge_value(src_graph, e))});
     }
   }
 
-  vov_int target;
-  target.load_edges(edge_list, std::identity{});
+  vov_int dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 3);
+  REQUIRE(dst_graph.size() == 3);
 
-  auto e0 = edges(target, 0);
-  REQUIRE(edge_value(target, *e0.begin()) == 10);
+  auto e0 = edges(dst_graph, 0);
+  REQUIRE(edge_value(dst_graph, *e0.begin()) == 10);
 }
 
 TEST_CASE("Value conversion - format string values", "[integration][6.5.5][conversion]") {
-  vov_int source({{0, 1, 42}, {1, 2, 99}});
+  vov_int src_graph({{0, 1, 42}, {1, 2, 99}});
 
   std::vector<graph::copyable_edge_t<uint64_t, std::string>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
       edge_list.push_back(
-            {vertex_id(source, v), target_id(source, e), "[" + std::to_string(edge_value(source, e)) + "]"});
+            {vertex_id(src_graph, v), target_id(src_graph, e), "[" + std::to_string(edge_value(src_graph, e)) + "]"});
     }
   }
 
-  vov_string target;
-  target.load_edges(edge_list, std::identity{});
+  vov_string dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 3);
+  REQUIRE(dst_graph.size() == 3);
 
-  auto e0 = edges(target, 0);
-  REQUIRE(edge_value(target, *e0.begin()) == "[42]");
+  auto e0 = edges(dst_graph, 0);
+  REQUIRE(edge_value(dst_graph, *e0.begin()) == "[42]");
 }
 
 TEST_CASE("Value conversion - chain transformations", "[integration][6.5.5][conversion]") {
@@ -1752,38 +1751,38 @@ TEST_CASE("Value conversion - chain transformations", "[integration][6.5.5][conv
 }
 
 TEST_CASE("Value conversion - preserve edge count across conversion", "[integration][6.5.5][conversion]") {
-  vov_int source({{0, 1, 1}, {0, 2, 2}, {1, 2, 3}, {2, 0, 4}, {2, 1, 5}});
+  vov_int src_graph({{0, 1, 1}, {0, 2, 2}, {1, 2, 3}, {2, 0, 4}, {2, 1, 5}});
 
-  size_t original_count = count_edges(source);
+  size_t original_count = count_edges(src_graph);
 
   std::vector<graph::copyable_edge_t<uint64_t, std::string>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e), std::to_string(edge_value(source, e))});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e), std::to_string(edge_value(src_graph, e))});
     }
   }
 
-  vov_string target;
-  target.load_edges(edge_list, std::identity{});
+  vov_string dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(count_edges(target) == original_count);
+  REQUIRE(count_edges(dst_graph) == original_count);
 }
 
 TEST_CASE("Value conversion - map to different container with values", "[integration][6.5.5][conversion]") {
-  mos_int source({{"a", "b", 10}, {"b", "c", 20}});
+  mos_int src_graph({{"a", "b", 10}, {"b", "c", 20}});
 
   std::vector<graph::copyable_edge_t<std::string, std::string>> edge_list;
-  for (auto&& v : vertices(source)) {
-    for (auto&& e : edges(source, v)) {
-      edge_list.push_back({vertex_id(source, v), target_id(source, e), "val:" + std::to_string(edge_value(source, e))});
+  for (auto&& v : vertices(src_graph)) {
+    for (auto&& e : edges(src_graph, v)) {
+      edge_list.push_back({vertex_id(src_graph, v), target_id(src_graph, e), "val:" + std::to_string(edge_value(src_graph, e))});
     }
   }
 
-  mol_string target;
-  target.load_edges(edge_list, std::identity{});
+  mol_string dst_graph;
+  dst_graph.load_edges(edge_list, std::identity{});
 
-  REQUIRE(target.size() == 3);
-  REQUIRE(count_edges(target) == 2);
+  REQUIRE(dst_graph.size() == 3);
+  REQUIRE(count_edges(dst_graph) == 2);
 }
 
 //==================================================================================================

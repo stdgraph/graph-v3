@@ -65,6 +65,8 @@ TEST_CASE("find_vertex - deque graph (random access default)", "[graph_cpo][find
 
 // Custom graph with find_vertex member
 struct CustomGraphWithMember {
+  using vertex_id_type = std::size_t;
+
   std::vector<std::vector<int>> adj_list;
 
   // Custom find_vertex that validates ID range and returns iterator to vertex_descriptor_view
@@ -101,6 +103,8 @@ TEST_CASE("find_vertex - custom member function", "[graph_cpo][find_vertex][memb
 
 namespace custom_ns {
 struct GraphWithADL {
+  using vertex_id_type = std::size_t;
+
   std::vector<std::list<int>> adj_list;
 };
 

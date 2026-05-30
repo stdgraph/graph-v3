@@ -73,15 +73,15 @@ TEST_CASE("out_incidence matches incidence", "[in_incidence][out]") {
 
     std::vector<unsigned> ref_ids, test_ids;
     for (auto [tid, e] : ref)
-      ref_ids.push_back(tid);
+      ref_ids.push_back(static_cast<unsigned>(tid));
     for (auto [tid, e] : test)
-      test_ids.push_back(tid);
+      test_ids.push_back(static_cast<unsigned>(tid));
 
     REQUIRE(ref_ids == test_ids);
   }
 
   SECTION("with EVF") {
-    auto evf  = [](const auto& g, auto e) { return adj::edge_value(g, e); };
+    auto evf  = [](const auto& gr, auto e) { return adj::edge_value(gr, e); };
     auto ref  = view::incidence(g, v0, evf);
     auto test = view::out_incidence(g, v0, evf);
 
@@ -104,7 +104,7 @@ TEST_CASE("out_incidence matches incidence", "[in_incidence][out]") {
   }
 
   SECTION("with EVF from vertex id") {
-    auto evf  = [](const auto& g, auto e) { return adj::edge_value(g, e); };
+    auto evf  = [](const auto& gr, auto e) { return adj::edge_value(gr, e); };
     auto ref  = view::incidence(g, 0u, evf);
     auto test = view::out_incidence(g, 0u, evf);
 
@@ -127,15 +127,15 @@ TEST_CASE("basic_out_incidence matches basic_incidence", "[in_incidence][basic_o
 
     std::vector<unsigned> ref_ids, test_ids;
     for (auto ei : ref)
-      ref_ids.push_back(ei.target_id);
+      ref_ids.push_back(static_cast<unsigned>(ei.target_id));
     for (auto ei : test)
-      test_ids.push_back(ei.target_id);
+      test_ids.push_back(static_cast<unsigned>(ei.target_id));
 
     REQUIRE(ref_ids == test_ids);
   }
 
   SECTION("with EVF") {
-    auto evf  = [](const auto& g, auto e) { return adj::edge_value(g, e); };
+    auto evf  = [](const auto& gr, auto e) { return adj::edge_value(gr, e); };
     auto ref  = view::basic_incidence(g, 0u, evf);
     auto test = view::basic_out_incidence(g, 0u, evf);
 
@@ -177,7 +177,7 @@ TEST_CASE("in_incidence iterates in_edges", "[in_incidence][in]") {
   }
 
   SECTION("with EVF") {
-    auto evf   = [](const auto& g, auto e) { return adj::edge_value(g, e); };
+    auto evf   = [](const auto& gr, auto e) { return adj::edge_value(gr, e); };
     auto iview = view::in_incidence(g, v0, evf);
     REQUIRE(iview.size() == 2);
 
@@ -195,7 +195,7 @@ TEST_CASE("in_incidence iterates in_edges", "[in_incidence][in]") {
   }
 
   SECTION("with EVF from vertex id") {
-    auto evf   = [](const auto& g, auto e) { return adj::edge_value(g, e); };
+    auto evf   = [](const auto& gr, auto e) { return adj::edge_value(gr, e); };
     auto iview = view::in_incidence(g, 1u, evf);
     REQUIRE(iview.size() == 2); // vertex 1: edges to 0 and 2
   }
@@ -214,7 +214,7 @@ TEST_CASE("basic_in_incidence", "[in_incidence][basic_in]") {
   }
 
   SECTION("with EVF — values accessible") {
-    auto evf   = [](const auto& g, auto e) { return adj::edge_value(g, e); };
+    auto evf   = [](const auto& gr, auto e) { return adj::edge_value(gr, e); };
     auto bview = view::basic_in_incidence(g, 0u, evf);
     REQUIRE(bview.size() == 2);
 

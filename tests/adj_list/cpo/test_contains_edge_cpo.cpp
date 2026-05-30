@@ -17,6 +17,8 @@ using namespace graph::adj_list;
 // =============================================================================
 
 struct GraphWithContainsEdgeMember {
+  using vertex_id_type = size_t;
+
   std::vector<std::vector<int>> adj_list;
 
   GraphWithContainsEdgeMember(size_t n) : adj_list(n) {}
@@ -41,6 +43,8 @@ struct GraphWithContainsEdgeMember {
 
 namespace test_adl {
 struct GraphWithADLContainsEdge {
+  using vertex_id_type = size_t;
+
   std::vector<std::vector<int>> adj_list;
 
   GraphWithADLContainsEdge(size_t n) : adj_list(n) {}

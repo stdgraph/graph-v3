@@ -1,6 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_template_test_macros.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <graph/container/traits/vov_graph_traits.hpp>
 #include <graph/container/traits/mos_graph_traits.hpp>
 #include <graph/container/traits/dofl_graph_traits.hpp>
@@ -15,12 +14,12 @@ using namespace graph::adj_list;
 using namespace graph::container;
 
 // Graph type aliases
-using vov_uint = dynamic_graph<void, void, void, uint64_t, false, vov_graph_traits<void, void, void, uint64_t, false>>;
+using vov_uint = vov_graph<void, void, void, uint64_t>;
 using mos_string =
-      dynamic_graph<void, void, void, std::string, false, mos_graph_traits<void, void, void, std::string, false>>;
-using vov_int = dynamic_graph<void, void, void, int, false, vov_graph_traits<void, void, void, int, false>>;
+      mos_graph<void, void, void, std::string>;
+using vov_int = vov_graph<void, void, void, int>;
 using dofl_uint =
-      dynamic_graph<void, void, void, uint64_t, false, dofl_graph_traits<void, void, void, uint64_t, false>>;
+      dofl_graph<void, void, void, uint64_t>;
 
 // ID mapper class: converts IDs from one type to another
 template <typename FromId, typename ToId>
@@ -67,21 +66,21 @@ private:
 
 // Helper: Convert graph with ID mapping
 template <typename SourceGraph, typename TargetGraph, typename FromId, typename ToId>
-TargetGraph convert_graph(const SourceGraph& source, const id_mapper<FromId, ToId>& mapper) {
+TargetGraph convert_graph(const SourceGraph& src_graph, const id_mapper<FromId, ToId>& mapper) {
   std::vector<copyable_edge_t<ToId, void>>   edge_list;
   std::vector<copyable_vertex_t<ToId, void>> vertex_list;
 
   // Add all vertices (even isolated ones)
-  for (auto&& u : vertices(source)) {
-    auto uid = vertex_id(source, u);
+  for (auto&& u : vertices(src_graph)) {
+    auto uid = vertex_id(src_graph, u);
     vertex_list.push_back({.id = mapper.to(uid)});
   }
 
   // Add all edges
-  for (auto&& u : vertices(source)) {
-    auto uid = vertex_id(source, u);
-    for (auto&& e : edges(source, u)) {
-      auto vid = target_id(source, e);
+  for (auto&& u : vertices(src_graph)) {
+    auto uid = vertex_id(src_graph, u);
+    for (auto&& e : edges(src_graph, u)) {
+      auto vid = target_id(src_graph, e);
       edge_list.push_back({.source_id = mapper.to(uid), .target_id = mapper.to(vid)});
     }
   }

@@ -265,7 +265,7 @@ TEMPLATE_TEST_CASE("edge_map CPO vertex_id(g, u)", "[dynamic_graph][cpo][vertex_
 
     std::vector<uint32_t> ids;
     for (auto v : vertices(g)) {
-      ids.push_back(vertex_id(g, v));
+      ids.push_back(static_cast<uint32_t>(vertex_id(g, v)));
     }
 
     std::ranges::sort(ids);

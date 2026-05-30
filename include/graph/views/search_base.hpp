@@ -60,20 +60,20 @@ class visited_tracker {
 
   storage_type visited_;
 
-  static storage_type make_storage(std::size_t num_vertices, Alloc alloc) {
+  static storage_type make_storage(std::size_t vertex_count, Alloc alloc) {
     if constexpr (use_bitset) {
-      return storage_type(num_vertices, false, alloc);
+      return storage_type(vertex_count, false, alloc);
     } else {
-      (void)num_vertices;
+      (void)vertex_count;
       return storage_type(0, std::hash<Vertex>{}, std::equal_to<Vertex>{}, set_alloc(alloc));
     }
   }
 
 public:
-  /// Construct tracker for a graph with @p num_vertices vertices.
-  /// @p num_vertices is used to pre-size the bitset; ignored for the hash variant.
-  explicit visited_tracker(std::size_t num_vertices, Alloc alloc = {})
-        : visited_(make_storage(num_vertices, alloc)) {}
+    /// Construct tracker for a graph with @p vertex_count vertices.
+    /// @p vertex_count is used to pre-size the bitset; ignored for the hash variant.
+    explicit visited_tracker(std::size_t vertex_count, Alloc alloc = {})
+      : visited_(make_storage(vertex_count, alloc)) {}
 
   /// Check if a vertex has been visited
   [[nodiscard]] bool is_visited(const Vertex& v) const {

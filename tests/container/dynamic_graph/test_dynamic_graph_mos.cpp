@@ -19,7 +19,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_template_test_macros.hpp>
 #include <graph/container/traits/mos_graph_traits.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -31,26 +30,26 @@ using namespace graph::container;
 
 // Type aliases for common test configurations with uint32_t vertex IDs
 using mos_void_void_void =
-      dynamic_graph<void, void, void, uint32_t, false, mos_graph_traits<void, void, void, uint32_t, false>>;
+      mos_graph<void, void, void>;
 using mos_int_void_void =
-      dynamic_graph<int, void, void, uint32_t, false, mos_graph_traits<int, void, void, uint32_t, false>>;
+      mos_graph<int, void, void>;
 using mos_void_int_void =
-      dynamic_graph<void, int, void, uint32_t, false, mos_graph_traits<void, int, void, uint32_t, false>>;
+      mos_graph<void, int, void>;
 using mos_int_int_void =
-      dynamic_graph<int, int, void, uint32_t, false, mos_graph_traits<int, int, void, uint32_t, false>>;
+      mos_graph<int, int, void>;
 using mos_void_void_int =
-      dynamic_graph<void, void, int, uint32_t, false, mos_graph_traits<void, void, int, uint32_t, false>>;
-using mos_int_int_int = dynamic_graph<int, int, int, uint32_t, false, mos_graph_traits<int, int, int, uint32_t, false>>;
+      mos_graph<void, void, int>;
+using mos_int_int_int = mos_graph<int, int, int>;
 
 // Type aliases with string vertex IDs (the primary use case for map containers)
 using mos_str_void_void_void =
-      dynamic_graph<void, void, void, std::string, false, mos_graph_traits<void, void, void, std::string, false>>;
+      mos_graph<void, void, void, std::string>;
 using mos_str_int_void_void =
-      dynamic_graph<int, void, void, std::string, false, mos_graph_traits<int, void, void, std::string, false>>;
+      mos_graph<int, void, void, std::string>;
 using mos_str_void_int_void =
-      dynamic_graph<void, int, void, std::string, false, mos_graph_traits<void, int, void, std::string, false>>;
+      mos_graph<void, int, void, std::string>;
 using mos_str_int_int_int =
-      dynamic_graph<int, int, int, std::string, false, mos_graph_traits<int, int, int, std::string, false>>;
+      mos_graph<int, int, int, std::string>;
 
 
 

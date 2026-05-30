@@ -4,6 +4,7 @@
 #include "graph/views/incidence.hpp"
 #include <queue>
 #include <algorithm>
+#include <cassert>
 
 namespace graph {
 
@@ -31,16 +32,16 @@ class _null_range_type : public std::vector<size_t> {
 
 public:
   _null_range_type() noexcept(noexcept(Allocator())) = default;
-  explicit _null_range_type(const Allocator& alloc) noexcept {}
-  _null_range_type(Base::size_type count, const T& value, const Allocator& alloc = Allocator()) {}
-  explicit _null_range_type(Base::size_type count, const Allocator& alloc = Allocator()) {}
+  explicit _null_range_type(const Allocator& /*alloc*/) noexcept {}
+  _null_range_type(Base::size_type /*count*/, const T& /*value*/, const Allocator& /*alloc*/ = Allocator()) {}
+  explicit _null_range_type(Base::size_type /*count*/, const Allocator& /*alloc*/ = Allocator()) {}
   template <class InputIt>
-  _null_range_type(InputIt first, InputIt last, const Allocator& alloc = Allocator()) {}
-  _null_range_type(const _null_range_type& other) : Base() {}
-  _null_range_type(const _null_range_type& other, const Allocator& alloc) {}
-  _null_range_type(_null_range_type&& other) noexcept {}
-  _null_range_type(_null_range_type&& other, const Allocator& alloc) {}
-  _null_range_type(std::initializer_list<T> init, const Allocator& alloc = Allocator()) {}
+  _null_range_type(InputIt /*first*/, InputIt /*last*/, const Allocator& /*alloc*/ = Allocator()) {}
+  _null_range_type(const _null_range_type& /*other*/) : Base() {}
+  _null_range_type(const _null_range_type& /*other*/, const Allocator& /*alloc*/) {}
+  _null_range_type(_null_range_type&& /*other*/) noexcept {}
+  _null_range_type(_null_range_type&& /*other*/, const Allocator& /*alloc*/) {}
+  _null_range_type(std::initializer_list<T> /*init*/, const Allocator& /*alloc*/ = Allocator()) {}
 };
 
 inline static _null_range_type null_predecessors;
@@ -96,10 +97,11 @@ void dijkstra_clrs(
 {
   using id_type     = vertex_id_t<G>;
   using weight_type = invoke_result_t<WF, const std::remove_reference_t<G>&, edge_t<G>>;
+  using pred_id_type = range_value_t<Predecessor>;
 
   // Remark(Andrew): Do we want to allow null distance?  What about if both are null?  Still run algorithm at all?
 
-  size_t N(num_vertices(g));
+  [[maybe_unused]] size_t N(num_vertices(g));
   assert(seed < N && seed >= 0);
 
   std::ranges::fill(distance, std::numeric_limits<weight_type>::max());
@@ -127,7 +129,7 @@ void dijkstra_clrs(
       if (distance[uid] + w < distance[vid]) {
         distance[vid] = distance[uid] + w;
         if constexpr (!is_same_v<Predecessor, _null_range_type>)
-          predecessor[vid] = uid;
+          predecessor[vid] = static_cast<pred_id_type>(uid);
         Q.push({vid, distance[vid]});
       }
     }

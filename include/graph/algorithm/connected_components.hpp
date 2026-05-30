@@ -209,7 +209,7 @@ void kosaraju(G&&           g,         // graph
   // Each DFS tree in this pass corresponds to exactly one SCC
   using gt_vertex_desc = vertex_t<std::remove_reference_t<GT>>;
   using GtVDescAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<gt_vertex_desc>;
-  size_t                    cid = 0;
+  CT                        cid = 0;
   std::ranges::reverse_view reverse{order};
   for (auto& uid : reverse) {
     if (component(g, uid) == std::numeric_limits<CT>::max()) {
@@ -355,7 +355,7 @@ void kosaraju(G&&           g,         // bidirectional graph
 
   // Second pass: DFS on reverse edges (via in_edges) in reverse finish order.
   // Each DFS tree corresponds to exactly one SCC.
-  size_t                    cid = 0;
+  CT                        cid = 0;
   std::ranges::reverse_view reverse{order};
   for (auto& u : reverse) {
     auto uid = vertex_id(g_ref, u);
@@ -559,7 +559,7 @@ static void link(vertex_id_t u, vertex_id_t v, Component& component) {
     if (p_high == high) {
       // high is a root (points to itself)
       if (component[high] == high) {
-        component[high] = low; // Link high root to low
+        component[high] = static_cast<std::remove_reference_t<decltype(component[high])>>(low); // Link high root to low
         break;
       } else {
         // Race condition: another thread changed it; retry with low

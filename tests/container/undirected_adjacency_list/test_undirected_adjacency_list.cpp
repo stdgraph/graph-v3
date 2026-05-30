@@ -476,11 +476,11 @@ TEST_CASE("edge_iterator comparison", "[undirected_adjacency_list][iterators][ed
   auto& vertex = g.vertices()[k1];
   auto  it1    = vertex.edges(g, k1).begin();
   auto  it2    = vertex.edges(g, k1).begin();
-  auto  end    = vertex.edges(g, k1).end();
+  auto  end_it = vertex.edges(g, k1).end();
 
   REQUIRE(it1 == it2);
   REQUIRE_FALSE(it1 != it2);
-  REQUIRE(it1 != end);
+  REQUIRE(it1 != end_it);
 }
 
 TEST_CASE("edge_iterator range-for", "[undirected_adjacency_list][iterators][edge]") {

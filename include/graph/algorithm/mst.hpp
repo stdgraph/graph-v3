@@ -983,7 +983,7 @@ auto prim(G&&                   g,           // graph
     auto wf_ref = std::ref(weight_fn);
     auto guarded_weight_fn = [&finalized, wf_ref](
           const GraphT& gr, const edge_t<G>& uv) -> edge_value_type {
-      const id_type vid = target_id(gr, uv);
+      const id_type vid = static_cast<id_type>(target_id(gr, uv));
       if (finalized[static_cast<std::size_t>(vid)]) {
         return infinite_distance<edge_value_type>();
       }
@@ -1010,7 +1010,7 @@ auto prim(G&&                   g,           // graph
     auto wf_ref = std::ref(weight_fn);
     auto guarded_weight_fn = [&finalized, wf_ref](
           const GraphT& gr, const edge_t<G>& uv) -> edge_value_type {
-      const id_type vid = target_id(gr, uv);
+      const id_type vid = static_cast<id_type>(target_id(gr, uv));
       if (finalized.contains(vid)) {
         return infinite_distance<edge_value_type>();
       }

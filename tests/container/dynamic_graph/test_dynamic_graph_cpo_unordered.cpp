@@ -680,7 +680,6 @@ TEMPLATE_TEST_CASE("unordered CPO edges(g, uid)", "[dynamic_graph][cpo][edges]",
   }
 
   SECTION("with edge values") {
-    using Graph_int_ev = typename Types::int_ev;
     Graph_int_ev g;
     g.resize_vertices(3);
 
@@ -722,7 +721,6 @@ TEMPLATE_TEST_CASE("unordered CPO edges(g, uid)", "[dynamic_graph][cpo][edges]",
   }
 
   SECTION("with parallel edges") {
-    using Graph_int_ev = typename Types::int_ev;
     Graph_int_ev g;
     g.resize_vertices(3);
 
@@ -743,7 +741,6 @@ TEMPLATE_TEST_CASE("unordered CPO edges(g, uid)", "[dynamic_graph][cpo][edges]",
   }
 
   SECTION("consistency with edges(g, u)") {
-    using Graph_int_ev = typename Types::int_ev;
     Graph_int_ev g;
     g.resize_vertices(4);
 
@@ -1152,7 +1149,7 @@ TEMPLATE_TEST_CASE("unordered CPO target(g, uv)", "[dynamic_graph][cpo][target]"
     std::vector<uint32_t> targets;
     for (auto uv : edge_view) {
       auto target_vertex = target(g, uv);
-      targets.push_back(vertex_id(g, target_vertex));
+      targets.push_back(static_cast<uint32_t>(vertex_id(g, target_vertex)));
     }
     std::ranges::sort(targets);
     REQUIRE(targets.size() == 2);
@@ -1222,7 +1219,7 @@ TEMPLATE_TEST_CASE("unordered CPO target(g, uv)", "[dynamic_graph][cpo][target]"
     // Unordered: collect targets
     std::vector<uint32_t> targets;
     for (auto uv : edge_view) {
-      targets.push_back(vertex_id(g, target(g, uv)));
+      targets.push_back(static_cast<uint32_t>(vertex_id(g, target(g, uv))));
     }
     std::ranges::sort(targets);
     REQUIRE(targets.size() == 2);

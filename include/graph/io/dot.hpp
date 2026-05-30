@@ -184,8 +184,8 @@ namespace detail {
   inline std::string trim(std::string_view sv) {
     auto start = sv.find_first_not_of(" \t\r\n");
     if (start == std::string_view::npos) return {};
-    auto end = sv.find_last_not_of(" \t\r\n");
-    return std::string(sv.substr(start, end - start + 1));
+    auto end_pos = sv.find_last_not_of(" \t\r\n");
+    return std::string(sv.substr(start, end_pos - start + 1));
   }
 
   inline std::string extract_label(std::string_view attrs) {
@@ -197,9 +197,9 @@ namespace detail {
     pos = attrs.find('"', pos);
     if (pos == std::string_view::npos) return {};
     ++pos;
-    auto end = attrs.find('"', pos);
-    if (end == std::string_view::npos) return {};
-    return std::string(attrs.substr(pos, end - pos));
+    auto end_pos = attrs.find('"', pos);
+    if (end_pos == std::string_view::npos) return {};
+    return std::string(attrs.substr(pos, end_pos - pos));
   }
 
 } // namespace detail

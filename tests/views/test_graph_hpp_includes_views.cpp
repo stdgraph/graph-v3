@@ -109,11 +109,11 @@ TEST_CASE("graph.hpp - value functions work", "[graph_hpp][value_functions]") {
   auto g = make_test_graph();
 
   // Test that value functions work through graph.hpp
-  auto vvf = [](const auto& g, auto v) { return vertex_id(g, v); };
+  auto vvf = [](const auto& gr, auto v) { return vertex_id(gr, v); };
 
   std::vector<int> values;
   for (auto [id, v, val] : g | vertexlist(vvf)) {
-    values.push_back(val);
+    values.push_back(static_cast<int>(val));
   }
 
   REQUIRE(values.size() == 3);

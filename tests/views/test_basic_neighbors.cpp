@@ -305,14 +305,14 @@ TEST_CASE("basic_neighbors - undirected_adjacency_list", "[basic_neighbors][undi
 
     std::set<unsigned int> targets;
     for (auto [tid] : nbrs) {
-      targets.insert(tid);
+      targets.insert(static_cast<unsigned int>(tid));
     }
     REQUIRE(targets.count(1) == 1);
     REQUIRE(targets.count(2) == 1);
   }
 
   SECTION("basic_neighbors(g, uid, vvf) - with value function") {
-    auto nbrs = basic_neighbors(g, 0u, [](const auto& g, auto v) { return vertex_value(g, v); });
+    auto nbrs = basic_neighbors(g, 0u, [](const auto& gr, auto v) { return vertex_value(gr, v); });
 
     std::vector<int> values;
     for (auto [tid, val] : nbrs) {

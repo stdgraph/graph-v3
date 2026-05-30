@@ -1,6 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
 #include <graph/views/bfs.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <graph/container/traits/uol_graph_traits.hpp>
 #include <vector>
 #include <algorithm>
@@ -90,7 +89,7 @@ TEST_CASE("vertices_bfs - with value function", "[bfs][vertices]") {
         {}      // 2 (leaf)
   };
 
-  auto value_fn = [](const auto& g, auto v) { return static_cast<int>(vertex_id(g, v)) * 10; };
+  auto value_fn = [](const auto& gr, auto v) { return static_cast<int>(vertex_id(gr, v)) * 10; };
 
   std::vector<int> values;
   for (auto [v, val] : vertices_bfs(g, 0, value_fn)) {
@@ -209,11 +208,11 @@ TEST_CASE("vertices_bfs - empty iteration", "[bfs][vertices]") {
 
   auto bfs = vertices_bfs(g, 0);
   auto it  = bfs.begin();
-  auto end = bfs.end();
+  auto end_it = bfs.end();
 
-  REQUIRE(it != end); // Has seed
+  REQUIRE(it != end_it); // Has seed
   ++it;
-  REQUIRE(it == end); // No more vertices
+  REQUIRE(it == end_it); // No more vertices
 }
 
 TEST_CASE("vertices_bfs - cancel_all", "[bfs][vertices][cancel]") {
@@ -343,9 +342,9 @@ TEST_CASE("edges_bfs - with value function", "[bfs][edges]") {
         {}      // 2 (leaf)
   };
 
-  auto value_fn = [](const auto& g, auto edge) {
-    auto target_v = target(g, edge);
-    return static_cast<int>(vertex_id(g, target_v)) * 10;
+  auto value_fn = [](const auto& gr, auto edge) {
+    auto target_v = target(gr, edge);
+    return static_cast<int>(vertex_id(gr, target_v)) * 10;
   };
 
   std::vector<int> values;
@@ -428,9 +427,9 @@ TEST_CASE("edges_bfs - cancel_all", "[bfs][edges][cancel]") {
 
   for (auto [edge] : bfs) {
     auto target_v  = target(g, edge);
-    int  target_id = static_cast<int>(vertex_id(g, target_v));
-    targets.push_back(target_id);
-    if (target_id == 1) {
+    int  target_vid = static_cast<int>(vertex_id(g, target_v));
+    targets.push_back(target_vid);
+    if (target_vid == 1) {
       bfs.cancel(cancel_search::cancel_all);
     }
   }
@@ -457,9 +456,9 @@ TEST_CASE("edges_bfs - cancel_branch", "[bfs][edges][cancel]") {
 
   for (auto [edge] : bfs) {
     auto target_v  = target(g, edge);
-    int  target_id = static_cast<int>(vertex_id(g, target_v));
-    targets.push_back(target_id);
-    if (target_id == 1) {
+    int  target_vid = static_cast<int>(vertex_id(g, target_v));
+    targets.push_back(target_vid);
+    if (target_vid == 1) {
       bfs.cancel(cancel_search::cancel_branch); // Skip exploring children of vertex 1
     }
   }
@@ -580,7 +579,7 @@ TEST_CASE("vertices_bfs - depth on wide tree", "[bfs][vertices][depth]") {
 
   auto bfs = vertices_bfs(g, 0);
 
-  for (auto [v] : bfs) {
+  for ([[maybe_unused]] auto entry : bfs) {
     // Just iterate
   }
 
@@ -602,7 +601,7 @@ TEST_CASE("vertices_bfs - depth on deep chain", "[bfs][vertices][depth]") {
 
   auto bfs = vertices_bfs(g, 0);
 
-  for (auto [v] : bfs) {
+  for ([[maybe_unused]] auto entry : bfs) {
     // Just iterate
   }
 
@@ -623,7 +622,7 @@ TEST_CASE("vertices_bfs - size on disconnected graph", "[bfs][vertices][size]") 
 
   auto bfs = vertices_bfs(g, 0);
 
-  for (auto [v] : bfs) {
+  for ([[maybe_unused]] auto entry : bfs) {
     // Just iterate
   }
 
@@ -644,7 +643,7 @@ TEST_CASE("edges_bfs - depth tracks edge depth", "[bfs][edges][depth]") {
 
   auto bfs = edges_bfs(g, 0);
 
-  for (auto [edge] : bfs) {
+  for ([[maybe_unused]] auto entry : bfs) {
     // Just iterate
   }
 
@@ -668,7 +667,7 @@ TEST_CASE("edges_bfs - size counts edges", "[bfs][edges][size]") {
   auto bfs        = edges_bfs(g, 0);
   int  edge_count = 0;
 
-  for (auto [edge] : bfs) {
+  for ([[maybe_unused]] auto entry : bfs) {
     ++edge_count;
     // Size should equal edges discovered so far
     REQUIRE(bfs.num_visited() == static_cast<std::size_t>(edge_count));
@@ -688,10 +687,10 @@ TEST_CASE("vertices_bfs - depth/size with value function", "[bfs][vertices][dept
         {}      // 3
   };
 
-  auto value_fn = [](const auto& g, auto v) { return static_cast<int>(vertex_id(g, v)) * 10; };
+  auto value_fn = [](const auto& gr, auto v) { return static_cast<int>(vertex_id(gr, v)) * 10; };
   auto bfs      = vertices_bfs(g, 0, value_fn);
 
-  for (auto [v, val] : bfs) {
+  for ([[maybe_unused]] auto entry : bfs) {
     // Just iterate
   }
 
@@ -708,10 +707,10 @@ TEST_CASE("edges_bfs - depth/size with value function", "[bfs][edges][depth]") {
         {}      // 3
   };
 
-  auto value_fn = [](const auto& g, auto e) { return static_cast<int>(vertex_id(g, target(g, e))) * 10; };
+  auto value_fn = [](const auto& gr, auto e) { return static_cast<int>(vertex_id(gr, target(gr, e))) * 10; };
   auto bfs      = edges_bfs(g, 0, value_fn);
 
-  for (auto [e, val] : bfs) {
+  for ([[maybe_unused]] auto entry : bfs) {
     // Just iterate
   }
 
@@ -728,13 +727,13 @@ using StrGraph = dynamic_adjacency_graph<uol_graph_traits<void, void, void, std:
 
 /// Build a StrGraph from vertex names and an edge list.
 static StrGraph make_graph(const std::vector<std::string>&                        vertex_names,
-                           const std::vector<std::pair<std::string, std::string>>& edges) {
+                           const std::vector<std::pair<std::string, std::string>>& edge_pairs) {
   using VD = copyable_vertex_t<std::string, void>;
   using ED = copyable_edge_t<std::string, void>;
 
   StrGraph g;
   g.load_vertices(vertex_names, [](const std::string& name) -> VD { return {name}; });
-  g.load_edges(edges, [](const auto& e) -> ED { return {e.first, e.second}; });
+  g.load_edges(edge_pairs, [](const auto& e) -> ED { return {e.first, e.second}; });
   return g;
 }
 

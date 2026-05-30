@@ -65,7 +65,6 @@ int main() {
   // Iterate through all actors (other than Kevin Bacon)
   for (size_t i = 0; i < actors.size(); ++i) {
     if (i != kevin_bacon) {
-      auto bacon_number = distance[i];
       std::cout << actors[i] << " has a bacon number of " << distance[i] << std::endl;
 
       auto   k = i;

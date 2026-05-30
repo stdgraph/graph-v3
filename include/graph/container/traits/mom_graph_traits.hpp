@@ -2,17 +2,9 @@
 
 #include <map>
 
+#include <graph/container/dynamic_graph.hpp>
+
 namespace graph::container {
-
-// Forward declarations
-template <class EV, class VV, class GV, class VId, bool Bidirectional, class Traits>
-class dynamic_out_edge;
-
-template <class EV, class VV, class GV, class VId, bool Bidirectional, class Traits>
-class dynamic_vertex;
-
-template <class EV, class VV, class GV, class VId, bool Bidirectional, class Traits>
-class dynamic_graph;
 
 // mom_graph_traits
 //  Vertices: std::map<VId, vertex_type> (ordered map keyed by vertex ID)
@@ -50,5 +42,9 @@ struct mom_graph_traits {
   using vertices_type = std::map<VId, vertex_type>; // Map keyed by vertex ID
   using edges_type    = std::map<VId, edge_type>;   // Map keyed by target vertex ID
 };
+
+// Templated type alias for quick mom_graph definition
+template <class EV = void, class VV = void, class GV = void, class VId = uint32_t, bool Bidirectional = false>
+using mom_graph = dynamic_graph<EV, VV, GV, VId, Bidirectional, mom_graph_traits<EV, VV, GV, VId, Bidirectional>>;
 
 } // namespace graph::container

@@ -23,7 +23,6 @@
 #ifndef GRAPH_TEST_TYPES_HPP
 #define GRAPH_TEST_TYPES_HPP
 
-#include <graph/container/dynamic_graph.hpp>
 #include <graph/container/traits/vov_graph_traits.hpp>
 #include <graph/container/traits/vod_graph_traits.hpp>
 #include <graph/container/traits/dov_graph_traits.hpp>

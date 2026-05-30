@@ -48,20 +48,20 @@ struct simple_edge {
  * For N vertices, a tree must have exactly N-1 edges
  */
 template <typename EdgeList>
-bool is_tree(size_t num_vertices, const EdgeList& edges) {
-  return edges.size() == num_vertices - 1;
+bool is_tree(size_t vertex_count, const EdgeList& edge_list) {
+  return edge_list.size() == vertex_count - 1;
 }
 
 /**
  * @brief Calculate total weight of edges in a spanning tree
  */
 template <typename EdgeList>
-auto total_weight(const EdgeList& edges) {
+auto total_weight(const EdgeList& edge_list) {
   using edge_type   = typename EdgeList::value_type;
   using weight_type = typename edge_type::value_type;
 
   weight_type total = 0;
-  for (const auto& e : edges) {
+  for (const auto& e : edge_list) {
     total += e.value;
   }
   return total;
@@ -71,9 +71,9 @@ auto total_weight(const EdgeList& edges) {
  * @brief Check if all edges in tree connect vertices that exist
  */
 template <typename EdgeList>
-bool edges_valid(size_t num_vertices, const EdgeList& edges) {
-  for (const auto& e : edges) {
-    if (e.source_id >= num_vertices || e.target_id >= num_vertices) {
+bool edges_valid(size_t vertex_count, const EdgeList& edge_list) {
+  for (const auto& e : edge_list) {
+    if (e.source_id >= vertex_count || e.target_id >= vertex_count) {
       return false;
     }
   }
@@ -84,15 +84,15 @@ bool edges_valid(size_t num_vertices, const EdgeList& edges) {
  * @brief Check connectivity using union-find
  */
 template <typename EdgeList>
-bool is_connected(size_t num_vertices, const EdgeList& edges) {
-  if (num_vertices == 0)
+bool is_connected(size_t vertex_count, const EdgeList& edge_list) {
+  if (vertex_count == 0)
     return true;
-  if (num_vertices == 1)
+  if (vertex_count == 1)
     return true;
-  if (edges.empty())
+  if (edge_list.empty())
     return false;
 
-  std::vector<size_t> parent(num_vertices);
+  std::vector<size_t> parent(vertex_count);
   std::iota(parent.begin(), parent.end(), 0);
 
   auto find = [&](size_t x) {
@@ -113,13 +113,13 @@ bool is_connected(size_t num_vertices, const EdgeList& edges) {
     return false;
   };
 
-  for (const auto& e : edges) {
+  for (const auto& e : edge_list) {
     unite(e.source_id, e.target_id);
   }
 
   // Check if all vertices have the same root
   size_t root = find(0);
-  for (size_t i = 1; i < num_vertices; ++i) {
+  for (size_t i = 1; i < vertex_count; ++i) {
     if (find(i) != root) {
       return false;
     }
@@ -379,7 +379,7 @@ TEST_CASE("kruskal and prim produce same MST weight", "[algorithm][mst]") {
   using Edge  = simple_edge<uint32_t, int>;
 
   // Create a graph
-  std::vector<Edge> edges = {{0, 1, 2}, {0, 3, 6}, {1, 2, 3}, {1, 3, 8}, {1, 4, 5}, {2, 4, 7}, {3, 4, 9}};
+  std::vector<Edge> edge_list = {{0, 1, 2}, {0, 3, 6}, {1, 2, 3}, {1, 3, 8}, {1, 4, 5}, {2, 4, 7}, {3, 4, 9}};
 
   // Build graph for Prim with bidirectional edges
   Graph g({{0, 1, 2},
@@ -399,7 +399,7 @@ TEST_CASE("kruskal and prim produce same MST weight", "[algorithm][mst]") {
 
   // Run Kruskal
   std::vector<Edge> kruskal_mst;
-  kruskal(edges, kruskal_mst);
+  kruskal(edge_list, kruskal_mst);
   int kruskal_weight = total_weight(kruskal_mst);
 
   // Run Prim
@@ -600,9 +600,9 @@ TEMPLATE_TEST_CASE("prim - sparse kruskal comparison",
            {40, 50, 9}, {50, 40, 9}});
 
   // Run Kruskal with contiguous edge list (same topology)
-  std::vector<Edge> edges = {{0, 1, 2}, {0, 3, 6}, {1, 2, 3}, {1, 3, 8}, {1, 4, 5}, {2, 4, 7}, {3, 4, 9}};
+  std::vector<Edge> edge_list = {{0, 1, 2}, {0, 3, 6}, {1, 2, 3}, {1, 3, 8}, {1, 4, 5}, {2, 4, 7}, {3, 4, 9}};
   std::vector<Edge> kruskal_mst;
-  kruskal(edges, kruskal_mst);
+  kruskal(edge_list, kruskal_mst);
   int kruskal_weight = total_weight(kruskal_mst);
 
   // Run Prim on sparse graph
@@ -640,7 +640,7 @@ TEMPLATE_TEST_CASE("prim - sparse invalid seed throws",
 
 TEST_CASE("prim - indexed d-ary heap parity", "[algorithm][mst][prim][indexed_heap]") {
   using Graph = vov_weighted;
-  using id_t  = vertex_id_t<Graph>;
+  using vid_t = vertex_id_t<Graph>;
 
   // 8-vertex weighted undirected graph that triggers post-finalization
   // re-relaxation (the case that exposed the original Prim correctness bug).
@@ -654,10 +654,10 @@ TEST_CASE("prim - indexed d-ary heap parity", "[algorithm][mst][prim][indexed_he
   const auto N = num_vertices(g);
 
   auto run = [&](auto heap_tag) {
-    std::vector<id_t> predecessor(N);
+    std::vector<vid_t> predecessor(N);
     std::vector<int>  weight(N);
     init_shortest_paths(g, weight, predecessor);
-    auto total = prim(g, id_t{0},
+    auto total = prim(g, vid_t{0},
                       container_value_fn(weight),
                       container_value_fn(predecessor),
                       [](const auto& gr, const auto& uv) { return edge_value(gr, uv); },
@@ -672,12 +672,12 @@ TEST_CASE("prim - indexed d-ary heap parity", "[algorithm][mst][prim][indexed_he
 
   // Cross-check the absolute MST weight against Kruskal on the same edges.
   using Edge = simple_edge<uint32_t, int>;
-  std::vector<Edge> edges = {
+  std::vector<Edge> edge_list = {
       {0, 1, 4}, {0, 2, 1}, {1, 2, 2}, {1, 3, 5}, {2, 3, 8}, {2, 4, 10},
       {3, 4, 2}, {3, 5, 6}, {4, 5, 3}, {4, 6, 9}, {5, 6, 7}, {5, 7, 1},
       {6, 7, 4}};
   std::vector<Edge> mst;
-  graph::kruskal(edges, mst);
+  graph::kruskal(edge_list, mst);
   const int kruskal_weight = total_weight(mst);
 
   REQUIRE(kruskal_weight == 18);   // sanity

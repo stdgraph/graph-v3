@@ -20,7 +20,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_template_test_macros.hpp>
 #include <graph/container/traits/uos_graph_traits.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -32,26 +31,26 @@ using namespace graph::container;
 
 // Type aliases for common test configurations with uint32_t vertex IDs
 using uos_void_void_void =
-      dynamic_graph<void, void, void, uint32_t, false, uos_graph_traits<void, void, void, uint32_t, false>>;
+      uos_graph<void, void, void>;
 using uos_int_void_void =
-      dynamic_graph<int, void, void, uint32_t, false, uos_graph_traits<int, void, void, uint32_t, false>>;
+      uos_graph<int, void, void>;
 using uos_void_int_void =
-      dynamic_graph<void, int, void, uint32_t, false, uos_graph_traits<void, int, void, uint32_t, false>>;
+      uos_graph<void, int, void>;
 using uos_int_int_void =
-      dynamic_graph<int, int, void, uint32_t, false, uos_graph_traits<int, int, void, uint32_t, false>>;
+      uos_graph<int, int, void>;
 using uos_void_void_int =
-      dynamic_graph<void, void, int, uint32_t, false, uos_graph_traits<void, void, int, uint32_t, false>>;
-using uos_int_int_int = dynamic_graph<int, int, int, uint32_t, false, uos_graph_traits<int, int, int, uint32_t, false>>;
+      uos_graph<void, void, int>;
+using uos_int_int_int = uos_graph<int, int, int>;
 
 // Type aliases with string vertex IDs (the primary use case for unordered_map containers)
 using uos_str_void_void_void =
-      dynamic_graph<void, void, void, std::string, false, uos_graph_traits<void, void, void, std::string, false>>;
+      uos_graph<void, void, void, std::string>;
 using uos_str_int_void_void =
-      dynamic_graph<int, void, void, std::string, false, uos_graph_traits<int, void, void, std::string, false>>;
+      uos_graph<int, void, void, std::string>;
 using uos_str_void_int_void =
-      dynamic_graph<void, int, void, std::string, false, uos_graph_traits<void, int, void, std::string, false>>;
+      uos_graph<void, int, void, std::string>;
 using uos_str_int_int_int =
-      dynamic_graph<int, int, int, std::string, false, uos_graph_traits<int, int, int, std::string, false>>;
+      uos_graph<int, int, int, std::string>;
 
 
 
@@ -537,13 +536,13 @@ TEST_CASE("uos graph iteration", "[dynamic_graph][uos][iteration]") {
     // unordered_map does NOT guarantee order (unlike map)
     // Just verify all vertices are present
     REQUIRE(vertex_ids.size() == 7); // 1, 2, 3, 4, 5, 6, 7
-    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 1) != vertex_ids.end());
-    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 2) != vertex_ids.end());
-    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 3) != vertex_ids.end());
-    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 4) != vertex_ids.end());
-    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 5) != vertex_ids.end());
-    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 6) != vertex_ids.end());
-    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 7) != vertex_ids.end());
+    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 1u) != vertex_ids.end());
+    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 2u) != vertex_ids.end());
+    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 3u) != vertex_ids.end());
+    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 4u) != vertex_ids.end());
+    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 5u) != vertex_ids.end());
+    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 6u) != vertex_ids.end());
+    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 7u) != vertex_ids.end());
   }
 }
 

@@ -16,7 +16,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_template_test_macros.hpp>
 #include <graph/container/traits/vom_graph_traits.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -28,17 +27,17 @@ using namespace graph::container;
 
 // Type aliases for common test configurations
 using vos_void_void_void =
-      dynamic_graph<void, void, void, uint32_t, false, vom_graph_traits<void, void, void, uint32_t, false>>;
+      vom_graph<void, void, void>;
 using vos_int_void_void =
-      dynamic_graph<int, void, void, uint32_t, false, vom_graph_traits<int, void, void, uint32_t, false>>;
+      vom_graph<int, void, void>;
 using vos_void_int_void =
-      dynamic_graph<void, int, void, uint32_t, false, vom_graph_traits<void, int, void, uint32_t, false>>;
+      vom_graph<void, int, void>;
 using vos_int_int_void =
-      dynamic_graph<int, int, void, uint32_t, false, vom_graph_traits<int, int, void, uint32_t, false>>;
+      vom_graph<int, int, void>;
 using vos_void_void_int =
-      dynamic_graph<void, void, int, uint32_t, false, vom_graph_traits<void, void, int, uint32_t, false>>;
+      vom_graph<void, void, int>;
 using vos_int_int_int =
-      dynamic_graph<int, int, int, uint32_t, false, vom_graph_traits<int, int, int, uint32_t, false>>;
+      vom_graph<int, int, int>;
 
 using vos_string_string_string =
       dynamic_graph<std::string,

@@ -450,7 +450,9 @@ namespace _cpo_impls {
       if constexpr (_has_member<G, VId>) {
         return {_St::_member, noexcept(std::declval<G&>().find_vertex(std::declval<const VId&>()))};
       } else if constexpr (_has_adl<G, VId>) {
-        return {_St::_adl, noexcept(find_vertex(std::declval<G&>(), std::declval<const VId&>()))};
+        // Avoid probing ADL noexcept with a potentially convertible VId type,
+        // which can trigger MSVC conversion warnings under /WX.
+        return {_St::_adl, false};
       } else if constexpr (_has_associative<G, VId>) {
         constexpr bool no_throw_find = noexcept(std::declval<G&>().find(std::declval<const VId&>()));
         // Note: We directly construct iterator from map iterator
@@ -2070,8 +2072,8 @@ namespace _cpo_impls {
         return {_St_uid::_member,
                 noexcept(std::declval<G&>().find_vertex_edge(std::declval<const U&>(), std::declval<const VId&>()))};
       } else if constexpr (_has_adl_uid<G, U, VId>) {
-        return {_St_uid::_adl,
-                noexcept(find_vertex_edge(std::declval<G&>(), std::declval<const U&>(), std::declval<const VId&>()))};
+        // Avoid probing ADL noexcept with potentially narrowing ID conversions under /WX.
+        return {_St_uid::_adl, false};
       } else if constexpr (_has_default_uid<G, U, VId>) {
         return {_St_uid::_default, false};
       } else {
@@ -2172,16 +2174,34 @@ namespace _cpo_impls {
         using _G   = std::remove_cvref_t<G>;
         using _U   = std::remove_cvref_t<U>;
         using _VId = std::remove_cvref_t<VId>;
+        using _GVId = vertex_id_t<_G>;
 
         if constexpr (_Choice_uid<_G, _U, _VId>._Strategy == _St_uid::_member) {
           return g.find_vertex_edge(u, vid);
         } else if constexpr (_Choice_uid<_G, _U, _VId>._Strategy == _St_uid::_adl) {
-          return find_vertex_edge(g, u, vid);
+          if constexpr (std::integral<_VId> && std::integral<_GVId> && (sizeof(_VId) > sizeof(_GVId))) {
+            auto edge_range = edges(std::forward<G>(g), u);
+            using _CmpId    = std::common_type_t<_GVId, _VId>;
+            auto it         = std::ranges::find_if(edge_range, [&](const auto& e) {
+              return static_cast<_CmpId>(target_id(std::forward<G>(g), e)) == static_cast<_CmpId>(vid);
+            });
+            return *it;
+          } else if constexpr (std::integral<_U>) {
+            return find_vertex_edge(g, static_cast<_GVId>(u), static_cast<_GVId>(vid));
+          } else {
+            auto edge_range = edges(std::forward<G>(g), u);
+            using _CmpId    = std::common_type_t<_GVId, _VId>;
+            auto it         = std::ranges::find_if(edge_range, [&](const auto& e) {
+              return static_cast<_CmpId>(target_id(std::forward<G>(g), e)) == static_cast<_CmpId>(vid);
+            });
+            return *it;
+          }
         } else if constexpr (_Choice_uid<_G, _U, _VId>._Strategy == _St_uid::_default) {
           // Default: iterate edges(g,u) and find edge with matching target_id
           auto edge_range = edges(std::forward<G>(g), u);
+          using _CmpId    = std::common_type_t<_GVId, _VId>;
           auto it         = std::ranges::find_if(edge_range, [&](const auto& e) {
-            return static_cast<vertex_id_t<_G>>(target_id(std::forward<G>(g), e)) == static_cast<vertex_id_t<_G>>(vid);
+            return static_cast<_CmpId>(target_id(std::forward<G>(g), e)) == static_cast<_CmpId>(vid);
           });
           // Not found - return end as an edge descriptor
           return *it;

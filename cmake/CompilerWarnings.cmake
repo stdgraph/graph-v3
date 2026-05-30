@@ -1,6 +1,6 @@
 # Comprehensive compiler warning configuration
 function(set_project_warnings target_name)
-    option(WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
+    option(WARNINGS_AS_ERRORS "Treat compiler warnings as errors" ON)
 
     set(MSVC_WARNINGS
         /W4     # High warning level
@@ -26,31 +26,72 @@ function(set_project_warnings target_name)
         /permissive- # standards conformance mode
     )
 
+    # The -Wno-* options are used to suppress specific warnings that are either not relevant or too noisy for this project.
+    # Further adjustments may be necessary based on the specific codebase and compiler versions used.
     set(CLANG_WARNINGS
         -Wall
         -Wextra
         -Wpedantic
-        -Wshadow
         -Wnon-virtual-dtor
         -Wold-style-cast
         -Wcast-align
         -Wunused
         -Woverloaded-virtual
-        -Wconversion
-        -Wsign-conversion
         -Wnull-dereference
         -Wdouble-promotion
         -Wformat=2
         -Wimplicit-fallthrough
+        -Wshadow
+        #-Wconversion
+        #-Wsign-conversion
+        -Wno-unused-parameter
+        -Wno-unused-variable
+        -Wno-mismatched-tags
+        -Wno-ignored-qualifiers
+        -Wno-deprecated-declarations
+        -Wno-unqualified-std-cast-call
+        -Wno-unused-lambda-capture
+        -Wno-unused-local-typedef
+        -Wno-self-assign-overloaded
+        -Wno-unneeded-internal-declaration
+        -Wno-unused-but-set-variable
+        -Wno-sign-compare
+        -Wno-old-style-cast
+        -Wno-double-promotion
+        -Wno-conversion
+        -Wno-sign-conversion
     )
 
     set(GCC_WARNINGS
-        ${CLANG_WARNINGS}
+        -Wall
+        -Wextra
+        -Wpedantic
+        -Wnon-virtual-dtor
+        -Wold-style-cast
+        -Wcast-align
+        -Wunused
+        -Woverloaded-virtual
+        -Wnull-dereference
+        -Wdouble-promotion
+        -Wformat=2
+        -Wimplicit-fallthrough
+        -Wshadow
+        #-Wconversion
+        #-Wsign-conversion
         -Wmisleading-indentation
         -Wduplicated-cond
-        -Wduplicated-branches
         -Wlogical-op
         -Wuseless-cast
+        -Wno-useless-cast
+        -Wno-old-style-cast
+        -Wno-unused-local-typedefs
+        -Wno-unused-but-set-variable
+        -Wno-sign-compare
+        -Wno-comment
+        -Wno-null-dereference
+        -Wno-deprecated-declarations
+        -Wno-conversion
+        -Wno-sign-conversion
     )
 
     if(WARNINGS_AS_ERRORS)
@@ -67,6 +108,21 @@ function(set_project_warnings target_name)
         set(PROJECT_WARNINGS ${GCC_WARNINGS})
     else()
         message(WARNING "No compiler warnings set for '${CMAKE_CXX_COMPILER_ID}' compiler.")
+    endif()
+
+    # clang-cl (MSVC ABI): MSVC_WARNINGS are already applied above via if(MSVC),
+    # but /W4 in clang-cl maps to Clang warning groups which fire on things the
+    # project intentionally suppresses. Apply all -Wno-* from CLANG_WARNINGS plus
+    # clang-cl-specific suppressions.
+    if(MSVC AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        foreach(w ${CLANG_WARNINGS})
+            if(w MATCHES "^-Wno-")
+                list(APPEND PROJECT_WARNINGS ${w})
+            endif()
+        endforeach()
+        list(APPEND PROJECT_WARNINGS
+            -Wno-unknown-attributes     # [[no_unique_address]] unsupported in MSVC ABI mode
+        )
     endif()
 
     target_compile_options(${target_name} INTERFACE ${PROJECT_WARNINGS})

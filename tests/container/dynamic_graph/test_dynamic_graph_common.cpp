@@ -42,7 +42,6 @@
 #include <graph/container/traits/dol_graph_traits.hpp>
 #include <graph/container/traits/dov_graph_traits.hpp>
 #include <graph/container/traits/dod_graph_traits.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <graph/graph_data.hpp>
 #include <string>
 #include <vector>
@@ -143,7 +142,7 @@ TEMPLATE_TEST_CASE("move construction",
   REQUIRE(g2.size() == 0);
 }
 
-TEMPLATE_TEST_CASE("construction with initializer_list edges",
+TEMPLATE_TEST_CASE("construction with initializer_list edge_list",
                    "[common][construction]",
                    (vofl_graph_traits<int, void, void, uint64_t, false>),
                    (vol_graph_traits<int, void, void, uint64_t, false>),
@@ -183,8 +182,8 @@ TEMPLATE_TEST_CASE("construction with edge range and load",
   using edge_data = copyable_edge_t<uint64_t, void>;
 
   Graph                  g;
-  std::vector<edge_data> edges = {{0, 1}, {1, 2}, {2, 3}};
-  g.load_edges(edges, std::identity{});
+  std::vector<edge_data> edge_list = {{0, 1}, {1, 2}, {2, 3}};
+  g.load_edges(edge_list, std::identity{});
 
   REQUIRE(g.size() == 4);
 }
@@ -351,7 +350,7 @@ TEMPLATE_TEST_CASE("default value initialization",
   // Vertices should be default-initialized
   REQUIRE(g.size() == 5);
 
-  // Access all vertices to ensure they're properly constructed
+  // Access all vertex_list to ensure they're properly constructed
   for (size_t i = 0; i < 5; ++i) {
     auto& v = g[i];
     (void)v; // Just ensure we can access it
@@ -375,10 +374,10 @@ TEMPLATE_TEST_CASE("load_edges with simple edge list",
   using Graph     = dynamic_graph<void, void, void, uint64_t, false, TestType>;
   using edge_data = copyable_edge_t<uint64_t, void>;
 
-  std::vector<edge_data> edges = {{0, 1}, {1, 2}, {2, 0}};
+  std::vector<edge_data> edge_list = {{0, 1}, {1, 2}, {2, 0}};
 
   Graph g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   REQUIRE(g.size() == 3);
 }
@@ -396,14 +395,14 @@ TEMPLATE_TEST_CASE("load_edges with edge values",
   using Graph     = dynamic_graph<int, void, void, uint64_t, false, TestType>;
   using edge_data = copyable_edge_t<uint64_t, int>;
 
-  std::vector<edge_data> edges = {{0, 1, 10}, {1, 2, 20}, {2, 0, 30}};
+  std::vector<edge_data> edge_list = {{0, 1, 10}, {1, 2, 20}, {2, 0, 30}};
 
   Graph g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   REQUIRE(g.size() == 3);
 
-  // Verify edge values exist (iterator through edges)
+  // Verify edge values exist (iterator through edge_list)
   auto& v0    = g[0];
   bool  found = false;
   for (auto& e : v0.edges()) {
@@ -428,10 +427,10 @@ TEMPLATE_TEST_CASE("load_vertices basic",
   using Graph       = dynamic_graph<void, int, void, uint64_t, false, TestType>;
   using vertex_data = copyable_vertex_t<uint64_t, int>;
 
-  std::vector<vertex_data> vertices = {{0, 100}, {1, 200}, {2, 300}};
+  std::vector<vertex_data> vertex_list = {{0, 100}, {1, 200}, {2, 300}};
 
   Graph g;
-  g.load_vertices(vertices, std::identity{});
+  g.load_vertices(vertex_list, std::identity{});
 
   REQUIRE(g.size() == 3);
   REQUIRE(g[0].value() == 100);
@@ -452,9 +451,9 @@ TEMPLATE_TEST_CASE("load_edges with empty range",
   using Graph     = dynamic_graph<void, void, void, uint64_t, false, TestType>;
   using edge_data = copyable_edge_t<uint64_t, void>;
 
-  std::vector<edge_data> edges;
+  std::vector<edge_data> edge_list;
   Graph                  g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   // Empty edge load may create vertex 0
   REQUIRE(g.size() <= 1);
@@ -473,9 +472,9 @@ TEMPLATE_TEST_CASE("load_edges auto-extends vertex count",
   using Graph     = dynamic_graph<void, void, void, uint64_t, false, TestType>;
   using edge_data = copyable_edge_t<uint64_t, void>;
 
-  std::vector<edge_data> edges = {{0, 10}, {5, 20}};
+  std::vector<edge_data> edge_list = {{0, 10}, {5, 20}};
   Graph                  g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   // Should auto-extend to include vertex 20
   REQUIRE(g.size() >= 21);
@@ -497,11 +496,11 @@ TEMPLATE_TEST_CASE("load_vertices then load_edges",
 
   Graph g;
 
-  std::vector<vertex_data> vertices = {{0, 10}, {1, 20}, {2, 30}};
-  g.load_vertices(vertices, std::identity{});
+  std::vector<vertex_data> vertex_list = {{0, 10}, {1, 20}, {2, 30}};
+  g.load_vertices(vertex_list, std::identity{});
 
-  std::vector<edge_data> edges = {{0, 1, 100}, {1, 2, 200}};
-  g.load_edges(edges, std::identity{});
+  std::vector<edge_data> edge_list = {{0, 1, 100}, {1, 2, 200}};
+  g.load_edges(edge_list, std::identity{});
 
   REQUIRE(g.size() == 3);
   REQUIRE(g[0].value() == 10);
@@ -602,9 +601,9 @@ TEMPLATE_TEST_CASE("load with self-loops",
   using Graph     = dynamic_graph<void, void, void, uint64_t, false, TestType>;
   using edge_data = copyable_edge_t<uint64_t, void>;
 
-  std::vector<edge_data> edges = {{0, 0}, {1, 1}, {0, 1}};
+  std::vector<edge_data> edge_list = {{0, 0}, {1, 1}, {0, 1}};
   Graph                  g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   REQUIRE(g.size() == 2);
 
@@ -619,7 +618,7 @@ TEMPLATE_TEST_CASE("load with self-loops",
   REQUIRE(has_self_loop);
 }
 
-TEMPLATE_TEST_CASE("load vertices with non-contiguous IDs",
+TEMPLATE_TEST_CASE("load vertex_list with non-contiguous IDs",
                    "[common][load]",
                    (vofl_graph_traits<void, int, void, uint64_t, false>),
                    (vol_graph_traits<void, int, void, uint64_t, false>),
@@ -632,9 +631,9 @@ TEMPLATE_TEST_CASE("load vertices with non-contiguous IDs",
   using Graph = dynamic_graph<void, int, void, uint64_t, false, TestType>;
 
   Graph g;
-  g.resize_vertices(11); // Pre-allocate for vertices 0-10
-  std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 100}, {5, 500}, {10, 1000}};
-  g.load_vertices(vertices, std::identity{});
+  g.resize_vertices(11); // Pre-allocate for vertex_list 0-10
+  std::vector<copyable_vertex_t<uint64_t, int>> vertex_list = {{0, 100}, {5, 500}, {10, 1000}};
+  g.load_vertices(vertex_list, std::identity{});
 
   REQUIRE(g.size() == 11); // Should have indices 0-10
   REQUIRE(g[0].value() == 100);
@@ -642,7 +641,7 @@ TEMPLATE_TEST_CASE("load vertices with non-contiguous IDs",
   REQUIRE(g[10].value() == 1000);
 }
 
-TEMPLATE_TEST_CASE("load vertices in reverse order",
+TEMPLATE_TEST_CASE("load vertex_list in reverse order",
                    "[common][load]",
                    (vofl_graph_traits<void, int, void, uint64_t, false>),
                    (vol_graph_traits<void, int, void, uint64_t, false>),
@@ -655,8 +654,8 @@ TEMPLATE_TEST_CASE("load vertices in reverse order",
   using Graph = dynamic_graph<void, int, void, uint64_t, false, TestType>;
 
   Graph                                         g;
-  std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{4, 400}, {3, 300}, {2, 200}, {1, 100}, {0, 0}};
-  g.load_vertices(vertices, std::identity{});
+  std::vector<copyable_vertex_t<uint64_t, int>> vertex_list = {{4, 400}, {3, 300}, {2, 200}, {1, 100}, {0, 0}};
+  g.load_vertices(vertex_list, std::identity{});
 
   REQUIRE(g.size() == 5);
   REQUIRE(g[0].value() == 0);
@@ -680,15 +679,15 @@ TEMPLATE_TEST_CASE("vertex access by index",
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}};
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{0, 1}};
   Graph                                        g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   REQUIRE(g.size() == 2);
   auto& v0 = g[0];
   auto& v1 = g[1];
 
-  // Verify vertices are accessible
+  // Verify vertex_list are accessible
   REQUIRE(&v0 != &v1);
 }
 
@@ -704,9 +703,9 @@ TEMPLATE_TEST_CASE("vertex iteration",
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {1, 2}};
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{0, 1}, {1, 2}};
   Graph                                        g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   size_t count = 0;
   for (auto it = g.begin(); it != g.end(); ++it) {
@@ -727,9 +726,9 @@ TEMPLATE_TEST_CASE("const vertex iteration",
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {1, 2}};
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{0, 1}, {1, 2}};
   Graph                                        g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   const Graph& cg    = g;
   size_t       count = 0;
@@ -739,7 +738,7 @@ TEMPLATE_TEST_CASE("const vertex iteration",
   REQUIRE(count == 3);
 }
 
-TEMPLATE_TEST_CASE("range-based for loop on vertices",
+TEMPLATE_TEST_CASE("range-based for loop on vertex_list",
                    "[common][access]",
                    (vofl_graph_traits<void, int, void, uint64_t, false>),
                    (vol_graph_traits<void, int, void, uint64_t, false>),
@@ -751,9 +750,9 @@ TEMPLATE_TEST_CASE("range-based for loop on vertices",
                    (dod_graph_traits<void, int, void, uint64_t, false>)) {
   using Graph = dynamic_graph<void, int, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 10}, {1, 20}, {2, 30}};
+  std::vector<copyable_vertex_t<uint64_t, int>> vertex_list = {{0, 10}, {1, 20}, {2, 30}};
   Graph                                         g;
-  g.load_vertices(vertices, std::identity{});
+  g.load_vertices(vertex_list, std::identity{});
 
   int sum = 0;
   for (auto& v : g) {
@@ -762,7 +761,7 @@ TEMPLATE_TEST_CASE("range-based for loop on vertices",
   REQUIRE(sum == 60);
 }
 
-TEMPLATE_TEST_CASE("size queries on vertices",
+TEMPLATE_TEST_CASE("size queries on vertex_list",
                    "[common][access]",
                    (vofl_graph_traits<void, void, void, uint64_t, false>),
                    (vol_graph_traits<void, void, void, uint64_t, false>),
@@ -777,8 +776,8 @@ TEMPLATE_TEST_CASE("size queries on vertices",
   Graph g;
   REQUIRE(g.size() == 0);
 
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {1, 2}, {2, 3}};
-  g.load_edges(edges, std::identity{});
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{0, 1}, {1, 2}, {2, 3}};
+  g.load_edges(edge_list, std::identity{});
 
   REQUIRE(g.size() == 4);
 }
@@ -795,9 +794,9 @@ TEMPLATE_TEST_CASE("single vertex access",
                    (dod_graph_traits<void, int, void, uint64_t, false>)) {
   using Graph = dynamic_graph<void, int, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 42}};
+  std::vector<copyable_vertex_t<uint64_t, int>> vertex_list = {{0, 42}};
   Graph                                         g;
-  g.load_vertices(vertices, std::identity{});
+  g.load_vertices(vertex_list, std::identity{});
 
   REQUIRE(g.size() == 1);
   REQUIRE(g[0].value() == 42);
@@ -815,13 +814,13 @@ TEMPLATE_TEST_CASE("large graph vertex access",
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_edge_t<uint64_t, void>> edges;
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list;
   for (uint64_t i = 0; i < 100; ++i) {
-    edges.push_back({i, i + 1});
+    edge_list.push_back({i, i + 1});
   }
 
   Graph g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   REQUIRE(g.size() == 101);
   auto& v50 = g[50];
@@ -840,9 +839,9 @@ TEMPLATE_TEST_CASE("vertex value access and modification",
                    (dod_graph_traits<void, int, void, uint64_t, false>)) {
   using Graph = dynamic_graph<void, int, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 10}, {1, 20}};
+  std::vector<copyable_vertex_t<uint64_t, int>> vertex_list = {{0, 10}, {1, 20}};
   Graph                                         g;
-  g.load_vertices(vertices, std::identity{});
+  g.load_vertices(vertex_list, std::identity{});
 
   REQUIRE(g[0].value() == 10);
   g[0].value() = 100;
@@ -878,9 +877,9 @@ TEMPLATE_TEST_CASE("vertex iterator validity",
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {1, 2}};
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{0, 1}, {1, 2}};
   Graph                                        g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   auto it1 = g.begin();
   auto it2 = g.begin();
@@ -903,8 +902,8 @@ TEMPLATE_TEST_CASE("vertex access bounds checking",
   using Graph = dynamic_graph<void, int, void, uint64_t, false, TestType>;
 
   Graph                                         g;
-  std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 10}, {1, 20}, {2, 30}};
-  g.load_vertices(vertices, std::identity{});
+  std::vector<copyable_vertex_t<uint64_t, int>> vertex_list = {{0, 10}, {1, 20}, {2, 30}};
+  g.load_vertices(vertex_list, std::identity{});
 
   // Valid accesses
   REQUIRE(g[0].value() == 10);
@@ -919,7 +918,7 @@ TEMPLATE_TEST_CASE("vertex access bounds checking",
 //==================================================================================================
 
 TEMPLATE_TEST_CASE("edge iteration from vertex",
-                   "[common][edges]",
+                   "[common][edge_list]",
                    (vofl_graph_traits<void, void, void, uint64_t, false>),
                    (vol_graph_traits<void, void, void, uint64_t, false>),
                    (vov_graph_traits<void, void, void, uint64_t, false>),
@@ -930,9 +929,9 @@ TEMPLATE_TEST_CASE("edge iteration from vertex",
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {0, 2}, {0, 3}};
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{0, 1}, {0, 2}, {0, 3}};
   Graph                                        g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   auto&  v0         = g[0];
   size_t edge_count = 0;
@@ -944,8 +943,8 @@ TEMPLATE_TEST_CASE("edge iteration from vertex",
   REQUIRE(edge_count == 3);
 }
 
-TEMPLATE_TEST_CASE("empty vertex has no edges",
-                   "[common][edges]",
+TEMPLATE_TEST_CASE("empty vertex has no edge_list",
+                   "[common][edge_list]",
                    (vofl_graph_traits<void, void, void, uint64_t, false>),
                    (vol_graph_traits<void, void, void, uint64_t, false>),
                    (vov_graph_traits<void, void, void, uint64_t, false>),
@@ -956,9 +955,9 @@ TEMPLATE_TEST_CASE("empty vertex has no edges",
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}};
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{0, 1}};
   Graph                                        g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   auto&  v1         = g[1];
   size_t edge_count = 0;
@@ -969,8 +968,8 @@ TEMPLATE_TEST_CASE("empty vertex has no edges",
   REQUIRE(edge_count == 0);
 }
 
-TEMPLATE_TEST_CASE("parallel edges support",
-                   "[common][edges]",
+TEMPLATE_TEST_CASE("parallel edge_list support",
+                   "[common][edge_list]",
                    (vofl_graph_traits<int, void, void, uint64_t, false>),
                    (vol_graph_traits<int, void, void, uint64_t, false>),
                    (vov_graph_traits<int, void, void, uint64_t, false>),
@@ -981,9 +980,9 @@ TEMPLATE_TEST_CASE("parallel edges support",
                    (dod_graph_traits<int, void, void, uint64_t, false>)) {
   using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 10}, {0, 1, 20}, {0, 1, 30}};
+  std::vector<copyable_edge_t<uint64_t, int>> edge_list = {{0, 1, 10}, {0, 1, 20}, {0, 1, 30}};
   Graph                                       g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   auto&  v0    = g[0];
   size_t count = 0;
@@ -991,11 +990,11 @@ TEMPLATE_TEST_CASE("parallel edges support",
     REQUIRE(e.target_id() == 1);
     ++count;
   }
-  REQUIRE(count == 3); // All parallel edges exist
+  REQUIRE(count == 3); // All parallel edge_list exist
 }
 
-TEMPLATE_TEST_CASE("edge degree queries",
-                   "[common][edges]",
+TEMPLATE_TEST_CASE("edge degree_count queries",
+                   "[common][edge_list]",
                    (vofl_graph_traits<void, void, void, uint64_t, false>),
                    (vol_graph_traits<void, void, void, uint64_t, false>),
                    (vov_graph_traits<void, void, void, uint64_t, false>),
@@ -1006,20 +1005,20 @@ TEMPLATE_TEST_CASE("edge degree queries",
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {0, 2}, {0, 3}, {1, 2}};
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{0, 1}, {0, 2}, {0, 3}, {1, 2}};
   Graph                                        g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   auto&  v0     = g[0];
-  size_t degree = static_cast<size_t>(std::ranges::distance(v0.edges()));
-  REQUIRE(degree == 3);
+  size_t degree_count = static_cast<size_t>(std::ranges::distance(v0.edges()));
+  REQUIRE(degree_count == 3);
 
   auto& v1 = g[1];
   REQUIRE(static_cast<size_t>(std::ranges::distance(v1.edges())) == 1);
 }
 
 TEMPLATE_TEST_CASE("edge empty check",
-                   "[common][edges]",
+                   "[common][edge_list]",
                    (vofl_graph_traits<void, void, void, uint64_t, false>),
                    (vol_graph_traits<void, void, void, uint64_t, false>),
                    (vov_graph_traits<void, void, void, uint64_t, false>),
@@ -1030,9 +1029,9 @@ TEMPLATE_TEST_CASE("edge empty check",
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}};
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{0, 1}};
   Graph                                        g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   auto& v0 = g[0];
   REQUIRE(v0.edges().begin() != v0.edges().end());
@@ -1042,7 +1041,7 @@ TEMPLATE_TEST_CASE("edge empty check",
 }
 
 TEMPLATE_TEST_CASE("bidirectional edge traversal",
-                   "[common][edges]",
+                   "[common][edge_list]",
                    (vofl_graph_traits<void, void, void, uint64_t, false>),
                    (vol_graph_traits<void, void, void, uint64_t, false>),
                    (vov_graph_traits<void, void, void, uint64_t, false>),
@@ -1053,9 +1052,9 @@ TEMPLATE_TEST_CASE("bidirectional edge traversal",
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {1, 0}};
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{0, 1}, {1, 0}};
   Graph                                        g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   auto& v0            = g[0];
   bool  found_forward = false;
@@ -1076,7 +1075,7 @@ TEMPLATE_TEST_CASE("bidirectional edge traversal",
 }
 
 TEMPLATE_TEST_CASE("edge target validation",
-                   "[common][edges]",
+                   "[common][edge_list]",
                    (vofl_graph_traits<void, void, void, uint64_t, false>),
                    (vol_graph_traits<void, void, void, uint64_t, false>),
                    (vov_graph_traits<void, void, void, uint64_t, false>),
@@ -1087,9 +1086,9 @@ TEMPLATE_TEST_CASE("edge target validation",
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {0, 2}, {0, 3}};
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{0, 1}, {0, 2}, {0, 3}};
   Graph                                        g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   auto&                 v0 = g[0];
   std::vector<uint64_t> targets;
@@ -1105,7 +1104,7 @@ TEMPLATE_TEST_CASE("edge target validation",
 }
 
 TEMPLATE_TEST_CASE("edge value iteration",
-                   "[common][edges]",
+                   "[common][edge_list]",
                    (vofl_graph_traits<int, void, void, uint64_t, false>),
                    (vol_graph_traits<int, void, void, uint64_t, false>),
                    (vov_graph_traits<int, void, void, uint64_t, false>),
@@ -1116,9 +1115,9 @@ TEMPLATE_TEST_CASE("edge value iteration",
                    (dod_graph_traits<int, void, void, uint64_t, false>)) {
   using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 10}, {0, 2, 20}, {0, 3, 30}};
+  std::vector<copyable_edge_t<uint64_t, int>> edge_list = {{0, 1, 10}, {0, 2, 20}, {0, 3, 30}};
   Graph                                       g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   auto& v0  = g[0];
   int   sum = 0;
@@ -1129,7 +1128,7 @@ TEMPLATE_TEST_CASE("edge value iteration",
 }
 
 TEMPLATE_TEST_CASE("edge iterator increment",
-                   "[common][edges]",
+                   "[common][edge_list]",
                    (vofl_graph_traits<void, void, void, uint64_t, false>),
                    (vol_graph_traits<void, void, void, uint64_t, false>),
                    (vov_graph_traits<void, void, void, uint64_t, false>),
@@ -1140,9 +1139,9 @@ TEMPLATE_TEST_CASE("edge iterator increment",
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {0, 2}, {0, 3}};
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{0, 1}, {0, 2}, {0, 3}};
   Graph                                        g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   auto& v0 = g[0];
   auto  it = v0.edges().begin();
@@ -1158,8 +1157,8 @@ TEMPLATE_TEST_CASE("edge iterator increment",
   REQUIRE(it == v0.edges().end());
 }
 
-TEMPLATE_TEST_CASE("high degree vertex",
-                   "[common][edges]",
+TEMPLATE_TEST_CASE("high degree_count vertex",
+                   "[common][edge_list]",
                    (vofl_graph_traits<void, void, void, uint64_t, false>),
                    (vol_graph_traits<void, void, void, uint64_t, false>),
                    (vov_graph_traits<void, void, void, uint64_t, false>),
@@ -1170,21 +1169,21 @@ TEMPLATE_TEST_CASE("high degree vertex",
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_edge_t<uint64_t, void>> edges;
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list;
   for (uint64_t i = 1; i <= 50; ++i) {
-    edges.push_back({0, i});
+    edge_list.push_back({0, i});
   }
 
   Graph g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   auto&  v0     = g[0];
-  size_t degree = static_cast<size_t>(std::ranges::distance(v0.edges()));
-  REQUIRE(degree == 50);
+  size_t degree_count = static_cast<size_t>(std::ranges::distance(v0.edges()));
+  REQUIRE(degree_count == 50);
 }
 
 TEMPLATE_TEST_CASE("edge range filtering",
-                   "[common][edges]",
+                   "[common][edge_list]",
                    (vofl_graph_traits<int, void, void, uint64_t, false>),
                    (vol_graph_traits<int, void, void, uint64_t, false>),
                    (vov_graph_traits<int, void, void, uint64_t, false>),
@@ -1195,9 +1194,9 @@ TEMPLATE_TEST_CASE("edge range filtering",
                    (dod_graph_traits<int, void, void, uint64_t, false>)) {
   using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 10}, {0, 2, 25}, {0, 3, 30}, {0, 4, 15}};
+  std::vector<copyable_edge_t<uint64_t, int>> edge_list = {{0, 1, 10}, {0, 2, 25}, {0, 3, 30}, {0, 4, 15}};
   Graph                                       g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   auto& v0    = g[0];
   auto  count = std::ranges::count_if(v0.edges(), [](const auto& e) { return e.value() >= 20; });
@@ -1205,7 +1204,7 @@ TEMPLATE_TEST_CASE("edge range filtering",
 }
 
 TEMPLATE_TEST_CASE("edge access from const vertex reference",
-                   "[common][edges]",
+                   "[common][edge_list]",
                    (vofl_graph_traits<int, void, void, uint64_t, false>),
                    (vol_graph_traits<int, void, void, uint64_t, false>),
                    (vov_graph_traits<int, void, void, uint64_t, false>),
@@ -1216,9 +1215,9 @@ TEMPLATE_TEST_CASE("edge access from const vertex reference",
                    (dod_graph_traits<int, void, void, uint64_t, false>)) {
   using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 10}, {0, 2, 20}};
+  std::vector<copyable_edge_t<uint64_t, int>> edge_list = {{0, 1, 10}, {0, 2, 20}};
   Graph                                       g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   const auto& v0_const = g[0];
   int         sum      = 0;
@@ -1241,8 +1240,8 @@ TEMPLATE_TEST_CASE("vertex value modification",
   using Graph = dynamic_graph<void, double, void, uint64_t, false, TestType>;
 
   Graph                                            g;
-  std::vector<copyable_vertex_t<uint64_t, double>> vertices = {{0, 1.5}, {1, 2.5}};
-  g.load_vertices(vertices, std::identity{});
+  std::vector<copyable_vertex_t<uint64_t, double>> vertex_list = {{0, 1.5}, {1, 2.5}};
+  g.load_vertices(vertex_list, std::identity{});
 
   g[0].value() = 3.14;
   REQUIRE(g[0].value() == 3.14);
@@ -1279,14 +1278,14 @@ TEMPLATE_TEST_CASE("string values work correctly",
   Graph g("graph_value");
   REQUIRE(g.graph_value() == "graph_value");
 
-  std::vector<copyable_vertex_t<uint64_t, std::string>> vertices = {{0, "v0"}, {1, "v1"}};
-  g.load_vertices(vertices, std::identity{});
+  std::vector<copyable_vertex_t<uint64_t, std::string>> vertex_list = {{0, "v0"}, {1, "v1"}};
+  g.load_vertices(vertex_list, std::identity{});
 
   REQUIRE(g[0].value() == "v0");
   REQUIRE(g[1].value() == "v1");
 
-  std::vector<copyable_edge_t<uint64_t, std::string>> edges = {{0, 1, "e01"}};
-  g.load_edges(edges, std::identity{});
+  std::vector<copyable_edge_t<uint64_t, std::string>> edge_list = {{0, 1, "e01"}};
+  g.load_edges(edge_list, std::identity{});
 
   for (auto& e : g[0].edges()) {
     REQUIRE(e.value() == "e01");
@@ -1305,9 +1304,9 @@ TEMPLATE_TEST_CASE("edge value modification",
                    (dod_graph_traits<int, void, void, uint64_t, false>)) {
   using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 10}};
+  std::vector<copyable_edge_t<uint64_t, int>> edge_list = {{0, 1, 10}};
   Graph                                       g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   auto& v0 = g[0];
   for (auto& e : v0.edges()) {
@@ -1331,9 +1330,9 @@ TEMPLATE_TEST_CASE("vertex value modification",
                    (dod_graph_traits<void, int, void, uint64_t, false>)) {
   using Graph = dynamic_graph<void, int, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 10}, {1, 20}};
+  std::vector<copyable_vertex_t<uint64_t, int>> vertex_list = {{0, 10}, {1, 20}};
   Graph                                         g;
-  g.load_vertices(vertices, std::identity{});
+  g.load_vertices(vertex_list, std::identity{});
 
   g[0].value() = 100;
   g[1].value() = 200;
@@ -1393,12 +1392,12 @@ TEMPLATE_TEST_CASE("mixed value types",
   Graph g(3.14);
   REQUIRE(g.graph_value() == 3.14);
 
-  std::vector<copyable_vertex_t<uint64_t, std::string>> vertices = {{0, "vertex"}};
-  g.load_vertices(vertices, std::identity{});
+  std::vector<copyable_vertex_t<uint64_t, std::string>> vertex_list = {{0, "vertex"}};
+  g.load_vertices(vertex_list, std::identity{});
   REQUIRE(g[0].value() == "vertex");
 
-  std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 0, 42}};
-  g.load_edges(edges, std::identity{});
+  std::vector<copyable_edge_t<uint64_t, int>> edge_list = {{0, 0, 42}};
+  g.load_edges(edge_list, std::identity{});
 
   for (auto& e : g[0].edges()) {
     REQUIRE(e.value() == 42);
@@ -1418,10 +1417,10 @@ TEMPLATE_TEST_CASE("const value access",
   using Graph = dynamic_graph<int, int, int, uint64_t, false, TestType>;
 
   Graph                                         g(42);
-  std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 10}};
-  g.load_vertices(vertices, std::identity{});
-  std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 0, 5}};
-  g.load_edges(edges, std::identity{});
+  std::vector<copyable_vertex_t<uint64_t, int>> vertex_list = {{0, 10}};
+  g.load_vertices(vertex_list, std::identity{});
+  std::vector<copyable_edge_t<uint64_t, int>> edge_list = {{0, 0, 5}};
+  g.load_edges(edge_list, std::identity{});
 
   const Graph& cg = g;
   REQUIRE(cg.graph_value() == 42);
@@ -1449,14 +1448,14 @@ TEMPLATE_TEST_CASE("large graph construction",
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
-  // Create a graph with 1000 vertices
-  std::vector<copyable_edge_t<uint64_t, void>> edges;
+  // Create a graph with 1000 vertex_list
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list;
   for (uint64_t i = 0; i < 1000; ++i) {
-    edges.push_back({i, (i + 1) % 1000});
+    edge_list.push_back({i, (i + 1) % 1000});
   }
 
   Graph g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   REQUIRE(g.size() == 1000);
 }
@@ -1476,8 +1475,8 @@ TEMPLATE_TEST_CASE("graph size tracking",
   Graph g;
   REQUIRE(g.size() == 0);
 
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {1, 2}};
-  g.load_edges(edges, std::identity{});
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{0, 1}, {1, 2}};
+  g.load_edges(edge_list, std::identity{});
   REQUIRE(g.size() == 3);
 
   std::vector<copyable_edge_t<uint64_t, void>> more_edges = {{3, 4}};
@@ -1497,9 +1496,9 @@ TEMPLATE_TEST_CASE("begin/end iteration",
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {1, 2}};
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{0, 1}, {1, 2}};
   Graph                                        g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   size_t count = 0;
   for (auto it = g.begin(); it != g.end(); ++it) {
@@ -1520,9 +1519,9 @@ TEMPLATE_TEST_CASE("cbegin/cend const iteration",
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {1, 2}};
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{0, 1}, {1, 2}};
   Graph                                        g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   size_t count = 0;
   for (auto it = g.cbegin(); it != g.cend(); ++it) {
@@ -1587,9 +1586,9 @@ TEMPLATE_TEST_CASE("graph iterator distance",
                    (dod_graph_traits<void, void, void, uint64_t, false>)) {
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {1, 2}, {2, 3}};
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{0, 1}, {1, 2}, {2, 3}};
   Graph                                        g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   auto dist = std::distance(g.begin(), g.end());
   REQUIRE(static_cast<size_t>(dist) == g.size());
@@ -1608,10 +1607,10 @@ TEMPLATE_TEST_CASE("copy preserves structure",
   using Graph = dynamic_graph<int, int, void, uint64_t, false, TestType>;
 
   Graph                                         g1;
-  std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 10}, {1, 20}};
-  g1.load_vertices(vertices, std::identity{});
-  std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 100}};
-  g1.load_edges(edges, std::identity{});
+  std::vector<copyable_vertex_t<uint64_t, int>> vertex_list = {{0, 10}, {1, 20}};
+  g1.load_vertices(vertex_list, std::identity{});
+  std::vector<copyable_edge_t<uint64_t, int>> edge_list = {{0, 1, 100}};
+  g1.load_edges(edge_list, std::identity{});
 
   Graph g2(g1);
   REQUIRE(g2.size() == g1.size());
@@ -1631,11 +1630,11 @@ TEMPLATE_TEST_CASE("ranges integration",
                    (dod_graph_traits<int, void, void, uint64_t, false>)) {
   using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 10}, {0, 2, 20}, {1, 2, 30}};
+  std::vector<copyable_edge_t<uint64_t, int>> edge_list = {{0, 1, 10}, {0, 2, 20}, {1, 2, 30}};
   Graph                                       g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
-  // Use std::ranges to count edges with value >= 20
+  // Use std::ranges to count edge_list with value >= 20
   auto& v0    = g[0];
   auto  count = std::ranges::count_if(v0.edges(), [](const auto& e) { return e.value() >= 20; });
   REQUIRE(count == 1);
@@ -1654,13 +1653,13 @@ TEMPLATE_TEST_CASE("graph equality comparison",
   using Graph = dynamic_graph<void, int, int, uint64_t, false, TestType>;
 
   Graph                                         g1;
-  std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 10}, {1, 20}};
-  g1.load_vertices(vertices, std::identity{});
+  std::vector<copyable_vertex_t<uint64_t, int>> vertex_list = {{0, 10}, {1, 20}};
+  g1.load_vertices(vertex_list, std::identity{});
 
   Graph g2;
-  g2.load_vertices(vertices, std::identity{});
+  g2.load_vertices(vertex_list, std::identity{});
 
-  // Both graphs have same vertices
+  // Both graphs have same vertex_list
   REQUIRE(g1.size() == g2.size());
   REQUIRE(g1[0].value() == g2[0].value());
 }
@@ -1678,8 +1677,8 @@ TEMPLATE_TEST_CASE("graph capacity queries",
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
   Graph                                        g;
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {1, 2}, {2, 3}};
-  g.load_edges(edges, std::identity{});
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{0, 1}, {1, 2}, {2, 3}};
+  g.load_edges(edge_list, std::identity{});
 
   REQUIRE(g.size() == 4);
   REQUIRE(g.begin() != g.end());
@@ -1730,10 +1729,10 @@ TEMPLATE_TEST_CASE("clear graph",
   using Graph = dynamic_graph<int, int, void, uint64_t, false, TestType>;
 
   Graph                                         g;
-  std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 10}, {1, 20}};
-  g.load_vertices(vertices, std::identity{});
-  std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 100}};
-  g.load_edges(edges, std::identity{});
+  std::vector<copyable_vertex_t<uint64_t, int>> vertex_list = {{0, 10}, {1, 20}};
+  g.load_vertices(vertex_list, std::identity{});
+  std::vector<copyable_edge_t<uint64_t, int>> edge_list = {{0, 1, 100}};
+  g.load_edges(edge_list, std::identity{});
 
   REQUIRE(g.size() == 2);
 
@@ -1755,8 +1754,8 @@ TEMPLATE_TEST_CASE("resize graph",
   using Graph = dynamic_graph<void, int, void, uint64_t, false, TestType>;
 
   Graph                                         g;
-  std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 10}, {1, 20}};
-  g.load_vertices(vertices, std::identity{});
+  std::vector<copyable_vertex_t<uint64_t, int>> vertex_list = {{0, 10}, {1, 20}};
+  g.load_vertices(vertex_list, std::identity{});
 
   REQUIRE(g.size() == 2);
 
@@ -1781,8 +1780,8 @@ TEMPLATE_TEST_CASE("repeated load operations",
   Graph g;
 
   for (int i = 0; i < 10; ++i) {
-    std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}};
-    g.load_edges(edges, std::identity{});
+    std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{0, 1}};
+    g.load_edges(edge_list, std::identity{});
   }
 
   REQUIRE(g.size() == 2);
@@ -1801,11 +1800,11 @@ TEMPLATE_TEST_CASE("large vertex count",
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
   Graph                                        g;
-  std::vector<copyable_edge_t<uint64_t, void>> edges;
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list;
   for (uint64_t i = 0; i < 100; ++i) {
-    edges.push_back({i, i + 1});
+    edge_list.push_back({i, i + 1});
   }
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   REQUIRE(g.size() == 101);
   REQUIRE(g.begin() != g.end());
@@ -1824,8 +1823,8 @@ TEMPLATE_TEST_CASE("move assignment efficiency",
   using Graph = dynamic_graph<std::string, std::string, void, uint64_t, false, TestType>;
 
   Graph                                                 g1;
-  std::vector<copyable_vertex_t<uint64_t, std::string>> vertices = {{0, "test"}};
-  g1.load_vertices(vertices, std::identity{});
+  std::vector<copyable_vertex_t<uint64_t, std::string>> vertex_list = {{0, "test"}};
+  g1.load_vertices(vertex_list, std::identity{});
 
   Graph g2;
   g2 = std::move(g1);
@@ -1847,13 +1846,13 @@ TEMPLATE_TEST_CASE("sparse graph memory",
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
   Graph g;
-  // Create sparse graph: only edges 0->100 and 50->150
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 100}, {50, 150}};
-  g.load_edges(edges, std::identity{});
+  // Create sparse graph: only edge_list 0->100 and 50->150
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{0, 100}, {50, 150}};
+  g.load_edges(edge_list, std::identity{});
 
   REQUIRE(g.size() == 151);
 
-  // Most vertices should have no edges
+  // Most vertex_list should have no edge_list
   size_t empty_count = 0;
   for (auto& v : g) {
     if (v.edges().begin() == v.edges().end()) {
@@ -1904,8 +1903,8 @@ TEMPLATE_TEST_CASE("single vertex graph",
   using Graph = dynamic_graph<void, int, void, uint64_t, false, TestType>;
 
   Graph                                         g;
-  std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 42}};
-  g.load_vertices(vertices, std::identity{});
+  std::vector<copyable_vertex_t<uint64_t, int>> vertex_list = {{0, 42}};
+  g.load_vertices(vertex_list, std::identity{});
 
   REQUIRE(g.size() == 1);
   REQUIRE(g[0].value() == 42);
@@ -1925,8 +1924,8 @@ TEMPLATE_TEST_CASE("only self-loops",
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
   Graph                                        g;
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 0}, {1, 1}, {2, 2}};
-  g.load_edges(edges, std::identity{});
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{0, 0}, {1, 1}, {2, 2}};
+  g.load_edges(edge_list, std::identity{});
 
   REQUIRE(g.size() == 3);
 
@@ -1941,7 +1940,7 @@ TEMPLATE_TEST_CASE("only self-loops",
   }
 }
 
-TEMPLATE_TEST_CASE("disconnected vertices",
+TEMPLATE_TEST_CASE("disconnected vertex_list",
                    "[common][edge_case]",
                    (vofl_graph_traits<void, void, void, uint64_t, false>),
                    (vol_graph_traits<void, void, void, uint64_t, false>),
@@ -1954,12 +1953,12 @@ TEMPLATE_TEST_CASE("disconnected vertices",
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
   Graph                                        g;
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {2, 3}};
-  g.load_edges(edges, std::identity{});
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{0, 1}, {2, 3}};
+  g.load_edges(edge_list, std::identity{});
 
   REQUIRE(g.size() == 4);
 
-  // Vertices 1 and 2 have no outgoing edges
+  // Vertices 1 and 2 have no outgoing edge_list
   REQUIRE(g[1].edges().begin() == g[1].edges().end());
 }
 
@@ -1976,22 +1975,22 @@ TEMPLATE_TEST_CASE("complete graph small",
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
   Graph g;
-  // Complete graph K4: all vertices connected to all others
-  std::vector<copyable_edge_t<uint64_t, void>> edges;
+  // Complete graph K4: all vertex_list connected to all others
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list;
   for (uint64_t i = 0; i < 4; ++i) {
     for (uint64_t j = 0; j < 4; ++j) {
       if (i != j) {
-        edges.push_back({i, j});
+        edge_list.push_back({i, j});
       }
     }
   }
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   REQUIRE(g.size() == 4);
 
   for (size_t i = 0; i < 4; ++i) {
-    size_t degree = static_cast<size_t>(std::ranges::distance(g[i].edges()));
-    REQUIRE(degree == 3);
+    size_t degree_count = static_cast<size_t>(std::ranges::distance(g[i].edges()));
+    REQUIRE(degree_count == 3);
   }
 }
 
@@ -2009,11 +2008,11 @@ TEMPLATE_TEST_CASE("star graph",
 
   Graph g;
   // Star: center vertex 0 connects to all others
-  std::vector<copyable_edge_t<uint64_t, void>> edges;
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list;
   for (uint64_t i = 1; i <= 10; ++i) {
-    edges.push_back({0, i});
+    edge_list.push_back({0, i});
   }
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   size_t center_degree = static_cast<size_t>(std::ranges::distance(g[0].edges()));
   REQUIRE(center_degree == 10);
@@ -2037,18 +2036,18 @@ TEMPLATE_TEST_CASE("chain graph",
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
   Graph                                        g;
-  std::vector<copyable_edge_t<uint64_t, void>> edges;
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list;
   for (uint64_t i = 0; i < 10; ++i) {
-    edges.push_back({i, i + 1});
+    edge_list.push_back({i, i + 1});
   }
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   REQUIRE(g.size() == 11);
 
   // Each vertex (except last) has exactly 1 outgoing edge
   for (size_t i = 0; i < 10; ++i) {
-    size_t degree = static_cast<size_t>(std::ranges::distance(g[i].edges()));
-    REQUIRE(degree == 1);
+    size_t degree_count = static_cast<size_t>(std::ranges::distance(g[i].edges()));
+    REQUIRE(degree_count == 1);
   }
 }
 
@@ -2065,8 +2064,8 @@ TEMPLATE_TEST_CASE("duplicate edge loading",
   using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
 
   Graph                                       g;
-  std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 10}, {0, 1, 20}, {0, 1, 30}};
-  g.load_edges(edges, std::identity{});
+  std::vector<copyable_edge_t<uint64_t, int>> edge_list = {{0, 1, 10}, {0, 1, 20}, {0, 1, 30}};
+  g.load_edges(edge_list, std::identity{});
 
   // All duplicates should be loaded
   size_t count = static_cast<size_t>(std::ranges::distance(g[0].edges()));
@@ -2086,8 +2085,8 @@ TEMPLATE_TEST_CASE("very large vertex ID",
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
   Graph                                        g;
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1000}};
-  g.load_edges(edges, std::identity{});
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{0, 1000}};
+  g.load_edges(edge_list, std::identity{});
 
   REQUIRE(g.size() >= 1001);
 }
@@ -2106,13 +2105,13 @@ TEMPLATE_TEST_CASE("mixed load order",
 
   Graph g;
 
-  // Load edges first
-  std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 100}};
-  g.load_edges(edges, std::identity{});
+  // Load edge_list first
+  std::vector<copyable_edge_t<uint64_t, int>> edge_list = {{0, 1, 100}};
+  g.load_edges(edge_list, std::identity{});
 
   // Then load vertices (should overwrite defaults)
-  std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 10}, {1, 20}};
-  g.load_vertices(vertices, std::identity{});
+  std::vector<copyable_vertex_t<uint64_t, int>> vertex_list = {{0, 10}, {1, 20}};
+  g.load_vertices(vertex_list, std::identity{});
 
   REQUIRE(g[0].value() == 10);
   REQUIRE(g[1].value() == 20);
@@ -2131,15 +2130,15 @@ TEMPLATE_TEST_CASE("cycle graph",
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
   Graph                                        g;
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
-  g.load_edges(edges, std::identity{});
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
+  g.load_edges(edge_list, std::identity{});
 
   REQUIRE(g.size() == 4);
 
   // Each vertex has exactly 1 outgoing edge
   for (size_t i = 0; i < 4; ++i) {
-    size_t degree = static_cast<size_t>(std::ranges::distance(g[i].edges()));
-    REQUIRE(degree == 1);
+    size_t degree_count = static_cast<size_t>(std::ranges::distance(g[i].edges()));
+    REQUIRE(degree_count == 1);
   }
 }
 
@@ -2157,22 +2156,22 @@ TEMPLATE_TEST_CASE("bipartite graph",
 
   Graph g;
   // Bipartite: group 0,1,2 connects only to group 3,4,5
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 3}, {0, 4}, {0, 5}, {1, 3}, {1, 4},
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{0, 3}, {0, 4}, {0, 5}, {1, 3}, {1, 4},
                                                         {1, 5}, {2, 3}, {2, 4}, {2, 5}};
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   REQUIRE(g.size() == 6);
 
-  // Group 1 has outgoing edges
+  // Group 1 has outgoing edge_list
   for (size_t i = 0; i < 3; ++i) {
-    size_t degree = static_cast<size_t>(std::ranges::distance(g[i].edges()));
-    REQUIRE(degree == 3);
+    size_t degree_count = static_cast<size_t>(std::ranges::distance(g[i].edges()));
+    REQUIRE(degree_count == 3);
   }
 
-  // Group 2 has no outgoing edges
+  // Group 2 has no outgoing edge_list
   for (size_t i = 3; i < 6; ++i) {
-    size_t degree = static_cast<size_t>(std::ranges::distance(g[i].edges()));
-    REQUIRE(degree == 0);
+    size_t degree_count = static_cast<size_t>(std::ranges::distance(g[i].edges()));
+    REQUIRE(degree_count == 0);
   }
 }
 
@@ -2205,8 +2204,8 @@ TEMPLATE_TEST_CASE("zero vertex ID",
   using Graph = dynamic_graph<void, int, void, uint64_t, false, TestType>;
 
   Graph                                         g;
-  std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 42}};
-  g.load_vertices(vertices, std::identity{});
+  std::vector<copyable_vertex_t<uint64_t, int>> vertex_list = {{0, 42}};
+  g.load_vertices(vertex_list, std::identity{});
 
   REQUIRE(g.size() >= 1);
   REQUIRE(g[0].value() == 42);
@@ -2225,9 +2224,9 @@ TEMPLATE_TEST_CASE("maximum vertex ID handling",
   using Graph = dynamic_graph<void, int, void, uint32_t, false, TestType>;
 
   Graph g;
-  g.resize_vertices(1001); // Pre-allocate for vertices 0-1000
-  std::vector<copyable_vertex_t<uint32_t, int>> vertices = {{0, 1}, {1000, 1000}};
-  g.load_vertices(vertices, std::identity{});
+  g.resize_vertices(1001); // Pre-allocate for vertex_list 0-1000
+  std::vector<copyable_vertex_t<uint32_t, int>> vertex_list = {{0, 1}, {1000, 1000}};
+  g.load_vertices(vertex_list, std::identity{});
 
   REQUIRE(g.size() == 1001);
   REQUIRE(g[1000].value() == 1000);
@@ -2245,17 +2244,14 @@ TEMPLATE_TEST_CASE("unordered edge loading",
                    (dod_graph_traits<int, void, void, uint64_t, false>)) {
   using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
 
-  std::vector<copyable_edge_t<uint64_t, int>> edges = {{5, 2, 52}, {0, 3, 3}, {2, 1, 21}, {3, 5, 35}};
+  std::vector<copyable_edge_t<uint64_t, int>> edge_list = {{5, 2, 52}, {0, 3, 3}, {2, 1, 21}, {3, 5, 35}};
   Graph                                       g;
-  g.load_edges(edges, std::identity{});
+  g.load_edges(edge_list, std::identity{});
 
   REQUIRE(g.size() == 6);
-  // Verify vertex 5 exists and has edges
+  // Verify vertex 5 exists and has edge_list
   auto&  v5         = g[5];
-  size_t edge_count = 0;
-  for (auto& e : v5.edges()) {
-    ++edge_count;
-  }
+  size_t edge_count = static_cast<size_t>(std::ranges::distance(v5.edges()));
   REQUIRE(edge_count >= 1);
 }
 
@@ -2276,8 +2272,8 @@ TEMPLATE_TEST_CASE("vertex iterator pre-increment",
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
   Graph                                        g;
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {1, 2}};
-  g.load_edges(edges, std::identity{});
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{0, 1}, {1, 2}};
+  g.load_edges(edge_list, std::identity{});
 
   auto it  = g.begin();
   auto it2 = ++it;
@@ -2298,8 +2294,8 @@ TEMPLATE_TEST_CASE("edge iterator comparison",
   using Graph = dynamic_graph<void, void, void, uint64_t, false, TestType>;
 
   Graph                                        g;
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{0, 1}, {0, 2}};
-  g.load_edges(edges, std::identity{});
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{0, 1}, {0, 2}};
+  g.load_edges(edge_list, std::identity{});
 
   auto& v0  = g[0];
   auto  it1 = v0.edges().begin();
@@ -2310,7 +2306,7 @@ TEMPLATE_TEST_CASE("edge iterator comparison",
   REQUIRE(it1 != it2);
 }
 
-TEMPLATE_TEST_CASE("ranges filter edges",
+TEMPLATE_TEST_CASE("ranges filter edge_list",
                    "[common][iterators]",
                    (vofl_graph_traits<int, void, void, uint64_t, false>),
                    (vol_graph_traits<int, void, void, uint64_t, false>),
@@ -2323,8 +2319,8 @@ TEMPLATE_TEST_CASE("ranges filter edges",
   using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
 
   Graph                                       g;
-  std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 5}, {0, 2, 15}, {0, 3, 25}, {0, 4, 35}};
-  g.load_edges(edges, std::identity{});
+  std::vector<copyable_edge_t<uint64_t, int>> edge_list = {{0, 1, 5}, {0, 2, 15}, {0, 3, 25}, {0, 4, 35}};
+  g.load_edges(edge_list, std::identity{});
 
   auto& v0       = g[0];
   auto  filtered = v0.edges() | std::views::filter([](const auto& e) { return e.value() > 10; });
@@ -2333,7 +2329,7 @@ TEMPLATE_TEST_CASE("ranges filter edges",
   REQUIRE(count == 3);
 }
 
-TEMPLATE_TEST_CASE("ranges transform edges",
+TEMPLATE_TEST_CASE("ranges transform edge_list",
                    "[common][iterators]",
                    (vofl_graph_traits<int, void, void, uint64_t, false>),
                    (vol_graph_traits<int, void, void, uint64_t, false>),
@@ -2346,8 +2342,8 @@ TEMPLATE_TEST_CASE("ranges transform edges",
   using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
 
   Graph                                       g;
-  std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 10}, {0, 2, 20}, {0, 3, 30}};
-  g.load_edges(edges, std::identity{});
+  std::vector<copyable_edge_t<uint64_t, int>> edge_list = {{0, 1, 10}, {0, 2, 20}, {0, 3, 30}};
+  g.load_edges(edge_list, std::identity{});
 
   auto& v0          = g[0];
   auto  transformed = v0.edges() | std::views::transform([](const auto& e) { return e.value() * 2; });
@@ -2372,8 +2368,8 @@ TEMPLATE_TEST_CASE("ranges accumulate edge values",
   using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
 
   Graph                                       g;
-  std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 10}, {0, 2, 20}, {0, 3, 30}};
-  g.load_edges(edges, std::identity{});
+  std::vector<copyable_edge_t<uint64_t, int>> edge_list = {{0, 1, 10}, {0, 2, 20}, {0, 3, 30}};
+  g.load_edges(edge_list, std::identity{});
 
   auto& v0  = g[0];
   int   sum = 0;
@@ -2396,8 +2392,8 @@ TEMPLATE_TEST_CASE("ranges find edge",
   using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
 
   Graph                                       g;
-  std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 10}, {0, 2, 20}, {0, 3, 30}};
-  g.load_edges(edges, std::identity{});
+  std::vector<copyable_edge_t<uint64_t, int>> edge_list = {{0, 1, 10}, {0, 2, 20}, {0, 3, 30}};
+  g.load_edges(edge_list, std::identity{});
 
   auto& v0 = g[0];
   auto  it = std::ranges::find_if(v0.edges(), [](const auto& e) { return e.value() == 20; });
@@ -2419,8 +2415,8 @@ TEMPLATE_TEST_CASE("ranges all_of edge predicate",
   using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
 
   Graph                                       g;
-  std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 10}, {0, 2, 20}, {0, 3, 30}};
-  g.load_edges(edges, std::identity{});
+  std::vector<copyable_edge_t<uint64_t, int>> edge_list = {{0, 1, 10}, {0, 2, 20}, {0, 3, 30}};
+  g.load_edges(edge_list, std::identity{});
 
   auto& v0           = g[0];
   bool  all_positive = std::ranges::all_of(v0.edges(), [](const auto& e) { return e.value() > 0; });
@@ -2441,8 +2437,8 @@ TEMPLATE_TEST_CASE("ranges any_of edge predicate",
   using Graph = dynamic_graph<int, void, void, uint64_t, false, TestType>;
 
   Graph                                       g;
-  std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 5}, {0, 2, 15}, {0, 3, 25}};
-  g.load_edges(edges, std::identity{});
+  std::vector<copyable_edge_t<uint64_t, int>> edge_list = {{0, 1, 5}, {0, 2, 15}, {0, 3, 25}};
+  g.load_edges(edge_list, std::identity{});
 
   auto& v0        = g[0];
   bool  has_large = std::ranges::any_of(v0.edges(), [](const auto& e) { return e.value() > 20; });
@@ -2468,16 +2464,16 @@ TEMPLATE_TEST_CASE("build graph incrementally",
 
   Graph g;
 
-  // Step 1: Add vertices
-  std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 10}, {1, 20}, {2, 30}};
-  g.load_vertices(vertices, std::identity{});
+  // Step 1: Add vertex_list
+  std::vector<copyable_vertex_t<uint64_t, int>> vertex_list = {{0, 10}, {1, 20}, {2, 30}};
+  g.load_vertices(vertex_list, std::identity{});
   REQUIRE(g.size() == 3);
 
-  // Step 2: Add edges
+  // Step 2: Add edge_list
   std::vector<copyable_edge_t<uint64_t, int>> edges1 = {{0, 1, 100}};
   g.load_edges(edges1, std::identity{});
 
-  // Step 3: Add more edges
+  // Step 3: Add more edge_list
   std::vector<copyable_edge_t<uint64_t, int>> edges2 = {{1, 2, 200}};
   g.load_edges(edges2, std::identity{});
 
@@ -2500,10 +2496,10 @@ TEMPLATE_TEST_CASE("modify and query",
   using Graph = dynamic_graph<int, int, void, uint64_t, false, TestType>;
 
   Graph                                         g;
-  std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 10}, {1, 20}};
-  g.load_vertices(vertices, std::identity{});
-  std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 100}};
-  g.load_edges(edges, std::identity{});
+  std::vector<copyable_vertex_t<uint64_t, int>> vertex_list = {{0, 10}, {1, 20}};
+  g.load_vertices(vertex_list, std::identity{});
+  std::vector<copyable_edge_t<uint64_t, int>> edge_list = {{0, 1, 100}};
+  g.load_edges(edge_list, std::identity{});
 
   // Modify
   g[0].value() = 99;
@@ -2531,8 +2527,8 @@ TEMPLATE_TEST_CASE("copy and modify independently",
   using Graph = dynamic_graph<int, int, void, uint64_t, false, TestType>;
 
   Graph                                         g1;
-  std::vector<copyable_vertex_t<uint64_t, int>> vertices = {{0, 10}};
-  g1.load_vertices(vertices, std::identity{});
+  std::vector<copyable_vertex_t<uint64_t, int>> vertex_list = {{0, 10}};
+  g1.load_vertices(vertex_list, std::identity{});
 
   Graph g2(g1);
 
@@ -2634,11 +2630,11 @@ TEMPLATE_TEST_CASE("complex graph construction",
 
   Graph g(3.14159);
 
-  std::vector<copyable_vertex_t<uint64_t, std::string>> vertices = {{0, "Alice"}, {1, "Bob"}, {2, "Charlie"}};
-  g.load_vertices(vertices, std::identity{});
+  std::vector<copyable_vertex_t<uint64_t, std::string>> vertex_list = {{0, "Alice"}, {1, "Bob"}, {2, "Charlie"}};
+  g.load_vertices(vertex_list, std::identity{});
 
-  std::vector<copyable_edge_t<uint64_t, int>> edges = {{0, 1, 10}, {1, 2, 20}, {2, 0, 30}};
-  g.load_edges(edges, std::identity{});
+  std::vector<copyable_edge_t<uint64_t, int>> edge_list = {{0, 1, 10}, {1, 2, 20}, {2, 0, 30}};
+  g.load_edges(edge_list, std::identity{});
 
   REQUIRE(g.graph_value() == 3.14159);
   REQUIRE(g.size() == 3);
@@ -2667,15 +2663,15 @@ TEMPLATE_TEST_CASE("multi-component graph workflow",
   using Graph = dynamic_graph<void, int, void, uint64_t, false, TestType>;
 
   Graph g;
-  g.resize_vertices(8); // Pre-allocate space for all vertices
+  g.resize_vertices(8); // Pre-allocate space for all vertex_list
 
-  // Component 1: vertices 0-2
+  // Component 1: vertex_list 0-2
   std::vector<copyable_vertex_t<uint64_t, int>> comp1 = {{0, 10}, {1, 20}, {2, 30}};
   g.load_vertices(comp1, std::identity{});
   std::vector<copyable_edge_t<uint64_t, void>> edges1 = {{0, 1}, {1, 2}};
   g.load_edges(edges1, std::identity{});
 
-  // Component 2: vertices 5-7 (disconnected from component 1)
+  // Component 2: vertex_list 5-7 (disconnected from component 1)
   std::vector<copyable_vertex_t<uint64_t, int>> comp2 = {{5, 50}, {6, 60}, {7, 70}};
   g.load_vertices(comp2, std::identity{});
   std::vector<copyable_edge_t<uint64_t, void>> edges2 = {{5, 6}, {6, 7}};
@@ -2685,7 +2681,7 @@ TEMPLATE_TEST_CASE("multi-component graph workflow",
   REQUIRE(g[0].value() == 10);
   REQUIRE(g[5].value() == 50);
 
-  // Vertices 3 and 4 exist but have no edges
+  // Vertices 3 and 4 exist but have no edge_list
   auto& v3 = g[3];
   REQUIRE(v3.edges().begin() == v3.edges().end());
   auto& v4 = g[4];

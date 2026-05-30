@@ -15,8 +15,8 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # Enable folder organization in IDEs
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-# Enable parallel compilation for MSVC
-if(MSVC)
+# Enable parallel compilation for MSVC (cl.exe only; clang-cl doesn't support /MP)
+if(MSVC AND NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     # Use /MP to enable parallel compilation with all available cores
     add_compile_options(/MP)
     message(STATUS "MSVC parallel compilation enabled with /MP")

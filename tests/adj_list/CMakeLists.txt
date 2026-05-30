@@ -63,4 +63,6 @@ if(MSVC)
 endif()
 
 # Register tests with CTest
-catch_discover_tests(graph3_adj_list_tests)
+catch_discover_tests(graph3_adj_list_tests
+    DISCOVERY_MODE PRE_TEST
+)

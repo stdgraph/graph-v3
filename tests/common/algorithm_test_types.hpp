@@ -127,9 +127,10 @@ using mofl_weighted = graph_test_types<mofl_tag>::int_ev;
 // Undirected Graph Types (when undirected_adjacency_list support is added)
 // =============================================================================
 
-// Placeholder for future undirected graph types
-// #define ALL_UNDIRECTED_TYPES \
-//     undirected_vov, undirected_dov, undirected_vol
+/* Placeholder for future undirected graph types:
+#define ALL_UNDIRECTED_TYPES \
+  undirected_vov, undirected_dov, undirected_vol
+*/
 
 // =============================================================================
 // Helper Traits for Algorithm Requirements

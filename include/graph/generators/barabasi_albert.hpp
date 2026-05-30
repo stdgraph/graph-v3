@@ -39,15 +39,15 @@ edge_list<VId> barabasi_albert(VId n, VId m, uint64_t seed = 42,
   std::vector<VId> urn;
   urn.reserve(2 * static_cast<size_t>(n) * m);
 
-  edge_list<VId> edges;
-  edges.reserve(2 * static_cast<size_t>(n) * m);
+  edge_list<VId> generated_edges;
+  generated_edges.reserve(2 * static_cast<size_t>(n) * m);
 
   // Seed: fully-connected clique of m0 vertices
   const VId m0 = std::max(m, VId{2});
   for (VId u = 0; u < m0; ++u) {
     for (VId v = u + 1; v < m0; ++v) {
-      edges.push_back({u, v, sample_weight(rng, wdist)});
-      edges.push_back({v, u, sample_weight(rng, wdist)});
+      generated_edges.push_back({u, v, sample_weight(rng, wdist)});
+      generated_edges.push_back({v, u, sample_weight(rng, wdist)});
       urn.push_back(u);
       urn.push_back(v);
     }
@@ -66,17 +66,17 @@ edge_list<VId> barabasi_albert(VId n, VId m, uint64_t seed = 42,
         already |= (x == t);
       if (!already) {
         chosen.push_back(t);
-        edges.push_back({w, t, sample_weight(rng, wdist)});
-        edges.push_back({t, w, sample_weight(rng, wdist)});
+        generated_edges.push_back({w, t, sample_weight(rng, wdist)});
+        generated_edges.push_back({t, w, sample_weight(rng, wdist)});
         urn.push_back(w);
         urn.push_back(t);
       }
     }
   }
 
-  std::stable_sort(edges.begin(), edges.end(),
+  std::stable_sort(generated_edges.begin(), generated_edges.end(),
                    [](const auto& a, const auto& b) { return a.source_id < b.source_id; });
-  return edges;
+  return generated_edges;
 }
 
 } // namespace graph::generators

@@ -98,8 +98,8 @@ public:
   using reference = std::iter_reference_t<BaseIter>;
 
   filtering_iterator() = default;
-  filtering_iterator(BaseIter begin, BaseIter end, Pred pred)
-      : current_(begin), end_(end), pred_(std::move(pred)) {
+  filtering_iterator(BaseIter begin_it, BaseIter end_it, Pred pred)
+      : current_(begin_it), end_(end_it), pred_(std::move(pred)) {
     advance_to_valid();
   }
 

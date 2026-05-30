@@ -49,7 +49,7 @@ struct BFSTrackingVisitor {
   }
 
   template <typename G, typename Edge>
-  void on_examine_edge(const G& g, const Edge& e) {
+  void on_examine_edge(const G&, const Edge&) {
     // Store edge endpoints for verification
     edges_examined.push_back({-1, -1}); // Placeholder, actual implementation would extract source/target
   }
@@ -197,11 +197,11 @@ TEST_CASE("breadth_first_search - complete graph", "[algorithm][bfs][single_sour
 TEST_CASE("breadth_first_search - tree structure", "[algorithm][bfs][single_source]") {
   using Graph = vov_void;
 
-  // Binary tree:      0
-  //                  / \\
-    //                1     2
-  //               / \\
-    //              3   4
+  /* Binary tree:      0
+                      / \\
+                     1   2
+                    / \\
+                   3   4 */
   Graph           g({{0, 1}, {0, 2}, {1, 3}, {1, 4}});
   CountingVisitor visitor;
 
@@ -654,10 +654,10 @@ TEMPLATE_TEST_CASE("breadth_first_search - sparse graph basic traversal",
   using Graph = TestType;
 
   auto g      = bfs_graph<Graph>();
-  auto source = bfs_source<Graph>();
+  auto start_vertex = bfs_source<Graph>();
 
   CountingVisitor visitor;
-  breadth_first_search(g, source, visitor);
+  breadth_first_search(g, start_vertex, visitor);
 
   // BFS from source should discover all 5 vertices: source -> two children -> merge -> leaf
   REQUIRE(visitor.vertices_discovered == 5);
@@ -671,10 +671,10 @@ TEMPLATE_TEST_CASE("breadth_first_search - sparse graph with tracking visitor",
   using Graph = TestType;
 
   auto g      = bfs_graph<Graph>();
-  auto source = bfs_source<Graph>();
+  auto start_vertex = bfs_source<Graph>();
 
   BFSTrackingVisitor visitor;
-  breadth_first_search(g, source, visitor);
+  breadth_first_search(g, start_vertex, visitor);
 
   // All 5 vertices should be discovered, examined, and finished
   REQUIRE(visitor.discovered.size() == 5);
@@ -682,7 +682,7 @@ TEMPLATE_TEST_CASE("breadth_first_search - sparse graph with tracking visitor",
   REQUIRE(visitor.finished.size() == 5);
 
   // Source vertex should be discovered first
-  REQUIRE(visitor.discovered[0] == static_cast<int>(source));
+  REQUIRE(visitor.discovered[0] == static_cast<int>(start_vertex));
 }
 
 TEMPLATE_TEST_CASE("breadth_first_search - sparse graph multi-source",
@@ -713,10 +713,10 @@ TEMPLATE_TEST_CASE("breadth_first_search - sparse graph empty visitor",
   using Graph = TestType;
 
   auto g      = bfs_graph<Graph>();
-  auto source = bfs_source<Graph>();
+  auto start_vertex = bfs_source<Graph>();
 
   // Should work with default empty visitor (no callbacks)
-  REQUIRE_NOTHROW(breadth_first_search(g, source));
+  REQUIRE_NOTHROW(breadth_first_search(g, start_vertex));
 }
 
 TEMPLATE_TEST_CASE("breadth_first_search - sparse graph partial reachability",

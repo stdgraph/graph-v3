@@ -113,9 +113,13 @@ using adj_list::num_vertices;
  * ```
  */
 template <adjacency_list G, typename OutOp, typename T = double>
-requires std::invocable<OutOp, vertex_id_t<G>, vertex_id_t<G>, edge_t<G>&, T>
+requires std::invocable<OutOp,
+                        typename std::remove_cvref_t<G>::vertex_id_type,
+                        typename std::remove_cvref_t<G>::vertex_id_type,
+                        edge_t<G>&,
+                        T>
 void jaccard_coefficient(G&& g, OutOp out) {
-  using vid_t = vertex_id_t<G>;
+  using vid_t = typename std::remove_cvref_t<G>::vertex_id_type;
 
   if (num_vertices(g) == 0) {
     return;
@@ -128,8 +132,10 @@ void jaccard_coefficient(G&& g, OutOp out) {
   using nbr_set = std::unordered_set<vid_t>;
   auto nbrs     = make_vertex_property_map<std::remove_reference_t<G>, nbr_set>(g, nbr_set{});
 
-  for (auto [uid] : views::basic_vertexlist(g)) {
-    for (auto [tid] : views::basic_incidence(g, uid)) {
+  for (auto&& [uid_raw] : views::basic_vertexlist(g)) {
+    const vid_t uid = static_cast<vid_t>(uid_raw);
+    for (auto&& [tid_raw] : views::basic_incidence(g, uid)) {
+      const vid_t tid = static_cast<vid_t>(tid_raw);
       if (tid != uid) { // skip self-loops
         nbrs[uid].insert(tid);
       }
@@ -139,8 +145,10 @@ void jaccard_coefficient(G&& g, OutOp out) {
   // ============================================================================
   // Phase 2: For every directed edge, compute and report the Jaccard coefficient
   // ============================================================================
-  for (auto&& [uid, u] : views::vertexlist(g)) {
-    for (auto&& [vid, uv] : views::incidence(g, u)) {
+  for (auto&& [uid_raw, u] : views::vertexlist(g)) {
+    const vid_t uid = static_cast<vid_t>(uid_raw);
+    for (auto&& [vid_raw, uv] : views::incidence(g, u)) {
+      const vid_t vid = static_cast<vid_t>(vid_raw);
       // Skip self-loops
       if (vid == uid) {
         continue;
@@ -162,7 +170,7 @@ void jaccard_coefficient(G&& g, OutOp out) {
 
       T val = (union_size == 0) ? T{0} : static_cast<T>(intersect_size) / static_cast<T>(union_size);
 
-      out(uid, vid, uv, val);
+      out(static_cast<vid_t>(uid), static_cast<vid_t>(vid), uv, val);
     }
   }
 }

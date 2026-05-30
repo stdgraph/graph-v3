@@ -15,7 +15,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <graph/graph.hpp>
 #include <graph/views/transpose.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <graph/container/traits/vov_graph_traits.hpp>
 #include <algorithm>
 #include <list>
@@ -82,9 +81,9 @@ TEST_CASE("transpose_view - vertex CPOs forward unchanged", "[views][transpose]"
   // Verify vertices range produces same vertex ids
   std::vector<uint32_t> g_ids, tv_ids;
   for (auto&& [uid, u] : view::vertexlist(g))
-    g_ids.push_back(uid);
+    g_ids.push_back(static_cast<uint32_t>(uid));
   for (auto&& [uid, u] : view::vertexlist(tv))
-    tv_ids.push_back(uid);
+    tv_ids.push_back(static_cast<uint32_t>(uid));
 
   REQUIRE(g_ids == tv_ids);
 }
@@ -237,3 +236,4 @@ TEST_CASE("transpose_view - single vertex no edges", "[views][transpose]") {
 
   CHECK(adj_list::num_vertices(tv) == 1);
 }
+ 

@@ -420,7 +420,7 @@ TEST_CASE("Value function - capturing lambda", "[views][edge_cases][value_functi
   std::vector<std::vector<int>> g{{1, 2}, {2}, {}};
   std::map<size_t, std::string> names{{0, "A"}, {1, "B"}, {2, "C"}};
 
-  auto vvf = [&names](const auto& g, auto v) { return names[vertex_id(g, v)]; };
+  auto vvf = [&names](const auto& gr, auto v) { return names[vertex_id(gr, v)]; };
 
   auto view = g | vertexlist(vvf);
 
@@ -434,7 +434,7 @@ TEST_CASE("Value function - mutable lambda", "[views][edge_cases][value_function
   std::vector<std::vector<int>> g{{1}, {2}, {}};
 
   int  counter = 0;
-  auto vvf     = [counter](const auto& g, auto v) mutable { return vertex_id(g, v) + counter++; };
+  auto vvf     = [counter](const auto& gr, auto v) mutable { return vertex_id(gr, v) + counter++; };
 
   auto view = g | vertexlist(vvf);
 
@@ -451,7 +451,7 @@ TEST_CASE("Value function - mutable lambda", "[views][edge_cases][value_function
 TEST_CASE("Value function - with structured binding", "[views][edge_cases][value_function]") {
   std::vector<std::vector<int>> g{{1, 2}, {2}, {}};
 
-  auto vvf = [](const auto& g, auto v) { return vertex_id(g, v) * 10; };
+  auto vvf = [](const auto& gr, auto v) { return vertex_id(gr, v) * 10; };
 
   auto view = g | vertexlist(vvf);
 
@@ -468,8 +468,8 @@ TEST_CASE("Value function - with structured binding", "[views][edge_cases][value
 TEST_CASE("Exception safety - value function throws", "[views][edge_cases][exception]") {
   std::vector<std::vector<int>> g{{1, 2}, {2}, {}};
 
-  auto throwing_vvf = [](const auto& g, auto v) -> int {
-    auto id = vertex_id(g, v);
+  auto throwing_vvf = [](const auto& gr, auto v) -> int {
+    auto id = vertex_id(gr, v);
     if (id == 1) {
       throw std::runtime_error("Test exception");
     }

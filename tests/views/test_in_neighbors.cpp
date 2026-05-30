@@ -71,9 +71,9 @@ TEST_CASE("out_neighbors matches neighbors", "[in_neighbors][out]") {
 
     std::vector<unsigned> ref_ids, test_ids;
     for (auto [tid, v] : ref)
-      ref_ids.push_back(tid);
+      ref_ids.push_back(static_cast<unsigned>(tid));
     for (auto [tid, v] : test)
-      test_ids.push_back(tid);
+      test_ids.push_back(static_cast<unsigned>(tid));
 
     REQUIRE(ref_ids == test_ids);
   }
@@ -87,9 +87,9 @@ TEST_CASE("out_neighbors matches neighbors", "[in_neighbors][out]") {
 
     std::vector<unsigned> ref_vals, test_vals;
     for (auto [tid, v, val] : ref)
-      ref_vals.push_back(val);
+      ref_vals.push_back(static_cast<unsigned>(val));
     for (auto [tid, v, val] : test)
-      test_vals.push_back(val);
+      test_vals.push_back(static_cast<unsigned>(val));
 
     REQUIRE(ref_vals == test_vals);
   }
@@ -123,9 +123,9 @@ TEST_CASE("basic_out_neighbors matches basic_neighbors", "[in_neighbors][basic_o
 
     std::vector<unsigned> ref_ids, test_ids;
     for (auto ni : ref)
-      ref_ids.push_back(ni.target_id);
+      ref_ids.push_back(static_cast<unsigned>(ni.target_id));
     for (auto ni : test)
-      test_ids.push_back(ni.target_id);
+      test_ids.push_back(static_cast<unsigned>(ni.target_id));
 
     REQUIRE(ref_ids == test_ids);
   }
@@ -251,3 +251,4 @@ TEST_CASE("in_neighbors - const graph", "[in_neighbors][const]") {
 
   REQUIRE(nview.size() == 2);
 }
+

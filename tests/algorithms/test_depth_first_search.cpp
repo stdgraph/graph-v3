@@ -53,27 +53,27 @@ struct DFSTrackingVisitor {
   }
 
   template <typename G, typename Edge>
-  void on_examine_edge(const G& g, const Edge& e) {
+  void on_examine_edge(const G&, const Edge&) {
     edges_examined.push_back({-1, -1}); // Placeholder
   }
 
   template <typename G, typename Edge>
-  void on_tree_edge(const G& g, const Edge& e) {
+  void on_tree_edge(const G&, const Edge&) {
     tree_edges.push_back({-1, -1}); // Placeholder
   }
 
   template <typename G, typename Edge>
-  void on_back_edge(const G& g, const Edge& e) {
+  void on_back_edge(const G&, const Edge&) {
     back_edges.push_back({-1, -1}); // Placeholder
   }
 
   template <typename G, typename Edge>
-  void on_forward_or_cross_edge(const G& g, const Edge& e) {
+  void on_forward_or_cross_edge(const G&, const Edge&) {
     forward_or_cross_edges.push_back({-1, -1}); // Placeholder
   }
 
   template <typename G, typename Edge>
-  void on_finish_edge(const G& g, const Edge& e) {
+  void on_finish_edge(const G&, const Edge&) {
     finished_edges.push_back({-1, -1}); // Placeholder
   }
 
@@ -253,11 +253,11 @@ TEST_CASE("depth_first_search - self-loop handling", "[algorithm][dfs][single_so
 TEST_CASE("depth_first_search - tree structure", "[algorithm][dfs][single_source]") {
   using Graph = vov_void;
 
-  // Binary tree:      0
-  //                  / \
-    //                1     2
-  //               / \
-    //              3   4
+  /* Binary tree:      0
+                      / \
+                     1   2
+                    / \
+                   3   4 */
   Graph              g({{0, 1}, {0, 2}, {1, 3}, {1, 4}});
   DFSCountingVisitor visitor;
 
@@ -736,10 +736,10 @@ TEMPLATE_TEST_CASE("depth_first_search - sparse graph basic traversal",
   using Graph = TestType;
 
   auto g      = bfs_graph<Graph>();   // 5-vertex DAG: src->a,b->merge->leaf
-  auto source = bfs_source<Graph>();
+  auto start_vertex = bfs_source<Graph>();
 
   DFSCountingVisitor visitor;
-  depth_first_search(g, source, visitor);
+  depth_first_search(g, start_vertex, visitor);
 
   // DFS from source should discover all 5 reachable vertices
   REQUIRE(visitor.vertices_discovered == 5);
@@ -752,23 +752,23 @@ TEMPLATE_TEST_CASE("depth_first_search - sparse graph with tracking visitor",
   using Graph = TestType;
 
   auto g      = bfs_graph<Graph>();
-  auto source = bfs_source<Graph>();
+  auto start_vertex = bfs_source<Graph>();
 
   DFSTrackingVisitor visitor;
-  depth_first_search(g, source, visitor);
+  depth_first_search(g, start_vertex, visitor);
 
   // All 5 vertices should be discovered and finished
   REQUIRE(visitor.discovered.size() == 5);
   REQUIRE(visitor.finished.size() == 5);
 
   // Source vertex should be discovered first
-  REQUIRE(visitor.discovered[0] == static_cast<int>(source));
+  REQUIRE(visitor.discovered[0] == static_cast<int>(start_vertex));
 
   // Source should be initialized and started
   REQUIRE(visitor.initialized.size() == 1);
-  REQUIRE(visitor.initialized[0] == static_cast<int>(source));
+  REQUIRE(visitor.initialized[0] == static_cast<int>(start_vertex));
   REQUIRE(visitor.started.size() == 1);
-  REQUIRE(visitor.started[0] == static_cast<int>(source));
+  REQUIRE(visitor.started[0] == static_cast<int>(start_vertex));
 }
 
 TEMPLATE_TEST_CASE("depth_first_search - sparse graph DAG edge classification",
@@ -778,16 +778,11 @@ TEMPLATE_TEST_CASE("depth_first_search - sparse graph DAG edge classification",
 
   // Diamond DAG: src->a, src->b, a->sink, b->sink
   auto g      = dag_graph<Graph>();
-  auto source = bfs_source<Graph>(); // DAG source == bfs source for contiguous;
+  auto start_vertex = bfs_source<Graph>(); // DAG source == bfs source for contiguous;
                                      // for sparse, dag uses 10 as root too
 
   DFSCountingVisitor visitor;
-
-  if constexpr (is_sparse_vertex_container_v<Graph>) {
-    depth_first_search(g, vertex_id_t<Graph>(10), visitor);
-  } else {
-    depth_first_search(g, vertex_id_t<Graph>(0), visitor);
-  }
+  depth_first_search(g, start_vertex, visitor);
 
   // All 4 vertices discovered
   REQUIRE(visitor.vertices_discovered == 4);
@@ -806,10 +801,10 @@ TEMPLATE_TEST_CASE("depth_first_search - sparse graph cycle detection",
   using Graph = TestType;
 
   auto g      = cycle_graph<Graph>();
-  auto source = cycle_source<Graph>();
+  auto start_vertex = cycle_source<Graph>();
 
   DFSCountingVisitor visitor;
-  depth_first_search(g, source, visitor);
+  depth_first_search(g, start_vertex, visitor);
 
   // All 4 vertices in the cycle should be discovered
   REQUIRE(visitor.vertices_discovered == 4);
@@ -825,10 +820,10 @@ TEMPLATE_TEST_CASE("depth_first_search - sparse graph empty visitor",
   using Graph = TestType;
 
   auto g      = bfs_graph<Graph>();
-  auto source = bfs_source<Graph>();
+  auto start_vertex = bfs_source<Graph>();
 
   // Should work with default empty visitor (no callbacks)
-  REQUIRE_NOTHROW(depth_first_search(g, source));
+  REQUIRE_NOTHROW(depth_first_search(g, start_vertex));
 }
 
 TEMPLATE_TEST_CASE("depth_first_search - sparse graph partial reachability",

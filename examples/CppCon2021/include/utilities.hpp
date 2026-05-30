@@ -36,8 +36,6 @@ auto graph_edge(std::tuple<Ts...> t) {
  */
 template <class EdgeList, class Adjacency>
 void push_back_plain_fill(const EdgeList& edge_list, Adjacency& adj, bool directed, size_t idx) {
-  const size_t jdx = (idx + 1) % 2;
-
   for (auto&& e : edge_list) {
 
     if (idx == 0) {
@@ -59,8 +57,6 @@ void push_back_plain_fill(const EdgeList& edge_list, Adjacency& adj, bool direct
  */
 template <class EdgeList, class Adjacency>
 void push_back_fill(const EdgeList& edge_list, Adjacency& adj, bool directed, size_t idx) {
-  const size_t jdx = (idx + 1) % 2;
-
   for (auto&& e : edge_list) {
 
     if (idx == 0) {
@@ -102,7 +98,7 @@ auto make_plain_edges(M& map, const E& edges) {
   EdgeList index_edges;
 
   for (auto&& e : edges) {
-    std::apply([&](auto&& u, auto&& v, auto... props_) { index_edges.push_back(std::make_tuple(map[u], map[v])); }, e);
+    std::apply([&](auto&& u, auto&& v, [[maybe_unused]] auto... props_) { index_edges.push_back(std::make_tuple(map[u], map[v])); }, e);
   }
 
   return index_edges;

@@ -1,6 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_template_test_macros.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <graph/container/traits/vov_graph_traits.hpp>
 #include <graph/container/traits/mos_graph_traits.hpp>
 #include <graph/container/traits/dofl_graph_traits.hpp>
@@ -95,10 +94,10 @@ std::unique_ptr<graph_view<typename std::remove_cvref_t<G>::vertex_id_type>> mak
 }
 
 // Test fixtures
-using vov_void = dynamic_graph<void, void, void, uint64_t, false, vov_graph_traits<void, void, void, uint64_t, false>>;
-using mos_void = dynamic_graph<void, void, void, uint64_t, false, mos_graph_traits<void, void, void, uint64_t, false>>;
+using vov_void = vov_graph<void, void, void, uint64_t>;
+using mos_void = mos_graph<void, void, void, uint64_t>;
 using dofl_void =
-      dynamic_graph<void, void, void, uint64_t, false, dofl_graph_traits<void, void, void, uint64_t, false>>;
+      dofl_graph<void, void, void, uint64_t>;
 
 TEST_CASE("graph_view wraps empty graph", "[6.3.5][type-erasure][empty]") {
   vov_void g;
@@ -160,13 +159,13 @@ TEST_CASE("graph_view get_edges returns all edges", "[6.3.5][type-erasure][get-e
   vov_void g({{0, 1}, {1, 0}});
 
   auto view  = make_graph_view(g);
-  auto edges = view->get_edges();
+  auto edge_list = view->get_edges();
 
-  REQUIRE(edges.size() == 2);
+  REQUIRE(edge_list.size() == 2);
 
-  std::sort(edges.begin(), edges.end());
-  REQUIRE(edges[0] == std::pair{0ul, 1ul});
-  REQUIRE(edges[1] == std::pair{1ul, 0ul});
+  std::sort(edge_list.begin(), edge_list.end());
+  REQUIRE(edge_list[0] == std::pair{0ul, 1ul});
+  REQUIRE(edge_list[1] == std::pair{1ul, 0ul});
 }
 
 TEST_CASE("graph_view with self-loop", "[6.3.5][type-erasure][self-loop]") {
@@ -199,8 +198,8 @@ TEST_CASE("graph_view wraps dofl graph", "[6.3.5][type-erasure][dofl]") {
   REQUIRE(view->num_vertices() == 3);
   REQUIRE(view->num_edges() == 3);
 
-  auto edges = view->get_edges();
-  REQUIRE(edges.size() == 3);
+  auto edge_list = view->get_edges();
+  REQUIRE(edge_list.size() == 3);
 }
 
 TEST_CASE("multiple graph_views in container", "[6.3.5][type-erasure][container]") {
@@ -299,8 +298,8 @@ TEST_CASE("graph_view with complex graph structure", "[6.3.5][type-erasure][comp
   REQUIRE(view->num_vertices() == 5);
   REQUIRE(view->num_edges() == 6);
 
-  auto edges = view->get_edges();
-  REQUIRE(edges.size() == 6);
+  auto edge_list = view->get_edges();
+  REQUIRE(edge_list.size() == 6);
 
   auto ids = view->get_vertex_ids();
   REQUIRE(ids.size() == 5);
@@ -314,8 +313,8 @@ TEST_CASE("graph_view empty edge list", "[6.3.5][type-erasure][no-edges]") {
   REQUIRE(view->num_vertices() == 3);
   REQUIRE(view->num_edges() == 2);
 
-  auto edges = view->get_edges();
-  REQUIRE(edges.size() == 2);
+  auto edge_list = view->get_edges();
+  REQUIRE(edge_list.size() == 2);
 }
 
 TEST_CASE("graph_view multiple self-loops", "[6.3.5][type-erasure][multi-self-loops]") {

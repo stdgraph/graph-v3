@@ -45,7 +45,7 @@ TEST_CASE("basic_edgelist - empty graph", "[basic_edgelist][empty]") {
   }
 }
 
-TEST_CASE("basic_edgelist - vertices with no edges", "[basic_edgelist][empty]") {
+TEST_CASE("basic_edgelist - vertices with no edge_pairs", "[basic_edgelist][empty]") {
   using Graph = std::vector<std::vector<int>>;
   Graph g     = {{}, {}, {}};
 
@@ -79,8 +79,8 @@ TEST_CASE("basic_edgelist - single edge", "[basic_edgelist][single]") {
   }
 
   SECTION("with value function") {
-    auto el = basic_edgelist(g, [](const auto& g, auto e) {
-      return static_cast<int>(adj_list::target_id(g, e)) * 10;
+    auto el = basic_edgelist(g, [](const auto& gr, auto e) {
+      return static_cast<int>(adj_list::target_id(gr, e)) * 10;
     });
 
     auto it = el.begin();
@@ -95,31 +95,31 @@ TEST_CASE("basic_edgelist - single edge", "[basic_edgelist][single]") {
   }
 }
 
-TEST_CASE("basic_edgelist - multiple edges", "[basic_edgelist][multiple]") {
+TEST_CASE("basic_edgelist - multiple edge_pairs", "[basic_edgelist][multiple]") {
   using Graph = std::vector<std::vector<int>>;
   Graph g     = {
-        {1, 2},    // vertex 0 → edges to 1, 2
+        {1, 2},    // vertex 0 → edge_pairs to 1, 2
         {2},       // vertex 1 → edge to 2
-        {}         // vertex 2 → no edges
+        {}         // vertex 2 → no edge_pairs
   };
 
-  SECTION("no value function - collects all edges") {
+  SECTION("no value function - collects all edge_pairs") {
     auto el = basic_edgelist(g);
 
-    std::vector<std::pair<std::size_t, std::size_t>> edges;
+    std::vector<std::pair<std::size_t, std::size_t>> edge_pairs;
     for (auto [sid, tid] : el) {
-      edges.emplace_back(sid, tid);
+      edge_pairs.emplace_back(sid, tid);
     }
 
-    REQUIRE(edges.size() == 3);
-    REQUIRE(edges[0] == std::pair<std::size_t, std::size_t>{0, 1});
-    REQUIRE(edges[1] == std::pair<std::size_t, std::size_t>{0, 2});
-    REQUIRE(edges[2] == std::pair<std::size_t, std::size_t>{1, 2});
+    REQUIRE(edge_pairs.size() == 3);
+    REQUIRE(edge_pairs[0] == std::pair<std::size_t, std::size_t>{0, 1});
+    REQUIRE(edge_pairs[1] == std::pair<std::size_t, std::size_t>{0, 2});
+    REQUIRE(edge_pairs[2] == std::pair<std::size_t, std::size_t>{1, 2});
   }
 
   SECTION("with value function") {
-    auto el = basic_edgelist(g, [](const auto& g, auto e) {
-      return static_cast<int>(adj_list::target_id(g, e)) * 10;
+    auto el = basic_edgelist(g, [](const auto& gr, auto e) {
+      return static_cast<int>(adj_list::target_id(gr, e)) * 10;
     });
 
     std::vector<int> values;
@@ -134,24 +134,24 @@ TEST_CASE("basic_edgelist - multiple edges", "[basic_edgelist][multiple]") {
 TEST_CASE("basic_edgelist - skips empty vertices", "[basic_edgelist][skip]") {
   using Graph = std::vector<std::vector<int>>;
   Graph g     = {
-        {},     // vertex 0 → no edges
-        {},     // vertex 1 → no edges
-        {0, 1}, // vertex 2 → edges to 0, 1
-        {},     // vertex 3 → no edges
+        {},     // vertex 0 → no edge_pairs
+        {},     // vertex 1 → no edge_pairs
+        {0, 1}, // vertex 2 → edge_pairs to 0, 1
+        {},     // vertex 3 → no edge_pairs
         {3}     // vertex 4 → edge to 3
   };
 
   auto el = basic_edgelist(g);
 
-  std::vector<std::pair<std::size_t, std::size_t>> edges;
+  std::vector<std::pair<std::size_t, std::size_t>> edge_pairs;
   for (auto [sid, tid] : el) {
-    edges.emplace_back(sid, tid);
+    edge_pairs.emplace_back(sid, tid);
   }
 
-  REQUIRE(edges.size() == 3);
-  REQUIRE(edges[0] == std::pair<std::size_t, std::size_t>{2, 0});
-  REQUIRE(edges[1] == std::pair<std::size_t, std::size_t>{2, 1});
-  REQUIRE(edges[2] == std::pair<std::size_t, std::size_t>{4, 3});
+  REQUIRE(edge_pairs.size() == 3);
+  REQUIRE(edge_pairs[0] == std::pair<std::size_t, std::size_t>{2, 0});
+  REQUIRE(edge_pairs[1] == std::pair<std::size_t, std::size_t>{2, 1});
+  REQUIRE(edge_pairs[2] == std::pair<std::size_t, std::size_t>{4, 3});
 }
 
 TEST_CASE("basic_edgelist - info_type has no edge field", "[basic_edgelist][info]") {
@@ -209,22 +209,22 @@ TEST_CASE("basic_edgelist - deque-based graph", "[basic_edgelist][deque]") {
   SECTION("no value function") {
     auto el = basic_edgelist(g);
 
-    std::vector<std::pair<std::size_t, std::size_t>> edges;
+    std::vector<std::pair<std::size_t, std::size_t>> edge_pairs;
     for (auto [sid, tid] : el) {
-      edges.emplace_back(sid, tid);
+      edge_pairs.emplace_back(sid, tid);
     }
 
-    REQUIRE(edges.size() == 5);
-    REQUIRE(edges[0] == std::pair<std::size_t, std::size_t>{0, 1});
-    REQUIRE(edges[1] == std::pair<std::size_t, std::size_t>{0, 2});
-    REQUIRE(edges[2] == std::pair<std::size_t, std::size_t>{1, 0});
-    REQUIRE(edges[3] == std::pair<std::size_t, std::size_t>{2, 0});
-    REQUIRE(edges[4] == std::pair<std::size_t, std::size_t>{2, 1});
+    REQUIRE(edge_pairs.size() == 5);
+    REQUIRE(edge_pairs[0] == std::pair<std::size_t, std::size_t>{0, 1});
+    REQUIRE(edge_pairs[1] == std::pair<std::size_t, std::size_t>{0, 2});
+    REQUIRE(edge_pairs[2] == std::pair<std::size_t, std::size_t>{1, 0});
+    REQUIRE(edge_pairs[3] == std::pair<std::size_t, std::size_t>{2, 0});
+    REQUIRE(edge_pairs[4] == std::pair<std::size_t, std::size_t>{2, 1});
   }
 
   SECTION("with value function") {
-    auto el = basic_edgelist(g, [](const auto& g, auto e) {
-      return static_cast<int>(adj_list::target_id(g, e));
+    auto el = basic_edgelist(g, [](const auto& gr, auto e) {
+      return static_cast<int>(adj_list::target_id(gr, e));
     });
 
     std::vector<int> targets;
@@ -243,15 +243,15 @@ TEST_CASE("basic_edgelist - const graph", "[basic_edgelist][const]") {
   SECTION("no value function") {
     auto el = basic_edgelist(g);
 
-    std::vector<std::pair<std::size_t, std::size_t>> edges;
+    std::vector<std::pair<std::size_t, std::size_t>> edge_pairs;
     for (auto [sid, tid] : el) {
-      edges.emplace_back(sid, tid);
+      edge_pairs.emplace_back(sid, tid);
     }
 
-    REQUIRE(edges.size() == 3);
-    REQUIRE(edges[0] == std::pair<std::size_t, std::size_t>{0, 1});
-    REQUIRE(edges[1] == std::pair<std::size_t, std::size_t>{0, 2});
-    REQUIRE(edges[2] == std::pair<std::size_t, std::size_t>{1, 0});
+    REQUIRE(edge_pairs.size() == 3);
+    REQUIRE(edge_pairs[0] == std::pair<std::size_t, std::size_t>{0, 1});
+    REQUIRE(edge_pairs[1] == std::pair<std::size_t, std::size_t>{0, 2});
+    REQUIRE(edge_pairs[2] == std::pair<std::size_t, std::size_t>{1, 0});
   }
 }
 
@@ -316,8 +316,8 @@ TEST_CASE("basic_edgelist - value function types", "[basic_edgelist][evf]") {
   Graph g     = {{1, 2}, {0}, {}};
 
   SECTION("returning string") {
-    auto el = basic_edgelist(g, [](const auto& g, auto e) {
-      return std::to_string(adj_list::target_id(g, e));
+    auto el = basic_edgelist(g, [](const auto& gr, auto e) {
+      return std::to_string(adj_list::target_id(gr, e));
     });
 
     std::vector<std::string> names;
@@ -329,8 +329,8 @@ TEST_CASE("basic_edgelist - value function types", "[basic_edgelist][evf]") {
   }
 
   SECTION("returning double") {
-    auto el = basic_edgelist(g, [](const auto& g, auto e) {
-      return static_cast<double>(adj_list::target_id(g, e)) * 1.5;
+    auto el = basic_edgelist(g, [](const auto& gr, auto e) {
+      return static_cast<double>(adj_list::target_id(gr, e)) * 1.5;
     });
 
     std::vector<double> values;
@@ -362,23 +362,23 @@ TEST_CASE("basic_edgelist - undirected_adjacency_list", "[basic_edgelist][undire
   SECTION("basic_edgelist(g) - basic iteration") {
     auto el = basic_edgelist(g);
 
-    std::set<std::pair<unsigned int, unsigned int>> edges;
+    std::set<std::pair<unsigned int, unsigned int>> edge_pairs;
     for (auto [sid, tid] : el) {
-      edges.emplace(sid, tid);
+      edge_pairs.emplace(static_cast<unsigned int>(sid), static_cast<unsigned int>(tid));
     }
 
     // Undirected: each edge appears in both directions
-    REQUIRE(edges.size() == 6);
-    REQUIRE(edges.count({0, 1}) == 1);
-    REQUIRE(edges.count({1, 0}) == 1);
-    REQUIRE(edges.count({0, 2}) == 1);
-    REQUIRE(edges.count({2, 0}) == 1);
-    REQUIRE(edges.count({1, 2}) == 1);
-    REQUIRE(edges.count({2, 1}) == 1);
+    REQUIRE(edge_pairs.size() == 6);
+    REQUIRE(edge_pairs.count({0, 1}) == 1);
+    REQUIRE(edge_pairs.count({1, 0}) == 1);
+    REQUIRE(edge_pairs.count({0, 2}) == 1);
+    REQUIRE(edge_pairs.count({2, 0}) == 1);
+    REQUIRE(edge_pairs.count({1, 2}) == 1);
+    REQUIRE(edge_pairs.count({2, 1}) == 1);
   }
 
   SECTION("basic_edgelist(g, evf) - with value function") {
-    auto el = basic_edgelist(g, [](const auto& g, auto e) { return edge_value(g, e); });
+    auto el = basic_edgelist(g, [](const auto& gr, auto e) { return edge_value(gr, e); });
 
     std::vector<int> weights;
     for (auto [sid, tid, w] : el) {

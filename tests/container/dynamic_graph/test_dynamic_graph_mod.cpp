@@ -23,7 +23,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_template_test_macros.hpp>
 #include <graph/container/traits/mod_graph_traits.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -40,26 +39,26 @@ using namespace graph::container;
 // Format: mod_EV_VV_GV (Edge Value, Vertex Value, Graph Value)
 // "void" means no value (using graph::void_t)
 using mod_void_void_void =
-      dynamic_graph<void, void, void, uint32_t, false, mod_graph_traits<void, void, void, uint32_t, false>>;
+      mod_graph<void, void, void>;
 using mod_int_void_void =
-      dynamic_graph<int, void, void, uint32_t, false, mod_graph_traits<int, void, void, uint32_t, false>>;
+      mod_graph<int, void, void>;
 using mod_void_int_void =
-      dynamic_graph<void, int, void, uint32_t, false, mod_graph_traits<void, int, void, uint32_t, false>>;
+      mod_graph<void, int, void>;
 using mod_int_int_void =
-      dynamic_graph<int, int, void, uint32_t, false, mod_graph_traits<int, int, void, uint32_t, false>>;
+      mod_graph<int, int, void>;
 using mod_void_void_int =
-      dynamic_graph<void, void, int, uint32_t, false, mod_graph_traits<void, void, int, uint32_t, false>>;
-using mod_int_int_int = dynamic_graph<int, int, int, uint32_t, false, mod_graph_traits<int, int, int, uint32_t, false>>;
+      mod_graph<void, void, int>;
+using mod_int_int_int = mod_graph<int, int, int>;
 
 // String vertex ID variants
 using mod_str_void_void_void =
-      dynamic_graph<void, void, void, std::string, false, mod_graph_traits<void, void, void, std::string, false>>;
+      mod_graph<void, void, void, std::string>;
 using mod_str_int_void_void =
-      dynamic_graph<int, void, void, std::string, false, mod_graph_traits<int, void, void, std::string, false>>;
+      mod_graph<int, void, void, std::string>;
 using mod_str_void_int_void =
-      dynamic_graph<void, int, void, std::string, false, mod_graph_traits<void, int, void, std::string, false>>;
+      mod_graph<void, int, void, std::string>;
 using mod_str_int_int_int =
-      dynamic_graph<int, int, int, std::string, false, mod_graph_traits<int, int, int, std::string, false>>;
+      mod_graph<int, int, int, std::string>;
 
 // Sourced edge variants (store source vertex ID in edge)
 

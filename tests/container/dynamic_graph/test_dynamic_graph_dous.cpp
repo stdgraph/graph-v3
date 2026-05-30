@@ -20,7 +20,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_template_test_macros.hpp>
 #include <graph/container/traits/dous_graph_traits.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <string>
 #include <deque>
 #include <algorithm>
@@ -32,17 +31,17 @@ using namespace graph::container;
 
 // Type aliases for common test configurations
 using dous_void_void_void =
-      dynamic_graph<void, void, void, uint32_t, false, dous_graph_traits<void, void, void, uint32_t, false>>;
+      dous_graph<void, void, void>;
 using dous_int_void_void =
-      dynamic_graph<int, void, void, uint32_t, false, dous_graph_traits<int, void, void, uint32_t, false>>;
+      dous_graph<int, void, void>;
 using dous_void_int_void =
-      dynamic_graph<void, int, void, uint32_t, false, dous_graph_traits<void, int, void, uint32_t, false>>;
+      dous_graph<void, int, void>;
 using dous_int_int_void =
-      dynamic_graph<int, int, void, uint32_t, false, dous_graph_traits<int, int, void, uint32_t, false>>;
+      dous_graph<int, int, void>;
 using dous_void_void_int =
-      dynamic_graph<void, void, int, uint32_t, false, dous_graph_traits<void, void, int, uint32_t, false>>;
+      dous_graph<void, void, int>;
 using dous_int_int_int =
-      dynamic_graph<int, int, int, uint32_t, false, dous_graph_traits<int, int, int, uint32_t, false>>;
+      dous_graph<int, int, int>;
 
 using dous_string_string_string =
       dynamic_graph<std::string,

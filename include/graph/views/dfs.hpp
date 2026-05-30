@@ -198,8 +198,8 @@ namespace dfs_detail {
     std::size_t                                                  depth_  = 0;
     std::size_t                                                  count_  = 0;
 
-    dfs_state(G& g, vertex_type seed_vertex, std::size_t num_vertices, Alloc alloc = {})
-          : stack_(std::vector<entry_type, stack_alloc>(alloc)), visited_(num_vertices, alloc) {
+        dfs_state(G& g, vertex_type seed_vertex, std::size_t vertex_count, Alloc alloc = {})
+          : stack_(std::vector<entry_type, stack_alloc>(alloc)), visited_(vertex_count, alloc) {
       auto edge_range = Accessor{}.edges(g, seed_vertex);
       stack_.push({seed_vertex, std::ranges::begin(edge_range), std::ranges::end(edge_range)});
       visited_.mark_visited(seed_vertex);

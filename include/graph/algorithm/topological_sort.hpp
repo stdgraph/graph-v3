@@ -174,7 +174,7 @@ namespace detail {
  */
   template <adjacency_list G, typename ColorMap, class Alloc>
   void topological_sort_dfs_visit(const G&                     g,
-                                  const vertex_id_t<G>&        source,
+                                  const vertex_id_t<G>&        start_vertex_id,
                                   ColorMap&                    color,
                                   auto&                        finish_order,
                                   bool&                        has_cycle,
@@ -183,7 +183,7 @@ namespace detail {
     using Color = TopoColor;
     using id_type = vertex_id_t<G>;
     using namespace graph::views;
-    using inc_range_t    = decltype(basic_incidence(g, source));
+    using inc_range_t    = decltype(basic_incidence(g, start_vertex_id));
     using inc_iterator_t = std::ranges::iterator_t<inc_range_t>;
     using inc_sentinel_t = std::ranges::sentinel_t<inc_range_t>;
 
@@ -194,13 +194,13 @@ namespace detail {
     };
 
     // Discover source and push its stack frame
-    color[source] = Color::Gray;
+    color[start_vertex_id] = Color::Gray;
 
     using FrameAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<StackFrame>;
     std::stack<StackFrame, std::deque<StackFrame, FrameAlloc>> S{std::deque<StackFrame, FrameAlloc>(FrameAlloc(alloc))};
     {
-      auto inc = basic_incidence(g, source);
-      S.push({source, std::ranges::begin(inc), std::ranges::end(inc)});
+      auto inc = basic_incidence(g, start_vertex_id);
+      S.push({start_vertex_id, std::ranges::begin(inc), std::ranges::end(inc)});
     }
 
     while (!S.empty() && !has_cycle) {
@@ -318,6 +318,11 @@ bool topological_sort(const G& g, const Sources& sources, OutputIterator result,
                       const Alloc& alloc = Alloc()) {
   using id_type = vertex_id_t<G>;
   using Color   = detail::TopoColor;
+    using out_iter_t = std::remove_cvref_t<OutputIterator>;
+    using out_id_type = std::conditional_t<
+      requires { typename out_iter_t::container_type::value_type; },
+      typename out_iter_t::container_type::value_type,
+      id_type>;
 
   // Lazy init: index graphs get a sized vector (value-init → White=0),
   // mapped graphs get an empty reserved map (absent key → White via get).
@@ -329,9 +334,9 @@ bool topological_sort(const G& g, const Sources& sources, OutputIterator result,
   bool has_cycle = false;
 
   // Run DFS from each source (skipping already-visited vertices)
-  for (auto source : sources) {
-    if (vertex_property_map_get(color, source, Color::White) == Color::White) {
-      detail::topological_sort_dfs_visit(g, source, color, finish_order, has_cycle, alloc);
+  for (auto source_vid : sources) {
+    if (vertex_property_map_get(color, source_vid, Color::White) == Color::White) {
+      detail::topological_sort_dfs_visit(g, source_vid, color, finish_order, has_cycle, alloc);
       if (has_cycle) {
         return false; // Cycle detected
       }
@@ -339,7 +344,9 @@ bool topological_sort(const G& g, const Sources& sources, OutputIterator result,
   }
 
   // Output vertices in reverse finish order (topological order)
-  std::ranges::copy(finish_order | std::views::reverse, result);
+  for (const auto vid : finish_order | std::views::reverse) {
+    *result++ = static_cast<out_id_type>(vid);
+  }
 
   return true;
 }
@@ -403,10 +410,10 @@ bool topological_sort(const G& g, const Sources& sources, OutputIterator result,
  */
 template <adjacency_list G, class OutputIterator, class Alloc = std::allocator<std::byte>>
 requires std::output_iterator<OutputIterator, vertex_id_t<G>>
-bool topological_sort(const G& g, const vertex_id_t<G>& source, OutputIterator result,
+bool topological_sort(const G& g, const vertex_id_t<G>& start_vertex_id, OutputIterator result,
                       const Alloc& alloc = Alloc()) {
   // Delegate to multi-source version with single source
-  std::array<vertex_id_t<G>, 1> sources = {source};
+  std::array<vertex_id_t<G>, 1> sources = {start_vertex_id};
   return topological_sort(g, sources, result, alloc);
 }
 
@@ -476,6 +483,11 @@ requires std::output_iterator<OutputIterator, vertex_id_t<G>>
 bool topological_sort(const G& g, OutputIterator result, const Alloc& alloc = Alloc()) {
   using id_type = vertex_id_t<G>;
   using Color   = detail::TopoColor;
+    using out_iter_t = std::remove_cvref_t<OutputIterator>;
+    using out_id_type = std::conditional_t<
+      requires { typename out_iter_t::container_type::value_type; },
+      typename out_iter_t::container_type::value_type,
+      id_type>;
 
   // Lazy init: index graphs get a sized vector (value-init → White=0),
   // mapped graphs get an empty reserved map (absent key → White via get).
@@ -498,7 +510,9 @@ bool topological_sort(const G& g, OutputIterator result, const Alloc& alloc = Al
   }
 
   // Output vertices in reverse finish order (topological order)
-  std::ranges::copy(finish_order | std::views::reverse, result);
+  for (const auto vid : finish_order | std::views::reverse) {
+    *result++ = static_cast<out_id_type>(vid);
+  }
 
   return true;
 }

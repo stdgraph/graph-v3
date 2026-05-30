@@ -18,7 +18,6 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_template_test_macros.hpp>
-#include <graph/container/dynamic_graph.hpp>
 #include <graph/container/traits/vov_graph_traits.hpp>
 #include <graph/container/traits/mos_graph_traits.hpp>
 #include <graph/container/traits/dofl_graph_traits.hpp>
@@ -33,18 +32,18 @@ using namespace graph::adj_list;
 using namespace graph::container;
 
 // Type aliases for testing
-using vov_void = dynamic_graph<void, void, void, uint64_t, false, vov_graph_traits<void, void, void, uint64_t, false>>;
+using vov_void = vov_graph<void, void, void, uint64_t>;
 
 using mos_void =
-      dynamic_graph<void, void, void, std::string, false, mos_graph_traits<void, void, void, std::string, false>>;
+      mos_graph<void, void, void, std::string>;
 
 using dofl_void =
-      dynamic_graph<void, void, void, uint64_t, false, dofl_graph_traits<void, void, void, uint64_t, false>>;
+      dofl_graph<void, void, void, uint64_t>;
 
 using mous_void =
-      dynamic_graph<void, void, void, std::string, false, mous_graph_traits<void, void, void, std::string, false>>;
+      mous_graph<void, void, void, std::string>;
 
-using dov_void = dynamic_graph<void, void, void, uint64_t, false, dov_graph_traits<void, void, void, uint64_t, false>>;
+using dov_void = dov_graph<void, void, void, uint64_t>;
 
 // ============================================================================
 // Generic Traversal Helper Functions (CPO-based)
@@ -123,16 +122,16 @@ bool is_isolated(const G& g, const typename G::vertex_id_type& uid) {
  * @brief Count the number of self-loops in the graph
  * @tparam G Graph type
  * @param g The graph
- * @return Number of edges where source_id == target_id
+ * @return Number of edges where src_vid == target_id
  */
 template <typename G>
 size_t count_self_loops(const G& g) {
   size_t count = 0;
 
   for (auto&& vertex : vertices(g)) {
-    auto source_id = vertex_id(g, vertex);
+    auto src_vid = vertex_id(g, vertex);
     for (auto&& edge : edges(g, vertex)) {
-      if (target_id(g, edge) == source_id) {
+      if (target_id(g, edge) == src_vid) {
         ++count;
       }
     }
