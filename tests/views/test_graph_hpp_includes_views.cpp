@@ -113,7 +113,7 @@ TEST_CASE("graph.hpp - value functions work", "[graph_hpp][value_functions]") {
 
   std::vector<int> values;
   for (auto [id, v, val] : g | vertexlist(vvf)) {
-    values.push_back(val);
+    values.push_back(static_cast<int>(val));
   }
 
   REQUIRE(values.size() == 3);

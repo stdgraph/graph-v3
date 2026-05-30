@@ -126,11 +126,11 @@ private:
     return max_vid;
   }
 
-  void push(edges_range& edges, const edge_type& val) {
+  void push(edges_range& edge_store, const edge_type& val) {
     if constexpr (graph::container::has_push_back<edges_range>)
-      edges.push_back(val);
+      edge_store.push_back(val);
     else if constexpr (graph::container::has_push_front<edges_range>)
-      edges.push_front(val);
+      edge_store.push_front(val);
   }
 
   // ── v3 graph CPO free functions ───────────────────────────────────────────
@@ -188,14 +188,15 @@ private:
 
   // edge_value(g, uv) — uv is an edge_descriptor; *uv.value() is the raw edge.
   template <class EDesc>
-  friend auto edge_value(graph_type& g, const EDesc& uv)
-        -> decltype(std::get<1>(to_tuple(*uv.value()))) {
-    return std::get<1>(to_tuple(*uv.value()));
+  using edge_value_ret_t = std::remove_cvref_t<decltype(std::get<1>(to_tuple(*std::declval<EDesc>().value())))>;
+
+  template <class EDesc>
+  friend edge_value_ret_t<EDesc> edge_value(graph_type& g, const EDesc& uv) {
+    return static_cast<edge_value_ret_t<EDesc>>(std::get<1>(to_tuple(*uv.value())));
   }
   template <class EDesc>
-  friend auto edge_value(const graph_type& /*g*/, const EDesc& uv)
-        -> decltype(std::get<1>(to_tuple(*uv.value()))) {
-    return std::get<1>(to_tuple(*uv.value()));
+  friend edge_value_ret_t<EDesc> edge_value(const graph_type& /*g*/, const EDesc& uv) {
+    return static_cast<edge_value_ret_t<EDesc>>(std::get<1>(to_tuple(*uv.value())));
   }
 };
 

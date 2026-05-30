@@ -305,7 +305,7 @@ TEST_CASE("basic_neighbors - undirected_adjacency_list", "[basic_neighbors][undi
 
     std::set<unsigned int> targets;
     for (auto [tid] : nbrs) {
-      targets.insert(tid);
+      targets.insert(static_cast<unsigned int>(tid));
     }
     REQUIRE(targets.count(1) == 1);
     REQUIRE(targets.count(2) == 1);

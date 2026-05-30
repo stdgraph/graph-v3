@@ -110,5 +110,20 @@ function(set_project_warnings target_name)
         message(WARNING "No compiler warnings set for '${CMAKE_CXX_COMPILER_ID}' compiler.")
     endif()
 
+    # clang-cl (MSVC ABI): MSVC_WARNINGS are already applied above via if(MSVC),
+    # but /W4 in clang-cl maps to Clang warning groups which fire on things the
+    # project intentionally suppresses. Apply all -Wno-* from CLANG_WARNINGS plus
+    # clang-cl-specific suppressions.
+    if(MSVC AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        foreach(w ${CLANG_WARNINGS})
+            if(w MATCHES "^-Wno-")
+                list(APPEND PROJECT_WARNINGS ${w})
+            endif()
+        endforeach()
+        list(APPEND PROJECT_WARNINGS
+            -Wno-unknown-attributes     # [[no_unique_address]] unsupported in MSVC ABI mode
+        )
+    endif()
+
     target_compile_options(${target_name} INTERFACE ${PROJECT_WARNINGS})
 endfunction()

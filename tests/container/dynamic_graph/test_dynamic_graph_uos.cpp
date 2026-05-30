@@ -536,13 +536,13 @@ TEST_CASE("uos graph iteration", "[dynamic_graph][uos][iteration]") {
     // unordered_map does NOT guarantee order (unlike map)
     // Just verify all vertices are present
     REQUIRE(vertex_ids.size() == 7); // 1, 2, 3, 4, 5, 6, 7
-    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 1) != vertex_ids.end());
-    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 2) != vertex_ids.end());
-    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 3) != vertex_ids.end());
-    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 4) != vertex_ids.end());
-    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 5) != vertex_ids.end());
-    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 6) != vertex_ids.end());
-    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 7) != vertex_ids.end());
+    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 1u) != vertex_ids.end());
+    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 2u) != vertex_ids.end());
+    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 3u) != vertex_ids.end());
+    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 4u) != vertex_ids.end());
+    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 5u) != vertex_ids.end());
+    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 6u) != vertex_ids.end());
+    REQUIRE(std::find(vertex_ids.begin(), vertex_ids.end(), 7u) != vertex_ids.end());
   }
 }
 

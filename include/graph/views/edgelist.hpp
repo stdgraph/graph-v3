@@ -197,9 +197,9 @@ public:
           : g_(g), v_(v), v_end_(v_end), current_edge_(current_edge), edge_end_(edge_end) {}
 
     [[nodiscard]] constexpr value_type operator*() const noexcept {
-      auto source_id = adj_list::vertex_id(*g_, v_);
-      auto target_id = adj_list::target_id(*g_, current_edge_);
-      return value_type{static_cast<vertex_id_type>(source_id), static_cast<vertex_id_type>(target_id), current_edge_};
+      auto src_id = adj_list::vertex_id(*g_, v_);
+      auto dst_id = adj_list::target_id(*g_, current_edge_);
+      return value_type{static_cast<vertex_id_type>(src_id), static_cast<vertex_id_type>(dst_id), current_edge_};
     }
 
     constexpr iterator& operator++() noexcept {
@@ -345,9 +345,9 @@ public:
           : g_(g), v_(v), v_end_(v_end), current_edge_(current_edge), edge_end_(edge_end), evf_(evf) {}
 
     [[nodiscard]] constexpr value_type operator*() const {
-      auto source_id = adj_list::vertex_id(*g_, v_);
-      auto target_id = adj_list::target_id(*g_, current_edge_);
-      return value_type{static_cast<vertex_id_type>(source_id), static_cast<vertex_id_type>(target_id), current_edge_, std::invoke(*evf_, std::as_const(*g_), current_edge_)};
+      auto src_id = adj_list::vertex_id(*g_, v_);
+      auto dst_id = adj_list::target_id(*g_, current_edge_);
+      return value_type{static_cast<vertex_id_type>(src_id), static_cast<vertex_id_type>(dst_id), current_edge_, std::invoke(*evf_, std::as_const(*g_), current_edge_)};
     }
 
     constexpr iterator& operator++() noexcept {

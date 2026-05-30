@@ -33,8 +33,8 @@ edge_list<VId> grid_2d(VId rows, VId cols, uint64_t seed = 42,
   std::mt19937_64 rng(seed);
   const VId       n = rows * cols;
 
-  edge_list<VId> edges;
-  edges.reserve(4 * static_cast<size_t>(n)); // upper bound
+  edge_list<VId> generated_edges;
+  generated_edges.reserve(4 * static_cast<size_t>(n)); // upper bound
 
   for (VId r = 0; r < rows; ++r) {
     for (VId c = 0; c < cols; ++c) {
@@ -42,20 +42,20 @@ edge_list<VId> grid_2d(VId rows, VId cols, uint64_t seed = 42,
       // Right neighbour
       if (c + 1 < cols) {
         VId v = u + 1;
-        edges.push_back({u, v, sample_weight(rng, wdist)});
-        edges.push_back({v, u, sample_weight(rng, wdist)});
+        generated_edges.push_back({u, v, sample_weight(rng, wdist)});
+        generated_edges.push_back({v, u, sample_weight(rng, wdist)});
       }
       // Down neighbour
       if (r + 1 < rows) {
         VId v = u + cols;
-        edges.push_back({u, v, sample_weight(rng, wdist)});
-        edges.push_back({v, u, sample_weight(rng, wdist)});
+        generated_edges.push_back({u, v, sample_weight(rng, wdist)});
+        generated_edges.push_back({v, u, sample_weight(rng, wdist)});
       }
     }
   }
-  std::stable_sort(edges.begin(), edges.end(),
+  std::stable_sort(generated_edges.begin(), generated_edges.end(),
                    [](const auto& a, const auto& b) { return a.source_id < b.source_id; });
-  return edges;
+  return generated_edges;
 }
 
 } // namespace graph::generators

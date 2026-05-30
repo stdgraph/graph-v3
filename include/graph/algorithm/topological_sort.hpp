@@ -318,6 +318,11 @@ bool topological_sort(const G& g, const Sources& sources, OutputIterator result,
                       const Alloc& alloc = Alloc()) {
   using id_type = vertex_id_t<G>;
   using Color   = detail::TopoColor;
+    using out_iter_t = std::remove_cvref_t<OutputIterator>;
+    using out_id_type = std::conditional_t<
+      requires { typename out_iter_t::container_type::value_type; },
+      typename out_iter_t::container_type::value_type,
+      id_type>;
 
   // Lazy init: index graphs get a sized vector (value-init → White=0),
   // mapped graphs get an empty reserved map (absent key → White via get).
@@ -339,7 +344,9 @@ bool topological_sort(const G& g, const Sources& sources, OutputIterator result,
   }
 
   // Output vertices in reverse finish order (topological order)
-  std::ranges::copy(finish_order | std::views::reverse, result);
+  for (const auto vid : finish_order | std::views::reverse) {
+    *result++ = static_cast<out_id_type>(vid);
+  }
 
   return true;
 }
@@ -476,6 +483,11 @@ requires std::output_iterator<OutputIterator, vertex_id_t<G>>
 bool topological_sort(const G& g, OutputIterator result, const Alloc& alloc = Alloc()) {
   using id_type = vertex_id_t<G>;
   using Color   = detail::TopoColor;
+    using out_iter_t = std::remove_cvref_t<OutputIterator>;
+    using out_id_type = std::conditional_t<
+      requires { typename out_iter_t::container_type::value_type; },
+      typename out_iter_t::container_type::value_type,
+      id_type>;
 
   // Lazy init: index graphs get a sized vector (value-init → White=0),
   // mapped graphs get an empty reserved map (absent key → White via get).
@@ -498,7 +510,9 @@ bool topological_sort(const G& g, OutputIterator result, const Alloc& alloc = Al
   }
 
   // Output vertices in reverse finish order (topological order)
-  std::ranges::copy(finish_order | std::views::reverse, result);
+  for (const auto vid : finish_order | std::views::reverse) {
+    *result++ = static_cast<out_id_type>(vid);
+  }
 
   return true;
 }

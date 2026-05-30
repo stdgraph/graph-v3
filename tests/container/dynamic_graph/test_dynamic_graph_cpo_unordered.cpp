@@ -1149,7 +1149,7 @@ TEMPLATE_TEST_CASE("unordered CPO target(g, uv)", "[dynamic_graph][cpo][target]"
     std::vector<uint32_t> targets;
     for (auto uv : edge_view) {
       auto target_vertex = target(g, uv);
-      targets.push_back(vertex_id(g, target_vertex));
+      targets.push_back(static_cast<uint32_t>(vertex_id(g, target_vertex)));
     }
     std::ranges::sort(targets);
     REQUIRE(targets.size() == 2);
@@ -1219,7 +1219,7 @@ TEMPLATE_TEST_CASE("unordered CPO target(g, uv)", "[dynamic_graph][cpo][target]"
     // Unordered: collect targets
     std::vector<uint32_t> targets;
     for (auto uv : edge_view) {
-      targets.push_back(vertex_id(g, target(g, uv)));
+      targets.push_back(static_cast<uint32_t>(vertex_id(g, target(g, uv))));
     }
     std::ranges::sort(targets);
     REQUIRE(targets.size() == 2);

@@ -104,7 +104,7 @@ TEST_CASE("unified header - value functions work", "[unified][value_functions]")
 
   std::vector<int> values;
   for (auto [id, v, val] : g | vertexlist(vvf)) {
-    values.push_back(val);
+    values.push_back(static_cast<int>(val));
   }
 
   REQUIRE(values.size() == 3);
@@ -120,10 +120,10 @@ TEST_CASE("unified header - chaining with std::views works", "[unified][chaining
   std::vector<int> results;
   for (auto id : g | vertexlist() | std::views::transform([](auto info) {
                    auto [id, v] = info;
-                   return id;
+                   return static_cast<int>(id);
                  }) | std::views::filter([](int id) { return id > 0; }) |
                        std::views::transform([](int id) { return id * 2; })) {
-    results.push_back(id);
+    results.push_back(static_cast<int>(id));
   }
 
   REQUIRE(results.size() == 2);

@@ -138,15 +138,15 @@ TEST_CASE("edgelist - multiple edge_pairs from single vertex", "[edgelist][multi
   SECTION("iteration") {
     auto elist = edgelist(g);
 
-    std::vector<std::pair<int, int>> edge_pairs;
+    std::vector<std::pair<std::size_t, std::size_t>> edge_pairs;
     for (auto [sid, tid, e] : elist) {
-      edge_pairs.emplace_back(sid, tid);
+      edge_pairs.emplace_back(static_cast<int>(sid), static_cast<int>(tid));
     }
 
     REQUIRE(edge_pairs.size() == 3);
-    REQUIRE(edge_pairs[0] == std::pair<int, int>{0, 1});
-    REQUIRE(edge_pairs[1] == std::pair<int, int>{0, 2});
-    REQUIRE(edge_pairs[2] == std::pair<int, int>{0, 3});
+    REQUIRE(edge_pairs[0] == std::pair<std::size_t, std::size_t>{0, 1});
+    REQUIRE(edge_pairs[1] == std::pair<std::size_t, std::size_t>{0, 2});
+    REQUIRE(edge_pairs[2] == std::pair<std::size_t, std::size_t>{0, 3});
   }
 
   SECTION("with value function") {
@@ -179,7 +179,7 @@ TEST_CASE("edgelist - flattening multiple vertex edge lists", "[edgelist][flatte
 
     std::vector<std::pair<int, int>> edge_pairs;
     for (auto [sid, tid, e] : elist) {
-      edge_pairs.emplace_back(sid, tid);
+      edge_pairs.emplace_back(static_cast<int>(sid), static_cast<int>(tid));
     }
 
     // Edges should come in vertex order, then edge order within vertex
@@ -226,7 +226,7 @@ TEST_CASE("edgelist - skipping empty vertices", "[edgelist][skip]") {
 
     std::vector<std::pair<int, int>> edge_pairs;
     for (auto [sid, tid, e] : elist) {
-      edge_pairs.emplace_back(sid, tid);
+      edge_pairs.emplace_back(static_cast<int>(sid), static_cast<int>(tid));
     }
 
     REQUIRE(edge_pairs.size() == 2);
@@ -331,7 +331,7 @@ TEST_CASE("edgelist - vector of deques", "[edgelist][container]") {
 
     std::vector<std::pair<int, int>> edge_pairs;
     for (auto [sid, tid, e] : elist) {
-      edge_pairs.emplace_back(sid, tid);
+      edge_pairs.emplace_back(static_cast<int>(sid), static_cast<int>(tid));
     }
 
     REQUIRE(edge_pairs.size() == 3);
@@ -365,7 +365,7 @@ TEST_CASE("edgelist - deque of vectors", "[edgelist][container]") {
 
     std::vector<std::pair<std::size_t, int>> edge_pairs;
     for (auto [sid, tid, e] : elist) {
-      edge_pairs.emplace_back(sid, tid);
+      edge_pairs.emplace_back(static_cast<int>(sid), static_cast<int>(tid));
     }
 
     REQUIRE(edge_pairs.size() == 3);
@@ -454,7 +454,7 @@ TEST_CASE("edgelist - map-based vertex container", "[edgelist][map]") {
 
     std::vector<std::pair<int, int>> edge_pairs;
     for (auto [sid, tid, e] : elist) {
-      edge_pairs.emplace_back(sid, tid);
+      edge_pairs.emplace_back(static_cast<int>(sid), static_cast<int>(tid));
     }
 
     REQUIRE(edge_pairs.size() == 3);
@@ -500,7 +500,7 @@ TEST_CASE("edgelist - vector vertices map edge_pairs", "[edgelist][edge_map]") {
 
     std::vector<std::pair<int, int>> edge_pairs;
     for (auto [sid, tid, e] : elist) {
-      edge_pairs.emplace_back(sid, tid);
+      edge_pairs.emplace_back(static_cast<int>(sid), static_cast<int>(tid));
     }
 
     REQUIRE(edge_pairs.size() == 3);
@@ -539,7 +539,7 @@ TEST_CASE("edgelist - map vertices map edge_pairs", "[edgelist][map][edge_map]")
 
     std::vector<std::pair<int, int>> edge_pairs;
     for (auto [sid, tid, e] : elist) {
-      edge_pairs.emplace_back(sid, tid);
+      edge_pairs.emplace_back(static_cast<int>(sid), static_cast<int>(tid));
     }
 
     REQUIRE(edge_pairs.size() == 3);
@@ -599,7 +599,7 @@ TEST_CASE("edgelist - edge_list with pairs", "[edgelist][edge_list]") {
 
     std::vector<std::pair<int, int>> edge_pairs;
     for (auto [sid, tid, e] : elist) {
-      edge_pairs.emplace_back(sid, tid);
+      edge_pairs.emplace_back(static_cast<int>(sid), static_cast<int>(tid));
     }
 
     REQUIRE(edge_pairs.size() == 4);
@@ -636,7 +636,7 @@ TEST_CASE("edgelist - edge_list with 2-tuples", "[edgelist][edge_list]") {
 
     std::vector<std::pair<int, int>> edge_pairs;
     for (auto [sid, tid, e] : elist) {
-      edge_pairs.emplace_back(sid, tid);
+      edge_pairs.emplace_back(static_cast<int>(sid), static_cast<int>(tid));
     }
 
     REQUIRE(edge_pairs[0] == std::pair<int, int>{0, 1});
@@ -658,7 +658,7 @@ TEST_CASE("edgelist - edge_list with 3-tuples (weighted)", "[edgelist][edge_list
 
     std::vector<std::pair<int, int>> edge_pairs;
     for (auto [sid, tid, e] : elist) {
-      edge_pairs.emplace_back(sid, tid);
+      edge_pairs.emplace_back(static_cast<int>(sid), static_cast<int>(tid));
     }
 
     REQUIRE(edge_pairs.size() == 3);
@@ -706,7 +706,7 @@ TEST_CASE("edgelist - edge_list with edge_data", "[edgelist][edge_list]") {
 
     std::vector<std::pair<int, int>> edge_pairs;
     for (auto [sid, tid, e] : elist) {
-      edge_pairs.emplace_back(sid, tid);
+      edge_pairs.emplace_back(static_cast<int>(sid), static_cast<int>(tid));
     }
 
     REQUIRE(edge_pairs[0] == std::pair<int, int>{10, 20});
@@ -910,7 +910,7 @@ TEST_CASE("edgelist - deque-based edge_list", "[edgelist][edge_list][container]"
 
     std::vector<std::pair<int, int>> edge_pairs;
     for (auto [sid, tid, e] : elist) {
-      edge_pairs.emplace_back(sid, tid);
+      edge_pairs.emplace_back(static_cast<int>(sid), static_cast<int>(tid));
     }
 
     REQUIRE(edge_pairs.size() == 3);
@@ -1005,3 +1005,4 @@ TEST_CASE("edgelist - edge_list_edgelist_view size() still works (vector)", "[ed
   STATIC_REQUIRE(std::ranges::sized_range<decltype(elist)>);
   REQUIRE(elist.size() == 3);
 }
+

@@ -364,7 +364,7 @@ TEST_CASE("basic_edgelist - undirected_adjacency_list", "[basic_edgelist][undire
 
     std::set<std::pair<unsigned int, unsigned int>> edge_pairs;
     for (auto [sid, tid] : el) {
-      edge_pairs.emplace(sid, tid);
+      edge_pairs.emplace(static_cast<unsigned int>(sid), static_cast<unsigned int>(tid));
     }
 
     // Undirected: each edge appears in both directions

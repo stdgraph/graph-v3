@@ -238,38 +238,54 @@ namespace topo_detail {
     [[nodiscard]] const std::optional<vertex_type>& cycle_vertex() const noexcept { return cycle_vertex_; }
 
   private:
-    // Recursive DFS visit for topological sort
-    void dfs_visit(G& g, vertex_type v, bool detect_cycles) {
-      visited_.mark_visited(v);
+    // Iterative DFS visit for topological sort (avoids stack overflow on deep graphs)
+    void dfs_visit(G& g, vertex_type start_v, bool detect_cycles) {
+      using edge_iterator_type = std::ranges::iterator_t<typename Accessor::template edge_range_t<G>>;
+      struct frame {
+        vertex_type       v;
+        edge_iterator_type it;
+        edge_iterator_type edge_end;
+      };
 
-      if (detect_cycles) {
-        rec_stack_.mark_visited(v);
-      }
+      std::vector<frame> dfs_stack;
 
-      // Visit all children
-      for (auto edge : Accessor{}.edges(g, v)) {
-        auto target_v = Accessor{}.neighbor(g, edge);
-
-        if (detect_cycles && rec_stack_.is_visited(target_v)) {
-          // Back edge detected - target_v closes the cycle
-          cycle_vertex_ = target_v;
-          return;
+      auto push_vertex = [&](vertex_type v) {
+        visited_.mark_visited(v);
+        if (detect_cycles) {
+          rec_stack_.mark_visited(v);
         }
+        auto edge_range = Accessor{}.edges(g, v);
+        dfs_stack.push_back({v, std::ranges::begin(edge_range), std::ranges::end(edge_range)});
+      };
 
-        if (!visited_.is_visited(target_v)) {
-          dfs_visit(g, target_v, detect_cycles);
-          if (cycle_vertex_) {
-            return; // Propagate early exit
+      push_vertex(start_v);
+
+      while (!dfs_stack.empty()) {
+        auto& [v, it, edge_end] = dfs_stack.back();
+
+        if (it == edge_end) {
+          // All children visited — add to post-order
+          if (detect_cycles) {
+            rec_stack_.unmark_visited(v);
+          }
+          post_order_.push_back(v);
+          dfs_stack.pop_back();
+        } else {
+          auto edge     = *it;
+          ++it;
+          auto target_v = Accessor{}.neighbor(g, edge);
+
+          if (detect_cycles && rec_stack_.is_visited(target_v)) {
+            // Back edge detected — target_v closes the cycle
+            cycle_vertex_ = target_v;
+            return;
+          }
+
+          if (!visited_.is_visited(target_v)) {
+            push_vertex(target_v);
           }
         }
       }
-
-      if (detect_cycles) {
-        rec_stack_.unmark_visited(v);
-      }
-
-      // Add to post-order after all children visited
-      post_order_.push_back(v);
     }
   };
 
@@ -290,7 +306,7 @@ namespace topo_detail {
  *
  * @see vertices_topological_sort_view<G,VVF,Alloc> — with value function
  * @see edges_topological_sort_view                 — edge-oriented variant
- */
+ */ 
 template <adj_list::adjacency_list G, class Alloc, class Accessor>
 class vertices_topological_sort_view<G, void, Alloc, Accessor>
       : public std::ranges::view_interface<vertices_topological_sort_view<G, void, Alloc, Accessor>> {

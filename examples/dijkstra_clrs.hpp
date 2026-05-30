@@ -4,6 +4,7 @@
 #include "graph/views/incidence.hpp"
 #include <queue>
 #include <algorithm>
+#include <cassert>
 
 namespace graph {
 
@@ -96,6 +97,7 @@ void dijkstra_clrs(
 {
   using id_type     = vertex_id_t<G>;
   using weight_type = invoke_result_t<WF, const std::remove_reference_t<G>&, edge_t<G>>;
+  using pred_id_type = range_value_t<Predecessor>;
 
   // Remark(Andrew): Do we want to allow null distance?  What about if both are null?  Still run algorithm at all?
 
@@ -127,7 +129,7 @@ void dijkstra_clrs(
       if (distance[uid] + w < distance[vid]) {
         distance[vid] = distance[uid] + w;
         if constexpr (!is_same_v<Predecessor, _null_range_type>)
-          predecessor[vid] = uid;
+          predecessor[vid] = static_cast<pred_id_type>(uid);
         Q.push({vid, distance[vid]});
       }
     }

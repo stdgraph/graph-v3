@@ -607,7 +607,7 @@ TEST_CASE("edges_topological_sort - simple DAG", "[topo][edge_pairs]") {
 
   std::vector<std::pair<int, int>> edge_pairs;
   for (auto [e] : edges_topological_sort(g)) {
-    edge_pairs.emplace_back(source_id(g, e), target_id(g, e));
+    edge_pairs.emplace_back(static_cast<int>(source_id(g, e)), static_cast<int>(target_id(g, e)));
   }
 
   REQUIRE(edge_pairs.size() == 2);
@@ -635,7 +635,7 @@ TEST_CASE("edges_topological_sort - diamond DAG", "[topo][edge_pairs]") {
   for (auto [e] : edges_topological_sort(g)) {
     auto src = source_id(g, e);
     auto tgt = target_id(g, e);
-    edge_map[src].insert(tgt);
+    edge_map[static_cast<int>(src)].insert(static_cast<int>(tgt));
   }
 
   REQUIRE(edge_map.size() == 3);
@@ -655,7 +655,7 @@ TEST_CASE("edges_topological_sort - structured binding with value", "[topo][edge
 
   std::vector<std::tuple<int, int, int>> edges_with_values;
   for (auto [e, val] : edges_topological_sort(g, [](const auto&, auto) { return 42; })) {
-    edges_with_values.emplace_back(source_id(g, e), target_id(g, e), val);
+    edges_with_values.emplace_back(static_cast<int>(source_id(g, e)), static_cast<int>(target_id(g, e)), val);
   }
 
   REQUIRE(edges_with_values.size() == 2);
@@ -672,7 +672,7 @@ TEST_CASE("edges_topological_sort - value function receives descriptor", "[topo]
   std::vector<int> edge_ids;
   for (auto [e, id] :
       edges_topological_sort(g, [](const auto& gr, auto ed) { return source_id(gr, ed) * 10 + target_id(gr, ed); })) {
-    edge_ids.push_back(id);
+    edge_ids.push_back(static_cast<int>(id));
   }
 
   REQUIRE(edge_ids.size() == 2);
@@ -709,7 +709,7 @@ TEST_CASE("edges_topological_sort - complex DAG", "[topo][edge_pairs]") {
   // First, get vertex positions from vertices_topological_sort
   int pos = 0;
   for (auto [v] : vertices_topological_sort(g)) {
-    vertex_positions[vertex_id(g, v)] = pos++;
+    vertex_positions[static_cast<int>(vertex_id(g, v))] = pos++;
   }
 
   // Now verify edge_pairs follow topological order (sources before targets)
@@ -717,11 +717,11 @@ TEST_CASE("edges_topological_sort - complex DAG", "[topo][edge_pairs]") {
     auto src = source_id(g, e);
     auto tgt = target_id(g, e);
 
-    seen_edges.emplace(src, tgt);
+    seen_edges.emplace(static_cast<int>(src), static_cast<int>(tgt));
     ++edge_count;
 
     // Verify source comes before target in topological order
-    REQUIRE(vertex_positions[src] < vertex_positions[tgt]);
+    REQUIRE(vertex_positions[static_cast<int>(src)] < vertex_positions[static_cast<int>(tgt)]);
   }
 
   REQUIRE(edge_count == 8);
@@ -735,7 +735,7 @@ TEST_CASE("edges_topological_sort - disconnected components", "[topo][edge_pairs
 
   std::set<std::pair<int, int>> edge_pairs;
   for (auto [e] : edges_topological_sort(g)) {
-    edge_pairs.emplace(source_id(g, e), target_id(g, e));
+    edge_pairs.emplace(static_cast<int>(source_id(g, e)), static_cast<int>(target_id(g, e)));
   }
 
   REQUIRE(edge_pairs.size() == 2);
@@ -784,7 +784,7 @@ TEST_CASE("vertices_topological_sort - self-loop", "[topo][vertices][cycles]") {
 
   std::vector<int> order;
   for (auto [v] : vertices_topological_sort(g)) {
-    order.push_back(vertex_id(g, v));
+    order.push_back(static_cast<int>(vertex_id(g, v)));
   }
 
   // Current behavior: produces ordering containing the vertex
@@ -802,7 +802,7 @@ TEST_CASE("vertices_topological_sort - simple cycle", "[topo][vertices][cycles]"
 
   std::vector<int> order;
   for (auto [v] : vertices_topological_sort(g)) {
-    order.push_back(vertex_id(g, v));
+    order.push_back(static_cast<int>(vertex_id(g, v)));
   }
 
   // Current behavior: produces an ordering with all vertices
@@ -845,7 +845,7 @@ TEST_CASE("vertices_topological_sort - cycle with tail", "[topo][vertices][cycle
 
   std::vector<int> order;
   for (auto [v] : vertices_topological_sort(g)) {
-    order.push_back(vertex_id(g, v));
+    order.push_back(static_cast<int>(vertex_id(g, v)));
   }
 
   REQUIRE(order.size() == 4);
@@ -876,7 +876,7 @@ TEST_CASE("vertices_topological_sort - multiple cycles", "[topo][vertices][cycle
 
   std::vector<int> order;
   for (auto [v] : vertices_topological_sort(g)) {
-    order.push_back(vertex_id(g, v));
+    order.push_back(static_cast<int>(vertex_id(g, v)));
   }
 
   // All vertices should be present
@@ -893,7 +893,7 @@ TEST_CASE("edges_topological_sort - simple cycle", "[topo][edge_pairs][cycles]")
 
   std::vector<std::pair<int, int>> edge_pairs;
   for (auto [e] : edges_topological_sort(g)) {
-    edge_pairs.emplace_back(source_id(g, e), target_id(g, e));
+    edge_pairs.emplace_back(static_cast<int>(source_id(g, e)), static_cast<int>(target_id(g, e)));
   }
 
   // All 3 edge_pairs should be present
@@ -913,7 +913,7 @@ TEST_CASE("edges_topological_sort - self-loop", "[topo][edge_pairs][cycles]") {
 
   std::vector<std::pair<int, int>> edge_pairs;
   for (auto [e] : edges_topological_sort(g)) {
-    edge_pairs.emplace_back(source_id(g, e), target_id(g, e));
+    edge_pairs.emplace_back(static_cast<int>(source_id(g, e)), static_cast<int>(target_id(g, e)));
   }
 
   // Self-loop edge should be present
@@ -964,7 +964,7 @@ TEST_CASE("vertices_topological_sort_safe - valid DAG", "[topo][vertices][safe]"
 
   std::vector<int> order;
   for (auto [v] : result.value()) {
-    order.push_back(vertex_id(g, v));
+    order.push_back(static_cast<int>(vertex_id(g, v)));
   }
 
   REQUIRE(order.size() == 3);
@@ -1012,7 +1012,7 @@ TEST_CASE("vertices_topological_sort_safe - with value function on DAG", "[topo]
 
   std::vector<std::tuple<int, int>> results;
   for (auto [v, val] : result.value()) {
-    results.emplace_back(vertex_id(g, v), val);
+    results.emplace_back(static_cast<int>(vertex_id(g, v)), val);
   }
 
   REQUIRE(results.size() == 3);
@@ -1061,7 +1061,7 @@ TEST_CASE("vertices_topological_sort_safe - diamond DAG", "[topo][vertices][safe
 
   std::vector<int> order;
   for (auto [v] : *result) {
-    order.push_back(vertex_id(g, v));
+    order.push_back(static_cast<int>(vertex_id(g, v)));
   }
 
   REQUIRE(order.size() == 4);
@@ -1080,7 +1080,7 @@ TEST_CASE("edges_topological_sort_safe - valid DAG", "[topo][edge_pairs][safe]")
 
   std::vector<std::pair<int, int>> edge_pairs;
   for (auto [e] : result.value()) {
-    edge_pairs.emplace_back(source_id(g, e), target_id(g, e));
+    edge_pairs.emplace_back(static_cast<int>(source_id(g, e)), static_cast<int>(target_id(g, e)));
   }
 
   REQUIRE(edge_pairs.size() == 2);
@@ -1537,3 +1537,4 @@ TEST_CASE("edges_topological_sort - string vertex ids", "[topo][edge_pairs][non_
     REQUIRE(it_ab < it_bc);
   }
 }
+

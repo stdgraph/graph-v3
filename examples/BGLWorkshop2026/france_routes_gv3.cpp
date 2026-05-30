@@ -75,8 +75,8 @@ load_result load(const string& filename) {
   if (std::regex_search(content, cm, cities_re)) {
     string cities_block = cm[1].str();
     for (auto it  = std::sregex_iterator(cities_block.begin(), cities_block.end(), name_re),
-              end = std::sregex_iterator{};
-         it != end; ++it) {
+          it_end = std::sregex_iterator{};
+        it != it_end; ++it) {
       string name            = (*it)[1].str();
       city_id[name]          = city_names.size();
       city_names.push_back(name);
@@ -99,19 +99,19 @@ load_result load(const string& filename) {
       R"re(\{\s*"from"\s*:\s*"([^"]+)"\s*,\s*"to"\s*:\s*"([^"]+)"\s*,\s*"distance_km"\s*:\s*(\d+)\s*,\s*"route"\s*:\s*"([^"]+)"\s*\})re");
 
   using edge_data = copyable_edge_t<vid_t, route_t>; // target vertex id + route info
-  vector<edge_data> edges;
+  vector<edge_data> edge_list;
 
   for (auto it  = std::sregex_iterator(content.begin(), content.end(), route_re),
-            end = std::sregex_iterator{};
-       it != end; ++it) {
+            it_end = std::sregex_iterator{};
+       it != it_end; ++it) {
     auto& m    = *it;
     vid_t src  = city_id.at(m[1].str());
     vid_t tgt  = city_id.at(m[2].str());
     dist_t dist = std::stoi(m[3].str());
-    edges.push_back({src, tgt, route_t{dist, m[4].str()}});
+    edge_list.push_back({src, tgt, route_t{dist, m[4].str()}});
   }
 
-  g.load_edges(edges);
+  g.load_edges(edge_list);
   return {std::move(g), std::move(city_id)};
 }
 
@@ -130,14 +130,14 @@ void run(const string& filename) {
   };
 
   // ── Evaluate shortest paths from source ────────────────────────────────────
-  const vid_t source_id = city_id.at("Paris");
+  const vid_t source_city_id = city_id.at("Paris");
 
   // Distance and predecessor vectors indexed by vertex id.
   vector<dist_t> distances(num_vertices(g));
   vector<vid_t>  predecessors(num_vertices(g));
   init_shortest_paths(g, distances, predecessors);
 
-  dijkstra_shortest_paths(g, source_id,
+  dijkstra_shortest_paths(g, source_city_id,
                           container_value_fn(distances),
                           container_value_fn(predecessors),
                           route_distance);
@@ -147,12 +147,12 @@ void run(const string& filename) {
     vector<std::pair<dist_t, vid_t>> by_dist;
     by_dist.reserve(num_vertices(g));
     for (vid_t uid = 0; uid < num_vertices(g); ++uid) {
-      if (uid != source_id)
+      if (uid != source_city_id)
         by_dist.emplace_back(distances[uid], uid);
     }
     std::ranges::sort(by_dist); // sort by (distance, uid) — default pair comparison
 
-    cout << "Shortest road distances from " << city_name(g, source_id) << ":\n";
+    cout << "Shortest road distances from " << city_name(g, source_city_id) << ":\n";
     for (auto& [d, uid] : by_dist) {
         if (d == infinite_distance<dist_t>())
         cout << "  " << city_name(g, uid) << ": unreachable\n";
@@ -164,17 +164,17 @@ void run(const string& filename) {
   // ── Reconstruct shortest path from Paris to Nice ────────────────────────────
   {
     const vid_t dest_id = city_id.at("Nice");
-    cout << "\nShortest path: " << city_name(g, source_id) << " -> " << city_name(g, dest_id) << "\n";
+    cout << "\nShortest path: " << city_name(g, source_city_id) << " -> " << city_name(g, dest_id) << "\n";
 
     vector<vid_t> path;
-    for (vid_t cur = dest_id; cur != source_id; cur = predecessors[cur]) {
+    for (vid_t cur = dest_id; cur != source_city_id; cur = predecessors[cur]) {
       if (path.size() >= num_vertices(g)) {
         cout << "  (no path found)\n";
         return;
       }
       path.push_back(cur);
     }
-    path.push_back(source_id);
+    path.push_back(source_city_id);
     std::ranges::reverse(path);
 
     for (size_t i = 0; i + 1 < path.size(); ++i) {

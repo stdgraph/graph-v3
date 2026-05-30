@@ -203,7 +203,11 @@ void biconnected_components(G&& g, OuterContainer& components, const Alloc& allo
         break;
       }
     }
-    inner_type comp(vset.begin(), vset.end());
+    inner_type comp;
+    comp.reserve(vset.size());
+    for (const auto vv : vset) {
+      comp.push_back(static_cast<typename inner_type::value_type>(vv));
+    }
     components.push_back(std::move(comp));
   };
 

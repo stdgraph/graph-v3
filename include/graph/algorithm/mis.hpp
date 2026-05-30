@@ -1,10 +1,16 @@
 /**
  * @file mis.hpp
- * 
+requires output_iterator<Iter, vertex_id_t<G>>
  * @brief Maximal Independent Set (MIS) algorithm for graphs.
  * 
  * @copyright Copyright (c) 2024
  * 
+  using graph_vid_t = typename std::remove_cvref_t<G>::vertex_id_type;
+  using iter_t      = std::remove_cvref_t<Iter>;
+  using out_vid_t   = std::conditional_t<
+        requires { typename iter_t::container_type::value_type; },
+        typename iter_t::container_type::value_type,
+        graph_vid_t>;
  * SPDX-License-Identifier: BSL-1.0
  *
  * @authors
@@ -120,6 +126,9 @@ size_t maximal_independent_set(G&&                   g,       // graph
                                Iter                  mis,     // out: maximal independent set
                                const vertex_id_t<G>& seed = 0 // seed vtx
 ) {
+  using graph_vid_t = typename std::remove_cvref_t<G>::vertex_id_type;
+  using out_vid_t   = graph_vid_t;
+
   size_t N = num_vertices(g);
   if (N == 0) {
     return 0;
@@ -132,7 +141,7 @@ size_t maximal_independent_set(G&&                   g,       // graph
   auto   removed_vertices = make_vertex_property_map<G, uint8_t>(g, uint8_t{0});
 
   // Mark seed vertex as removed
-  removed_vertices[seed] = 1;
+  removed_vertices[static_cast<graph_vid_t>(seed)] = 1;
 
   // Check if seed vertex has a self-loop
   bool seed_has_self_loop = false;
@@ -145,22 +154,22 @@ size_t maximal_independent_set(G&&                   g,       // graph
 
   // Only add seed to MIS if it has no self-loop
   if (!seed_has_self_loop) {
-    *mis++ = seed;
+    *mis++ = static_cast<out_vid_t>(seed);
     ++count;
     // Mark neighbors as removed
     for (auto uv : edges(g, *seed_vit)) {
-      removed_vertices[target_id(g, uv)] = 1;
+      removed_vertices[static_cast<graph_vid_t>(target_id(g, uv))] = 1;
     }
   }
 
   for (auto u : vertices(g)) {
-    vertex_id_t<G> uid = vertex_id(g, u);
+    graph_vid_t uid = static_cast<graph_vid_t>(vertex_id(g, u));
     if (!removed_vertices[uid]) {
-      *mis++ = uid;
+      *mis++ = static_cast<out_vid_t>(uid);
       ++count;
       removed_vertices[uid] = 1;
       for (auto uv : edges(g, u)) {
-        removed_vertices[target_id(g, uv)] = 1;
+        removed_vertices[static_cast<graph_vid_t>(target_id(g, uv))] = 1;
       }
     }
   }

@@ -429,18 +429,18 @@ TEST_CASE("incidence - iterating all vertices", "[incidence][all]") {
   };
 
   // Collect all edges from all vertices
-  std::vector<std::pair<int, int>> all_edges;
+  std::vector<std::pair<std::size_t, std::size_t>> all_edges;
 
   for (auto [id, v] : vertexlist(g)) {
     for (auto [tid, e] : incidence(g, v)) {
-      all_edges.emplace_back(source_id(g, e), tid);
+      all_edges.emplace_back(static_cast<unsigned int>(source_id(g, e)), static_cast<unsigned int>(tid));
     }
   }
 
   REQUIRE(all_edges.size() == 3);
-  REQUIRE(all_edges[0] == std::pair<int, int>{0, 1});
-  REQUIRE(all_edges[1] == std::pair<int, int>{0, 2});
-  REQUIRE(all_edges[2] == std::pair<int, int>{1, 2});
+  REQUIRE(all_edges[0] == std::pair<std::size_t, std::size_t>{0, 1});
+  REQUIRE(all_edges[1] == std::pair<std::size_t, std::size_t>{0, 2});
+  REQUIRE(all_edges[2] == std::pair<std::size_t, std::size_t>{1, 2});
 }
 
 // =============================================================================
@@ -519,7 +519,7 @@ TEST_CASE("incidence - map vertices vector edges", "[incidence][map]") {
 
     for (auto [id, v] : vertexlist(g)) {
       for (auto [tid, e] : incidence(g, v)) {
-        all_edges.emplace_back(source_id(g, e), tid);
+        all_edges.emplace_back(static_cast<unsigned int>(source_id(g, e)), static_cast<unsigned int>(tid));
       }
     }
 
@@ -793,7 +793,7 @@ TEST_CASE("incidence - undirected_adjacency_list iteration order", "[incidence][
 
     for (auto [id, v] : vertexlist(g)) {
       for (auto [tid, e] : incidence(g, v)) {
-        all_edges.emplace_back(source_id(g, e), tid);
+        all_edges.emplace_back(static_cast<unsigned int>(source_id(g, e)), static_cast<unsigned int>(tid));
       }
     }
 
@@ -908,3 +908,4 @@ TEST_CASE("incidence - undirected_adjacency_list empty and single edge", "[incid
     REQUIRE(edge_value(g, e1) == 42); // Same edge, same weight
   }
 }
+

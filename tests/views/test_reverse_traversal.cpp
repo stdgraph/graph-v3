@@ -77,7 +77,7 @@ TEST_CASE("vertices_bfs - default accessor on bidir graph", "[bfs][accessor][for
 
   std::vector<uint32_t> visited;
   for (auto [v] : vertices_bfs(g, uint32_t{0})) {
-    visited.push_back(vertex_id(g, v));
+    visited.push_back(static_cast<uint32_t>(vertex_id(g, v)));
   }
 
   REQUIRE(visited.size() == 4);
@@ -99,7 +99,7 @@ TEST_CASE("vertices_bfs - reverse accessor from sink", "[bfs][accessor][reverse]
   // BFS backwards from vertex 3 (the sink) using in_edge_accessor
   std::vector<uint32_t> visited;
   for (auto [v] : vertices_bfs<in_edge_accessor>(g, uint32_t{3})) {
-    visited.push_back(vertex_id(g, v));
+    visited.push_back(static_cast<uint32_t>(vertex_id(g, v)));
   }
 
   // From 3 following incoming edges: 3 -> {1, 2} -> {0}
@@ -115,7 +115,7 @@ TEST_CASE("edges_bfs - reverse accessor from sink", "[bfs][accessor][reverse]") 
 
   std::vector<uint32_t> source_ids;
   for (auto [uv] : edges_bfs<in_edge_accessor>(g, uint32_t{3})) {
-    source_ids.push_back(source_id(g, uv));
+    source_ids.push_back(static_cast<uint32_t>(source_id(g, uv)));
   }
 
   // From 3 following incoming edges: edges arriving at 3 are from 1 and 2
@@ -129,7 +129,7 @@ TEST_CASE("vertices_bfs - reverse on chain", "[bfs][accessor][reverse]") {
   // Reverse BFS from 3 should visit 3, 2, 1, 0
   std::vector<uint32_t> visited;
   for (auto [v] : vertices_bfs<in_edge_accessor>(g, uint32_t{3})) {
-    visited.push_back(vertex_id(g, v));
+    visited.push_back(static_cast<uint32_t>(vertex_id(g, v)));
   }
 
   REQUIRE(visited.size() == 4);
@@ -147,8 +147,8 @@ TEST_CASE("vertices_bfs - reverse with value function", "[bfs][accessor][reverse
   std::vector<uint32_t> ids;
   std::vector<uint32_t> vals;
   for (auto [v, val] : vertices_bfs<in_edge_accessor>(g, uint32_t{3}, vvf)) {
-    ids.push_back(vertex_id(g, v));
-    vals.push_back(val);
+    ids.push_back(static_cast<uint32_t>(vertex_id(g, v)));
+    vals.push_back(static_cast<uint32_t>(val));
   }
 
   REQUIRE(ids == std::vector<uint32_t>{3, 2, 1, 0});
@@ -164,7 +164,7 @@ TEST_CASE("vertices_dfs - default accessor on bidir graph", "[dfs][accessor][for
 
   std::vector<uint32_t> visited;
   for (auto [v] : vertices_dfs(g, uint32_t{0})) {
-    visited.push_back(vertex_id(g, v));
+    visited.push_back(static_cast<uint32_t>(vertex_id(g, v)));
   }
 
   // DFS from 0 along the chain should visit all 4
@@ -184,7 +184,7 @@ TEST_CASE("vertices_dfs - reverse accessor from sink", "[dfs][accessor][reverse]
   // Reverse DFS from 3 should visit 3, 2, 1, 0
   std::vector<uint32_t> visited;
   for (auto [v] : vertices_dfs<in_edge_accessor>(g, uint32_t{3})) {
-    visited.push_back(vertex_id(g, v));
+    visited.push_back(static_cast<uint32_t>(vertex_id(g, v)));
   }
 
   REQUIRE(visited.size() == 4);
@@ -196,7 +196,7 @@ TEST_CASE("edges_dfs - reverse accessor from sink", "[dfs][accessor][reverse]") 
 
   std::vector<uint32_t> neighbor_ids;
   for (auto [uv] : edges_dfs<in_edge_accessor>(g, uint32_t{3})) {
-    neighbor_ids.push_back(source_id(g, uv));
+    neighbor_ids.push_back(static_cast<uint32_t>(source_id(g, uv)));
   }
 
   // From 3 backwards: edges are 3<-2, 2<-1, 1<-0
@@ -210,8 +210,8 @@ TEST_CASE("vertices_dfs - reverse with value function", "[dfs][accessor][reverse
   std::vector<uint32_t> ids;
   std::vector<uint32_t> vals;
   for (auto [v, val] : vertices_dfs<in_edge_accessor>(g, uint32_t{3}, vvf)) {
-    ids.push_back(vertex_id(g, v));
-    vals.push_back(val);
+    ids.push_back(static_cast<uint32_t>(vertex_id(g, v)));
+    vals.push_back(static_cast<uint32_t>(val));
   }
 
   REQUIRE(ids == std::vector<uint32_t>{3, 2, 1, 0});
@@ -227,7 +227,7 @@ TEST_CASE("vertices_dfs - reverse on diamond from sink", "[dfs][accessor][revers
 
   std::vector<uint32_t> visited;
   for (auto [v] : vertices_dfs<in_edge_accessor>(g, uint32_t{3})) {
-    visited.push_back(vertex_id(g, v));
+    visited.push_back(static_cast<uint32_t>(vertex_id(g, v)));
   }
 
   // From 3, incoming edges lead to 1 and 2; from those, incoming edge leads to 0
@@ -247,7 +247,7 @@ TEST_CASE("vertices_topological_sort - default accessor", "[topo][accessor][forw
 
   std::vector<uint32_t> order;
   for (auto [v] : vertices_topological_sort(g)) {
-    order.push_back(vertex_id(g, v));
+    order.push_back(static_cast<uint32_t>(vertex_id(g, v)));
   }
 
   REQUIRE(order.size() == 4);
@@ -271,7 +271,7 @@ TEST_CASE("vertices_topological_sort - reverse accessor", "[topo][accessor][reve
   // Topological order of the reversed graph: 3 before {1,2}, {1,2} before 0
   std::vector<uint32_t> order;
   for (auto [v] : vertices_topological_sort<in_edge_accessor>(g)) {
-    order.push_back(vertex_id(g, v));
+    order.push_back(static_cast<uint32_t>(vertex_id(g, v)));
   }
 
   REQUIRE(order.size() == 4);
@@ -288,7 +288,7 @@ TEST_CASE("edges_topological_sort - reverse accessor", "[topo][accessor][reverse
 
   std::set<uint32_t> source_vertices;
   for (auto [uv] : edges_topological_sort<in_edge_accessor>(g)) {
-    source_vertices.insert(source_id(g, uv));
+    source_vertices.insert(static_cast<uint32_t>(source_id(g, uv)));
   }
 
   // All vertices with incoming edges (in the reversed direction = original out-edges)
@@ -309,7 +309,7 @@ TEST_CASE("vertices_topological_sort_safe - reverse accessor", "[topo][accessor]
 
   std::vector<uint32_t> order;
   for (auto [v] : *result) {
-    order.push_back(vertex_id(g, v));
+    order.push_back(static_cast<uint32_t>(vertex_id(g, v)));
   }
 
   REQUIRE(order.size() == 4);
@@ -324,7 +324,7 @@ TEST_CASE("vertices_topological_sort_safe - reverse with VVF", "[topo][accessor]
 
   std::vector<uint32_t> order;
   for (auto [v, val] : *result) {
-    order.push_back(val);
+    order.push_back(static_cast<uint32_t>(val));
   }
 
   REQUIRE(order.size() == 4);
@@ -407,11 +407,11 @@ TEST_CASE("explicit out_edge_accessor matches default BFS", "[accessor][explicit
   std::vector<uint32_t> default_order, explicit_order;
 
   for (auto [v] : vertices_bfs(g, uint32_t{0})) {
-    default_order.push_back(vertex_id(g, v));
+    default_order.push_back(static_cast<uint32_t>(vertex_id(g, v)));
   }
 
   for (auto [v] : vertices_bfs<out_edge_accessor>(g, uint32_t{0})) {
-    explicit_order.push_back(vertex_id(g, v));
+    explicit_order.push_back(static_cast<uint32_t>(vertex_id(g, v)));
   }
 
   REQUIRE(default_order == explicit_order);
@@ -423,11 +423,11 @@ TEST_CASE("explicit out_edge_accessor matches default DFS", "[accessor][explicit
   std::vector<uint32_t> default_order, explicit_order;
 
   for (auto [v] : vertices_dfs(g, uint32_t{0})) {
-    default_order.push_back(vertex_id(g, v));
+    default_order.push_back(static_cast<uint32_t>(vertex_id(g, v)));
   }
 
   for (auto [v] : vertices_dfs<out_edge_accessor>(g, uint32_t{0})) {
-    explicit_order.push_back(vertex_id(g, v));
+    explicit_order.push_back(static_cast<uint32_t>(vertex_id(g, v)));
   }
 
   REQUIRE(default_order == explicit_order);
@@ -439,11 +439,11 @@ TEST_CASE("explicit out_edge_accessor matches default topo sort", "[accessor][ex
   std::vector<uint32_t> default_order, explicit_order;
 
   for (auto [v] : vertices_topological_sort(g)) {
-    default_order.push_back(vertex_id(g, v));
+    default_order.push_back(static_cast<uint32_t>(vertex_id(g, v)));
   }
 
   for (auto [v] : vertices_topological_sort<out_edge_accessor>(g)) {
-    explicit_order.push_back(vertex_id(g, v));
+    explicit_order.push_back(static_cast<uint32_t>(vertex_id(g, v)));
   }
 
   REQUIRE(default_order == explicit_order);

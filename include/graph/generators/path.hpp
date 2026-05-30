@@ -27,14 +27,14 @@ template <class VId = uint32_t>
 edge_list<VId> path_graph(VId n, uint64_t seed = 42,
                           weight_dist wdist = weight_dist::uniform) {
   std::mt19937_64 rng(seed);
-  edge_list<VId>  edges;
-  edges.reserve(n > 0 ? n - 1 : 0);
+  edge_list<VId>  generated_edges;
+  generated_edges.reserve(n > 0 ? n - 1 : 0);
 
   for (VId u = 0; u + 1 < n; ++u) {
-    edges.push_back({u, static_cast<VId>(u + 1), sample_weight(rng, wdist)});
+    generated_edges.push_back({u, static_cast<VId>(u + 1), sample_weight(rng, wdist)});
   }
   // Already sorted.
-  return edges;
+  return generated_edges;
 }
 
 } // namespace graph::generators

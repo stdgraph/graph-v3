@@ -73,9 +73,9 @@ TEST_CASE("out_incidence matches incidence", "[in_incidence][out]") {
 
     std::vector<unsigned> ref_ids, test_ids;
     for (auto [tid, e] : ref)
-      ref_ids.push_back(tid);
+      ref_ids.push_back(static_cast<unsigned>(tid));
     for (auto [tid, e] : test)
-      test_ids.push_back(tid);
+      test_ids.push_back(static_cast<unsigned>(tid));
 
     REQUIRE(ref_ids == test_ids);
   }
@@ -127,9 +127,9 @@ TEST_CASE("basic_out_incidence matches basic_incidence", "[in_incidence][basic_o
 
     std::vector<unsigned> ref_ids, test_ids;
     for (auto ei : ref)
-      ref_ids.push_back(ei.target_id);
+      ref_ids.push_back(static_cast<unsigned>(ei.target_id));
     for (auto ei : test)
-      test_ids.push_back(ei.target_id);
+      test_ids.push_back(static_cast<unsigned>(ei.target_id));
 
     REQUIRE(ref_ids == test_ids);
   }

@@ -21,15 +21,17 @@ using namespace graph::views::adaptors;
 using TestGraph = std::vector<std::vector<int>>;
 
 // Create a random directed graph
-TestGraph create_random_graph(size_t num_vertices, size_t avg_degree) {
-  TestGraph    g(num_vertices);
+TestGraph create_random_graph(size_t vertex_count, size_t mean_degree) {
+  TestGraph    g(vertex_count);
   std::mt19937 rng(42); // Fixed seed for reproducibility
 
-  std::uniform_int_distribution<size_t> dist(0, num_vertices - 1);
+  std::uniform_int_distribution<size_t> dist(0, vertex_count - 1);
 
-  for (size_t u = 0; u < num_vertices; ++u) {
-    size_t degree = std::poisson_distribution<size_t>(avg_degree)(rng);
-    for (size_t i = 0; i < degree; ++i) {
+  std::poisson_distribution<int> degree_dist(static_cast<int>(mean_degree));
+
+  for (size_t u = 0; u < vertex_count; ++u) {
+    auto sampled_degree = static_cast<size_t>(degree_dist(rng));
+    for (size_t i = 0; i < sampled_degree; ++i) {
       size_t v = dist(rng);
       if (v != u) { // Avoid self-loops
         g[u].push_back(static_cast<int>(v));
@@ -41,19 +43,19 @@ TestGraph create_random_graph(size_t num_vertices, size_t avg_degree) {
 }
 
 // Create a path graph (0 -> 1 -> 2 -> ... -> n-1)
-TestGraph create_path_graph(size_t num_vertices) {
-  TestGraph g(num_vertices);
-  for (size_t i = 0; i + 1 < num_vertices; ++i) {
+TestGraph create_path_graph(size_t vertex_count) {
+  TestGraph g(vertex_count);
+  for (size_t i = 0; i + 1 < vertex_count; ++i) {
     g[i].push_back(static_cast<int>(i + 1));
   }
   return g;
 }
 
 // Create a complete graph (all vertices connected)
-TestGraph create_complete_graph(size_t num_vertices) {
-  TestGraph g(num_vertices);
-  for (size_t u = 0; u < num_vertices; ++u) {
-    for (size_t v = 0; v < num_vertices; ++v) {
+TestGraph create_complete_graph(size_t vertex_count) {
+  TestGraph g(vertex_count);
+  for (size_t u = 0; u < vertex_count; ++u) {
+    for (size_t v = 0; v < vertex_count; ++v) {
       if (u != v) {
         g[u].push_back(static_cast<int>(v));
       }
@@ -63,11 +65,11 @@ TestGraph create_complete_graph(size_t num_vertices) {
 }
 
 // Create a DAG (directed acyclic graph) for topological sort
-TestGraph create_dag(size_t num_vertices) {
-  TestGraph g(num_vertices);
-  for (size_t u = 0; u < num_vertices; ++u) {
+TestGraph create_dag(size_t vertex_count) {
+  TestGraph g(vertex_count);
+  for (size_t u = 0; u < vertex_count; ++u) {
     // Connect to next few vertices only (maintains DAG property)
-    for (size_t v = u + 1; v < std::min(u + 5, num_vertices); ++v) {
+    for (size_t v = u + 1; v < std::min(u + 5, vertex_count); ++v) {
       g[u].push_back(static_cast<int>(v));
     }
   }

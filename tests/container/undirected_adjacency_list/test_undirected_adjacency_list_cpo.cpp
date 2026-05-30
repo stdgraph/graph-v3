@@ -275,8 +275,8 @@ TEST_CASE("edge target_id CPO via ADL", "[undirected_adjacency_list][cpo][target
   // Edges from vertex 0 should go to vertices 1 and 2
   REQUIRE(targets.size() == 2);
   // Order may vary, so check both are present
-  REQUIRE((std::find(targets.begin(), targets.end(), 1) != targets.end()));
-  REQUIRE((std::find(targets.begin(), targets.end(), 2) != targets.end()));
+  REQUIRE((std::find(targets.begin(), targets.end(), 1u) != targets.end()));
+  REQUIRE((std::find(targets.begin(), targets.end(), 2u) != targets.end()));
 }
 
 TEST_CASE("edge source_id CPO via ADL", "[undirected_adjacency_list][cpo][source_id]") {

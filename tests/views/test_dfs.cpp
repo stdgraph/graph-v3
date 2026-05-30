@@ -91,7 +91,7 @@ TEST_CASE("vertices_dfs - structured bindings", "[dfs][vertices][bindings]") {
 
     std::vector<std::pair<int, int>> results;
     for (auto [v, val] : dfs) {
-      results.emplace_back(static_cast<int>(vertex_id(g, v)), val);
+      results.emplace_back(static_cast<int>(vertex_id(g, v)), static_cast<int>(val));
     }
 
     REQUIRE(results.size() == 3);
@@ -1375,3 +1375,4 @@ TEST_CASE("vertices_dfs cancel_branch - string ids", "[dfs][cancel][non_integral
     REQUIRE(ids == std::vector<std::string>{"a"});
   }
 }
+

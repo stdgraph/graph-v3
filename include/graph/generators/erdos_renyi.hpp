@@ -42,9 +42,9 @@ edge_list<VId> erdos_renyi(VId n, double p, uint64_t seed = 42,
   std::mt19937_64 rng(seed);
   const size_t    total = static_cast<size_t>(n) * (n - 1); // n*(n-1) directed pairs
 
-  edge_list<VId> edges;
+  edge_list<VId> generated_edges;
   const size_t   expected = static_cast<size_t>(static_cast<double>(total) * p * 1.1) + 16;
-  edges.reserve(expected);
+  generated_edges.reserve(expected);
 
   // Geometric skip: sample the gap between consecutive selected positions.
   std::geometric_distribution<size_t> geom(p);
@@ -54,11 +54,11 @@ edge_list<VId> erdos_renyi(VId n, double p, uint64_t seed = 42,
     const VId u      = static_cast<VId>(pos / (n - 1));
     const VId offset = static_cast<VId>(pos % (n - 1));
     const VId v      = (offset < u) ? offset : offset + 1;
-    edges.push_back({u, v, sample_weight(rng, wdist)});
+    generated_edges.push_back({u, v, sample_weight(rng, wdist)});
     pos += geom(rng) + 1;
   }
   // Edges are already sorted by source_id (u is non-decreasing).
-  return edges;
+  return generated_edges;
 }
 
 } // namespace graph::generators

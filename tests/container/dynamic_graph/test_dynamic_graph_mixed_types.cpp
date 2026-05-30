@@ -282,17 +282,17 @@ TEST_CASE("Bidirectional edges across types", "[6.4.1][mixed][bidirectional]") {
 }
 
 TEST_CASE("Large graph across types", "[6.4.1][mixed][large]") {
-  std::vector<copyable_edge_t<uint64_t, void>> edges;
+  std::vector<copyable_edge_t<uint64_t, void>> edge_data;
   for (uint64_t i = 0; i < 100; ++i) {
-    edges.push_back({.source_id = i, .target_id = i + 1});
+    edge_data.push_back({.source_id = i, .target_id = i + 1});
   }
 
   vov_void g1;
-  g1.load_edges(edges);
+  g1.load_edges(edge_data);
   mos_void g2;
-  g2.load_edges(edges);
+  g2.load_edges(edge_data);
   dofl_void g3;
-  g3.load_edges(edges);
+  g3.load_edges(edge_data);
 
   REQUIRE(count_vertices(g1) == 101);
   REQUIRE(count_vertices(g2) == 101);
@@ -304,19 +304,19 @@ TEST_CASE("Large graph across types", "[6.4.1][mixed][large]") {
 }
 
 TEST_CASE("Generic function with dense graph", "[6.4.1][mixed][dense]") {
-  std::vector<copyable_edge_t<uint64_t, void>> edges;
+  std::vector<copyable_edge_t<uint64_t, void>> edge_data;
   for (uint64_t i = 0; i < 10; ++i) {
     for (uint64_t j = 0; j < 10; ++j) {
       if (i != j) {
-        edges.push_back({.source_id = i, .target_id = j});
+        edge_data.push_back({.source_id = i, .target_id = j});
       }
     }
   }
 
   vov_void g1;
-  g1.load_edges(edges);
+  g1.load_edges(edge_data);
   mos_void g2;
-  g2.load_edges(edges);
+  g2.load_edges(edge_data);
 
   REQUIRE(count_vertices(g1) == 10);
   REQUIRE(count_vertices(g2) == 10);
@@ -383,20 +383,20 @@ TEST_CASE("All graph types with isolated vertex", "[6.4.1][mixed][isolated]") {
 // ============================================================================
 
 TEST_CASE("vov graph constructed from range with identity projection", "[6.4.1][range-construct][identity]") {
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {
         {.source_id = 0, .target_id = 1}, {.source_id = 1, .target_id = 2}, {.source_id = 0, .target_id = 2}};
   std::vector<uint64_t> partitions;
-  vov_void              g(2ul, edges, identity{}, partitions);
+  vov_void              g(2ul, edge_list, identity{}, partitions);
 
   REQUIRE(count_vertices(g) == 3);
   REQUIRE(count_edges(g) == 3);
 }
 
 TEST_CASE("mos graph constructed from range with identity projection", "[6.4.1][range-construct][mos]") {
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{.source_id = 10, .target_id = 20},
-                                                        {.source_id = 20, .target_id = 30}};
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {{.source_id = 10, .target_id = 20},
+                                                            {.source_id = 20, .target_id = 30}};
   std::vector<uint64_t>                        partitions;
-  mos_void                                     g(30ul, edges, identity{}, partitions);
+  mos_void                                     g(30ul, edge_list, identity{}, partitions);
 
   REQUIRE(count_vertices(g) == 3);
   REQUIRE(count_edges(g) == 2);
@@ -405,10 +405,10 @@ TEST_CASE("mos graph constructed from range with identity projection", "[6.4.1][
 }
 
 TEST_CASE("dofl graph constructed from range with identity projection", "[6.4.1][range-construct][dofl]") {
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {
+  std::vector<copyable_edge_t<uint64_t, void>> edge_list = {
         {.source_id = 0, .target_id = 1}, {.source_id = 1, .target_id = 2}, {.source_id = 2, .target_id = 0}};
   std::vector<uint64_t> partitions;
-  dofl_void             g(2ul, edges, identity{}, partitions);
+  dofl_void             g(2ul, edge_list, identity{}, partitions);
 
   REQUIRE(count_vertices(g) == 3);
   REQUIRE(count_edges(g) == 3);
@@ -480,18 +480,18 @@ TEST_CASE("mixed construction methods coexist", "[6.4.1][range-construct][mixed-
   vov_void g1({{.source_id = 0, .target_id = 1}, {.source_id = 1, .target_id = 2}});
 
   // Range with identity projection
-  std::vector<copyable_edge_t<uint64_t, void>> edges = {{.source_id = 0, .target_id = 1},
-                                                        {.source_id = 1, .target_id = 2}};
+  std::vector<copyable_edge_t<uint64_t, void>> edge_data = {{.source_id = 0, .target_id = 1},
+                                                            {.source_id = 1, .target_id = 2}};
   std::vector<uint64_t>                        partitions;
-  mos_void                                     g2(2ul, edges, identity{}, partitions);
+  mos_void                                     g2(2ul, edge_data, identity{}, partitions);
 
   // Custom projection
   struct Edge {
     uint64_t u, v;
   };
-  std::vector<Edge> edge_data = {{0, 1}, {1, 2}};
+  std::vector<Edge> edge_input = {{0, 1}, {1, 2}};
   auto      proj = [](const Edge& e) { return copyable_edge_t<uint64_t, void>{.source_id = e.u, .target_id = e.v}; };
-  dofl_void g3(2ul, edge_data, proj, partitions);
+  dofl_void g3(2ul, edge_input, proj, partitions);
 
   // All should have same structure
   REQUIRE(count_edges(g1) == 2);
@@ -500,9 +500,9 @@ TEST_CASE("mixed construction methods coexist", "[6.4.1][range-construct][mixed-
 }
 
 TEST_CASE("range construction with empty range", "[6.4.1][range-construct][empty]") {
-  std::vector<copyable_edge_t<uint64_t, void>> edges;
+  std::vector<copyable_edge_t<uint64_t, void>> edge_data;
   vov_void                                     g;
-  g.load_edges(edges);
+  g.load_edges(edge_data);
 
   REQUIRE(count_vertices(g) == 0);
   REQUIRE(count_edges(g) == 0);

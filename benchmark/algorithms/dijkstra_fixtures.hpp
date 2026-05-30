@@ -82,16 +82,16 @@ inline edge_list path_graph(vertex_id_t n, uint64_t seed = 42,
 // ---------------------------------------------------------------------------
 
 /// Build a compressed_graph (CSR) from a pre-sorted edge list.
-inline csr_graph_t make_csr(const edge_list& edges, vertex_id_t num_vertices) {
+inline csr_graph_t make_csr(const edge_list& edge_list_data, vertex_id_t vertex_count) {
   csr_graph_t g;
-  g.load_edges(edges, std::identity{}, num_vertices);
+  g.load_edges(edge_list_data, std::identity{}, vertex_count);
   return g;
 }
 
 /// Build a vov dynamic_graph from an edge list (order does not matter).
-inline vov_graph_t make_vov(const edge_list& edges, vertex_id_t num_vertices) {
+inline vov_graph_t make_vov(const edge_list& edge_list_data, vertex_id_t vertex_count) {
   vov_graph_t g;
-  g.load_edges(edges, std::identity{}, num_vertices);
+  g.load_edges(edge_list_data, std::identity{}, vertex_count);
   return g;
 }
 

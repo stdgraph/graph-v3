@@ -559,7 +559,7 @@ static void link(vertex_id_t u, vertex_id_t v, Component& component) {
     if (p_high == high) {
       // high is a root (points to itself)
       if (component[high] == high) {
-        component[high] = low; // Link high root to low
+        component[high] = static_cast<std::remove_reference_t<decltype(component[high])>>(low); // Link high root to low
         break;
       } else {
         // Race condition: another thread changed it; retry with low

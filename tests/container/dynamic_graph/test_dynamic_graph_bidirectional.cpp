@@ -364,7 +364,7 @@ TEST_CASE("bidir in_edges carry correct edge values",
     auto uid = vertex_id(g, v);
     for (auto ie : in_edges(g, v)) {
       auto sid = source_id(g, ie);
-      auto key = std::pair{sid, uid};
+      auto key = std::pair<uint32_t, uint32_t>{static_cast<uint32_t>(sid), static_cast<uint32_t>(uid)};
       REQUIRE(expected.count(key) == 1);
       REQUIRE(edge_value(g, ie) == expected[key]);
     }

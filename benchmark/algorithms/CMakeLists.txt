@@ -108,4 +108,4 @@ endif()
 # Register with CTest using a short minimum time so CI stays fast.
 # For proper baseline capture use: ./benchmark_dijkstra --benchmark_min_time=1.0
 add_test(NAME benchmark_dijkstra
-    COMMAND benchmark_dijkstra --benchmark_min_time=0.1)
+    COMMAND benchmark_dijkstra --benchmark_min_time=0.1s)

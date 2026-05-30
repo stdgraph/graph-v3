@@ -132,10 +132,10 @@ TEST_CASE("Generic operations on variant collection", "[6.4.3]") {
 TEST_CASE("Check which graph type is stored in variant", "[6.4.3]") {
   using graph_variant = std::variant<vov_uint, mos_string, dofl_int>;
 
-  std::vector<copyable_edge_string>   edges    = {{"A", "B"}};
-  std::vector<copyable_vertex_string> vertices = {{"A"}, {"B"}};
+  std::vector<copyable_edge_string>   edge_data   = {{"A", "B"}};
+  std::vector<copyable_vertex_string> vertex_data = {{"A"}, {"B"}};
   std::vector<std::string>            partitions;
-  mos_string                          g(edges, vertices, identity{}, identity{}, partitions);
+  mos_string                          g(edge_data, vertex_data, identity{}, identity{}, partitions);
 
   graph_variant var = std::move(g);
 
@@ -147,10 +147,10 @@ TEST_CASE("Check which graph type is stored in variant", "[6.4.3]") {
 TEST_CASE("Get specific graph type from variant", "[6.4.3]") {
   using graph_variant = std::variant<vov_uint, mos_string>;
 
-  std::vector<copyable_edge_uint>   edges    = {{0, 1}, {1, 2}, {2, 3}};
-  std::vector<copyable_vertex_uint> vertices = {{0}, {1}, {2}, {3}};
+  std::vector<copyable_edge_uint>   edge_data   = {{0, 1}, {1, 2}, {2, 3}};
+  std::vector<copyable_vertex_uint> vertex_data = {{0}, {1}, {2}, {3}};
   std::vector<uint64_t>             partitions;
-  vov_uint                          g(edges, vertices, identity{}, identity{}, partitions);
+  vov_uint                          g(edge_data, vertex_data, identity{}, identity{}, partitions);
 
   graph_variant var = std::move(g);
 
@@ -307,16 +307,16 @@ TEST_CASE("Aggregate statistics across variant graphs", "[6.4.3]") {
 
   // Create multiple graphs
   for (int i = 0; i < 5; ++i) {
-    std::vector<copyable_edge_uint>   edges;
-    std::vector<copyable_vertex_uint> vertices;
+    std::vector<copyable_edge_uint>   edge_data;
+    std::vector<copyable_vertex_uint> vertex_data;
     for (uint64_t j = 0; j < static_cast<uint64_t>(i + 1); ++j) {
-      vertices.push_back({j});
+      vertex_data.push_back({j});
       if (j > 0) {
-        edges.push_back({j - 1, j});
+        edge_data.push_back({j - 1, j});
       }
     }
     std::vector<uint64_t> partitions;
-    graphs.emplace_back(vov_uint(edges, vertices, identity{}, identity{}, partitions));
+    graphs.emplace_back(vov_uint(edge_data, vertex_data, identity{}, identity{}, partitions));
   }
 
   // Calculate total vertices and edges
@@ -366,10 +366,10 @@ TEST_CASE("Transform variant graphs", "[6.4.3]") {
 TEST_CASE("Conditional processing based on graph type", "[6.4.3]") {
   using graph_variant = std::variant<vov_uint, mos_string>;
 
-  std::vector<copyable_edge_string>   edges    = {{"node1", "node2"}};
-  std::vector<copyable_vertex_string> vertices = {{"node1"}, {"node2"}};
+  std::vector<copyable_edge_string>   edge_data   = {{"node1", "node2"}};
+  std::vector<copyable_vertex_string> vertex_data = {{"node1"}, {"node2"}};
   std::vector<std::string>            partitions;
-  mos_string                          g(edges, vertices, identity{}, identity{}, partitions);
+  mos_string                          g(edge_data, vertex_data, identity{}, identity{}, partitions);
 
   graph_variant var = std::move(g);
 
@@ -391,10 +391,10 @@ TEST_CASE("Conditional processing based on graph type", "[6.4.3]") {
 TEST_CASE("Exception safety with variant graphs", "[6.4.3]") {
   using graph_variant = std::variant<vov_uint, mos_string>;
 
-  std::vector<copyable_edge_uint>   edges    = {{0, 1}};
-  std::vector<copyable_vertex_uint> vertices = {{0}, {1}};
+  std::vector<copyable_edge_uint>   edge_data   = {{0, 1}};
+  std::vector<copyable_vertex_uint> vertex_data = {{0}, {1}};
   std::vector<uint64_t>             partitions;
-  vov_uint                          g(edges, vertices, identity{}, identity{}, partitions);
+  vov_uint                          g(edge_data, vertex_data, identity{}, identity{}, partitions);
 
   graph_variant var = std::move(g);
 

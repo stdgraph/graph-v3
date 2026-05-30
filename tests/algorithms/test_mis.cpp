@@ -39,13 +39,13 @@ bool is_maximal(const G& g, const std::vector<typename G::vertex_id_type>& mis_v
 
   for (auto u : vertices(g)) {
     auto uid = vertex_id(g, u);
-    if (mis_set.count(uid))
+    if (mis_set.count(static_cast<typename G::vertex_id_type>(uid)))
       continue; // Already in set
 
     // Check if uid is adjacent to any vertex in the MIS
     bool adjacent_to_mis = false;
     for (auto uv : edges(g, u)) {
-      if (mis_set.count(target_id(g, uv))) {
+      if (mis_set.count(static_cast<typename G::vertex_id_type>(target_id(g, uv)))) {
         adjacent_to_mis = true;
         break;
       }

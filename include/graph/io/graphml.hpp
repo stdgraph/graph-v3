@@ -308,9 +308,9 @@ namespace detail {
     pos = tag.find('"', pos);
     if (pos == std::string_view::npos) return {};
     ++pos;
-    auto end = tag.find('"', pos);
-    if (end == std::string_view::npos) return {};
-    return std::string(tag.substr(pos, end - pos));
+    auto end_pos = tag.find('"', pos);
+    if (end_pos == std::string_view::npos) return {};
+    return std::string(tag.substr(pos, end_pos - pos));
   }
 
   inline std::string xml_unescape(std::string_view s) {
@@ -352,9 +352,9 @@ inline graphml_graph read_graphml(std::istream& is) {
   auto   find_tag = [&](size_t from) -> std::pair<size_t, size_t> {
     auto start = content.find('<', from);
     if (start == std::string::npos) return {std::string::npos, std::string::npos};
-    auto end = content.find('>', start);
-    if (end == std::string::npos) return {std::string::npos, std::string::npos};
-    return {start, end + 1};
+    auto tag_end = content.find('>', start);
+    if (tag_end == std::string::npos) return {std::string::npos, std::string::npos};
+    return {start, tag_end + 1};
   };
 
   auto get_tag_name = [](std::string_view tag) -> std::string {
@@ -362,9 +362,9 @@ inline graphml_graph read_graphml(std::istream& is) {
     size_t start = 1;
     if (tag.size() > 1 && tag[1] == '/') start = 2;
     if (tag.size() > 1 && tag[1] == '?') start = 2;
-    auto end = tag.find_first_of(" \t\n/>", start);
-    if (end == std::string_view::npos) end = tag.size() - 1;
-    return std::string(tag.substr(start, end - start));
+    auto end_pos = tag.find_first_of(" \t\n/>", start);
+    if (end_pos == std::string_view::npos) end_pos = tag.size() - 1;
+    return std::string(tag.substr(start, end_pos - start));
   };
 
   // State machine

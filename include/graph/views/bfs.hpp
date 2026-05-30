@@ -194,8 +194,8 @@ namespace bfs_detail {
     std::size_t                                                 max_depth_ = 0;
     std::size_t                                                 count_     = 0;
 
-    bfs_state(G& g, vertex_type seed_vertex, std::size_t num_vertices, Alloc alloc = {})
-          : queue_(std::deque<entry_type, queue_alloc>(alloc)), visited_(num_vertices, alloc) {
+        bfs_state(G& g, vertex_type seed_vertex, std::size_t vertex_count, Alloc alloc = {})
+          : queue_(std::deque<entry_type, queue_alloc>(alloc)), visited_(vertex_count, alloc) {
       (void)g;
       queue_.push({seed_vertex, 0});
       visited_.mark_visited(seed_vertex);
@@ -228,8 +228,8 @@ namespace bfs_detail {
     std::size_t                                                 count_     = 0;
     std::optional<vertex_id_type> skip_vertex_id_; // Vertex to skip when processing (for cancel_branch)
 
-    bfs_edge_state(G& g, vertex_type seed_vertex, std::size_t num_vertices, Alloc alloc = {})
-          : queue_(std::deque<entry_type, queue_alloc>(alloc)), visited_(num_vertices, alloc) {
+        bfs_edge_state(G& g, vertex_type seed_vertex, std::size_t vertex_count, Alloc alloc = {})
+          : queue_(std::deque<entry_type, queue_alloc>(alloc)), visited_(vertex_count, alloc) {
       auto edge_range = Accessor{}.edges(g, seed_vertex);
       auto edge_begin = std::ranges::begin(edge_range);
       auto edge_end   = std::ranges::end(edge_range);
