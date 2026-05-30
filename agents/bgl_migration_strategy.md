@@ -2,7 +2,7 @@
 
 A comprehensive analysis of the Boost Graph Library (BGL) and graph-v3, identifying gaps, migration paths, and recommended extensions to enable a smooth upgrade transition.
 
-> **Last reviewed:** 2026-05-03 against `include/graph/` source tree.
+> **Last reviewed:** 2026-05-30 against `include/graph/` source tree.
 
 ---
 
@@ -51,7 +51,6 @@ graph-v3 is a ground-up C++20 redesign targeting ISO standardization (P3126–P3
 - No `copy_graph` utility with cross-type and property mapping support
 - No `labeled_graph` adaptor (string labels → vertex mapping)
 - No named parameter interface (BGL users must learn new positional API)
-- No composable visitor adaptors (`make_visitor(...)` factory)
 
 ---
 
@@ -395,7 +394,7 @@ breadth_first_search(g, {s}, my_visitor{});
 | **Missing events** | Base class provides no-ops | Simply omit the method — zero overhead |
 | **Parameter order** | `(vertex, graph)` or `(edge, graph)` | `(graph, vertex_id)` or `(graph, edge)` — graph first |
 | **Vertex parameter** | `vertex_descriptor` | Both `vertex_id_t<G>` and `vertex_t<G>` overloads supported |
-| **Event composition** | `make_bfs_visitor(pair<recorder1, pair<recorder2, ...>>)` | Not available — write a combined visitor struct |
+| **Event composition** | `make_bfs_visitor(pair<recorder1, pair<recorder2, ...>>)` | `make_visitor(on_tree_edge(predecessor_recorder(pred)), ...)` — see `visitor_factory.hpp` |
 
 ### BGL Event → graph-v3 Event Mapping
 
@@ -420,17 +419,57 @@ breadth_first_search(g, {s}, my_visitor{});
 
 **Missing events:** `non_tree_edge`, `gray_target`, `black_target` are BFS-specific events that distinguish edge targets by color state. These could be added to graph-v3's BFS visitor concept if needed for migration.
 
-### Composable Visitor Adaptors — Gap (still open)
+### Composable Visitor Adaptors — Implemented
 
-BGL provides reusable event visitor adaptors (`predecessor_recorder`, `distance_recorder`, `time_stamper`, `property_writer`) that can be composed via `std::pair` chaining. graph-v3 has no equivalent — users write monolithic visitor structs. As of 2026-05, no `make_visitor(...)` factory or pre-built event adaptors are available.
+BGL provides reusable event visitor adaptors (`predecessor_recorder`, `distance_recorder`, `time_stamper`, `property_writer`) that can be composed via `std::pair` chaining. graph-v3 now provides an equivalent toolkit in `include/graph/algorithm/visitor_factory.hpp` (included by the `graph/algorithms.hpp` umbrella).
 
-**Recommendation:** Consider providing lambda-based visitor construction:
+Three layers:
+
+**Layer 1 — single-event adaptors.** Wrap a callable so it fires for exactly one traversal event, analogous to BGL event tags:
+```cpp
+on_discover_vertex(f)   // vertex events
+on_tree_edge(f)         // edge events — on_tree_edge, on_back_edge,
+                        // on_edge_relaxed, on_finish_edge, etc.
+```
+
+**Layer 2 — `make_visitor(...)`.** Fan one traversal out to any number of sub-visitors. Each child may be a single-event adaptor, a prebuilt recorder, or any struct with `on_*` methods. Supports mixing descriptor-form and id-form children in the same call:
 ```cpp
 auto vis = make_visitor(
-    on_discover_vertex([&](auto& g, auto uid) { ... }),
-    on_examine_edge([&](auto& g, auto uv) { ... })
+    on_discover_vertex([&](auto& g, auto uid) { order.push_back(uid); }),
+    on_tree_edge(predecessor_recorder(pred))
 );
+breadth_first_search(g, {s}, vis);
 ```
+
+**Layer 3 — prebuilt recorders.** Ready-made callables for common bookkeeping; the caller binds each to the desired event:
+
+| Recorder | Description | Typical event binding |
+|----------|-------------|----------------------|
+| `predecessor_recorder(pred)` | `pred[target_id] = source_id` | `on_tree_edge` (BFS/DFS), `on_edge_relaxed` (Dijkstra) |
+| `distance_recorder(dist, weight_fn)` | weighted distance accumulation | `on_edge_relaxed` |
+| `distance_recorder(dist)` | hop-count distance | `on_tree_edge` |
+| `time_stamper(time_map, clock)` | `time[vertex_id] = clock++` | `on_discover_vertex`, `on_finish_vertex` |
+
+**BGL vs. graph-v3 comparison:**
+```cpp
+// BGL:
+breadth_first_search(g, s, visitor(make_bfs_visitor(std::make_pair(
+    record_predecessors(pred.data(), on_tree_edge()),
+    record_distances(dist.data(), on_tree_edge())))));
+
+// graph-v3:
+breadth_first_search(g, {s},
+    make_visitor(
+        on_tree_edge(predecessor_recorder(pred)),
+        on_tree_edge(distance_recorder(dist)),
+        on_discover_vertex([&](auto&, auto uid){ order.push_back(uid); })));
+```
+
+Key differences from BGL:
+- Recorders are plain `(g, x)->void` callables bound to events by the caller — no event-tag type system.
+- Visitors are held by reference, not copied; no `boost::ref` wrapper needed for stateful visitors.
+- `composite_visitor` exposes `on_X` only when at least one child handles event `X`, keeping `has_on_*` / `valid_visitor` detection accurate.
+- `property_writer` (BGL) has no direct equivalent; use a lambda with `on_examine_vertex` / `on_examine_edge`.
 
 ---
 
@@ -1055,7 +1094,7 @@ These items block migration for the largest number of BGL users:
 | **PageRank** | Algorithm | Low | Widely used iterative algorithm |
 | **DIMACS read/write** | I/O | Low | Required for max-flow benchmark suites |
 
-> **Done since the previous revision of this plan:** `filtered_graph` adaptor, DOT/GraphML/JSON I/O, Erdős-Rényi / Barabási-Albert / 2D grid / path generators, `kosaraju` + `tarjan_scc`, `afforest`, library-shipped BGL adaptor (`include/graph/adaptors/bgl/`).
+> **Done since the previous revision of this plan:** `filtered_graph` adaptor, DOT/GraphML/JSON I/O, Erdős-Rényi / Barabási-Albert / 2D grid / path generators, `kosaraju` + `tarjan_scc`, `afforest`, library-shipped BGL adaptor (`include/graph/adaptors/bgl/`), composable visitor toolkit (`visitor_factory.hpp`: `make_visitor`, single-event adaptors, `predecessor_recorder`, `distance_recorder`, `time_stamper`), `valid_visitor` strict concept with `static_assert` diagnostics in BFS/DFS/Dijkstra/Bellman-Ford.
 
 ### Phase 2: Common Algorithm Coverage
 
@@ -1085,7 +1124,7 @@ These items block migration for the largest number of BGL users:
 | **Max Cardinality Matching** | Algorithm | Medium | Bipartite matching |
 | **Layout algorithms** | Algorithm | Medium | Graph visualization |
 | **Small World / PLOD generators** | Generator | Low | Synthetic graph generation |
-| **Lambda visitor composition** | API | Low | `make_visitor(on_discover_vertex([&](...){...}), ...)` |
+| ~~**Lambda visitor composition**~~ | ~~API~~ | ~~Low~~ | ✅ Done — `visitor_factory.hpp`: `make_visitor`, single-event adaptors, `predecessor_recorder`, `distance_recorder`, `time_stamper` |
 | **BGL compatibility header** | Migration | Medium | `graph_traits` shim + name aliases for gradual migration |
 
 ### Phase 4: Ecosystem & Tooling

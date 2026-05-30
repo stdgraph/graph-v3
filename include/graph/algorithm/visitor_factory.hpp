@@ -30,6 +30,42 @@
  *
  * Used with: breadth_first_search, depth_first_search, dijkstra_shortest_paths,
  *            bellman_ford_shortest_paths.
+ *
+ * ---
+ *
+ * **BGL vs. graph-v3 syntax comparison**
+ *
+ * BGL (Boost.Graph):
+ * @code
+ * // predecessor and distance recorders bound to specific events via event tags,
+ * // multiplexed with std::make_pair and make_bfs_visitor.
+ * breadth_first_search(g, s,
+ *     visitor(make_bfs_visitor(std::make_pair(
+ *         record_predecessors(pred.data(), on_tree_edge()),
+ *         record_distances(dist.data(), on_tree_edge())))));
+ * @endcode
+ *
+ * graph-v3 (this header):
+ * @code
+ * // same operations: recorders are callables bound to event adaptors,
+ * // composited with make_visitor.
+ * breadth_first_search(g, s,
+ *     make_visitor(
+ *         on_tree_edge(predecessor_recorder(pred)),
+ *         on_tree_edge(distance_recorder(dist)),
+ *         on_discover_vertex([&](auto&, auto u){ order.push_back(vertex_id(g,u)); })));
+ * @endcode
+ *
+ * Key differences from BGL:
+ *  - No per-algorithm visitor type or base class — any struct with an @c on_*
+ *    method is accepted directly.
+ *  - Visitors are held by reference (not copied); stateful visitors do not
+ *    require @c boost::ref wrapping.
+ *  - Vertex events have both descriptor and vertex-id overloads; the composite
+ *    bridges the two automatically, so a descriptor-only and an id-only child
+ *    can coexist in the same @c make_visitor() call.
+ *  - Unused events compile away to nothing via @c if constexpr, guaranteed
+ *    rather than inliner-dependent.
  */
 
 #pragma once
