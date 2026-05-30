@@ -163,6 +163,9 @@ void breadth_first_search(G&&            g, // graph
                           const Sources& sources,
                           Visitor&&      visitor = empty_visitor(),
                           const Alloc&   alloc   = Alloc()) {
+  static_assert(valid_visitor<G, Visitor>,
+                "Visitor has no recognized on_* callbacks. Check for a misspelled event name "
+                "(e.g. on_discover_vertx), or pass graph::empty_visitor{} for no callbacks.");
   using id_type = vertex_id_t<G>;
 
   // Initialize BFS data structures

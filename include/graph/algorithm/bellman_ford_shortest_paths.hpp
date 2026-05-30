@@ -237,6 +237,9 @@ requires distance_fn_for<DistanceFn, G> &&                                //
       Compare&& compare = less<distance_fn_value_t<DistanceFn, G>>(),
       Combine&& combine = plus<distance_fn_value_t<DistanceFn, G>>()) {
   using graph_type    = std::remove_reference_t<G>;
+  static_assert(valid_visitor<graph_type, Visitor>,
+                "Visitor has no recognized on_* callbacks. Check for a misspelled event name "
+                "(e.g. on_discover_vertx), or pass graph::empty_visitor{} for no callbacks.");
   using id_type       = vertex_id_t<graph_type>;
   using DistanceValue = distance_fn_value_t<DistanceFn, G>;
   using weight_type   = invoke_result_t<WF, const graph_type&, edge_t<graph_type>>;
