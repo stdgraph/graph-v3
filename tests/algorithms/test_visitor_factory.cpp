@@ -72,11 +72,11 @@ TEST_CASE("on_examine_edge adaptor fires only on edge examination", "[visitor_fa
   using Graph = vov_void;
   auto g      = path_graph_4<Graph>();
 
-  int edges = 0;
-  auto vis  = on_examine_edge([&](const auto&, const auto&) { ++edges; });
+  int edge_count = 0;
+  auto vis        = on_examine_edge([&](const auto&, const auto&) { ++edge_count; });
 
   breadth_first_search(g, 0u, vis);
-  REQUIRE(edges == 3); // 3 edges in a 4-vertex path
+  REQUIRE(edge_count == 3); // 3 edges in a 4-vertex path
 }
 
 // =============================================================================
@@ -89,18 +89,18 @@ TEST_CASE("make_visitor fans events out to multiple sub-visitors", "[visitor_fac
 
   int discovered = 0;
   int examined   = 0;
-  int edges      = 0;
+  int edge_count = 0;
 
-  auto vis = make_visitor(                                                      //
-        on_discover_vertex([&](const auto&, const auto&) { ++discovered; }),    //
-        on_examine_vertex([&](const auto&, const auto&) { ++examined; }),       //
-        on_examine_edge([&](const auto&, const auto&) { ++edges; }));
+  auto vis = make_visitor(                                                          //
+        on_discover_vertex([&](const auto&, const auto&) { ++discovered; }),        //
+        on_examine_vertex([&](const auto&, const auto&) { ++examined; }),           //
+        on_examine_edge([&](const auto&, const auto&) { ++edge_count; }));
 
   breadth_first_search(g, 0u, vis);
 
   REQUIRE(discovered == 4);
   REQUIRE(examined == 4);
-  REQUIRE(edges == 3);
+  REQUIRE(edge_count == 3);
 }
 
 TEST_CASE("make_visitor forwards one event to several handlers", "[visitor_factory][composite]") {
