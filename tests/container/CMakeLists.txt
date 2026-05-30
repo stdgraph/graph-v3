@@ -64,6 +64,7 @@ add_executable(graph3_container_tests
     # undirected_adjacency_list
     undirected_adjacency_list/test_undirected_adjacency_list.cpp
     undirected_adjacency_list/test_undirected_adjacency_list_cpo.cpp
+    undirected_adjacency_list/test_undirected_adjacency_list_mutation.cpp
     undirected_adjacency_list/test_undirected_bidirectional.cpp
 )
 

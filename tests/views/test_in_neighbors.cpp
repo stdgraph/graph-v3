@@ -37,12 +37,12 @@ namespace view = graph::views;
 // ---------------------------------------------------------------------------
 static Graph make_triangle() {
   Graph g(0);
-  g.create_vertex(10); // 0
-  g.create_vertex(20); // 1
-  g.create_vertex(30); // 2
-  g.create_edge(0, 1, 100);
-  g.create_edge(0, 2, 200);
-  g.create_edge(1, 2, 300);
+  g.add_vertex(10); // 0
+  g.add_vertex(20); // 1
+  g.add_vertex(30); // 2
+  g.add_edge(0, 1, 100);
+  g.add_edge(0, 2, 200);
+  g.add_edge(1, 2, 300);
   return g;
 }
 
@@ -227,9 +227,9 @@ TEST_CASE("basic_in_neighbors", "[in_neighbors][basic_in]") {
 
 TEST_CASE("in_neighbors - isolated vertex", "[in_neighbors][empty]") {
   Graph g(0);
-  g.create_vertex(10);
-  g.create_vertex(20);
-  g.create_edge(1, 1, 99); // self-loop on 1
+  g.add_vertex(10);
+  g.add_vertex(20);
+  g.add_edge(1, 1, 99); // self-loop on 1
 
   auto v0    = *adj::find_vertex(g, 0u);
   auto nview = view::in_neighbors(g, v0);

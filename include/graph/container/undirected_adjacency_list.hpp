@@ -123,9 +123,9 @@ namespace ranges = std::ranges;
 /// using Graph = undirected_adjacency_list<int, string>;  // edge_value=int, vertex_value=string
 ///
 /// Graph g;
-/// auto u = g.create_vertex("Alice");
-/// auto v = g.create_vertex("Bob");
-/// auto uv = g.create_edge(u, v, 100);  // edge from Alice to Bob with value 100
+/// auto u = g.add_vertex("Alice");
+/// auto v = g.add_vertex("Bob");
+/// auto uv = g.add_edge(u, v, 100);  // edge from Alice to Bob with value 100
 ///
 /// // Iterate neighbors
 /// for (auto&& [uid, vid, uv] : g.edges(u)) {
@@ -723,6 +723,17 @@ public:
 
   edge_id_type edge_id(const graph_type& g) const noexcept;
 
+  // Adjust the stored endpoint ids after the vertex at @p removed_id was erased and all
+  // higher-numbered vertices were shifted down by one position.
+  void renumber_after_vertex_erase(vertex_id_type removed_id) noexcept {
+    auto& in_link  = static_cast<vertex_edge_list_inward_link_type&>(*this);
+    auto& out_link = static_cast<vertex_edge_list_outward_link_type&>(*this);
+    if (in_link.vertex_id_ > removed_id)
+      --in_link.vertex_id_;
+    if (out_link.vertex_id_ > removed_id)
+      --out_link.vertex_id_;
+  }
+
   friend graph_type; // the graph is the one to create & destroy edges because it owns the allocator
   friend base_undirected_adjacency_list<EV, VV, GV, VId, VContainer, Alloc>; // base class also creates edges
   friend vertex_type;                                                        // vertex can also destroy its own edges
@@ -1055,17 +1066,21 @@ public:
   /// @brief Get range of all edges.
   /// @note Each undirected edge appears twice in iteration (once from each endpoint).
   /// @complexity O(1) to create range, O(V+E) to iterate.
-  edge_range       edges() { return {edge_iterator(*this, begin()), edge_iterator(*this, end()), this->edges_size_}; }
+  edge_range       edges() {
+    auto& self = static_cast<graph_type&>(*this);
+    return {edge_iterator(self, begin()), edge_iterator(self, end()), this->edges_size_};
+  }
   const_edge_range edges() const {
-    return {const_edge_iterator(*this, const_cast<base_undirected_adjacency_list&>(*this).begin()),
-            const_edge_iterator(*this, const_cast<base_undirected_adjacency_list&>(*this).end()), this->edges_size_};
+    auto& self = static_cast<const graph_type&>(*this);
+    return {const_edge_iterator(self, const_cast<graph_type&>(self).begin()),
+            const_edge_iterator(self, const_cast<graph_type&>(self).end()), this->edges_size_};
   }
 
 public: // Vertex Creation
   /// @brief Create a new vertex with default value.
   /// @return Iterator to the newly created vertex.
   /// @complexity O(1) amortized
-  vertex_iterator create_vertex() {
+  vertex_iterator add_vertex() {
     this->vertices_.push_back(vertex_type(this->vertices_, static_cast<vertex_id_type>(this->vertices_.size())));
     return this->vertices_.begin() + static_cast<vertex_difference_type>(this->vertices_.size() - 1);
 }
@@ -1074,7 +1089,7 @@ public: // Vertex Creation
   /// @param val Value to move into the vertex.
   /// @return Iterator to the newly created vertex.
   /// @complexity O(1) amortized
-  vertex_iterator create_vertex(vertex_value_type&& val) {
+  vertex_iterator add_vertex(vertex_value_type&& val) {
     this->vertices_.push_back(
           vertex_type(this->vertices_, static_cast<vertex_id_type>(this->vertices_.size()), std::move(val)));
     return this->vertices_.begin() + static_cast<vertex_difference_type>(this->vertices_.size() - 1);
@@ -1087,7 +1102,7 @@ public: // Vertex Creation
   /// @complexity O(1) amortized
   template <class VV2>
   requires std::constructible_from<VV, const VV2&>
-  vertex_iterator create_vertex(const VV2& val) {
+  vertex_iterator add_vertex(const VV2& val) {
     this->vertices_.push_back(
           vertex_type(this->vertices_, static_cast<vertex_id_type>(this->vertices_.size()), val));
     return this->vertices_.begin() + static_cast<vertex_id_type>(this->vertices_.size() - 1);
@@ -1099,10 +1114,10 @@ public: // Edge Creation
   /// @param vid Target vertex id.
   /// @return Iterator to the newly created edge.
   /// @complexity O(1).
-  vertex_edge_iterator create_edge(vertex_id_type uid, vertex_id_type vid) {
+  vertex_edge_iterator add_edge(vertex_id_type uid, vertex_id_type vid) {
     vertex_iterator ui = try_find_vertex(uid);
     vertex_iterator vi = try_find_vertex(vid);
-    return create_edge(ui, vi);
+    return add_edge(ui, vi);
   }
 
   /// @brief Create an edge with value between two vertices (by id, move value).
@@ -1111,10 +1126,10 @@ public: // Edge Creation
   /// @param val Edge value to move.
   /// @return Iterator to the newly created edge.
   /// @complexity O(1).
-  vertex_edge_iterator create_edge(vertex_id_type uid, vertex_id_type vid, edge_value_type&& val) {
+  vertex_edge_iterator add_edge(vertex_id_type uid, vertex_id_type vid, edge_value_type&& val) {
     vertex_iterator ui = this->vertices_.begin() + uid;
     vertex_iterator vi = this->vertices_.begin() + vid;
-    return create_edge(ui, vi, std::move(val));
+    return add_edge(ui, vi, std::move(val));
   }
 
   /// @brief Create an edge with value between two vertices (by id, copy value).
@@ -1126,10 +1141,10 @@ public: // Edge Creation
   /// @complexity O(1).
   template <class EV2>
   requires std::constructible_from<EV, const EV2&>
-  vertex_edge_iterator create_edge(vertex_id_type uid, vertex_id_type vid, const EV2& val) {
+  vertex_edge_iterator add_edge(vertex_id_type uid, vertex_id_type vid, const EV2& val) {
     vertex_iterator ui = this->vertices_.begin() + uid;
     vertex_iterator vi = this->vertices_.begin() + vid;
-    return create_edge(ui, vi, val);
+    return add_edge(ui, vi, val);
   }
 
   /// @brief Create an edge between two vertices (by iterator).
@@ -1137,7 +1152,7 @@ public: // Edge Creation
   /// @param v Target vertex iterator.
   /// @return Iterator to the newly created edge.
   /// @complexity O(1).
-  vertex_edge_iterator create_edge(vertex_iterator u, vertex_iterator v) {
+  vertex_edge_iterator add_edge(vertex_iterator u, vertex_iterator v) {
     vertex_id_type uid = static_cast<vertex_id_type>(u - this->vertices_.begin());
     edge_type*     uv  = this->edge_alloc_.allocate(1);
     new (uv) edge_type(static_cast<graph_type&>(*this), u, v);
@@ -1151,7 +1166,7 @@ public: // Edge Creation
   /// @param val Edge value to move.
   /// @return Iterator to the newly created edge.
   /// @complexity O(1).
-  vertex_edge_iterator create_edge(vertex_iterator u, vertex_iterator v, edge_value_type&& val) {
+  vertex_edge_iterator add_edge(vertex_iterator u, vertex_iterator v, edge_value_type&& val) {
     vertex_id_type uid = static_cast<vertex_id_type>(u - this->vertices_.begin());
     edge_type*     uv  = this->edge_alloc_.allocate(1);
     new (uv) edge_type(static_cast<graph_type&>(*this), u, v, std::move(val));
@@ -1168,7 +1183,7 @@ public: // Edge Creation
   /// @complexity O(1).
   template <class EV2>
   requires std::constructible_from<EV, const EV2&>
-  vertex_edge_iterator create_edge(vertex_iterator u, vertex_iterator v, const EV2& val) {
+  vertex_edge_iterator add_edge(vertex_iterator u, vertex_iterator v, const EV2& val) {
     vertex_id_type uid = static_cast<vertex_id_type>(u - this->vertices_.begin());
     edge_type*     uv  = this->edge_alloc_.allocate(1);
     new (uv) edge_type(static_cast<graph_type&>(*this), u, v, val);
@@ -1177,11 +1192,27 @@ public: // Edge Creation
   }
 
 public: // Edge Removal
-  /// @brief Erase an edge from the graph.
-  /// @param pos Iterator to the edge to erase.
+  /// @brief Remove an edge from the graph.
+  /// @param pos Iterator to the edge to remove.
   /// @return Iterator to the next edge.
   /// @complexity O(1) to unlink from both vertex edge lists.
-  edge_iterator erase_edge(edge_iterator pos);
+  edge_iterator remove_edge(edge_iterator pos);
+
+  /// @brief Remove the edge(s) between two vertices (by id).
+  /// @param uid One endpoint vertex id.
+  /// @param vid The other endpoint vertex id.
+  /// @return The number of edges removed.
+  /// @throws std::out_of_range if either vertex id is out of range.
+  /// @complexity O(degree(uid)).
+  vertex_size_type remove_edge(vertex_id_type uid, vertex_id_type vid);
+
+public: // Vertex Removal
+  /// @brief Remove a vertex and all of its incident edges from the graph.
+  /// @param uid The id of the vertex to remove.
+  /// @note Vertices with an id greater than @p uid are renumbered (shifted down by one).
+  /// @throws std::out_of_range if @p uid is out of range.
+  /// @complexity O(V + E).
+  void remove_vertex(vertex_id_type uid);
 
 public: // Graph Modification
   /// @brief Remove all vertices and edges from the graph.
@@ -1576,24 +1607,24 @@ public:
 ///-------------------------------------------------------------------------------------
 ///
 /// Vertex Iterators:
-///   - Invalidated by: create_vertex() if reallocation occurs, clear()
-///   - NOT invalidated by: create_edge(), erase_edge()
+///   - Invalidated by: add_vertex() if reallocation occurs, remove_vertex(), clear()
+///   - NOT invalidated by: add_edge(), remove_edge()
 ///   - Note: Use vertex ids instead of iterators for stable references
 ///
 /// Edge Iterators (graph-level edges()):
-///   - Invalidated by: erase_edge() on the same edge, clear()
-///   - NOT invalidated by: erase_edge() on different edges, create_edge(), create_vertex()
+///   - Invalidated by: remove_edge() on the same edge, remove_vertex(), clear()
+///   - NOT invalidated by: remove_edge() on different edges, add_edge(), add_vertex()
 ///
 /// Vertex-Edge Iterators (per-vertex edges):
-///   - Invalidated by: erase_edge() that removes the edge, clear()
-///   - NOT invalidated by: erase_edge() on different edges, create_edge(), create_vertex()
+///   - Invalidated by: remove_edge() that removes the edge, remove_vertex(), clear()
+///   - NOT invalidated by: remove_edge() on different edges, add_edge(), add_vertex()
 ///
 /// Vertex-Vertex Iterators (neighbors):
 ///   - Same invalidation rules as vertex-edge iterators
 ///
 /// References and Pointers:
-///   - Vertex references: Invalidated by create_vertex() if reallocation, clear()
-///   - Edge references: Invalidated by erase_edge() on that edge, clear()
+///   - Vertex references: Invalidated by add_vertex() if reallocation, remove_vertex(), clear()
+///   - Edge references: Invalidated by remove_edge() on that edge, remove_vertex(), clear()
 ///   - Use vertex ids for stable references across operations
 ///
 /// Thread Safety:
@@ -1859,15 +1890,19 @@ public: // Accessors
 
 public: // Vertex creation
   // Base class vertex creation methods
-  using base_type::create_vertex;
+  using base_type::add_vertex;
 
 public: // Edge creation
   // Base class edge creation methods
-  using base_type::create_edge;
+  using base_type::add_edge;
 
 public: // Edge removal
   // Base class edge removal methods
-  using base_type::erase_edge;
+  using base_type::remove_edge;
+
+public: // Vertex removal
+  // Base class vertex removal method
+  using base_type::remove_vertex;
 
 public: // Graph operations
   // Base class graph operations
@@ -1964,7 +1999,7 @@ public:
 
 public:
   // Forward declare all the same public methods as the primary template
-  // (constructor declarations, accessors, create_vertex, create_edge, etc.)
+  // (constructor declarations, accessors, add_vertex, add_edge, etc.)
   // The implementations will be shared via undirected_adjacency_list_impl.hpp
 
   undirected_adjacency_list()                                         = default;
@@ -2033,15 +2068,19 @@ public: // Accessors
 
 public: // Vertex creation
   // Base class vertex creation methods
-  using base_type::create_vertex;
+  using base_type::add_vertex;
 
 public: // Edge creation
   // Base class edge creation methods
-  using base_type::create_edge;
+  using base_type::add_edge;
 
 public: // Edge removal
   // Base class edge removal methods
-  using base_type::erase_edge;
+  using base_type::remove_edge;
+
+public: // Vertex removal
+  // Base class vertex removal method
+  using base_type::remove_vertex;
 
 public: // Graph operations
   // Base class graph operations

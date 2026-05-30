@@ -39,12 +39,12 @@ namespace view = graph::views;
 // ---------------------------------------------------------------------------
 static Graph make_triangle() {
   Graph g(0);
-  g.create_vertex(10); // 0
-  g.create_vertex(20); // 1
-  g.create_vertex(30); // 2
-  g.create_edge(0, 1, 100);
-  g.create_edge(0, 2, 200);
-  g.create_edge(1, 2, 300);
+  g.add_vertex(10); // 0
+  g.add_vertex(20); // 1
+  g.add_vertex(30); // 2
+  g.add_edge(0, 1, 100);
+  g.add_edge(0, 2, 200);
+  g.add_edge(1, 2, 300);
   return g;
 }
 
@@ -232,9 +232,9 @@ TEST_CASE("basic_in_incidence", "[in_incidence][basic_in]") {
 
 TEST_CASE("in_incidence - isolated vertex", "[in_incidence][empty]") {
   Graph g(0);
-  g.create_vertex(10); // 0  — no edges
-  g.create_vertex(20); // 1
-  g.create_edge(1, 1, 99); // self-loop on 1 (just so the graph isn't trivial)
+  g.add_vertex(10); // 0  — no edges
+  g.add_vertex(20); // 1
+  g.add_edge(1, 1, 99); // self-loop on 1 (just so the graph isn't trivial)
 
   auto v0    = *adj::find_vertex(g, 0u);
   auto iview = view::in_incidence(g, v0);

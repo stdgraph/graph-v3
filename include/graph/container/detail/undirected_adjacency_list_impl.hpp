@@ -6,6 +6,7 @@
 #define UNDIRECTED_ADJ_LIST_IMPL_HPP
 
 #include <stdexcept>
+#include <unordered_set>
 
 namespace graph::container {
 
@@ -1015,7 +1016,7 @@ ual_vertex<EV, VV, GV, VId, VContainer, Alloc>::erase_edge(graph_type&          
 #if 0
 template <typename EV, typename VV, typename GV, integral VId, template <typename V, typename A> class VContainer, typename Alloc>
 typename ual_vertex<EV, VV, GV, VId, VContainer, Alloc>::vertex_edge_iterator
-ual_vertex<EV, VV, GV, VId, VContainer, Alloc>::create_edge(graph_type& g, vertex_type& v) {
+ual_vertex<EV, VV, GV, VId, VContainer, Alloc>::add_edge(graph_type& g, vertex_type& v) {
   edge_type* uv = g.edge_alloc_.allocate(1);
   new (uv) edge_type(g, *this, v);
   ++g.edges_size_;
@@ -1024,7 +1025,7 @@ ual_vertex<EV, VV, GV, VId, VContainer, Alloc>::create_edge(graph_type& g, verte
 
 template <typename EV, typename VV, typename GV, integral VId, template <typename V, typename A> class VContainer, typename Alloc>
 typename ual_vertex<EV, VV, GV, VId, VContainer, Alloc>::vertex_edge_iterator
-ual_vertex<EV, VV, GV, VId, VContainer, Alloc>::create_edge(graph_type& g, vertex_type& v, edge_value_type&& val) {
+ual_vertex<EV, VV, GV, VId, VContainer, Alloc>::add_edge(graph_type& g, vertex_type& v, edge_value_type&& val) {
   edge_type* uv = g.edge_alloc_.allocate(1);
   new (uv) edge_type(g, *this, v, move(val));
   ++g.edges_size_;
@@ -1033,7 +1034,7 @@ ual_vertex<EV, VV, GV, VId, VContainer, Alloc>::create_edge(graph_type& g, verte
 
 template <typename EV, typename VV, typename GV, integral VId, template <typename V, typename A> class VContainer, typename Alloc>
 typename ual_vertex<EV, VV, GV, VId, VContainer, Alloc>::vertex_edge_iterator
-ual_vertex<EV, VV, GV, VId, VContainer, Alloc>::create_edge(graph_type& g, vertex_type& v, const edge_value_type& val) {
+ual_vertex<EV, VV, GV, VId, VContainer, Alloc>::add_edge(graph_type& g, vertex_type& v, const edge_value_type& val) {
   edge_type* uv = g.edge_alloc_.allocate(1);
   new (uv) edge_type(g, *this, v, val);
   ++g.edges_size_;
@@ -1115,9 +1116,9 @@ base_undirected_adjacency_list<EV, VV, GV, VId, VContainer, Alloc>::base_undirec
       // Only copy each edge once: when uid matches source and source <= target
       if (uid == src_id && src_id <= tgt_id) {
         if constexpr (std::is_void_v<EV>) {
-          g.create_edge(src_id, tgt_id);
+          g.add_edge(src_id, tgt_id);
         } else {
-          g.create_edge(src_id, tgt_id, uv->value());
+          g.add_edge(src_id, tgt_id, uv->value());
         }
       }
     }
@@ -1160,7 +1161,7 @@ base_undirected_adjacency_list<EV, VV, GV, VId, VContainer, Alloc>::base_undirec
   }
   vertices_.resize(max_vtx_id + 1); // assure expected vertices exist
 
-  // Downcast to graph_type to access create_edge
+  // Downcast to graph_type to access add_edge
   auto& g = static_cast<graph_type&>(*this);
 
   // add edges
@@ -1173,9 +1174,9 @@ base_undirected_adjacency_list<EV, VV, GV, VId, VContainer, Alloc>::base_undirec
         g.throw_unordered_edges();
 
       if constexpr (std::is_void_v<EV>) {
-        g.create_edge(ed.source_id, ed.target_id);
+        g.add_edge(ed.source_id, ed.target_id);
       } else {
-        g.create_edge(ed.source_id, ed.target_id, ed.value);
+        g.add_edge(ed.source_id, ed.target_id, ed.value);
       }
       tid = ed.source_id;
     }
@@ -1201,13 +1202,13 @@ base_undirected_adjacency_list<EV, VV, GV, VId, VContainer, Alloc>::base_undirec
   }
   vertices_.resize(max_vtx_id + 1); // assure expected vertices exist
 
-  // Downcast to graph_type to access create_edge
+  // Downcast to graph_type to access add_edge
   auto& g = static_cast<graph_type&>(*this);
 
   // add edges - no ordering requirement, just insert them
   for (auto& edge_data : ilist) {
     const auto& [uid, vid, uv_val] = edge_data;
-    g.create_edge(uid, vid, uv_val);
+    g.add_edge(uid, vid, uv_val);
   }
 }
 
@@ -1229,13 +1230,13 @@ base_undirected_adjacency_list<EV, VV, GV, VId, VContainer, Alloc>::base_undirec
   }
   vertices_.resize(max_vtx_id + 1); // assure expected vertices exist
 
-  // Downcast to graph_type to access create_edge
+  // Downcast to graph_type to access add_edge
   auto& g = static_cast<graph_type&>(*this);
 
   // add edges - no ordering requirement, just insert them
   for (auto& edge_data : ilist) {
     const auto& [uid, vid] = edge_data;
-    g.create_edge(uid, vid);
+    g.add_edge(uid, vid);
   }
 }
 
@@ -1436,13 +1437,78 @@ template <typename EV,
           template <typename V, typename A> class VContainer,
           typename Alloc>
 typename base_undirected_adjacency_list<EV, VV, GV, VId, VContainer, Alloc>::edge_iterator
-base_undirected_adjacency_list<EV, VV, GV, VId, VContainer, Alloc>::erase_edge(edge_iterator pos) {
+base_undirected_adjacency_list<EV, VV, GV, VId, VContainer, Alloc>::remove_edge(edge_iterator pos) {
   edge_type* uv = &*pos;
   ++pos;
-  uv->~edge_type(); // unlinks from vertices
+  vertex_type& u = this->vertices_[uv->list_owner_id()];
+  vertex_type& v = this->vertices_[uv->list_target_id()];
+  uv->unlink(u, v); // unlink from both endpoints' edge lists
+  uv->~edge_type();
   this->edge_alloc_.deallocate(uv, 1);
   --this->edges_size_;
   return pos;
+}
+
+template <typename EV,
+          typename VV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A> class VContainer,
+          typename Alloc>
+typename base_undirected_adjacency_list<EV, VV, GV, VId, VContainer, Alloc>::vertex_size_type
+base_undirected_adjacency_list<EV, VV, GV, VId, VContainer, Alloc>::remove_edge(vertex_id_type uid,
+                                                                                vertex_id_type vid) {
+  auto& derived = static_cast<graph_type&>(*this);
+  if (uid >= this->vertices_.size() || vid >= this->vertices_.size())
+    throw std::out_of_range("remove_edge: vertex id out of range");
+
+  vertex_type&         u     = this->vertices_[uid];
+  vertex_size_type     count = 0;
+  vertex_edge_iterator it    = u.edges_begin(derived, uid);
+  vertex_edge_iterator last  = u.edges_end(derived, uid);
+  while (it != last) {
+    edge_type&     uv    = *it;
+    vertex_id_type other = (uv.list_owner_id() == uid) ? uv.list_target_id() : uv.list_owner_id();
+    if (other == vid) {
+      it = u.erase_edge(derived, it); // unlinks from both endpoints, returns next in u's list
+      ++count;
+    } else {
+      ++it;
+    }
+  }
+  return count;
+}
+
+//-------------------------------------------------------------------------------------
+// Vertex removal methods
+//-------------------------------------------------------------------------------------
+
+template <typename EV,
+          typename VV,
+          typename GV,
+          integral VId,
+          template <typename V, typename A> class VContainer,
+          typename Alloc>
+void base_undirected_adjacency_list<EV, VV, GV, VId, VContainer, Alloc>::remove_vertex(vertex_id_type uid) {
+  auto& derived = static_cast<graph_type&>(*this);
+  if (uid >= this->vertices_.size())
+    throw std::out_of_range("remove_vertex: vertex id out of range");
+
+  // 1. Remove all edges incident to the vertex being erased.
+  this->vertices_[uid].clear_edges(derived);
+
+  // 2. Collect the remaining (unique) physical edges. Each undirected edge appears twice
+  //    when iterating, so deduplicate by address. Ids are still consistent at this point.
+  std::unordered_set<edge_type*> remaining;
+  for (edge_type& e : derived.edges())
+    remaining.insert(&e);
+
+  // 3. Erase the vertex; vertices with a higher id shift down by one position.
+  this->vertices_.erase(this->vertices_.begin() + static_cast<vertex_difference_type>(uid));
+
+  // 4. Renumber the stored endpoint ids of every remaining edge.
+  for (edge_type* e : remaining)
+    e->renumber_after_vertex_erase(uid);
 }
 
 //-------------------------------------------------------------------------------------
@@ -1619,7 +1685,7 @@ undirected_adjacency_list<EV, VV, GV, VId, VContainer, Alloc>::undirected_adjace
   if constexpr (!std::is_void_v<VV>) {
     for (auto& vtx : vrng) {
       auto&& [id, value] = vproj(vtx); // copyable_vertex_t<VId, VV>
-      create_vertex(value);
+      add_vertex(value);
     }
   }
   this->vertices_.resize(max_vtx_id + 1); // assure expected vertices exist
@@ -1635,9 +1701,9 @@ undirected_adjacency_list<EV, VV, GV, VId, VContainer, Alloc>::undirected_adjace
 
       vertex_edge_iterator uv;
       if constexpr (std::is_void_v<EV>) {
-        uv = create_edge(ed.source_id, ed.target_id);
+        uv = add_edge(ed.source_id, ed.target_id);
       } else {
-        uv = create_edge(ed.source_id, ed.target_id, ed.value);
+        uv = add_edge(ed.source_id, ed.target_id, ed.value);
       }
       tid = ed.source_id;
     }

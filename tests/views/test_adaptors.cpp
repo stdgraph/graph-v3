@@ -1188,12 +1188,12 @@ using BiGraph = undirected_adjacency_list<int, int, int>;
 // Triangle graph: 0--1 (w=100), 0--2 (w=200), 1--2 (w=300)
 static BiGraph make_bi_graph() {
   BiGraph g(0);
-  g.create_vertex(10); // 0
-  g.create_vertex(20); // 1
-  g.create_vertex(30); // 2
-  g.create_edge(0, 1, 100);
-  g.create_edge(0, 2, 200);
-  g.create_edge(1, 2, 300);
+  g.add_vertex(10); // 0
+  g.add_vertex(20); // 1
+  g.add_vertex(30); // 2
+  g.add_edge(0, 1, 100);
+  g.add_edge(0, 2, 200);
+  g.add_edge(1, 2, 300);
   return g;
 }
 

@@ -352,12 +352,12 @@ TEST_CASE("basic_edgelist - undirected_adjacency_list", "[basic_edgelist][undire
   using Graph = graph::container::undirected_adjacency_list<int, int>;
   Graph g;
 
-  g.create_vertex(100);
-  g.create_vertex(200);
-  g.create_vertex(300);
-  g.create_edge(0, 1, 10);
-  g.create_edge(0, 2, 20);
-  g.create_edge(1, 2, 12);
+  g.add_vertex(100);
+  g.add_vertex(200);
+  g.add_vertex(300);
+  g.add_edge(0, 1, 10);
+  g.add_edge(0, 2, 20);
+  g.add_edge(1, 2, 12);
 
   SECTION("basic_edgelist(g) - basic iteration") {
     auto el = basic_edgelist(g);
