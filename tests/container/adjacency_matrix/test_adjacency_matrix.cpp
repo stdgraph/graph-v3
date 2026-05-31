@@ -110,3 +110,41 @@ TEST_CASE("adjacency_matrix: weighted edges expose target + value", "[container]
   REQUIRE(edges[0] == std::pair<std::size_t, double>{1, 1.5});
   REQUIRE(edges[1] == std::pair<std::size_t, double>{2, 2.5});
 }
+
+// =============================================================================
+// Edge-range + projection constructor
+// =============================================================================
+
+TEST_CASE("adjacency_matrix: construct from copyable_edge range (identity)", "[container][adjacency_matrix]") {
+  std::vector<graph::copyable_edge_t<std::uint32_t>> ee = {{0, 1}, {0, 2}, {1, 2}, {2, 3}};
+
+  adjacency_matrix<> g(4, ee);
+
+  REQUIRE(g.num_vertices() == 4);
+  REQUIRE(g.num_edges() == 4);
+  REQUIRE(g.has_edge(0, 1));
+  REQUIRE(g.has_edge(2, 3));
+  REQUIRE_FALSE(g.has_edge(3, 0));
+}
+
+TEST_CASE("adjacency_matrix: construct from edge range with projection", "[container][adjacency_matrix]") {
+  struct raw_edge {
+    int from;
+    int to;
+    double w;
+  };
+  std::vector<raw_edge> ee = {{0, 1, 1.5}, {0, 2, 2.5}, {1, 2, 3.5}};
+
+  auto proj = [](const raw_edge& e) {
+    return graph::copyable_edge_t<std::uint32_t, double>{static_cast<std::uint32_t>(e.from),
+                                                         static_cast<std::uint32_t>(e.to), e.w};
+  };
+
+  adjacency_matrix<double> g(3, ee, proj);
+
+  REQUIRE(g.num_edges() == 3);
+  REQUIRE(g.weight(0, 1) == 1.5);
+  REQUIRE(g.weight(0, 2) == 2.5);
+  REQUIRE(g.weight(1, 2) == 3.5);
+}
+

@@ -46,6 +46,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <iterator>
 #include <ranges>
 #include <type_traits>
@@ -280,6 +281,38 @@ public:
       : n_(order)
       , flags_(static_cast<std::size_t>(order) * static_cast<std::size_t>(order), flag_t{0})
       , cells_(static_cast<std::size_t>(order) * static_cast<std::size_t>(order), element_type{}) {}
+
+  /**
+   * @brief Construct an @p order x @p order matrix and load it from a range of edges.
+   *
+   * Each element of @p erng is projected to a `copyable_edge_t<VId, EV>` (i.e.
+   * `{source_id, target_id [, value]}`) by @p eproj and inserted via `add_edge`.
+   * When the projected value type already is `copyable_edge_t<VId, EV>`,
+   * `std::identity` (the default) can be used. This mirrors the edge-range +
+   * projection constructors of `dynamic_graph` and `compressed_graph`.
+   *
+   * The matrix is sized to @p order; edge endpoints are NOT scanned to grow it,
+   * so every projected `source_id` / `target_id` must be `< order`.
+   *
+   * @tparam ERng  Range type of the source edge data.
+   * @tparam EProj Projection from an @p erng element to `copyable_edge_t<VId, EV>`.
+   *
+   * @param order The number of vertices (matrix is `order x order`).
+   * @param erng  The source range of edge data.
+   * @param eproj The projection function (or `std::identity` when already projected).
+   */
+  template <std::ranges::input_range ERng, class EProj = std::identity>
+  requires copyable_edge<std::invoke_result_t<EProj&, std::ranges::range_reference_t<ERng>>, VId, EV>
+  constexpr adjacency_matrix(VId order, ERng&& erng, EProj eproj = EProj{}) : adjacency_matrix(order) {
+    for (auto&& elem : erng) {
+      const copyable_edge_t<VId, EV>& uv = eproj(elem);
+      if constexpr (weighted) {
+        add_edge(static_cast<VId>(uv.source_id), static_cast<VId>(uv.target_id), uv.value);
+      } else {
+        add_edge(static_cast<VId>(uv.source_id), static_cast<VId>(uv.target_id));
+      }
+    }
+  }
 
   // ---- range interface (drives the inner-value pattern) -------------------
 
