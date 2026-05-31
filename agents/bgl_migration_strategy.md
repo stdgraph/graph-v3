@@ -60,7 +60,7 @@ graph-v3 is a ground-up C++20 redesign targeting ISO standardization (P3126–P3
 - Dozens of missing algorithms across flow, matching, coloring, planarity, isomorphism, centrality, layout, and related areas
 - No `subgraph` hierarchy with descriptor mapping
 - No DIMACS or METIS I/O
-- Graph generators partially implemented (Erdős-Rényi G(n,p), Barabási-Albert, 2D grid, path available; Watts-Strogatz, R-MAT, complete graph still missing)
+- Graph generators partially implemented (Erdős-Rényi G(n,p) and G(n,m), Barabási-Albert, 2D grid, path, complete graph available; Watts-Strogatz, R-MAT still missing)
 - No `adjacency_matrix` container
 - No `copy_graph` utility with cross-type and property mapping support
 - No `labeled_graph` adaptor (string labels → vertex mapping)
@@ -527,7 +527,7 @@ auto read_graphml(istream& is) -> dynamic_graph<std::string, std::string>;
 | Generator | BGL Header | graph-v3 | Priority |
 |-----------|-----------|----------|----------|
 | **Erdős-Rényi G(n,p)** | `erdos_renyi_generator.hpp` | ✅ `<graph/generators/erdos_renyi.hpp>` | ✅ Done |
-| **Erdos-Renyi G(n,m)** | (same) | ❌ Not available | 🟡 Medium |
+| **Erdos-Renyi G(n,m)** | (same) | ✅ `<graph/generators/gnm.hpp>` | ✅ Done |
 | **Barabási–Albert (preferential attachment)** | — | ✅ `<graph/generators/barabasi_albert.hpp>` | ✅ Done |
 | **2D Grid (4-connected)** | `mesh_graph_generator.hpp` | ✅ `<graph/generators/grid.hpp>` | ✅ Done |
 | **Path graph** | — | ✅ `<graph/generators/path.hpp>` | ✅ Done |
@@ -535,7 +535,7 @@ auto read_graphml(istream& is) -> dynamic_graph<std::string, std::string>;
 | **PLOD (Power-Law Out-Degree)** | `plod_generator.hpp` | ❌ Not available (use Barabási–Albert) | 🟡 Medium |
 | **R-MAT** | `rmat_graph_generator.hpp` | ❌ Not available | 🟡 Medium |
 | **SSCA#2** | `ssca_graph_generator.hpp` | ❌ Not available | 🟢 Low |
-| **Complete Graph K(n)** | — (manual) | ❌ Not available | 🟢 Low |
+| **Complete Graph K(n)** | — (manual) | ✅ `<graph/generators/complete.hpp>` | ✅ Done |
 
 ### graph-v3 Generator API
 
@@ -548,6 +548,9 @@ using namespace graph::generators;
 // Erdős–Rényi G(n,p) — O(E) geometric-skip algorithm (Batagelj & Brandes 2005)
 auto er = erdos_renyi(10'000u, 8.0 / 10'000);    // ~80K directed edges
 
+// Erdős–Rényi G(n,m) — fixed edge count, distinct edges sampled uniformly
+auto erm = erdos_renyi_gnm(10'000u, 80'000u);    // exactly 80K directed edges
+
 // 2D grid — bidirectional 4-connected, E/V ≈ 4
 auto grid = grid_2d(100u, 100u);                  // 10K vertices, ~40K edges
 
@@ -556,6 +559,9 @@ auto ba = barabasi_albert(10'000u, 4u);           // E/V ≈ 8
 
 // Path — 0 → 1 → 2 → … → (n−1), minimum-traffic baseline
 auto path = path_graph(1'000u);                   // 999 edges
+
+// Complete K(n) — all ordered pairs (u,v), u ≠ v; dense stress test
+auto kn = complete_graph(100u);                   // 100*99 = 9'900 edges
 
 // Load into any container:
 compressed_graph<double> g;
@@ -578,10 +584,10 @@ To achieve full BGL parity, the following generators are still needed:
 
 | Generator | Notes |
 |-----------|-------|
-| Erdős-Rényi G(n,m) | Fixed edge count variant; wrap existing G(n,p) with rejection or Fisher-Yates |
 | Watts-Strogatz small world | Ring lattice + random rewiring |
 | R-MAT | Recursive matrix; important for Graph500 benchmarks |
-| Complete graph K(n) | Trivial to implement |
+| PLOD | Power-law out-degree; partially served by Barabási–Albert |
+| SSCA#2 | Composite clique-based benchmark generator |
 
 ---
 
@@ -1196,7 +1202,7 @@ These items block migration for the largest number of BGL users:
 | **PageRank** | Algorithm | Low | Widely used iterative algorithm |
 | **DIMACS read/write** | I/O | Low | Required for max-flow benchmark suites |
 
-> **Done since the previous revision of this plan:** `filtered_graph` adaptor, DOT/GraphML/JSON I/O, Erdős-Rényi / Barabási-Albert / 2D grid / path generators, `kosaraju` + `tarjan_scc`, `afforest`, library-shipped BGL adaptor (`include/graph/adaptors/bgl/`), composable visitor toolkit (`visitor_factory.hpp`: `make_visitor`, single-event adaptors, `predecessor_recorder`, `distance_recorder`, `time_stamper`), `valid_visitor` strict concept with `static_assert` diagnostics in BFS/DFS/Dijkstra/Bellman-Ford.
+> **Done since the previous revision of this plan:** `filtered_graph` adaptor, DOT/GraphML/JSON I/O, Erdős-Rényi G(n,p)/G(n,m) / Barabási-Albert / 2D grid / path / complete-graph generators, `kosaraju` + `tarjan_scc`, `afforest`, library-shipped BGL adaptor (`include/graph/adaptors/bgl/`), composable visitor toolkit (`visitor_factory.hpp`: `make_visitor`, single-event adaptors, `predecessor_recorder`, `distance_recorder`, `time_stamper`), `valid_visitor` strict concept with `static_assert` diagnostics in BFS/DFS/Dijkstra/Bellman-Ford.
 
 ### Phase 2: Common Algorithm Coverage
 
@@ -1328,15 +1334,15 @@ The scores below are directional editorial estimates, not audited counts.
 | **Layout** | 5 algorithms | 0 | 0% |
 | **Graph adaptors** | 5 adaptors | 3 (transpose, filtered, BGL adaptor) | 60% |
 | **Graph I/O** | 5 formats | 3 (DOT, GraphML, JSON) | 60% |
-| **Graph generators** | 6 generators | 4 (path, grid, Erdős–Rényi, Barabási–Albert) | 67% |
+| **Graph generators** | 6 generators | 6 (path, grid, complete, Erdős–Rényi G(n,p)/G(n,m), Barabási–Albert) | 83% |
 | **Visitors** | 5 types + composable adaptors | Concept-checked visitors + composable adaptors (`make_visitor`, `on_*` event wrappers, `predecessor_recorder`, `distance_recorder`, `time_stamper`). The remaining unimplemented visitor events are related to colored tranversal not supported in graph-v3. | 90% |
 | **Graph mutation** | Full `MutableGraph` concept (CPOs) | Member-function mutation on both `dynamic_graph` and `undirected_adjacency_list`; no mutating CPOs | 70% |
 
-**Overall estimated BGL API coverage: ~46%**
+**Overall estimated BGL API coverage: ~47%**
 
-The unweighted average across all 20 scorecard rows is now ~46%, but the picture splits sharply:
+The unweighted average across all 20 scorecard rows is now ~47%, but the picture splits sharply:
 
-- **Core/everyday categories** (graph types, architecture, properties, traversal, MST, connectivity, I/O, adaptors, generators, visitors, mutation — 12 rows): average ~75%. For a BGL user doing graph construction, traversal, shortest paths, MST, or connectivity work, graph-v3 covers the vast majority of the API surface.
+- **Core/everyday categories** (graph types, architecture, properties, traversal, MST, connectivity, I/O, adaptors, generators, visitors, mutation — 12 rows): average ~76%. For a BGL user doing graph construction, traversal, shortest paths, MST, or connectivity work, graph-v3 covers the vast majority of the API surface.
 - **Specialist algorithm domains** (network flow, matching, coloring, planarity, isomorphism, ordering, layout — 7 rows): all at 0%, and these pull the overall figure down significantly.
 
 The coverage that exists is architecturally superior (C++20, ranges, concepts, CPOs, zero-config), and the library includes novel features (lazy traversal views, triangle counting, label propagation, Jaccard similarity) not found in BGL. The primary migration barrier is breadth of specialist algorithm coverage.

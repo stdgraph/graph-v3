@@ -20,7 +20,9 @@
 - [Generators](#generators)
   - [path_graph](#path_graph)
   - [grid_graph](#grid_graph)
+  - [complete_graph](#complete_graph)
   - [erdos_renyi_graph](#erdos_renyi_graph)
+  - [erdos_renyi_gnm](#erdos_renyi_gnm)
   - [barabasi_albert_graph](#barabasi_albert_graph)
 - [Example: Building and Querying a Generated Graph](#example)
 
@@ -42,7 +44,9 @@ All generators are header-only and require no external dependencies.
 // Or include individually:
 #include <graph/generators/path.hpp>
 #include <graph/generators/grid.hpp>
+#include <graph/generators/complete.hpp>
 #include <graph/generators/erdos_renyi.hpp>
+#include <graph/generators/gnm.hpp>
 #include <graph/generators/barabasi_albert.hpp>
 ```
 
@@ -95,6 +99,36 @@ auto edges = graph::generators::grid_graph(3u, 4u);
 
 ---
 
+### `complete_graph`
+
+Generates a complete graph K(n): every ordered pair `(u, v)` with `u ≠ v`.
+
+```cpp
+template <class VId = uint32_t>
+auto complete_graph(VId n, uint64_t seed = 42,
+                    weight_dist wdist = weight_dist::uniform)
+    -> std::vector<copyable_edge_t<VId, double>>;
+```
+
+| Parameter | Description |
+|-----------|-------------|
+| `n` | Number of vertices |
+| `seed` | Random seed for reproducible edge weights |
+| `wdist` | Edge-weight distribution: `weight_dist::uniform` (U[1,100], default), `weight_dist::exponential` (Exp(0.1)+1), or `weight_dist::constant_one` (1.0) |
+
+**Returns:** `n * (n-1)` directed edges — the fully-connected graph — sorted by
+source id, then target id.
+
+> **Warning:** the edge count grows as O(n²); generating K(n) for large `n` is
+> memory-intensive (e.g. `n = 10'000` yields ~100M edges).
+
+```cpp
+auto edges = graph::generators::complete_graph(100u);
+// 100 * 99 = 9'900 directed edges
+```
+
+---
+
 ### `erdos_renyi_graph`
 
 Generates a random graph using the Erdős–Rényi G(n, p) model.
@@ -117,6 +151,38 @@ auto erdos_renyi_graph(VId num_vertices, double edge_probability,
 ```cpp
 auto edges = graph::generators::erdos_renyi_graph(100u, 0.05);
 // ~495 edges on average (100*99*0.05)
+```
+
+---
+
+### `erdos_renyi_gnm`
+
+Generates a random graph using the Erdős–Rényi G(n, m) model — the
+fixed-edge-count companion to `erdos_renyi`. Exactly `m` distinct edges are
+selected uniformly at random from the `n * (n-1)` ordered pairs.
+
+```cpp
+template <class VId = uint32_t>
+auto erdos_renyi_gnm(VId n, size_t m, uint64_t seed = 42,
+                     weight_dist wdist = weight_dist::uniform)
+    -> std::vector<copyable_edge_t<VId, double>>;
+```
+
+| Parameter | Description |
+|-----------|-------------|
+| `n` | Number of vertices |
+| `m` | Number of edges to generate (clamped to `n * (n-1)` if larger) |
+| `seed` | Random seed for reproducibility |
+| `wdist` | Edge-weight distribution: `weight_dist::uniform` (U[1,100], default), `weight_dist::exponential` (Exp(0.1)+1), or `weight_dist::constant_one` (1.0) |
+
+**Returns:** Exactly `m` distinct directed edges (`u ≠ v`), sorted by source id.
+Use this model when a precise edge count is required (e.g. controlling graph
+density for benchmarks); use `erdos_renyi` (G(n, p)) when each edge should exist
+independently with a fixed probability.
+
+```cpp
+auto edges = graph::generators::erdos_renyi_gnm(100u, 500u);
+// exactly 500 distinct directed edges
 ```
 
 ---
