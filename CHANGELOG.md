@@ -3,6 +3,9 @@
 ## [Unreleased]
 
 ### Added
+- **Container mutation API** — BGL-style member functions for incrementally building and editing graphs:
+  - **`dynamic_graph`**: `add_vertex()` / `add_vertex(val)` (sequential), `add_vertex(id)` / `add_vertex(id, val)` (associative, returns `bool`), `add_edge(u, v[, val])` (throws `std::out_of_range` if either endpoint is missing; maintains in-edges when bidirectional), `remove_edge(u, v)` (returns count removed), `remove_vertex(u)` (sequential renumbers higher ids; associative keeps stable keys).
+  - **`undirected_adjacency_list`**: `remove_edge(uid, vid)` (returns count removed), `remove_vertex(uid)` (O(V+E), renumbers higher ids). Both throw `std::out_of_range` on invalid ids.
 - **Composable visitor toolkit** (`algorithm/visitor_factory.hpp`, included via `algorithms.hpp` umbrella) — BGL-style event-visitor combinators built on the existing duck-typed `on_*` callback model, without changing any traversal algorithm:
   - **Layer 1 — single-event adaptors** (`on_discover_vertex(f)`, `on_tree_edge(f)`, …): wrap a callable so it fires for exactly one traversal event. Generated for all 14 event names (5 vertex + 9 edge) via a macro. Analogous to BGL event tags.
   - **Layer 2 — `composite_visitor` / `make_visitor(...)`**: fan a single traversal out to multiple sub-visitors. Each event method is constrained by a fold over the child pack, so a composite exposes `on_X` only when at least one child handles it — keeping `has_on_*` / `valid_visitor` detection accurate and preserving zero-overhead event skipping. Bridges descriptor- and id-form children automatically via `vertex_id()`.
@@ -59,6 +62,7 @@
   - `germany_routes_example.cpp` — builds a Germany routes graph, traverses it, and runs Dijkstra twice (segment count and km distance)
 
 ### Changed
+- **`undirected_adjacency_list` mutation API renamed** to match `dynamic_graph` and BGL conventions: `create_vertex` → `add_vertex`, `create_edge` → `add_edge`, `erase_edge` → `remove_edge`. The old member names were removed (no backward-compatible aliases); update call sites accordingly.
 - **`edge_descriptor` simplified to iterator-only storage** — removed the `conditional_t<random_access_iterator, size_t, EdgeIter>` dual-storage path; edges always store the iterator directly since edges always have physical containers. Eliminates 38 `if constexpr` branches across 6 files (~500 lines removed).
 - **`compressed_graph::vertices(g)` returns `iota_view`** — simplified to `std::ranges::iota_view<size_t, size_t>(0, num_vertices())`, which the `vertices` CPO wraps automatically via `_wrap_if_needed`.
 - **`vertex_descriptor_view` CTAD deduction guides** — updated from `Container::iterator`/`const_iterator` to `std::ranges::iterator_t<>` for compatibility with views like `iota_view`.

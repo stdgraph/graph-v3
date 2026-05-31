@@ -46,7 +46,7 @@ graph-v3 is a ground-up C++20 redesign targeting ISO standardization (P3126–P3
 - No `subgraph` hierarchy with descriptor mapping
 - No DIMACS or METIS I/O
 - Graph generators partially implemented (Erdős-Rényi G(n,p), Barabási-Albert, 2D grid, path available; Watts-Strogatz, R-MAT, complete graph still missing)
-- `dynamic_graph` lacks individual mutation (`add_vertex`, `add_edge`, `remove_vertex`, `remove_edge`); `undirected_adjacency_list` provides `create_vertex` / `create_edge` / `erase_edge` but no `erase_vertex`
+- Both `dynamic_graph` and `undirected_adjacency_list` now support full mutation (`add_vertex`, `add_edge`, `remove_edge`, `remove_vertex`); no major mutation gaps remain
 - No `adjacency_matrix` container
 - No `copy_graph` utility with cross-type and property mapping support
 - No `labeled_graph` adaptor (string labels → vertex mapping)
@@ -740,16 +740,11 @@ add_edge(2, 3, 30.0, g);
 **graph-v3:**
 ```cpp
 Graph g({{0,1,10.0}, {0,2,20.0}, {2,3,30.0}});
-// Or with undirected_adjacency_list for individual mutation:
-undirected_adjacency_list<double> g;
-g.create_vertex(); g.create_vertex(); // ...
-g.create_edge(0, 1, 10.0);
+// Or with incremental mutation (both containers support full mutation API):
+dynamic_graph<double> g;  // or undirected_adjacency_list<double>
+auto u = g.add_vertex(); auto v = g.add_vertex(); // ...
+g.add_edge(u, v, 10.0);
 ```
-
-> ⚠️ **Migration friction:** `dynamic_graph` does not support incremental `add_edge`. Code that builds graphs edge-by-edge must either:
-> 1. Collect edges into a vector first, then construct
-> 2. Use `undirected_adjacency_list` (undirected only)
-> 3. Wait for mutation API to be added to `dynamic_graph`
 
 #### Pattern 3: Vertex/Edge Iteration
 
@@ -1086,8 +1081,7 @@ These items block migration for the largest number of BGL users:
 
 | Item | Type | Effort | Rationale |
 |------|------|--------|-----------|
-| **Individual mutation on directed graph** | Container | High | `add_vertex()`, `add_edge()`, `remove_vertex()`, `remove_edge()` on `dynamic_graph`. Most BGL code builds graphs incrementally. |
-| **`erase_vertex` on `undirected_adjacency_list`** | Container | Medium | Currently only `erase_edge` is supported on the mutation-friendly container |
+| **`adjacency_matrix` container** | Container | High | BGL users relying on matrix storage have no direct equivalent |
 | **A\* Search** | Algorithm | Medium | Heavily used in pathfinding, robotics, game AI |
 | **`copy_graph` utility** | Utility | Low | Cross-type graph copy with property mapping |
 | **Betweenness Centrality** | Algorithm | Medium | Core network analysis metric |

@@ -300,6 +300,58 @@ G g;
 > `include/graph/container/traits/`. The simplest starting point is
 > `vov_graph_traits.hpp`.
 
+### Mutation API
+
+`dynamic_graph` supports incremental, BGL-style mutation after construction. The
+`add_vertex` overloads differ between **sequential** (`v`/`d`) and **associative**
+(`m`/`u`) vertex containers:
+
+```cpp
+using namespace graph::container;
+using G = vov_graph<double, std::string>;   // sequential vertices, EV=double, VV=string
+G g;
+
+// Sequential containers: ids are positional; add_vertex appends and returns the new id
+auto a = g.add_vertex("Alice");   // returns vertex_id_type 0
+auto b = g.add_vertex("Bob");     // returns 1
+auto c = g.add_vertex();          // default-constructed value, returns 2
+
+g.add_edge(a, b, 1.5);            // both endpoints must already exist
+g.add_edge(a, c);                 // EV default-constructed when value omitted
+
+auto removed = g.remove_edge(a, b);   // returns number of edges removed
+g.remove_vertex(c);                   // renumbers higher vertex/edge ids
+```
+
+For **associative** vertex containers (`m*` / `u*` traits) the caller supplies the
+id (key), and `add_vertex` returns a `bool` indicating whether a new vertex was
+inserted:
+
+```cpp
+using G = mov_graph<double, std::string, void, std::string>;  // map<string, vertex>
+G g;
+
+bool inserted = g.add_vertex("alice", "Alice");   // true (new), false if key existed
+g.add_vertex("bob", "Bob");
+g.add_edge("alice", "bob", 2.0);
+
+g.remove_edge("alice", "bob");
+g.remove_vertex("bob");           // remaining keys stay stable (no renumbering)
+```
+
+| Operation | Sequential (`v`/`d`) | Associative (`m`/`u`) |
+|-----------|----------------------|------------------------|
+| `add_vertex()` / `add_vertex(val)` | Appends, returns new id | n/a (id required) |
+| `add_vertex(id)` / `add_vertex(id, val)` | n/a | Keyed insert, returns `bool` |
+| `add_edge(u, v)` / `add_edge(u, v, val)` | Both endpoints must exist (`std::out_of_range` otherwise) | same |
+| `remove_edge(u, v)` | Returns count removed | same |
+| `remove_vertex(u)` | Renumbers higher ids; invalidates descriptors | Stable keys; only removed id invalidated |
+
+> **Note:** `add_edge` requires that both vertices already exist — it does not
+> auto-create them. When `Bidirectional` is `true`, edge mutations also maintain
+> the matching in-edge lists. After `remove_vertex` on a sequential container, all
+> existing vertex and edge descriptors are invalidated because ids are renumbered.
+
 ---
 
 ## 2. `compressed_graph`
@@ -439,6 +491,41 @@ endpoint). Use `edges_size() / 2` for the unique edge count.
 | `VId` | `uint32_t` | Vertex ID type (integral) |
 | `VContainer` | `std::vector` | Vertex storage container template |
 | `Alloc` | `std::allocator<char>` | Allocator |
+
+### Mutation API
+
+`undirected_adjacency_list` is built incrementally with the same BGL-style names
+as `dynamic_graph`. Vertex ids are positional indices into the vertex container.
+
+```cpp
+#include <graph/container/undirected_adjacency_list.hpp>
+using namespace graph::container;
+
+undirected_adjacency_list<int, std::string> g;   // EV=int (weight), VV=string (name)
+
+auto u = g.add_vertex("Alice");   // returns vertex_iterator
+auto v = g.add_vertex("Bob");
+auto w = g.add_vertex();          // default-constructed value
+
+g.add_edge(u, v, 42);             // by iterator, with edge value
+g.add_edge(0, 2);                 // by id, edge value default-constructed
+
+auto n = g.remove_edge(0u, 1u);   // by id: returns number of edges removed
+g.remove_vertex(2u);              // O(V+E): renumbers higher vertex ids
+```
+
+| Operation | Complexity | Notes |
+|-----------|------------|-------|
+| `add_vertex()` / `add_vertex(val)` | O(1) amortized | Appends, returns `vertex_iterator` |
+| `add_edge(u, v)` / `add_edge(u, v, val)` | O(1) | By iterator or by id; with or without edge value |
+| `remove_edge(pos)` | O(1) | By `edge_iterator`; unlinks from both endpoints |
+| `remove_edge(uid, vid)` | O(degree(uid)) | Returns count removed; `std::out_of_range` on invalid id |
+| `remove_vertex(uid)` | O(V + E) | Renumbers higher vertex ids; `std::out_of_range` on invalid id |
+
+> **Iterator invalidation:** `add_vertex` may invalidate vertex iterators if the
+> vertex container reallocates; `remove_vertex` invalidates them because higher
+> ids are renumbered. `add_edge` and `remove_edge` do **not** invalidate vertex
+> iterators.
 
 ---
 
