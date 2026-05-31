@@ -12,6 +12,7 @@
  *   - watts_strogatz()   — small-world ring lattice with rewiring
  *   - rmat()             — R-MAT recursive-matrix (Graph500-style)
  *   - plod()             — power-law out-degree
+ *   - ssca()             — SSCA#2 clique-based benchmark graph
  *
  * All generators return a sorted std::vector<copyable_edge_t<VId, double>>
  * suitable for loading into any graph container via load_edges().
@@ -29,3 +30,4 @@
 #include <graph/generators/watts_strogatz.hpp>
 #include <graph/generators/rmat.hpp>
 #include <graph/generators/plod.hpp>
+#include <graph/generators/ssca.hpp>

@@ -27,6 +27,7 @@
   - [watts_strogatz](#watts_strogatz)
   - [rmat](#rmat)
   - [plod](#plod)
+  - [ssca](#ssca)
 - [Example: Building and Querying a Generated Graph](#example)
 
 ---
@@ -54,6 +55,7 @@ All generators are header-only and require no external dependencies.
 #include <graph/generators/watts_strogatz.hpp>
 #include <graph/generators/rmat.hpp>
 #include <graph/generators/plod.hpp>
+#include <graph/generators/ssca.hpp>
 ```
 
 ---
@@ -314,6 +316,41 @@ auto plod(VId n, double alpha = 2.5, double beta = 10.0,
 ```cpp
 auto edges = graph::generators::plod(1000u, 2.5, 10.0);
 // power-law out-degree distribution
+```
+
+---
+
+### `ssca`
+
+Generates an SSCA#2 (HPCS Scalable Synthetic Compact Applications #2) benchmark
+graph: randomly-sized cliques connected by sparse inter-clique edges whose
+probability decays with the inter-clique id distance.
+
+```cpp
+template <class VId = uint32_t>
+auto ssca(VId n, VId max_clique_size = 8, double prob_inter_clique = 0.2,
+          int max_parallel_edges = 2, uint64_t seed = 42,
+          weight_dist wdist = weight_dist::uniform)
+    -> std::vector<copyable_edge_t<VId, double>>;
+```
+
+| Parameter | Description |
+|-----------|-------------|
+| `n` | Number of vertices |
+| `max_clique_size` | Maximum clique size (sizes drawn uniformly from [1, this]) |
+| `prob_inter_clique` | Probability a vertex emits an inter-clique edge |
+| `max_parallel_edges` | Maximum parallel edges per intra-clique pair |
+| `seed` | Random seed for reproducibility |
+| `wdist` | Edge-weight distribution (see above) |
+
+**Returns:** Directed edges sorted by source id. Vertices are partitioned into
+consecutive cliques; every ordered pair within a clique is connected (with up to
+`max_parallel_edges` parallel edges — a defining SSCA#2 trait), plus sparse
+inter-clique links. Self-loops are skipped.
+
+```cpp
+auto edges = graph::generators::ssca(1000u, 8u, 0.2);
+// clustered graph: dense cliques + sparse inter-clique edges
 ```
 
 ---

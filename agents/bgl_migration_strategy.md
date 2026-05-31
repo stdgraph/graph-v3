@@ -55,12 +55,12 @@ graph-v3 is a ground-up C++20 redesign targeting ISO standardization (P3126–P3
 - `filtered_graph` adaptor (vertex/edge predicates) modelling `adjacency_list`
 - Ready-to-use BGL adaptor (`graph::bgl::graph_adaptor`) for incremental migration
 - Three I/O formats already implemented (DOT, GraphML, JSON)
+- Full BGL graph-generator parity (Erdős-Rényi G(n,p)/G(n,m), Barabási-Albert, Watts-Strogatz, R-MAT, PLOD, SSCA#2, 2D grid, path, complete graph)
 
 **Key gaps requiring attention for BGL migration:**
 - Dozens of missing algorithms across flow, matching, coloring, planarity, isomorphism, centrality, layout, and related areas
 - No `subgraph` hierarchy with descriptor mapping
 - No DIMACS or METIS I/O
-- Graph generators partially implemented (Erdős-Rényi G(n,p) and G(n,m), Barabási-Albert, Watts-Strogatz, R-MAT, PLOD, 2D grid, path, complete graph available; only SSCA#2 still missing)
 - No `adjacency_matrix` container
 - No `copy_graph` utility with cross-type and property mapping support
 - No `labeled_graph` adaptor (string labels → vertex mapping)
@@ -534,7 +534,7 @@ auto read_graphml(istream& is) -> dynamic_graph<std::string, std::string>;
 | **Small World (Watts-Strogatz)** | `small_world_generator.hpp` | ✅ `<graph/generators/watts_strogatz.hpp>` | ✅ Done |
 | **PLOD (Power-Law Out-Degree)** | `plod_generator.hpp` | ✅ `<graph/generators/plod.hpp>` | ✅ Done |
 | **R-MAT** | `rmat_graph_generator.hpp` | ✅ `<graph/generators/rmat.hpp>` | ✅ Done |
-| **SSCA#2** | `ssca_graph_generator.hpp` | ❌ Not available | 🟢 Low |
+| **SSCA#2** | `ssca_graph_generator.hpp` | ✅ `<graph/generators/ssca.hpp>` | ✅ Done |
 | **Complete Graph K(n)** | — (manual) | ✅ `<graph/generators/complete.hpp>` | ✅ Done |
 
 ### graph-v3 Generator API
@@ -572,6 +572,9 @@ auto rm = rmat(16u, 1u << 18);                    // 65'536 vertices, ~256K edge
 // PLOD — power-law out-degree (BGL parity; prefer Barabási–Albert)
 auto pl = plod(1'000u);                            // power-law out-degree
 
+// SSCA#2 — clique-based HPCS benchmark (dense cliques + sparse inter-clique)
+auto ss = ssca(1'000u, 8u, 0.2);                   // clustered graph
+
 // Load into any container:
 compressed_graph<double> g;
 g.load_edges(er, std::identity{}, 10'000u);
@@ -589,11 +592,9 @@ auto edges = erdos_renyi<uint64_t>(1'000'000ULL, 0.00001);
 
 ### Remaining Gaps
 
-The one remaining BGL generator is the composite benchmark generator:
-
-| Generator | Notes |
-|-----------|-------|
-| SSCA#2 | Composite clique-based HPCS benchmark generator |
+None — all BGL graph generators now have graph-v3 equivalents. graph-v3 also adds
+the Barabási–Albert, complete-graph K(n), and path generators that BGL lacks as
+named functions.
 
 ---
 
@@ -1208,7 +1209,7 @@ These items block migration for the largest number of BGL users:
 | **PageRank** | Algorithm | Low | Widely used iterative algorithm |
 | **DIMACS read/write** | I/O | Low | Required for max-flow benchmark suites |
 
-> **Done since the previous revision of this plan:** `filtered_graph` adaptor, DOT/GraphML/JSON I/O, Erdős-Rényi G(n,p)/G(n,m) / Barabási-Albert / 2D grid / path / complete-graph / Watts-Strogatz / R-MAT / PLOD generators, `kosaraju` + `tarjan_scc`, `afforest`, library-shipped BGL adaptor (`include/graph/adaptors/bgl/`), composable visitor toolkit (`visitor_factory.hpp`: `make_visitor`, single-event adaptors, `predecessor_recorder`, `distance_recorder`, `time_stamper`), `valid_visitor` strict concept with `static_assert` diagnostics in BFS/DFS/Dijkstra/Bellman-Ford.
+> **Done since the previous revision of this plan:** `filtered_graph` adaptor, DOT/GraphML/JSON I/O, Erdős-Rényi G(n,p)/G(n,m) / Barabási-Albert / 2D grid / path / complete-graph / Watts-Strogatz / R-MAT / PLOD / SSCA#2 generators, `kosaraju` + `tarjan_scc`, `afforest`, library-shipped BGL adaptor (`include/graph/adaptors/bgl/`), composable visitor toolkit (`visitor_factory.hpp`: `make_visitor`, single-event adaptors, `predecessor_recorder`, `distance_recorder`, `time_stamper`), `valid_visitor` strict concept with `static_assert` diagnostics in BFS/DFS/Dijkstra/Bellman-Ford.
 
 ### Phase 2: Common Algorithm Coverage
 
@@ -1237,7 +1238,7 @@ These items block migration for the largest number of BGL users:
 | **Push-Relabel Max Flow** | Algorithm | High | High-performance max flow |
 | **Max Cardinality Matching** | Algorithm | Medium | Bipartite matching |
 | **Layout algorithms** | Algorithm | Medium | Graph visualization |
-| ~~**Small World / PLOD generators**~~ | ~~Generator~~ | ~~Low~~ | ✅ Done — `watts_strogatz.hpp`, `plod.hpp`, `rmat.hpp` |
+| ~~**Small World / PLOD generators**~~ | ~~Generator~~ | ~~Low~~ | ✅ Done — `watts_strogatz.hpp`, `plod.hpp`, `rmat.hpp`, `ssca.hpp` (full BGL generator parity) |
 | ~~**Lambda visitor composition**~~ | ~~API~~ | ~~Low~~ | ✅ Done — `visitor_factory.hpp`: `make_visitor`, single-event adaptors, `predecessor_recorder`, `distance_recorder`, `time_stamper` |
 | **BGL compatibility header** | Migration | Medium | `graph_traits` shim + name aliases for gradual migration |
 
@@ -1340,7 +1341,7 @@ The scores below are directional editorial estimates, not audited counts.
 | **Layout** | 5 algorithms | 0 | 0% |
 | **Graph adaptors** | 5 adaptors | 3 (transpose, filtered, BGL adaptor) | 60% |
 | **Graph I/O** | 5 formats | 3 (DOT, GraphML, JSON) | 60% |
-| **Graph generators** | 6 generators | 9 (path, grid, complete, Erdős–Rényi G(n,p)/G(n,m), Barabási–Albert, Watts–Strogatz, R-MAT, PLOD) | 95% |
+| **Graph generators** | 6 generators | 10 (path, grid, complete, Erdős–Rényi G(n,p)/G(n,m), Barabási–Albert, Watts–Strogatz, R-MAT, PLOD, SSCA#2) | 100% |
 | **Visitors** | 5 types + composable adaptors | Concept-checked visitors + composable adaptors (`make_visitor`, `on_*` event wrappers, `predecessor_recorder`, `distance_recorder`, `time_stamper`). The remaining unimplemented visitor events are related to colored tranversal not supported in graph-v3. | 90% |
 | **Graph mutation** | Full `MutableGraph` concept (CPOs) | Member-function mutation on both `dynamic_graph` and `undirected_adjacency_list`; no mutating CPOs | 70% |
 

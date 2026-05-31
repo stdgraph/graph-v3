@@ -479,6 +479,51 @@ TEST_CASE("plod: basic properties", "[generators][plod]") {
 }
 
 // ---------------------------------------------------------------------------
+// SSCA#2
+// ---------------------------------------------------------------------------
+
+TEST_CASE("ssca: basic properties", "[generators][ssca]") {
+  constexpr uint32_t N = 200;
+  auto edges = ssca(N);
+
+  SECTION("no self-loops") {
+    for (const auto& e : edges) {
+      REQUIRE(e.source_id != e.target_id);
+    }
+  }
+
+  SECTION("all vertex ids in range [0, N)") {
+    for (const auto& e : edges) {
+      REQUIRE(e.source_id < N);
+      REQUIRE(e.target_id < N);
+    }
+  }
+
+  SECTION("sorted by source_id") {
+    REQUIRE(std::is_sorted(edges.begin(), edges.end(),
+                           [](const auto& a, const auto& b) { return a.source_id < b.source_id; }));
+  }
+
+  SECTION("deterministic with same seed") {
+    auto edges2 = ssca(N);
+    REQUIRE(edges.size() == edges2.size());
+    for (size_t i = 0; i < edges.size(); ++i) {
+      REQUIRE(edges[i].source_id == edges2[i].source_id);
+      REQUIRE(edges[i].target_id == edges2[i].target_id);
+    }
+  }
+
+  SECTION("generates edges (dense intra-clique structure)") {
+    REQUIRE(edges.size() > 0);
+  }
+
+  SECTION("clique size 1 with no inter-clique edges yields empty graph") {
+    auto isolated = ssca(N, /*max_clique_size*/ 1u, /*prob_inter_clique*/ 0.0);
+    REQUIRE(isolated.empty());
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Template parameter: custom VId type
 // ---------------------------------------------------------------------------
 
@@ -502,4 +547,6 @@ TEST_CASE("generators work with uint64_t vertex ids", "[generators][template]") 
   REQUIRE(ws_edges.size() > 0);
   REQUIRE(rmat_edges.size() > 0);
   REQUIRE(plod_edges.size() > 0);
+  auto ssca_edges = ssca<uint64_t>(uint64_t{50});
+  REQUIRE(ssca_edges.size() > 0);
 }
