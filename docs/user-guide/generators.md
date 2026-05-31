@@ -24,6 +24,9 @@
   - [erdos_renyi_graph](#erdos_renyi_graph)
   - [erdos_renyi_gnm](#erdos_renyi_gnm)
   - [barabasi_albert_graph](#barabasi_albert_graph)
+  - [watts_strogatz](#watts_strogatz)
+  - [rmat](#rmat)
+  - [plod](#plod)
 - [Example: Building and Querying a Generated Graph](#example)
 
 ---
@@ -48,6 +51,9 @@ All generators are header-only and require no external dependencies.
 #include <graph/generators/erdos_renyi.hpp>
 #include <graph/generators/gnm.hpp>
 #include <graph/generators/barabasi_albert.hpp>
+#include <graph/generators/watts_strogatz.hpp>
+#include <graph/generators/rmat.hpp>
+#include <graph/generators/plod.hpp>
 ```
 
 ---
@@ -209,6 +215,105 @@ auto barabasi_albert_graph(VId num_vertices, VId edges_per_vertex,
 ```cpp
 auto edges = graph::generators::barabasi_albert_graph(1000u, 3u);
 // ~3000 edges, scale-free topology
+```
+
+---
+
+### `watts_strogatz`
+
+Generates a small-world graph using the Watts–Strogatz model: a ring lattice
+where each vertex connects to its `k` nearest neighbours, with each forward
+lattice edge rewired to a random target with probability `beta`.
+
+```cpp
+template <class VId = uint32_t>
+auto watts_strogatz(VId n, VId k, double beta, uint64_t seed = 42,
+                    weight_dist wdist = weight_dist::uniform)
+    -> std::vector<copyable_edge_t<VId, double>>;
+```
+
+| Parameter | Description |
+|-----------|-------------|
+| `n` | Number of vertices (must be > `k`) |
+| `k` | Each vertex connects to its `k` nearest ring neighbours (rounded down to even) |
+| `beta` | Rewiring probability in [0, 1]: `0` = pure ring lattice, `1` ≈ random graph |
+| `seed` | Random seed for reproducibility |
+| `wdist` | Edge-weight distribution: `weight_dist::uniform` (default), `weight_dist::exponential`, or `weight_dist::constant_one` |
+
+**Returns:** Bidirectional edges (each undirected pair emitted both ways), sorted
+by source id. Intermediate `beta` (~0.01–0.1) produces the characteristic
+small-world regime: high clustering with short average path length.
+
+```cpp
+auto edges = graph::generators::watts_strogatz(100u, 6u, 0.1);
+// ring lattice of degree 6, 10% of edges rewired
+```
+
+---
+
+### `rmat`
+
+Generates a directed graph using the R-MAT (Recursive MATrix) model, which
+produces the power-law / community structure used by the Graph500 benchmark.
+Each edge is placed by recursively descending into one of four adjacency-matrix
+quadrants with probabilities `(a, b, c, d)`.
+
+```cpp
+template <class VId = uint32_t>
+auto rmat(uint32_t scale, size_t m,
+          double a = 0.57, double b = 0.19, double c = 0.19, double d = 0.05,
+          uint64_t seed = 42, weight_dist wdist = weight_dist::uniform)
+    -> std::vector<copyable_edge_t<VId, double>>;
+```
+
+| Parameter | Description |
+|-----------|-------------|
+| `scale` | Graph has `2^scale` vertices |
+| `m` | Number of directed edges to attempt to place |
+| `a, b, c, d` | Quadrant probabilities (should sum to ~1; normalised internally) |
+| `seed` | Random seed for reproducibility |
+| `wdist` | Edge-weight distribution (see above) |
+
+**Returns:** Up to `m` distinct directed edges (self-loops and duplicates
+removed), sorted by source id. The default `(0.57, 0.19, 0.19, 0.05)` are the
+standard Graph500 parameters.
+
+```cpp
+auto edges = graph::generators::rmat<uint32_t>(16, 1u << 18);
+// 65'536 vertices, ~256K edges, skewed degree distribution
+```
+
+---
+
+### `plod`
+
+Generates a directed graph with a power-law out-degree distribution
+(Palmer–Steffan PLOD model). Each vertex is assigned a target out-degree drawn
+from a power law, then edges are placed to random targets.
+
+```cpp
+template <class VId = uint32_t>
+auto plod(VId n, double alpha = 2.5, double beta = 10.0,
+          uint64_t seed = 42, weight_dist wdist = weight_dist::uniform)
+    -> std::vector<copyable_edge_t<VId, double>>;
+```
+
+| Parameter | Description |
+|-----------|-------------|
+| `n` | Number of vertices |
+| `alpha` | Power-law exponent (larger ⇒ steeper degree decay) |
+| `beta` | Degree scaling factor (larger ⇒ denser graph) |
+| `seed` | Random seed for reproducibility |
+| `wdist` | Edge-weight distribution (see above) |
+
+**Returns:** Directed edges (no self-loops or duplicates), sorted by source id.
+
+> **Note:** For most scale-free use cases [`barabasi_albert_graph`](#barabasi_albert_graph)
+> is a better choice; `plod` is provided for BGL parity.
+
+```cpp
+auto edges = graph::generators::plod(1000u, 2.5, 10.0);
+// power-law out-degree distribution
 ```
 
 ---

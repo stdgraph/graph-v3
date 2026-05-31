@@ -60,7 +60,7 @@ graph-v3 is a ground-up C++20 redesign targeting ISO standardization (P3126–P3
 - Dozens of missing algorithms across flow, matching, coloring, planarity, isomorphism, centrality, layout, and related areas
 - No `subgraph` hierarchy with descriptor mapping
 - No DIMACS or METIS I/O
-- Graph generators partially implemented (Erdős-Rényi G(n,p) and G(n,m), Barabási-Albert, 2D grid, path, complete graph available; Watts-Strogatz, R-MAT still missing)
+- Graph generators partially implemented (Erdős-Rényi G(n,p) and G(n,m), Barabási-Albert, Watts-Strogatz, R-MAT, PLOD, 2D grid, path, complete graph available; only SSCA#2 still missing)
 - No `adjacency_matrix` container
 - No `copy_graph` utility with cross-type and property mapping support
 - No `labeled_graph` adaptor (string labels → vertex mapping)
@@ -531,9 +531,9 @@ auto read_graphml(istream& is) -> dynamic_graph<std::string, std::string>;
 | **Barabási–Albert (preferential attachment)** | — | ✅ `<graph/generators/barabasi_albert.hpp>` | ✅ Done |
 | **2D Grid (4-connected)** | `mesh_graph_generator.hpp` | ✅ `<graph/generators/grid.hpp>` | ✅ Done |
 | **Path graph** | — | ✅ `<graph/generators/path.hpp>` | ✅ Done |
-| **Small World (Watts-Strogatz)** | `small_world_generator.hpp` | ❌ Not available | 🟡 Medium |
-| **PLOD (Power-Law Out-Degree)** | `plod_generator.hpp` | ❌ Not available (use Barabási–Albert) | 🟡 Medium |
-| **R-MAT** | `rmat_graph_generator.hpp` | ❌ Not available | 🟡 Medium |
+| **Small World (Watts-Strogatz)** | `small_world_generator.hpp` | ✅ `<graph/generators/watts_strogatz.hpp>` | ✅ Done |
+| **PLOD (Power-Law Out-Degree)** | `plod_generator.hpp` | ✅ `<graph/generators/plod.hpp>` | ✅ Done |
+| **R-MAT** | `rmat_graph_generator.hpp` | ✅ `<graph/generators/rmat.hpp>` | ✅ Done |
 | **SSCA#2** | `ssca_graph_generator.hpp` | ❌ Not available | 🟢 Low |
 | **Complete Graph K(n)** | — (manual) | ✅ `<graph/generators/complete.hpp>` | ✅ Done |
 
@@ -563,6 +563,15 @@ auto path = path_graph(1'000u);                   // 999 edges
 // Complete K(n) — all ordered pairs (u,v), u ≠ v; dense stress test
 auto kn = complete_graph(100u);                   // 100*99 = 9'900 edges
 
+// Watts–Strogatz — small-world ring lattice with random rewiring
+auto ws = watts_strogatz(1'000u, 6u, 0.1);        // degree 6, 10% rewired
+
+// R-MAT — recursive-matrix, Graph500-style power-law / community structure
+auto rm = rmat(16u, 1u << 18);                    // 65'536 vertices, ~256K edges
+
+// PLOD — power-law out-degree (BGL parity; prefer Barabási–Albert)
+auto pl = plod(1'000u);                            // power-law out-degree
+
 // Load into any container:
 compressed_graph<double> g;
 g.load_edges(er, std::identity{}, 10'000u);
@@ -580,14 +589,11 @@ auto edges = erdos_renyi<uint64_t>(1'000'000ULL, 0.00001);
 
 ### Remaining Gaps
 
-To achieve full BGL parity, the following generators are still needed:
+The one remaining BGL generator is the composite benchmark generator:
 
 | Generator | Notes |
 |-----------|-------|
-| Watts-Strogatz small world | Ring lattice + random rewiring |
-| R-MAT | Recursive matrix; important for Graph500 benchmarks |
-| PLOD | Power-law out-degree; partially served by Barabási–Albert |
-| SSCA#2 | Composite clique-based benchmark generator |
+| SSCA#2 | Composite clique-based HPCS benchmark generator |
 
 ---
 
@@ -1202,7 +1208,7 @@ These items block migration for the largest number of BGL users:
 | **PageRank** | Algorithm | Low | Widely used iterative algorithm |
 | **DIMACS read/write** | I/O | Low | Required for max-flow benchmark suites |
 
-> **Done since the previous revision of this plan:** `filtered_graph` adaptor, DOT/GraphML/JSON I/O, Erdős-Rényi G(n,p)/G(n,m) / Barabási-Albert / 2D grid / path / complete-graph generators, `kosaraju` + `tarjan_scc`, `afforest`, library-shipped BGL adaptor (`include/graph/adaptors/bgl/`), composable visitor toolkit (`visitor_factory.hpp`: `make_visitor`, single-event adaptors, `predecessor_recorder`, `distance_recorder`, `time_stamper`), `valid_visitor` strict concept with `static_assert` diagnostics in BFS/DFS/Dijkstra/Bellman-Ford.
+> **Done since the previous revision of this plan:** `filtered_graph` adaptor, DOT/GraphML/JSON I/O, Erdős-Rényi G(n,p)/G(n,m) / Barabási-Albert / 2D grid / path / complete-graph / Watts-Strogatz / R-MAT / PLOD generators, `kosaraju` + `tarjan_scc`, `afforest`, library-shipped BGL adaptor (`include/graph/adaptors/bgl/`), composable visitor toolkit (`visitor_factory.hpp`: `make_visitor`, single-event adaptors, `predecessor_recorder`, `distance_recorder`, `time_stamper`), `valid_visitor` strict concept with `static_assert` diagnostics in BFS/DFS/Dijkstra/Bellman-Ford.
 
 ### Phase 2: Common Algorithm Coverage
 
@@ -1231,7 +1237,7 @@ These items block migration for the largest number of BGL users:
 | **Push-Relabel Max Flow** | Algorithm | High | High-performance max flow |
 | **Max Cardinality Matching** | Algorithm | Medium | Bipartite matching |
 | **Layout algorithms** | Algorithm | Medium | Graph visualization |
-| **Small World / PLOD generators** | Generator | Low | Synthetic graph generation |
+| ~~**Small World / PLOD generators**~~ | ~~Generator~~ | ~~Low~~ | ✅ Done — `watts_strogatz.hpp`, `plod.hpp`, `rmat.hpp` |
 | ~~**Lambda visitor composition**~~ | ~~API~~ | ~~Low~~ | ✅ Done — `visitor_factory.hpp`: `make_visitor`, single-event adaptors, `predecessor_recorder`, `distance_recorder`, `time_stamper` |
 | **BGL compatibility header** | Migration | Medium | `graph_traits` shim + name aliases for gradual migration |
 
@@ -1334,15 +1340,15 @@ The scores below are directional editorial estimates, not audited counts.
 | **Layout** | 5 algorithms | 0 | 0% |
 | **Graph adaptors** | 5 adaptors | 3 (transpose, filtered, BGL adaptor) | 60% |
 | **Graph I/O** | 5 formats | 3 (DOT, GraphML, JSON) | 60% |
-| **Graph generators** | 6 generators | 6 (path, grid, complete, Erdős–Rényi G(n,p)/G(n,m), Barabási–Albert) | 83% |
+| **Graph generators** | 6 generators | 9 (path, grid, complete, Erdős–Rényi G(n,p)/G(n,m), Barabási–Albert, Watts–Strogatz, R-MAT, PLOD) | 95% |
 | **Visitors** | 5 types + composable adaptors | Concept-checked visitors + composable adaptors (`make_visitor`, `on_*` event wrappers, `predecessor_recorder`, `distance_recorder`, `time_stamper`). The remaining unimplemented visitor events are related to colored tranversal not supported in graph-v3. | 90% |
 | **Graph mutation** | Full `MutableGraph` concept (CPOs) | Member-function mutation on both `dynamic_graph` and `undirected_adjacency_list`; no mutating CPOs | 70% |
 
-**Overall estimated BGL API coverage: ~47%**
+**Overall estimated BGL API coverage: ~48%**
 
-The unweighted average across all 20 scorecard rows is now ~47%, but the picture splits sharply:
+The unweighted average across all 20 scorecard rows is now ~48%, but the picture splits sharply:
 
-- **Core/everyday categories** (graph types, architecture, properties, traversal, MST, connectivity, I/O, adaptors, generators, visitors, mutation — 12 rows): average ~76%. For a BGL user doing graph construction, traversal, shortest paths, MST, or connectivity work, graph-v3 covers the vast majority of the API surface.
+- **Core/everyday categories** (graph types, architecture, properties, traversal, MST, connectivity, I/O, adaptors, generators, visitors, mutation — 12 rows): average ~77%. For a BGL user doing graph construction, traversal, shortest paths, MST, or connectivity work, graph-v3 covers the vast majority of the API surface.
 - **Specialist algorithm domains** (network flow, matching, coloring, planarity, isomorphism, ordering, layout — 7 rows): all at 0%, and these pull the overall figure down significantly.
 
 The coverage that exists is architecturally superior (C++20, ranges, concepts, CPOs, zero-config), and the library includes novel features (lazy traversal views, triangle counting, label propagation, Jaccard similarity) not found in BGL. The primary migration barrier is breadth of specialist algorithm coverage.

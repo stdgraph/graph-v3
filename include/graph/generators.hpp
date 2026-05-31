@@ -9,6 +9,9 @@
  *   - barabasi_albert()  — preferential-attachment (scale-free)
  *   - path_graph()       — simple directed path
  *   - complete_graph()   — complete graph K(n)
+ *   - watts_strogatz()   — small-world ring lattice with rewiring
+ *   - rmat()             — R-MAT recursive-matrix (Graph500-style)
+ *   - plod()             — power-law out-degree
  *
  * All generators return a sorted std::vector<copyable_edge_t<VId, double>>
  * suitable for loading into any graph container via load_edges().
@@ -23,3 +26,6 @@
 #include <graph/generators/barabasi_albert.hpp>
 #include <graph/generators/path.hpp>
 #include <graph/generators/complete.hpp>
+#include <graph/generators/watts_strogatz.hpp>
+#include <graph/generators/rmat.hpp>
+#include <graph/generators/plod.hpp>
