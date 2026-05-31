@@ -37,9 +37,9 @@ using graph::adj_list::find_vertex_edge;
 
 TEST_CASE("vertices CPO basic", "[undirected_adjacency_list][cpo][vertices]") {
   IntGraph g(42); // graph value = 42
-  g.create_vertex(10);
-  g.create_vertex(20);
-  g.create_vertex(30);
+  g.add_vertex(10);
+  g.add_vertex(20);
+  g.add_vertex(30);
 
   // Test via ADL (friend functions)
   auto verts = vertices(g);
@@ -54,9 +54,9 @@ TEST_CASE("vertices CPO basic", "[undirected_adjacency_list][cpo][vertices]") {
 
 TEST_CASE("vertex_id CPO", "[undirected_adjacency_list][cpo][vertex_id]") {
   IntGraph g(0);
-  g.create_vertex(10);
-  g.create_vertex(20);
-  g.create_vertex(30);
+  g.add_vertex(10);
+  g.add_vertex(20);
+  g.add_vertex(30);
 
   SECTION("vertex_id returns correct id for each vertex") {
     auto         verts       = vertices(g);
@@ -85,19 +85,19 @@ TEST_CASE("num_vertices CPO", "[undirected_adjacency_list][cpo][num_vertices]") 
   IntGraph g(0);
   REQUIRE(num_vertices(g) == 0);
 
-  g.create_vertex(10);
+  g.add_vertex(10);
   REQUIRE(num_vertices(g) == 1);
 
-  g.create_vertex(20);
-  g.create_vertex(30);
+  g.add_vertex(20);
+  g.add_vertex(30);
   REQUIRE(num_vertices(g) == 3);
 }
 
 TEST_CASE("find_vertex CPO", "[undirected_adjacency_list][cpo][find_vertex]") {
   IntGraph g(0);
-  g.create_vertex(10);
-  g.create_vertex(20);
-  g.create_vertex(30);
+  g.add_vertex(10);
+  g.add_vertex(20);
+  g.add_vertex(30);
 
   SECTION("find existing vertex by id") {
     auto it = find_vertex(g, 0u);
@@ -134,27 +134,27 @@ TEST_CASE("find_vertex CPO", "[undirected_adjacency_list][cpo][find_vertex]") {
 
 TEST_CASE("num_edges CPO", "[undirected_adjacency_list][cpo][num_edges]") {
   IntGraph g(0);
-  g.create_vertex();
-  g.create_vertex();
-  g.create_vertex();
+  g.add_vertex();
+  g.add_vertex();
+  g.add_vertex();
 
   REQUIRE(num_edges(g) == 0);
 
-  g.create_edge(0, 1, 100);
+  g.add_edge(0, 1, 100);
   REQUIRE(num_edges(g) == 1);
 
-  g.create_edge(1, 2, 200);
+  g.add_edge(1, 2, 200);
   REQUIRE(num_edges(g) == 2);
 }
 
 TEST_CASE("has_edges CPO", "[undirected_adjacency_list][cpo][has_edges]") {
   IntGraph g(0);
-  g.create_vertex();
-  g.create_vertex();
+  g.add_vertex();
+  g.add_vertex();
 
   REQUIRE_FALSE(has_edges(g));
 
-  g.create_edge(0, 1, 100);
+  g.add_edge(0, 1, 100);
   REQUIRE(has_edges(g));
 }
 
@@ -176,9 +176,9 @@ TEST_CASE("graph_value CPO", "[undirected_adjacency_list][cpo][graph_value]") {
 
 TEST_CASE("vertex_value CPO", "[undirected_adjacency_list][cpo][vertex_value]") {
   IntGraph g(0);
-  g.create_vertex(10);
-  g.create_vertex(20);
-  g.create_vertex(30);
+  g.add_vertex(10);
+  g.add_vertex(20);
+  g.add_vertex(30);
 
   auto verts = vertices(g);
   auto it    = verts.begin();
@@ -197,12 +197,12 @@ TEST_CASE("vertex_value CPO", "[undirected_adjacency_list][cpo][vertex_value]") 
 
 TEST_CASE("edges CPO", "[undirected_adjacency_list][cpo][edges]") {
   IntGraph g(0);
-  g.create_vertex();
-  g.create_vertex();
-  g.create_vertex();
-  g.create_edge(0, 1, 100);
-  g.create_edge(0, 2, 200);
-  g.create_edge(1, 2, 300);
+  g.add_vertex();
+  g.add_vertex();
+  g.add_vertex();
+  g.add_edge(0, 1, 100);
+  g.add_edge(0, 2, 200);
+  g.add_edge(1, 2, 300);
 
   SECTION("edges from vertex 0") {
     auto verts      = vertices(g);
@@ -218,7 +218,7 @@ TEST_CASE("edges CPO", "[undirected_adjacency_list][cpo][edges]") {
 
   SECTION("edges from vertex with no edges") {
     IntGraph g2(0);
-    g2.create_vertex();
+    g2.add_vertex();
     auto verts      = vertices(g2);
     auto v          = *verts.begin();
     auto edge_range = edges(g2, v);
@@ -233,12 +233,12 @@ TEST_CASE("edges CPO", "[undirected_adjacency_list][cpo][edges]") {
 
 TEST_CASE("degree CPO", "[undirected_adjacency_list][cpo][degree]") {
   IntGraph g(0);
-  g.create_vertex();
-  g.create_vertex();
-  g.create_vertex();
-  g.create_edge(0, 1, 100);
-  g.create_edge(0, 2, 200);
-  g.create_edge(1, 2, 300);
+  g.add_vertex();
+  g.add_vertex();
+  g.add_vertex();
+  g.add_edge(0, 1, 100);
+  g.add_edge(0, 2, 200);
+  g.add_edge(1, 2, 300);
 
   SECTION("degree of vertex with 2 edges") {
     auto verts = vertices(g);
@@ -248,7 +248,7 @@ TEST_CASE("degree CPO", "[undirected_adjacency_list][cpo][degree]") {
 
   SECTION("degree of vertex with no edges") {
     IntGraph g2(0);
-    g2.create_vertex();
+    g2.add_vertex();
     auto verts = vertices(g2);
     auto v     = *verts.begin();
     REQUIRE(degree(g2, v) == 0);
@@ -257,11 +257,11 @@ TEST_CASE("degree CPO", "[undirected_adjacency_list][cpo][degree]") {
 
 TEST_CASE("edge target_id CPO via ADL", "[undirected_adjacency_list][cpo][target_id]") {
   IntGraph g(0);
-  g.create_vertex();
-  g.create_vertex();
-  g.create_vertex();
-  g.create_edge(0, 1, 100);
-  g.create_edge(0, 2, 200);
+  g.add_vertex();
+  g.add_vertex();
+  g.add_vertex();
+  g.add_edge(0, 1, 100);
+  g.add_edge(0, 2, 200);
 
   auto verts      = vertices(g);
   auto v0         = *verts.begin();
@@ -281,9 +281,9 @@ TEST_CASE("edge target_id CPO via ADL", "[undirected_adjacency_list][cpo][target
 
 TEST_CASE("edge source_id CPO via ADL", "[undirected_adjacency_list][cpo][source_id]") {
   IntGraph g(0);
-  g.create_vertex();
-  g.create_vertex();
-  g.create_edge(0, 1, 100);
+  g.add_vertex();
+  g.add_vertex();
+  g.add_edge(0, 1, 100);
 
   auto verts      = vertices(g);
   auto v0         = *verts.begin();
@@ -296,9 +296,9 @@ TEST_CASE("edge source_id CPO via ADL", "[undirected_adjacency_list][cpo][source
 
 TEST_CASE("edge_value CPO via ADL", "[undirected_adjacency_list][cpo][edge_value]") {
   IntGraph g(0);
-  g.create_vertex();
-  g.create_vertex();
-  g.create_edge(0, 1, 100);
+  g.add_vertex();
+  g.add_vertex();
+  g.add_edge(0, 1, 100);
 
   auto verts      = vertices(g);
   auto v0         = *verts.begin();
@@ -320,12 +320,12 @@ TEST_CASE("edge_value CPO via ADL", "[undirected_adjacency_list][cpo][edge_value
 TEST_CASE("CPO integration - graph traversal", "[undirected_adjacency_list][cpo][integration]") {
   IntGraph g(0);
   // Create a simple triangle graph: 0 -- 1 -- 2 -- 0
-  g.create_vertex(10);
-  g.create_vertex(20);
-  g.create_vertex(30);
-  g.create_edge(0, 1, 12);
-  g.create_edge(1, 2, 23);
-  g.create_edge(2, 0, 31);
+  g.add_vertex(10);
+  g.add_vertex(20);
+  g.add_vertex(30);
+  g.add_edge(0, 1, 12);
+  g.add_edge(1, 2, 23);
+  g.add_edge(2, 0, 31);
 
   SECTION("traverse all vertices and edges using CPOs") {
     int    total_vertex_value = 0;
@@ -351,11 +351,11 @@ TEST_CASE("CPO integration - graph traversal", "[undirected_adjacency_list][cpo]
 
 TEST_CASE("target CPO", "[undirected_adjacency_list][cpo][target]") {
   IntGraph g(0);
-  g.create_vertex(10); // vertex 0
-  g.create_vertex(20); // vertex 1
-  g.create_vertex(30); // vertex 2
-  g.create_edge(0, 1, 100);
-  g.create_edge(0, 2, 200);
+  g.add_vertex(10); // vertex 0
+  g.add_vertex(20); // vertex 1
+  g.add_vertex(30); // vertex 2
+  g.add_edge(0, 1, 100);
+  g.add_edge(0, 2, 200);
 
   SECTION("target returns vertex descriptor") {
     auto verts      = vertices(g);
@@ -391,11 +391,11 @@ TEST_CASE("target CPO", "[undirected_adjacency_list][cpo][target]") {
 
 TEST_CASE("source CPO", "[undirected_adjacency_list][cpo][source]") {
   IntGraph g(0);
-  g.create_vertex(10); // vertex 0
-  g.create_vertex(20); // vertex 1
-  g.create_vertex(30); // vertex 2
-  g.create_edge(0, 1, 100);
-  g.create_edge(0, 2, 200);
+  g.add_vertex(10); // vertex 0
+  g.add_vertex(20); // vertex 1
+  g.add_vertex(30); // vertex 2
+  g.add_edge(0, 1, 100);
+  g.add_edge(0, 2, 200);
 
   SECTION("source returns vertex descriptor") {
     auto verts      = vertices(g);
@@ -424,12 +424,12 @@ TEST_CASE("source CPO", "[undirected_adjacency_list][cpo][source]") {
 
 TEST_CASE("find_vertex_edge CPO", "[undirected_adjacency_list][cpo][find_vertex_edge]") {
   IntGraph g(0);
-  g.create_vertex(10); // vertex 0
-  g.create_vertex(20); // vertex 1
-  g.create_vertex(30); // vertex 2
-  g.create_edge(0, 1, 100);
-  g.create_edge(0, 2, 200);
-  g.create_edge(1, 2, 300);
+  g.add_vertex(10); // vertex 0
+  g.add_vertex(20); // vertex 1
+  g.add_vertex(30); // vertex 2
+  g.add_edge(0, 1, 100);
+  g.add_edge(0, 2, 200);
+  g.add_edge(1, 2, 300);
 
   SECTION("find_vertex_edge with descriptor and vid") {
     auto verts = vertices(g);
@@ -474,11 +474,11 @@ TEST_CASE("find_vertex_edge CPO", "[undirected_adjacency_list][cpo][find_vertex_
 
 TEST_CASE("contains_edge CPO", "[undirected_adjacency_list][cpo][contains_edge]") {
   IntGraph g(0);
-  g.create_vertex(10); // vertex 0
-  g.create_vertex(20); // vertex 1
-  g.create_vertex(30); // vertex 2
-  g.create_edge(0, 1, 100);
-  g.create_edge(0, 2, 200);
+  g.add_vertex(10); // vertex 0
+  g.add_vertex(20); // vertex 1
+  g.add_vertex(30); // vertex 2
+  g.add_edge(0, 1, 100);
+  g.add_edge(0, 2, 200);
   // No edge between 1 and 2
 
   SECTION("contains_edge with two vertex ids - edge exists") {
@@ -513,12 +513,12 @@ TEST_CASE("contains_edge CPO", "[undirected_adjacency_list][cpo][contains_edge]"
 
 TEST_CASE("edges(g) graph-level CPO", "[undirected_adjacency_list][cpo][edges]") {
   IntGraph g(0);
-  g.create_vertex(10); // vertex 0
-  g.create_vertex(20); // vertex 1
-  g.create_vertex(30); // vertex 2
-  g.create_edge(0, 1, 100);
-  g.create_edge(1, 2, 200);
-  g.create_edge(0, 2, 300);
+  g.add_vertex(10); // vertex 0
+  g.add_vertex(20); // vertex 1
+  g.add_vertex(30); // vertex 2
+  g.add_edge(0, 1, 100);
+  g.add_edge(1, 2, 200);
+  g.add_edge(0, 2, 300);
 
   SECTION("graph-level edges iteration visits all edges") {
     // Use the graph's edges() member which iterates all edges
@@ -547,11 +547,11 @@ TEST_CASE("edges(g) graph-level CPO", "[undirected_adjacency_list][cpo][edges]")
 
 TEST_CASE("source_id with vertex descriptor edges", "[undirected_adjacency_list][cpo][source_id]") {
   IntGraph g(0);
-  g.create_vertex(10); // vertex 0
-  g.create_vertex(20); // vertex 1
-  g.create_vertex(30); // vertex 2
-  g.create_edge(0, 1, 100);
-  g.create_edge(1, 2, 200);
+  g.add_vertex(10); // vertex 0
+  g.add_vertex(20); // vertex 1
+  g.add_vertex(30); // vertex 2
+  g.add_edge(0, 1, 100);
+  g.add_edge(1, 2, 200);
 
   SECTION("source_id via CPO") {
     auto verts = vertices(g);
@@ -591,9 +591,9 @@ TEST_CASE("CPO with empty graph", "[undirected_adjacency_list][cpo][empty]") {
 
 TEST_CASE("CPO const correctness", "[undirected_adjacency_list][cpo][const]") {
   IntGraph g(0);
-  g.create_vertex(10);
-  g.create_vertex(20);
-  g.create_edge(0, 1, 100);
+  g.add_vertex(10);
+  g.add_vertex(20);
+  g.add_edge(0, 1, 100);
 
   const IntGraph& cg = g;
 
@@ -626,7 +626,7 @@ TEST_CASE("CPO const correctness", "[undirected_adjacency_list][cpo][const]") {
 TEST_CASE("CPO vertex_id consistency", "[undirected_adjacency_list][cpo][vertex_id]") {
   IntGraph g(0);
   for (int i = 0; i < 10; ++i) {
-    g.create_vertex(i * 10);
+    g.add_vertex(i * 10);
   }
 
   SECTION("vertex_id matches iteration order") {
@@ -649,14 +649,14 @@ TEST_CASE("CPO vertex_id consistency", "[undirected_adjacency_list][cpo][vertex_
 
 TEST_CASE("CPO edge traversal consistency", "[undirected_adjacency_list][cpo][edges]") {
   IntGraph g(0);
-  g.create_vertex(10); // 0
-  g.create_vertex(20); // 1
-  g.create_vertex(30); // 2
-  g.create_vertex(40); // 3
+  g.add_vertex(10); // 0
+  g.add_vertex(20); // 1
+  g.add_vertex(30); // 2
+  g.add_vertex(40); // 3
   // Create a path: 0 -- 1 -- 2 -- 3
-  g.create_edge(0, 1, 1);
-  g.create_edge(1, 2, 2);
-  g.create_edge(2, 3, 3);
+  g.add_edge(0, 1, 1);
+  g.add_edge(1, 2, 2);
+  g.add_edge(2, 3, 3);
 
   SECTION("edge target and source are consistent") {
     for (auto v : vertices(g)) {
@@ -689,12 +689,12 @@ TEST_CASE("edges via vertex descriptor CPO", "[undirected_adjacency_list][cpo][e
   using namespace graph;
   using namespace graph::adj_list;
   undirected_adjacency_list<int, int> g;
-  g.create_vertex(10);
-  g.create_vertex(20);
-  g.create_vertex(30);
-  g.create_edge(0, 1, 100);
-  g.create_edge(0, 2, 200);
-  g.create_edge(1, 2, 300);
+  g.add_vertex(10);
+  g.add_vertex(20);
+  g.add_vertex(30);
+  g.add_edge(0, 1, 100);
+  g.add_edge(0, 2, 200);
+  g.add_edge(1, 2, 300);
 
   SECTION("get edges via vertex descriptor from vertices()") {
     size_t v0_count = 0;
@@ -728,13 +728,13 @@ TEST_CASE("degree via vertex descriptor CPO", "[undirected_adjacency_list][cpo][
   using namespace graph;
   using namespace graph::adj_list;
   undirected_adjacency_list<int, int> g;
-  g.create_vertex(10);
-  g.create_vertex(20);
-  g.create_vertex(30);
-  g.create_vertex(40); // isolated vertex
-  g.create_edge(0, 1, 100);
-  g.create_edge(0, 2, 200);
-  g.create_edge(1, 2, 300);
+  g.add_vertex(10);
+  g.add_vertex(20);
+  g.add_vertex(30);
+  g.add_vertex(40); // isolated vertex
+  g.add_edge(0, 1, 100);
+  g.add_edge(0, 2, 200);
+  g.add_edge(1, 2, 300);
 
   SECTION("degree via vertex descriptor") {
     for (auto v : vertices(g)) {

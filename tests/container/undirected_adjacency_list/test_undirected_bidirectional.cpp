@@ -58,12 +58,12 @@ TEST_CASE("undirected_adjacency_list models bidirectional_adjacency_list",
 TEST_CASE("in_edges returns same edges as edges for undirected graph",
           "[undirected_adjacency_list][bidirectional][in_edges]") {
   IntGraph g(0);
-  g.create_vertex(10); // 0
-  g.create_vertex(20); // 1
-  g.create_vertex(30); // 2
-  g.create_edge(0, 1, 100);
-  g.create_edge(0, 2, 200);
-  g.create_edge(1, 2, 300);
+  g.add_vertex(10); // 0
+  g.add_vertex(20); // 1
+  g.add_vertex(30); // 2
+  g.add_edge(0, 1, 100);
+  g.add_edge(0, 2, 200);
+  g.add_edge(1, 2, 300);
 
   SECTION("in_edges and edges produce identical target sets per vertex") {
     for (auto v : vertices(g)) {
@@ -93,12 +93,12 @@ TEST_CASE("in_edges returns same edges as edges for undirected graph",
 TEST_CASE("in_edges by vertex id",
           "[undirected_adjacency_list][bidirectional][in_edges]") {
   IntGraph g(0);
-  g.create_vertex(10); // 0
-  g.create_vertex(20); // 1
-  g.create_vertex(30); // 2
-  g.create_edge(0, 1, 100);
-  g.create_edge(0, 2, 200);
-  g.create_edge(1, 2, 300);
+  g.add_vertex(10); // 0
+  g.add_vertex(20); // 1
+  g.add_vertex(30); // 2
+  g.add_edge(0, 1, 100);
+  g.add_edge(0, 2, 200);
+  g.add_edge(1, 2, 300);
 
   // in_edges(g, uid) should work via the CPO default tier
   size_t count = 0;
@@ -111,9 +111,9 @@ TEST_CASE("in_edges by vertex id",
 TEST_CASE("in_edges on const graph",
           "[undirected_adjacency_list][bidirectional][in_edges]") {
   IntGraph g(0);
-  g.create_vertex(10);
-  g.create_vertex(20);
-  g.create_edge(0, 1, 100);
+  g.add_vertex(10);
+  g.add_vertex(20);
+  g.add_edge(0, 1, 100);
 
   const IntGraph& cg = g;
   auto            v  = *vertices(cg).begin();
@@ -128,7 +128,7 @@ TEST_CASE("in_edges on const graph",
 TEST_CASE("in_edges on vertex with no edges",
           "[undirected_adjacency_list][bidirectional][in_edges]") {
   IntGraph g(0);
-  g.create_vertex(10); // isolated vertex
+  g.add_vertex(10); // isolated vertex
 
   auto v     = *vertices(g).begin();
   auto range = in_edges(g, v);
@@ -147,13 +147,13 @@ TEST_CASE("in_edges on vertex with no edges",
 TEST_CASE("in_degree equals degree for undirected graph",
           "[undirected_adjacency_list][bidirectional][in_degree]") {
   IntGraph g(0);
-  g.create_vertex(10); // 0
-  g.create_vertex(20); // 1
-  g.create_vertex(30); // 2
-  g.create_vertex(40); // 3 (isolated)
-  g.create_edge(0, 1, 100);
-  g.create_edge(0, 2, 200);
-  g.create_edge(1, 2, 300);
+  g.add_vertex(10); // 0
+  g.add_vertex(20); // 1
+  g.add_vertex(30); // 2
+  g.add_vertex(40); // 3 (isolated)
+  g.add_edge(0, 1, 100);
+  g.add_edge(0, 2, 200);
+  g.add_edge(1, 2, 300);
 
   SECTION("in_degree matches degree via vertex descriptor") {
     for (auto v : vertices(g)) {
@@ -186,12 +186,12 @@ TEST_CASE("in_degree equals degree for undirected graph",
 TEST_CASE("find_in_edge works on undirected graph",
           "[undirected_adjacency_list][bidirectional][find_in_edge]") {
   IntGraph g(0);
-  g.create_vertex(10); // 0
-  g.create_vertex(20); // 1
-  g.create_vertex(30); // 2
-  g.create_edge(0, 1, 100);
-  g.create_edge(0, 2, 200);
-  g.create_edge(1, 2, 300);
+  g.add_vertex(10); // 0
+  g.add_vertex(20); // 1
+  g.add_vertex(30); // 2
+  g.add_edge(0, 1, 100);
+  g.add_edge(0, 2, 200);
+  g.add_edge(1, 2, 300);
 
   SECTION("find_in_edge with two vertex ids - edge exists") {
     // find_in_edge(g, uid, vid) default: find_vertex_edge(g, vid, uid)
@@ -252,11 +252,11 @@ TEST_CASE("find_in_edge works on undirected graph",
 TEST_CASE("contains_in_edge works on undirected graph",
           "[undirected_adjacency_list][bidirectional][contains_in_edge]") {
   IntGraph g(0);
-  g.create_vertex(10); // 0
-  g.create_vertex(20); // 1
-  g.create_vertex(30); // 2
-  g.create_edge(0, 1, 100);
-  g.create_edge(0, 2, 200);
+  g.add_vertex(10); // 0
+  g.add_vertex(20); // 1
+  g.add_vertex(30); // 2
+  g.add_edge(0, 1, 100);
+  g.add_edge(0, 2, 200);
   // No edge between 1 and 2
 
   SECTION("contains_in_edge with two vertex ids - edge exists") {
@@ -310,12 +310,12 @@ TEST_CASE("undirected graph edge symmetry with in_edges",
           "[undirected_adjacency_list][bidirectional][integration]") {
   IntGraph g(0);
   // Triangle: 0--1, 1--2, 2--0
-  g.create_vertex(10);
-  g.create_vertex(20);
-  g.create_vertex(30);
-  g.create_edge(0, 1, 12);
-  g.create_edge(1, 2, 23);
-  g.create_edge(2, 0, 31);
+  g.add_vertex(10);
+  g.add_vertex(20);
+  g.add_vertex(30);
+  g.add_edge(0, 1, 12);
+  g.add_edge(1, 2, 23);
+  g.add_edge(2, 0, 31);
 
   SECTION("total in_edges iteration matches total edges iteration") {
     size_t total_out = 0, total_in = 0;
@@ -347,11 +347,11 @@ TEST_CASE("undirected graph star topology - in_edges correctness",
   IntGraph g(0);
   // Star graph: vertex 0 connected to 1..4
   for (int i = 0; i < 5; ++i)
-    g.create_vertex(i * 10);
-  g.create_edge(0, 1, 1);
-  g.create_edge(0, 2, 2);
-  g.create_edge(0, 3, 3);
-  g.create_edge(0, 4, 4);
+    g.add_vertex(i * 10);
+  g.add_edge(0, 1, 1);
+  g.add_edge(0, 2, 2);
+  g.add_edge(0, 3, 3);
+  g.add_edge(0, 4, 4);
 
   SECTION("hub vertex has same in_degree and degree") {
     REQUIRE(in_degree(g, 0u) == 4);

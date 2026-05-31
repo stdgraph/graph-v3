@@ -225,6 +225,13 @@ public:
 private:
   vertex_id_type target_id_ = vertex_id_type();
 
+  // Mutation support for dynamic_graph_base::remove_vertex on sequential containers.
+  // Allows decrementing stored target_id after a vertex is erased from a vector/deque.
+  template <class, class, class, class, bool, class>
+  friend class dynamic_graph_base;
+
+  constexpr void set_target_id(const vertex_id_type& id) noexcept { target_id_ = id; }
+
 private:
   // target_id(g,uv) - ADL customization point for CPO
   friend constexpr decltype(auto) target_id(const graph_type&, const edge_type& uv) noexcept {
@@ -288,6 +295,12 @@ public:
 
 private:
   vertex_id_type source_id_ = vertex_id_type();
+
+  // Mutation support for dynamic_graph_base::remove_vertex on sequential containers.
+  template <class, class, class, class, bool, class>
+  friend class dynamic_graph_base;
+
+  constexpr void set_source_id(const vertex_id_type& id) noexcept { source_id_ = id; }
 
 private:
   // source_id(g,uv), source(g)
@@ -978,6 +991,25 @@ public: // Construction/Destruction/Assignment
   dynamic_graph_base(vertex_allocator_type alloc) : vertices_(alloc), partition_(alloc) { terminate_partitions(); }
 
   /**
+   * @brief Construct a graph with a fixed number of vertices and no edges.
+   * 
+   * Pre-creates @p vertex_count default-constructed vertices (ids @c 0 to @c vertex_count-1), analogous to
+   * Boost.Graph's @c adjacency_list(n) constructor. Edges can then be added incrementally with @c add_edge().
+   * If vertices have a user-defined value (e.g. VV not void), the value must be default-constructable.
+   * 
+   * @note Only supported for resizable (sequential) vertex containers; for associative vertex containers no
+   *       vertices are created.
+   * 
+   * @param vertex_count The number of vertices to create.
+   * @param alloc        Used to allocate vertices and edges.
+  */
+  dynamic_graph_base(size_type vertex_count, vertex_allocator_type alloc)
+        : vertices_(alloc), partition_(alloc) {
+    resize_vertices(vertex_count);
+    terminate_partitions();
+  }
+
+  /**
    * @brief Construct the graph using edge and vertex ranges.
    * 
    * The value_type of @c erng must be converted to @c copyable_edge_t<G> before it can be
@@ -1552,6 +1584,378 @@ public: // Operations
     edge_count_ = 0;
   }
 
+public: // Vertex and Edge Mutation
+
+  // --- add_vertex: sequential containers (vector/deque) ---
+  // Vertex ids are positional indices, so a new vertex is appended and assigned the next
+  // sequential id. These overloads are disabled for associative containers, where ids are
+  // user-supplied keys that may be sparse and/or non-integral.
+
+  /// @brief Add a new vertex with a default-constructed value (sequential containers only).
+  ///
+  /// The vertex is appended and assigned the next sequential id.
+  ///
+  /// @return The id of the newly created vertex.
+  /// @complexity O(1) amortized.
+  vertex_id_type add_vertex()
+      requires (!is_associative_container<vertices_type>) {
+    vertices_.push_back(vertex_type(vertices_.get_allocator()));
+    return static_cast<vertex_id_type>(vertices_.size() - 1);
+  }
+
+  /// @brief Add a new vertex with a value (sequential containers only).
+  /// Only available when VV is not void.
+  ///
+  /// The vertex is appended and assigned the next sequential id.
+  ///
+  /// @param val Value to forward into the new vertex.
+  /// @return The id of the newly created vertex.
+  /// @complexity O(1) amortized.
+  template <class V = VV>
+  vertex_id_type add_vertex(V&& val)
+      requires (!std::is_void_v<VV> && std::same_as<std::remove_cvref_t<V>, VV> &&
+                !is_associative_container<vertices_type>) {
+    vertices_.emplace_back(std::forward<V>(val), vertices_.get_allocator());
+    return static_cast<vertex_id_type>(vertices_.size() - 1);
+  }
+
+  // --- add_vertex: associative containers (map/unordered_map) ---
+  // Vertex ids are user-supplied keys that may be sparse and/or non-integral, so the caller
+  // must provide the id explicitly. Insertion is idempotent: if a vertex with the given id
+  // already exists it is preserved (its edges are not disturbed).
+
+  /// @brief Add a vertex with the given id (associative containers only).
+  ///
+  /// If a vertex with @p id already exists it is left unchanged.
+  ///
+  /// @param id The id (key) of the vertex to add.
+  /// @return true if a new vertex was inserted, false if one already existed.
+  /// @complexity O(log n) for ordered maps, O(1) average for unordered maps.
+  bool add_vertex(const vertex_id_type& id)
+      requires (is_associative_container<vertices_type>) {
+    return vertices_.try_emplace(id).second;
+  }
+
+  /// @brief Add a vertex with the given id and value (associative containers only).
+  /// Only available when VV is not void.
+  ///
+  /// If a vertex with @p id already exists its value is assigned from @p val and its edges
+  /// are left unchanged; otherwise a new vertex is inserted with the value.
+  ///
+  /// @param id  The id (key) of the vertex to add.
+  /// @param val Value to forward into the vertex.
+  /// @return true if a new vertex was inserted, false if an existing vertex's value was updated.
+  /// @complexity O(log n) for ordered maps, O(1) average for unordered maps.
+  template <class V = VV>
+  bool add_vertex(const vertex_id_type& id, V&& val)
+      requires (!std::is_void_v<VV> && std::same_as<std::remove_cvref_t<V>, VV> &&
+                is_associative_container<vertices_type>) {
+    auto it = vertices_.find(id);
+    if (it == vertices_.end()) {
+      vertices_.emplace(id, vertex_type(std::forward<V>(val)));
+      return true;
+    }
+    it->second.value() = std::forward<V>(val);
+    return false;
+  }
+
+  /// @brief Add a directed edge from uid to vid.
+  ///
+  /// When EV is not void the edge value is default-constructed; use the value overload to
+  /// supply an explicit value.
+  ///
+  /// Both vertices must already exist. For sequential containers the ids are positional
+  /// indices; for associative containers they are user-supplied keys. A missing vertex
+  /// throws @c std::out_of_range in either case.
+  ///
+  /// @param uid Source vertex id.
+  /// @param vid Target vertex id.
+  /// @complexity O(1) amortized for most containers; O(log n) for ordered set/map containers.
+  void add_edge(const vertex_id_type& uid, const vertex_id_type& vid) {
+    if constexpr (Bidirectional) {
+      emplace_edge(vertex_at(vid).in_edges(), uid, in_edge_type(uid));
+    } else {
+      (void)vertex_at(vid); // validate target exists (throws std::out_of_range otherwise)
+    }
+    emplace_edge(vertex_at(uid).edges(), vid, edge_type(vid));
+    ++edge_count_;
+  }
+
+  /// @brief Add a directed edge from uid to vid with a value (copy or move).
+  /// Only available when EV is not void.
+  ///
+  /// Both vertices must already exist; a missing vertex throws @c std::out_of_range.
+  ///
+  /// @param uid Source vertex id.
+  /// @param vid Target vertex id.
+  /// @param val Edge value to forward into the out-edge; in-edge (if bidirectional) receives a copy.
+  /// @complexity O(1) amortized for most containers; O(log n) for ordered set/map containers.
+  template <class E = EV>
+  void add_edge(const vertex_id_type& uid, const vertex_id_type& vid, E&& val)
+      requires (!std::is_void_v<EV> && std::same_as<std::remove_cvref_t<E>, EV>) {
+    if constexpr (Bidirectional) {
+      emplace_edge(vertex_at(vid).in_edges(), uid, in_edge_type(uid, val)); // copy before move
+    } else {
+      (void)vertex_at(vid); // validate target exists (throws std::out_of_range otherwise)
+    }
+    emplace_edge(vertex_at(uid).edges(), vid, edge_type(vid, std::forward<E>(val)));
+    ++edge_count_;
+  }
+
+  /// @brief Remove all directed edges from uid to vid.
+  ///
+  /// @param uid Source vertex id.
+  /// @param vid Target vertex id.
+  /// @return Number of edges removed.
+  /// @complexity O(degree(uid)) for most containers; O(1) average for unordered_set/map containers.
+  size_type remove_edge(const vertex_id_type& uid, const vertex_id_type& vid) {
+    if (!contains_vertex(uid))
+      return 0;
+    size_type count = remove_out_edges_targeting(vertex_at(uid).edges(), vid);
+    if constexpr (Bidirectional) {
+      if (count > 0 && contains_vertex(vid))
+        remove_in_edges_for(vertex_at(vid).in_edges(), uid);
+    }
+    edge_count_ -= count;
+    return count;
+  }
+
+  /// @brief Remove a vertex and all edges associated with it.
+  ///
+  /// For sequential containers (vector/deque), erasing a vertex renumbers all subsequent
+  /// vertex ids (decrement by one) and updates all stored edge ids accordingly.
+  /// All existing vertex and edge descriptors become invalid after this call.
+  ///
+  /// For associative containers (map/unordered_map), only the removed vertex's id is
+  /// invalidated; remaining vertex ids are stable.
+  ///
+  /// @param uid The vertex id to remove.
+  /// @complexity O(V + E) for sequential containers; O(V + degree(uid)) for associative containers.
+  void remove_vertex(const vertex_id_type& uid) {
+    if (!contains_vertex(uid))
+      return;
+
+    if constexpr (Bidirectional) {
+      // (1) Remove each out-edge uid→vid: unlink the corresponding in-edge at vid.
+      {
+        auto& out = vertex_at(uid).edges();
+        for (const auto& e : out) {
+          vertex_id_type vid = e.target_id();
+          if (vid != uid && contains_vertex(vid))
+            remove_in_edges_for(vertex_at(vid).in_edges(), uid);
+        }
+        edge_count_ -= static_cast<size_type>(std::ranges::distance(out));
+      }
+
+      // (2) Remove each in-edge src→uid: unlink the corresponding out-edge at src.
+      {
+        auto& in = vertex_at(uid).in_edges();
+        for (const auto& e : in) {
+          vertex_id_type src = get_in_edge_id(e);
+          if (src != uid && contains_vertex(src)) {
+            size_type n = remove_out_edges_targeting(vertex_at(src).edges(), uid);
+            edge_count_ -= n;
+          }
+        }
+      }
+    } else {
+      // Non-bidirectional: count uid's out-edges (they go away with the vertex).
+      edge_count_ -= static_cast<size_type>(std::ranges::distance(vertex_at(uid).edges()));
+
+      // Remove edges pointing to uid from every other vertex.
+      if constexpr (is_associative_container<vertices_type>) {
+        for (auto& [key, vtx] : vertices_) {
+          if (key == uid)
+            continue;
+          edge_count_ -= remove_out_edges_targeting(vtx.edges(), uid);
+        }
+      } else {
+        for (size_type i = 0; i < static_cast<size_type>(vertices_.size()); ++i) {
+          if (static_cast<vertex_id_type>(i) == uid)
+            continue;
+          edge_count_ -= remove_out_edges_targeting(vertices_[i].edges(), uid);
+        }
+      }
+    }
+
+    // (3) For sequential containers: renumber all stored edge ids that are > uid.
+    if constexpr (!is_associative_container<vertices_type>) {
+      for (auto& vtx : vertices_) {
+        adjust_out_edge_ids(vtx.edges(), uid);
+        if constexpr (Bidirectional)
+          adjust_in_edge_ids(vtx.in_edges(), uid);
+      }
+    }
+
+    // (4) Erase the vertex.
+    if constexpr (is_associative_container<vertices_type>) {
+      vertices_.erase(uid);
+    } else {
+      vertices_.erase(vertices_.begin() + static_cast<std::ptrdiff_t>(uid));
+    }
+  }
+
+private: // Mutation helpers
+
+  // Extract the stored vertex id from an in-edge element:
+  //   dynamic_in_edge  (non-uniform bidir traits): stored in source_id_
+  //   edge_type as in_edge_type (standard bidir traits): stored in target_id_
+  template <class InEdgeT>
+  static constexpr vertex_id_type get_in_edge_id(const InEdgeT& e) noexcept {
+    if constexpr (requires { e.source_id(); })
+      return e.source_id();
+    else
+      return e.target_id();
+  }
+
+  // Set the stored vertex id on an in-edge element.
+  template <class InEdgeT>
+  static constexpr void set_in_edge_id(InEdgeT& e, vertex_id_type id) noexcept {
+    if constexpr (requires { e.source_id(); })
+      e.set_source_id(id);
+    else
+      e.set_target_id(id);
+  }
+
+  // Remove all out-edges whose target_id equals tid. Returns the count removed.
+  template <class EdgeContainer>
+  static size_type remove_out_edges_targeting(EdgeContainer& edges, vertex_id_type tid) {
+    if constexpr (is_map_based_edge_container<EdgeContainer>) {
+      return static_cast<size_type>(edges.erase(tid));
+    } else if constexpr (has_emplace<EdgeContainer>) {
+      // set / unordered_set: at most one match (comparison is by target_id)
+      auto it = edges.find(edge_type(tid));
+      if (it != edges.end()) {
+        edges.erase(it);
+        return 1;
+      }
+      return 0;
+    } else if constexpr (requires(EdgeContainer& c) {
+                           c.remove_if([](const typename EdgeContainer::value_type&) { return true; });
+                         }) {
+      // list / forward_list: C++20 remove_if returns count
+      return static_cast<size_type>(
+            edges.remove_if([tid](const auto& e) { return e.target_id() == tid; }));
+    } else {
+      // vector / deque: erase-remove
+      auto new_end =
+            std::remove_if(edges.begin(), edges.end(), [tid](const auto& e) { return e.target_id() == tid; });
+      size_type count = static_cast<size_type>(std::distance(new_end, edges.end()));
+      edges.erase(new_end, edges.end());
+      return count;
+    }
+  }
+
+  // Remove all in-edges whose stored vertex id equals src_id. Returns the count removed.
+  template <class InEdgesContainer>
+  static size_type remove_in_edges_for(InEdgesContainer& in_edges, vertex_id_type src_id) {
+    using elem_t = typename InEdgesContainer::value_type;
+    if constexpr (is_map_based_edge_container<InEdgesContainer>) {
+      return static_cast<size_type>(in_edges.erase(src_id));
+    } else if constexpr (has_emplace<InEdgesContainer>) {
+      auto it = in_edges.find(elem_t(src_id));
+      if (it != in_edges.end()) {
+        in_edges.erase(it);
+        return 1;
+      }
+      return 0;
+    } else if constexpr (requires(InEdgesContainer& c) {
+                           c.remove_if([](const elem_t&) { return true; });
+                         }) {
+      return static_cast<size_type>(in_edges.remove_if([src_id](const auto& e) {
+        if constexpr (requires { e.source_id(); })
+          return e.source_id() == src_id;
+        else
+          return e.target_id() == src_id;
+      }));
+    } else {
+      auto new_end = std::remove_if(in_edges.begin(), in_edges.end(), [src_id](const auto& e) {
+        if constexpr (requires { e.source_id(); })
+          return e.source_id() == src_id;
+        else
+          return e.target_id() == src_id;
+      });
+      size_type count = static_cast<size_type>(std::distance(new_end, in_edges.end()));
+      in_edges.erase(new_end, in_edges.end());
+      return count;
+    }
+  }
+
+  // Decrement the target_id of all out-edges with target_id > uid.
+  // For set/unordered_set and map-based containers the affected elements must be
+  // erased and re-inserted because the key (target_id) would change.
+  template <class EdgeContainer>
+  void adjust_out_edge_ids(EdgeContainer& edges, vertex_id_type uid) {
+    if constexpr (is_map_based_edge_container<EdgeContainer>) {
+      std::vector<std::pair<vertex_id_type, typename EdgeContainer::mapped_type>> pending;
+      for (auto it = edges.upper_bound(uid); it != edges.end();) {
+        pending.emplace_back(static_cast<vertex_id_type>(it->first - 1), std::move(it->second));
+        it = edges.erase(it);
+      }
+      for (auto& [k, v] : pending) {
+        v.set_target_id(k);
+        edges.emplace(k, std::move(v));
+      }
+    } else if constexpr (has_emplace<EdgeContainer>) {
+      // set / unordered_set: elements are immutable — copy out, erase, decrement, re-insert
+      std::vector<typename EdgeContainer::value_type> pending;
+      for (auto it = edges.begin(); it != edges.end();) {
+        if (it->target_id() > uid) {
+          pending.push_back(*it);
+          it = edges.erase(it);
+        } else {
+          ++it;
+        }
+      }
+      for (auto& e : pending) {
+        e.set_target_id(e.target_id() - 1);
+        edges.emplace(std::move(e));
+      }
+    } else {
+      // vector / deque / list / forward_list: modify in-place
+      for (auto& e : edges)
+        if (e.target_id() > uid)
+          e.set_target_id(e.target_id() - 1);
+    }
+  }
+
+  // Decrement the stored vertex id of all in-edges with stored id > uid.
+  template <class InEdgesContainer>
+  void adjust_in_edge_ids(InEdgesContainer& in_edges, vertex_id_type uid) {
+    using elem_t = typename InEdgesContainer::value_type;
+    if constexpr (is_map_based_edge_container<InEdgesContainer>) {
+      std::vector<std::pair<vertex_id_type, typename InEdgesContainer::mapped_type>> pending;
+      for (auto it = in_edges.upper_bound(uid); it != in_edges.end();) {
+        pending.emplace_back(static_cast<vertex_id_type>(it->first - 1), std::move(it->second));
+        it = in_edges.erase(it);
+      }
+      for (auto& [k, v] : pending) {
+        set_in_edge_id(v, k);
+        in_edges.emplace(k, std::move(v));
+      }
+    } else if constexpr (has_emplace<InEdgesContainer>) {
+      std::vector<elem_t> pending;
+      for (auto it = in_edges.begin(); it != in_edges.end();) {
+        if (get_in_edge_id(*it) > uid) {
+          pending.push_back(*it);
+          it = in_edges.erase(it);
+        } else {
+          ++it;
+        }
+      }
+      for (auto& e : pending) {
+        set_in_edge_id(e, get_in_edge_id(e) - 1);
+        in_edges.emplace(std::move(e));
+      }
+    } else {
+      for (auto& e : in_edges)
+        if (get_in_edge_id(e) > uid)
+          set_in_edge_id(e, get_in_edge_id(e) - 1);
+    }
+  }
+
+public: // Vertex Query and Access
+
   /**
    * @brief Check if a vertex with the given id exists in the graph.
    * 
@@ -1917,6 +2321,18 @@ public: // Construction/Destruction/Assignment
   */
   dynamic_graph(allocator_type alloc) : base_type(alloc) {}
 
+  /**
+   * @brief Construct a dynamic_graph with a fixed number of vertices and no edges.
+   * 
+   * Pre-creates @p vertex_count default-constructed vertices (ids @c 0 to @c vertex_count-1), analogous to
+   * Boost.Graph's @c adjacency_list(n) constructor. Edges can then be added incrementally with @c add_edge().
+   * 
+   * @param vertex_count The number of vertices to create.
+   * @param alloc        Used to allocate vertices and edges.
+  */
+  dynamic_graph(typename base_type::size_type vertex_count, allocator_type alloc = allocator_type())
+        : base_type(vertex_count, alloc) {}
+
 public: // Graph value accessors
   /**
    * @brief Returns the user-defined value for the graph.
@@ -2069,6 +2485,18 @@ public: // Construction/Destruction/Assignment
    * @param alloc Used to allocate vertices and edges.
   */
   dynamic_graph(allocator_type alloc) : base_type(alloc) {}
+
+  /**
+   * @brief Construct a dynamic_graph with a fixed number of vertices and no edges.
+   * 
+   * Pre-creates @p vertex_count default-constructed vertices (ids @c 0 to @c vertex_count-1), analogous to
+   * Boost.Graph's @c adjacency_list(n) constructor. Edges can then be added incrementally with @c add_edge().
+   * 
+   * @param vertex_count The number of vertices to create.
+   * @param alloc        Used to allocate vertices and edges.
+  */
+  dynamic_graph(typename base_type::size_type vertex_count, allocator_type alloc = allocator_type())
+        : base_type(vertex_count, alloc) {}
 
   /**
    * @brief Constructs the graph from a range of edge data and range of vertex data.

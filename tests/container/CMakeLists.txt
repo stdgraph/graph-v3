@@ -35,6 +35,7 @@ add_executable(graph3_container_tests
     dynamic_graph/test_dynamic_graph_common.cpp
     dynamic_graph/test_dynamic_edge_comparison.cpp
     dynamic_graph/test_dynamic_graph_nonintegral_ids.cpp
+    dynamic_graph/test_dynamic_graph_mutation.cpp
     dynamic_graph/test_dynamic_graph_integration.cpp
     dynamic_graph/test_dynamic_graph_stl_algorithms.cpp
     dynamic_graph/test_dynamic_graph_generic_queries.cpp
@@ -63,6 +64,7 @@ add_executable(graph3_container_tests
     # undirected_adjacency_list
     undirected_adjacency_list/test_undirected_adjacency_list.cpp
     undirected_adjacency_list/test_undirected_adjacency_list_cpo.cpp
+    undirected_adjacency_list/test_undirected_adjacency_list_mutation.cpp
     undirected_adjacency_list/test_undirected_bidirectional.cpp
 )
 

@@ -669,22 +669,22 @@ TEST_CASE("incidence - undirected_adjacency_list basic", "[incidence][undirected
   Graph g;
 
   // Create vertices: 0, 1, 2, 3, 4
-  g.create_vertex(100); // vertex 0, value=100
-  g.create_vertex(200); // vertex 1, value=200
-  g.create_vertex(300); // vertex 2, value=300
-  g.create_vertex(400); // vertex 3, value=400
-  g.create_vertex(500); // vertex 4, value=500
+  g.add_vertex(100); // vertex 0, value=100
+  g.add_vertex(200); // vertex 1, value=200
+  g.add_vertex(300); // vertex 2, value=300
+  g.add_vertex(400); // vertex 3, value=400
+  g.add_vertex(500); // vertex 4, value=500
 
   // Create edges from vertex 0 to multiple targets (star topology from 0)
   // These are undirected edges - each creates one edge accessible from both ends
-  g.create_edge(0, 1, 10); // 0 -- 1, weight=10
-  g.create_edge(0, 2, 20); // 0 -- 2, weight=20
-  g.create_edge(0, 3, 30); // 0 -- 3, weight=30
-  g.create_edge(0, 4, 40); // 0 -- 4, weight=40
+  g.add_edge(0, 1, 10); // 0 -- 1, weight=10
+  g.add_edge(0, 2, 20); // 0 -- 2, weight=20
+  g.add_edge(0, 3, 30); // 0 -- 3, weight=30
+  g.add_edge(0, 4, 40); // 0 -- 4, weight=40
 
   // Additional edges to make vertex 2 a hub
-  g.create_edge(2, 3, 23); // 2 -- 3, weight=23
-  g.create_edge(2, 4, 24); // 2 -- 4, weight=24
+  g.add_edge(2, 3, 23); // 2 -- 3, weight=23
+  g.add_edge(2, 4, 24); // 2 -- 4, weight=24
 
   SECTION("vertex 0 has 4 incident edges") {
     auto verts = vertices(g);
@@ -773,13 +773,13 @@ TEST_CASE("incidence - undirected_adjacency_list iteration order", "[incidence][
   Graph g;
 
   // Create a simple triangle: 0 -- 1 -- 2 -- 0
-  g.create_vertex(0);
-  g.create_vertex(1);
-  g.create_vertex(2);
+  g.add_vertex(0);
+  g.add_vertex(1);
+  g.add_vertex(2);
 
-  g.create_edge(0, 1, 1);
-  g.create_edge(1, 2, 2);
-  g.create_edge(2, 0, 3);
+  g.add_edge(0, 1, 1);
+  g.add_edge(1, 2, 2);
+  g.add_edge(2, 0, 3);
 
   SECTION("each vertex has exactly 2 incident edges") {
     for (auto [id, v] : vertexlist(g)) {
@@ -817,14 +817,14 @@ TEST_CASE("incidence - undirected_adjacency_list range algorithms", "[incidence]
 
   // Create vertices
   for (int i = 0; i < 5; ++i) {
-    g.create_vertex(i * 100);
+    g.add_vertex(i * 100);
   }
 
   // Create a hub at vertex 0 with many edges
-  g.create_edge(0, 1, 10);
-  g.create_edge(0, 2, 20);
-  g.create_edge(0, 3, 30);
-  g.create_edge(0, 4, 40);
+  g.add_edge(0, 1, 10);
+  g.add_edge(0, 2, 20);
+  g.add_edge(0, 3, 30);
+  g.add_edge(0, 4, 40);
 
   auto v0_it = find_vertex(g, 0u);
   auto v0    = *v0_it;
@@ -868,8 +868,8 @@ TEST_CASE("incidence - undirected_adjacency_list empty and single edge", "[incid
 
   SECTION("vertex with no edges") {
     Graph g;
-    g.create_vertex(0);
-    g.create_vertex(1);
+    g.add_vertex(0);
+    g.add_vertex(1);
     // No edges created
 
     auto v0_it = find_vertex(g, 0u);
@@ -882,9 +882,9 @@ TEST_CASE("incidence - undirected_adjacency_list empty and single edge", "[incid
 
   SECTION("single edge - both endpoints see it") {
     Graph g;
-    g.create_vertex(0);
-    g.create_vertex(1);
-    g.create_edge(0, 1, 42);
+    g.add_vertex(0);
+    g.add_vertex(1);
+    g.add_edge(0, 1, 42);
 
     auto v0_it = find_vertex(g, 0u);
     auto v0    = *v0_it;

@@ -77,9 +77,11 @@ class undirected_adjacency_list;
 | Operation | Complexity |
 |-----------|-----------|
 | Vertex access by id | O(1) |
-| `create_vertex()` | O(1) amortized |
-| `create_edge(u, v)` | O(1) |
-| `erase_edge(pos)` | O(1) — unlinks from both vertices' lists |
+| `add_vertex()` | O(1) amortized |
+| `add_edge(u, v)` | O(1) |
+| `remove_edge(pos)` | O(1) — unlinks from both vertices' lists |
+| `remove_edge(uid, vid)` | O(degree(uid)) |
+| `remove_vertex(uid)` | O(V + E) — renumbers higher vertex ids |
 | `degree(v)` | O(1) — cached per vertex |
 | Iterate edges from vertex | O(degree) |
 | Iterate all edges | O(V + E) |
@@ -88,8 +90,8 @@ class undirected_adjacency_list;
 from each endpoint. Use `edges_size() / 2` to get the unique edge count.
 
 **Iterator invalidation:**
-- Vertex iterators: invalidated by `create_vertex()` if reallocation occurs, and `clear()`.
-- Vertex iterators: **not** invalidated by `create_edge()` or `erase_edge()`.
+- Vertex iterators: invalidated by `add_vertex()` if reallocation occurs, by `remove_vertex()`, and by `clear()`.
+- Vertex iterators: **not** invalidated by `add_edge()` or `remove_edge()`.
 
 **Basic usage:**
 
@@ -100,9 +102,9 @@ using namespace graph::container;
 // Edge value = int (weight), vertex value = std::string (name)
 undirected_adjacency_list<int, std::string> g;
 
-auto u = g.create_vertex("Alice");
-auto v = g.create_vertex("Bob");
-auto e = g.create_edge(u, v, 42);   // weight 42
+auto u = g.add_vertex("Alice");
+auto v = g.add_vertex("Bob");
+auto e = g.add_edge(u, v, 42);   // weight 42
 
 // Iterate incident edges of u
 for (auto&& [uid, vid, uv] : edges(g, *u)) {

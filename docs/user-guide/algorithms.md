@@ -44,7 +44,8 @@ Algorithms follow a consistent pattern:
 - **Output**: filled via caller-provided output ranges (distances, predecessors,
   component labels) — not returned by value
 - **Weight functions**: passed as callable `WF(g, uv)` returning edge weight
-- **Visitors**: optional structs with callback methods for fine-grained event hooks
+- **Visitors**: optional structs with callback methods for fine-grained event hooks,
+  or assemble one from reusable pieces with the [composable visitor toolkit](#composable-visitors)
 - **Initialization**: use `init_shortest_paths()` to properly set up distance and
   predecessor vectors before calling shortest-path algorithms
 
@@ -335,6 +336,82 @@ callbacks you define are called — unimplemented callbacks are silently skipped
 
 Each callback also has an `_id` variant that receives vertex/edge IDs instead of
 descriptors.
+
+### Composable visitors
+
+Instead of hand-writing a visitor struct, you can assemble one from reusable
+pieces with the toolkit in `<graph/algorithm/visitor_factory.hpp>` (also pulled
+in by the `algorithms.hpp` umbrella header). It is the graph-v3 analogue of
+Boost.Graph's `make_bfs_visitor` / event-tag combinators. There are three layers:
+
+**1. Single-event adaptors** — wrap any `(g, x)` callable so it fires for exactly
+one event. One adaptor exists per event name (`on_discover_vertex`,
+`on_tree_edge`, `on_edge_relaxed`, …):
+
+```cpp
+#include <graph/algorithms.hpp>
+using namespace graph;
+
+std::vector<vertex_id_t<G>> order;
+breadth_first_search(g, s,
+    on_discover_vertex([&](auto& g, auto u) { order.push_back(vertex_id(g, u)); }));
+```
+
+**2. `make_visitor(...)`** — fan a single traversal out to several sub-visitors.
+A composite only exposes an `on_X` method when at least one child handles event
+`X`, so unused events still compile away to nothing. Descriptor-form and id-form
+children can be mixed freely:
+
+```cpp
+auto pred = make_vertex_property_map<G, vertex_id_t<G>>(g);
+auto dist = make_vertex_property_map<G, int>(g);
+std::vector<vertex_id_t<G>> order;
+
+breadth_first_search(g, s,
+    make_visitor(
+        on_tree_edge(predecessor_recorder(pred)),
+        on_tree_edge(distance_recorder(dist)),   // hop-count layering
+        on_discover_vertex([&](auto& g, auto u) { order.push_back(vertex_id(g, u)); })));
+```
+
+**3. Prebuilt recorders** — ready-made `(g, x) -> void` callables for the most
+common bookkeeping; you choose the event to bind them to:
+
+| Recorder | Records | Typical event |
+|----------|---------|---------------|
+| `predecessor_recorder(pred)` | `pred[target] = source` | `on_tree_edge` (BFS/DFS), `on_edge_relaxed` (Dijkstra/Bellman-Ford) |
+| `distance_recorder(dist, weight_fn)` | `dist[target] = dist[source] + weight(g, uv)` | `on_edge_relaxed` (weighted) |
+| `distance_recorder(dist)` | `dist[target] = dist[source] + 1` | `on_tree_edge` (hop-count layering) |
+| `time_stamper(time_map, clock)` | `time[u] = clock++` | `on_discover_vertex` / `on_finish_vertex` |
+
+Because the recorders are event-agnostic, the same pieces work for Dijkstra by
+binding them to the relaxation event:
+
+```cpp
+auto pred = make_vertex_property_map<G, vertex_id_t<G>>(g);
+dijkstra_shortest_paths(g, s, dist, weight,
+    make_visitor(
+        on_edge_relaxed(predecessor_recorder(pred)),
+        on_edge_relaxed(distance_recorder(dist, weight))));
+```
+
+A `time_stamper` advances its `clock` by reference, so two stampers sharing one
+counter produce interleaved discover/finish timestamps:
+
+```cpp
+auto discover = make_vertex_property_map<G, int>(g);
+auto finish   = make_vertex_property_map<G, int>(g);
+int  clock    = 0;
+depth_first_search(g, s,
+    make_visitor(
+        on_discover_vertex(time_stamper(discover, clock)),
+        on_finish_vertex(time_stamper(finish, clock))));
+```
+
+> Misspelled event names are caught at compile time: BFS, DFS, Dijkstra, and
+> Bellman-Ford `static_assert` on `valid_visitor`, so a visitor with no
+> recognized `on_*` method produces a clear diagnostic instead of silently doing
+> nothing.
 
 ---
 

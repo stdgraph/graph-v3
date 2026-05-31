@@ -423,7 +423,7 @@ TEST_CASE("connected_components (UAL) - single vertex", "[algorithm][connected_c
   using Graph = undirected_adjacency_list<int, int>;
 
   Graph g;
-  g.create_vertex(0);
+  g.add_vertex(0);
   std::vector<uint32_t> component(num_vertices(g));
 
   size_t num_components = connected_components(g, container_value_fn(component));
@@ -491,7 +491,7 @@ TEST_CASE("connected_components (UAL) - isolated vertices", "[algorithm][connect
   // Five isolated vertices
   Graph g;
   for (int i = 0; i < 5; ++i) {
-    g.create_vertex(i);
+    g.add_vertex(i);
   }
   std::vector<uint32_t> component(num_vertices(g));
 
@@ -602,10 +602,10 @@ TEST_CASE("connected_components (UAL) - with vertex values", "[algorithm][connec
 
   // Disconnected with vertex values
   Graph g;
-  g.create_vertex(100);
-  g.create_vertex(200);
-  g.create_vertex(300);
-  g.create_edge(0, 1, 1);
+  g.add_vertex(100);
+  g.add_vertex(200);
+  g.add_vertex(300);
+  g.add_edge(0, 1, 1);
   std::vector<uint32_t> component(num_vertices(g));
 
   size_t num_components = connected_components(g, container_value_fn(component));
