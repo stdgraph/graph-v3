@@ -991,6 +991,25 @@ public: // Construction/Destruction/Assignment
   dynamic_graph_base(vertex_allocator_type alloc) : vertices_(alloc), partition_(alloc) { terminate_partitions(); }
 
   /**
+   * @brief Construct a graph with a fixed number of vertices and no edges.
+   * 
+   * Pre-creates @p vertex_count default-constructed vertices (ids @c 0 to @c vertex_count-1), analogous to
+   * Boost.Graph's @c adjacency_list(n) constructor. Edges can then be added incrementally with @c add_edge().
+   * If vertices have a user-defined value (e.g. VV not void), the value must be default-constructable.
+   * 
+   * @note Only supported for resizable (sequential) vertex containers; for associative vertex containers no
+   *       vertices are created.
+   * 
+   * @param vertex_count The number of vertices to create.
+   * @param alloc        Used to allocate vertices and edges.
+  */
+  dynamic_graph_base(size_type vertex_count, vertex_allocator_type alloc)
+        : vertices_(alloc), partition_(alloc) {
+    resize_vertices(vertex_count);
+    terminate_partitions();
+  }
+
+  /**
    * @brief Construct the graph using edge and vertex ranges.
    * 
    * The value_type of @c erng must be converted to @c copyable_edge_t<G> before it can be
@@ -2302,6 +2321,18 @@ public: // Construction/Destruction/Assignment
   */
   dynamic_graph(allocator_type alloc) : base_type(alloc) {}
 
+  /**
+   * @brief Construct a dynamic_graph with a fixed number of vertices and no edges.
+   * 
+   * Pre-creates @p vertex_count default-constructed vertices (ids @c 0 to @c vertex_count-1), analogous to
+   * Boost.Graph's @c adjacency_list(n) constructor. Edges can then be added incrementally with @c add_edge().
+   * 
+   * @param vertex_count The number of vertices to create.
+   * @param alloc        Used to allocate vertices and edges.
+  */
+  dynamic_graph(typename base_type::size_type vertex_count, allocator_type alloc = allocator_type())
+        : base_type(vertex_count, alloc) {}
+
 public: // Graph value accessors
   /**
    * @brief Returns the user-defined value for the graph.
@@ -2454,6 +2485,18 @@ public: // Construction/Destruction/Assignment
    * @param alloc Used to allocate vertices and edges.
   */
   dynamic_graph(allocator_type alloc) : base_type(alloc) {}
+
+  /**
+   * @brief Construct a dynamic_graph with a fixed number of vertices and no edges.
+   * 
+   * Pre-creates @p vertex_count default-constructed vertices (ids @c 0 to @c vertex_count-1), analogous to
+   * Boost.Graph's @c adjacency_list(n) constructor. Edges can then be added incrementally with @c add_edge().
+   * 
+   * @param vertex_count The number of vertices to create.
+   * @param alloc        Used to allocate vertices and edges.
+  */
+  dynamic_graph(typename base_type::size_type vertex_count, allocator_type alloc = allocator_type())
+        : base_type(vertex_count, alloc) {}
 
   /**
    * @brief Constructs the graph from a range of edge data and range of vertex data.

@@ -138,11 +138,11 @@ These are behavioral analogues, not strict one-to-one translations. In particula
 | `BidirectionalGraph` | `bidirectional_adjacency_list<G>` | `in_edges(g, u)` available |
 | `AdjacencyGraph` | Part of `adjacency_list<G>` | `neighbors(g, u)` view |
 | `VertexListGraph` | `vertex_range<G>` | `vertices(g)` returns range |
-| `EdgeListGraph` | `edgelist(g)` view | Not a concept — a view function |
+| `EdgeListGraph` | `basic_sourced_edgelist<EL>` / `basic_sourced_index_edgelist<EL>` | Concepts for an edgelist (range of edges); `edgelist(g)` is a *view* that produces such a range from an adjacency list |
 | `VertexAndEdgeListGraph` | `adjacency_list<G>` | Combined by default |
 | `AdjacencyMatrix` | ❌ Not available | No O(1) edge lookup concept |
-| `MutableGraph` | ❌ No unified concept | `dynamic_graph` is batch-load oriented; `undirected_adjacency_list` supports create-vertex/create-edge and edge erasure |
-| `PropertyGraph` | ❌ No formal concept | CPOs `vertex_value`/`edge_value` serve the role |
+| `MutableGraph` | ❌ No unified concept | No mutating CPOs are defined in the current design |
+| `PropertyGraph` | ❌ No formal concept | CPOs `vertex_value`/`edge_value` and their matching `vertex_value_t<G>/edge_value_t<G>` serve the role |
 | `ColorValue` | ❌ Internal only | Hidden inside algorithms |
 
 ### Key Concept Differences
@@ -162,8 +162,8 @@ These are behavioral analogues, not strict one-to-one translations. In particula
 | `graph_traits<G>::vertex_descriptor` | `vertex_t<G>` (descriptor-like handle); use `vertex_id_t<G>` when you specifically need the key/index |
 | `graph_traits<G>::edge_descriptor` | `edge_t<G>` |
 | `graph_traits<G>::vertex_iterator` | `vertex_iterator_t<G>` |
-| `graph_traits<G>::out_edge_iterator` | `iterator_t<vertex_edge_range_t<G>>` |
-| `graph_traits<G>::in_edge_iterator` | `iterator_t<in_edge_range_t<G>>` |
+| `graph_traits<G>::out_edge_iterator` | `out_edge_iterator_t<G>` |
+| `graph_traits<G>::in_edge_iterator` | `in_edge_iterator_t<G>` |
 | `graph_traits<G>::adjacency_iterator` | (use `neighbors(g, u)` view) |
 | `graph_traits<G>::directed_category` | (implicit in type: `dynamic_graph` vs `undirected_adjacency_list`) |
 | `graph_traits<G>::traversal_category` | (replaced by concept constraints) |
@@ -717,21 +717,40 @@ To achieve full BGL parity, the following generators are still needed:
 ```cpp
 typedef boost::adjacency_list<vecS, vecS, directedS,
     no_property, property<edge_weight_t, double>> Graph;
-typedef graph_traits<Graph>::vertex_descriptor Vertex;
-typedef graph_traits<Graph>::edge_descriptor Edge;
+typedef graph_traits<Graph>::vertex_descriptor Vertex; // integral (size_t) for vecS
+typedef graph_traits<Graph>::edge_descriptor   Edge;
+typedef graph_traits<Graph>::vertices_size_type VId;  // same as vertex_descriptor for vecS
 ```
 
 **graph-v3:**
+
+Define a graph based on `dynamic_graph`. This is similar to the graph used by BGL, but it's
+not the only graph type supported.
 ```cpp
-using Graph = graph::dynamic_graph<double>; // EV=double, VV=void
-using VId = graph::vertex_id_t<Graph>;
+#include <graph/container/traits/vov_graph_traits.hpp>
+using Graph  = graph::container::vov_graph<double>; // vecS vertices, vecS edges, EV=double
+using Vertex = vertex_t<Graph>;
+using Edge   = edge_t<Graph>;
+using VId    = graph::vertex_id_t<Graph>; // integral in this example, but may be non-integral
 ```
+
+Graphs may also be defined using standard containers. The following has the same characteristics
+as the `vov_graph` above. Construction and mutation functions (e.g. add/remove for vertices and
+edges) are unique to a graph type.
+```cpp
+using Graph  = vector<<vector<pair<size_t,double>>>; // vecS vertices, vecS edges, EV=double
+using Vertex = vertex_t<Graph>;
+using Edge   = edge_t<Graph>;
+using VId    = graph::vertex_id_t<Graph>; // integral in this example, but may be non-integral
+```
+
+User-defined graphs can easily be used by by overriding 3-7 CPO functions for the graph.
 
 #### Pattern 2: Graph Construction with add_edge
 
 **BGL:**
 ```cpp
-Graph g(5);
+Graph g(5); // 5 vertices, no edges
 add_edge(0, 1, 10.0, g);
 add_edge(1, 2, 20.0, g);
 add_edge(2, 3, 30.0, g);
@@ -739,11 +758,16 @@ add_edge(2, 3, 30.0, g);
 
 **graph-v3:**
 ```cpp
-Graph g({{0,1,10.0}, {0,2,20.0}, {2,3,30.0}});
-// Or with incremental mutation (both containers support full mutation API):
-dynamic_graph<double> g;  // or undirected_adjacency_list<double>
-auto u = g.add_vertex(); auto v = g.add_vertex(); // ...
-g.add_edge(u, v, 10.0);
+Graph g(5); // 5 vertices, no edges
+g.add_edge(0, 1, 10.0);
+g.add_edge(1, 2, 20.0);
+g.add_edge(2, 3, 30.0);
+```
+* Note that add_edge is a member function of g. There are no mutating CPOs at this time.
+
+Or with an _Initializer list_
+```cpp
+Graph g({{0,1,10.0}, {1,2,20.0}, {2,3,30.0}});
 ```
 
 #### Pattern 3: Vertex/Edge Iteration
@@ -760,9 +784,20 @@ for (tie(vi, vi_end) = vertices(g); vi != vi_end; ++vi) {
 ```
 
 **graph-v3:**
+
+Using views:
 ```cpp
 for (auto&& [uid, u] : vertexlist(g)) {
-    for (auto&& [tid, uv] : incidence(g, u)) {
+    for (auto&& [vid, uv] : incidence(g, u)) {
+        double w = edge_value(g, uv);
+    }
+}
+```
+
+Using lower-level CPO functions directly:
+```cpp
+for (auto u : vertices(g)) {
+    for (auto uv : out_edges(g, u)) {
         double w = edge_value(g, uv);
     }
 }
@@ -782,10 +817,15 @@ dijkstra_shortest_paths(g, s,
 **graph-v3:**
 ```cpp
 vector<VId> pred(num_vertices(g));
-vector<double> dist(num_vertices(g), numeric_limits<double>::max());
+vector<double> dist(num_vertices(g));
+init_shortest_paths(g, dist, pred);  // dist -> infinite_distance, pred -> self-id
 dijkstra_shortest_paths(g, {s}, container_value_fn(dist), container_value_fn(pred),
     [](const auto& g, const auto& uv) { return edge_value(g, uv); });
 ```
+
+> **Note:** BGL's full `dijkstra_shortest_paths` initializes the distance and predecessor
+> maps internally. graph-v3 does not auto-initialize, so the caller must call
+> `init_shortest_paths(g, dist, pred)` first (or pre-fill `dist` with `infinite_distance<double>()`).
 
 #### Pattern 5: Custom BFS Visitor
 
@@ -816,7 +856,6 @@ dijkstra_shortest_paths(fg, s, ...);
 
 **graph-v3:**
 ```cpp
-#include <graph/adaptors/filtered_graph.hpp>
 auto ep = [&](auto&& uv) { return edge_value(g, uv) > 5.0; };
 auto fg = graph::adaptors::filtered_graph(g, graph::adaptors::keep_all{}, ep);
 dijkstra_shortest_paths(fg, {s}, dist_fn, pred_fn, weight_fn);
@@ -883,6 +922,15 @@ There is **no `graph_traits` to specialise**. A CPO is satisfied in one of three
 2. A free function found by ADL in the namespace of `G` (e.g. `vertices(g)` in namespace `boost`).
 3. A built-in default that works when `G` matches a recognised pattern (e.g. random-access range of inner ranges of integers).
 
+> **Note:** This refers to *adapting* an external graph type — there is no trait to
+> specialise to teach graph-v3 about your type; you satisfy the CPOs instead. This is
+> distinct from `dynamic_graph`, the container used in many examples, which *does* take a
+> traits template parameter that selects the container types for vertices and edges.
+> Pre-defined combinations are provided as aliases in their own headers (e.g. `vov_graph`
+> = vector-of-vector). Because those traits constrain containers via *concepts* (not
+> concrete standard-library types), containers from other libraries can be used as long
+> as they model the required concepts.
+
 For BGL types you will use **option 2**: add free functions in `namespace boost`. ADL will find them because `boost::adjacency_list` lives in that namespace.
 
 ### 12.2 Recommended Layout
@@ -902,6 +950,16 @@ Put the adapter in its own header, included **before** any graph-v3 algorithm he
 All adapter functions go inside `namespace boost { ... }` so ADL picks them up.
 
 ### 12.3 Minimal Adapter for `boost::adjacency_list`
+
+> **Note:** graph-v3 already ships a complete, production-ready BGL adaptor — prefer it
+> over hand-rolling your own. Include `<graph/adaptors/bgl/graph_adaptor.hpp>` (and
+> `<graph/adaptors/bgl/property_bridge.hpp>` for property maps). It supports `vecS`/`listS`/`setS`
+> storage, `directedS`/`undirectedS`/`bidirectionalS`, `in_edges`, and BGL property-map bridging.
+> See [docs/user-guide/bgl-adaptor.md](../docs/user-guide/bgl-adaptor.md) and
+> [examples/bgl_adaptor_example.cpp](../examples/bgl_adaptor_example.cpp).
+>
+> The minimal example below is kept for reference: it shows *how* CPO-based adaptation works
+> and serves as a template for adapting other third-party graph types.
 
 The example below adapts `boost::adjacency_list<vecS, vecS, directedS, VBundle, EBundle>` — the most common BGL configuration. It is the analogue of graph-v3's `vov_graph_traits`-backed `dynamic_graph`.
 
@@ -1025,6 +1083,25 @@ graph::dijkstra_shortest_paths(g, {source}, distances, predecessors, weight);
 ```
 
 **Exterior property maps.** Pass them as ordinary lambdas — graph-v3 algorithms accept any invocable taking an edge or vertex descriptor.
+
+**No bundled properties.** When the BGL `adjacency_list` carries no bundled properties, you don't
+need `vertex_value` / `edge_value` at all. Instead, define a separate function object per property
+whose call interface takes the graph plus a descriptor — `prop(g, u)` for vertex properties or
+`prop(g, uv)` for edge properties — and hand each one to the algorithms that consume it:
+
+```cpp
+// Pull values from an interior or exterior BGL property map.
+auto weight = [wmap = ::boost::get(::boost::edge_weight, g)](const auto& g, auto uv) -> double {
+    return ::boost::get(wmap, uv);     // prop(g, uv)
+};
+auto vcolor = [cmap = ::boost::get(::boost::vertex_color, g)](const auto& g, auto u) {
+    return ::boost::get(cmap, u);      // prop(g, u)
+};
+
+graph::dijkstra_shortest_paths(g, {source}, distances, predecessors, weight);
+```
+
+Each property is an independent callable, so you only define the ones a given algorithm requires.
 
 ### 12.6 Other BGL Container Configurations
 
