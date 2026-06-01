@@ -41,7 +41,7 @@ This guide serves two audiences:
 
 ## 1. Executive Summary
 
-graph-v3 is a ground-up C++20 redesign targeting ISO standardization (P3126–P3131, P3337). It replaces BGL's iterator-pair/tag-dispatch/property-list architecture with CPOs, ranges, concepts, and structured bindings. The redesign is fundamentally cleaner but still covers only a modest fraction of classic BGL's total algorithm surface area and lacks several adaptors, I/O formats, and generators that BGL users rely on.
+graph-v3 is a ground-up C++20 redesign targeting ISO standardization (P3126–P3131, P3337). It replaces BGL's iterator-pair/tag-dispatch/property-list architecture with CPOs, ranges, concepts, and structured bindings. The redesign is fundamentally cleaner but still covers only a modest fraction of classic BGL's total algorithm surface area and lacks several adaptors and algorithms that BGL users rely on.
 
 **Key strengths of graph-v3 over BGL:**
 - Zero-config adaptation of standard containers (`vector<vector<int>>` is a valid graph)
@@ -54,13 +54,12 @@ graph-v3 is a ground-up C++20 redesign targeting ISO standardization (P3126–P3
 - `transpose_view` is a zero-cost adaptor (no wrapper descriptor types)
 - `filtered_graph` adaptor (vertex/edge predicates) modelling `adjacency_list`
 - Ready-to-use BGL adaptor (`graph::bgl::graph_adaptor`) for incremental migration
-- Three I/O formats already implemented (DOT, GraphML, JSON)
+- Full BGL I/O format parity plus JSON (DOT, GraphML, JSON, DIMACS, METIS, adjacency-list text)
+- Full BGL graph-generator parity (Erdős-Rényi G(n,p)/G(n,m), Barabási-Albert, Watts-Strogatz, R-MAT, PLOD, SSCA#2, 2D grid, path, complete graph)
 
 **Key gaps requiring attention for BGL migration:**
 - Dozens of missing algorithms across flow, matching, coloring, planarity, isomorphism, centrality, layout, and related areas
 - No `subgraph` hierarchy with descriptor mapping
-- No DIMACS or METIS I/O
-- Graph generators partially implemented (Erdős-Rényi G(n,p), Barabási-Albert, 2D grid, path available; Watts-Strogatz, R-MAT, complete graph still missing)
 - No `adjacency_matrix` container
 - No `copy_graph` utility with cross-type and property mapping support
 - No `labeled_graph` adaptor (string labels → vertex mapping)
@@ -411,14 +410,14 @@ graph-v3's lazy view system is a significant advancement over BGL:
 |--------|-----|----------|----------|
 | **DOT / GraphViz** | `read_graphviz()`, `write_graphviz()` | ✅ `write_dot()`, `read_dot()` | 🔴 High — most common format |
 | **GraphML (XML)** | `read_graphml()`, `write_graphml()` | ✅ `write_graphml()`, `read_graphml()` | 🟡 Medium |
-| **DIMACS** | `read_dimacs_max_flow()`, `write_dimacs_max_flow()` | ❌ None | 🟡 Medium (needed for flow algorithms) |
-| **METIS** | `metis_reader` class | ❌ None | 🟢 Low |
-| **Adjacency List Text** | `operator<<` / `operator>>` | ❌ None | 🟢 Low |
+| **DIMACS** | `read_dimacs_max_flow()`, `write_dimacs_max_flow()` | ✅ `write_dimacs()`, `write_dimacs_max_flow()`, `read_dimacs()` | 🟡 Medium (needed for flow algorithms) |
+| **METIS** | `metis_reader` class | ✅ `write_metis()`, `read_metis()` | 🟢 Low |
+| **Adjacency List Text** | `operator<<` / `operator>>` | ✅ `write_adjacency_list_text()`, `read_adjacency_list_text()` | 🟢 Low |
 | **JSON** | None | ✅ `write_json()`, `read_json()` | 🟡 Medium (modern format) |
 
-**Status:** DOT, GraphML, and JSON readers/writers are implemented and shipped. Headers live under `include/graph/io/` (`dot.hpp`, `graphml.hpp`, `json.hpp`). Reader functions return type-tagged graph objects (`dot_graph`, `graphml_graph`, `json_graph`) suitable for use with all graph-v3 algorithms.
+**Status:** All six interchange formats are implemented and shipped. Headers live under `include/graph/io/` (`dot.hpp`, `graphml.hpp`, `json.hpp`, `dimacs.hpp`, `metis.hpp`, `adjacency_list_text.hpp`). Writers are generic over any graph satisfying the adjacency-list concepts; readers return lightweight type-tagged parsed structures (`dot_graph`, `graphml_graph`, `json_graph`, `dimacs_graph`, `metis_graph`, `adjacency_list_text_graph`) suitable for post-processing into any graph-v3 container. DIMACS supports the max-flow, shortest-path, and edge (clique/coloring) variants; METIS handles the optional `fmt`/`ncon` weight flags; both normalize the file's 1-indexed ids to 0-indexed.
 
-**Recommendation:** Implement DIMACS next — needed for the standard max-flow benchmark suite once flow algorithms land. METIS and adjacency-list text are low priority.
+**Recommendation:** None outstanding — graph-v3 now matches BGL's I/O format coverage and adds JSON on top. Future work is limited to broadening the parsed subsets (e.g. DOT subgraphs, GraphML nested graphs) as needs arise.
 
 ### DOT API — `std::format`-Based (implemented)
 
@@ -527,15 +526,15 @@ auto read_graphml(istream& is) -> dynamic_graph<std::string, std::string>;
 | Generator | BGL Header | graph-v3 | Priority |
 |-----------|-----------|----------|----------|
 | **Erdős-Rényi G(n,p)** | `erdos_renyi_generator.hpp` | ✅ `<graph/generators/erdos_renyi.hpp>` | ✅ Done |
-| **Erdos-Renyi G(n,m)** | (same) | ❌ Not available | 🟡 Medium |
+| **Erdos-Renyi G(n,m)** | (same) | ✅ `<graph/generators/gnm.hpp>` | ✅ Done |
 | **Barabási–Albert (preferential attachment)** | — | ✅ `<graph/generators/barabasi_albert.hpp>` | ✅ Done |
 | **2D Grid (4-connected)** | `mesh_graph_generator.hpp` | ✅ `<graph/generators/grid.hpp>` | ✅ Done |
 | **Path graph** | — | ✅ `<graph/generators/path.hpp>` | ✅ Done |
-| **Small World (Watts-Strogatz)** | `small_world_generator.hpp` | ❌ Not available | 🟡 Medium |
-| **PLOD (Power-Law Out-Degree)** | `plod_generator.hpp` | ❌ Not available (use Barabási–Albert) | 🟡 Medium |
-| **R-MAT** | `rmat_graph_generator.hpp` | ❌ Not available | 🟡 Medium |
-| **SSCA#2** | `ssca_graph_generator.hpp` | ❌ Not available | 🟢 Low |
-| **Complete Graph K(n)** | — (manual) | ❌ Not available | 🟢 Low |
+| **Small World (Watts-Strogatz)** | `small_world_generator.hpp` | ✅ `<graph/generators/watts_strogatz.hpp>` | ✅ Done |
+| **PLOD (Power-Law Out-Degree)** | `plod_generator.hpp` | ✅ `<graph/generators/plod.hpp>` | ✅ Done |
+| **R-MAT** | `rmat_graph_generator.hpp` | ✅ `<graph/generators/rmat.hpp>` | ✅ Done |
+| **SSCA#2** | `ssca_graph_generator.hpp` | ✅ `<graph/generators/ssca.hpp>` | ✅ Done |
+| **Complete Graph K(n)** | — (manual) | ✅ `<graph/generators/complete.hpp>` | ✅ Done |
 
 ### graph-v3 Generator API
 
@@ -548,6 +547,9 @@ using namespace graph::generators;
 // Erdős–Rényi G(n,p) — O(E) geometric-skip algorithm (Batagelj & Brandes 2005)
 auto er = erdos_renyi(10'000u, 8.0 / 10'000);    // ~80K directed edges
 
+// Erdős–Rényi G(n,m) — fixed edge count, distinct edges sampled uniformly
+auto erm = erdos_renyi_gnm(10'000u, 80'000u);    // exactly 80K directed edges
+
 // 2D grid — bidirectional 4-connected, E/V ≈ 4
 auto grid = grid_2d(100u, 100u);                  // 10K vertices, ~40K edges
 
@@ -556,6 +558,21 @@ auto ba = barabasi_albert(10'000u, 4u);           // E/V ≈ 8
 
 // Path — 0 → 1 → 2 → … → (n−1), minimum-traffic baseline
 auto path = path_graph(1'000u);                   // 999 edges
+
+// Complete K(n) — all ordered pairs (u,v), u ≠ v; dense stress test
+auto kn = complete_graph(100u);                   // 100*99 = 9'900 edges
+
+// Watts–Strogatz — small-world ring lattice with random rewiring
+auto ws = watts_strogatz(1'000u, 6u, 0.1);        // degree 6, 10% rewired
+
+// R-MAT — recursive-matrix, Graph500-style power-law / community structure
+auto rm = rmat(16u, 1u << 18);                    // 65'536 vertices, ~256K edges
+
+// PLOD — power-law out-degree (BGL parity; prefer Barabási–Albert)
+auto pl = plod(1'000u);                            // power-law out-degree
+
+// SSCA#2 — clique-based HPCS benchmark (dense cliques + sparse inter-clique)
+auto ss = ssca(1'000u, 8u, 0.2);                   // clustered graph
 
 // Load into any container:
 compressed_graph<double> g;
@@ -574,14 +591,9 @@ auto edges = erdos_renyi<uint64_t>(1'000'000ULL, 0.00001);
 
 ### Remaining Gaps
 
-To achieve full BGL parity, the following generators are still needed:
-
-| Generator | Notes |
-|-----------|-------|
-| Erdős-Rényi G(n,m) | Fixed edge count variant; wrap existing G(n,p) with rejection or Fisher-Yates |
-| Watts-Strogatz small world | Ring lattice + random rewiring |
-| R-MAT | Recursive matrix; important for Graph500 benchmarks |
-| Complete graph K(n) | Trivial to implement |
+None — all BGL graph generators now have graph-v3 equivalents. graph-v3 also adds
+the Barabási–Albert, complete-graph K(n), and path generators that BGL lacks as
+named functions.
 
 ---
 
@@ -1194,9 +1206,8 @@ These items block migration for the largest number of BGL users:
 | **`copy_graph` utility** | Utility | Low | Cross-type graph copy with property mapping |
 | **Betweenness Centrality** | Algorithm | Medium | Core network analysis metric |
 | **PageRank** | Algorithm | Low | Widely used iterative algorithm |
-| **DIMACS read/write** | I/O | Low | Required for max-flow benchmark suites |
 
-> **Done since the previous revision of this plan:** `filtered_graph` adaptor, DOT/GraphML/JSON I/O, Erdős-Rényi / Barabási-Albert / 2D grid / path generators, `kosaraju` + `tarjan_scc`, `afforest`, library-shipped BGL adaptor (`include/graph/adaptors/bgl/`), composable visitor toolkit (`visitor_factory.hpp`: `make_visitor`, single-event adaptors, `predecessor_recorder`, `distance_recorder`, `time_stamper`), `valid_visitor` strict concept with `static_assert` diagnostics in BFS/DFS/Dijkstra/Bellman-Ford.
+> **Done since the previous revision of this plan:** `filtered_graph` adaptor, DOT/GraphML/JSON I/O plus full BGL I/O parity (DIMACS via `dimacs.hpp`, METIS via `metis.hpp`, adjacency-list text via `adjacency_list_text.hpp`), Erdős-Rényi G(n,p)/G(n,m) / Barabási-Albert / 2D grid / path / complete-graph / Watts-Strogatz / R-MAT / PLOD / SSCA#2 generators, `kosaraju` + `tarjan_scc`, `afforest`, library-shipped BGL adaptor (`include/graph/adaptors/bgl/`), composable visitor toolkit (`visitor_factory.hpp`: `make_visitor`, single-event adaptors, `predecessor_recorder`, `distance_recorder`, `time_stamper`), `valid_visitor` strict concept with `static_assert` diagnostics in BFS/DFS/Dijkstra/Bellman-Ford.
 
 ### Phase 2: Common Algorithm Coverage
 
@@ -1211,7 +1222,7 @@ These items block migration for the largest number of BGL users:
 | **Transitive Closure/Reduction** | Algorithm | Medium | DAG analysis |
 | **Core Numbers (k-core)** | Algorithm | Medium | Network analysis |
 | **Cuthill-McKee Ordering** | Algorithm | Medium | Sparse matrix bandwidth reduction |
-| **DIMACS I/O** | I/O | Low | Needed for flow algorithm benchmarks |
+| ~~**DIMACS I/O**~~ | ~~I/O~~ | ~~Low~~ | ✅ Done — `dimacs.hpp` (`write_dimacs`, `write_dimacs_max_flow`, `read_dimacs`) |
 
 ### Phase 3: Advanced Features
 
@@ -1225,7 +1236,7 @@ These items block migration for the largest number of BGL users:
 | **Push-Relabel Max Flow** | Algorithm | High | High-performance max flow |
 | **Max Cardinality Matching** | Algorithm | Medium | Bipartite matching |
 | **Layout algorithms** | Algorithm | Medium | Graph visualization |
-| **Small World / PLOD generators** | Generator | Low | Synthetic graph generation |
+| ~~**Small World / PLOD generators**~~ | ~~Generator~~ | ~~Low~~ | ✅ Done — `watts_strogatz.hpp`, `plod.hpp`, `rmat.hpp`, `ssca.hpp` (full BGL generator parity) |
 | ~~**Lambda visitor composition**~~ | ~~API~~ | ~~Low~~ | ✅ Done — `visitor_factory.hpp`: `make_visitor`, single-event adaptors, `predecessor_recorder`, `distance_recorder`, `time_stamper` |
 | **BGL compatibility header** | Migration | Medium | `graph_traits` shim + name aliases for gradual migration |
 
@@ -1233,7 +1244,7 @@ These items block migration for the largest number of BGL users:
 
 | Item | Type | Effort | Rationale |
 |------|------|--------|-----------|
-| **METIS I/O** | I/O | Low | Legacy partitioning format |
+| ~~**METIS I/O**~~ | ~~I/O~~ | ~~Low~~ | ✅ Done — `metis.hpp` (`write_metis`, `read_metis`) |
 | **Parallel algorithms** | Algorithm | High | Parallel BFS, CC, PageRank |
 | **`grid_graph`** | Container | Medium | Implicit N-dimensional grid |
 | **Condensation graph** | Algorithm | Low | DAG from SCC |
@@ -1294,7 +1305,7 @@ Why this strengthens — rather than competes with — the `std::graph` goal:
 - Present the Boost-facing name (e.g. `boost::graph2` or `boost::graph::v2`) as an **alias / inline-namespace layer** over the canonical namespace, **not** a rename or fork. One source of truth, two presented names. This keeps the eventual `std::graph` migration a near-mechanical re-alias.
 - Use Boost's pre-acceptance "no stability guarantee" window to keep refining the design while usage data accrues, so a Boost release does not prematurely calcify the API/ABI that the proposal depends on.
 
-**Scope discipline:** the standardization core is the container / concept / CPO / traversal foundation (the core categories average ~75% in [Appendix C](#appendix-c-migration-readiness-scorecard)). Ship that foundation to Boost to validate it; the specialist algorithm domains still at 0% in Appendix A (flow, matching, coloring, planarity, isomorphism, ordering, layout) can land incrementally and block neither the Boost review nor the proposal.
+**Scope discipline:** the standardization core is the container / concept / CPO / traversal foundation (the core categories average ~78% in [Appendix C](#appendix-c-migration-readiness-scorecard)). Ship that foundation to Boost to validate it; the specialist algorithm domains still at 0% in Appendix A (flow, matching, coloring, planarity, isomorphism, ordering, layout) can land incrementally and block neither the Boost review nor the proposal.
 
 **Sequencing:**
 
@@ -1327,16 +1338,16 @@ The scores below are directional editorial estimates, not audited counts.
 | **Ordering/bandwidth** | 8 algorithms | 0 | 0% |
 | **Layout** | 5 algorithms | 0 | 0% |
 | **Graph adaptors** | 5 adaptors | 3 (transpose, filtered, BGL adaptor) | 60% |
-| **Graph I/O** | 5 formats | 3 (DOT, GraphML, JSON) | 60% |
-| **Graph generators** | 6 generators | 4 (path, grid, Erdős–Rényi, Barabási–Albert) | 67% |
+| **Graph I/O** | 5 formats | 6 (DOT, GraphML, JSON, DIMACS, METIS, adjacency-list text) | 100% |
+| **Graph generators** | 6 generators | 10 (path, grid, complete, Erdős–Rényi G(n,p)/G(n,m), Barabási–Albert, Watts–Strogatz, R-MAT, PLOD, SSCA#2) | 100% |
 | **Visitors** | 5 types + composable adaptors | Concept-checked visitors + composable adaptors (`make_visitor`, `on_*` event wrappers, `predecessor_recorder`, `distance_recorder`, `time_stamper`). The remaining unimplemented visitor events are related to colored tranversal not supported in graph-v3. | 90% |
 | **Graph mutation** | Full `MutableGraph` concept (CPOs) | Member-function mutation on both `dynamic_graph` and `undirected_adjacency_list`; no mutating CPOs | 70% |
 
-**Overall estimated BGL API coverage: ~46%**
+**Overall estimated BGL API coverage: ~50%**
 
-The unweighted average across all 20 scorecard rows is now ~46%, but the picture splits sharply:
+The unweighted average across all 20 scorecard rows is now ~50%, but the picture splits sharply:
 
-- **Core/everyday categories** (graph types, architecture, properties, traversal, MST, connectivity, I/O, adaptors, generators, visitors, mutation — 12 rows): average ~75%. For a BGL user doing graph construction, traversal, shortest paths, MST, or connectivity work, graph-v3 covers the vast majority of the API surface.
+- **Core/everyday categories** (graph types, architecture, properties, traversal, MST, connectivity, I/O, adaptors, generators, visitors, mutation — 12 rows): average ~80%. For a BGL user doing graph construction, traversal, shortest paths, MST, or connectivity work, graph-v3 covers the vast majority of the API surface.
 - **Specialist algorithm domains** (network flow, matching, coloring, planarity, isomorphism, ordering, layout — 7 rows): all at 0%, and these pull the overall figure down significantly.
 
 The coverage that exists is architecturally superior (C++20, ranges, concepts, CPOs, zero-config), and the library includes novel features (lazy traversal views, triangle counting, label propagation, Jaccard similarity) not found in BGL. The primary migration barrier is breadth of specialist algorithm coverage.

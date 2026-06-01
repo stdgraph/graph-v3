@@ -226,17 +226,327 @@ TEST_CASE("path_graph: basic properties", "[generators][path]") {
 }
 
 // ---------------------------------------------------------------------------
+// Erdős–Rényi G(n, m)
+// ---------------------------------------------------------------------------
+
+TEST_CASE("erdos_renyi_gnm: basic properties", "[generators][gnm]") {
+  constexpr uint32_t N = 100;
+  constexpr size_t   M = 500;
+  auto edges = erdos_renyi_gnm(N, M);
+
+  SECTION("exactly M edges") {
+    REQUIRE(edges.size() == M);
+  }
+
+  SECTION("no self-loops") {
+    for (const auto& e : edges) {
+      REQUIRE(e.source_id != e.target_id);
+    }
+  }
+
+  SECTION("all vertex ids in range [0, N)") {
+    for (const auto& e : edges) {
+      REQUIRE(e.source_id < N);
+      REQUIRE(e.target_id < N);
+    }
+  }
+
+  SECTION("edges are distinct") {
+    std::set<std::pair<uint32_t, uint32_t>> edge_set;
+    for (const auto& e : edges) {
+      edge_set.emplace(e.source_id, e.target_id);
+    }
+    REQUIRE(edge_set.size() == edges.size());
+  }
+
+  SECTION("sorted by source_id") {
+    REQUIRE(std::is_sorted(edges.begin(), edges.end(),
+                           [](const auto& a, const auto& b) { return a.source_id < b.source_id; }));
+  }
+
+  SECTION("deterministic with same seed") {
+    auto edges2 = erdos_renyi_gnm(N, M);
+    REQUIRE(edges.size() == edges2.size());
+    for (size_t i = 0; i < edges.size(); ++i) {
+      REQUIRE(edges[i].source_id == edges2[i].source_id);
+      REQUIRE(edges[i].target_id == edges2[i].target_id);
+    }
+  }
+
+  SECTION("m clamped to n*(n-1) when too large") {
+    constexpr uint32_t n = 5;
+    auto full = erdos_renyi_gnm(n, 1000);
+    REQUIRE(full.size() == static_cast<size_t>(n) * (n - 1));
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Complete graph K(n)
+// ---------------------------------------------------------------------------
+
+TEST_CASE("complete_graph: basic properties", "[generators][complete]") {
+  constexpr uint32_t N = 12;
+  auto edges = complete_graph(N);
+
+  SECTION("exactly N*(N-1) edges") {
+    REQUIRE(edges.size() == static_cast<size_t>(N) * (N - 1));
+  }
+
+  SECTION("no self-loops") {
+    for (const auto& e : edges) {
+      REQUIRE(e.source_id != e.target_id);
+    }
+  }
+
+  SECTION("every ordered pair (u, v) with u != v is present exactly once") {
+    std::set<std::pair<uint32_t, uint32_t>> edge_set;
+    for (const auto& e : edges) {
+      edge_set.emplace(e.source_id, e.target_id);
+    }
+    REQUIRE(edge_set.size() == edges.size());
+    for (uint32_t u = 0; u < N; ++u) {
+      for (uint32_t v = 0; v < N; ++v) {
+        if (u != v) {
+          REQUIRE(edge_set.count({u, v}) == 1);
+        }
+      }
+    }
+  }
+
+  SECTION("sorted by source_id") {
+    REQUIRE(std::is_sorted(edges.begin(), edges.end(),
+                           [](const auto& a, const auto& b) { return a.source_id < b.source_id; }));
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Watts–Strogatz small world
+// ---------------------------------------------------------------------------
+
+TEST_CASE("watts_strogatz: basic properties", "[generators][watts_strogatz]") {
+  constexpr uint32_t N    = 100;
+  constexpr uint32_t K    = 6;
+  constexpr double   beta = 0.1;
+  auto edges = watts_strogatz(N, K, beta);
+
+  SECTION("no self-loops") {
+    for (const auto& e : edges) {
+      REQUIRE(e.source_id != e.target_id);
+    }
+  }
+
+  SECTION("all vertex ids in range [0, N)") {
+    for (const auto& e : edges) {
+      REQUIRE(e.source_id < N);
+      REQUIRE(e.target_id < N);
+    }
+  }
+
+  SECTION("sorted by source_id") {
+    REQUIRE(std::is_sorted(edges.begin(), edges.end(),
+                           [](const auto& a, const auto& b) { return a.source_id < b.source_id; }));
+  }
+
+  SECTION("bidirectional: every (u,v) has matching (v,u)") {
+    std::set<std::pair<uint32_t, uint32_t>> edge_set;
+    for (const auto& e : edges) {
+      edge_set.emplace(e.source_id, e.target_id);
+    }
+    for (const auto& e : edges) {
+      REQUIRE(edge_set.count({e.target_id, e.source_id}) > 0);
+    }
+  }
+
+  SECTION("no duplicate undirected pairs") {
+    std::set<std::pair<uint32_t, uint32_t>> edge_set;
+    for (const auto& e : edges) {
+      edge_set.emplace(e.source_id, e.target_id);
+    }
+    REQUIRE(edge_set.size() == edges.size());
+  }
+
+  SECTION("beta = 0 yields a pure ring lattice with N*K directed edges") {
+    auto lattice = watts_strogatz(N, K, 0.0);
+    REQUIRE(lattice.size() == static_cast<size_t>(N) * K);
+  }
+
+  SECTION("deterministic with same seed") {
+    auto edges2 = watts_strogatz(N, K, beta);
+    REQUIRE(edges.size() == edges2.size());
+    for (size_t i = 0; i < edges.size(); ++i) {
+      REQUIRE(edges[i].source_id == edges2[i].source_id);
+      REQUIRE(edges[i].target_id == edges2[i].target_id);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// R-MAT
+// ---------------------------------------------------------------------------
+
+TEST_CASE("rmat: basic properties", "[generators][rmat]") {
+  constexpr uint32_t scale = 8; // 256 vertices
+  constexpr size_t   M     = 2000;
+  constexpr uint32_t N     = 1u << scale;
+  auto edges = rmat<uint32_t>(scale, M);
+
+  SECTION("no self-loops") {
+    for (const auto& e : edges) {
+      REQUIRE(e.source_id != e.target_id);
+    }
+  }
+
+  SECTION("all vertex ids in range [0, 2^scale)") {
+    for (const auto& e : edges) {
+      REQUIRE(e.source_id < N);
+      REQUIRE(e.target_id < N);
+    }
+  }
+
+  SECTION("edges are distinct") {
+    std::set<std::pair<uint32_t, uint32_t>> edge_set;
+    for (const auto& e : edges) {
+      edge_set.emplace(e.source_id, e.target_id);
+    }
+    REQUIRE(edge_set.size() == edges.size());
+  }
+
+  SECTION("edge count does not exceed requested m") {
+    REQUIRE(edges.size() <= M);
+  }
+
+  SECTION("sorted by source_id") {
+    REQUIRE(std::is_sorted(edges.begin(), edges.end(),
+                           [](const auto& a, const auto& b) { return a.source_id < b.source_id; }));
+  }
+
+  SECTION("deterministic with same seed") {
+    auto edges2 = rmat<uint32_t>(scale, M);
+    REQUIRE(edges.size() == edges2.size());
+    for (size_t i = 0; i < edges.size(); ++i) {
+      REQUIRE(edges[i].source_id == edges2[i].source_id);
+      REQUIRE(edges[i].target_id == edges2[i].target_id);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// PLOD
+// ---------------------------------------------------------------------------
+
+TEST_CASE("plod: basic properties", "[generators][plod]") {
+  constexpr uint32_t N = 200;
+  auto edges = plod(N);
+
+  SECTION("no self-loops") {
+    for (const auto& e : edges) {
+      REQUIRE(e.source_id != e.target_id);
+    }
+  }
+
+  SECTION("all vertex ids in range [0, N)") {
+    for (const auto& e : edges) {
+      REQUIRE(e.source_id < N);
+      REQUIRE(e.target_id < N);
+    }
+  }
+
+  SECTION("edges are distinct") {
+    std::set<std::pair<uint32_t, uint32_t>> edge_set;
+    for (const auto& e : edges) {
+      edge_set.emplace(e.source_id, e.target_id);
+    }
+    REQUIRE(edge_set.size() == edges.size());
+  }
+
+  SECTION("sorted by source_id") {
+    REQUIRE(std::is_sorted(edges.begin(), edges.end(),
+                           [](const auto& a, const auto& b) { return a.source_id < b.source_id; }));
+  }
+
+  SECTION("deterministic with same seed") {
+    auto edges2 = plod(N);
+    REQUIRE(edges.size() == edges2.size());
+    for (size_t i = 0; i < edges.size(); ++i) {
+      REQUIRE(edges[i].source_id == edges2[i].source_id);
+      REQUIRE(edges[i].target_id == edges2[i].target_id);
+    }
+  }
+
+  SECTION("generates at least some edges") {
+    REQUIRE(edges.size() > 0);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// SSCA#2
+// ---------------------------------------------------------------------------
+
+TEST_CASE("ssca: basic properties", "[generators][ssca]") {
+  constexpr uint32_t N = 200;
+  auto edges = ssca(N);
+
+  SECTION("no self-loops") {
+    for (const auto& e : edges) {
+      REQUIRE(e.source_id != e.target_id);
+    }
+  }
+
+  SECTION("all vertex ids in range [0, N)") {
+    for (const auto& e : edges) {
+      REQUIRE(e.source_id < N);
+      REQUIRE(e.target_id < N);
+    }
+  }
+
+  SECTION("sorted by source_id") {
+    REQUIRE(std::is_sorted(edges.begin(), edges.end(),
+                           [](const auto& a, const auto& b) { return a.source_id < b.source_id; }));
+  }
+
+  SECTION("deterministic with same seed") {
+    auto edges2 = ssca(N);
+    REQUIRE(edges.size() == edges2.size());
+    for (size_t i = 0; i < edges.size(); ++i) {
+      REQUIRE(edges[i].source_id == edges2[i].source_id);
+      REQUIRE(edges[i].target_id == edges2[i].target_id);
+    }
+  }
+
+  SECTION("generates edges (dense intra-clique structure)") {
+    REQUIRE(edges.size() > 0);
+  }
+
+  SECTION("clique size 1 with no inter-clique edges yields empty graph") {
+    auto isolated = ssca(N, /*max_clique_size*/ 1u, /*prob_inter_clique*/ 0.0);
+    REQUIRE(isolated.empty());
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Template parameter: custom VId type
 // ---------------------------------------------------------------------------
 
 TEST_CASE("generators work with uint64_t vertex ids", "[generators][template]") {
   auto er_edges   = erdos_renyi<uint64_t>(uint64_t{50}, 0.1);
+  auto gnm_edges  = erdos_renyi_gnm<uint64_t>(uint64_t{50}, 100);
   auto grid_edges = grid_2d<uint64_t>(uint64_t{5}, uint64_t{5});
   auto ba_edges   = barabasi_albert<uint64_t>(uint64_t{50}, uint64_t{2});
   auto path_edges = path_graph<uint64_t>(uint64_t{20});
+  auto kn_edges   = complete_graph<uint64_t>(uint64_t{8});
+  auto ws_edges   = watts_strogatz<uint64_t>(uint64_t{50}, uint64_t{4}, 0.1);
+  auto rmat_edges = rmat<uint64_t>(6, 100);
+  auto plod_edges = plod<uint64_t>(uint64_t{50});
 
   REQUIRE(er_edges.size() > 0);
+  REQUIRE(gnm_edges.size() == 100);
   REQUIRE(grid_edges.size() > 0);
   REQUIRE(ba_edges.size() > 0);
   REQUIRE(path_edges.size() == 19);
+  REQUIRE(kn_edges.size() == 8 * 7);
+  REQUIRE(ws_edges.size() > 0);
+  REQUIRE(rmat_edges.size() > 0);
+  REQUIRE(plod_edges.size() > 0);
+  auto ssca_edges = ssca<uint64_t>(uint64_t{50});
+  REQUIRE(ssca_edges.size() > 0);
 }

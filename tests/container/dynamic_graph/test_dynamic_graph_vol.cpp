@@ -1913,8 +1913,8 @@ TEST_CASE("vol graph properties and queries", "[dynamic_graph][vol][properties]"
     }
 
     REQUIRE(sinks.size() == 2);
-    REQUIRE(std::find(sinks.begin(), sinks.end(), 2) != sinks.end());
-    REQUIRE(std::find(sinks.begin(), sinks.end(), 3) != sinks.end());
+    REQUIRE(std::find(sinks.begin(), sinks.end(), size_t{2}) != sinks.end());
+    REQUIRE(std::find(sinks.begin(), sinks.end(), size_t{3}) != sinks.end());
   }
 
   SECTION("compute out-degree for each vertex") {
@@ -2508,8 +2508,8 @@ TEST_CASE("vol complete workflow scenarios", "[dynamic_graph][vol][workflow]") {
     }
 
     REQUIRE(ready_tasks.size() == 2);
-    REQUIRE(std::find(ready_tasks.begin(), ready_tasks.end(), 0) != ready_tasks.end()); // Task A
-    REQUIRE(std::find(ready_tasks.begin(), ready_tasks.end(), 3) != ready_tasks.end()); // Task D
+    REQUIRE(std::find(ready_tasks.begin(), ready_tasks.end(), size_t{0}) != ready_tasks.end()); // Task A
+    REQUIRE(std::find(ready_tasks.begin(), ready_tasks.end(), size_t{3}) != ready_tasks.end()); // Task D
   }
 }
 
