@@ -15,7 +15,16 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # Enable folder organization in IDEs
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-# Enable parallel compilation for MSVC (cl.exe only; clang-cl doesn't support /MP)
+# MSVC exception model: always enable standard C++ EH unwind semantics.
+#
+# This avoids warning C4530 ("C++ exception handler used, but unwind semantics
+# are not enabled") in Debug builds, especially from third-party targets such as
+# Catch2, and keeps behavior consistent across all targets.
+if(MSVC)
+    add_compile_options(/EHsc)
+endif()
+
+# Enable parallel compilation for MSVC cl.exe (clang-cl doesn't support /MP)
 if(MSVC AND NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     # Use /MP to enable parallel compilation with all available cores
     add_compile_options(/MP)

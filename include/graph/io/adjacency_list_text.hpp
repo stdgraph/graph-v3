@@ -103,15 +103,15 @@ inline adjacency_list_text_graph read_adjacency_list_text(std::istream& is) {
     if (colon != std::string::npos) line[colon] = ' ';
 
     std::istringstream ls(line);
-    std::string        source;
-    if (!(ls >> source)) continue; // blank line
+    std::string        src;
+    if (!(ls >> src)) continue; // blank line
 
-    ensure_vertex(source);
+    ensure_vertex(src);
 
-    std::string target;
-    while (ls >> target) {
-      ensure_vertex(target);
-      result.edges.push_back({source, target});
+    std::string dst;
+    while (ls >> dst) {
+      ensure_vertex(dst);
+      result.edges.push_back({src, dst});
     }
   }
 

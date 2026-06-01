@@ -965,8 +965,8 @@ public: // Vertex range accessors
     if (id >= size())
       return std::views::iota(edge_index_type{0}, edge_index_type{0});
 
-    auto start_idx = row_index_[id].index;
-    auto end_idx   = row_index_[id + 1].index;
+    auto start_idx = row_index_[static_cast<typename row_index_vector::size_type>(id)].index;
+    auto end_idx   = row_index_[static_cast<typename row_index_vector::size_type>(id + 1)].index;
     return std::views::iota(start_idx, end_idx);
   }
 
@@ -1018,7 +1018,7 @@ public: // Vertex range accessors
    * @note No bounds checking is performed. The caller must ensure edge_id is valid.
   */
   [[nodiscard]] constexpr vertex_id_type target_id(edge_id_type edge_id) const noexcept {
-    return col_index_[edge_id].index;
+    return col_index_[static_cast<typename col_index_vector::size_type>(edge_id)].index;
   }
 
   /**
