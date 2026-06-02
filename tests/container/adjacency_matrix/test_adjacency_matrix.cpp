@@ -3,7 +3,14 @@
 #include "graph/container/adjacency_matrix.hpp"
 
 #include <algorithm>
+#include <csignal>
 #include <vector>
+
+#if !defined(NDEBUG) && (defined(__unix__) || defined(__APPLE__))
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#endif
 
 using namespace graph;
 using namespace graph::adj_list;
@@ -34,6 +41,8 @@ TEST_CASE("adjacency_matrix: unweighted directed basics", "[container][adjacency
   REQUIRE(g.num_vertices() == 4);
   REQUIRE(g.num_edges() == 4);
   REQUIRE(g.has_edge(0, 1));
+  REQUIRE(g.exists(0, 1));
+  REQUIRE_FALSE(g.exists(3, 0));
   REQUIRE_FALSE(g.has_edge(1, 0));
 
   SECTION("vertices() yields sequential integral ids") {
@@ -79,6 +88,9 @@ TEST_CASE("adjacency_matrix: undirected adds reciprocal edge", "[container][adja
   REQUIRE(g.has_edge(1, 0));
   REQUIRE(g.has_edge(1, 2));
   REQUIRE(g.has_edge(2, 1));
+  REQUIRE(g.exists(0, 1));
+  REQUIRE(g.exists(1, 0));
+  REQUIRE_FALSE(g.exists(0, 2));
   REQUIRE(g.num_edges() == 4);
 }
 
@@ -92,14 +104,19 @@ TEST_CASE("adjacency_matrix: weighted edges expose target + value", "[container]
   g.add_edge(0, 2, 2.5);
   g.add_edge(1, 2, 3.5);
 
-  REQUIRE(g.weight(0, 1) == 1.5);
-  REQUIRE(g.weight(1, 2) == 3.5);
+  REQUIRE(g(0, 1) == 1.5);
+  REQUIRE(g(1, 2) == 3.5);
+  REQUIRE(g.exists(0, 1));
+  REQUIRE_FALSE(g.exists(2, 0));
+
+  const adjacency_matrix<double>& cg2 = g;
+  REQUIRE(cg2(0, 1) == 1.5);
 
   auto vs = vertices(g);
   auto u0 = *vs.begin();
 
   // out_edges yields the present targets; the weight is recovered via the
-  // edge_value CPO (the stored edge element is a {target, weight} pair).
+  // edge_value CPO.
   std::vector<std::pair<std::size_t, double>> edges;
   for (auto uv : out_edges(g, u0)) {
     edges.emplace_back(static_cast<std::size_t>(target_id(g, uv)), edge_value(g, uv));
@@ -110,6 +127,26 @@ TEST_CASE("adjacency_matrix: weighted edges expose target + value", "[container]
   REQUIRE(edges[0] == std::pair<std::size_t, double>{1, 1.5});
   REQUIRE(edges[1] == std::pair<std::size_t, double>{2, 2.5});
 }
+
+#if !defined(NDEBUG) && (defined(__unix__) || defined(__APPLE__))
+TEST_CASE("adjacency_matrix: operator()(u,v) asserts on missing edge in debug", "[container][adjacency_matrix]") {
+  adjacency_matrix<double> g(3);
+  g.add_edge(0, 1, 1.5);
+
+  const pid_t pid = fork();
+  REQUIRE(pid >= 0);
+
+  if (pid == 0) {
+    (void)g(2, 0); // Missing edge -> debug assert should fire.
+    _exit(0);
+  }
+
+  int status = 0;
+  REQUIRE(waitpid(pid, &status, 0) == pid);
+  REQUIRE(WIFSIGNALED(status));
+  REQUIRE(WTERMSIG(status) == SIGABRT);
+}
+#endif
 
 // =============================================================================
 // Edge-range + projection constructor
@@ -123,8 +160,10 @@ TEST_CASE("adjacency_matrix: construct from copyable_edge range (identity)", "[c
   REQUIRE(g.num_vertices() == 4);
   REQUIRE(g.num_edges() == 4);
   REQUIRE(g.has_edge(0, 1));
+  REQUIRE(g.exists(0, 1));
   REQUIRE(g.has_edge(2, 3));
   REQUIRE_FALSE(g.has_edge(3, 0));
+  REQUIRE_FALSE(g.exists(3, 0));
 }
 
 TEST_CASE("adjacency_matrix: construct from edge range with projection", "[container][adjacency_matrix]") {
@@ -143,8 +182,8 @@ TEST_CASE("adjacency_matrix: construct from edge range with projection", "[conta
   adjacency_matrix<double> g(3, ee, proj);
 
   REQUIRE(g.num_edges() == 3);
-  REQUIRE(g.weight(0, 1) == 1.5);
-  REQUIRE(g.weight(0, 2) == 2.5);
-  REQUIRE(g.weight(1, 2) == 3.5);
+  REQUIRE(g(0, 1) == 1.5);
+  REQUIRE(g(0, 2) == 2.5);
+  REQUIRE(g(1, 2) == 3.5);
 }
 

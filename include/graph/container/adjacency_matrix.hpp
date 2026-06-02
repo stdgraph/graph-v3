@@ -33,9 +33,8 @@
  *   - `graph::out_edges(g, u)` -> `u.inner_value(g)` is the row view, a forward range
  *                                 of edge-value elements -> wrapped in an
  *                                 `edge_descriptor_view`.
- *   - `graph::target_id(g, uv)`-> extracted from the stored row element: the column
- *                                 index (unweighted) or `pair::first` (weighted).
- *   - `graph::edge_value(g, uv)`-> the stored element's `pair::second` (weighted).
+ *   - `graph::target_id(g, uv)`-> extracted from the edge iterator's current column.
+ *   - `graph::edge_value(g, uv)`-> extracted from the referenced matrix cell (weighted).
  *
  * Cost model (inherent to dense matrices):
  *   - Edge existence / weight lookup: O(1).
@@ -46,11 +45,14 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <concepts>
+#include <cassert>
 #include <functional>
 #include <iterator>
 #include <ranges>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "graph/graph.hpp"
@@ -70,9 +72,13 @@ namespace _amx_detail {
   /// Presence flag storage type (1 byte; 0 = absent, 1 = present).
   using flag_t = std::uint8_t;
 
-  /// Edge element stored per cell: the target id (unweighted) or {target, weight} (weighted).
+  /// Edge element stored per cell: empty marker (unweighted) or edge value (weighted).
+  ///
+  /// Design note: target-id is not stored in each cell. The edge iterator keeps
+  /// the current column, allowing `target_id` to be answered directly from
+  /// descriptor position while keeping a single lookup into the row storage.
   template <class EV, class VId>
-  using edge_element_t = std::conditional_t<std::is_void_v<EV>, VId, std::pair<VId, EV>>;
+  using edge_element_t = std::conditional_t<std::is_void_v<EV>, std::monostate, EV>;
 
   /**
    * @brief Forward iterator over the present edges of a single matrix row.
@@ -103,6 +109,11 @@ namespace _amx_detail {
 
     [[nodiscard]] constexpr reference operator*() const noexcept { return cells_[col_]; }
     [[nodiscard]] constexpr pointer operator->() const noexcept { return cells_ + col_; }
+    [[nodiscard]] constexpr VId      target_id() const noexcept { return col_; }
+
+    [[nodiscard]] constexpr reference edge_value_ref() const noexcept {
+      return cells_[col_];
+    }
 
     constexpr row_edge_iterator& operator++() noexcept {
       ++col_;
@@ -334,13 +345,18 @@ public:
   [[nodiscard]] constexpr VId         order() const noexcept { return n_; }
   [[nodiscard]] constexpr std::size_t num_edges() const noexcept { return edge_count_; }
 
-  [[nodiscard]] constexpr bool has_edge(VId u, VId v) const noexcept { return flags_[index(u, v)] != flag_t{0}; }
+  /// True iff edge (u, v) is present.
+  [[nodiscard]] constexpr bool exists(VId u, VId v) const noexcept { return flags_[index(u, v)] != flag_t{0}; }
 
-  /// Edge weight of (u, v); only available for weighted matrices.
+  /// Back-compat alias for existence checks.
+  [[nodiscard]] constexpr bool has_edge(VId u, VId v) const noexcept { return exists(u, v); }
+
+  /// Natural read-only value access for edge (u, v); requires the edge to exist.
   template <class E = EV>
   requires weighted
-  [[nodiscard]] constexpr const E& weight(VId u, VId v) const noexcept {
-    return cells_[index(u, v)].second;
+  [[nodiscard]] constexpr const E& operator()(VId u, VId v) const noexcept {
+    assert(exists(u, v));
+    return cells_[index(u, v)];
   }
 
   // ---- mutation -----------------------------------------------------------
@@ -360,11 +376,29 @@ public:
   requires weighted
   constexpr void add_edge(VId u, VId v, E value) {
     set_cell(u, v);
+    cells_[index(u, v)] = value;
     if constexpr (!Directed) {
       set_cell(v, u);
-      cells_[index(v, u)].second = value;
+      cells_[index(v, u)] = value;
     }
-    cells_[index(u, v)].second = std::move(value);
+  }
+
+  template <typename G, typename EdgeDesc>
+  requires std::same_as<std::remove_cvref_t<G>, adjacency_matrix> &&
+           requires(const EdgeDesc& uv) {
+             uv.value().target_id();
+           }
+  [[nodiscard]] friend constexpr auto target_id(G&& /*g*/, const EdgeDesc& uv) noexcept {
+    return uv.value().target_id();
+  }
+
+  template <typename G, typename EdgeDesc>
+  requires weighted && std::same_as<std::remove_cvref_t<G>, adjacency_matrix> &&
+           requires(const EdgeDesc& uv) {
+             uv.value().edge_value_ref();
+           }
+  [[nodiscard]] friend constexpr decltype(auto) edge_value(G&& /*g*/, const EdgeDesc& uv) noexcept {
+    return uv.value().edge_value_ref();
   }
 
 protected:
@@ -381,11 +415,6 @@ private:
     if (cell == flag_t{0}) {
       cell = flag_t{1};
       ++edge_count_;
-    }
-    if constexpr (weighted) {
-      cells_[idx].first = v;
-    } else {
-      cells_[idx] = v;
     }
   }
 
@@ -430,8 +459,8 @@ public:
     return flag_mdspan{this->flags_data(), n, n};
   }
 
-  /// Natural element access: true iff edge (u, v) is present.
-  [[nodiscard]] bool operator()(VId u, VId v) const noexcept {
+  /// True iff edge (u, v) is present.
+  [[nodiscard]] bool exists(VId u, VId v) const noexcept {
     return presence()[static_cast<std::size_t>(u), static_cast<std::size_t>(v)] != flag_t{0};
   }
 };
