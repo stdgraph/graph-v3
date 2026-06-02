@@ -571,7 +571,8 @@ views, and algorithms work. `vertices(g)` yields the integral row indices, and
 
 | Operation | Complexity |
 |-----------|------------|
-| `has_edge(u, v)` / `weight(u, v)` | O(1) |
+| `exists(u, v)` / `has_edge(u, v)` | O(1) |
+| `operator()(u, v)` (weighted, const) | O(1) |
 | `add_edge(u, v[, val])` | O(1) |
 | Iterate `out_edges(g, u)` | O(order) (whole row scanned) |
 | `num_edges()` / `num_vertices()` | O(1) |
@@ -590,11 +591,13 @@ g.add_edge(0, 2);
 g.add_edge(2, 3);
 
 bool e = g.has_edge(0, 1);          // O(1)
+bool e2 = g.exists(0, 1);           // O(1)
 
-// Weighted (double) — weight recovered via the edge_value CPO or weight(u, v)
+// Weighted (double) — value recovered via edge_value CPO or const operator()(u, v)
 adjacency_matrix<double> w(3);
 w.add_edge(0, 1, 1.5);
-double wt = w.weight(0, 1);         // 1.5
+const auto& cw = w;
+double wt = cw(0, 1);               // 1.5
 
 // Undirected — adds the reciprocal edge automatically
 adjacency_matrix<void, std::uint32_t, /*Directed=*/false> u(3);
@@ -646,7 +649,7 @@ owning storage, but additionally exposes the dense presence plane as a 2-D
 #if defined(__cpp_lib_mdspan)
 md_adjacency_matrix<double> g(3);
 g.add_edge(0, 1, 2.5);
-bool present = g(0, 1);             // true
+bool present = g.exists(0, 1);      // true
 auto plane   = g.presence();       // std::mdspan<const std::uint8_t, dextents<size_t,2>>
 #endif
 ```

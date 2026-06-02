@@ -2,7 +2,7 @@
 
 A comprehensive analysis of the Boost Graph Library (BGL) and graph-v3, identifying migration paths, gaps, and recommended extensions to enable a smooth upgrade transition.
 
-> **Last reviewed:** 2026-05-30 against `include/graph/` source tree.
+> **Last reviewed:** 2026-06-01 against `include/graph/` source tree.
 
 ---
 
@@ -105,6 +105,8 @@ graph-v3 is a ground-up C++20 redesign targeting ISO standardization (P3126–P3
 | `adjacency_list<vecS, vecS, undirectedS, VP, EP>` | `undirected_adjacency_list<EV, VV, GV, VId>` | Closest built-in undirected container; dual-list design, not a storage/layout match for BGL `vecS` / `vecS` |
 | `compressed_sparse_row_graph<directedS, VP, EP>` | `compressed_graph<EV, VV, GV, VId, EIndex>` | Both CSR; graph-v3 uses projection-based loading |
 | `edge_list<Iter>` | Any `input_range` satisfying `basic_sourced_edgelist` | graph-v3 is more flexible — any range of edge-like tuples works |
+
+> **`adjacency_matrix` API note (2026-06):** use `exists(u, v)` (or `has_edge(u, v)` alias) for edge presence checks. For weighted matrices, direct value read access is `const operator()(u, v)`. The older `weight(u, v)` helper and mutable `operator()(u, v)` are removed.
 
 ### Closest Selector Analogues
 
