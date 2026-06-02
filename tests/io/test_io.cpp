@@ -8,6 +8,7 @@
 #include <graph/io.hpp>
 #include <graph/container/traits/vov_graph_traits.hpp>
 
+#include <cstdint>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -364,4 +365,248 @@ TEST_CASE("write_graphml: XML-escapes values", "[io][graphml]") {
   std::string output = os.str();
 
   REQUIRE(output.find("a &lt; b &amp; c &gt; d") != std::string::npos);
+}
+
+// ===========================================================================
+// DIMACS tests
+// ===========================================================================
+
+TEST_CASE("write_dimacs: generic arc list", "[io][dimacs]") {
+  auto g = make_test_graph();
+  std::ostringstream os;
+  write_dimacs(os, g);
+  std::string output = os.str();
+
+  REQUIRE(output.find("p sp 3 3") != std::string::npos);
+  // 1-indexed endpoints: 0->1 becomes "a 1 2", weight 1.5
+  REQUIRE(output.find("a 1 2 1.5") != std::string::npos);
+  REQUIRE(output.find("a 1 3 2.5") != std::string::npos);
+  REQUIRE(output.find("a 2 3 3.5") != std::string::npos);
+}
+
+TEST_CASE("write_dimacs: custom problem type", "[io][dimacs]") {
+  auto g = make_plain_graph();
+  std::ostringstream os;
+  write_dimacs(os, g, "max");
+  std::string output = os.str();
+
+  REQUIRE(output.find("p max 3 4") != std::string::npos);
+}
+
+TEST_CASE("write_dimacs_max_flow: source/sink descriptors", "[io][dimacs]") {
+  auto g = make_test_graph();
+  std::ostringstream os;
+  write_dimacs_max_flow(os, g, 0u, 2u,
+    [](const auto& gr, auto uv) { return edge_value(gr, uv); });
+  std::string output = os.str();
+
+  REQUIRE(output.find("p max 3 3") != std::string::npos);
+  REQUIRE(output.find("n 1 s") != std::string::npos);
+  REQUIRE(output.find("n 3 t") != std::string::npos);
+  REQUIRE(output.find("a 1 2 1.5") != std::string::npos);
+}
+
+TEST_CASE("read_dimacs: parse max-flow problem", "[io][dimacs]") {
+  std::istringstream is(R"(c sample max-flow problem
+p max 4 5
+n 1 s
+n 4 t
+a 1 2 10
+a 1 3 5
+a 2 4 8
+a 3 4 7
+a 2 3 3
+)");
+
+  auto result = read_dimacs(is);
+  REQUIRE(result.problem == "max");
+  REQUIRE(result.num_vertices == 4);
+  REQUIRE(result.num_arcs == 5);
+  REQUIRE(result.nodes.size() == 2);
+  // ids normalized to 0-indexed
+  REQUIRE(result.nodes[0].id == 0);
+  REQUIRE(result.nodes[0].designation == "s");
+  REQUIRE(result.nodes[1].id == 3);
+  REQUIRE(result.nodes[1].designation == "t");
+  REQUIRE(result.edges.size() == 5);
+  REQUIRE(result.edges[0].source == 0);
+  REQUIRE(result.edges[0].target == 1);
+  REQUIRE(result.edges[0].weight == "10");
+}
+
+TEST_CASE("read_dimacs: edge format (e lines)", "[io][dimacs]") {
+  std::istringstream is(R"(c clique format
+p edge 3 2
+e 1 2
+e 2 3
+)");
+
+  auto result = read_dimacs(is);
+  REQUIRE(result.problem == "edge");
+  REQUIRE(result.edges.size() == 2);
+  REQUIRE(result.edges[0].source == 0);
+  REQUIRE(result.edges[0].target == 1);
+  REQUIRE(result.edges[1].source == 1);
+  REQUIRE(result.edges[1].target == 2);
+  REQUIRE(result.edges[0].weight.empty());
+}
+
+TEST_CASE("DIMACS roundtrip: write then read", "[io][dimacs]") {
+  auto g = make_test_graph();
+  std::ostringstream oss;
+  write_dimacs(oss, g);
+
+  std::istringstream iss(oss.str());
+  auto parsed = read_dimacs(iss);
+
+  REQUIRE(parsed.num_vertices == 3);
+  REQUIRE(parsed.num_arcs == 3);
+  REQUIRE(parsed.edges.size() == 3);
+  REQUIRE(parsed.edges[0].source == 0);
+  REQUIRE(parsed.edges[0].target == 1);
+}
+
+// ===========================================================================
+// METIS tests
+// ===========================================================================
+
+TEST_CASE("write_metis: undirected adjacency", "[io][metis]") {
+  auto g = make_plain_graph(); // 0->1, 0->2, 1->2, 2->0
+  std::ostringstream os;
+  write_metis(os, g);
+  std::string output = os.str();
+
+  // 3 vertices; undirected edges {0,1},{0,2},{1,2} => 3 edges
+  REQUIRE(output.find("3 3") != std::string::npos);
+  // vertex 1 (id 0) is adjacent to 2 and 3 (ids 1,2)
+  std::istringstream iss(output);
+  std::string line;
+  std::getline(iss, line); // comment
+  std::getline(iss, line); // header
+  std::getline(iss, line); // vertex 1 line
+  REQUIRE(line.find("2") != std::string::npos);
+  REQUIRE(line.find("3") != std::string::npos);
+}
+
+TEST_CASE("write_metis: with edge weights", "[io][metis]") {
+  auto g = make_test_graph();
+  std::ostringstream os;
+  write_metis(os, g, /*with_weights=*/true);
+  std::string output = os.str();
+
+  REQUIRE(output.find("001") != std::string::npos); // fmt flag
+  REQUIRE(output.find("1.5") != std::string::npos);
+}
+
+TEST_CASE("read_metis: unweighted graph", "[io][metis]") {
+  std::istringstream is(R"(% sample
+4 5
+2 3
+1 3 4
+1 2 4
+2 3
+)");
+
+  auto result = read_metis(is);
+  REQUIRE(result.num_vertices == 4);
+  REQUIRE(result.num_edges == 5);
+  REQUIRE(result.adjacency.size() == 4);
+  // vertex 0 neighbours: 2,3 (file) -> 1,2 (0-indexed)
+  REQUIRE(result.adjacency[0].size() == 2);
+  REQUIRE(result.adjacency[0][0].neighbor == 1);
+  REQUIRE(result.adjacency[0][1].neighbor == 2);
+  // vertex 1 neighbours: 1,3,4 -> 0,2,3
+  REQUIRE(result.adjacency[1].size() == 3);
+  REQUIRE(result.adjacency[1][0].neighbor == 0);
+  REQUIRE(result.adjacency[1][2].neighbor == 3);
+}
+
+TEST_CASE("read_metis: weighted graph (fmt=001)", "[io][metis]") {
+  std::istringstream is(R"(% weighted
+3 2 001
+2 5 3 7
+1 5
+1 7
+)");
+
+  auto result = read_metis(is);
+  REQUIRE(result.num_vertices == 3);
+  REQUIRE(result.fmt == 1);
+  REQUIRE(result.adjacency[0].size() == 2);
+  REQUIRE(result.adjacency[0][0].neighbor == 1);
+  REQUIRE(result.adjacency[0][0].weight == "5");
+  REQUIRE(result.adjacency[0][1].neighbor == 2);
+  REQUIRE(result.adjacency[0][1].weight == "7");
+}
+
+TEST_CASE("METIS roundtrip: write then read", "[io][metis]") {
+  auto g = make_plain_graph();
+  std::ostringstream oss;
+  write_metis(oss, g);
+
+  std::istringstream iss(oss.str());
+  auto parsed = read_metis(iss);
+
+  REQUIRE(parsed.num_vertices == 3);
+  REQUIRE(parsed.num_edges == 3);
+  // symmetric: total adjacency entries == 2 * edges
+  std::uint64_t total = 0;
+  for (const auto& a : parsed.adjacency) total += a.size();
+  REQUIRE(total == 6);
+}
+
+// ===========================================================================
+// Adjacency List Text tests
+// ===========================================================================
+
+TEST_CASE("write_adjacency_list_text: structure dump", "[io][adjtext]") {
+  auto g = make_plain_graph(); // 0->1, 0->2, 1->2, 2->0
+  std::ostringstream os;
+  write_adjacency_list_text(os, g);
+  std::string output = os.str();
+
+  REQUIRE(output.find("0: 1 2") != std::string::npos);
+  REQUIRE(output.find("1: 2") != std::string::npos);
+  REQUIRE(output.find("2: 0") != std::string::npos);
+}
+
+TEST_CASE("read_adjacency_list_text: parse with colon", "[io][adjtext]") {
+  std::istringstream is(R"(0: 1 2
+1: 2
+2: 0 3
+3:
+)");
+
+  auto result = read_adjacency_list_text(is);
+  REQUIRE(result.vertex_ids.size() == 4);
+  REQUIRE(result.edges.size() == 5);
+  REQUIRE(result.edges[0].source == "0");
+  REQUIRE(result.edges[0].target == "1");
+  REQUIRE(result.edges[4].source == "2");
+  REQUIRE(result.edges[4].target == "3");
+}
+
+TEST_CASE("read_adjacency_list_text: whitespace-only separator", "[io][adjtext]") {
+  std::istringstream is(R"(A B C
+B C
+C A
+)");
+
+  auto result = read_adjacency_list_text(is);
+  REQUIRE(result.vertex_ids.size() == 3);
+  REQUIRE(result.edges.size() == 4);
+  REQUIRE(result.edges[0].source == "A");
+  REQUIRE(result.edges[0].target == "B");
+}
+
+TEST_CASE("Adjacency List Text roundtrip: write then read", "[io][adjtext]") {
+  auto g = make_plain_graph();
+  std::ostringstream oss;
+  write_adjacency_list_text(oss, g);
+
+  std::istringstream iss(oss.str());
+  auto parsed = read_adjacency_list_text(iss);
+
+  REQUIRE(parsed.vertex_ids.size() == 3);
+  REQUIRE(parsed.edges.size() == 4);
 }
