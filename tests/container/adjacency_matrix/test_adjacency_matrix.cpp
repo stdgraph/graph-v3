@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include "graph/algorithm/dijkstra_shortest_paths.hpp"
 #include "graph/container/adjacency_matrix.hpp"
 
 #include <algorithm>
@@ -117,15 +118,38 @@ TEST_CASE("adjacency_matrix: weighted edges expose target + value", "[container]
 
   // out_edges yields the present targets; the weight is recovered via the
   // edge_value CPO.
-  std::vector<std::pair<std::size_t, double>> edges;
+  std::vector<std::pair<std::size_t, double>> ee;
   for (auto uv : out_edges(g, u0)) {
-    edges.emplace_back(static_cast<std::size_t>(target_id(g, uv)), edge_value(g, uv));
+    ee.emplace_back(static_cast<std::size_t>(target_id(g, uv)), edge_value(g, uv));
   }
-  std::ranges::sort(edges);
+  std::ranges::sort(ee);
 
-  REQUIRE(edges.size() == 2);
-  REQUIRE(edges[0] == std::pair<std::size_t, double>{1, 1.5});
-  REQUIRE(edges[1] == std::pair<std::size_t, double>{2, 2.5});
+  REQUIRE(ee.size() == 2);
+  REQUIRE(ee[0] == std::pair<std::size_t, double>{1, 1.5});
+  REQUIRE(ee[1] == std::pair<std::size_t, double>{2, 2.5});
+}
+
+TEST_CASE("adjacency_matrix: dijkstra shortest distances", "[container][adjacency_matrix][dijkstra]") {
+  adjacency_matrix<double> g(4);
+  g.add_edge(0, 1, 1.0);
+  g.add_edge(0, 2, 4.0);
+  g.add_edge(1, 2, 2.0);
+  g.add_edge(1, 3, 6.0);
+  g.add_edge(2, 3, 3.0);
+
+  std::vector<double> distance(num_vertices(g));
+  init_shortest_paths(g, distance);
+
+  dijkstra_shortest_distances(g, vertex_id_t<adjacency_matrix<double>>(0),
+                              container_value_fn(distance),
+                              [](const auto& graph_ref, const auto& uv) {
+                                return edge_value(graph_ref, uv);
+                              });
+
+  REQUIRE(distance[0] == 0.0);
+  REQUIRE(distance[1] == 1.0);
+  REQUIRE(distance[2] == 3.0);
+  REQUIRE(distance[3] == 6.0);
 }
 
 #if !defined(NDEBUG) && (defined(__unix__) || defined(__APPLE__))
