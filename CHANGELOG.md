@@ -60,11 +60,10 @@
   - `rr_adaptor.hpp` — generic range-of-ranges graph adaptor; exposes graph-v3 CPO interface (vertices, edges, target_id, vertex_value, edge_value, find_vertex) using descriptor-based friend functions; data members declared before friend trailing-return-type declarations to satisfy C++ class scope rules
   - `graphviz_output.hpp` — Graphviz `.gv` file writers using vertexlist, incidence, and edges_dfs views
   - `germany_routes_example.cpp` — builds a Germany routes graph, traverses it, and runs Dijkstra twice (segment count and km distance)
-- **`adjacency_matrix` Dijkstra coverage test** — added container-level shortest-path validation for weighted `adjacency_matrix` using `dijkstra_shortest_distances` and `edge_value` CPO weight access (`tests/container/adjacency_matrix/test_adjacency_matrix.cpp`).
+- **`adjacency_matrix` container** (`container/adjacency_matrix.hpp`) — added dense `n x n` graph container (C++20) with optional C++23 `md_adjacency_matrix` `mdspan` view variant; supports weighted/unweighted graphs and models graph-v3 adjacency CPO concepts.
 
 ### Changed
 - **`undirected_adjacency_list` mutation API renamed** to match `dynamic_graph` and BGL conventions: `create_vertex` → `add_vertex`, `create_edge` → `add_edge`, `erase_edge` → `remove_edge`. The old member names were removed (no backward-compatible aliases); update call sites accordingly.
-- **`adjacency_matrix` API cleanup** — edge-existence query is now `exists(u, v)` (with `has_edge(u, v)` retained as an alias); weighted direct access uses const `operator()(u, v)`; removed `weight(u, v)` and removed non-const `operator()(u, v)`.
 - **`edge_descriptor` simplified to iterator-only storage** — removed the `conditional_t<random_access_iterator, size_t, EdgeIter>` dual-storage path; edges always store the iterator directly since edges always have physical containers. Eliminates 38 `if constexpr` branches across 6 files (~500 lines removed).
 - **`compressed_graph::vertices(g)` returns `iota_view`** — simplified to `std::ranges::iota_view<size_t, size_t>(0, num_vertices())`, which the `vertices` CPO wraps automatically via `_wrap_if_needed`.
 - **`vertex_descriptor_view` CTAD deduction guides** — updated from `Container::iterator`/`const_iterator` to `std::ranges::iterator_t<>` for compatibility with views like `iota_view`.
