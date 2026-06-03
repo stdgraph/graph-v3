@@ -61,6 +61,9 @@ add_executable(graph3_container_tests
     # dynamic_graph - CPO tests (edge map containers - vom, mom)
     dynamic_graph/test_dynamic_graph_cpo_edge_map.cpp
     
+    # adjacency_matrix
+    adjacency_matrix/test_adjacency_matrix.cpp
+
     # undirected_adjacency_list
     undirected_adjacency_list/test_undirected_adjacency_list.cpp
     undirected_adjacency_list/test_undirected_adjacency_list_cpo.cpp

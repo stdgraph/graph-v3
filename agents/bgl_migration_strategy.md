@@ -2,7 +2,7 @@
 
 A comprehensive analysis of the Boost Graph Library (BGL) and graph-v3, identifying migration paths, gaps, and recommended extensions to enable a smooth upgrade transition.
 
-> **Last reviewed:** 2026-05-30 against `include/graph/` source tree.
+> **Last reviewed:** 2026-06-01 against `include/graph/` source tree.
 
 ---
 
@@ -60,7 +60,6 @@ graph-v3 is a ground-up C++20 redesign targeting ISO standardization (P3126–P3
 **Key gaps requiring attention for BGL migration:**
 - Dozens of missing algorithms across flow, matching, coloring, planarity, isomorphism, centrality, layout, and related areas
 - No `subgraph` hierarchy with descriptor mapping
-- No `adjacency_matrix` container
 - No `copy_graph` utility with cross-type and property mapping support
 - No `labeled_graph` adaptor (string labels → vertex mapping)
 - No named parameter interface (BGL users must learn new positional API)
@@ -107,6 +106,8 @@ graph-v3 is a ground-up C++20 redesign targeting ISO standardization (P3126–P3
 | `compressed_sparse_row_graph<directedS, VP, EP>` | `compressed_graph<EV, VV, GV, VId, EIndex>` | Both CSR; graph-v3 uses projection-based loading |
 | `edge_list<Iter>` | Any `input_range` satisfying `basic_sourced_edgelist` | graph-v3 is more flexible — any range of edge-like tuples works |
 
+> **`adjacency_matrix` API note (2026-06):** use `exists(u, v)` (or `has_edge(u, v)` alias) for edge presence checks. For weighted matrices, direct value read access is `const operator()(u, v)`. The older `weight(u, v)` helper and mutable `operator()(u, v)` are removed.
+
 ### Closest Selector Analogues
 
 These are behavioral analogues, not strict one-to-one translations. In particular, classic BGL `mapS` / `hash_mapS` selectors map to set-like containers, whereas graph-v3 `om` / `oum` traits use true map / unordered_map edge containers keyed by target vertex ID.
@@ -131,7 +132,7 @@ These are behavioral analogues, not strict one-to-one translations. In particula
 
 | BGL Container | Status in graph-v3 | Migration Path |
 |---------------|--------------------|--------------------|
-| **`adjacency_matrix`** | ❌ Not available | Use `dynamic_graph` with `os`/`ous` edge container for O(log n)/O(1) edge lookup; or implement `adjacency_matrix` |
+| **`adjacency_matrix`** | ✅ `adjacency_matrix` | Direct replacement — dense `n x n` container (C++20; C++23 `md_adjacency_matrix` adds an `mdspan` view). Build from an order or an edge range + projection |
 | **`directed_graph`** | ❌ Not available | Use `dynamic_graph<EV, VV, GV, VId, false>` for a directed graph, or `true` when you also need in-edge traversal |
 | **`undirected_graph`** | ✅ `undirected_adjacency_list` | Direct replacement |
 | **`labeled_graph`** | ❌ Not available | Use map-based `dynamic_graph` with `mo*` traits and string keys; or implement as an adaptor |
@@ -1201,13 +1202,12 @@ These items block migration for the largest number of BGL users:
 
 | Item | Type | Effort | Rationale |
 |------|------|--------|-----------|
-| **`adjacency_matrix` container** | Container | High | BGL users relying on matrix storage have no direct equivalent |
 | **A\* Search** | Algorithm | Medium | Heavily used in pathfinding, robotics, game AI |
 | **`copy_graph` utility** | Utility | Low | Cross-type graph copy with property mapping |
 | **Betweenness Centrality** | Algorithm | Medium | Core network analysis metric |
 | **PageRank** | Algorithm | Low | Widely used iterative algorithm |
 
-> **Done since the previous revision of this plan:** `filtered_graph` adaptor, DOT/GraphML/JSON I/O plus full BGL I/O parity (DIMACS via `dimacs.hpp`, METIS via `metis.hpp`, adjacency-list text via `adjacency_list_text.hpp`), Erdős-Rényi G(n,p)/G(n,m) / Barabási-Albert / 2D grid / path / complete-graph / Watts-Strogatz / R-MAT / PLOD / SSCA#2 generators, `kosaraju` + `tarjan_scc`, `afforest`, library-shipped BGL adaptor (`include/graph/adaptors/bgl/`), composable visitor toolkit (`visitor_factory.hpp`: `make_visitor`, single-event adaptors, `predecessor_recorder`, `distance_recorder`, `time_stamper`), `valid_visitor` strict concept with `static_assert` diagnostics in BFS/DFS/Dijkstra/Bellman-Ford.
+> **Done since the previous revision of this plan:** `adjacency_matrix` dense container (C++20 + C++23 `mdspan` variant), `filtered_graph` adaptor, DOT/GraphML/JSON I/O plus full BGL I/O parity (DIMACS via `dimacs.hpp`, METIS via `metis.hpp`, adjacency-list text via `adjacency_list_text.hpp`), Erdős-Rényi G(n,p)/G(n,m) / Barabási-Albert / 2D grid / path / complete-graph / Watts-Strogatz / R-MAT / PLOD / SSCA#2 generators, `kosaraju` + `tarjan_scc`, `afforest`, library-shipped BGL adaptor (`include/graph/adaptors/bgl/`), composable visitor toolkit (`visitor_factory.hpp`: `make_visitor`, single-event adaptors, `predecessor_recorder`, `distance_recorder`, `time_stamper`), `valid_visitor` strict concept with `static_assert` diagnostics in BFS/DFS/Dijkstra/Bellman-Ford.
 
 ### Phase 2: Common Algorithm Coverage
 
@@ -1228,7 +1228,6 @@ These items block migration for the largest number of BGL users:
 
 | Item | Type | Effort | Rationale |
 |------|------|--------|-----------|
-| **`adjacency_matrix`** | Container | Medium | Dense graph storage |
 | **`subgraph_view`** | Adaptor | High | Hierarchical subgraph with descriptor mapping |
 | **`labeled_graph` adaptor** | Adaptor | Medium | String label → vertex mapping |
 | **Boyer-Myrvold Planarity** | Algorithm | High | Planarity testing |
@@ -1322,7 +1321,7 @@ The scores below are directional editorial estimates, not audited counts.
 
 | Category | BGL Features | graph-v3 Coverage | Score |
 |----------|-------------|-------------------|-------|
-| **Core graph types** | 8 containers | 3 containers + zero-config | 60% |
+| **Core graph types** | 8 containers | 4 containers + zero-config | 70% |
 | **Concepts & traits** | 18+ concepts | 9 concepts (broader) | 80% (by design) |
 | **Property system** | Interior + exterior + bundled (tag-dispatched) | Single `VV`/`EV` value (struct for multiple fields) + `container_value_fn` / `vertex_property_map` for external maps; tag dispatch eliminated by design | 100% (by design) |
 | **Traversal algorithms** | BFS, DFS, undirected DFS, topological sort | BFS, DFS, topological sort + lazy views | 100% |

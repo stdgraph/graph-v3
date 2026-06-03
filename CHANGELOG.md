@@ -60,6 +60,7 @@
   - `rr_adaptor.hpp` — generic range-of-ranges graph adaptor; exposes graph-v3 CPO interface (vertices, edges, target_id, vertex_value, edge_value, find_vertex) using descriptor-based friend functions; data members declared before friend trailing-return-type declarations to satisfy C++ class scope rules
   - `graphviz_output.hpp` — Graphviz `.gv` file writers using vertexlist, incidence, and edges_dfs views
   - `germany_routes_example.cpp` — builds a Germany routes graph, traverses it, and runs Dijkstra twice (segment count and km distance)
+- **`adjacency_matrix` container** (`container/adjacency_matrix.hpp`) — added dense `n x n` graph container (C++20) with optional C++23 `md_adjacency_matrix` `mdspan` view variant; supports weighted/unweighted graphs and models graph-v3 adjacency CPO concepts.
 
 ### Changed
 - **`undirected_adjacency_list` mutation API renamed** to match `dynamic_graph` and BGL conventions: `create_vertex` → `add_vertex`, `create_edge` → `add_edge`, `erase_edge` → `remove_edge`. The old member names were removed (no backward-compatible aliases); update call sites accordingly.
