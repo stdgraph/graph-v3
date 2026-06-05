@@ -1285,35 +1285,6 @@ namespace graph::compat {
 
 > **Recommendation:** A compatibility shim should be provided as a **separate, non-standardized** header — not part of the core library. It serves as a migration aid, not a long-term API.
 
-### Standardization Strategy: Boost Incubation
-
-A recurring objection to standardizing graph-v3 is the absence of field usage — the design has not yet been validated by a real user base. This is an evidence gap, not a design flaw, and WG21/LEWG explicitly weigh "existing practice" when evaluating library proposals.
-
-**Strategy: ship graph-v3 to Boost as a modern successor to BGL ("BGL2") to gather users, then feed the resulting field experience back into the standards proposals (P3126–P3131, P3337).**
-
-Why this strengthens — rather than competes with — the `std::graph` goal:
-
-- **It directly answers the objection.** Boost adoption produces real users, bug reports, performance data versus BGL, and API-friction reports that paper review cannot surface.
-- **Strong precedent.** `filesystem`, `optional`, `variant`, `any`, and networking (`asio`) all incubated in Boost before moving toward `std`. A Boost library *is* existing practice.
-- **Right audience.** Boost users are standards-aware early adopters who will exercise the concept constraints, CPO ergonomics, error-message quality, and adaptor composition that most need validation.
-- **Built-in migration population.** Positioning as "modern BGL" inherits BGL's mindshare and gives the library an immediate user base (the audience this document serves).
-
-**Packaging guidance (avoid a fork):**
-
-- Keep the **canonical source in `namespace graph`** (the working name that migrates cleanly to `std::graph`).
-- Present the Boost-facing name (e.g. `boost::graph2` or `boost::graph::v2`) as an **alias / inline-namespace layer** over the canonical namespace, **not** a rename or fork. One source of truth, two presented names. This keeps the eventual `std::graph` migration a near-mechanical re-alias.
-- Use Boost's pre-acceptance "no stability guarantee" window to keep refining the design while usage data accrues, so a Boost release does not prematurely calcify the API/ABI that the proposal depends on.
-
-**Scope discipline:** the standardization core is the container / concept / CPO / traversal foundation (the core categories average ~78% in [Appendix C](#appendix-c-migration-readiness-scorecard)). Ship that foundation to Boost to validate it; the specialist algorithm domains still at 0% in Appendix A (flow, matching, coloring, planarity, isomorphism, ordering, layout) can land incrementally and block neither the Boost review nor the proposal.
-
-**Sequencing:**
-
-1. Boost release as "modern BGL," canonical `namespace graph` with a Boost-facing alias layer.
-2. Collect usage: bug reports, benchmarks versus BGL, ergonomics/API-friction reports, and real-world coexistence testing of the CPO-suppresses-ADL behavior (see §11).
-3. Feed refinements back into P3126–P3131 / P3337 as field-experience evidence.
-4. Re-alias the validated subset into `std::graph`.
-
----
 
 ## Appendix C. Migration Readiness Scorecard
 
