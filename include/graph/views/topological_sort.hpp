@@ -343,7 +343,7 @@ public:
 
     iterator& operator++() {
       ++index_;
-      if (state_)
+      if (state_ && state_->cancel_ == cancel_search::continue_search && index_ < state_->post_order_.size())
         ++state_->count_;
       return *this;
     }
@@ -380,10 +380,16 @@ public:
   constexpr vertices_topological_sort_view() noexcept = default;
 
   /// Construct topological sort view for entire graph
-  vertices_topological_sort_view(G& g, Alloc alloc = {}) : g_(&g), state_(std::make_shared<state_type>(g, alloc)) {}
+  vertices_topological_sort_view(G& g, Alloc alloc = {}) : g_(&g), state_(std::make_shared<state_type>(g, alloc)) {
+    if (!state_->post_order_.empty())
+      state_->count_ = 1; // first vertex is yielded before any operator++ fires
+  }
 
   /// Construct with pre-built state (used by _safe functions)
-  vertices_topological_sort_view(G& g, std::shared_ptr<state_type> state) : g_(&g), state_(std::move(state)) {}
+  vertices_topological_sort_view(G& g, std::shared_ptr<state_type> state) : g_(&g), state_(std::move(state)) {
+    if (state_ && !state_->post_order_.empty())
+      state_->count_ = 1; // first vertex is yielded before any operator++ fires
+  }
 
   [[nodiscard]] iterator begin() { return iterator(state_, 0); }
   [[nodiscard]] sentinel end() const noexcept { return {}; }
@@ -470,7 +476,7 @@ public:
 
     iterator& operator++() {
       ++index_;
-      if (state_)
+      if (state_ && state_->cancel_ == cancel_search::continue_search && index_ < state_->post_order_.size())
         ++state_->count_;
       return *this;
     }
@@ -508,11 +514,17 @@ public:
 
   /// Construct with value function
   vertices_topological_sort_view(G& g, VVF vvf, Alloc alloc = {})
-        : g_(&g), vvf_(std::move(vvf)), state_(std::make_shared<state_type>(g, alloc)) {}
+        : g_(&g), vvf_(std::move(vvf)), state_(std::make_shared<state_type>(g, alloc)) {
+    if (!state_->post_order_.empty())
+      state_->count_ = 1;
+  }
 
   /// Construct with value function and pre-built state (used by _safe functions)
   vertices_topological_sort_view(G& g, VVF vvf, std::shared_ptr<state_type> state)
-        : g_(&g), vvf_(std::move(vvf)), state_(std::move(state)) {}
+        : g_(&g), vvf_(std::move(vvf)), state_(std::move(state)) {
+    if (state_ && !state_->post_order_.empty())
+      state_->count_ = 1;
+  }
 
   [[nodiscard]] iterator begin() { return iterator(g_, state_, 0, &vvf_); }
   [[nodiscard]] sentinel end() const noexcept { return {}; }
@@ -605,13 +617,15 @@ public:
         auto edge_range = Accessor{}.edges(*g_, v);
         edge_it_        = std::ranges::begin(edge_range);
         edge_end_       = std::ranges::end(edge_range);
-        skip_to_first_edge(); // Position without incrementing count_
+        skip_to_first_edge();
       }
     }
 
     [[nodiscard]] value_type operator*() const { return value_type{*edge_it_}; }
 
     iterator& operator++() {
+      if (!state_ || state_->cancel_ != cancel_search::continue_search)
+        return *this;
       ++edge_it_;
       advance_to_next_edge();
       return *this;
@@ -637,10 +651,11 @@ public:
     }
 
   private:
-    /// Initial positioning: find first edge without incrementing count_
+    /// Initial positioning: find first edge and count it as the first yielded edge.
     void skip_to_first_edge() {
       while (vertex_index_ < state_->post_order_.size()) {
         if (edge_it_ != edge_end_) {
+          ++state_->count_; // first edge is now the current yielded element
           return;
         }
         ++vertex_index_;
@@ -653,16 +668,15 @@ public:
       }
     }
 
-    /// Advance to next edge, incrementing count_ for each exhausted source vertex
+    /// Advance to next edge, counting each newly positioned edge as yielded.
     void advance_to_next_edge() {
       // Find next edge, advancing to next vertex if needed
       while (vertex_index_ < state_->post_order_.size()) {
         if (edge_it_ != edge_end_) {
-          return; // Found an edge
+          ++state_->count_; // this edge is now the current yielded element
+          return;
         }
 
-        // Done with previous vertex's edges — count it
-        ++state_->count_;
         ++vertex_index_;
         if (vertex_index_ < state_->post_order_.size()) {
           auto v          = state_->post_order_[vertex_index_];
@@ -694,7 +708,7 @@ public:
   [[nodiscard]] iterator begin() { return iterator(g_, state_, 0); }
   [[nodiscard]] sentinel end() const noexcept { return {}; }
 
-  /// Get count of source vertices whose edges have been fully yielded.
+  /// Get count of edges yielded so far, including the currently yielded edge.
   [[nodiscard]] std::size_t num_visited() const noexcept { return state_ ? state_->count_ : 0; }
 
   /// Get current cancel state
@@ -769,7 +783,7 @@ public:
         auto edge_range = Accessor{}.edges(*g_, v);
         edge_it_        = std::ranges::begin(edge_range);
         edge_end_       = std::ranges::end(edge_range);
-        skip_to_first_edge(); // Position without incrementing count_
+        skip_to_first_edge();
       }
     }
 
@@ -778,6 +792,8 @@ public:
     }
 
     iterator& operator++() {
+      if (!state_ || state_->cancel_ != cancel_search::continue_search)
+        return *this;
       ++edge_it_;
       advance_to_next_edge();
       return *this;
@@ -803,10 +819,11 @@ public:
     }
 
   private:
-    /// Initial positioning: find first edge without incrementing count_
+    /// Initial positioning: find first edge and count it as the first yielded edge.
     void skip_to_first_edge() {
       while (vertex_index_ < state_->post_order_.size()) {
         if (edge_it_ != edge_end_) {
+          ++state_->count_; // first edge is now the current yielded element
           return;
         }
         ++vertex_index_;
@@ -819,14 +836,14 @@ public:
       }
     }
 
-    /// Advance to next edge, incrementing count_ for each exhausted source vertex
+    /// Advance to next edge, counting each newly positioned edge as yielded.
     void advance_to_next_edge() {
       while (vertex_index_ < state_->post_order_.size()) {
         if (edge_it_ != edge_end_) {
+          ++state_->count_; // this edge is now the current yielded element
           return;
         }
 
-        ++state_->count_;
         ++vertex_index_;
         if (vertex_index_ < state_->post_order_.size()) {
           auto v          = state_->post_order_[vertex_index_];
@@ -861,7 +878,7 @@ public:
   [[nodiscard]] iterator begin() { return iterator(g_, state_, 0, &evf_); }
   [[nodiscard]] sentinel end() const noexcept { return {}; }
 
-  /// Get count of source vertices whose edges have been fully yielded.
+  /// Get count of edges yielded so far, including the currently yielded edge.
   [[nodiscard]] std::size_t num_visited() const noexcept { return state_ ? state_->count_ : 0; }
 
   /// Get current cancel state

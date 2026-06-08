@@ -119,7 +119,7 @@ TEST_CASE("vertices_bfs - depth tracking", "[bfs][vertices]") {
   }
 
   REQUIRE(bfs.depth() == 3);       // Path length 0->1->2->3
-  REQUIRE(bfs.num_visited() == 3); // 3 vertices visited after seed
+  REQUIRE(bfs.num_visited() == 4); // 4 yielded vertices including seed
 }
 
 TEST_CASE("vertices_bfs - size tracking", "[bfs][vertices]") {
@@ -138,7 +138,7 @@ TEST_CASE("vertices_bfs - size tracking", "[bfs][vertices]") {
   }
 
   REQUIRE(iterations == 3);
-  REQUIRE(bfs.num_visited() == 2); // 2 vertices visited after seed
+  REQUIRE(bfs.num_visited() == 3); // 3 yielded vertices including seed
 }
 
 TEST_CASE("vertices_bfs - single vertex", "[bfs][vertices]") {
@@ -560,8 +560,8 @@ TEST_CASE("vertices_bfs - size accumulates correctly", "[bfs][vertices][size]") 
     prev_size = current_size;
   }
 
-  // After iteration completes, size should be 5 (all non-seed vertices discovered)
-  REQUIRE(bfs.num_visited() == 5); // 5 vertices visited after seed (excludes seed itself)
+  // After iteration completes, num_visited should be 6 (all yielded vertices)
+  REQUIRE(bfs.num_visited() == 6); // 6 yielded vertices including seed
   REQUIRE(vertex_count == 6);      // Total vertices iterated including seed
 }
 
@@ -584,7 +584,7 @@ TEST_CASE("vertices_bfs - depth on wide tree", "[bfs][vertices][depth]") {
   }
 
   REQUIRE(bfs.depth() == 1);       // Max depth is 1 (only two levels)
-  REQUIRE(bfs.num_visited() == 5); // 5 children visited
+  REQUIRE(bfs.num_visited() == 6); // 6 yielded vertices including seed
 }
 
 TEST_CASE("vertices_bfs - depth on deep chain", "[bfs][vertices][depth]") {
@@ -606,7 +606,7 @@ TEST_CASE("vertices_bfs - depth on deep chain", "[bfs][vertices][depth]") {
   }
 
   REQUIRE(bfs.depth() == 5);       // Max depth is 5 (6 levels: 0 through 5)
-  REQUIRE(bfs.num_visited() == 5); // 5 vertices after seed
+  REQUIRE(bfs.num_visited() == 6); // 6 yielded vertices including seed
 }
 
 TEST_CASE("vertices_bfs - size on disconnected graph", "[bfs][vertices][size]") {
@@ -627,7 +627,7 @@ TEST_CASE("vertices_bfs - size on disconnected graph", "[bfs][vertices][size]") 
   }
 
   REQUIRE(bfs.depth() == 1);       // Depth 1 within component
-  REQUIRE(bfs.num_visited() == 2); // Only 2 vertices reachable from 0 (excludes seed)
+  REQUIRE(bfs.num_visited() == 3); // 3 yielded vertices in the reachable component
 }
 
 TEST_CASE("edges_bfs - depth tracks edge depth", "[bfs][edges][depth]") {
@@ -695,7 +695,7 @@ TEST_CASE("vertices_bfs - depth/size with value function", "[bfs][vertices][dept
   }
 
   REQUIRE(bfs.depth() == 2);       // Depth is 2 (0 -> 1 -> 3)
-  REQUIRE(bfs.num_visited() == 3); // 3 vertices after seed
+  REQUIRE(bfs.num_visited() == 4); // 4 yielded vertices including seed
 }
 
 TEST_CASE("edges_bfs - depth/size with value function", "[bfs][edges][depth]") {

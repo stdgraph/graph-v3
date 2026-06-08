@@ -201,7 +201,7 @@ TEST_CASE("vertices_dfs - depth and size accessors", "[dfs][vertices][accessors]
 
   // Before iteration
   REQUIRE(dfs.depth() == 1);       // seed is on stack
-  REQUIRE(dfs.num_visited() == 0); // no vertices counted yet
+  REQUIRE(dfs.num_visited() == 1); // seed is the first yielded vertex
 
   // Iterate
   std::vector<int> visited;
@@ -211,7 +211,7 @@ TEST_CASE("vertices_dfs - depth and size accessors", "[dfs][vertices][accessors]
 
   // After full iteration
   REQUIRE(visited.size() == 6);
-  REQUIRE(dfs.num_visited() == 5); // All vertices except seed are counted by advance()
+  REQUIRE(dfs.num_visited() == 6); // All yielded vertices are counted, including seed
 }
 
 // =============================================================================
@@ -351,7 +351,7 @@ TEST_CASE("vertices_dfs - search_view concept", "[dfs][vertices][concepts]") {
   // Verify accessors exist and return correct types
   REQUIRE(dfs.cancel() == cancel_search::continue_search);
   REQUIRE(dfs.depth() == 1);
-  REQUIRE(dfs.num_visited() == 0);
+  REQUIRE(dfs.num_visited() == 1);
 }
 
 // =============================================================================
