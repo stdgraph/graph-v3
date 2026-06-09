@@ -581,4 +581,36 @@ inline namespace _cpo_instances {
 
 } // namespace _cpo_instances
 
+// =============================================================================
+// Shared edge concept
+// =============================================================================
+
+/**
+ * @brief Base edge concept shared by adjacency lists and edge lists.
+ *
+ * A basic_edge is any type for which source_id(g, e) and target_id(g, e) are
+ * valid expressions, where g is the owning graph or edge-list container. This is
+ * the minimal requirement that ties an edge to both the adjacency-list and the
+ * edge-list abstract data types: it depends only on the shared source_id / target_id
+ * CPOs and makes no assumption about vertex storage.
+ *
+ * It is satisfied by adj_list edge_descriptors, edge_list descriptors, edge_data
+ * aggregates, tuple/pair representations, and any user-defined type with appropriate
+ * source_id / target_id CPO support.
+ *
+ * Note: Return types are not constrained to allow better compiler error messages.
+ *
+ * The adjacency-list refinement adj_list::edge adds source(g, e) / target(g, e) on
+ * top of basic_edge; the edge_list::basic_sourced_edgelist concept requires
+ * basic_edge of its element type.
+ *
+ * @tparam G Graph (or edge-list container) type
+ * @tparam E Edge type
+ */
+template <class G, class E>
+concept basic_edge = requires(G& g, const E& e) {
+  source_id(g, e);
+  target_id(g, e);
+};
+
 } // namespace graph
