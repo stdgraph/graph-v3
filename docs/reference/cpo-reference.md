@@ -52,7 +52,7 @@ All CPOs listed below are available in `namespace graph` after
 | `contains_out_edge` | `(g, uid, vid)` | `bool` | O(deg) | Yes |
 | `contains_in_edge` | `(g, uid, vid)` | `bool` | O(deg) | Yes |
 | `has_edges` | `(g)` | `bool` | O(V) | Yes |
-| `vertex_value` | `(g, u)` | `decltype(auto)` | O(1) | No |
+| `vertex_value` | `(g, u)` / `(g, uid)` | `decltype(auto)` | O(1) | No |
 | `edge_value` | `(g, uv)` | `decltype(auto)` | O(1) | Yes |
 | `graph_value` | `(g)` | `decltype(auto)` | O(1) | No |
 | `partition_id` | `(g, u)` | `partition_id_t<G>` | O(1) | No |
@@ -379,16 +379,22 @@ decay or copy.
 ### `vertex_value(g, u)`
 
 ```cpp
-auto vertex_value(G& g, vertex_t<G>& u) -> /* decltype(auto) */;
+auto vertex_value(G& g, vertex_t<G>& u)        -> /* decltype(auto) */;  // by descriptor
+auto vertex_value(G& g, vertex_id_t<G> uid)    -> /* decltype(auto) */;  // by id (convenience)
 ```
 
 Returns the user-defined value associated with vertex `u`. **No default** —
 the graph must provide this via member or ADL.
 
+The `(g, uid)` overload is a convenience form that mirrors the descriptor
+dispatch: a member `g.vertex_value(uid)` or ADL `vertex_value(g, uid)` taking the
+id directly is preferred, and only when neither exists does it fall back to
+`vertex_value(g, *find_vertex(g, uid))`.
+
 | Property | Value |
 |----------|-------|
 | **Return type** | `decltype(auto)` — preserves by-value, by-ref, by-const-ref, and by-rvalue-ref |
-| **Complexity** | O(1) |
+| **Complexity** | O(1) for the descriptor form; the `uid` fallback adds `find_vertex` cost (O(1) index, O(log n)/O(1) avg mapped) |
 
 ### `edge_value(g, uv)`
 

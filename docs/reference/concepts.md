@@ -24,7 +24,7 @@ Header: `<graph/adj_list/adjacency_list_concepts.hpp>`
 
 ```
 Primitives
-  edge<G, E>  ·  vertex<G, V>  ·  hashable_vertex_id<G>
+  basic_edge<G, E>  ·  edge<G, E>  ·  vertex<G, V>  ·  hashable_vertex_id<G>
 
 Ranges  (parameterised on a range type R)
   out_edge_range<R, G>          requires edge<G, E>
@@ -49,15 +49,41 @@ Compound concepts
 
 ![Adjacency List Concept Hierarchy](../assets/adjacency_list_concepts.svg)
 
-### `edge<G, E>`
+### `basic_edge<G, E>`
 
-An edge exposes at least a target vertex ID.
+The shared edge floor used by **both** adjacency lists and edge lists. An edge
+exposes a source and a target vertex ID. It lives in `namespace graph` (alongside
+the shared `source_id` / `target_id` CPOs) and is the concept required by
+`edge_list::basic_sourced_edgelist`.
 
 ```cpp
-template <class G, class E = void>
-concept edge = requires(G& g, E& e) {
-    { target_id(g, e) } -> std::convertible_to<vertex_id_t<G>>;
+template <class G, class E>
+concept basic_edge = requires(G& g, const E& e) {
+    source_id(g, e);
+    target_id(g, e);
 };
+```
+
+> Return types are intentionally left unconstrained so the compiler reports the
+> actual mismatch at the point of use (same rationale as `std::ranges::sized_range`).
+
+### `edge<G, E>`
+
+The adjacency-list refinement of `basic_edge`. In addition to the source/target
+IDs it requires the source and target vertex **descriptors** via the `source` and
+`target` CPOs. Within an `adjacency_list` these are always available — the default
+`source`/`target` resolve to `*find_vertex(g, source_id/target_id(g, e))` — so the
+requirement is free for conforming graphs while keeping bare edge-list elements
+(which have no vertex container) out of this concept.
+
+```cpp
+template <class G, class E>
+concept edge =
+    basic_edge<G, E> &&
+    requires(G& g, const E& e) {
+        source(g, e);
+        target(g, e);
+    };
 ```
 
 ### `out_edge_range<R, G>`

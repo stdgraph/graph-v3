@@ -11,7 +11,8 @@ digraph ConceptHierarchy {
 
     node [fillcolor="#cce5ff"]  // light blue
 
-    edge_c [label="edge<G,E>\nsource_id · target_id"]
+    basic_edge_c [label="basic_edge<G,E>\nsource_id · target_id\n(shared with edge_list)"]
+    edge_c [label="edge<G,E>\nbasic_edge\n+ source · target"]
     vertex_c [label="vertex<G,V>\nvertex_descriptor\nvertex_id · find_vertex"]
     hashable_vertex_id [label="hashable_vertex_id<G>\nhash(vertex_id_t<G>)"]
 
@@ -50,6 +51,9 @@ digraph ConceptHierarchy {
 
     // ── Edges (arrows = "is required by" / "refines") ─────────────────────────
 
+    // Shared edge floor → adjacency-list edge refinement
+    basic_edge_c -> edge_c
+
     // Primitives → ranges
     edge_c    -> out_edge_range
     edge_c    -> in_edge_range
@@ -83,7 +87,8 @@ digraph ConceptHierarchy {
     mapped_vertex_range          -> mapped_bidirectional_adjacency_list
 
     // ── Rank hints for cleaner layout ─────────────────────────────────────────
-    { rank=same; edge_c; vertex_c; hashable_vertex_id }
+    { rank=same; basic_edge_c; vertex_c; hashable_vertex_id }
+    { rank=same; edge_c }
     { rank=same; out_edge_range; in_edge_range; vertex_range }
     { rank=same; index_vertex_range; mapped_vertex_range }
     { rank=same; adjacency_list }

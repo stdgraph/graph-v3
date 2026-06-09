@@ -88,12 +88,9 @@ namespace edge_list {
   // basic_sourced_edgelist: Supports ANY vertex ID type (int, string, custom types, etc.)
   template <class EL> // For exposition only
   concept basic_sourced_edgelist =
-        std::ranges::input_range<EL> &&                        //
-        !std::ranges::range<std::ranges::range_value_t<EL>> && // distinguish from adjacency list
-        requires(EL& el, std::ranges::range_value_t<EL> uv) {
-          { graph::source_id(el, uv) };
-          { graph::target_id(el, uv) } -> std::convertible_to<decltype(graph::source_id(el, uv))>;
-        };
+        std::ranges::input_range<EL> &&                                  //
+        !std::ranges::range<std::ranges::range_value_t<EL>> &&           // distinguish from adjacency list
+        graph::basic_edge<EL, std::ranges::range_value_t<EL>>;           // shared edge floor: source_id + target_id
 
   // basic_sourced_index_edgelist: Requires INTEGRAL vertex IDs (int, size_t, etc.)
   template <class EL> // For exposition only

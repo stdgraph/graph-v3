@@ -161,28 +161,35 @@ TEST_CASE("has_edge_value runtime behavior", "[edge_list][runtime]") {
 }
 
 // =============================================================================
-// Interop with adj_list::edge<G,E> concept (I.2)
+// Interop with the shared graph::basic_edge<G,E> concept (I.2)
 // =============================================================================
 
-TEST_CASE("edge_list types satisfy adj_list::edge concept", "[edge_list][concepts][interop]") {
-  // After dropping the is_edge_descriptor_v gate, any type whose elements
-  // support source_id(g,e) and target_id(g,e) satisfies edge<G,E>.
+TEST_CASE("edge_list types satisfy basic_edge but not adj_list::edge", "[edge_list][concepts][interop]") {
+  // Edge-list elements support the shared source_id(g,e)/target_id(g,e) CPOs, so
+  // they satisfy the shared graph::basic_edge floor. They do NOT satisfy the
+  // adjacency-list refinement adj_list::edge, which additionally requires the
+  // source(g,e)/target(g,e) vertex-descriptor CPOs (edge lists have no vertex
+  // container to resolve descriptors against).
 
   // tuple<source, target, value>
   using tuple_el = std::vector<std::tuple<int, int, double>>;
-  STATIC_REQUIRE(adj_list::edge<tuple_el, std::tuple<int, int, double>>);
+  STATIC_REQUIRE(graph::basic_edge<tuple_el, std::tuple<int, int, double>>);
+  STATIC_REQUIRE_FALSE(adj_list::edge<tuple_el, std::tuple<int, int, double>>);
 
   // pair<source, target>
   using pair_el = std::vector<std::pair<int, int>>;
-  STATIC_REQUIRE(adj_list::edge<pair_el, std::pair<int, int>>);
+  STATIC_REQUIRE(graph::basic_edge<pair_el, std::pair<int, int>>);
+  STATIC_REQUIRE_FALSE(adj_list::edge<pair_el, std::pair<int, int>>);
 
   // edge_data with value
   using ed_type = graph::edge_data<int, true, void, double>;
   using ed_el   = std::vector<ed_type>;
-  STATIC_REQUIRE(adj_list::edge<ed_el, ed_type>);
+  STATIC_REQUIRE(graph::basic_edge<ed_el, ed_type>);
+  STATIC_REQUIRE_FALSE(adj_list::edge<ed_el, ed_type>);
 
   // edge_list::edge_descriptor
   using desc_type = edge_list::edge_descriptor<int, double>;
   using desc_el   = std::vector<desc_type>;
-  STATIC_REQUIRE(adj_list::edge<desc_el, desc_type>);
+  STATIC_REQUIRE(graph::basic_edge<desc_el, desc_type>);
+  STATIC_REQUIRE_FALSE(adj_list::edge<desc_el, desc_type>);
 }
