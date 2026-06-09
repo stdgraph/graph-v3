@@ -10,7 +10,8 @@ digraph EdgeListConceptHierarchy {
 
     node [fillcolor="#cce5ff"]  // light blue
 
-    basic_sourced_edgelist [label="basic_sourced_edgelist<EL>\ninput_range\n!range-of-ranges\nsource_id · target_id\n(compatible return types)"]
+    basic_edge [label="basic_edge<EL,E>\nsource_id · target_id\n(shared with adj_list)"]
+    basic_sourced_edgelist [label="basic_sourced_edgelist<EL>\ninput_range\n!range-of-ranges\nbasic_edge<EL, range_value_t<EL>>"]
 
     // ── Refinements ───────────────────────────────────────────────────────────
 
@@ -22,6 +23,7 @@ digraph EdgeListConceptHierarchy {
 
     // ── Edges ─────────────────────────────────────────────────────────────────
 
+    basic_edge -> basic_sourced_edgelist
     basic_sourced_edgelist -> basic_sourced_index_edgelist
     basic_sourced_edgelist -> has_edge_value
 

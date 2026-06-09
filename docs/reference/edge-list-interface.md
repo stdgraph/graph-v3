@@ -30,16 +30,23 @@ namespace graph::edge_list { ... }
 
 | Concept | Parameters | Description |
 |---------|------------|-------------|
-| `basic_sourced_edgelist<EL>` | Edge list `EL` | `input_range` of non-nested elements; `source_id(el, uv)` and `target_id(el, uv)` are valid. Vertex ID type can be any type. |
+| `basic_sourced_edgelist<EL>` | Edge list `EL` | `input_range` of non-nested elements whose element satisfies the shared `basic_edge` concept (`source_id(el, uv)` and `target_id(el, uv)` are valid). Vertex ID type can be any type. |
 | `basic_sourced_index_edgelist<EL>` | Edge list `EL` | Refines `basic_sourced_edgelist`; `source_id` and `target_id` return `std::integral` types. |
 | `has_edge_value<EL>` | Edge list `EL` | Refines `basic_sourced_edgelist`; `edge_value(el, uv)` is valid. |
+
+> **Shared edge floor:** `basic_sourced_edgelist` rests on the same
+> `graph::basic_edge<EL, range_value_t<EL>>` concept that the adjacency-list
+> `edge` concept refines, tying both abstract data types together at the edge
+> level. The adjacency-list `edge` additionally requires the `source`/`target`
+> vertex descriptors, which edge-list elements do not provide.
 
 ### Concept Hierarchy
 
 ```
-basic_sourced_edgelist<EL>
-├── basic_sourced_index_edgelist<EL>   (+ integral vertex IDs)
-└── has_edge_value<EL>                 (+ edge_value(el, uv))
+basic_edge<EL, E>   (shared with adj_list: source_id · target_id)
+└── basic_sourced_edgelist<EL>
+    ├── basic_sourced_index_edgelist<EL>   (+ integral vertex IDs)
+    └── has_edge_value<EL>                 (+ edge_value(el, uv))
 ```
 
 ---
