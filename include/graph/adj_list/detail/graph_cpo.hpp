@@ -2992,6 +2992,9 @@ namespace _cpo_impls {
   namespace _vertex_value {
     enum class _St { _none, _member, _adl, _default };
 
+    // Use the public CPO instance for the uid convenience overload
+    using _cpo_instances::find_vertex;
+
     // Check for g.vertex_value(u) member function
     // Note: Uses G (not G&) to preserve const qualification
     template <typename G, typename U>
@@ -3012,6 +3015,17 @@ namespace _cpo_impls {
     concept _has_default = is_vertex_descriptor_v<std::remove_cvref_t<U>> && requires(G g, const U& u) {
       { u.inner_value(g) };
     };
+
+    // Check if we can use the uid convenience overload:
+    //   vertex_value(g, *find_vertex(g, uid))
+    // Requires that uid is not itself a vertex descriptor, that find_vertex(g, uid)
+    // is valid, and that vertex_value is available on the resulting vertex descriptor.
+    template <typename G, typename VId>
+    concept _has_uid = !vertex_descriptor_type<std::remove_cvref_t<VId>> &&     //
+                       requires(G g, const VId& uid) { { find_vertex(g, uid) }; } &&
+                       (_has_member<G, vertex_t<std::remove_cvref_t<G>>> ||
+                        _has_adl<G, vertex_t<std::remove_cvref_t<G>>> ||
+                        _has_default<G, vertex_t<std::remove_cvref_t<G>>>);
 
     template <typename G, typename U>
     [[nodiscard]] consteval _Choice_t<_St> _Choose() noexcept {
@@ -3077,6 +3091,28 @@ namespace _cpo_impls {
         } else if constexpr (_Choice<_G, _U>._Strategy == _St::_default) {
           return u.inner_value(std::forward<G>(g));
         }
+      }
+
+      /**
+             * @brief Get the user-defined value associated with a vertex (by ID)
+             *
+             * Convenience overload that combines find_vertex + vertex_value(g, u):
+             * resolves to vertex_value(g, *find_vertex(g, uid)). Complexity matches
+             * find_vertex (O(1) for random-access, O(log n)/O(1) average for associative).
+             *
+             * @tparam G Graph type
+             * @tparam VId Vertex ID type (typically vertex_id_t<G>)
+             * @param g Graph container
+             * @param uid Vertex ID
+             * @return Exactly the type returned by the descriptor overload (decltype(auto)).
+             */
+      template <typename G, typename VId>
+      requires _has_uid<std::remove_cvref_t<G>, std::remove_cvref_t<VId>>
+      [[nodiscard]] constexpr decltype(auto) operator()(G&& g, const VId& uid) const
+            noexcept(_Choice<std::remove_cvref_t<G>, vertex_t<std::remove_cvref_t<G>>>._No_throw &&
+                     noexcept(*find_vertex(std::declval<G&>(), std::declval<const VId&>())))
+      {
+        return (*this)(std::forward<G>(g), *find_vertex(std::forward<G>(g), uid));
       }
     };
   } // namespace _vertex_value

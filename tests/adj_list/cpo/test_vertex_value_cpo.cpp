@@ -48,6 +48,19 @@ TEST_CASE("vertex_value - vector of vertex data structures", "[vertex_value][def
   REQUIRE(vertex_value(g, v2).weight == 30);
 }
 
+TEST_CASE("vertex_value - by vertex id (uid overload)", "[vertex_value][uid]") {
+  GraphWithVertexData g = {{"Alice", 10}, {"Bob", 20}, {"Charlie", 30}};
+
+  // vertex_value(g, uid) resolves to vertex_value(g, *find_vertex(g, uid))
+  REQUIRE(vertex_value(g, vertex_id_t<GraphWithVertexData>{0}).name == "Alice");
+  REQUIRE(vertex_value(g, vertex_id_t<GraphWithVertexData>{1}).weight == 20);
+  REQUIRE(vertex_value(g, vertex_id_t<GraphWithVertexData>{2}).name == "Charlie");
+
+  // The uid overload aliases the descriptor overload, including mutation.
+  vertex_value(g, vertex_id_t<GraphWithVertexData>{0}).weight = 99;
+  REQUIRE(g[0].weight == 99);
+}
+
 TEST_CASE("vertex_value - modify vertex data", "[vertex_value][default][modify]") {
   GraphWithVertexData g = {{"Alice", 10}, {"Bob", 20}};
 
