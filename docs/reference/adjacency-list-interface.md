@@ -28,7 +28,8 @@ All concepts are in `graph::adj_list`, re-exported to `graph`.
 
 | Concept | Parameters | Description |
 |---------|------------|-------------|
-| `edge<G, E>` | Graph `G`, edge `E` | `E` is an `edge_descriptor`; `source_id(g,e)`, `source(g,e)`, `target_id(g,e)`, `target(g,e)` are valid |
+| `basic_edge<G, E>` | Graph `G`, edge `E` | Shared edge floor (in `namespace graph`): `source_id(g,e)` and `target_id(g,e)` are valid. Also satisfied by edge-list elements. |
+| `edge<G, E>` | Graph `G`, edge `E` | Refines `basic_edge<G,E>` and additionally requires the `source(g,e)` and `target(g,e)` vertex descriptors. Always satisfied by adjacency-list edge descriptors. |
 
 ### Edge Range Concepts
 

@@ -22,31 +22,34 @@ namespace graph::adj_list {
 /**
  * @brief Concept for edge types
  *
- * An edge is any type for which source_id(g, e) and target_id(g, e) are valid expressions.
- * This includes adj_list edge_descriptors, edge_list descriptors, edge_data aggregates,
- * tuple/pair representations, and any user-defined type with appropriate CPO support.
+ * An edge refines the shared graph::basic_edge concept (which requires source_id(g, e)
+ * and target_id(g, e)) by additionally requiring access to the source and target vertex
+ * descriptors via source(g, e) and target(g, e).
+ *
+ * Within an adjacency_list these descriptors are always available: out_edges(g, u) and
+ * in_edges(g, u) always yield edge_descriptors, and adjacency_list implies a vertex_range
+ * (hence find_vertex), so the default source/target CPOs resolve them via
+ * *find_vertex(g, source_id/target_id(g, e)). The descriptor requirement is therefore free
+ * for conforming graphs while keeping edge_list elements (which have no vertex container)
+ * out of this concept — those satisfy only graph::basic_edge.
  *
  * Requirements:
- * - source_id(g, e) must be valid (returns source vertex ID)
- * - target_id(g, e) must be valid (returns target vertex ID)
+ * - graph::basic_edge<G, E> (source_id(g, e) and target_id(g, e) are valid)
+ * - source(g, e) must be valid (returns the source vertex descriptor)
+ * - target(g, e) must be valid (returns the target vertex descriptor)
  *
  * Note: Return types are not constrained to allow better compiler error messages.
- * Algorithms that additionally need vertex descriptors (source(g,e) / target(g,e))
- * should add those requirements explicitly beyond this concept.
  *
  * Examples:
  * - adj_list edge_descriptor<EdgeIter, VertexIter, EdgeDirection>
- * - edge_list edge_descriptor<VId, EV>
- * - edge_data<VId, true, void, EV>
- * - std::tuple<int, int, double>  (source=get<0>, target=get<1>)
  *
- * @tparam G Graph (or edge-list container) type
+ * @tparam G Graph type
  * @tparam E Edge type
  */
 template <class G, class E>
-concept edge = requires(G& g, const E& e) {
-  source_id(g, e);
-  target_id(g, e);
+concept edge = graph::basic_edge<G, E> && requires(G& g, const E& e) {
+  source(g, e);
+  target(g, e);
 };
 
 // =============================================================================

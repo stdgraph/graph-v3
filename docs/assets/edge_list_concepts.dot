@@ -6,15 +6,14 @@ digraph EdgeListConceptHierarchy {
     node [shape=box, style="filled,rounded", fontname="Helvetica", fontsize=11]
     edge [fontname="Helvetica", fontsize=9]
 
-    // ── Primitive concepts ───────────────────────────────────────────────────
-    //
+    // ── Primitive concepts ────────────────────────────────────────────────────
 
     node [fillcolor="#cce5ff"]  // light blue
 
-    basic_sourced_edgelist [label="basic_sourced_edgelist<EL>\ninput_range<EL>\n¬range-of-ranges\nsource_id(e) → vertex_id_t<G>\ntarget_id(e) → vertex_id_t<G>"]
+    basic_edge [label="basic_edge<EL,E>\nsource_id(el, e)\ntarget_id(el, e)\n(shared with adj_list)"]
+    basic_sourced_edgelist [label="basic_sourced_edgelist<EL>\ninput_range<EL>\n¬range-of-ranges\nbasic_edge<EL, range_value_t<EL>>"]
 
-    // ── Refinements ──────────────────────────────────────────────────────────
-    //
+    // ── Refinements ───────────────────────────────────────────────────────────
 
     node [fillcolor="#d4edda"]  // light green
 
@@ -22,13 +21,12 @@ digraph EdgeListConceptHierarchy {
 
     has_edge_value [label="has_edge_value<EL>\nbasic_sourced_edgelist<EL>\n∧ edge_value(el, uv) → edge_value_t<EL>"]
 
-    // ── Edges ────────────────────────────────────────────────────────────────
-    //
+    // ── Edges ─────────────────────────────────────────────────────────────────
 
+    basic_edge -> basic_sourced_edgelist
     basic_sourced_edgelist -> basic_sourced_index_edgelist
     basic_sourced_edgelist -> has_edge_value
 
-    // ── Rank hints ───────────────────────────────────────────────────────────
-    //
+    // ── Rank hints ────────────────────────────────────────────────────────────
     { rank=same; basic_sourced_index_edgelist; has_edge_value }
 }

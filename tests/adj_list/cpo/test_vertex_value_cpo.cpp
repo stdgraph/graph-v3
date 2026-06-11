@@ -48,6 +48,50 @@ TEST_CASE("vertex_value - vector of vertex data structures", "[vertex_value][def
   REQUIRE(vertex_value(g, v2).weight == 30);
 }
 
+TEST_CASE("vertex_value - by vertex id (uid overload)", "[vertex_value][uid]") {
+  GraphWithVertexData g = {{"Alice", 10}, {"Bob", 20}, {"Charlie", 30}};
+
+  // vertex_value(g, uid) resolves to vertex_value(g, *find_vertex(g, uid))
+  REQUIRE(vertex_value(g, vertex_id_t<GraphWithVertexData>{0}).name == "Alice");
+  REQUIRE(vertex_value(g, vertex_id_t<GraphWithVertexData>{1}).weight == 20);
+  REQUIRE(vertex_value(g, vertex_id_t<GraphWithVertexData>{2}).name == "Charlie");
+
+  // The uid overload aliases the descriptor overload, including mutation.
+  vertex_value(g, vertex_id_t<GraphWithVertexData>{0}).weight = 99;
+  REQUIRE(g[0].weight == 99);
+}
+
+// Graph that provides a member vertex_value(uid) taking the id directly.
+// The uid overload must prefer this over the find_vertex fallback.
+struct VertexGraphWithUidMember {
+  std::vector<int> data;
+
+  // id-taking member (returns a sentinel-transformed value to prove it was used)
+  int vertex_value(std::size_t uid) const { return data[uid] + 1000; }
+
+  // descriptor-taking member (different value, to detect which path ran)
+  int vertex_value(const vertex_descriptor<std::vector<int>::iterator>& u) const { return data[u.value()]; }
+
+  auto begin() { return data.begin(); }
+  auto end() { return data.end(); }
+  auto begin() const { return data.begin(); }
+  auto end() const { return data.end(); }
+};
+
+TEST_CASE("vertex_value - uid overload prefers id-taking member over find_vertex",
+          "[vertex_value][uid][member]") {
+  VertexGraphWithUidMember g;
+  g.data = {10, 20, 30};
+
+  // uid overload must call vertex_value(uid) member -> data[uid] + 1000
+  REQUIRE(vertex_value(g, std::size_t{0}) == 1010);
+  REQUIRE(vertex_value(g, std::size_t{2}) == 1030);
+
+  // descriptor overload still calls the descriptor member -> data[index]
+  auto v1 = vertex_descriptor<decltype(g.begin())>(1);
+  REQUIRE(vertex_value(g, v1) == 20);
+}
+
 TEST_CASE("vertex_value - modify vertex data", "[vertex_value][default][modify]") {
   GraphWithVertexData g = {{"Alice", 10}, {"Bob", 20}};
 

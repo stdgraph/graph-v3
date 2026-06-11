@@ -203,8 +203,9 @@ namespace dfs_detail {
       auto edge_range = Accessor{}.edges(g, seed_vertex);
       stack_.push({seed_vertex, std::ranges::begin(edge_range), std::ranges::end(edge_range)});
       visited_.mark_visited(seed_vertex);
-      // Note: count_ is not incremented here. It's incremented in advance() when
-      // a vertex is actually yielded by the iterator.
+      // count_ is initialized to 0 here. vertices_dfs_view sets it to 1 after
+      // construction (seed is first yielded vertex). edges_dfs_view leaves it at 0
+      // because advance_to_next_edge() increments count_ when the first edge is found.
     }
   };
 
@@ -348,7 +349,9 @@ public:
 
   /// Construct from vertex descriptor
   vertices_dfs_view(G& g, vertex_type seed_vertex, Alloc alloc = {})
-        : g_(&g), state_(std::make_shared<state_type>(g, seed_vertex, adj_list::num_vertices(g), alloc)) {}
+        : g_(&g), state_(std::make_shared<state_type>(g, seed_vertex, adj_list::num_vertices(g), alloc)) {
+    state_->count_ = 1; // seed is the first visited vertex
+  }
 
   /// Construct from vertex ID (delegates to vertex descriptor constructor)
   vertices_dfs_view(G& g, const vertex_id_type& seed, Alloc alloc = {})
@@ -523,7 +526,9 @@ public:
   vertices_dfs_view(G& g, vertex_type seed_vertex, VVF vvf, Alloc alloc = {})
         : g_(&g)
         , vvf_(std::move(vvf))
-        , state_(std::make_shared<state_type>(g, seed_vertex, adj_list::num_vertices(g), alloc)) {}
+        , state_(std::make_shared<state_type>(g, seed_vertex, adj_list::num_vertices(g), alloc)) {
+    state_->count_ = 1; // seed is the first visited vertex
+  }
 
   /// Construct from vertex ID (delegates to vertex descriptor constructor)
   vertices_dfs_view(G& g, const vertex_id_type& seed, VVF vvf, Alloc alloc = {})

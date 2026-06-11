@@ -199,6 +199,7 @@ namespace bfs_detail {
       (void)g;
       queue_.push({seed_vertex, 0});
       visited_.mark_visited(seed_vertex);
+      count_ = 1; // seed is the first visited vertex
     }
   };
 

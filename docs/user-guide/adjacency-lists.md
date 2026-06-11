@@ -49,7 +49,8 @@ graph-v3 defines 9 concepts in `graph::adj_list` (re-exported into `graph::`).
 
 | Concept | Description |
 |---------|-------------|
-| `edge<G, E>` | Edge descriptor with `source_id`, `source`, `target_id`, and `target` |
+| `basic_edge<G, E>` | Shared edge floor: `source_id` and `target_id` (also satisfied by edge-list elements) |
+| `edge<G, E>` | Refines `basic_edge`; additionally provides the `source` and `target` vertex descriptors |
 | `out_edge_range<R, G>` | Forward range whose elements satisfy `edge` |
 
 ### Vertex concepts

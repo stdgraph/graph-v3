@@ -11,7 +11,8 @@ digraph ConceptHierarchy {
 
     node [fillcolor="#cce5ff"]  // light blue
 
-    edge_c [label="edge<G,E>\nsource_id(g, e)\ntarget_id(g, e)"]
+    basic_edge_c [label="basic_edge<G,E>\nsource_id(g, e)\ntarget_id(g, e)\n(shared with edge_list)"]
+    edge_c [label="edge<G,E>\nbasic_edge<G,E>\nsource(g, e)\ntarget(g, e)"]
     vertex_c [label="vertex<G,V>\nis_vertex_descriptor_v<V>\nvertex_id(g, u)\nfind_vertex(g, uid)"]
     hashable_vertex_id [label="hashable_vertex_id<G>\nhash<vertex_id_t<G>>{}(uid) → size_t"]
 
@@ -28,27 +29,30 @@ digraph ConceptHierarchy {
 
     node [fillcolor="#fff3cd"]  // light yellow
 
-    index_vertex_range  [label="index_vertex_range<G>\nintegral<vertex_id_t<G>>\nintegral<vertex_range_t<G>::storage_type>\nvertices(g) → vertex_range<G>"]
-    mapped_vertex_range [label="mapped_vertex_range<G>\n¬index_vertex_range<G>\nhashable_vertex_id<G>\nvertices(g) → forward_range\nfind_vertex(g, uid)"]
+    index_vertex_range  [label="index_vertex_range<G>\nintegral<vertex_id_t<G>>\nintegral<vertex_range_t<G>::storage_type>"]
+    mapped_vertex_range [label="mapped_vertex_range<G>\n¬index_vertex_range<G>\nhashable_vertex_id<G>\nfind_vertex(g, uid)"]
 
     // ── Core graph concepts ───────────────────────────────────────────────────
 
     node [fillcolor="#f8d7da"]  // light red/salmon
 
     adjacency_list          [label="adjacency_list<G>\nvertices(g) → vertex_range<G>\nout_edges(g, u) → out_edge_range<G>"]
-    ordered_vertex_edges    [label="ordered_vertex_edges<G>\nadjacency_list<G>\nforward_iterator on out_edges(g, u)\n(edges sorted by target_id)"]
-    bidirectional_adjacency_list [label="bidirectional_adjacency_list<G>\nadjacency_list<G>\nin_edges(g, u) → in_edge_range<G>\nsource_id(g, ie) → vertex_id_t<G>"]
+    ordered_vertex_edges    [label="ordered_vertex_edges<G>\nadjacency_list<G>\nout_edges(g, u) sorted by target_id"]
+    bidirectional_adjacency_list [label="bidirectional_adjacency_list<G>\nadjacency_list<G>\nin_edges(g, u) → in_edge_range<G>"]
 
-    // ── Compound / specialised concepts ──────────────────────────────────────
+    // ── Compound / specialised concepts ───────────────────────────────────────
 
     node [fillcolor="#e2d9f3"]  // light purple
 
-    index_adjacency_list            [label="index_adjacency_list<G>\nadjacency_list<G>\n∧ index_vertex_range<G>"]
-    mapped_adjacency_list           [label="mapped_adjacency_list<G>\nadjacency_list<G>\n∧ mapped_vertex_range<G>"]
-    index_bidirectional_adjacency_list [label="index_bidirectional\n_adjacency_list<G>\nbidirectional_adjacency_list<G>\n∧ index_vertex_range<G>"]
-    mapped_bidirectional_adjacency_list [label="mapped_bidirectional\n_adjacency_list<G>\nbidirectional_adjacency_list<G>\n∧ mapped_vertex_range<G>"]
+    index_adjacency_list            [label="index_adjacency_list<G>\nadjacency_list<G> ∧ index_vertex_range<G>"]
+    mapped_adjacency_list           [label="mapped_adjacency_list<G>\nadjacency_list<G> ∧ mapped_vertex_range<G>"]
+    index_bidirectional_adjacency_list [label="index_bidirectional\n_adjacency_list<G>\nbidirectional_adjacency_list<G> ∧ index_vertex_range<G>"]
+    mapped_bidirectional_adjacency_list [label="mapped_bidirectional\n_adjacency_list<G>\nbidirectional_adjacency_list<G> ∧ mapped_vertex_range<G>"]
 
     // ── Edges (arrows = "is required by" / "refines") ─────────────────────────
+
+    // Shared edge floor → adjacency-list edge refinement
+    basic_edge_c -> edge_c
 
     // Primitives → ranges
     edge_c    -> out_edge_range
@@ -73,7 +77,7 @@ digraph ConceptHierarchy {
     adjacency_list     -> index_adjacency_list
     index_vertex_range -> index_adjacency_list
 
-    adjacency_list     -> mapped_adjacency_list
+    adjacency_list      -> mapped_adjacency_list
     mapped_vertex_range -> mapped_adjacency_list
 
     bidirectional_adjacency_list -> index_bidirectional_adjacency_list
@@ -83,7 +87,8 @@ digraph ConceptHierarchy {
     mapped_vertex_range          -> mapped_bidirectional_adjacency_list
 
     // ── Rank hints for cleaner layout ─────────────────────────────────────────
-    { rank=same; edge_c; vertex_c; hashable_vertex_id }
+    { rank=same; basic_edge_c; vertex_c; hashable_vertex_id }
+    { rank=same; edge_c }
     { rank=same; out_edge_range; in_edge_range; vertex_range }
     { rank=same; index_vertex_range; mapped_vertex_range }
     { rank=same; adjacency_list }
