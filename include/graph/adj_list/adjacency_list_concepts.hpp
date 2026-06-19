@@ -321,6 +321,29 @@ concept bidirectional_adjacency_list = adjacency_list<G> && requires(G& g, verte
 template <class G>
 concept index_bidirectional_adjacency_list = bidirectional_adjacency_list<G> && index_vertex_range<G>;
 
+/**
+ * @brief Concept for dense adjacency-matrix graphs.
+ *
+ * An adjacency_matrix refines index_adjacency_list by additionally requiring O(1)
+ * edge-existence queries and O(1) edge lookup by source/target vertex ID.
+ *
+ * Requirements:
+ * - Must satisfy index_adjacency_list<G>
+ * - contains_out_edge(g, uid, vid) must be valid and return bool (O(1) existence)
+ * - find_vertex_edge(g, u, vid) must be valid (O(1) edge lookup)
+ *
+ * In-edge support is NOT required by this base concept; bidirectionality remains
+ * an optional, separate refinement (bidirectional_adjacency_list).
+ *
+ * @tparam G Graph type
+ */
+template <class G>
+concept adjacency_matrix = index_adjacency_list<G> &&
+                           requires(G& g, vertex_t<G> u, vertex_id_t<G> uid, vertex_id_t<G> vid) {
+                             { contains_out_edge(g, uid, vid) } -> std::convertible_to<bool>;
+                             find_vertex_edge(g, u, vid);
+                           };
+
 // =============================================================================
 // Mapped (Key-Based) Graph Concepts
 // =============================================================================

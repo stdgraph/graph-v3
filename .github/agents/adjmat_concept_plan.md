@@ -192,15 +192,15 @@ Expected outcomes:
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 1 | Define `adjacency_matrix<G>` concept in `adjacency_list_concepts.hpp` | not started |
+| 1 | Define `adjacency_matrix<G>` concept in `adjacency_list_concepts.hpp` | done |
 | 2a | Rename class `adjacency_matrix` → `adjmat` | done |
 | 2b | Rename class `md_adjacency_matrix` → `md_adjmat` and update base type | done |
 | 2c | Remove old-name aliases and old-name type references in header | done |
-| 3a | Update doc comments inside `adjacency_matrix.hpp` | not started |
-| 3b | Verify `graph.hpp` umbrella — no changes expected | not started |
-| 3c | Update `docs/user-guide/containers.md` (`adjmat`/`md_adjmat`) | not started |
-| 3d | Verify `docs/reference/adjacency-list-interface.md` consistency | not started |
-| 4a | Update type usage in test file to `adjmat<>` | not started |
-| 4b | Add concept conformance `static_assert` blocks | not started |
-| 4c | Update `TEST_CASE` tags | not started |
-| 5  | Build + `ctest` pass, review diagnostics | not started |
+| 3a | Update doc comments inside `adjacency_matrix.hpp` | done |
+| 3b | Verify `graph.hpp` umbrella — no changes expected | done |
+| 3c | Update `docs/user-guide/containers.md` (`adjmat`/`md_adjmat`) | done |
+| 3d | Verify `docs/reference/adjacency-list-interface.md` consistency | done |
+| 4a | Update type usage in test file to `adjmat<>` | done |
+| 4b | Add concept conformance `static_assert` blocks | done |
+| 4c | Update `TEST_CASE` tags | done |
+| 5  | Build + `ctest` pass, review diagnostics | done |

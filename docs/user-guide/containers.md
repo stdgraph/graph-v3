@@ -18,7 +18,7 @@ adjacency list concepts so all CPOs, views, and algorithms work interchangeably.
 | [`dynamic_graph`](#1-dynamic_graph) | Traits-configured vertex + edge containers | Mutable | General purpose, flexible container choice |
 | [`compressed_graph`](#2-compressed_graph) | CSR (Compressed Sparse Row) | Immutable after construction | Read-only, high performance, memory-compact |
 | [`undirected_adjacency_list`](#3-undirected_adjacency_list) | Dual doubly-linked lists per edge | Mutable, O(1) edge removal | Undirected graphs, frequent edge insertion/removal |
-| [`adjacency_matrix`](#4-adjacency_matrix) | Dense `n x n` cell array | Fixed order, mutable cells | Small/dense graphs, O(1) edge existence queries |
+| [`adjmat`](#4-adjmat) | Dense `n x n` cell array | Fixed order, mutable cells | Small/dense graphs, O(1) edge existence queries |
 
 All four live in `graph::container`.
 
@@ -530,7 +530,7 @@ g.remove_vertex(2u);              // O(V+E): renumbers higher vertex ids
 
 ---
 
-## 4. `adjacency_matrix`
+## 4. `adjmat`
 
 ```cpp
 #include <graph/container/adjacency_matrix.hpp>
@@ -539,11 +539,11 @@ namespace graph::container {
 template <class EV       = void,       // edge value (weight) type
           class VId      = uint32_t,   // vertex id / index type (integral)
           bool  Directed = true>       // false adds the reciprocal edge too
-class adjacency_matrix;
+class adjmat;
 }
 ```
 
-`adjacency_matrix` is a **dense** container: it owns an `n x n` block of cells,
+`adjmat` is a **dense** container: it owns an `n x n` block of cells,
 one per ordered vertex pair. This makes edge-existence and weight lookups O(1)
 at the cost of O(n²) space, so it suits **small or dense** graphs and algorithms
 that probe arbitrary `(u, v)` pairs (e.g. Floyd–Warshall, transitive closure).
@@ -585,7 +585,7 @@ views, and algorithms work. `vertices(g)` yields the integral row indices, and
 using namespace graph::container;
 
 // Unweighted, directed, 4 vertices
-adjacency_matrix<> g(4);
+adjmat<> g(4);
 g.add_edge(0, 1);
 g.add_edge(0, 2);
 g.add_edge(2, 3);
@@ -594,19 +594,19 @@ bool e = g.has_edge(0, 1);          // O(1)
 bool e2 = g.exists(0, 1);           // O(1)
 
 // Weighted (double) — value recovered via edge_value CPO or const operator()(u, v)
-adjacency_matrix<double> w(3);
+adjmat<double> w(3);
 w.add_edge(0, 1, 1.5);
 const auto& cw = w;
 double wt = cw(0, 1);               // 1.5
 
 // Undirected — adds the reciprocal edge automatically
-adjacency_matrix<void, std::uint32_t, /*Directed=*/false> u(3);
+adjmat<void, std::uint32_t, /*Directed=*/false> u(3);
 u.add_edge(0, 1);                   // both (0,1) and (1,0) now present
 ```
 
 ### Construction from an edge range
 
-As with `dynamic_graph` and `compressed_graph`, an `adjacency_matrix` can be
+As with `dynamic_graph` and `compressed_graph`, an `adjmat` can be
 built directly from a range of edges plus a projection to
 `copyable_edge_t<VId, EV>` (`{source_id, target_id [, value]}`). The matrix is
 sized to the supplied order; endpoints are **not** scanned to grow it, so every
@@ -618,12 +618,12 @@ using namespace graph::container;
 
 // Already copyable_edge_t — use std::identity (the default)
 std::vector<graph::copyable_edge_t<std::uint32_t>> ee = {{0,1},{0,2},{1,2},{2,3}};
-adjacency_matrix<> g(4, ee);
+adjmat<> g(4, ee);
 
 // Project from your own edge type
 struct raw_edge { int from, to; double w; };
 std::vector<raw_edge> raw = {{0,1,1.5},{0,2,2.5},{1,2,3.5}};
-adjacency_matrix<double> wg(3, raw, [](const raw_edge& e) {
+adjmat<double> wg(3, raw, [](const raw_edge& e) {
   return graph::copyable_edge_t<std::uint32_t, double>{
       static_cast<std::uint32_t>(e.from), static_cast<std::uint32_t>(e.to), e.w};
 });
@@ -640,14 +640,14 @@ adjacency_matrix<double> wg(3, raw, [](const raw_edge& e) {
 ### C++23 `mdspan` variant
 
 When compiled as C++23 with `<mdspan>` available, the header also defines
-`md_adjacency_matrix<EV, VId, Directed>`. It has identical concept wiring and
+`md_adjmat<EV, VId, Directed>`. It has identical concept wiring and
 owning storage, but additionally exposes the dense presence plane as a 2-D
 `std::mdspan` (`presence()`) and offers natural `m(u, v)` element access. The
 `mdspan` is a *view* over the owned storage — it never owns the data.
 
 ```cpp
 #if defined(__cpp_lib_mdspan)
-md_adjacency_matrix<double> g(3);
+md_adjmat<double> g(3);
 g.add_edge(0, 1, 2.5);
 bool present = g.exists(0, 1);      // true
 auto plane   = g.presence();       // std::mdspan<const std::uint8_t, dextents<size_t,2>>
@@ -920,7 +920,7 @@ order and advanced customization patterns.
               │   mutable edge properties?
 Start ────────┤
               │
-              ├─ Small or dense graph with      → adjacency_matrix
+              ├─ Small or dense graph with      → adjmat
               │   O(1) (u,v) existence queries?    (O(n²) space, fixed order)
               │
               ├─ Graph is read-only             → compressed_graph
@@ -935,7 +935,7 @@ edges must be duplicated (e.g. edges A/B and B/A for vertices A and B). Properti
 duplicated, or handled in a way that avoids duplication (e.g. a `std::shared_ptr` to a property 
 struct), if they are mutable.
 
-| Criterion | `dynamic_graph` | `compressed_graph` | `undirected_adjacency_list` | `adjacency_matrix` | range-of-ranges |
+| Criterion | `dynamic_graph` | `compressed_graph` | `undirected_adjacency_list` | `adjmat` | range-of-ranges |
 |-----------|-----------------|--------------------|-----------------------------|--------------------|------------------|
 | Add/remove vertices | Yes | No | Yes | No (fixed order) | Depends on outer container |
 | Add/remove edges | Yes | No | Yes (O(1) remove) | Add only (set cells) | Depends on inner container |
@@ -956,6 +956,6 @@ graph data structure with all library views and algorithms by overriding graph C
 
 - [Adjacency Lists User Guide](adjacency-lists.md) — concepts, CPOs, descriptors
 - [Edge Lists User Guide](edge-lists.md) — edge list input for graph construction
-- [Getting Started](../getting-started.md) — quick-start examples with all three containers
+- [Getting Started](../getting-started.md) — quick-start examples with all four containers
 - [Adjacency List Interface](../reference/adjacency-list-interface.md) — formal adjacency list specification
 - [Edge List Interface](../reference/edge-list-interface.md) — formal edge list specification

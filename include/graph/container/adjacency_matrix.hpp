@@ -384,7 +384,7 @@ public:
   }
 
   template <typename G, typename EdgeDesc>
-  requires std::same_as<std::remove_cvref_t<G>, adjmat> &&
+  requires std::same_as<std::remove_cvref_t<G>, adjmat<EV, VId, Directed>> &&
            requires(const EdgeDesc& uv) {
              uv.value().target_id();
            }
@@ -393,7 +393,7 @@ public:
   }
 
   template <typename G, typename EdgeDesc>
-  requires weighted && std::same_as<std::remove_cvref_t<G>, adjmat> &&
+  requires weighted && std::same_as<std::remove_cvref_t<G>, adjmat<EV, VId, Directed>> &&
            requires(const EdgeDesc& uv) {
              uv.value().edge_value_ref();
            }

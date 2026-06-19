@@ -115,7 +115,7 @@ namespace edge_list {
 
   template <class EL>
   inline constexpr bool is_directed_v = is_directed<EL>::value;
-
+ 
 
   //
   // edgelist types (note that concepts don't really do anything except document expectations)

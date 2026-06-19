@@ -52,7 +52,8 @@ All concepts are in `graph::adj_list`, re-exported to `graph`.
 | `adjacency_list<G>` | Graph `G` | `vertices(g)` → `vertex_range`, `edges(g,u)` → `out_edge_range` |
 | `index_adjacency_list<G>` | Graph `G` | `adjacency_list<G>` + `index_vertex_range<G>` (random-access vertices, integral IDs) |
 | `ordered_vertex_edges<G>` | Graph `G` | `adjacency_list<G>` + edge ranges sorted by `target_id` |
-| `bidirectional_adjacency_list<G>` | Graph `G` | `index_adjacency_list<G>` + `in_edges(g,u)` and `in_degree(g,u)` |
+| `bidirectional_adjacency_list<G>` | Graph `G` | `adjacency_list<G>` + `in_edges(g,u)` and valid incoming-edge `source_id(g,ie)` |
+| `adjacency_matrix<G>` | Graph `G` | `index_adjacency_list<G>` + O(1) `contains_out_edge(g,uid,vid)` and `find_vertex_edge(g,u,vid)` |
 
 > **Note:** All current algorithms require `index_adjacency_list<G>`. The more
 > general `adjacency_list<G>` supports associative vertex containers and may be

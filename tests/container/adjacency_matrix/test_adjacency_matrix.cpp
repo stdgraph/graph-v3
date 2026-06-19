@@ -21,19 +21,25 @@ using namespace graph::container;
 // Concept conformance
 // =============================================================================
 
-static_assert(std::ranges::random_access_range<adjacency_matrix<>>,
-              "matrix must be a random-access range to drive the inner-value pattern");
-static_assert(adjacency_list<adjacency_matrix<>>, "unweighted matrix must model adjacency_list");
-static_assert(index_adjacency_list<adjacency_matrix<>>, "unweighted matrix must model index_adjacency_list");
-static_assert(adjacency_list<adjacency_matrix<double>>, "weighted matrix must model adjacency_list");
-static_assert(index_adjacency_list<adjacency_matrix<double>>, "weighted matrix must model index_adjacency_list");
+TEST_CASE("adjmat: concept conformance", "[container][adjmat]") {
+  constexpr bool conforms =
+      std::ranges::random_access_range<adjmat<>> &&
+      adjacency_list<adjmat<>> &&
+      index_adjacency_list<adjmat<>> &&
+      adjacency_list<adjmat<double>> &&
+      index_adjacency_list<adjmat<double>> &&
+      graph::adj_list::adjacency_matrix<adjmat<>> &&
+      graph::adj_list::adjacency_matrix<adjmat<double>>;
+
+  REQUIRE(conforms);
+}
 
 // =============================================================================
 // Unweighted, directed
 // =============================================================================
 
-TEST_CASE("adjacency_matrix: unweighted directed basics", "[container][adjacency_matrix]") {
-  adjacency_matrix<> g(4);
+TEST_CASE("adjmat: unweighted directed basics", "[container][adjmat]") {
+  adjmat<> g(4);
   g.add_edge(0, 1);
   g.add_edge(0, 2);
   g.add_edge(1, 2);
@@ -80,8 +86,8 @@ TEST_CASE("adjacency_matrix: unweighted directed basics", "[container][adjacency
 // Unweighted, undirected (symmetric)
 // =============================================================================
 
-TEST_CASE("adjacency_matrix: undirected adds reciprocal edge", "[container][adjacency_matrix]") {
-  adjacency_matrix<void, std::uint32_t, /*Directed=*/false> g(3);
+TEST_CASE("adjmat: undirected adds reciprocal edge", "[container][adjmat]") {
+  adjmat<void, std::uint32_t, /*Directed=*/false> g(3);
   g.add_edge(0, 1);
   g.add_edge(1, 2);
 
@@ -99,8 +105,8 @@ TEST_CASE("adjacency_matrix: undirected adds reciprocal edge", "[container][adja
 // Weighted
 // =============================================================================
 
-TEST_CASE("adjacency_matrix: weighted edges expose target + value", "[container][adjacency_matrix]") {
-  adjacency_matrix<double> g(3);
+TEST_CASE("adjmat: weighted edges expose target + value", "[container][adjmat]") {
+  adjmat<double> g(3);
   g.add_edge(0, 1, 1.5);
   g.add_edge(0, 2, 2.5);
   g.add_edge(1, 2, 3.5);
@@ -110,7 +116,7 @@ TEST_CASE("adjacency_matrix: weighted edges expose target + value", "[container]
   REQUIRE(g.exists(0, 1));
   REQUIRE_FALSE(g.exists(2, 0));
 
-  const adjacency_matrix<double>& cg2 = g;
+  const adjmat<double>& cg2 = g;
   REQUIRE(cg2(0, 1) == 1.5);
 
   auto vs = vertices(g);
@@ -129,8 +135,8 @@ TEST_CASE("adjacency_matrix: weighted edges expose target + value", "[container]
   REQUIRE(ee[1] == std::pair<std::size_t, double>{2, 2.5});
 }
 
-TEST_CASE("adjacency_matrix: dijkstra shortest distances", "[container][adjacency_matrix][dijkstra]") {
-  adjacency_matrix<double> g(4);
+TEST_CASE("adjmat: dijkstra shortest distances", "[container][adjmat][dijkstra]") {
+  adjmat<double> g(4);
   g.add_edge(0, 1, 1.0);
   g.add_edge(0, 2, 4.0);
   g.add_edge(1, 2, 2.0);
@@ -138,13 +144,18 @@ TEST_CASE("adjacency_matrix: dijkstra shortest distances", "[container][adjacenc
   g.add_edge(2, 3, 3.0);
 
   std::vector<double> distance(num_vertices(g));
-  init_shortest_paths(g, distance);
 
-  dijkstra_shortest_distances(g, vertex_id_t<adjacency_matrix<double>>(0),
-                              container_value_fn(distance),
-                              [](const auto& graph_ref, const auto& uv) {
-                                return edge_value(graph_ref, uv);
-                              });
+  // Wrap in a C++20 explicit-template lambda so IntelliSense defers concept
+  // instantiation. The real compiler (clang) resolves adjmat<double> through
+  // the inner-value pattern correctly; IntelliSense does not.
+  [&]<class G>(G& graph) {
+    init_shortest_paths(graph, distance);
+    dijkstra_shortest_distances(graph, vertex_id_t<G>(0),
+                                container_value_fn(distance),
+                                [](const auto& graph_ref, const auto& uv) {
+                                  return edge_value(graph_ref, uv);
+                                });
+  }(g);
 
   REQUIRE(distance[0] == 0.0);
   REQUIRE(distance[1] == 1.0);
@@ -153,8 +164,8 @@ TEST_CASE("adjacency_matrix: dijkstra shortest distances", "[container][adjacenc
 }
 
 #if !defined(NDEBUG) && (defined(__unix__) || defined(__APPLE__))
-TEST_CASE("adjacency_matrix: operator()(u,v) asserts on missing edge in debug", "[container][adjacency_matrix]") {
-  adjacency_matrix<double> g(3);
+TEST_CASE("adjmat: operator()(u,v) asserts on missing edge in debug", "[container][adjmat]") {
+  adjmat<double> g(3);
   g.add_edge(0, 1, 1.5);
 
   const pid_t pid = fork();
@@ -176,10 +187,10 @@ TEST_CASE("adjacency_matrix: operator()(u,v) asserts on missing edge in debug", 
 // Edge-range + projection constructor
 // =============================================================================
 
-TEST_CASE("adjacency_matrix: construct from copyable_edge range (identity)", "[container][adjacency_matrix]") {
+TEST_CASE("adjmat: construct from copyable_edge range (identity)", "[container][adjmat]") {
   std::vector<graph::copyable_edge_t<std::uint32_t>> ee = {{0, 1}, {0, 2}, {1, 2}, {2, 3}};
 
-  adjacency_matrix<> g(4, ee);
+  adjmat<> g(4, ee);
 
   REQUIRE(g.num_vertices() == 4);
   REQUIRE(g.num_edges() == 4);
@@ -190,7 +201,7 @@ TEST_CASE("adjacency_matrix: construct from copyable_edge range (identity)", "[c
   REQUIRE_FALSE(g.exists(3, 0));
 }
 
-TEST_CASE("adjacency_matrix: construct from edge range with projection", "[container][adjacency_matrix]") {
+TEST_CASE("adjmat: construct from edge range with projection", "[container][adjmat]") {
   struct raw_edge {
     int from;
     int to;
@@ -203,7 +214,7 @@ TEST_CASE("adjacency_matrix: construct from edge range with projection", "[conta
                                                          static_cast<std::uint32_t>(e.to), e.w};
   };
 
-  adjacency_matrix<double> g(3, ee, proj);
+  adjmat<double> g(3, ee, proj);
 
   REQUIRE(g.num_edges() == 3);
   REQUIRE(g(0, 1) == 1.5);
