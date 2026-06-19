@@ -72,9 +72,7 @@ All concepts are in `graph::adj_list`, re-exported to `graph`.
 | `has_full_queries<G>` / `has_full_queries_v<G>` | concept / bool | `has_basic_queries` + `has_contains_edge` |
 | `unordered_edge<G>` | concept | Graph has unordered (undirected) edges |
 | `ordered_edge<G>` | concept | Graph has ordered (directed) edges |
-| `define_adjacency_matrix<G>` | struct (`false_type`) | Specialize to `true_type` for adjacency matrix |
-| `is_adjacency_matrix<G>` / `is_adjacency_matrix_v<G>` | struct / bool | Type trait for adjacency matrix |
-| `adjacency_matrix<G>` | concept | Graph is an adjacency matrix |
+| `adjacency_matrix<G>` | concept | Graph is an adjacency matrix (refines `index_adjacency_list`; adds O(1) `contains_out_edge` and `find_vertex_edge`) |
 
 ---
 

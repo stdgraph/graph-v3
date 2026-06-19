@@ -6,7 +6,7 @@
  *
  * This header provides two presentations of the same idea:
  *
- *   1. graph::container::adjacency_matrix<EV, VId, Directed>
+ *   1. graph::container::adjmat<EV, VId, Directed>
  *        A portable C++20 implementation. It owns two dense `n*n` planes:
  *          - a presence plane (`flags_`) giving O(1) `has_edge(u, v)`, and
  *          - an element plane (`cells_`) holding the edge element for each cell.
@@ -17,7 +17,7 @@
  *        in the owned element plane, the per-vertex edge iterators yield stable
  *        references, which is what `target_id` / `edge_value` require.
  *
- *   2. graph::container::md_adjacency_matrix<EV, VId, Directed>
+ *   2. graph::container::md_adjmat<EV, VId, Directed>
  *        A C++23 variant (guarded by `__cpp_lib_mdspan`) that reuses the same
  *        owning storage but additionally exposes the dense presence plane through
  *        `std::mdspan`, giving natural `m(u, v)` element access and the option to
@@ -276,7 +276,7 @@ namespace _amx_detail {
  */
 template <class EV = void, class VId = std::uint32_t, bool Directed = true>
 requires std::integral<VId>
-class adjacency_matrix {
+class adjmat {
   static constexpr bool weighted = !std::is_void_v<EV>;
   using flag_t                   = _amx_detail::flag_t;
   using element_type             = _amx_detail::edge_element_t<EV, VId>;
@@ -288,7 +288,7 @@ public:
   using const_iterator = _amx_detail::vertex_iterator<EV, VId>;
 
   /// Construct an @p order x @p order matrix with no edges.
-  constexpr explicit adjacency_matrix(VId order = VId{0})
+  constexpr explicit adjmat(VId order = VId{0})
       : n_(order)
       , flags_(static_cast<std::size_t>(order) * static_cast<std::size_t>(order), flag_t{0})
       , cells_(static_cast<std::size_t>(order) * static_cast<std::size_t>(order), element_type{}) {}
@@ -314,7 +314,7 @@ public:
    */
   template <std::ranges::input_range ERng, class EProj = std::identity>
   requires copyable_edge<std::invoke_result_t<EProj&, std::ranges::range_reference_t<ERng>>, VId, EV>
-  constexpr adjacency_matrix(VId order, ERng&& erng, EProj eproj = EProj{}) : adjacency_matrix(order) {
+  constexpr adjmat(VId order, ERng&& erng, EProj eproj = EProj{}) : adjmat(order) {
     for (auto&& elem : erng) {
       const copyable_edge_t<VId, EV>& uv = eproj(elem);
       if constexpr (weighted) {
@@ -384,7 +384,7 @@ public:
   }
 
   template <typename G, typename EdgeDesc>
-  requires std::same_as<std::remove_cvref_t<G>, adjacency_matrix> &&
+  requires std::same_as<std::remove_cvref_t<G>, adjmat> &&
            requires(const EdgeDesc& uv) {
              uv.value().target_id();
            }
@@ -393,7 +393,7 @@ public:
   }
 
   template <typename G, typename EdgeDesc>
-  requires weighted && std::same_as<std::remove_cvref_t<G>, adjacency_matrix> &&
+  requires weighted && std::same_as<std::remove_cvref_t<G>, adjmat> &&
            requires(const EdgeDesc& uv) {
              uv.value().edge_value_ref();
            }
@@ -434,7 +434,7 @@ private:
  * @ingroup graph_containers
  * @brief C++23 adjacency matrix that adds a `std::mdspan` access layer.
  *
- * Identical concept wiring and owning storage as @ref adjacency_matrix, but the
+ * Identical concept wiring and owning storage as @ref adjmat, but the
  * dense presence plane is additionally exposed as a 2-D `std::mdspan` view. This
  * gives ergonomic, zero-overhead `m(u, v)` element access and lets callers
  * reason about layout (`layout_right` keeps each out-edge row contiguous). The
@@ -443,8 +443,8 @@ private:
  */
 template <class EV = void, class VId = std::uint32_t, bool Directed = true>
 requires std::integral<VId>
-class md_adjacency_matrix : public adjacency_matrix<EV, VId, Directed> {
-  using base   = adjacency_matrix<EV, VId, Directed>;
+class md_adjmat : public adjmat<EV, VId, Directed> {
+  using base   = adjmat<EV, VId, Directed>;
   using flag_t = _amx_detail::flag_t;
 
 public:
