@@ -10,16 +10,16 @@ digraph EdgeListConceptHierarchy {
 
     node [fillcolor="#cce5ff"]  // light blue
 
-    basic_edge [label="basic_edge<EL,E>\nsource_id · target_id\n(shared with adj_list)"]
-    basic_sourced_edgelist [label="basic_sourced_edgelist<EL>\ninput_range\n!range-of-ranges\nbasic_edge<EL, range_value_t<EL>>"]
+    basic_edge [label="basic_edge<EL,E>\nsource_id(el, e)\ntarget_id(el, e)\n(shared with adj_list)"]
+    basic_sourced_edgelist [label="basic_sourced_edgelist<EL>\ninput_range<EL>\n¬range-of-ranges\nbasic_edge<EL, range_value_t<EL>>"]
 
     // ── Refinements ───────────────────────────────────────────────────────────
 
     node [fillcolor="#d4edda"]  // light green
 
-    basic_sourced_index_edgelist [label="basic_sourced_index_edgelist<EL>\nbasic_sourced_edgelist\n+ integral source_id\n+ integral target_id"]
+    basic_sourced_index_edgelist [label="basic_sourced_index_edgelist<EL>\nbasic_sourced_edgelist<EL>\n∧ integral<source_id_t<EL>>\n∧ integral<target_id_t<EL>>"]
 
-    has_edge_value [label="has_edge_value<EL>\nbasic_sourced_edgelist\n+ edge_value(el, uv)"]
+    has_edge_value [label="has_edge_value<EL>\nbasic_sourced_edgelist<EL>\n∧ edge_value(el, uv) → edge_value_t<EL>"]
 
     // ── Edges ─────────────────────────────────────────────────────────────────
 
