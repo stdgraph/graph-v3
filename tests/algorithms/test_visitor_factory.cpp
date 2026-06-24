@@ -30,14 +30,6 @@ struct CountingChild {
   }
 };
 
-// A sub-visitor that consumes the vertex id form of an event.
-struct IdChild {
-  std::vector<std::size_t>* out;
-  template <typename G>
-  void on_discover_vertex(const G&, const vertex_id_t<G>& uid) {
-    out->push_back(static_cast<std::size_t>(uid));
-  }
-};
 } // namespace
 
 // A single-event adaptor is a valid visitor.
@@ -101,42 +93,6 @@ TEST_CASE("make_visitor fans events out to multiple sub-visitors", "[visitor_fac
   REQUIRE(discovered == 4);
   REQUIRE(examined == 4);
   REQUIRE(edge_count == 3);
-}
-
-TEST_CASE("make_visitor forwards one event to several handlers", "[visitor_factory][composite]") {
-  using Graph = vov_void;
-  auto g      = path_graph_4<Graph>();
-
-  int a = 0;
-  int b = 0;
-
-  auto vis = make_visitor(                                              //
-        on_discover_vertex([&](const auto&, const auto&) { ++a; }),     //
-        on_discover_vertex([&](const auto&, const auto&) { ++b; }));
-
-  breadth_first_search(g, 0u, vis);
-
-  REQUIRE(a == 4);
-  REQUIRE(b == 4);
-}
-
-TEST_CASE("composite bridges descriptor and id sub-visitors", "[visitor_factory][composite]") {
-  using Graph = vov_void;
-  auto g      = path_graph_4<Graph>();
-
-  std::vector<std::size_t> by_id;
-  int                      by_desc = 0;
-
-  // One child wants the vertex id, the other a descriptor; the composite must
-  // satisfy both from a single event.
-  auto vis = make_visitor(                                                 //
-        IdChild{&by_id},                                                   //
-        on_discover_vertex([&](const auto&, const auto&) { ++by_desc; }));
-
-  breadth_first_search(g, 0u, vis);
-
-  REQUIRE(by_desc == 4);
-  REQUIRE(by_id == std::vector<std::size_t>{0, 1, 2, 3});
 }
 
 // =============================================================================

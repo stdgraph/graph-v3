@@ -14,10 +14,10 @@
  *     event tags.
  *
  *  2. **`composite_visitor` / `make_visitor(...)`**: fan a single traversal out to several
- *     sub-visitors. Each event is forwarded to every child that implements it (by descriptor
- *     or by vertex id, whichever the child accepts). A composite only exposes an @c on_X
- *     method when at least one child handles event @c X, so it interoperates with the
- *     `has_on_*` detection used by the algorithms and with the `valid_visitor` strict check.
+ *     sub-visitors. Each event is forwarded to every child that implements it. A composite
+ *     only exposes an @c on_X method when at least one child handles event @c X, so it
+ *     interoperates with the `has_on_*` detection used by the algorithms and with the
+ *     `valid_visitor` strict check.
  *
  *  3. **Prebuilt recorders** (`predecessor_recorder`, `distance_recorder`, `time_stamper`):
  *     ready-made callables for the most common bookkeeping tasks. They return plain
@@ -61,9 +61,6 @@
  *    method is accepted directly.
  *  - Visitors are held by reference (not copied); stateful visitors do not
  *    require @c boost::ref wrapping.
- *  - Vertex events have both descriptor and vertex-id overloads; the composite
- *    bridges the two automatically, so a descriptor-only and an id-only child
- *    can coexist in the same @c make_visitor() call.
  *  - Unused events compile away to nothing via @c if constexpr, guaranteed
  *    rather than inliner-dependent.
  */
@@ -85,9 +82,8 @@ namespace graph {
 // Layer 1: single-event adaptors
 //
 // Each adaptor wraps a callable and exposes exactly one on_* method. The method is a template
-// so the same adaptor works whether the algorithm passes a vertex descriptor or a vertex id
-// (for vertex events) and regardless of the edge type (for edge events). The wrapped callable
-// is invoked as f(g, x).
+// so the same adaptor works for any descriptor or edge type used by the algorithms. The wrapped
+// callable is invoked as f(g, x).
 //
 // GRAPH_VISITOR_EVENT_ADAPTOR(on_discover_vertex) generates:
 //   - struct on_discover_vertex_fn<F>   — the adaptor type
@@ -134,8 +130,7 @@ GRAPH_VISITOR_EVENT_ADAPTOR(on_finish_edge)
 //
 // For a vertex event the composite receives whatever the algorithm passes (a descriptor,
 // because the descriptor-form concept is checked first by the algorithms). Each child is
-// then called with the form it supports: the descriptor directly, or vertex_id(g, x) for a
-// child that only provides the *_id overload.
+// then called directly with that descriptor.
 //
 // Each event method is constrained by a fold expression over the child pack so that the
 // method exists only when at least one child handles that event. This keeps has_on_* /
@@ -151,7 +146,7 @@ public:
 
 #  define GRAPH_COMPOSITE_VERTEX_EVENT(EVENT)                                                       \
     template <class G, class X>                                                                     \
-      requires((has_##EVENT<G, Vs> || has_##EVENT##_id<G, Vs>) || ...)                              \
+      requires((has_##EVENT<G, Vs>) || ...)                                                         \
     void EVENT(const G& g, const X& x) {                                                            \
       std::apply(                                                                                   \
             [&](auto&... child) {                                                                   \
@@ -159,8 +154,6 @@ public:
                 using C = std::remove_reference_t<decltype(c)>;                                     \
                 if constexpr (has_##EVENT<G, C>)                                                    \
                   c.EVENT(g, x);                                                                    \
-                else if constexpr (has_##EVENT##_id<G, C>)                                          \
-                  c.EVENT(g, vertex_id(g, x));                                                      \
               };                                                                                    \
               (dispatch(child), ...);                                                               \
             },                                                                                      \

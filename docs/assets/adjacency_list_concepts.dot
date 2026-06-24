@@ -45,6 +45,7 @@ digraph ConceptHierarchy {
     node [fillcolor="#e2d9f3"]  // light purple
 
     index_adjacency_list            [label="index_adjacency_list<G>\nadjacency_list<G> ∧ index_vertex_range<G>"]
+    adjacency_matrix_c              [label="adjacency_matrix<G>\nindex_adjacency_list<G>\ncontains_out_edge(g, uid, vid)\nfind_vertex_edge(g, u, vid)"]
     mapped_adjacency_list           [label="mapped_adjacency_list<G>\nadjacency_list<G> ∧ mapped_vertex_range<G>"]
     index_bidirectional_adjacency_list [label="index_bidirectional\n_adjacency_list<G>\nbidirectional_adjacency_list<G> ∧ index_vertex_range<G>"]
     mapped_bidirectional_adjacency_list [label="mapped_bidirectional\n_adjacency_list<G>\nbidirectional_adjacency_list<G> ∧ mapped_vertex_range<G>"]
@@ -77,6 +78,8 @@ digraph ConceptHierarchy {
     adjacency_list     -> index_adjacency_list
     index_vertex_range -> index_adjacency_list
 
+    index_adjacency_list -> adjacency_matrix_c
+
     adjacency_list      -> mapped_adjacency_list
     mapped_vertex_range -> mapped_adjacency_list
 
@@ -95,4 +98,5 @@ digraph ConceptHierarchy {
     { rank=same; ordered_vertex_edges; bidirectional_adjacency_list }
     { rank=same; index_adjacency_list; mapped_adjacency_list;
                  index_bidirectional_adjacency_list; mapped_bidirectional_adjacency_list }
+    { rank=same; adjacency_matrix_c }
 }

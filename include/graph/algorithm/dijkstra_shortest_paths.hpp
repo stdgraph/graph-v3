@@ -279,13 +279,9 @@ constexpr void dijkstra_shortest_paths(
 
   // Initialize-vertex visitor callbacks (shared across heap implementations).
   // (The optimizer removes this loop if on_initialize_vertex() is empty.)
-  if constexpr (has_on_initialize_vertex<graph_type, Visitor> || has_on_initialize_vertex_id<graph_type, Visitor>) {
+  if constexpr (has_on_initialize_vertex<graph_type, Visitor>) {
     for (auto&& [uid, u] : views::vertexlist(g)) {
-      if constexpr (has_on_initialize_vertex<graph_type, Visitor>) {
-        visitor.on_initialize_vertex(g, u);
-      } else if constexpr (has_on_initialize_vertex_id<graph_type, Visitor>) {
-        visitor.on_initialize_vertex(g, uid);
-      }
+      visitor.on_initialize_vertex(g, u);
     }
   }
 
@@ -333,8 +329,6 @@ constexpr void dijkstra_shortest_paths(
       queue.push({seed, zero});
       if constexpr (has_on_discover_vertex<graph_type, Visitor>) {
         visitor.on_discover_vertex(g, seed);
-      } else if constexpr (has_on_discover_vertex_id<graph_type, Visitor>) {
-        visitor.on_discover_vertex(g, seed_id);
       }
     }
 
@@ -355,8 +349,6 @@ constexpr void dijkstra_shortest_paths(
 
       if constexpr (has_on_examine_vertex<graph_type, Visitor>) {
         visitor.on_examine_vertex(g, u);
-      } else if constexpr (has_on_examine_vertex_id<graph_type, Visitor>) {
-        visitor.on_examine_vertex(g, uid);
       }
 
       // Process all outgoing edges from the current vertex
@@ -379,8 +371,6 @@ constexpr void dijkstra_shortest_paths(
           if (is_neighbor_undiscovered) {
             if constexpr (has_on_discover_vertex<graph_type, Visitor>) {
               visitor.on_discover_vertex(g, v);
-            } else if constexpr (has_on_discover_vertex_id<graph_type, Visitor>) {
-              visitor.on_discover_vertex(g, vid);
             }
           }
           queue.push({v, distance(g, vid)});
@@ -397,8 +387,6 @@ constexpr void dijkstra_shortest_paths(
       // matching BGL visitor semantics.
       if constexpr (has_on_finish_vertex<graph_type, Visitor>) {
         visitor.on_finish_vertex(g, u);
-      } else if constexpr (has_on_finish_vertex_id<graph_type, Visitor>) {
-        visitor.on_finish_vertex(g, uid);
       }
     } // while(!queue.empty())
   } else {
@@ -442,8 +430,6 @@ constexpr void dijkstra_shortest_paths(
         heap.push(static_cast<id_type>(seed_id));
         if constexpr (has_on_discover_vertex<graph_type, Visitor>) {
           visitor.on_discover_vertex(g, *seed_it);
-        } else if constexpr (has_on_discover_vertex_id<graph_type, Visitor>) {
-          visitor.on_discover_vertex(g, seed_id);
         }
       }
 
@@ -456,8 +442,6 @@ constexpr void dijkstra_shortest_paths(
 
         if constexpr (has_on_examine_vertex<graph_type, Visitor>) {
           visitor.on_examine_vertex(g, u);
-        } else if constexpr (has_on_examine_vertex_id<graph_type, Visitor>) {
-          visitor.on_examine_vertex(g, uid);
         }
 
         for (auto&& [vid, uv] : views::incidence(g, u)) {
@@ -476,8 +460,6 @@ constexpr void dijkstra_shortest_paths(
               if constexpr (has_on_discover_vertex<graph_type, Visitor>) {
                 vertex_t<graph_type> v = target(g, uv);
                 visitor.on_discover_vertex(g, v);
-              } else if constexpr (has_on_discover_vertex_id<graph_type, Visitor>) {
-                visitor.on_discover_vertex(g, vid);
               }
               heap.push(vid);
             } else {
@@ -495,8 +477,6 @@ constexpr void dijkstra_shortest_paths(
 
         if constexpr (has_on_finish_vertex<graph_type, Visitor>) {
           visitor.on_finish_vertex(g, u);
-        } else if constexpr (has_on_finish_vertex_id<graph_type, Visitor>) {
-          visitor.on_finish_vertex(g, uid);
         }
       } // while(!heap.empty())
     };

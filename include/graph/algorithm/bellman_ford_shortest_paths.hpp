@@ -278,8 +278,6 @@ requires distance_fn_for<DistanceFn, G> &&                                //
     distance(g, seed_id) = zero; // mark source as discovered
     if constexpr (has_on_discover_vertex<graph_type, Visitor>) {
       visitor.on_discover_vertex(g, *seed_it);
-    } else if constexpr (has_on_discover_vertex_id<graph_type, Visitor>) {
-      visitor.on_discover_vertex(g, seed_id);
     }
   }
 

@@ -192,16 +192,12 @@ void depth_first_search(G&&                   g,      // graph
   // Initialize source vertex
   if constexpr (has_on_initialize_vertex<G, Visitor>) {
     visitor.on_initialize_vertex(g, *find_vertex(g, start_vertex_id));
-  } else if constexpr (has_on_initialize_vertex_id<G, Visitor>) {
-    visitor.on_initialize_vertex(g, start_vertex_id);
   }
 
   // Notify visitor that we're starting from this source
   if constexpr (has_on_start_vertex<G, Visitor>) {
     auto src_vertex = *find_vertex(g, start_vertex_id);
     visitor.on_start_vertex(g, src_vertex);
-  } else if constexpr (has_on_start_vertex_id<G, Visitor>) {
-    visitor.on_start_vertex(g, start_vertex_id);
   }
 
   // Each stack frame stores a vertex and iterators into its incidence range,
@@ -221,8 +217,6 @@ void depth_first_search(G&&                   g,      // graph
   color[start_vertex_id] = Color::Gray;
   if constexpr (has_on_discover_vertex<G, Visitor>) {
     visitor.on_discover_vertex(g, *find_vertex(g, start_vertex_id));
-  } else if constexpr (has_on_discover_vertex_id<G, Visitor>) {
-    visitor.on_discover_vertex(g, start_vertex_id);
   }
 
   using FrameAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<StackFrame>;
@@ -240,8 +234,6 @@ void depth_first_search(G&&                   g,      // graph
       color[frame.vertex_id] = Color::Black;
       if constexpr (has_on_finish_vertex<G, Visitor>) {
         visitor.on_finish_vertex(g, *find_vertex(g, frame.vertex_id));
-      } else if constexpr (has_on_finish_vertex_id<G, Visitor>) {
-        visitor.on_finish_vertex(g, frame.vertex_id);
       }
       S.pop();
       continue;
@@ -270,8 +262,6 @@ void depth_first_search(G&&                   g,      // graph
       color[vid] = Color::Gray;
       if constexpr (has_on_discover_vertex<G, Visitor>) {
         visitor.on_discover_vertex(g, *find_vertex(g, vid));
-      } else if constexpr (has_on_discover_vertex_id<G, Visitor>) {
-        visitor.on_discover_vertex(g, vid);
       }
       auto inc = views::incidence(g, *find_vertex(g, vid));
       S.push({vid, std::ranges::begin(inc), std::ranges::end(inc)});

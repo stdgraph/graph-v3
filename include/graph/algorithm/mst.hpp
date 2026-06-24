@@ -974,8 +974,8 @@ auto prim(G&&                   g,           // graph
 
     struct prim_finish_visitor {
       std::vector<bool>* finalized_ptr;
-      void on_finish_vertex(const GraphT& /*gr*/, const id_type& uid) const {
-        (*finalized_ptr)[static_cast<std::size_t>(uid)] = true;
+      void on_finish_vertex(const GraphT& gr, const vertex_t<GraphT>& u) const {
+        (*finalized_ptr)[static_cast<std::size_t>(vertex_id(gr, u))] = true;
       }
     };
     prim_finish_visitor visitor{&finalized};
@@ -1001,8 +1001,8 @@ auto prim(G&&                   g,           // graph
 
     struct prim_finish_visitor {
       std::unordered_set<id_type>* finalized_ptr;
-      void on_finish_vertex(const GraphT& /*gr*/, const id_type& uid) const {
-        finalized_ptr->insert(uid);
+      void on_finish_vertex(const GraphT& gr, const vertex_t<GraphT>& u) const {
+        finalized_ptr->insert(vertex_id(gr, u));
       }
     };
     prim_finish_visitor visitor{&finalized};
