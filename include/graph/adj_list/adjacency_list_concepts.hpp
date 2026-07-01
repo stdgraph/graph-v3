@@ -47,9 +47,9 @@ namespace graph::adj_list {
  * @tparam E Edge type
  */
 template <class G, class E>
-concept edge = graph::basic_edge<G, E> && requires(G& g, const E& e) {
-  source(g, e);
-  target(g, e);
+concept edge = graph::basic_edge<G, E> && is_edge_descriptor_v<E> && requires(G& g, const E& uv) {
+  source(g, uv);
+  target(g, uv);
 };
 
 // =============================================================================
@@ -106,7 +106,7 @@ template <class G, class V>
 concept vertex = is_vertex_descriptor_v<std::remove_cvref_t<V>> && //
                  requires(G& g, const V& u, const vertex_id_t<G>& uid) {
                    vertex_id(g, u);
-                   find_vertex(g, uid);
+                   { find_vertex(g, uid) } -> std::forward_iterator;
                  };
 
 // =============================================================================
@@ -330,7 +330,7 @@ concept index_bidirectional_adjacency_list = bidirectional_adjacency_list<G> && 
  * Requirements:
  * - Must satisfy index_adjacency_list<G>
  * - contains_out_edge(g, uid, vid) must be valid and return bool (O(1) existence)
- * - find_vertex_edge(g, u, vid) must be valid (O(1) edge lookup)
+ * - find_out_edge(g, u, vid) must be valid (O(1) edge lookup)
  *
  * In-edge support is NOT required by this base concept; bidirectionality remains
  * an optional, separate refinement (bidirectional_adjacency_list).
@@ -340,8 +340,8 @@ concept index_bidirectional_adjacency_list = bidirectional_adjacency_list<G> && 
 template <class G>
 concept adjacency_matrix = index_adjacency_list<G> &&
                            requires(G& g, vertex_t<G> u, vertex_id_t<G> uid, vertex_id_t<G> vid) {
-                             { contains_out_edge(g, uid, vid) } -> std::convertible_to<bool>;
-                             find_vertex_edge(g, u, vid);
+                             { contains_out_edge(g, uid, vid) } -> std::convertible_to<bool>; // ToDo: contains_out_edge(g,u,v)
+                             find_out_edge(g, u, vid);                                        // ToDo: find_out_edge(g,u,v)
                            };
 
 // =============================================================================
